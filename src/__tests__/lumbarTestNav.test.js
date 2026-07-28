@@ -15,8 +15,10 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
     });
   });
 
-  it("does NOT map Active SLR to the passive SLR test (clinically distinct, no real implementation)", () => {
-    expect(lumbarTestNav("Active SLR")).toBeNull();
+  it("maps Active SLR to its own load-transfer special test (distinct from the passive/neural SLR)", () => {
+    expect(lumbarTestNav("Active SLR")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_active_slr" } });
+    // must NOT collide with the passive neural SLR entry
+    expect(lumbarTestNav("Active SLR").ctx.highlightTest).not.toBe("st_slr_test");
   });
 
   it("maps Observation to the observation module for this region", () => {

@@ -1460,7 +1460,9 @@ function lumbarTestNav(testStr) {
   const s = String(testStr || "");
   // Exclusions first: tests that share a word with a mapped test but are
   // clinically distinct and have no dedicated implementation of their own.
-  if (/active slr/i.test(s)) return null;
+  if (/active slr|active straight leg|\baslr\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_active_slr" },
+      why:"Active SLR (Mens) - a lumbopelvic load-transfer test, NOT the neural SLR. Heaviness raising the leg that eases with manual pelvic compression = impaired force closure / SIJ dysfunction (87% sens, 94% spec)." };
   if (/crossed slr/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },
       why:"Crossed SLR - raising the UNAFFECTED leg reproduces the patient's radicular pain. ~90% specific for lumbar disc herniation. Recorded as the Crossed SLR positive option on the SLR test card." };

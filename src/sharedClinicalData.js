@@ -2493,6 +2493,13 @@ const SPECIAL_TESTS_DATA = {
         how:"Patient walks briskly until buttock/leg claudicant pain appears, then STOOPS (flexes the trunk forward). POSITIVE = flexion relieves the leg symptoms and allows continued walking — characteristic of neurogenic claudication from lumbar canal stenosis.",
         options:["Positive — flexion relieves leg pain","Negative — no relief with flexion"],
       },
+      { id:"st_active_slr", label:"Active Straight Leg Raise (ASLR)", structure:"Lumbopelvic / SIJ load transfer",
+        sensitivity:"87%", specificity:"94%",
+        positive:"Heaviness/effort raising the leg, eased by pelvic compression",
+        negative:"Legs raise easily and symmetrically",
+        how:"Patient SUPINE. Ask to raise one straight leg ~20 cm and score the effort/heaviness (0 = none, 5 = unable), comparing sides. Then repeat while you MANUALLY COMPRESS the pelvis (ASIS to ASIS, or a belt). POSITIVE = raising is difficult/heavy AND compression makes it easier — indicates impaired force closure / SIJ load-transfer dysfunction (Mens 2001), common in pregnancy-related pelvic girdle pain.",
+        options:["Negative — symmetrical, effortless","Positive — heavy, improves with pelvic compression","Positive — heavy, no change with compression"],
+      },
     ]
   },
 
