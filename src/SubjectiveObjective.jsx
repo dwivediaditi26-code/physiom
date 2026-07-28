@@ -5192,11 +5192,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
-                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = lumbarTestNav(t);
                                       const btn = target
@@ -5375,11 +5375,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
-                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = cervicalTestNav(t);
                                       const btn = target
@@ -5565,11 +5565,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
-                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = thoracicTestNav(t);
                                       const btn = target
@@ -5712,11 +5712,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
-                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = shoulderTestNav(t);
                                       const btn = target
@@ -5771,11 +5771,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                               const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
-                                <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
+                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:6 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
                                     {c.keyExams.map((t, ti) => (
                                       <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
                                     ))}
