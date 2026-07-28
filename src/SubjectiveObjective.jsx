@@ -1480,6 +1480,9 @@ function lumbarTestNav(testStr) {
   if (/sij provocation cluster/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar" },
       why:"A cluster, not one test — Compression, Distraction, Sacral Thrust (Thigh Thrust), Gaenslen's all live on this page. 3+ positive = 91% specific for SIJ." };
+  if (/standing.*flexion|sitting.*flexion|flexion test|gillet|stork.*sij|piedallu/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar" },
+      why:"Standing/sitting flexion (Gillet / Piedallu) motion tests have weak inter-rater reliability on their own — cross-check against the SIJ provocation cluster (Compression, Distraction, Thigh Thrust, Gaenslen's) on this page. 3+ positive = 91% specific for SIJ." };
   if (/faber/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },
       why:"FABER/Patrick's — SIJ and hip joint provocation. 77% sensitivity. Cross-check against the SIJ cluster above." };
