@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { getC } from "./utils.jsx";
-import { SCALES } from "./sharedClinicalData.js";
+import { SCALES, injectViewerControls } from "./sharedClinicalData.js";
 
 const A="#7c3aed",S2="#FFFFFF",BD="#E0E0E2",TX="#0D0D0D",MU="#6B6B6B";
 
@@ -106,7 +106,7 @@ ${sc.fields.map((f,i)=>`<div class="question">
 <div class="disclaimer">This validated outcome measure is for clinical use only. PhysioMind · ${clinicName} · ${new Date().toLocaleDateString("en-IN")}</div>
 </body></html>`;
   const w=window.open("","_blank");
-  if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+  if(w){w.document.write(injectViewerControls(html));w.document.close();setTimeout(()=>w.print(),500);}
 }
 
 // ─── LIVE GUIDED MODE ─────────────────────────────────────────────────────────

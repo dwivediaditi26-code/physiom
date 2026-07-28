@@ -6,7 +6,7 @@ import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
 import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./sharedClinicalData.js";
-import { NKT_REGIONS } from "./sharedClinicalData.js";
+import { NKT_REGIONS, injectViewerControls } from "./sharedClinicalData.js";
 import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import BodyChartPro from "./BodyChartPro.jsx";
 // These used to be flat constants shared by every user of a device. Now
@@ -1516,11 +1516,12 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
   const handlePreviewDoc = (doc) => {
     const w = window.open();
-    if (doc.type.includes("image")) {
-      w.document.write(`<img src="${doc.dataUrl}" style="max-width:100%;"/>`);
-    } else {
-      w.document.write(`<iframe src="${doc.dataUrl}" style="width:100%;height:100vh;border:none;"></iframe>`);
-    }
+    if (!w) return;
+    const inner = doc.type.includes("image")
+      ? `<img src="${doc.dataUrl}" style="max-width:100%;"/>`
+      : `<iframe src="${doc.dataUrl}" style="width:100%;height:100vh;border:none;"></iframe>`;
+    w.document.write(injectViewerControls(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${doc.name || "Document"}</title><style>body{margin:0}</style></head><body>${inner}</body></html>`));
+    w.document.close();
   };
 
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);

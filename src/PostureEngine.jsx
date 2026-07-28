@@ -7,6 +7,7 @@ import { runViTPoseLateral, warmupViTPose } from "./vitposeEngine";
 import { analyzeSagittalContour, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
 import HybridKendall from "./HybridKendall";
+import { injectViewerControls } from "./sharedClinicalData.js";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
   [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
@@ -6842,7 +6843,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     // Open in new tab and print — same method as the working PdfReportsModal
     const win = window.open("","_blank");
     if(!win){ alert("Please allow popups to generate the PDF report."); return; }
-    win.document.open(); win.document.write(fullHtml); win.document.close();
+    win.document.open(); win.document.write(injectViewerControls(fullHtml)); win.document.close();
     setTimeout(()=>{ try{ win.print(); }catch(e){} }, 800);
     setShowReportModal(false);
     } catch(err) {

@@ -6,7 +6,7 @@ import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
-import { SCALES } from "./sharedClinicalData.js";
+import { SCALES, injectViewerControls } from "./sharedClinicalData.js";
 import { SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES } from "./sharedClinicalData.js";
 
 // Auto-derived from SCALES (the same source OutcomeMeasuresPro's own UI
@@ -8093,7 +8093,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
 </div>
 </body></html>`;
     const w = window.open("","_blank","width=960,height=800");
-    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 800); }
+    if (w) { w.document.write(injectViewerControls(html)); w.document.close(); setTimeout(() => w.print(), 800); }
   };
 
   const SECTION_LABELS = {

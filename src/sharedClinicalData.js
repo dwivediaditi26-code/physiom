@@ -4877,6 +4877,26 @@ const KC_REGIONS = {
 };
 
 // ─── KINETIC CHAIN SECTION COMPONENT ─────────────────────────────────────────
+// ── Viewer close/print controls — injected into every generated report ──────
+// In a standalone PWA the report opens in a chrome-less window with no way to
+// dismiss it. This adds a fixed toolbar (Close + Print) that is hidden while
+// printing. window.close() works because the window was script-opened; the
+// fallbacks cover browsers that block programmatic close.
+function injectViewerControls(html) {
+  if (!html || html.indexOf('id="pmv-close-bar"') !== -1) return html;
+  const bar = `
+<style id="pmv-ctrl-style">
+  @media screen { body { padding-top: 46px !important; } }
+  @media print { #pmv-close-bar { display: none !important; } body { padding-top: 0 !important; } }
+</style>
+<div id="pmv-close-bar" role="toolbar" style="position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:7px 12px;background:rgba(255,255,255,0.94);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 1px 8px rgba(0,0,0,0.14);font-family:'Segoe UI',system-ui,Arial,sans-serif;">
+  <button type="button" onclick="try{window.print()}catch(e){}" style="border:1px solid #cbd5e1;background:#f8fafc;color:#334155;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">&#128424; Print / Save PDF</button>
+  <button type="button" onclick="(function(){try{window.close()}catch(e){};setTimeout(function(){if(!window.closed){try{if(window.history.length>1){window.history.back()}else{window.location.replace('about:blank')}}catch(_){window.location.href='about:blank'}}},200)})()" style="border:none;background:#dc2626;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;">&#10005; Close</button>
+</div>`;
+  if (html.indexOf('</body>') !== -1) return html.replace('</body>', bar + '</body>');
+  return html + bar;
+}
+
 async function downloadPDFFromHTML(html, filename) {
   // Mobile-safe strategy: Blob URL → new tab → auto print
   // Works on iOS Safari, Android Chrome, and desktop browsers.
@@ -4884,7 +4904,8 @@ async function downloadPDFFromHTML(html, filename) {
   return new Promise((resolve) => {
     try {
       // Inject auto-print script into the HTML before creating blob
-      const printReady = html.replace(
+      const htmlWithCtrls = injectViewerControls(html);
+      const printReady = htmlWithCtrls.replace(
         '</body>',
         `<script>
           window.addEventListener('load', function() {
@@ -5733,7 +5754,7 @@ export {
   SUBJ_TIER, SUBJ_NOTES, classifyField, coreProgress, NEW_NOTE_IDS,
   needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S,
   NKT_REGIONS, KC_REGIONS,
-  downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage,
+  downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage,
   SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel,
   CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey,
   EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES,
