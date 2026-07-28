@@ -8496,16 +8496,42 @@ const OBS_REGION_PRIORITY = {
   af:  ["posture_feet","swelling","deformity","skin"],
 };
 
-function ObservationModule({ data, set }) {
+function ObservationModule({ data, set, navContext={} }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#fff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
     muted:"#6B6B6B", red:"#dc2626", yellow:"#b45309", green:"#059669",
   };
 
-  const [region, setRegion] = React.useState("all");
-  const [open, setOpen] = React.useState({general:true});
+  const [region, setRegion] = React.useState(navContext.obsRegion || "all");
+  const [open, setOpen] = React.useState(() => {
+    const init = {general:true};
+    (OBS_REGION_PRIORITY[navContext.obsRegion] || []).forEach(id => { init[id] = true; });
+    if (navContext.obsSection) init[navContext.obsSection] = true;
+    return init;
+  });
   const [showHistory, setShowHistory] = React.useState(false);
+
+  // Deep-link: respond to navContext coming from the Subjective smart-action
+  // grid — focus the suggested region, open its priority sections, and scroll.
+  React.useEffect(() => {
+    const target = navContext.obsSection || (OBS_REGION_PRIORITY[navContext.obsRegion] || [])[0];
+    if (navContext.obsRegion) setRegion(navContext.obsRegion);
+    if (navContext.obsRegion || navContext.obsSection) {
+      setOpen(o => {
+        const nx = {...o};
+        (OBS_REGION_PRIORITY[navContext.obsRegion] || []).forEach(id => { nx[id] = true; });
+        if (navContext.obsSection) nx[navContext.obsSection] = true;
+        return nx;
+      });
+    }
+    if (target) {
+      setTimeout(() => {
+        const el = typeof document !== "undefined" && document.getElementById("obs-sec-" + target);
+        if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+      }, 120);
+    }
+  }, [navContext.obsRegion, navContext.obsSection]);
 
   const toggle = (k) => setOpen(o => ({...o, [k]: !o[k]}));
   const v = (k) => data[k] || "";
@@ -8542,7 +8568,7 @@ function ObservationModule({ data, set }) {
     const isPriority = region!=="all" && (OBS_REGION_PRIORITY[region]||[]).includes(id);
     const isOpen = open[id];
     return (
-      <div style={{background:PC.surface,border:`1px solid ${isPriority?PC.accent+"55":PC.border}`,
+      <div id={"obs-sec-"+id} style={{background:PC.surface,border:`1px solid ${isPriority?PC.accent+"55":PC.border}`,
         borderRadius:12,marginBottom:8,overflow:"hidden",
         boxShadow:isPriority?"0 0 0 2px rgba(124,58,237,0.1)":"none"}}>
         <div onClick={()=>toggle(id)} style={{display:"flex",alignItems:"center",gap:10,

@@ -104,6 +104,10 @@ const OUTCOME_SCALE_IDS = {
   ndi: "ndi", odi: "odi", oswestry: "odi", lefs: "lefs", psfs: "psfs",
   "koos-jr": "koosjr", koosjr: "koosjr", "hoos-jr": "hoosjr", hoosjr: "hoosjr",
   faam: "faam", "tsk": "tsk", fabq: "fabqpa", pcs: "pcs", rmdq: "rmdq", roland: "rmdq",
+  womac: "womac", "oxford knee": "oks", oxford: "oks",
+  "visa-a": "visaa", visaa: "visaa", "visa-p": "visap", "visa-pf": "visap", visap: "visap",
+  constant: "constant", ases: "ases", lysholm: "lysholm", ikdc: "ikdc", prtee: "prtee",
+  quebec: "qbpds", "start back": "startback", nprs: "nprs",
 };
 function outcomeScaleId(name = "") {
   const n = String(name).toLowerCase();
@@ -1429,8 +1433,8 @@ function NavActionBtn({ btn, onNav, PC }) {
 // at a module that doesn't actually test it.
 // ══════════════════════════════════════════════════════════════════════════════
 const LUMBAR_ROM_HIGHLIGHTS = ["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"];
-const LUMBAR_NEURO_HIGHLIGHTS = ["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"];
-const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_obliques"];
+const LUMBAR_NEURO_HIGHLIGHTS = ["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump"];
+const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_oblique"];
 
 function lumbarTestNav(testStr) {
   const s = String(testStr || "");
@@ -1491,7 +1495,7 @@ function lumbarTestNav(testStr) {
 // them -- an honest gap, not a wrong pointer.
 // ══════════════════════════════════════════════════════════════════════════════
 const CERVICAL_ROM_HIGHLIGHTS = ["rom_crotl","rom_crotr","rom_cflex","rom_cext","rom_clatl","rom_clatr"];
-const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"];
+const CERVICAL_NEURO_HIGHLIGHTS = ["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump"];
 const CERVICAL_MMT_HIGHLIGHTS = ["mmt_dnf","mmt_scm","mmt_trapU","mmt_scalenes","mmt_suboccip"];
 
 function cervicalTestNav(testStr) {
@@ -1622,7 +1626,7 @@ const REGION_NAV = {
     { label:"Cervical MMT",       icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Cervical", mmtHighlights:["mmt_dnf","mmt_scm","mmt_trapU","mmt_scalenes","mmt_suboccip"] },        col:"#7c3aed", why:"Deep neck flexors — the single most important cervical motor control test (CCFT protocol)." },
     { label:"Spurling Test",      icon:"🔬", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_spurling" },                            col:"#0891b2", why:"Highest specificity (92%) for cervical radiculopathy — foramen closure test. Run first if arm symptoms." },
     { label:"Slump / ULTT",       icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                            col:"#0891b2", why:"Slump test — neural tension screen. ULTT 1-4 differentiates median, radial, ulnar nerve involvement." },
-    { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump_test"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
+    { label:"Neurological Screen",icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_c5","n_c6","n_c7","n_c8","n_t1","nt_ultt1","nt_slump"] }, col:"#dc2626", why:"C5-T1 dermatomes, myotomes, biceps/brachio/triceps reflexes. Localise nerve root level." },
     { label:"Posture Analysis",   icon:"🧍", nav:"posture", ctx:{ region:"Cervical" },                                                                col:"#059669", why:"CVA, forward head, thoracic kyphosis — all increase cervical loading. Assess before treating." },
     { label:"CPA Assessment",     icon:"⚡", nav:"nkt",     ctx:{ nktRegion:"cervical", nktHighlights:["nkt_dnf","nkt_scm","nkt_upper_trap","nkt_scalenes","nkt_levator_scap","nkt_suboccip"] }, col:"#d97706", why:"DNF inhibition → SCM/scalene dominance → FHP maintained. CPA identifies the exact inhibitor." },
     { label:"Kinetic Chain",      icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_cervical_thoracic_jct"] }, col:"#7c3aed", why:"Thoracic kyphosis is the primary driver of cervical loading. Address thoracic before cervical." },
@@ -1632,15 +1636,15 @@ const REGION_NAV = {
   "Lumbar / SI": [
     { label:"Lumbar ROM",           icon:"📐", nav:"rom",    ctx:{ romRegion:"Lumbar", romHighlights:["rom_lflex","rom_lext","rom_llfl","rom_llfr","rom_lrotl","rom_lrotr"] },                                     col:"#9333ea", why:"Lumbar flexion — establishes direction of pain provocation. McKenzie: flexion or extension preference?" },
 
-    { label:"Core MMT",            icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Spine & Core", mmtHighlights:["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_obliques"] },                              col:"#7c3aed", why:"Multifidus — segmental stabiliser most inhibited in LBP. Assess before any loading programme." },
+    { label:"Core MMT",            icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Spine & Core", mmtHighlights:["mmt_multif","mmt_ta","mmt_ql","mmt_diaphragm","mmt_oblique"] },                              col:"#7c3aed", why:"Multifidus — segmental stabiliser most inhibited in LBP. Assess before any loading programme." },
     { label:"SLR Test",            icon:"🔬", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_slr_test" },                             col:"#0891b2", why:"SLR — 80% sensitivity for L4/L5/S1 nerve root compression. Positive < 60° = neural involvement." },
     { label:"Slump Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"neural", highlightTest:"st_slump_test" },                           col:"#0891b2", why:"Slump — more sensitive than SLR for disc herniation. Reproduces radicular symptoms in flexed posture." },
     { label:"Kemp's Test",         icon:"🔬", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_kemp" },                                 col:"#0891b2", why:"Kemp's — facet loading test. Positive = ipsilateral facet referral or foraminal stenosis." },
-    { label:"Neurological Screen", icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump_test"] }, col:"#dc2626", why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." },
+    { label:"Neurological Screen", icon:"⚡", nav:"neuro",   ctx:{ neuroHighlights:["n_l4","n_l5","n_s1","n_s2","nt_slr","nt_slump"] }, col:"#dc2626", why:"L1-S2 dermatomes, myotomes, patella/achilles reflexes. Localise disc level. Rule out cauda equina." },
     { label:"Functional Screen",   icon:"🏃", nav:"fma",     ctx:{ fsRegion:"lumbar" }, col:"#059669", why:"Forward bend — observe hip hinge vs lumbar flexion. Squat — global lower chain. Single-leg — SIJ control." },
   ],
   "Shoulder (L)": [
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["cx_a_flex","cx_a_ext","cx_r_flex","cx_r_ext"] }, col:"#f59e0b", why:"Lumbar STTT — disc vs facet differentiation via contractile/non-contractile tissue tension testing." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Shoulder STTT — painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
     { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring","fa_tlf"] }, col:"#059669", why:"TLF and SBL — thoracolumbar fascia is the primary fascial structure linking lumbar extensors to contralateral shoulder." },
     { label:"Shoulder ROM",         icon:"📐", nav:"rom",    ctx:{ romRegion:"Shoulder", romHighlights:["rom_sabd","rom_ser","rom_sflex","rom_sir","rom_sext","rom_sadd"] }, col:"#9333ea", why:"Painful arc 60-120° = subacromial. Full loss = capsular. Immediate clinical differentiator." },
 
@@ -1665,8 +1669,8 @@ const REGION_NAV = {
   ],
   "Knee (L)": [
     { label:"Knee ROM",             icon:"📐", nav:"rom",    ctx:{ romRegion:"Knee", romHighlights:["rom_kflex","rom_kext"] },                          col:"#9333ea", why:"Knee flexion loss indicates joint effusion, posterior capsule tightness, or meniscal block. Measure first." },
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["sh_a_flex","sh_a_abd","sh_a_er","sh_r_abd","sh_r_er","sh_r_ir","sh_jp_inferior"] }, col:"#f59e0b", why:"Painful arc pattern differentiates subacromial vs capsular vs AC joint vs contractile source." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Anterior/lateral fascial lines — pec minor and bicipital groove fascia restrict shoulder mobility." },
+    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["kn_a_flex","kn_a_ext","kn_r_ext","kn_r_flex","kn_jp_tib_fem","kn_jp_medial_lat","kn_p_patellar"] }, col:"#f59e0b", why:"Knee STTT — resisted extension/flexion isolate quadriceps vs hamstring; joint play differentiates tibiofemoral vs patellofemoral source." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
     { label:"Knee MMT",             icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Knee", mmtHighlights:["mmt_quad","mmt_gastroc","mmt_poplit"] },           col:"#7c3aed", why:"VMO inhibition is the primary driver of PFJ maltracking. Single most important knee MMT." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmed","mmt_gmax","mmt_tfl","mmt_adduc","mmt_gmin"] }, col:"#7c3aed", why:"Glute med weakness drives dynamic knee valgus — assess proximal before isolating the knee." },
     { label:"Lachman Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"knee", highlightTest:"st_lachmans" },                               col:"#0891b2", why:"86% sensitivity for ACL. Best ACL test at 20-30° flexion. Run before pivot shift." },
@@ -1686,7 +1690,7 @@ const REGION_NAV = {
   ],
   "Hip / Groin": [
     { label:"Hip ROM",              icon:"📐", nav:"rom",    ctx:{ romRegion:"Hip", romHighlights:["rom_hir","rom_her","rom_hflex","rom_hext","rom_habd","rom_hadd"] },                                          col:"#9333ea", why:"IR most restricted in hip OA (capsular pattern: IR > ER > abduction). FADIR reproduces impingement." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL posterior chain — hamstring and IT band fascial restriction drives patellofemoral and knee pain patterns." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_ll_test"] }, col:"#059669", why:"Lateral line + SBL — TFL/ITB and hamstring fascial restriction drive lateral hip and groin loading patterns." },
     { label:"Hip MMT",              icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Hip & Pelvis", mmtHighlights:["mmt_gmax","mmt_gmed","mmt_tfl","mmt_adduc","mmt_psoas"] },                                col:"#7c3aed", why:"Glute max — primary hip stabiliser and load transfer muscle. Prone hip extension with knee bent." },
     { label:"FADIR Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_fadir_test" },                              col:"#0891b2", why:"FADIR — hip impingement (FAI) provocation. Flexion + adduction + IR reproduces anterior groin pain." },
     { label:"FABER Test",          icon:"🔬", nav:"special", ctx:{ specialRegion:"hip", highlightTest:"st_faber_test" },                              col:"#0891b2", why:"FABER — hip, SIJ, and adductor provocation. Figure-4 position stresses all three simultaneously." },
@@ -1695,7 +1699,7 @@ const REGION_NAV = {
   ],
   "Ankle / Foot": [
     { label:"Ankle ROM",            icon:"📐", nav:"rom",    ctx:{ romRegion:"Ankle", romHighlights:["rom_adf","rom_apf","rom_ainv","rom_aev"] },                                        col:"#9333ea", why:"Dorsiflexion — <35° weight-bearing is clinically significant. Primary kinetic chain driver." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_passive_tension","fa_active_line_load","fa_sbl_hamstring"] }, col:"#059669", why:"Hip and lumbar fascial lines — TLF and SBL restriction commonly present with hip flexor and posterior chain tightness." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_active_line_load"] }, col:"#059669", why:"SBL / plantar fascia continuity — posterior chain restriction from hamstring to plantar fascia drives heel and midfoot pain." },
     { label:"Ankle MMT",            icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Ankle & Foot", mmtHighlights:["mmt_tp","mmt_ta","mmt_soleus","mmt_peronls","mmt_ehl"] },                                  col:"#7c3aed", why:"Tibialis posterior — medial arch controller. Weakness = pronation, tibial IR, knee valgus cascade." },
     { label:"Anterior Drawer",     icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_ant_drawer_ankle" },                 col:"#0891b2", why:"Anterior drawer — ATFL integrity. Most commonly injured ankle ligament. 73% sensitivity." },
     { label:"Thompson Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"ankle_foot", highlightTest:"st_thompson_test" },                    col:"#0891b2", why:"Thompson test — Achilles tendon rupture screen. 96% sensitivity. Squeeze calf = plantarflexion response." },
@@ -1705,7 +1709,7 @@ const REGION_NAV = {
   ],
   "Elbow/Wrist/Hand": [
     { label:"Elbow / Wrist ROM",   icon:"📐", nav:"rom",    ctx:{ romRegion:"Elbow", romHighlights:["rom_eflex","rom_eext","rom_esup","rom_epro","rom_wflex","rom_wext"] },                                      col:"#9333ea", why:"Elbow flexion/extension, forearm sup/pro — establish mobility baseline and end-feel quality." },
-    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_sbl_hamstring","fa_passive_tension","fa_skin_roll"] }, col:"#059669", why:"SBL and plantar fascia — posterior chain restriction from hamstring to plantar fascia drives ankle/foot pain." },
+    { label:"Fascia Screen",        icon:"🕸️", nav:"fascia",      ctx:{ fasciaHighlights:["fa_skin_roll","fa_passive_tension","fa_densification"] }, col:"#059669", why:"Upper-limb superficial front/back arm lines — forearm and bicipital fascia densification restricts elbow and wrist mobility." },
     { label:"Elbow / Wrist MMT",   icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Wrist & Hand", mmtHighlights:["mmt_ecrb","mmt_fcr","mmt_bicep","mmt_tricep","mmt_brachio"] },                                col:"#7c3aed", why:"ECRB — primary lateral epicondylalgia culprit. Test in elbow extension for maximum provocation." },
     { label:"Cozen's Test",        icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_cozens" },                          col:"#0891b2", why:"Cozen's — lateral epicondylalgia provocation. Resisted wrist extension with pronation. High specificity." },
     { label:"Phalen's Test",       icon:"🔬", nav:"special", ctx:{ specialRegion:"elbow_wrist", highlightTest:"st_phalen" },                          col:"#0891b2", why:"Phalen's — carpal tunnel screen. 68% sensitivity. Wrist flexion 60s reproduces median nerve symptoms." },
@@ -1715,7 +1719,6 @@ const REGION_NAV = {
   ],
   "Thoracic spine": [
     { label:"Thoracic ROM",          icon:"📐", nav:"rom",   ctx:{ romRegion:"Thoracic", romHighlights:["rom_throtl","rom_throtr","rom_thflex","rom_thext"] },                                  col:"#9333ea", why:"Thoracic rotation — most clinically significant thoracic ROM. <30° bilateral = significant restriction." },
-    { label:"STTT Screen",       icon:"🦴", nav:"cyriax_full", ctx:{ cyriaxHighlights:["el_a_flex","el_a_ext","el_r_wext","el_r_wflex","el_r_grip","wr_r_ext","wr_r_flex"] }, col:"#f59e0b", why:"Elbow/wrist STTT — resisted wrist extension = lateral epicondylalgia; resisted grip differentiates tendon pathology." },
     { label:"Thoracic MMT",         icon:"💪", nav:"mmt",    ctx:{ mmtRegion:"Shoulder & Scapula", mmtHighlights:["mmt_trapL","mmt_trapM","mmt_serratus","mmt_trapU","mmt_rhomb"] },                         col:"#7c3aed", why:"Lower trapezius — scapular depression and posterior tilt. Weakness = shoulder and thoracic impingement driver." },
     { label:"Posture Analysis",    icon:"🧍", nav:"posture", ctx:{ region:"Thoracic" },                                                               col:"#059669", why:"Kyphosis angle, scoliotic curve, rib symmetry, scapular position — thoracic posture drives all chains above and below." },
     { label:"Kinetic Chain",       icon:"⛓️", nav:"kinetic", ctx:{ kcRegion:"thoracic", kcHighlights:["kc_thoracic_rotation","kc_thoracic_extension","kc_rib_mobility","kc_scapulohumeral_rhythm"] }, col:"#7c3aed", why:"Thoracic is the MOBILITY joint driving cervical, shoulder, and lumbar STABILITY demands." },
@@ -4924,6 +4927,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               "Elbow/Wrist/Hand":[{item:"Carrying angle — cubitus valgus / varus",why:"Cubitus valgus >15 degrees = increased MCL valgus stress; post-fracture deformity screen"},{item:"Muscle wasting — thenar / hypothenar / intrinsic",why:"Thenar wasting = CTS / median nerve; hypothenar = ulnar nerve (cubital / Guyon's canal)"},{item:"Swelling location — joint line vs soft tissue",why:"Lateral epicondyle = tendinopathy; olecranon = bursitis; radiocarpal = synovitis / TFCC"},{item:"Finger deformity — swan neck / boutonniere / Heberden's",why:"Swan neck / boutonniere = RA / post-injury; Heberden's / Bouchard's = OA"},{item:"Skin — colour change / trophic / dystrophic nails",why:"CRPS signs: allodynia, colour change, disproportionate swelling, temperature asymmetry"}],
             };
             const obsForRegion = (regionObs[r.region] || []).concat(obsItems).slice(0, 5);
+            const OBS_REGION_CODE = { "Cervical spine":"cx","Thoracic spine":"th","Lumbar / SI":"lx","Shoulder (L)":"sh","Shoulder (R)":"sh","Knee (L)":"kn","Knee (R)":"kn","Hip / Groin":"hp","Ankle / Foot":"af","Elbow/Wrist/Hand":"wh" };
+            const obsCode = OBS_REGION_CODE[REGION_FAMILY_KEY[r.region] || r.region] || null;
+            const POSTURE_REGION = { "Cervical spine":"Cervical","Thoracic spine":"Thoracic","Lumbar / SI":"Lumbar","Shoulder (L)":"Shoulder","Shoulder (R)":"Shoulder","Hip / Groin":"Hip","Knee (L)":"Knee","Knee (R)":"Knee","Ankle / Foot":"Ankle" };
+            const postureRegion = POSTURE_REGION[REGION_FAMILY_KEY[r.region] || r.region] || null;
 
             // ── ROM priority from pattern ──
             const romPriority = {
@@ -5870,6 +5877,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       <span style={{ fontSize:"0.78rem", fontWeight:800, textTransform:"uppercase",
                         letterSpacing:1.2, color: PC.muted }}>Phase 2 — Observation</span>
                       <span style={{ fontSize:"0.8rem", color: PC.muted, fontStyle:"italic" }}>Observe for:</span>
+                      <span style={{ flex:1 }}/>
+                      {onNav && postureRegion && <button onClick={()=>onNav("posture",{ region:postureRegion })} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.a3+"18", border:`1px solid ${PC.a3}44`, borderRadius:20, color:PC.a3, cursor:"pointer" }}>Posture →</button>}
+                      {onNav && obsCode && <button onClick={()=>onNav("observation",{ obsRegion:obsCode })} style={{ fontSize:"0.78rem", fontWeight:800, padding:"3px 10px", background:PC.accent+"22", border:`1px solid ${PC.accent}44`, borderRadius:20, color:PC.accent, cursor:"pointer" }}>Start Observation →</button>}
                     </div>
                     <div style={{ padding:"10px 13px", display:"flex", flexDirection:"column", gap:6 }}>
                       {obsForRegion.map((o, oi)=>(

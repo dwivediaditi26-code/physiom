@@ -4350,9 +4350,14 @@ function useBreakpoint() {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-function PostureAnalysisModule({ activePatient, set: setPatientField }){
+function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={} }){
+  // Deep-link: map the region suggested by the Subjective smart-action grid to
+  // the most informative posture view (kyphosis/FHP read best from the side).
+  const _regionView = (reg="") => /cervic|thoracic|lumbar|hip/i.test(reg) ? "lateral"
+    : /shoulder/i.test(reg) ? "posterior"
+    : /knee|ankle|foot/i.test(reg) ? "anterior" : "anterior";
   const [mode,setMode]=useState("upload");
-  const [view,setView]=useState("anterior");
+  const [view,setView]=useState(navContext.region ? _regionView(navContext.region) : "anterior");
   const [mpStatus,setMpStatus]=useState("loading");
   const [camStatus,setCamStatus]=useState("idle");
   const [camFacing,setCamFacing]=useState("environment");
@@ -4510,6 +4515,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField }){
   const manualImgSize=useRef({w:800,h:1000});
 
   useEffect(()=>{viewRef.current=view;},[view]);
+  useEffect(()=>{ if(navContext && navContext.region){ setView(_regionView(navContext.region)); setTab("capture"); } },[navContext.region]);
 
   // A full-body portrait photo rendered at 100% width is usually taller than the
   // visible screen, so the capture area scrolls. Whatever scroll position it was

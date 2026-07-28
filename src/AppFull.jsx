@@ -1294,7 +1294,7 @@ function AppInner({ currentUser, onSignOut }) {
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set}/>
+              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}}/>
             </div>
           )}
           {active==="posture" && !mountedTabs.has("posture") && (
@@ -1406,7 +1406,7 @@ function AppInner({ currentUser, onSignOut }) {
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyObservation data={data} set={set}/></Suspense>
+                <Suspense fallback={<TabFallback/>}><LazyObservation data={data} set={set} navContext={active==="observation"?navContext:{}}/></Suspense>
                 </>
               ):tests==="CYRIAX_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
