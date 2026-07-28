@@ -35,8 +35,58 @@ function fasciaHighlightsFromDetail(detail = "") {
 }
 // Build the NavActionBtn descriptor for an authored assessment-layer module,
 // attaching a specific ctx where the target module supports deep-linking.
-function layerNavBtn(m, onNav) {
-  const ctx = m.key === "fascia" ? { fasciaHighlights: fasciaHighlightsFromDetail(m.detail) } : null;
+// ── CPA (NKT) + Kinetic-chain deep-link mapping ──
+// Which NKT module region each patient region family maps to.
+const NKT_REGION_FOR = {
+  "Cervical spine": "cervical", "Thoracic spine": "shoulder", "Lumbar / SI": "core",
+  "Shoulder (L)": "shoulder", "Shoulder (R)": "shoulder", "Hip / Groin": "hip",
+  "Knee (L)": "knee", "Knee (R)": "knee", "Ankle / Foot": "ankle", "Elbow/Wrist/Hand": "upper_limb",
+};
+// NKT muscle-card id -> which module region it lives under (so we only highlight
+// cards that actually exist in the region we open).
+const NKT_ID_REGION = {
+  nkt_dnf:"cervical", nkt_scm:"cervical", nkt_suboccip:"cervical", nkt_upper_trap:"cervical", nkt_scalenes:"cervical", nkt_levator_scap:"cervical", nkt_splenius:"cervical", nkt_semispinalis:"cervical",
+  nkt_lower_trap:"shoulder", nkt_serratus:"shoulder", nkt_infraspinatus:"shoulder", nkt_subscapularis:"shoulder", nkt_mid_trap:"shoulder", nkt_pec_minor:"shoulder", nkt_ant_deltoid:"shoulder", nkt_post_deltoid:"shoulder", nkt_teres_major:"shoulder",
+  nkt_ta:"core", nkt_multifidus:"core", nkt_diaphragm:"core", nkt_ql:"core", nkt_psoas:"core", nkt_erector_spinae:"core", nkt_obliques:"core", nkt_pelvic_floor:"core",
+  nkt_gmax:"hip", nkt_gmed:"hip", nkt_piriformis:"hip", nkt_hip_flex_fo:"hip",
+  nkt_vmo:"knee", nkt_hamstrings:"knee", nkt_adductors:"knee", nkt_tfl:"knee", nkt_rectus_fem:"knee", nkt_popliteus:"knee",
+  nkt_tib_ant:"ankle", nkt_tib_post:"ankle", nkt_gastroc:"ankle", nkt_peroneals:"ankle", nkt_fhl:"ankle", nkt_foot_intrinsics:"ankle",
+  nkt_biceps:"upper_limb", nkt_triceps:"upper_limb", nkt_wrist_ext:"upper_limb", nkt_wrist_flex:"upper_limb", nkt_pronator:"upper_limb", nkt_grip:"upper_limb",
+};
+// Keyword -> NKT card id (matched against the authored CPA detail text).
+const NKT_KEYWORDS = [
+  ["deep neck flex","nkt_dnf"],["deep-neck-flex","nkt_dnf"],["dnf","nkt_dnf"],["sternocleido","nkt_scm"],["scm","nkt_scm"],["suboccip","nkt_suboccip"],["upper trap","nkt_upper_trap"],["scalene","nkt_scalenes"],["levator","nkt_levator_scap"],["splenius","nkt_splenius"],["semispinalis","nkt_semispinalis"],
+  ["lower trap","nkt_lower_trap"],["serratus","nkt_serratus"],["infraspinatus","nkt_infraspinatus"],["subscap","nkt_subscapularis"],["mid trap","nkt_mid_trap"],["rhomboid","nkt_mid_trap"],["pec minor","nkt_pec_minor"],["pectoral","nkt_pec_minor"],["pec ","nkt_pec_minor"],
+  ["transversus","nkt_ta"],["deep-core","nkt_ta"],["deep core","nkt_ta"],[" ta ","nkt_ta"],["multifidus","nkt_multifidus"],["diaphragm","nkt_diaphragm"],["quadratus","nkt_ql"],[" ql","nkt_ql"],["psoas","nkt_psoas"],["iliopsoas","nkt_psoas"],["erector","nkt_erector_spinae"],["oblique","nkt_obliques"],["pelvic floor","nkt_pelvic_floor"],
+  ["gluteus maximus","nkt_gmax"],["glute max","nkt_gmax"],["gmax","nkt_gmax"],["gluteus medius","nkt_gmed"],["glute med","nkt_gmed"],["gmed","nkt_gmed"],["piriformis","nkt_piriformis"],
+  ["vmo","nkt_vmo"],["vastus","nkt_vmo"],["hamstring","nkt_hamstrings"],["adductor","nkt_adductors"],["tfl","nkt_tfl"],["tensor fasc","nkt_tfl"],["rectus fem","nkt_rectus_fem"],["popliteus","nkt_popliteus"],
+  ["tibialis anterior","nkt_tib_ant"],["tib ant","nkt_tib_ant"],["tibialis posterior","nkt_tib_post"],["tib post","nkt_tib_post"],["gastroc","nkt_gastroc"],["soleus","nkt_gastroc"],["calf","nkt_gastroc"],["peroneal","nkt_peroneals"],["foot intrins","nkt_foot_intrinsics"],
+];
+function nktCtxFromDetail(detail, family) {
+  const region = NKT_REGION_FOR[family];
+  if (!region) return null;
+  const d = " " + String(detail || "").toLowerCase() + " ";
+  const ids = [];
+  for (const [kw, id] of NKT_KEYWORDS) if (d.includes(kw) && NKT_ID_REGION[id] === region && !ids.includes(id)) ids.push(id);
+  return ids.length ? { nktRegion: region, nktHighlights: ids } : { nktRegion: region };
+}
+// Kinetic-chain module region for each patient region family (the detail spans
+// several regions, so we deterministically open the patient's own region).
+const KC_REGION_FOR = {
+  "Cervical spine": "cervical", "Thoracic spine": "thoracic", "Lumbar / SI": "lumbar",
+  "Shoulder (L)": "scapula", "Shoulder (R)": "scapula", "Hip / Groin": "hip",
+  "Knee (L)": "knee", "Knee (R)": "knee", "Ankle / Foot": "foot_ankle",
+};
+function kcCtxFromDetail(detail, family) {
+  const region = KC_REGION_FOR[family];
+  return region ? { kcRegion: region } : null;
+}
+
+function layerNavBtn(m, onNav, family) {
+  let ctx = null;
+  if (m.key === "fascia") ctx = { fasciaHighlights: fasciaHighlightsFromDetail(m.detail) };
+  else if (m.key === "nkt") ctx = nktCtxFromDetail(m.detail, family);
+  else if (m.key === "kinetic") ctx = kcCtxFromDetail(m.detail, family);
   // why = generic teaching only (shown under "?"); detail = the patient-specific
   // line, shown directly in the block below the label.
   return { label: m.label, icon: LAYER_ICON[m.key] || "\u2022", col: "#0891b2", nav: (onNav && m.key) ? m.key : null, ctx, why: LAYER_TEACH[m.key] || "", detail: m.detail };
@@ -63,7 +113,7 @@ function outcomeScaleId(name = "") {
 function splitOutcomeMeasures(detail = "") {
   return String(detail).split(/\s*[;,]\s*|\s+or\s+/i).map((x) => x.trim()).filter((x) => x.length > 1);
 }
-function layerNavButtons(m, mi, onNav, PC) {
+function layerNavButtons(m, mi, onNav, PC, family) {
   if (m.key === "outcome") {
     const teachBase = LAYER_TEACH[m.key] || "";
     const measures = splitOutcomeMeasures(m.detail);
@@ -77,7 +127,7 @@ function layerNavButtons(m, mi, onNav, PC) {
       });
     }
   }
-  return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC} />];
+  return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav, family)} onNav={onNav} PC={PC} />];
 }
 
 const TEST_SVG = {
@@ -5154,7 +5204,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
                               );
@@ -5337,7 +5387,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
                               );
@@ -5527,7 +5577,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
                               );
@@ -5674,7 +5724,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
                               );
@@ -5729,7 +5779,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     {c.keyExams.map((t, ti) => (
                                       <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
                                     ))}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
                               );
