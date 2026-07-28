@@ -2882,14 +2882,17 @@ function fieldIcon_S(f) {
 // every row lines up), the field's input on the right (~70%). A
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
-function AssessmentRow({ label, helpText, PC, children, last }) {
+function AssessmentRow({ label, helpText, PC, children, last, stacked }) {
   return (
     <div className="pm-arow" style={{
-      display: "flex", alignItems: "center", gap: 10,
+      display: "flex",
+      flexDirection: stacked ? "column" : "row",
+      alignItems: stacked ? "stretch" : "center",
+      gap: stacked ? 6 : 10,
       padding: "8px 2px",
       borderBottom: last ? "none" : "0.5px solid #EFEDF7",
     }}>
-      <span className="pm-arow-label" style={{ width: "42%", flexShrink: 0, fontSize: "0.84rem", fontWeight: 400, color: "#5C5C6B", lineHeight: 1.25 }}>
+      <span className="pm-arow-label" style={{ width: stacked ? "100%" : "42%", flexShrink: 0, fontSize: "0.84rem", fontWeight: 400, color: "#5C5C6B", lineHeight: 1.25 }}>
         {label}
         {helpText && (
           <span title={helpText} style={{
@@ -2898,7 +2901,7 @@ function AssessmentRow({ label, helpText, PC, children, last }) {
           }}>ⓘ</span>
         )}
       </span>
-      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      <div style={{ width: stacked ? "100%" : "auto", flex: stacked ? "none" : 1, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
@@ -4756,7 +4759,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
                               {mainFields.map(({ field }, fi) => (
                                 <AssessmentRow key={field.id} label={field.label}
-                                  helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                                  helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === mainFields.length - 1 && deepFields.length === 0}>
                                   {renderField(field)}
                                 </AssessmentRow>
                               ))}
@@ -4772,7 +4775,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   </button>
                                   {open && deepFields.map(({ field }, fi) => (
                                     <AssessmentRow key={field.id} label={field.label}
-                                      helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
+                                      helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === deepFields.length - 1}>
                                       {renderField(field)}
                                     </AssessmentRow>
                                   ))}
