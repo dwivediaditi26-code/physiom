@@ -3717,6 +3717,30 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
   const phone    = v("dem_phone") || v("dem_mobile");
   const patId    = v("dem_id") || v("patient_id");
   const dob      = v("dem_dob");
+  // Derive age from DOB when possible so the SOAP header can't drift out of
+  // sync with Demographics (a typed dem_age can be stale/inconsistent).
+  const ageFromDob = (() => {
+    if (!dob) return "";
+    let d = null;
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
+    const dmy = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dob);
+    if (iso) d = new Date(+iso[1], +iso[2]-1, +iso[3]);
+    else if (dmy) d = new Date(+dmy[3], +dmy[2]-1, +dmy[1]);
+    if (!d || isNaN(d.getTime())) return "";
+    const now = new Date();
+    let a = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) a--;
+    return a >= 0 && a < 130 ? String(a) : "";
+  })();
+  const ageDisplay = ageFromDob || age;
+  // Full demographic block — mirror everything the Demographics module captures
+  const occupation = v("dem_occupation");
+  const dominant   = v("dem_dominant") || v("dem_dominant_hand") || v("dem_hand");
+  const workStatus = v("dem_work_status");
+  const employer   = v("dem_employer");
+  const email      = v("dem_email");
+  const address    = v("dem_address");
   const therapist= clinician || v("soap_clinician");
   const vasNow   = v("cc_vas_now") || v("pa_vas_now");
   const vasWorst = v("cc_vas_worst") || v("pa_vas_worst");
@@ -4200,7 +4224,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:18,fontWeight:700,color:"#111827"}}>{name}</div>
               <div style={{fontSize:13,color:"#6B7280",marginTop:1}}>
-                {[sex&&sex.toUpperCase(),age&&age+" yrs",phone].filter(Boolean).join(" · ")}
+                {[sex&&sex.toUpperCase(),ageDisplay&&ageDisplay+" yrs",phone].filter(Boolean).join(" · ")}
               </div>
             </div>
             {vasNow&&<div style={{textAlign:"center",padding:"6px 12px",background:nrsBg(vasNow),borderRadius:12,border:`1px solid ${nrsColor(vasNow)}30`,flexShrink:0}}>
@@ -4217,6 +4241,12 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
             {patId&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Patient ID</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{patId}</div></div>}
             {dob&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>DOB</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{dob}</div></div>}
             {therapist&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Therapist</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{therapist}</div></div>}
+            {occupation&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Occupation</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{occupation}</div></div>}
+            {dominant&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Dominant Hand</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{dominant}</div></div>}
+            {workStatus&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Work Status</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{workStatus}</div></div>}
+            {employer&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Employer</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{employer}</div></div>}
+            {email&&<div><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Email</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{email}</div></div>}
+            {address&&<div style={{gridColumn:"1 / -1"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Address</div><div style={{fontSize:14.5,color:"#374151",marginTop:1}}>{address}</div></div>}
             <div style={{gridColumn:"1 / -1"}}><div style={{fontSize:12,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase"}}>Mode</div><span style={{display:"inline-block",marginTop:2,background:"#D1FAE5",color:"#065F46",padding:"2px 8px",borderRadius:4,fontSize:13,fontWeight:500}}>Digital template</span></div>
           </div>
 

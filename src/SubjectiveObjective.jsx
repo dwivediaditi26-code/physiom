@@ -14,6 +14,32 @@ import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 
+// Map a condition's authored fascia description to the specific Fascia-module
+// test cards to open, so tapping the "Fascia" suggestion deep-links straight to
+// the relevant line (e.g. deep-front-arm line) instead of the section top.
+function fasciaHighlightsFromDetail(detail = "") {
+  const d = String(detail).toLowerCase();
+  const ids = [];
+  if (/deep.?front|dfl|arm.?line|biceps|pec|coracoid|anterior/.test(d)) ids.push("fa_passive_tension", "fa_densification");
+  if (/sbl|back.?line|hamstring|posterior/.test(d)) ids.push("fa_sbl_hamstring");
+  if (/spiral/.test(d)) ids.push("fa_spiral_rot");
+  if (/lateral/.test(d)) ids.push("fa_ll_test");
+  if (/thoracolumbar|tlf/.test(d)) ids.push("fa_tlf");
+  if (!ids.length) ids.push("fa_skin_roll", "fa_passive_tension", "fa_densification");
+  return [...new Set(ids)];
+}
+// Build the NavActionBtn descriptor for an authored assessment-layer module,
+// attaching a specific ctx where the target module supports deep-linking.
+function layerNavBtn(m, onNav) {
+  const teach = LAYER_TEACH[m.key] ? LAYER_TEACH[m.key] + "\n\nFor this patient: " + m.detail : m.detail;
+  const ctx = m.key === "fascia" ? { fasciaHighlights: fasciaHighlightsFromDetail(m.detail) } : null;
+  return { label: m.label, icon: LAYER_ICON[m.key] || "\u2022", col: "#0891b2", nav: (onNav && m.key) ? m.key : null, ctx, why: teach };
+}
+// The specific special tests for a condition are already rendered as their own
+// buttons above the layer row, so the generic "Special tests"/"STTT" layer
+// buttons are redundant -- drop them.
+const REDUNDANT_LAYER_KEYS = new Set(["special", "cyriax_full"]);
+
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
   neer: (
@@ -5061,7 +5087,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
                               const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
                                 <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
@@ -5076,7 +5102,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
                                     {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
                                     ))}
                                   </div>
                                 </div>
@@ -5246,7 +5272,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
                               const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
                                 <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
@@ -5261,7 +5287,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
                                     {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
                                     ))}
                                   </div>
                                 </div>
@@ -5438,7 +5464,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || spineAssessmentModules(c.id).length > 0) && (() => {
                               const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = spineAssessmentModules(c.id).filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              const layers = spineAssessmentModules(c.id).filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
                                 <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
@@ -5453,7 +5479,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
                                     {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
                                     ))}
                                   </div>
                                 </div>
@@ -5587,7 +5613,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             {c.matchTier !== "Unlikely" && ((c.objectiveTests && (c.objectiveTests.required?.length > 0 || c.objectiveTests.recommended?.length > 0)) || c.assessmentModules.length > 0) && (() => {
                               const priTests = [...(c.objectiveTests?.required || []), ...(c.objectiveTests?.recommended || [])];
                               const testFirst = new Set(priTests.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = c.assessmentModules.filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
                                 <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
@@ -5602,7 +5628,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
                                     {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
                                     ))}
                                   </div>
                                 </div>
@@ -5648,7 +5674,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                             </div>
                             {c.matchTier !== "Unlikely" && (c.keyExams.length > 0 || c.assessmentModules.length > 0) && (() => {
                               const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = c.assessmentModules.filter((m) => !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+                              const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
                               return (
                                 <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${PC.border}` }}>
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
@@ -5659,7 +5685,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                       <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
                                     ))}
                                     {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={{ label:m.label, icon:LAYER_ICON[m.key]||"•", col:"#0891b2", nav:(onNav&&m.key)?m.key:null, ctx:null, why:(LAYER_TEACH[m.key]?LAYER_TEACH[m.key]+"\n\nFor this patient: "+m.detail : m.detail) }} onNav={onNav} PC={PC}/>
+                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
                                     ))}
                                   </div>
                                 </div>

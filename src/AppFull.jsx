@@ -241,6 +241,13 @@ function AppInner({ currentUser, onSignOut }) {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
       const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
       if (draft && Object.keys(draft).length > 5) return draft;
+      // Draft is empty/too thin but a patient is still active (raw.pid). Load
+      // that patient's saved record so the Subjective form matches the header
+      // instead of rendering blank while the header shows the patient's name.
+      if (raw && raw.pid) {
+        const active = loadPatientDB(currentUser?.id).find(p => p.id === raw.pid);
+        if (active && active.data && Object.keys(active.data).length > 0) return active.data;
+      }
     } catch {}
     return {};
   });
