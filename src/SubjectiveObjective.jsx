@@ -2883,7 +2883,8 @@ function PainSliderCompact({ value, onChange, PC }) {
       <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
-        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer" }} />
+        className="pm-nrs-range"
+        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer", height: 28, touchAction: "none" }} />
       <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 16, flexShrink: 0 }}>10</span>
       <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.95rem", color: "#2D2D3A", minWidth: 34, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
     </div>
@@ -2945,10 +2946,11 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
           }} />
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, width: 18, height: 18, marginTop: 9,
+          flexShrink: 0, width: 24, height: 24, marginTop: 6,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "none", color: "#9A98AC", fontSize: "0.9rem", cursor: "pointer",
-          border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
+          background: "#6C5CE7", color: "#fff", fontSize: "0.85rem", cursor: "pointer",
+          borderRadius: "50%", border: "none", lineHeight: 1,
+          transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
         }}>⌄</button>
       </div>
 
@@ -2997,6 +2999,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [activeSection, setActiveSection] = useState("complaint");
   const [deepOpen, setDeepOpen] = useState({}); // section key -> show deep-dive fields
   const sectionTopRef = React.useRef(null);
+  const groupTabsRef = React.useRef(null); // the region/group tab card — scroll target so a tab tap lands at the top of the region, keeping the tabs visible
   const [selectedRegions, setSelectedRegions] = useState(()=>{
     try{ return JSON.parse(data.cx_selected_regions||"[]"); }catch{ return []; }
   });
@@ -4252,8 +4255,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
         ) : null;
       })()}
 
-      {/* ── Progress bar — grouped status pills ── */}
-      {(()=>{
+      {/* ── Progress bar — grouped status pills (removed per request) ── */}
+      {false && (()=>{
         // Core group: complaint + universal sections
         const coreKeys = Object.keys(UNIV_S||{});
         const coreFields = Object.values(UNIV_S||{}).flatMap(s=>s.fields||[]).filter(f=>f.id);
@@ -4569,7 +4572,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               setActiveSection(key);
               setSearchTerm("");
               setTimeout(() => {
-                if (sectionTopRef.current) sectionTopRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+                // Scroll to the tab card (not the section body) so the tabs stay
+                // visible and the region's first section shows right below,
+                // instead of flinging the page into the middle of the content.
+                const target = groupTabsRef.current || sectionTopRef.current;
+                if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
               }, 30);
             };
             const jumpToSection = (key) => {
@@ -4587,7 +4594,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
             return (
               <>
-                <div style={{ background:"#fff", borderRadius:14, overflow:"hidden",
+                <div ref={groupTabsRef} style={{ background:"#fff", borderRadius:14, overflow:"hidden",
                   border:"1px solid rgba(0,0,0,0.07)",
                   boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
 

@@ -99,6 +99,14 @@
       @media (min-width: 768px) {
         input, select, textarea { font-size: inherit; }
       }
+      /* Pain (NRS) slider — larger track + thumb so it is easy to drag
+         precisely on a phone instead of jumping straight to 10. */
+      input[type="range"].pm-nrs-range { -webkit-appearance: none; appearance: none; background: transparent; }
+      input[type="range"].pm-nrs-range:focus { outline: none; }
+      input[type="range"].pm-nrs-range::-webkit-slider-runnable-track { height: 8px; border-radius: 6px; background: #E4E1F5; }
+      input[type="range"].pm-nrs-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; background: #6C5CE7; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.28); cursor: pointer; }
+      input[type="range"].pm-nrs-range::-moz-range-track { height: 8px; border-radius: 6px; background: #E4E1F5; }
+      input[type="range"].pm-nrs-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #6C5CE7; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.28); cursor: pointer; }
     </style>
 
     <title>PhysioMind Pro — Posture Screening & Education</title>
