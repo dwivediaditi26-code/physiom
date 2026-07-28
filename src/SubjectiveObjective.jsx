@@ -1507,6 +1507,24 @@ function lumbarTestNav(testStr) {
       why:"Flexion — discogenic aggravator; test for centralisation with repeated movements (McKenzie). Extension — facet/stenosis pattern, reproduces symptoms and tests centralisation the opposite direction. Side flexion asymmetry — lateral shift/disc protrusion screen." };
 
 
+  if (/passive lumbar extension/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_passive_lumbar_ext" },
+      why:"Passive Lumbar Extension — the most accurate test for lumbar instability (84% sens, 90% spec). LBP/heaviness that eases on lowering the legs = positive." };
+  if (/pheasant test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_pheasant" },
+      why:"Pheasant — prone PA pressure with passive lumbar hyperextension; radiating pain or a segment 'giving' suggests instability." };
+  if (/farfan torsion/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_farfan_torsion" },
+      why:"Farfan Torsion — controlled rotational stress across a segment; reproduces facet/annular pain under torsion." };
+  if (/h and i stability|h & i/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_h_and_i" },
+      why:"McKenzie H and I tests — map the direction of a mechanical block to establish the direction of preference." };
+  if (/bicycle test|van gelderen/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_bicycle_van_gelderen" },
+      why:"Bicycle Test of van Gelderen — symptoms eased by forward-lean (flexion) despite continued effort = neurogenic (stenosis); unchanged = vascular claudication." };
+  if (/stoop test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"lumbar", highlightTest:"st_stoop" },
+      why:"Stoop Test — walking-induced leg pain relieved by trunk flexion; characteristic of neurogenic claudication from canal stenosis." };
   if (/observation|posture screen/i.test(s))
     return { icon:"\ud83d\udc41\ufe0f", col:"#7c3aed", nav:"observation", ctx:{ obsRegion:"lx" },
       why:"Lumbar lordosis (loss = disc/guarding, increased = facet), lateral shift/scoliosis, pelvic obliquity, paraspinal bulk asymmetry, and antalgic/Trendelenburg gait." };
@@ -1569,6 +1587,21 @@ function cervicalTestNav(testStr) {
   if (/cervical rotation lateral flexion|\bcrlf\b/i.test(s))
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
       why:"CRLF — screens for first-rib elevation restricting cervical rotation/lateral flexion." };
+  if (/adson'?s test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_adson" },
+      why:"Adson's — thoracic outlet / scalene compression of the subclavian artery. Weight symptom reproduction over pulse change alone." };
+  if (/costoclavicular|military brace/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_costoclavicular" },
+      why:"Costoclavicular (Military Brace) — narrows the space between clavicle and first rib to reproduce TOS symptoms." };
+  if (/roos test|elevated arm stress|\beast\b/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_roos_east" },
+      why:"Roos / EAST — 3-minute elevated-arm stress test; the most sensitive screen for thoracic outlet syndrome." };
+  if (/cyriax release test/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cyriax_release" },
+      why:"Cyriax Release — unloading the shoulder girdle provokes a release-phenomenon paraesthesia in TOS." };
+  if (/first thoracic nerve root|t1 nerve root stretch/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_t1_nerve_stretch" },
+      why:"First thoracic nerve root stretch — arm abducted with elbow flexed; scapular/medial-arm pain implicates a T1 root lesion." };
 
   if (/neurological screen/i.test(s))
     return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{ neuroHighlights: CERVICAL_NEURO_HIGHLIGHTS },
@@ -1625,9 +1658,18 @@ function thoracicTestNav(testStr) {
     return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"cervical", highlightTest:"st_cervical_rotation_lt" },
       why:"CRLF -- Magee-described as testing first-rib elevation restricting cervical rotation/lateral flexion, directly relevant to thoracic outlet syndrome (T04)." };
 
-  if (/rib spring|rib mobility|functional (movement )?screen|functional testing/i.test(s))
+  if (/rib spring|rib springing/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"thoracic", highlightTest:"st_rib_spring" },
+      why:"Rib Springing -- prone PA spring over each rib angle, level by level, comparing sides; localised pain/stiffness implicates costovertebral/costotransverse dysfunction (or a fractured rib -- spring gently)." };
+  if (/passive scapular approximation/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"thoracic", highlightTest:"st_passive_scapular_approx" },
+      why:"Passive Scapular Approximation -- prone scapular retraction reproducing upper-thoracic/scapular pain implicates a T1-T4 root or facet source rather than local muscle." };
+  if (/forestier|bowstring/i.test(s))
+    return { icon:"\ud83d\udd2c", col:"#0891b2", nav:"special", ctx:{ specialRegion:"thoracic", highlightTest:"st_forestier_bowstring" },
+      why:"Forestier's Bowstring Sign -- contralateral paraspinals staying taut on side-flexion; associated with ankylosing spondylitis and marked paraspinal guarding." };
+  if (/rib mobility|functional (movement )?screen|functional testing/i.test(s))
     return { icon:"\ud83c\udfc3", col:"#059669", nav:"fma", ctx:{ fsRegion:"thoracic" },
-      why:"Rib spring (prone PA over each rib angle), pump handle (ribs 1-5), and bucket handle (ribs 6-10) all live in this functional/rib mobility screen -- the real implemented version of Rib Springing." };
+      why:"Pump handle (ribs 1-5) and bucket handle (ribs 6-10) rib-mobility screens live in this functional module." };
 
   if (/neurological screen/i.test(s))
     return { icon:"\u26a1", col:"#dc2626", nav:"neuro", ctx:{},

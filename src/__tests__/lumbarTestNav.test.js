@@ -23,6 +23,15 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
     expect(lumbarTestNav("Observation")).toMatchObject({ nav:"observation", ctx:{ obsRegion:"lx" } });
   });
 
+  it("maps newly-added lumbar special tests to the special-tests tab", () => {
+    expect(lumbarTestNav("Passive Lumbar Extension Test")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_passive_lumbar_ext" } });
+    expect(lumbarTestNav("Pheasant Test")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_pheasant" } });
+    expect(lumbarTestNav("Farfan Torsion Test")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_farfan_torsion" } });
+    expect(lumbarTestNav("H and I Stability Tests")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_h_and_i" } });
+    expect(lumbarTestNav("Bicycle Test of van Gelderen")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_bicycle_van_gelderen" } });
+    expect(lumbarTestNav("Stoop Test")).toMatchObject({ nav:"special", ctx:{ highlightTest:"st_stoop" } });
+  });
+
   it("maps Slump test to the neural special-tests entry", () => {
     expect(lumbarTestNav("Slump test")).toMatchObject({
       nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" },
@@ -85,13 +94,7 @@ describe("lumbarTestNav -- L01-L11 objective test -> module mapping", () => {
     expect(lumbarTestNav("Passive physiological intervertebral movements")).toBeNull();
     expect(lumbarTestNav("X-ray if degenerative changes suspected")).toBeNull();
     expect(lumbarTestNav("ODI / NPRS / fear-avoidance screen")).toBeNull();
-    expect(lumbarTestNav("Bicycle Test of van Gelderen")).toBeNull();
-    expect(lumbarTestNav("Stoop Test")).toBeNull();
     expect(lumbarTestNav("Treadmill Test (1.2mph + preferred speed, up to 15min)")).toBeNull();
-    expect(lumbarTestNav("Passive Lumbar Extension Test")).toBeNull();
-    expect(lumbarTestNav("H and I Stability Tests")).toBeNull();
-    expect(lumbarTestNav("Farfan Torsion Test")).toBeNull();
-    expect(lumbarTestNav("Pheasant Test")).toBeNull();
     expect(lumbarTestNav("Meyerding grading once imaging confirms a slip")).toBeNull();
     expect(lumbarTestNav("Hamstring length")).toBeNull();
     expect(lumbarTestNav("Resisted isometric movements")).toBeNull();
