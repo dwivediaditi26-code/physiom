@@ -36,9 +36,10 @@ function fasciaHighlightsFromDetail(detail = "") {
 // Build the NavActionBtn descriptor for an authored assessment-layer module,
 // attaching a specific ctx where the target module supports deep-linking.
 function layerNavBtn(m, onNav) {
-  const teach = LAYER_TEACH[m.key] ? LAYER_TEACH[m.key] + "\n\nFor this patient: " + m.detail : m.detail;
   const ctx = m.key === "fascia" ? { fasciaHighlights: fasciaHighlightsFromDetail(m.detail) } : null;
-  return { label: m.label, icon: LAYER_ICON[m.key] || "\u2022", col: "#0891b2", nav: (onNav && m.key) ? m.key : null, ctx, why: teach };
+  // why = generic teaching only (shown under "?"); detail = the patient-specific
+  // line, shown directly in the block below the label.
+  return { label: m.label, icon: LAYER_ICON[m.key] || "\u2022", col: "#0891b2", nav: (onNav && m.key) ? m.key : null, ctx, why: LAYER_TEACH[m.key] || "", detail: m.detail };
 }
 // The specific special tests for a condition are already rendered as their own
 // buttons above the layer row, so the generic "Special tests"/"STTT" layer
@@ -64,7 +65,7 @@ function splitOutcomeMeasures(detail = "") {
 }
 function layerNavButtons(m, mi, onNav, PC) {
   if (m.key === "outcome") {
-    const teachBase = LAYER_TEACH[m.key] ? LAYER_TEACH[m.key] + "\n\nFor this patient: " + m.detail : m.detail;
+    const teachBase = LAYER_TEACH[m.key] || "";
     const measures = splitOutcomeMeasures(m.detail);
     if (measures.length) {
       return measures.map((name, i) => {
@@ -1348,6 +1349,11 @@ function NavActionBtn({ btn, onNav, PC }) {
           ?
         </button>
       </div>
+      {btn.detail && (
+        <div style={{ fontSize:"0.8rem", color:PC.text, padding:"1px 4px 2px", lineHeight:1.45 }}>
+          <span style={{ color:col, fontWeight:700 }}>For this patient: </span>{btn.detail}
+        </div>
+      )}
       {showWhy && (
         <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
           background:PC.s3, borderRadius:"0 0 6px 6px",
