@@ -3198,6 +3198,18 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
   const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  // Re-sync selected regions from the loaded patient's saved record.
+  // selectedRegions is seeded once in its useState initializer, which never
+  // re-runs when a *different* patient is loaded into the same mounted module
+  // -- so the newly loaded patient's regions weren't showing after switching
+  // patients. This keeps state in step with data.cx_selected_regions. It's a
+  // no-op when a local region toggle is the source (persisted value already
+  // equals state), so it cannot loop.
+  useEffect(() => {
+    let persisted = [];
+    try { persisted = JSON.parse(data.cx_selected_regions || "[]"); } catch { persisted = []; }
+    setSelectedRegions(prev => (JSON.stringify(prev) === JSON.stringify(persisted) ? prev : persisted));
+  }, [data.cx_selected_regions]);
   const [activeReviewRegion, setActiveReviewRegion] = useState(null); // which region tab is showing in the Interpretation results screen
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
