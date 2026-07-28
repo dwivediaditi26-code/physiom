@@ -559,7 +559,13 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   const [tooltip, setTooltip]           = useState(null);
   const [activePanel, setActivePanel]   = useState(null); // region being edited
   const [adminMode, setAdminMode]       = useState(false);
-  const [editedPts, setEditedPts]       = useState({});
+  const [editedPts, setEditedPts]       = useState(() => {
+    try { return JSON.parse(localStorage.getItem("body_chart_region_overrides") || "{}"); }
+    catch { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("body_chart_region_overrides", JSON.stringify(editedPts)); } catch {}
+  }, [editedPts]);
   const [radiationMode, setRadiationMode] = useState(false);
   const [radiationDraw, setRadiationDraw] = useState(null);
   const [arrows, setArrows]             = useState(chartData.arrows || []);
@@ -690,6 +696,29 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
     return JSON.stringify(out, null, 2);
   };
 
+  // Export the (possibly Admin-corrected) region polygons as ready-to-paste
+  // source so anatomically-misplaced areas fixed in Admin Mode can be made
+  // permanent in the code. Coordinates are rounded to 2 decimals.
+  const exportRegions = () => {
+    const r2v = v => Math.round(v * 100) / 100;
+    const merged = REGIONS.map(r => ({ ...r, pts: (editedPts[r.id] || r.pts).map(([x,y]) => [r2v(x), r2v(y)]) }));
+    const src = "const REGIONS = [\n" + merged.map(r =>
+      `  { id:${JSON.stringify(r.id)}, view:${JSON.stringify(r.view)}, label:${JSON.stringify(r.label)},\n    pts:${JSON.stringify(r.pts)} },`
+    ).join("\n") + "\n];";
+    try {
+      navigator.clipboard?.writeText(src);
+      alert("✅ Corrected body regions copied to clipboard.\n\nPaste them into the chat so they can be saved permanently in the app.");
+    } catch {
+      alert(src);
+    }
+    return src;
+  };
+  const resetRegions = () => {
+    if (window.confirm("Reset all body-region positions back to the built-in defaults? Your Admin corrections will be cleared.")) {
+      setEditedPts({});
+    }
+  };
+
   return (
     <div style={{ fontFamily:"system-ui,sans-serif", userSelect:"none" }}>
 
@@ -738,6 +767,22 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
           {adminMode ? "🔧 Admin ON" : "🔧 Admin"}
         </button>
+        {adminMode && (
+          <>
+            <button onClick={exportRegions}
+              style={{ padding:"5px 11px", borderRadius:8, border:"1.5px solid #7c3aed",
+                background:"rgba(124,58,237,0.12)", color:"#7c3aed",
+                fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
+              📋 Export corrected regions
+            </button>
+            <button onClick={resetRegions}
+              style={{ padding:"5px 11px", borderRadius:8, border:"1px solid #fca5a5",
+                background:"#fef2f2", color:"#ef4444",
+                fontWeight:700, fontSize:"0.7rem", cursor:"pointer" }}>
+              ↺ Reset to default
+            </button>
+          </>
+        )}
         {entries.length > 0 && (
           <button onClick={() => setEntries([])}
             style={{ padding:"5px 11px", borderRadius:8, border:"1px solid #fca5a5",
@@ -1000,7 +1045,8 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
             background:"rgba(17,24,39,0.85)", borderRadius:8, padding:"6px 10px",
             fontSize:"0.65rem", color:"#9ca3af", textAlign:"center" }}>
             🔧 Admin Mode — Click polygon to select · Drag dots to move points
-            · Double-click dot to remove · Alt+click dot to remove
+            · Double-click dot to remove · Alt+click dot to remove ·
+            tap 📋 Export when done to save your corrections
           </div>
         )}
 
