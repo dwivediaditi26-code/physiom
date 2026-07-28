@@ -40,6 +40,42 @@ function layerNavBtn(m, onNav) {
 // buttons are redundant -- drop them.
 const REDUNDANT_LAYER_KEYS = new Set(["special", "cyriax_full"]);
 
+// Suggested outcome measures should be individual clickable buttons (like the
+// special tests), deep-linking straight into the questionnaire when the app
+// implements it. Map a measure name to its in-app scale id.
+const OUTCOME_SCALE_IDS = {
+  spadi: "spadi", dash: "dash", quickdash: "dash", "quick dash": "dash",
+  ndi: "ndi", odi: "odi", oswestry: "odi", lefs: "lefs", psfs: "psfs",
+  "koos-jr": "koosjr", koosjr: "koosjr", "hoos-jr": "hoosjr", hoosjr: "hoosjr",
+  faam: "faam", "tsk": "tsk", fabq: "fabqpa", pcs: "pcs", rmdq: "rmdq", roland: "rmdq",
+};
+function outcomeScaleId(name = "") {
+  const n = String(name).toLowerCase();
+  for (const key of Object.keys(OUTCOME_SCALE_IDS)) if (n.includes(key)) return OUTCOME_SCALE_IDS[key];
+  return null;
+}
+function splitOutcomeMeasures(detail = "") {
+  return String(detail).split(/\s*[;,]\s*|\s+or\s+/i).map((x) => x.trim()).filter((x) => x.length > 1);
+}
+// Return one-or-more NavActionBtn elements for an authored assessment-layer
+// module. Outcome expands into a button per suggested measure.
+function layerNavButtons(m, mi, onNav, PC) {
+  if (m.key === "outcome") {
+    const teachBase = LAYER_TEACH[m.key] ? LAYER_TEACH[m.key] + "\n\nFor this patient: " + m.detail : m.detail;
+    const measures = splitOutcomeMeasures(m.detail);
+    if (measures.length) {
+      return measures.map((name, i) => {
+        const sid = outcomeScaleId(name);
+        const btn = sid
+          ? { label: name, icon: "\uD83D\uDCC8", col: "#0891b2", nav: onNav ? "outcome" : null, ctx: { scaleId: sid }, why: teachBase }
+          : { label: name, icon: "\uD83D\uDCC8", col: PC.muted, nav: null, ctx: null, why: "No in-app questionnaire for this measure yet -- score it externally.\n\n" + teachBase };
+        return <NavActionBtn key={"lay" + mi + "om" + i} btn={btn} onNav={onNav} PC={PC} />;
+      });
+    }
+  }
+  return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC} />];
+}
+
 const TEST_SVG = {
   // ─── SHOULDER ───────────────────────────────────────────────────────────
   neer: (
@@ -2889,11 +2925,11 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
       <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
-        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+        display: "flex", alignItems: "flex-start", gap: 6, cursor: "pointer",
         border: `1px solid ${textValue ? "#C9C1F0" : "#E4E1F5"}`, borderRadius: 10,
-        background: "#fff", padding: "0 8px 0 12px", height: 36, boxSizing: "border-box",
+        background: "#fff", padding: "0 8px 0 12px", minHeight: 36, boxSizing: "border-box",
       }}>
-        <input ref={taRef} type="text" value={textValue} onChange={handleTyped}
+        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
           placeholder={isMulti ? "Tap to select..." : "Tap to select..."}
           className="pm-cfield-text"
@@ -2901,11 +2937,12 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
             fontSize: "0.82rem", fontWeight: textValue ? 600 : 400,
             color: textValue ? "#7B68EE" : "#9A98AC", fontFamily: "inherit",
-            textOverflow: "ellipsis", padding: 0, height: "100%",
+            resize: "none", overflow: "hidden", whiteSpace: "pre-wrap", wordBreak: "break-word",
+            lineHeight: 1.35, padding: "7px 0", margin: 0,
           }} />
         <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, width: 18, height: 18,
+          flexShrink: 0, width: 18, height: 18, marginTop: 9,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: "none", color: "#9A98AC", fontSize: "0.9rem", cursor: "pointer",
           border: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
@@ -5101,9 +5138,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
                                   </div>
                                 </div>
                               );
@@ -5286,9 +5321,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
                                   </div>
                                 </div>
                               );
@@ -5478,9 +5511,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
                                   </div>
                                 </div>
                               );
@@ -5627,9 +5658,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                         : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
                                       return <NavActionBtn key={"pri"+ti} btn={btn} onNav={onNav} PC={PC}/>;
                                     })}
-                                    {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
                                   </div>
                                 </div>
                               );
@@ -5684,9 +5713,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     {c.keyExams.map((t, ti) => (
                                       <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
                                     ))}
-                                    {layers.map((m, mi) => (
-                                      <NavActionBtn key={"lay"+mi} btn={layerNavBtn(m, onNav)} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC))}
                                   </div>
                                 </div>
                               );

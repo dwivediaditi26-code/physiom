@@ -2536,7 +2536,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   {
     const catchAll = listGlobalCatalogFields()
       .concat(activePrefixes.flatMap(px => listRegionCatalogFields(px)))
-      .filter(f => !SOAP_LIVE_CATCHALL_EXCLUDE.has(f.id))
+      .filter(f => !SOAP_LIVE_CATCHALL_EXCLUDE.has(f.id) && !f.id.startsWith("dem_"))
       .map(f => ({ ...f, val: a(f.id) }))
       .filter(f => f.val);
     if (catchAll.length) {
@@ -4389,7 +4389,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
               : String(x||"").trim();
             const extra = listGlobalCatalogFields()
               .concat(PFXS.flatMap(px=>listRegionCatalogFields(px)))
-              .filter(f=>!SOAP_NOTES_CATCHALL_EXCLUDE.has(f.id))
+              .filter(f=>!SOAP_NOTES_CATCHALL_EXCLUDE.has(f.id) && !f.id.startsWith("dem_"))
               .map(f=>({...f, val: fmt(data[f.id])}))
               .filter(f=>f.val);
             if(!extra.length) return null;
