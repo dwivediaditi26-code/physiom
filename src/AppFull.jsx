@@ -241,6 +241,13 @@ function AppInner({ currentUser, onSignOut }) {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
       const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
       if (draft && Object.keys(draft).length > 5) return draft;
+      // Draft is empty/too thin but a patient is still active (raw.pid). Load
+      // that patient's saved record so the Subjective form matches the header
+      // instead of rendering blank while the header shows the patient's name.
+      if (raw && raw.pid) {
+        const active = loadPatientDB(currentUser?.id).find(p => p.id === raw.pid);
+        if (active && active.data && Object.keys(active.data).length > 0) return active.data;
+      }
     } catch {}
     return {};
   });
@@ -484,6 +491,15 @@ function AppInner({ currentUser, onSignOut }) {
     const updated = patients.filter(p => p.id !== id);
     setPatients(updated);
     savePatientDB(updated, currentUser?.id);
+    // Also remove the row from Supabase. savePatientDB only UPSERTs the patients
+    // that remain, so without an explicit delete the cloud copy survives and the
+    // patient reappears on the next load when the remote list is merged back in
+    // (this was the "deleted patients keep coming back / still 25" bug).
+    if (currentUser?.id) {
+      supabase.from("patients").delete().eq("id", id).eq("user_id", currentUser.id)
+        .then(({ error }) => { if (error) console.warn("[Supabase delete]", error.message); })
+        .catch((e) => console.warn("[Supabase delete error]", e));
+    }
     if (activePatientId === id) { setData({}); setActivePatientId(null); }
     setJsonMsg({ type:"success", text:"Patient deleted" });
     setTimeout(() => setJsonMsg(null), 2000);
