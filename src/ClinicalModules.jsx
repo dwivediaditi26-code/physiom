@@ -5942,88 +5942,6 @@ const HIP_PROTOCOLS = [
   },
 ];
 
-// ─── SHARED PROTOCOL PANEL RENDERER ──────────────────────────────────────────
-function ProtocolPanel({ protocols, openId, setOpenId, openTx, setOpenTx, openPhase, togglePhase, onAdd, onRemove, onUpdate, programme }) {
-  return (
-    <div style={{ borderTop:"1px solid rgba(0,0,0,0.08)", padding:"10px 14px 14px" }}>
-      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
-        {protocols.map(p => (
-          <button key={p.id} onClick={() => { setOpenId(openId === p.id ? null : p.id); setOpenTx(null); }}
-            style={{ padding:"6px 13px", borderRadius:20, fontSize:"0.75rem", fontWeight:700,
-              background: openId === p.id ? `${p.color}18` : "transparent",
-              border: `1px solid ${openId === p.id ? p.color : "#E0E0E2"}`,
-              color: openId === p.id ? p.color : "#6B6B6B", cursor:"pointer" }}>
-            {p.icon} {p.label}
-          </button>
-        ))}
-      </div>
-      {openId && (() => {
-        const p = protocols.find(x => x.id === openId);
-        if (!p) return null;
-        return (
-          <div style={{ background:`${p.color}06`, border:`1px solid ${p.color}30`, borderRadius:10, padding:"12px" }}>
-            <div style={{ fontSize:"0.8rem", color:p.color, fontWeight:700, marginBottom:12,
-              background:`${p.color}12`, display:"inline-block", padding:"3px 10px",
-              borderRadius:6, border:`1px solid ${p.color}30` }}>📚 {p.evidence}</div>
-            <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-              <button onClick={() => setOpenTx(null)} style={{ flex:1, padding:"8px", borderRadius:8,
-                border:`1px solid ${openTx !== "tx" ? p.color : "#E0E0E2"}`,
-                background: openTx !== "tx" ? `${p.color}15` : "transparent",
-                color: openTx !== "tx" ? p.color : "#6B6B6B", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
-                💪 Exercise Protocol
-              </button>
-              <button onClick={() => setOpenTx("tx")} style={{ flex:1, padding:"8px", borderRadius:8,
-                border:`1px solid ${openTx === "tx" ? p.color : "#E0E0E2"}`,
-                background: openTx === "tx" ? `${p.color}15` : "transparent",
-                color: openTx === "tx" ? p.color : "#6B6B6B", fontSize:"0.75rem", fontWeight:800, cursor:"pointer" }}>
-                🏥 Treatment Techniques
-              </button>
-            </div>
-            {openTx !== "tx" && p.phases.map((ph, pi) => (
-              <div key={pi} style={{ marginBottom:8, border:`1px solid ${ph.color}30`, borderRadius:8, overflow:"hidden" }}>
-                <div onClick={() => togglePhase(`${p.id}_${pi}`)}
-                  style={{ padding:"10px 12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", background:`${ph.color}10` }}>
-                  <div style={{ fontWeight:800, fontSize:"0.82rem", color:ph.color }}>{ph.phase}</div>
-                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontSize:"0.8rem", color:"#6B6B6B" }}>{ph.exercises.length} exercises</span>
-                    <span style={{ color:ph.color, fontSize:"0.8rem" }}>{openPhase[`${p.id}_${pi}`] ? "▲" : "▼"}</span>
-                  </div>
-                </div>
-                {openPhase[`${p.id}_${pi}`] && (
-                  <div style={{ padding:"10px 12px" }}>
-                    {ph.exercises.map((ex, ei) => {
-                      const exId = "proto_" + ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_");
-                      const progEntry = programme?.find(e=>e.id===exId);
-                      const inProg = !!progEntry;
-                      const full = {...ex, id:exId, phase:ph.phase, target:ex.cues?.slice(0,40)||ex.name};
-                      return (
-                        <ExerciseDetailCard key={ei} ex={progEntry||full} inProg={inProg}
-                          onAdd={()=>onAdd&&onAdd(full)} onRemove={()=>onRemove&&onRemove(exId)}
-                          onUpdate={(field,val)=>onUpdate&&onUpdate(exId,field,val)} accentColor={ph.color}/>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-            {openTx === "tx" && (
-              <div>
-                {p.treatment.map((tx, ti) => (
-                  <div key={ti} style={{ background:"#FFFFFF", border:`1px solid ${p.color}25`, borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
-                    <div style={{ fontWeight:800, fontSize:"0.76rem", color:p.color, marginBottom:5 }}>🏥 {tx.name}</div>
-                    <div style={{ fontSize:"0.73rem", color:"#334155", lineHeight:1.6, marginBottom:6 }}>{tx.desc}</div>
-                    <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 {tx.evidence}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
-
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
 // ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
 function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor="#7c3aed" }) {
@@ -6093,13 +6011,7 @@ const REGION_PROTOCOLS = { Knee: KNEE_PROTOCOLS, Shoulder: SHOULDER_PROTOCOLS, E
 function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onUpdate, onLoadTemplate, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
-  const [openId,     setOpenId]     = useState(null);
-  const [openTx,     setOpenTx]     = useState(null);
-  const [openPhase,  setOpenPhase]  = useState({});
-  const [tSearch,    setTSearch]    = useState("");
   const [openTpl,    setOpenTpl]    = useState(null);
-
-  const togglePhase = (key) => setOpenPhase(p => ({ ...p, [key]: !p[key] }));
 
   const TAB_REGION_MAP = {
     knee:"Knee", shoulder:"Shoulder", elbow:"Elbow", hip:"Hip",
@@ -6286,7 +6198,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
         <div style={{ borderTop:"1px solid #e8e0f4" }}>
           <div style={{ display:"flex", gap:3, padding:"7px 10px", overflowX:"auto", borderBottom:"1px solid #e8e0f4", background:"#F2F2F4" }}>
             {TABS.map(t => (
-              <button key={t.id} onClick={() => { setActiveTab(t.id); setOpenId(null); setOpenTpl(null); }}
+              <button key={t.id} onClick={() => { setActiveTab(t.id); setOpenTpl(null); }}
                 style={{ padding:"4px 10px", borderRadius:7, fontSize:"0.8rem", fontWeight:activeTab===t.id?800:500, flexShrink:0,
                   border:`1px solid ${activeTab===t.id?t.color+"60":"#E0E0E2"}`,
                   background: activeTab===t.id?`${t.color}12`:"transparent",
