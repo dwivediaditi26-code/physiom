@@ -37,6 +37,13 @@ const neuro = {
   label: "Neuro",
   phases: [
     {
+      id: "templates", label: "Templates", icon: "🧩",
+      subtitle: "Condition-specific guided templates — TBI, Stroke, SCI, Parkinson's, MS. Each step deep-links to the relevant assessment tool.",
+      sections: [{ fields: [
+        { type:"component", key:"templatesHub", widget:"Templates" },
+      ]}]
+    },
+    {
       id: "demographics", label: "Demographics", icon: "👤",
       subtitle: "Patient identity, care setting, condition, and referring diagnosis.",
       sections: [{ fields: [

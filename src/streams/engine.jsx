@@ -106,7 +106,7 @@ function GridTable({ f, get, set, PC, rows, cols, colOptions }) {
   );
 }
 
-export default function AssessmentEngine({ config, data, set, PC, components }) {
+export default function AssessmentEngine({ config, data, set, PC, components, navTo }) {
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [showExport, setShowExport] = useState(false);
   const [highlightKey, setHighlightKey] = useState(null);
@@ -166,7 +166,7 @@ export default function AssessmentEngine({ config, data, set, PC, components }) 
       rows={f.regions} cols={f.modes} colOptions={()=>f.grades}/>;
     else if (f.type === "component") {
       const Comp = components && components[f.widget];
-      inner = Comp ? <Comp data={data} set={set} PC={PC}/>
+      inner = Comp ? <Comp data={data} set={set} PC={PC} navTo={navTo}/>
         : <div style={{color:PC.muted,fontSize:"0.8rem"}}>Widget "{f.widget}" not registered.</div>;
     }
     else inner = <Field f={f} val={get(f.key)} onChange={v=>put(f.key,v)} PC={PC}/>;

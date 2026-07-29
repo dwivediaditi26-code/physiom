@@ -36,7 +36,7 @@ import {
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
-import { NeurologicalModule } from "./PhysioNeuro.jsx";
+import { NeurologicalModule, NeuroTemplatesHub } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
 import neuroStream from "./streams/neuro.js";
 import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget } from "./streams/neuroWidgets.jsx";
@@ -101,7 +101,8 @@ const TabFallback = () => (
 // Config-driven stream registry. A stream with a config renders via the
 // AssessmentEngine; others fall back to the "coming soon" placeholder.
 const STREAM_CONFIGS = { neuro: neuroStream };
-const STREAM_WIDGETS = { GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
+const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} navTo={navTo} navContext={{}}/>;
+const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
@@ -1315,7 +1316,7 @@ function AppInner({ currentUser, onSignOut }) {
           <StreamSelector stream={stream} setStream={setStream} PC={PC}/>
           {stream !== "ortho" ? (
             STREAM_CONFIGS[stream] ? (
-              <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC}/>
+              <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>
             ) : (
               <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
             )
