@@ -3482,6 +3482,16 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       const umn = /positive/i.test(String(data.n_ref_babinski_left)+String(data.n_ref_babinski_right)) || /positive/i.test(String(data.n_ref_clonus_ankle_left)+String(data.n_ref_clonus_ankle_right));
       if (umn) bits.push("UMN signs positive");
       if (v("neuro_tardieuGrade") || v("neuro_spasticityPattern")) bits.push("spasticity present");
+      // LMN pattern (areflexia / flaccid) — hallmark of GBS & peripheral neuropathy
+      const dtrKeys = ["n_ref_bicep","n_ref_brad","n_ref_tricep","n_ref_patella","n_ref_achilles"];
+      const areflexia = dtrKeys.some(k => /absent|^0/i.test(String(data[k+"_left"]||"")) || /absent|^0/i.test(String(data[k+"_right"]||"")));
+      if (cond === "GBS / Neuropathy") {
+        bits.push(`LMN pattern — flaccid, symmetric weakness${areflexia ? ", areflexia" : ""}`);
+        const resp = /shallow|paradox/i.test(v("neuro_breathPattern")) || /weak|absent/i.test(v("neuro_cough")) || (parseInt(v("neuro_mrcSum"),10) || 60) < 40;
+        if (resp) bits.push("\u26A0 respiratory compromise — monitor FVC / escalate");
+      } else if (areflexia && !umn) {
+        bits.push("LMN pattern (areflexia)");
+      }
       if (cond === "Parkinson's") {
         const pd = [];
         if (inv("Bradykinesia")) pd.push("bradykinesia");
