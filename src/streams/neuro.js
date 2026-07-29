@@ -232,7 +232,100 @@ const neuro = {
         ]}
       ]
     }
-  ]
+  ],
+  // ── Guided workflow checklists (ported from Neuro Templates) ──
+  // Each step jumps to a phase and highlights the target engine field.
+  checklists: {
+    "Stroke": [
+      { label:"Consciousness & GCS", phase:"objective", fieldKey:"consciousness" },
+      { label:"Communication / aphasia screen", phase:"objective", fieldKey:"aphasia" },
+      { label:"Perceptual / neglect screen", phase:"objective", fieldKey:"perceptual" },
+      { label:"Cranial nerve exam", phase:"objective", fieldKey:"cranial" },
+      { label:"Sensory testing", phase:"objective", fieldKey:"sensory" },
+      { label:"Motor: tone / power / Brunnstrom", phase:"objective", fieldKey:"motor" },
+      { label:"Coordination & balance", phase:"objective", fieldKey:"sittingBal" },
+      { label:"Gait analysis", phase:"objective", fieldKey:"gaitDev" },
+      { label:"NIHSS", phase:"objective", fieldKey:"nihss" },
+      { label:"Fugl-Meyer motor assessment", phase:"objective", fieldKey:"fuglUE" },
+      { label:"ADL / Barthel", phase:"objective", fieldKey:"barthel" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "TBI": [
+      { label:"GCS (E/V/M)", phase:"objective", fieldKey:"gcs" },
+      { label:"RASS / sedation (if ICU)", phase:"objective", fieldKey:"rass" },
+      { label:"Orientation & cognition", phase:"objective", fieldKey:"orientation" },
+      { label:"Cranial nerve exam", phase:"objective", fieldKey:"cranial" },
+      { label:"Tone, power & reflexes", phase:"objective", fieldKey:"motor" },
+      { label:"Coordination", phase:"objective", fieldKey:"fingerNose" },
+      { label:"Rancho Los Amigos level", phase:"objective", fieldKey:"rancho" },
+      { label:"Balance", phase:"objective", fieldKey:"standingBal" },
+      { label:"ADL / Barthel", phase:"objective", fieldKey:"barthel" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "Spinal cord injury": [
+      { label:"Sensory level (dermatome)", phase:"objective", fieldKey:"sensoryLevel" },
+      { label:"Motor / myotome testing", phase:"objective", fieldKey:"motor" },
+      { label:"ASIA impairment grade", phase:"objective", fieldKey:"asiaGrade" },
+      { label:"ASIA motor & sensory scores", phase:"objective", fieldKey:"asiaMotor" },
+      { label:"Bowel / bladder", phase:"objective", fieldKey:"bladder" },
+      { label:"Skin / pressure areas", phase:"objective", fieldKey:"skin" },
+      { label:"Respiratory (high lesions)", phase:"objective", fieldKey:"breathPattern" },
+      { label:"Transfers & function", phase:"objective", fieldKey:"transfers" },
+      { label:"SCIM", phase:"objective", fieldKey:"scim" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "Parkinson's": [
+      { label:"Rigidity & bradykinesia", phase:"objective", fieldKey:"involuntary" },
+      { label:"Tone (palpation)", phase:"objective", fieldKey:"tonePalpation" },
+      { label:"Postural stability / Romberg", phase:"objective", fieldKey:"romberg" },
+      { label:"Gait (festination, freezing)", phase:"objective", fieldKey:"gaitDev" },
+      { label:"Balance / TUG", phase:"objective", fieldKey:"tug" },
+      { label:"UPDRS", phase:"objective", fieldKey:"updrs" },
+      { label:"Hoehn & Yahr stage", phase:"objective", fieldKey:"hoehnYahr" },
+      { label:"ADL / Barthel", phase:"objective", fieldKey:"barthel" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "GBS / Neuropathy": [
+      { label:"Respiratory function", phase:"objective", fieldKey:"breathPattern" },
+      { label:"Motor power (distal → proximal)", phase:"objective", fieldKey:"motor" },
+      { label:"Sensory testing", phase:"objective", fieldKey:"sensory" },
+      { label:"MRC sum score", phase:"objective", fieldKey:"mrcSum" },
+      { label:"GBS disability scale", phase:"objective", fieldKey:"gbsDisability" },
+      { label:"Autonomic / vitals", phase:"objective", fieldKey:"vitals" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "Multiple sclerosis": [
+      { label:"Fatigue & symptom history", phase:"subjective", fieldKey:"hopi" },
+      { label:"Cranial nerves (optic, diplopia)", phase:"objective", fieldKey:"cranial" },
+      { label:"Sensory testing", phase:"objective", fieldKey:"sensory" },
+      { label:"Motor & spasticity", phase:"objective", fieldKey:"motor" },
+      { label:"Cerebellar / coordination", phase:"objective", fieldKey:"fingerNose" },
+      { label:"Balance (Berg)", phase:"objective", fieldKey:"berg" },
+      { label:"EDSS", phase:"objective", fieldKey:"edss" },
+      { label:"Bladder function", phase:"objective", fieldKey:"bladder" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "Cerebral palsy": [
+      { label:"Developmental history", phase:"subjective", fieldKey:"developmental" },
+      { label:"Tone / spasticity", phase:"objective", fieldKey:"tonePalpation" },
+      { label:"Motor & selective control", phase:"objective", fieldKey:"motor" },
+      { label:"GMFCS level", phase:"objective", fieldKey:"gmfcs" },
+      { label:"MACS level", phase:"objective", fieldKey:"macs" },
+      { label:"Gait", phase:"objective", fieldKey:"gaitDev" },
+      { label:"ADL / Barthel", phase:"objective", fieldKey:"barthel" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+    "_default": [
+      { label:"Higher mental function", phase:"objective", fieldKey:"consciousness" },
+      { label:"Cranial nerve exam", phase:"objective", fieldKey:"cranial" },
+      { label:"Sensory testing", phase:"objective", fieldKey:"sensory" },
+      { label:"Motor system", phase:"objective", fieldKey:"motor" },
+      { label:"Coordination & balance", phase:"objective", fieldKey:"fingerNose" },
+      { label:"Gait", phase:"objective", fieldKey:"gaitDev" },
+      { label:"ADL / function", phase:"objective", fieldKey:"barthel" },
+      { label:"Goals & plan", phase:"plan", fieldKey:"plan" },
+    ],
+  }
 };
 
 export default neuro;

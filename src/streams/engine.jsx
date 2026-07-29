@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 
 /* ─────────────────────────────────────────────────────────────────────────
    Config-driven Assessment Engine (Step 2)
@@ -109,6 +109,8 @@ function GridTable({ f, get, set, PC, rows, cols, colOptions }) {
 export default function AssessmentEngine({ config, data, set, PC }) {
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [showExport, setShowExport] = useState(false);
+  const [highlightKey, setHighlightKey] = useState(null);
+  const [showChecklist, setShowChecklist] = useState(true);
   const exportRef = useRef(null);
   const P = `${config.id}_`; // key prefix in shared data
   const get = k => data[P+k];
@@ -126,18 +128,42 @@ export default function AssessmentEngine({ config, data, set, PC }) {
     return true;
   };
 
+  // ── Guided workflow (from template checklists) ──
+  const phaseIdxById = {};
+  config.phases.forEach((p,i)=>{ phaseIdxById[p.id]=i; });
+  const condition = get("condition");
+  const checklist = (config.checklists && (config.checklists[condition] || config.checklists._default)) || null;
+  const highlightRef = useRef(null);
+  const isFilled = (fieldKey) => Object.keys(data).some(k =>
+    (k === P+fieldKey || k.startsWith(P+fieldKey+"::")) &&
+    data[k] !== "" && data[k] != null && data[k] !== false);
+  const jumpTo = (step) => {
+    if (phaseIdxById[step.phase] != null) setPhaseIdx(phaseIdxById[step.phase]);
+    setHighlightKey(step.fieldKey);
+  };
+  useEffect(() => {
+    if (highlightKey && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior:"smooth", block:"center" });
+      const t = setTimeout(()=>setHighlightKey(null), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [highlightKey, phaseIdx]);
+
   const renderField = (f) => {
     if (!visible(f)) return null;
-    if (f.type === "checkgrid") return <CheckGrid key={f.key} f={f} get={get} set={put} PC={PC}/>;
-    if (f.type === "limbtable")
-      return <GridTable key={f.key} f={f} get={get} set={put} PC={PC}
-        rows={f.rows} cols={f.columns.map(c=>c.label)}
-        colOptions={lbl=>{const c=f.columns.find(x=>x.label===lbl);return c?c.options:[];}}/>;
-    if (f.type === "sensorytable")
-      return <GridTable key={f.key} f={f} get={get} set={put} PC={PC}
-        rows={f.regions} cols={f.modes} colOptions={()=>f.grades}/>;
-    return (<div key={f.key} style={{gridColumn:span[f.layout]||span.half}}>
-      <Field f={f} val={get(f.key)} onChange={v=>put(f.key,v)} PC={PC}/></div>);
+    let inner;
+    if (f.type === "checkgrid") inner = <CheckGrid f={f} get={get} set={put} PC={PC}/>;
+    else if (f.type === "limbtable") inner = <GridTable f={f} get={get} set={put} PC={PC}
+      rows={f.rows} cols={f.columns.map(c=>c.label)}
+      colOptions={lbl=>{const c=f.columns.find(x=>x.label===lbl);return c?c.options:[];}}/>;
+    else if (f.type === "sensorytable") inner = <GridTable f={f} get={get} set={put} PC={PC}
+      rows={f.regions} cols={f.modes} colOptions={()=>f.grades}/>;
+    else inner = <Field f={f} val={get(f.key)} onChange={v=>put(f.key,v)} PC={PC}/>;
+    const hl = f.key === highlightKey;
+    const full = f.type==="checkgrid"||f.type==="limbtable"||f.type==="sensorytable"||f.layout==="full";
+    return (<div key={f.key} ref={hl?highlightRef:null}
+      style={{gridColumn: full?"1 / -1":(span[f.layout]||span.half),
+        ...(hl?{outline:`2px solid ${PC.accent}`,outlineOffset:4,borderRadius:12,transition:"outline 0.2s"}:{})}}>{inner}</div>);
   };
 
   const exportText = useMemo(() => {
@@ -172,6 +198,35 @@ export default function AssessmentEngine({ config, data, set, PC }) {
 
   return (
     <div>
+      {/* guided workflow checklist */}
+      {checklist && (
+        <div style={{marginBottom:18,border:`1px solid ${PC.border}`,borderRadius:12,overflow:"hidden"}}>
+          <button type="button" onClick={()=>setShowChecklist(v=>!v)}
+            style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"11px 14px",
+              background:PC.s2||"#f8fafc",border:"none",cursor:"pointer",textAlign:"left"}}>
+            <span style={{fontSize:"1rem"}}>🧭</span>
+            <span style={{fontWeight:700,fontSize:"0.85rem",color:PC.text}}>Guided workflow — {condition}</span>
+            <span style={{marginLeft:"auto",fontSize:"0.72rem",fontFamily:"ui-monospace,monospace",color:PC.muted}}>
+              {checklist.filter(s=>isFilled(s.fieldKey)).length}/{checklist.length} done</span>
+            <span style={{color:PC.muted,fontSize:"0.8rem"}}>{showChecklist?"\u25B2":"\u25BC"}</span>
+          </button>
+          {showChecklist && (
+            <div style={{padding:"6px 8px"}}>
+              {checklist.map((s,i)=>{
+                const done = isFilled(s.fieldKey);
+                return (
+                  <button key={i} type="button" onClick={()=>jumpTo(s)}
+                    style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"8px 10px",
+                      background:"none",border:"none",borderRadius:8,cursor:"pointer",textAlign:"left"}}>
+                    <span style={{width:18,height:18,flexShrink:0,borderRadius:"50%",display:"inline-flex",
+                      alignItems:"center",justifyContent:"center",fontSize:"0.7rem",color:done?"#fff":PC.muted,
+                      background:done?PC.accent:"transparent",border:`1.5px solid ${done?PC.accent:PC.border}`}}>{done?"\u2713":i+1}</span>
+                    <span style={{fontSize:"0.82rem",color:done?PC.muted:PC.text,textDecoration:done?"line-through":"none"}}>{s.label}</span>
+                    <span style={{marginLeft:"auto",fontSize:"0.68rem",color:PC.muted}}>\u2192</span>
+                  </button>);
+              })}
+            </div>)}
+        </div>)}
       {/* phase pills */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
         {config.phases.map((ph,i)=>(
