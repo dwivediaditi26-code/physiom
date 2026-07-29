@@ -44,6 +44,26 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   }
   const pfx = REGION_PREFIX_MAP[reg] || null;
 
+  // Multi-region: /api/parse now also returns additionalRegions[] for
+  // narratives describing more than one distinct body area (e.g. neck AND
+  // knee). Resolve each the same way the primary region is resolved above,
+  // so the caller can select ALL of them (not just the primary) into
+  // cx_selected_regions -- otherwise a two-region intake only ever selected
+  // one region and Run-Analysis stayed locked for the other.
+  const resolveSide = (r, lat) =>
+    (r === "Shoulder" || r === "Knee")
+      ? r + (lat === "Left" ? " (L)" : " (R)")
+      : r;
+  const allRegions = [];
+  if (reg) allRegions.push(reg);
+  if (Array.isArray(result.additionalRegions)) {
+    for (const extra of result.additionalRegions) {
+      if (!extra) continue;
+      const resolved = resolveSide(extra, result.laterality);
+      if (resolved && !allRegions.includes(resolved)) allRegions.push(resolved);
+    }
+  }
+
   // ── Demographics ─────────────────────────────────────────────────
   if (result.age)        updates.dem_age = String(result.age);
   if (result.sex)        updates.dem_sex = result.sex;
@@ -264,6 +284,7 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   return {
     updates,
     region: reg || null,
+    regions: allRegions,
     filledLabels: filled,
     redFlagsToReview,
     extractionMeta,

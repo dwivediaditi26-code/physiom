@@ -232,11 +232,16 @@ export default function AIAssistant({ data, set, PC, onClose }) {
       // up (and unlocks analysis) once the clinician opens Subjective is
       // to merge it into the persisted field directly, same dedupe/cap-at-3
       // rule SubjectiveObjective.jsx's own applyAiResult uses.
-      if (m.region) {
+      const regionsToAdd = (m.regions && m.regions.length) ? m.regions : (m.region ? [m.region] : []);
+      if (regionsToAdd.length) {
         let existing = [];
         try { existing = JSON.parse(data.cx_selected_regions || "[]"); } catch {}
-        if (!existing.includes(m.region) && existing.length < 3) {
-          updates.cx_selected_regions = JSON.stringify([...existing, m.region]);
+        const merged = [...existing];
+        for (const r of regionsToAdd) {
+          if (r && !merged.includes(r) && merged.length < 3) merged.push(r);
+        }
+        if (merged.length !== existing.length) {
+          updates.cx_selected_regions = JSON.stringify(merged);
         }
       }
       // Extraction audit trail (zero-hallucination spec): the verbatim
@@ -437,8 +442,8 @@ export default function AIAssistant({ data, set, PC, onClose }) {
                   {m.applied ? `Filled ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} into the patient record` : `Found ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} to fill`}
                 </span>
               </div>
-              {m.region && (
-                <div style={{ fontSize: "0.74rem", color: muted, marginBottom: 6 }}>Region detected: <strong style={{ color: text }}>{m.region}</strong></div>
+              {(m.regions && m.regions.length ? m.regions : (m.region ? [m.region] : [])).length > 0 && (
+                <div style={{ fontSize: "0.74rem", color: muted, marginBottom: 6 }}>{((m.regions && m.regions.length ? m.regions : [m.region]).length > 1) ? "Regions detected: " : "Region detected: "}<strong style={{ color: text }}>{(m.regions && m.regions.length ? m.regions : [m.region]).join(", ")}</strong></div>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
                 {m.filledLabels.map((label, li) => (
