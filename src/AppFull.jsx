@@ -91,6 +91,69 @@ const TabFallback = () => (
 // ═══════════════════════════════════════════════════════════════════════════
 // MULTI-PATIENT DATABASE
 // ═══════════════════════════════════════════════════════════════════════════
+// ── CLINICAL STREAMS (Step 1) ────────────────────────────────────────────────
+// The 5 top-level assessment specialties. Each will own its own
+// config-driven flow (demographics → subjective → objective → plan).
+// Step 1 wires the selector + routing shell; only "ortho" is live today.
+const STREAMS = [
+  { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
+  { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:false },
+  { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c", live:false },
+  { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777", live:false },
+  { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626", live:false },
+];
+
+function StreamSelector({ stream, setStream, PC }) {
+  return (
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20,
+      padding:"10px 12px",background:PC.s2||"#f8fafc",
+      border:`1px solid ${PC.border}`,borderRadius:14}}>
+      {STREAMS.map(st => {
+        const sel = stream===st.id;
+        return (
+          <button key={st.id} type="button" onClick={()=>setStream(st.id)}
+            title={st.live?`${st.label} assessment`:`${st.label} — coming soon`}
+            style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",
+              borderRadius:11,cursor:"pointer",fontSize:"0.85rem",fontWeight:700,
+              letterSpacing:"0.2px",transition:"all 0.15s",
+              border:`2px solid ${sel?st.color:PC.border}`,
+              background:sel?st.color+"14":(PC.surface||"#fff"),
+              color:sel?st.color:(PC.text||"#334155"),
+              opacity:st.live?1:0.85}}>
+            <span style={{fontSize:"1rem"}}>{st.icon}</span>
+            {st.label}
+            {!st.live && <span style={{fontSize:"0.62rem",fontWeight:800,
+              padding:"1px 6px",borderRadius:6,background:PC.border,
+              color:PC.muted,letterSpacing:"0.4px"}}>SOON</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StreamEnginePlaceholder({ stream, setStream, PC }) {
+  const st = STREAMS.find(s=>s.id===stream) || {};
+  return (
+    <div style={{textAlign:"center",padding:"56px 24px",maxWidth:560,margin:"0 auto"}}>
+      <div style={{fontSize:"3rem",marginBottom:12}}>{st.icon}</div>
+      <h2 style={{fontSize:"1.4rem",fontWeight:800,color:PC.text,marginBottom:8}}>
+        {st.label} assessment</h2>
+      <p style={{fontSize:"0.9rem",color:PC.muted,lineHeight:1.6,marginBottom:22}}>
+        This stream will run on the config-driven assessment engine —
+        demographics, subjective, objective and plan all tailored for
+        {" "}{st.label.toLowerCase()} patients. It's being built next (Step 2).
+      </p>
+      <button type="button" onClick={()=>setStream("ortho")}
+        style={{padding:"10px 20px",borderRadius:10,border:`2px solid ${STREAMS[0].color}`,
+          background:STREAMS[0].color+"12",color:STREAMS[0].color,fontWeight:700,
+          fontSize:"0.85rem",cursor:"pointer"}}>
+        ← Back to Ortho (live)
+      </button>
+    </div>
+  );
+}
+
 function AppInner({ currentUser, onSignOut }) {
   // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
   // why this matters: without this, two students sharing one browser/device
@@ -114,6 +177,12 @@ function AppInner({ currentUser, onSignOut }) {
 
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
+  // ── CLINICAL STREAM (Step 1 scaffold) ──────────────────────────────
+  // Top-level specialty that drives the whole assessment flow. "ortho"
+  // keeps the existing app; other streams render via the config-driven
+  // AssessmentEngine (built in Step 2).
+  const [stream, setStream] = useState(() => localStorage.getItem("pm_stream") || "ortho");
+  useEffect(() => { try { localStorage.setItem("pm_stream", stream); } catch(e){} }, [stream]);
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('pm_onboarded'));
   const [lastSaved, setLastSaved] = useState(null);
   // 'idle' | 'saving' | 'saved' | 'error' — reflects whether the active
@@ -1234,6 +1303,13 @@ function AppInner({ currentUser, onSignOut }) {
         {/* Main */}
         <div className="pm-main" style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
+          {/* ── STREAM SELECTOR + ROUTING SHELL (Step 1) ── */}
+          <StreamSelector stream={stream} setStream={setStream} PC={PC}/>
+          {stream !== "ortho" ? (
+            <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
+          ) : (
+          <>
+
           {/* ── CLINICAL WORKFLOW HEADER ── */}
           {activePatient && (() => {
             const d2 = data;
@@ -1568,6 +1644,8 @@ function AppInner({ currentUser, onSignOut }) {
             </div>
           ))}
           <div style={{height:60}}/>
+          </>
+          )}
         </div>
       </div>
 
