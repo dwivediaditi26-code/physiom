@@ -921,7 +921,6 @@ function AppInner({ currentUser, onSignOut }) {
         <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
         <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
         <SidebarItem navKey="neuro"         icon="⚡" label="Neurological"/>
-        <SidebarItem navKey="neurotemplates" icon="🧩" label="Neuro Templates"/>
         <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
       </SidebarGroup>
 
@@ -1698,7 +1697,6 @@ function AppInner({ currentUser, onSignOut }) {
                 <BnavItem navKey="mmt"         icon="💪" label="MMT"/>
                 <BnavItem navKey="special"     icon="🔬" label="Special Tests (100+)"/>
                 <BnavItem navKey="neuro"       icon="⚡" label="Neurological"/>
-                <BnavItem navKey="neurotemplates" icon="🧩" label="Neuro Templates"/>
                 <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
               </div>
               <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>

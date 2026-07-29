@@ -242,7 +242,7 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
                       alignItems:"center",justifyContent:"center",fontSize:"0.7rem",color:done?"#fff":PC.muted,
                       background:done?PC.accent:"transparent",border:`1.5px solid ${done?PC.accent:PC.border}`}}>{done?"\u2713":i+1}</span>
                     <span style={{fontSize:"0.82rem",color:done?PC.muted:PC.text,textDecoration:done?"line-through":"none"}}>{s.label}</span>
-                    <span style={{marginLeft:"auto",fontSize:"0.68rem",color:PC.muted}}>\u2192</span>
+                    <span style={{marginLeft:"auto",fontSize:"0.68rem",color:PC.muted}}>{"\u2192"}</span>
                   </button>);
               })}
             </div>)}
@@ -258,10 +258,6 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
               color:i===phaseIdx?PC.accent:PC.muted}}>
             <span>{ph.icon}</span>{ph.label}
           </button>))}
-        <button type="button" onClick={()=>setShowExport(true)}
-          style={{marginLeft:"auto",padding:"7px 14px",borderRadius:9,cursor:"pointer",
-            fontSize:"0.8rem",fontWeight:700,border:`1px solid ${PC.accent}`,
-            background:PC.accent,color:"#fff"}}>📄 Generate note</button>
       </div>
 
       {/* active phase */}
@@ -294,31 +290,6 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
             cursor:phaseIdx===config.phases.length-1?"default":"pointer",opacity:phaseIdx===config.phases.length-1?0.3:1}}>Next →</button>
       </div>
 
-      {/* export modal */}
-      {showExport && (
-        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.5)",display:"flex",
-          alignItems:"center",justifyContent:"center",padding:16,zIndex:60}}>
-          <div style={{background:PC.surface||"#fff",borderRadius:14,width:"100%",maxWidth:640,
-            maxHeight:"85vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-              padding:"14px 18px",borderBottom:`1px solid ${PC.border}`}}>
-              <h3 style={{fontSize:"0.95rem",fontWeight:700,color:PC.text}}>{config.label} clinical note</h3>
-              <button type="button" onClick={()=>setShowExport(false)}
-                style={{background:"none",border:"none",cursor:"pointer",color:PC.muted,fontSize:"0.85rem"}}>Close</button>
-            </div>
-            <textarea ref={exportRef} readOnly value={exportText}
-              style={{flex:1,minHeight:"45vh",resize:"none",padding:"14px 18px",fontSize:"0.75rem",
-                fontFamily:"ui-monospace,monospace",color:PC.text,background:"transparent",border:"none",outline:"none"}}/>
-            <div style={{display:"flex",justifyContent:"flex-end",gap:8,padding:"12px 18px",borderTop:`1px solid ${PC.border}`}}>
-              <button type="button" onClick={copyNote}
-                style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${PC.border}`,
-                  background:"none",color:PC.text,fontSize:"0.78rem",cursor:"pointer"}}>Copy</button>
-              <button type="button" onClick={()=>window.print()}
-                style={{padding:"7px 14px",borderRadius:8,border:"none",background:PC.accent,
-                  color:"#fff",fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>Print</button>
-            </div>
-          </div>
-        </div>)}
     </div>
   );
 }
