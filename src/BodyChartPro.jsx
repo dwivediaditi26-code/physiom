@@ -566,6 +566,7 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   useEffect(() => {
     try { localStorage.setItem("body_chart_region_overrides", JSON.stringify(editedPts)); } catch {}
   }, [editedPts]);
+  const [exportText, setExportText] = useState(null);
   const [radiationMode, setRadiationMode] = useState(false);
   const [radiationDraw, setRadiationDraw] = useState(null);
   const [arrows, setArrows]             = useState(chartData.arrows || []);
@@ -705,13 +706,19 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
     const src = "const REGIONS = [\n" + merged.map(r =>
       `  { id:${JSON.stringify(r.id)}, view:${JSON.stringify(r.view)}, label:${JSON.stringify(r.label)},\n    pts:${JSON.stringify(r.pts)} },`
     ).join("\n") + "\n];";
-    try {
-      navigator.clipboard?.writeText(src);
-      alert("✅ Corrected body regions copied to clipboard.\n\nPaste them into the chat so they can be saved permanently in the app.");
-    } catch {
-      alert(src);
-    }
+    try { navigator.clipboard?.writeText(src); } catch {}
+    setExportText(src);   // always show a selectable box in case clipboard is blocked
     return src;
+  };
+  const downloadRegions = () => {
+    try {
+      const blob = new Blob([exportText || ""], { type:"text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `body_chart_regions_${Date.now()}.txt`;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+    } catch {}
   };
   const resetRegions = () => {
     if (window.confirm("Reset all body-region positions back to the built-in defaults? Your Admin corrections will be cleared.")) {
@@ -721,6 +728,28 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
 
   return (
     <div style={{ fontFamily:"system-ui,sans-serif", userSelect:"none" }}>
+
+      {exportText && (
+        <div onClick={()=>setExportText(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"85vh", display:"flex", flexDirection:"column", boxShadow:"0 20px 50px rgba(0,0,0,0.35)" }}>
+            <div style={{ padding:"14px 16px", borderBottom:"1px solid #eee" }}>
+              <div style={{ fontWeight:800, fontSize:"0.95rem", color:"#1a1025" }}>📋 Corrected body regions</div>
+              <div style={{ fontSize:"0.72rem", color:"#6b7280", marginTop:3 }}>Tap the box (it selects everything), copy, and paste it into the chat — or use Download / Share.</div>
+            </div>
+            <textarea readOnly value={exportText}
+              onFocus={e=>e.target.select()} onClick={e=>e.target.select()}
+              style={{ flex:1, minHeight:180, margin:"12px 16px", padding:"10px", fontFamily:"monospace", fontSize:"0.7rem", border:"1px solid #ddd", borderRadius:8, resize:"none", color:"#111", background:"#f9fafb" }}/>
+            <div style={{ display:"flex", gap:8, padding:"0 16px 16px", flexWrap:"wrap" }}>
+              <button onClick={()=>{ try{navigator.clipboard?.writeText(exportText);}catch{} }}
+                style={{ flex:1, minWidth:120, padding:"10px", borderRadius:9, border:"none", background:"#7c3aed", color:"#fff", fontWeight:800, fontSize:"0.78rem", cursor:"pointer" }}>Copy</button>
+              <button onClick={()=>{ if(navigator.share){ navigator.share({ title:"Body chart regions", text:exportText }).catch(()=>{}); } else { downloadRegions(); } }}
+                style={{ flex:1, minWidth:120, padding:"10px", borderRadius:9, border:"1px solid #7c3aed", background:"#fff", color:"#7c3aed", fontWeight:800, fontSize:"0.78rem", cursor:"pointer" }}>Share / Download</button>
+              <button onClick={()=>setExportText(null)}
+                style={{ padding:"10px 16px", borderRadius:9, border:"1px solid #e5e7eb", background:"#fff", color:"#6b7280", fontWeight:700, fontSize:"0.78rem", cursor:"pointer" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, alignItems:"center" }}>
