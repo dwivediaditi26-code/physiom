@@ -83,3 +83,88 @@ export function CranialWidget({ data, set, PC }) {
     </div>
   );
 }
+
+/* ── Reflexes: DTR + pathological UMN/LMN signs + clonus, with automatic
+   UMN-pattern interpretation. Shares keys n_ref_<id>_left / _right. ── */
+import { REFLEXES, COORDINATION_TESTS } from "../sharedClinicalData.js";
+
+const DTR_OPTS = ["0 Absent","1+ Diminished","2+ Normal","3+ Brisk","4+ Clonus"];
+const POSNEG = ["Negative","Positive"];
+const GROUP_LABEL = { DTR:"Deep tendon reflexes", UMN:"Pathological / UMN signs", Clonus:"Clonus", LMN:"LMN signs & tone" };
+
+function reflexOpts(r){
+  if (r.group === "DTR") return DTR_OPTS;
+  if (r.id === "n_ref_lmn_tone") return ["Normal — smooth low resistance","Spastic — clasp-knife (UMN)","Rigid — lead-pipe (extrapyramidal)","Cogwheel (Parkinson)","Flaccid — no resistance (LMN)"];
+  if (r.group === "LMN") return ["Absent","Present"];
+  return POSNEG; // UMN, Clonus
+}
+
+export function ReflexWidget({ data, set, PC }) {
+  const groups = ["DTR","UMN","Clonus","LMN"];
+  const umnFlag = REFLEXES.some(r => (r.umnSign) &&
+    (String(data[`${r.id}_left`]||"").includes("Positive") || String(data[`${r.id}_right`]||"").includes("Positive")))
+    || REFLEXES.some(r => r.group==="DTR" && [`${r.id}_left`,`${r.id}_right`].some(k=>String(data[k]||"").startsWith("4+")));
+  return (
+    <div>
+      <div style={{fontWeight:800,fontSize:"0.85rem",color:PC.text,marginBottom:10}}>Reflexes & pathological signs</div>
+      {umnFlag && (
+        <div style={{padding:"10px 12px",borderRadius:10,marginBottom:12,
+          background:"#dc262614",border:"1px solid #dc262655",color:"#dc2626",fontSize:"0.78rem",fontWeight:600,lineHeight:1.5}}>
+          ⚠️ Upper Motor Neuron pattern — pathological reflex(es) or hyperreflexia positive. Consider cord compression / myelopathy; correlate with clonus, Babinski, Hoffmann's. Urgent MRI if progressive.
+        </div>)}
+      {groups.map(g=>{
+        const rows = REFLEXES.filter(r=>r.group===g);
+        if (!rows.length) return null;
+        return (
+          <div key={g} style={{marginBottom:14}}>
+            <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>{GROUP_LABEL[g]}</div>
+            {rows.map(r=>{
+              const opts = reflexOpts(r);
+              return (
+                <div key={r.id} style={{background:PC.surface||"#fff",border:`1px solid ${PC.border}`,borderRadius:10,padding:"9px 11px",marginBottom:7}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <div><span style={{fontWeight:700,fontSize:"0.78rem",color:PC.text}}>{r.label}</span>
+                      <span style={{fontSize:"0.7rem",color:PC.muted,marginLeft:6}}>{r.level}</span></div>
+                    <div style={{display:"flex",gap:6}}>
+                      {["left","right"].map(side=>(
+                        <select key={side} value={data[`${r.id}_${side}`]||""} onChange={e=>set(`${r.id}_${side}`,e.target.value)}
+                          title={side==="left"?"Left":"Right"}
+                          style={{...sel(PC),width:"auto",minWidth:110,padding:"6px 8px",fontSize:"0.76rem"}}>
+                          <option value="">{side==="left"?"L —":"R —"}</option>
+                          {opts.map(o=><option key={o} value={o}>{side==="left"?"L: ":"R: "}{o}</option>)}
+                        </select>))}
+                    </div>
+                  </div>
+                </div>);
+            })}
+          </div>);
+      })}
+    </div>
+  );
+}
+
+/* ── Coordination: cerebellar non-equilibrium tests with teaching notes.
+   Shares keys coord_<id>_L / _R. ── */
+export function CoordinationWidget({ data, set, PC }) {
+  return (
+    <div>
+      <div style={{fontWeight:800,fontSize:"0.85rem",color:PC.text,marginBottom:10}}>Coordination (cerebellar)</div>
+      {COORDINATION_TESTS.map(t=>(
+        <div key={t.id} style={{background:PC.surface||"#fff",border:`1px solid ${PC.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
+          <div style={{fontWeight:700,fontSize:"0.8rem",color:PC.text,marginBottom:3}}>{t.label}</div>
+          <div style={{fontSize:"0.7rem",color:PC.muted,lineHeight:1.5,marginBottom:8}}>{t.how}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8}}>
+            {[["L","Left"],["R","Right"]].map(([sfx,lbl])=>(
+              <label key={sfx} style={{display:"block"}}>
+                <span style={{display:"block",fontSize:"0.68rem",fontWeight:600,color:PC.muted,marginBottom:4}}>{lbl}</span>
+                <select value={data[`${t.id}_${sfx}`]||""} onChange={e=>set(`${t.id}_${sfx}`,e.target.value)} style={sel(PC)}>
+                  <option value="">—</option>
+                  {t.record.map(o=><option key={o} value={o}>{o}</option>)}
+                </select>
+              </label>))}
+          </div>
+          <div style={{fontSize:"0.66rem",color:PC.muted,lineHeight:1.5,marginTop:7,fontStyle:"italic"}}>{t.note}</div>
+        </div>))}
+    </div>
+  );
+}
