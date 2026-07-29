@@ -139,7 +139,8 @@ export default function AssessmentEngine({ config, data, set, PC, components }) 
   const truthy = (val) => val !== "" && val != null && val !== false;
   const isFilled = (fieldKey) => {
     const fld = fieldIndex[fieldKey];
-    if (fld && fld.match) return Object.keys(data).some(k => k.startsWith(fld.match) && truthy(data[k]));
+    if (fld && fld.match) { const ms = Array.isArray(fld.match)?fld.match:[fld.match];
+      return Object.keys(data).some(k => ms.some(m=>k.startsWith(m)) && truthy(data[k])); }
     return Object.keys(data).some(k => (k === P+fieldKey || k.startsWith(P+fieldKey+"::")) && truthy(data[k]));
   };
   const jumpTo = (step) => {

@@ -39,7 +39,7 @@ import AuthScreen from "./AuthScreen.jsx";
 import { NeurologicalModule } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
 import neuroStream from "./streams/neuro.js";
-import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget } from "./streams/neuroWidgets.jsx";
+import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget } from "./streams/neuroWidgets.jsx";
 import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
@@ -101,7 +101,7 @@ const TabFallback = () => (
 // Config-driven stream registry. A stream with a config renders via the
 // AssessmentEngine; others fall back to the "coming soon" placeholder.
 const STREAM_CONFIGS = { neuro: neuroStream };
-const STREAM_WIDGETS = { GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget };
+const STREAM_WIDGETS = { GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },

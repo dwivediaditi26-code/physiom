@@ -111,21 +111,21 @@ const neuro = {
           { type:"select", key:"dysphagia", label:"Swallow / dysphagia screen", options:["Safe","Impaired — needs SLT referral","NBM / NG feeding"] },
         ]},
         { heading:"Cognitive / perceptual screen", fields: [
-          { type:"checkgrid", key:"perceptual", label:"Deficits noted", options:[
-            "Unilateral neglect","Anosognosia","Somatoagnosia","Right-left discrimination deficit",
-            "Finger agnosia","Spatial relation deficit","Topographical disorientation",
-            "Visual agnosia","Ideomotor apraxia","Ideational apraxia","Constructional apraxia"] },
+          { type:"component", key:"perceptual", widget:"Perceptual", match:"perc_" },
         ]},
         { heading:"Cranial nerves", fields: [
           { type:"component", key:"cranial", widget:"Cranial", match:"cn_" },
         ]},
         { heading:"Sensory system", fields: [
-          { type:"sensorytable", key:"sensory", label:"Sensation by region",
-            regions:SENS_REGIONS, modes:SENS_MODES, grades:SENS_GRADE },
+          { type:"component", key:"sensory", widget:"Sensory", match:["n_c","n_t","n_l","n_s"] },
+          { type:"component", key:"myotomes", widget:"Myotome", match:"myo_" },
           { type:"text", key:"stereognosis", label:"Stereognosis" },
           { type:"text", key:"graphesthesia", label:"Graphesthesia" },
           { type:"text", key:"twoPoint", label:"Two-point discrimination" },
           { type:"text", key:"sensoryLevel", label:"Sensory level (dermatome)", showIf:cond("Spinal cord injury") },
+        ]},
+        { heading:"Neural tension / neurodynamics", fields: [
+          { type:"component", key:"neuraltension", widget:"NeuralTension", match:"nt_" },
         ]},
         { heading:"Motor system", fields: [
           { type:"select", key:"tonePalpation", label:"Tone (palpation)", options:["Normal","Hypertonic","Hypotonic","Flaccid","Rigid"] },
@@ -144,6 +144,7 @@ const neuro = {
         ]},
         { heading:"Coordination, balance & gait", fields: [
           { type:"component", key:"coordination", widget:"Coordination", match:"coord_" },
+          { type:"component", key:"vestibular", widget:"Vestibular", match:"vest_" },
           { type:"select", key:"romberg", label:"Romberg", options:["Negative","Positive"] },
           { type:"select", key:"sittingBal", label:"Sitting balance (static/dynamic)", options:BAL_GRADE },
           { type:"select", key:"standingBal", label:"Standing balance (static/dynamic)", options:BAL_GRADE },
@@ -202,6 +203,9 @@ const neuro = {
           { type:"select", key:"macs", label:"MACS level", options:["I","II","III","IV","V"], showIf:cond("Cerebral palsy") },
           // Other
           { type:"text", key:"otherScale", label:"Condition-specific scale (specify)", layout:"full", showIf:cond("Other") },
+        ]},
+        { heading:"Neurological red flags", fields: [
+          { type:"component", key:"redflags", widget:"RedFlags", match:"nrf_" },
         ]},
       ]
     },
