@@ -5287,7 +5287,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = lumbarTestNav(t);
                                       const btn = target
@@ -5470,7 +5470,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = cervicalTestNav(t);
                                       const btn = target
@@ -5660,7 +5660,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = thoracicTestNav(t);
                                       const btn = target
@@ -5807,7 +5807,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
                                     {priTests.map((t, ti) => {
                                       const target = shoulderTestNav(t);
                                       const btn = target
@@ -5866,7 +5866,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                   <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:8 }}>
+                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
                                     {c.keyExams.map((t, ti) => (
                                       <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
                                     ))}
