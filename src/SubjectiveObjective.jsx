@@ -4640,7 +4640,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               fontFamily:"inherit", display:"flex", alignItems:"center",
               justifyContent:"center", gap:8, marginBottom:12,
             }}>
-            🧠 Review &amp; Run Analysis
+            🧠 Suggest probable objective assessment
             {selectedRegions.length > 0 && (
               <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
                 padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
