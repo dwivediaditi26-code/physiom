@@ -3506,6 +3506,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         if (v("neuro_pusher") && v("neuro_pusher") !== "Absent") bits.push(`pusher behaviour (${v("neuro_pusher")})`);
         if (v("neuro_shoulderSublux") && v("neuro_shoulderSublux") !== "None") bits.push(`shoulder subluxation (${v("neuro_shoulderSublux")})`);
       }
+      // Cerebellar ataxia — from coordination tests (shared coord_*_L/R keys)
+      const ataxic = (typeof COORDINATION_TESTS !== "undefined" ? COORDINATION_TESTS : []).some(t =>
+        /dysmetria|ataxia|dysdiadocho|unable|overshoot|oscillat/i.test(String(data[`${t.id}_L`]||"") + String(data[`${t.id}_R`]||"")));
+      if (ataxic) bits.push("cerebellar ataxia (limb dysmetria)");
+      // Focal deficits
+      if (data["neuro_gaitDev::Foot drop"]) bits.push("focal weakness — foot drop");
+      if (cond === "Other" && v("neuro_otherScale")) bits.push(v("neuro_otherScale"));
       const scales = [["NIHSS",v("neuro_nihss")],["Fugl-Meyer UE",v("neuro_fuglUE")],["ASIA",v("neuro_asiaGrade")],["UPDRS",v("neuro_updrs")],["H&Y",v("neuro_hoehnYahr")],["EDSS",v("neuro_edss")],["mRS",v("neuro_mrs")],["Barthel",v("neuro_barthel")]].filter(([,x])=>x).map(([lab,x])=>`${lab} ${x}`);
       let line = `Neurological impression: ${bits.join(", ")}.`;
       if (scales.length) line += ` Baseline measures: ${scales.join(", ")}.`;
