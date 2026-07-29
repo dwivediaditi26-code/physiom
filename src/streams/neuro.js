@@ -69,6 +69,7 @@ const neuro = {
         { fields: [
           { type:"select", key:"onset", label:"Mode of onset", options:["Sudden","Gradual","Insidious","Traumatic","Progressive","Relapsing-remitting"] },
           { type:"text", key:"goals", label:"Patient / family goals" },
+          { type:"select", key:"fatigue", label:"Fatigue (esp. MS, post-stroke)", options:["None","Mild","Moderate","Severe"] },
           { type:"textarea", key:"hopi", label:"History of present illness", layout:"full", rows:3 },
           { type:"textarea", key:"pmh", label:"Past medical / surgical history", rows:2 },
           { type:"textarea", key:"comorbidities", label:"Comorbidities & risk factors (HTN, DM, cardiac, smoking)", rows:2 },
@@ -84,6 +85,8 @@ const neuro = {
           { type:"text", key:"painAggr", label:"Aggravating factors" },
           { type:"text", key:"painRel", label:"Relieving factors" },
           { type:"text", key:"vas", label:"VAS (0–10)", mono:true },
+          { type:"select", key:"painNeuropathic", label:"Neuropathic features (burning, shooting, allodynia)", options:["No","Yes — consider DN4 / LANSS"] },
+          { type:"select", key:"centralPain", label:"Central / post-stroke pain suspected", options:["No","Yes"] },
         ]}
       ]
     },
@@ -104,7 +107,7 @@ const neuro = {
           { type:"select", key:"ventilation", label:"Ventilation support", options:["Room air","Nasal O₂","NIV / BiPAP","Invasive ventilation","Tracheostomy"] },
           { type:"select", key:"haemodynamic", label:"Haemodynamic stability", options:["Stable","On inotropes","Unstable"] },
         ]},
-        { heading:"Respiratory", showIf:{ key:"setting", in:ICU_WARD }, fields: [
+        { heading:"Respiratory", showIf:{ anyOf:[{ key:"setting", in:ICU_WARD },{ key:"condition", in:["Spinal cord injury","GBS / Neuropathy"] }] }, fields: [
           { type:"select", key:"breathPattern", label:"Breathing pattern", options:["Normal","Shallow","Paradoxical","Apneustic","Cheyne-Stokes"] },
           { type:"select", key:"cough", label:"Cough / secretion clearance", options:["Effective","Weak","Absent"] },
           { type:"text", key:"chestExpansion", label:"Chest expansion / auscultation notes" },
@@ -114,6 +117,8 @@ const neuro = {
           { type:"component", key:"gcs", widget:"GCS", match:"gcs_" },
           { type:"text", key:"orientation", label:"Orientation (time/place/person)" },
           { type:"text", key:"memory", label:"Memory & attention" },
+          { type:"text", key:"mmse", label:"MMSE (/30)", mono:true },
+          { type:"text", key:"moca", label:"MoCA (/30)", mono:true },
           { type:"select", key:"aphasia", label:"Speech / aphasia", options:["None","Broca's (expressive)","Wernicke's (receptive)","Global","Dysarthria only"] },
           { type:"select", key:"dysphagia", label:"Swallow / dysphagia screen", options:["Safe","Impaired — needs SLT referral","NBM / NG feeding"] },
         ]},
@@ -138,6 +143,12 @@ const neuro = {
           { type:"select", key:"tonePalpation", label:"Tone (palpation)", options:["Normal","Hypertonic","Hypotonic","Flaccid","Rigid"] },
           { type:"text", key:"spasticityPattern", label:"Spasticity pattern / distribution" },
           { type:"select", key:"clonus", label:"Clonus", options:["Absent","Ankle — few beats","Ankle — sustained","Present elsewhere"] },
+          { type:"note", tag:"⊕ Motor in UMN", text:"Isolated Oxford MMT is not valid where spasticity or synergy dominate (O’Sullivan). Grade movement quality, selective motor control and Brunnstrom stage; use Motricity Index for validated strength." },
+          { type:"select", key:"tardieuGrade", label:"Tardieu spasticity grade", options:["0 — no resistance","1 — slight catch","2 — clear catch + release","3 — fatigable clonus <10s","4 — non-fatigable clonus >10s"] },
+          { type:"text", key:"tardieuAngles", label:"Tardieu R1 / R2 angles" },
+          { type:"text", key:"motricityIndex", label:"Motricity Index (/100)", mono:true },
+          { type:"textarea", key:"movementQuality", label:"Movement quality — synergy pattern & selective motor control", layout:"full", rows:2 },
+          { type:"textarea", key:"associatedReactions", label:"Associated reactions / associated movements", rows:2 },
           { type:"limbtable", key:"motor", label:"Tone / power / DTR / Brunnstrom",
             rows:LIMBS, columns:[
               { label:"Tone (Ashworth)", options:ASHWORTH },
@@ -155,12 +166,27 @@ const neuro = {
           { type:"select", key:"romberg", label:"Romberg", options:["Negative","Positive"] },
           { type:"select", key:"sittingBal", label:"Sitting balance (static/dynamic)", options:BAL_GRADE },
           { type:"select", key:"standingBal", label:"Standing balance (static/dynamic)", options:BAL_GRADE },
+          { type:"select", key:"rightingReactions", label:"Righting reactions", options:["Present","Impaired","Absent"] },
+          { type:"select", key:"equilibriumReactions", label:"Equilibrium reactions", options:["Present","Impaired","Absent"] },
+          { type:"select", key:"protectiveReactions", label:"Protective / saving reactions", options:["Present","Impaired","Absent"] },
           { type:"text", key:"berg", label:"Berg Balance (/56)", mono:true },
           { type:"text", key:"tug", label:"Timed Up & Go (s)", mono:true },
           { type:"checkgrid", key:"gaitDev", label:"Gait deviations", options:[
             "Foot drop","Circumduction","Hip hiking","Steppage","Ataxic","Festinating",
             "Scissoring","Antalgic","Trendelenburg","Reduced arm swing","Wide base"] },
           { type:"text", key:"gaitDevice", label:"Assistive device" },
+        ]},
+        { heading:"Functional movement analysis", fields: [
+          { type:"note", tag:"⊕ Task analysis", text:"Assess the quality of movement (Carr & Shepherd motor relearning), not just independence — note missing components and compensations." },
+          { type:"textarea", key:"bedMobility", label:"Bed mobility / rolling", rows:2 },
+          { type:"textarea", key:"sitToStand", label:"Sit-to-stand", rows:2 },
+          { type:"textarea", key:"transferQuality", label:"Transfers — quality & compensations", rows:2 },
+          { type:"textarea", key:"posturalControl", label:"Sitting & standing postural control", rows:2 },
+        ]},
+        { heading:"Stroke / hemiplegia-specific", showIf:{ key:"condition", in:["Stroke","TBI"] }, fields: [
+          { type:"select", key:"shoulderSublux", label:"Glenohumeral subluxation (finger-breadths)", options:["None","½ finger","1 finger","1½ fingers","2+ fingers"] },
+          { type:"select", key:"pusher", label:"Pusher behaviour / contraversive pushing (SCP)", options:["Absent","Mild","Moderate","Severe"] },
+          { type:"select", key:"shoulderPain", label:"Hemiplegic shoulder pain", options:["No","Yes"] },
         ]},
         { heading:"Hand function, bladder & ADL", fields: [
           { type:"checkgrid", key:"grip", label:"Grip patterns intact", options:["Spherical","Hook","Pinch","Tip-to-tip"] },

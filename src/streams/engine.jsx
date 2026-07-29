@@ -119,13 +119,17 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
   const phase = config.phases[phaseIdx];
 
   // Conditional visibility: field/section may declare showIf {key, in|equals|any}
-  const visible = (item) => {
-    const c = item.showIf; if (!c) return true;
+  const matchCond = (c) => {
     const v = get(c.key);
     if (c.in) return c.in.includes(v);
     if (c.equals !== undefined) return v === c.equals;
     if (c.any) return !!v;
     return true;
+  };
+  const visible = (item) => {
+    const c = item.showIf; if (!c) return true;
+    if (c.anyOf) return c.anyOf.some(matchCond);
+    return matchCond(c);
   };
 
   // ── Guided workflow (from template checklists) ──
@@ -158,7 +162,11 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
   const renderField = (f) => {
     if (!visible(f)) return null;
     let inner;
-    if (f.type === "checkgrid") inner = <CheckGrid f={f} get={get} set={put} PC={PC}/>;
+    if (f.type === "note") inner = (
+      <div style={{padding:"10px 12px",borderRadius:10,background:(PC.s2||"#f8fafc"),
+        border:`1px solid ${PC.border}`,color:PC.muted,fontSize:"0.78rem",lineHeight:1.55}}>
+        <span style={{fontWeight:700,color:PC.accent}}>{f.tag||"\u2295 Clinical note"}</span> {f.text}</div>);
+    else if (f.type === "checkgrid") inner = <CheckGrid f={f} get={get} set={put} PC={PC}/>;
     else if (f.type === "limbtable") inner = <GridTable f={f} get={get} set={put} PC={PC}
       rows={f.rows} cols={f.columns.map(c=>c.label)}
       colOptions={lbl=>{const c=f.columns.find(x=>x.label===lbl);return c?c.options:[];}}/>;
@@ -171,7 +179,7 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
     }
     else inner = <Field f={f} val={get(f.key)} onChange={v=>put(f.key,v)} PC={PC}/>;
     const hl = f.key === highlightKey;
-    const full = f.type==="checkgrid"||f.type==="limbtable"||f.type==="sensorytable"||f.type==="component"||f.layout==="full";
+    const full = f.type==="note"||f.type==="checkgrid"||f.type==="limbtable"||f.type==="sensorytable"||f.type==="component"||f.layout==="full";
     return (<div key={f.key} ref={hl?highlightRef:null}
       style={{gridColumn: full?"1 / -1":(span[f.layout]||span.half),
         ...(hl?{outline:`2px solid ${PC.accent}`,outlineOffset:4,borderRadius:12,transition:"outline 0.2s"}:{})}}>{inner}</div>);
@@ -186,6 +194,7 @@ export default function AssessmentEngine({ config, data, set, PC, components, na
         if (sec.heading) out.push(`[${sec.heading}]`);
         sec.fields.forEach(f=>{
           if (!visible(f)) return;
+          if (f.type==="note") return;
           if (f.type==="checkgrid") {
             const on=f.options.filter(o=>get(`${f.key}::${o}`));
             out.push(`${f.label}: ${on.length?on.join(", "):"None noted"}`);
