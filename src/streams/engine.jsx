@@ -116,7 +116,18 @@ export default function AssessmentEngine({ config, data, set, PC }) {
 
   const phase = config.phases[phaseIdx];
 
+  // Conditional visibility: field/section may declare showIf {key, in|equals|any}
+  const visible = (item) => {
+    const c = item.showIf; if (!c) return true;
+    const v = get(c.key);
+    if (c.in) return c.in.includes(v);
+    if (c.equals !== undefined) return v === c.equals;
+    if (c.any) return !!v;
+    return true;
+  };
+
   const renderField = (f) => {
+    if (!visible(f)) return null;
     if (f.type === "checkgrid") return <CheckGrid key={f.key} f={f} get={get} set={put} PC={PC}/>;
     if (f.type === "limbtable")
       return <GridTable key={f.key} f={f} get={get} set={put} PC={PC}
@@ -134,8 +145,10 @@ export default function AssessmentEngine({ config, data, set, PC }) {
     config.phases.forEach(ph=>{
       out.push("", ph.label.toUpperCase(), "-".repeat(ph.label.length));
       ph.sections.forEach(sec=>{
+        if (!visible(sec)) return;
         if (sec.heading) out.push(`[${sec.heading}]`);
         sec.fields.forEach(f=>{
+          if (!visible(f)) return;
           if (f.type==="checkgrid") {
             const on=f.options.filter(o=>get(`${f.key}::${o}`));
             out.push(`${f.label}: ${on.length?on.join(", "):"None noted"}`);
@@ -180,14 +193,18 @@ export default function AssessmentEngine({ config, data, set, PC }) {
       <div>
         <h2 style={{fontSize:"1.35rem",fontWeight:800,color:PC.text,marginBottom:4}}>{phase.label}</h2>
         {phase.subtitle && <p style={{fontSize:"0.82rem",color:PC.muted,marginBottom:16}}>{phase.subtitle}</p>}
-        {phase.sections.map((sec,si)=>(
+        {phase.sections.filter(visible).map((sec,si)=>{
+          const shown = sec.fields.filter(visible);
+          if (!shown.length) return null;
+          return (
           <div key={si} style={{marginBottom:22}}>
             {sec.heading && <h4 style={{fontSize:"0.78rem",fontWeight:700,color:PC.text,
               textTransform:"uppercase",letterSpacing:"0.6px",margin:"6px 0 12px"}}>{sec.heading}</h4>}
             <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:14}}>
-              {sec.fields.map(renderField)}
+              {shown.map(renderField)}
             </div>
-          </div>))}
+          </div>);
+        })}
       </div>
 
       {/* phase nav */}
