@@ -37,6 +37,8 @@ import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { NeurologicalModule } from "./PhysioNeuro.jsx";
+import AssessmentEngine from "./streams/engine.jsx";
+import neuroStream from "./streams/neuro.js";
 import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
@@ -95,6 +97,10 @@ const TabFallback = () => (
 // The 5 top-level assessment specialties. Each will own its own
 // config-driven flow (demographics → subjective → objective → plan).
 // Step 1 wires the selector + routing shell; only "ortho" is live today.
+// Config-driven stream registry. A stream with a config renders via the
+// AssessmentEngine; others fall back to the "coming soon" placeholder.
+const STREAM_CONFIGS = { neuro: neuroStream };
+
 const STREAMS = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
   { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:false },
@@ -1306,7 +1312,11 @@ function AppInner({ currentUser, onSignOut }) {
           {/* ── STREAM SELECTOR + ROUTING SHELL (Step 1) ── */}
           <StreamSelector stream={stream} setStream={setStream} PC={PC}/>
           {stream !== "ortho" ? (
-            <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
+            STREAM_CONFIGS[stream] ? (
+              <AssessmentEngine config={STREAM_CONFIGS[stream]} data={data} set={set} PC={PC}/>
+            ) : (
+              <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
+            )
           ) : (
           <>
 
