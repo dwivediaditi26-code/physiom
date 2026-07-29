@@ -2942,7 +2942,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     // blocks above, so everything documented in the stream lands in SOAP.
     try {
       const objPhase = (neuroStream.phases || []).find(p => p.id === "objective");
-      const covered = new Set(["motor","reflexes","cranial","sensory","myotomes","neuraltension","coordination","vestibular","perceptual","redflags","gcs","involuntary"]);
+      const covered = new Set(["motor","reflexes","cranial","sensory","myotomes","neuraltension","coordination","vestibular","perceptual","redflags","gcs"]);
       (objPhase ? objPhase.sections : []).forEach(sec => {
         (sec.fields || []).forEach(fl => {
           if (!fl.key || covered.has(fl.key)) return;
@@ -3456,22 +3456,47 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   // ── A: ASSESSMENT ──────────────────────────────────────────────────────────
   const A_parts = [];
-  // Neuro stream — clinical impression synthesis
+  // Neuro stream — clinical impression synthesis (condition-aware)
   try {
     const cond = v("neuro_condition");
     if (cond) {
       const bits = [];
-      const pw = (side) => { const n = parseInt(String(data[`neuro_motor::${side} UE::Power (Oxford)`]||"5"),10); return isNaN(n)?5:n; };
-      const l = pw("Left"), r = pw("Right");
-      const weakSide = (l<5 && l<=r) ? "left" : (r<5 && r<l) ? "right" : "";
+      const inv = (opt) => !!data[`neuro_involuntary::${opt}`];
+      const pw = (side) => { const n = parseInt(String(data[`neuro_motor::${side} UE::Power (Oxford)`]||""),10); return isNaN(n)?null:n; };
+      if (cond === "Spinal cord injury") {
+        const lvl = v("neuro_neuroLevel") || v("neuro_sensoryLevel");
+        const grade = v("neuro_asiaGrade");
+        const completeness = grade === "A" ? "complete" : grade ? "incomplete" : "";
+        const dist = /C/i.test(lvl) ? "tetraplegia" : /^(T|L|S)/i.test(lvl) ? "paraplegia" : "";
+        bits.push(`${cond}${lvl?` (${lvl})`:""}${(completeness||dist)?` — ${[completeness,dist].filter(Boolean).join(" ")}`:""}`);
+      } else if (cond === "Stroke" || cond === "TBI") {
+        const l = pw("Left"), r = pw("Right");
+        let side = "";
+        if (l!=null && r!=null) { if (l<=4 && r-l>=2) side="left"; else if (r<=4 && l-r>=2) side="right"; }
+        else if (l!=null && l<5 && r==null) side="left";
+        else if (r!=null && r<5 && l==null) side="right";
+        bits.push(`${cond}${side?` with ${side} hemiparesis`:""}`);
+      } else {
+        bits.push(cond);
+      }
       const umn = /positive/i.test(String(data.n_ref_babinski_left)+String(data.n_ref_babinski_right)) || /positive/i.test(String(data.n_ref_clonus_ankle_left)+String(data.n_ref_clonus_ankle_right));
-      bits.push(`${cond}${weakSide?` with ${weakSide} hemiparesis`:""}`);
-      if (umn) bits.push("UMN pattern (pathological reflexes positive)");
+      if (umn) bits.push("UMN signs positive");
       if (v("neuro_tardieuGrade") || v("neuro_spasticityPattern")) bits.push("spasticity present");
-      if (/neglect/i.test(v("perc_neglect_result"))) bits.push("unilateral neglect");
-      if (v("neuro_pusher") && v("neuro_pusher") !== "Absent") bits.push(`pusher behaviour (${v("neuro_pusher")})`);
-      if (v("neuro_shoulderSublux") && v("neuro_shoulderSublux") !== "None") bits.push(`shoulder subluxation (${v("neuro_shoulderSublux")})`);
-      const scales = [["NIHSS",v("neuro_nihss")],["Fugl-Meyer UE",v("neuro_fuglUE")],["ASIA",v("neuro_asiaGrade")],["UPDRS",v("neuro_updrs")],["mRS",v("neuro_mrs")],["Barthel",v("neuro_barthel")]].filter(([,x])=>x).map(([lab,x])=>`${lab} ${x}`);
+      if (cond === "Parkinson's") {
+        const pd = [];
+        if (inv("Bradykinesia")) pd.push("bradykinesia");
+        if (inv("Rigidity (cogwheel)") || inv("Rigidity (lead-pipe)")) pd.push("rigidity");
+        if (inv("Resting tremor")) pd.push("resting tremor");
+        if (pd.length) bits.push(pd.join(" / "));
+        if (/positive/i.test(v("neuro_romberg")) || (parseInt(v("neuro_hoehnYahr"),10)||0) >= 3) bits.push("postural instability");
+        if (data["neuro_gaitDev::Festinating"]) bits.push("festinating gait / freezing");
+      }
+      if (cond === "Stroke" || cond === "TBI") {
+        if (/neglect/i.test(v("perc_neglect_result"))) bits.push("unilateral neglect");
+        if (v("neuro_pusher") && v("neuro_pusher") !== "Absent") bits.push(`pusher behaviour (${v("neuro_pusher")})`);
+        if (v("neuro_shoulderSublux") && v("neuro_shoulderSublux") !== "None") bits.push(`shoulder subluxation (${v("neuro_shoulderSublux")})`);
+      }
+      const scales = [["NIHSS",v("neuro_nihss")],["Fugl-Meyer UE",v("neuro_fuglUE")],["ASIA",v("neuro_asiaGrade")],["UPDRS",v("neuro_updrs")],["H&Y",v("neuro_hoehnYahr")],["EDSS",v("neuro_edss")],["mRS",v("neuro_mrs")],["Barthel",v("neuro_barthel")]].filter(([,x])=>x).map(([lab,x])=>`${lab} ${x}`);
       let line = `Neurological impression: ${bits.join(", ")}.`;
       if (scales.length) line += ` Baseline measures: ${scales.join(", ")}.`;
       A_parts.push(line);
