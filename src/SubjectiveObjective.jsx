@@ -151,7 +151,7 @@ function layerNavButtons(m, mi, onNav, PC, family) {
       });
     }
   }
-  return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav, family)} onNav={onNav} PC={PC} />];
+  return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav, family)} onNav={onNav} PC={PC} alwaysShowWhy />];
 }
 
 const TEST_SVG = {
@@ -1397,8 +1397,9 @@ function CyriaxModule({ data, set, navContext={} }) {
 const SEP_S="|||";
 const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":"#dc2626","Shoulder (L)":"#0891b2","Shoulder (R)":"#06b6d4","Elbow/Wrist/Hand":"#059669","Hip / Groin":"#d946ef","Knee (L)":"#f59e0b","Knee (R)":"#eab308","Ankle / Foot":"#16a34a"};
 const ALL_REGIONS_S=Object.keys(RC_S);
-function NavActionBtn({ btn, onNav, PC }) {
+function NavActionBtn({ btn, onNav, PC, alwaysShowWhy = false }) {
   const [showWhy, setShowWhy] = React.useState(false);
+  const whyOpen = alwaysShowWhy || showWhy;
   const clickable = !!btn.nav;
   const col = clickable ? btn.col : PC.muted;
   return (
@@ -1428,10 +1429,13 @@ function NavActionBtn({ btn, onNav, PC }) {
           <span style={{ color:col, fontWeight:700 }}>For this patient: </span>{btn.detail}
         </div>
       )}
-      {showWhy && (
-        <div style={{ fontSize:"0.82rem", color:PC.muted, padding:"5px 8px",
-          background:PC.s3, borderRadius:"0 0 6px 6px",
-          border:`1px solid ${col}20`, borderTop:"none", lineHeight:1.5, whiteSpace:"pre-line" }}>
+      {whyOpen && btn.why && (
+        <div style={{ fontSize: alwaysShowWhy ? "0.78rem" : "0.82rem", color:PC.muted,
+          padding: alwaysShowWhy ? "2px 4px 3px" : "5px 8px",
+          background: alwaysShowWhy ? "transparent" : PC.s3,
+          borderRadius: alwaysShowWhy ? 0 : "0 0 6px 6px",
+          border: alwaysShowWhy ? "none" : `1px solid ${col}20`, borderTop:"none",
+          lineHeight:1.5, whiteSpace:"pre-line", fontStyle: alwaysShowWhy ? "italic" : "normal" }}>
           {btn.why}
         </div>
       )}
