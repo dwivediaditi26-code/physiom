@@ -3435,6 +3435,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const existingNotes = data.neuro_clinician_notes || "";
       const aiNote = "AI noticed in intake narrative, please screen: " + redFlagsToReview.join("; ");
       updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
+      // Also surface these in the Red Flag Alert Banner (which only reads
+      // structured fields, not the free-text notes above) by storing them
+      // in a dedicated multi-value field the banner scans.
+      const existingAiRF = data.ai_red_flags ? String(data.ai_red_flags).split(SEP_S).filter(Boolean) : [];
+      const mergedAiRF = [...existingAiRF];
+      for (const rf of redFlagsToReview) { if (rf && !mergedAiRF.includes(rf)) mergedAiRF.push(rf); }
+      updates.ai_red_flags = mergedAiRF.join(SEP_S);
     }
 
     // Extraction audit trail (zero-hallucination spec): verbatim
@@ -3841,6 +3848,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     ...getMulti("knl_rf").filter(v => !v.startsWith("No")),
     ...getMulti("knr_rf").filter(v => !v.startsWith("No")),
     ...getMulti("hp_rf").filter(v => !v.startsWith("No")),
+    ...getMulti("ai_red_flags").filter(Boolean),
   ];
   const hasAnyRedFlag = allRedFlags.length > 0;
 

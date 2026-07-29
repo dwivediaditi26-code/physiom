@@ -223,6 +223,13 @@ export default function AIAssistant({ data, set, PC, onClose }) {
         const existingNotes = data.neuro_clinician_notes || "";
         const aiNote = "AI noticed in intake narrative, please screen: " + m.redFlagsToReview.join("; ");
         updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
+        // Also surface in the Subjective tab's Red Flag Alert Banner, which
+        // reads the structured ai_red_flags field (not the free-text notes).
+        const SEP_S = "|||";
+        const existingAiRF = data.ai_red_flags ? String(data.ai_red_flags).split(SEP_S).filter(Boolean) : [];
+        const mergedAiRF = [...existingAiRF];
+        for (const rf of m.redFlagsToReview) { if (rf && !mergedAiRF.includes(rf)) mergedAiRF.push(rf); }
+        updates.ai_red_flags = mergedAiRF.join(SEP_S);
       }
       // The Subjective tab's "Review & Run Analysis" button stays disabled
       // until at least one region is in cx_selected_regions. That list is
