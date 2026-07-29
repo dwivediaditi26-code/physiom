@@ -1414,10 +1414,30 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
         <div style={{...sectionLbl,marginBottom:0}}>{isNew?`Today — Session ${sessionNo}`:`Session ${sessionNo} · ${activeSession?.date||""}`}</div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div><label style={lbl}>Pain — start of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
-        <div><label style={lbl}>Pain — end of session (NRS 0–10)</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
-      </div>
+      {(()=>{
+        const TEAL="#0F6E56", TEAL_BG=PC.isDark?"rgba(29,158,117,0.14)":"#E1F5EE", TEAL_BORDER="#5DCAA5";
+        const start=parseFloat(qv.pain_today), end=parseFloat(qv.pain_after);
+        const bothSet=!isNaN(start)&&!isNaN(end);
+        const delta=bothSet?start-end:0;
+        const endLower=bothSet&&end<start;
+        const endStyle={...inp,...(endLower?{border:`1.5px solid ${TEAL_BORDER}`,background:TEAL_BG,color:TEAL,fontWeight:700}:{})};
+        return(
+          <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <div><label style={lbl}>Pain — start</label><input style={inp} type="number" min="0" max="10" placeholder="e.g. 5" value={qv.pain_today} onChange={e=>setQv(p=>({...p,pain_today:e.target.value}))}/></div>
+              <div><label style={lbl}>Pain — end</label><input style={endStyle} type="number" min="0" max="10" placeholder="e.g. 3" value={qv.pain_after} onChange={e=>setQv(p=>({...p,pain_after:e.target.value}))}/></div>
+            </div>
+            {bothSet&&(
+              <div style={{marginTop:10,display:"flex",alignItems:"center",gap:6,fontSize:"0.78rem",padding:"7px 10px",borderRadius:8,
+                background:delta>0?TEAL_BG:(delta<0?"rgba(220,38,38,0.08)":PC.s2),
+                color:delta>0?TEAL:(delta<0?"#dc2626":PC.muted)}}>
+                <span style={{fontWeight:800}}>{delta>0?`↓ ${delta} point${delta!==1?"s":""} lower`:delta<0?`↑ ${Math.abs(delta)} point${Math.abs(delta)!==1?"s":""} higher`:"No change"}</span>
+                <span style={{color:PC.muted}}>this session</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{marginBottom:14}}>
         <div style={sectionLbl}>Treatment {isNew&&lastSession&&treatmentList.length>0&&<span style={{fontWeight:500,textTransform:"none",color:PC.muted}}>(copied from S{lastSession.sessionNo||sessionNo-1})</span>}</div>
@@ -1590,7 +1610,7 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
         <div onClick={()=>navTo("treatment")} style={{padding:"9px",border:`1.5px dashed ${PC.accent}50`,borderRadius:9,textAlign:"center",fontSize:"0.82rem",fontWeight:700,color:PC.accent,cursor:"pointer"}}>＋ Add / edit in Exercise Prescription →</div>
       </div>
 
-      <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",marginBottom:8}}>
+      <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#0F6E56",color:"#fff",fontWeight:800,fontSize:"0.85rem",cursor:"pointer",marginBottom:8}}>
         {saved?(isNew?"✅ Saved — opening SOAP to sign…":"✅ Session updated"):(isNew?"Save & Go to SOAP →":"Update session")}
       </button>
       {isNew&&(

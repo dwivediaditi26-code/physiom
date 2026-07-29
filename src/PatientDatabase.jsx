@@ -1535,7 +1535,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const email= d.dem_email || "";
   const dob  = d.dem_dob   || "";
   const mrn  = d.dem_mrn   || patient?.mrn || "";
-  const dx   = patient?.lastDx || d.soap_assessment?.split('\n')[0]?.slice(0,60) || d.cc_dx || "";
+  const dx   = patient?.lastDx || d.soap_a_diagnosis || d.soap_a?.split(/[.\n]/)[0]?.slice(0,60) || d.soap_assessment?.split('\n')[0]?.slice(0,60) || d.cc_dx || "";
   const chiefComplaint = d.cc_main || "";
   const _cm = (d.cc_main||"").toLowerCase();
   const _loc = Array.isArray(d.cc_location) ? d.cc_location.join(", ") : (d.cc_location||"");
