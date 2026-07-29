@@ -5,6 +5,7 @@ import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
 import neuroStream from "./streams/neuro.js";
+import { SREGIONS, SMODES, sregSlug } from "./streams/neuroWidgets.jsx";
 import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
 import { SCALES, injectViewerControls } from "./sharedClinicalData.js";
@@ -2545,6 +2546,17 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     }
   }
 
+  // Neuro stream — subjective history
+  try {
+    const subjPhase = (neuroStream.phases||[]).find(p=>p.id==="subjective");
+    const sl = [];
+    (subjPhase?subjPhase.sections:[]).forEach(sec=>sec.fields.forEach(fl=>{
+      if (!fl.key || ["note","component","limbtable","sensorytable"].includes(fl.type)) return;
+      if (fl.type==="checkgrid") { const on=(fl.options||[]).filter(o=>data[`neuro_${fl.key}::${o}`]); if(on.length) sl.push(`${fl.label}: ${on.join(", ")}`); }
+      else { const val=v(`neuro_${fl.key}`); if(val) sl.push(`${fl.label}: ${val}`); }
+    }));
+    if (sl.length) S_parts.push(`Neuro history:\n  ${sl.join("\n  ")}.`);
+  } catch (e) { /* neuro optional */ }
   if (extraS) S_parts.push(extraS);
 
   // ── O: OBJECTIVE ──────────────────────────────────────────────────────────
@@ -2806,6 +2818,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         else if (right) dermAbnormal.push(`${d.level}: R=${right}`);
       }
     });
+    // Region/side sensation (central lesions)
+    const sregLines = [];
+    SREGIONS.forEach(rg => {
+      const mods = SMODES.map(md => { const val = v(`sregion_${sregSlug(rg)}_${sregSlug(md)}`); return (val && !/intact/i.test(val)) ? `${md}=${val}` : null; }).filter(Boolean);
+      if (mods.length) sregLines.push(`    ${rg}: ${mods.join(", ")}`);
+    });
+    if (sregLines.length) neuroLines.push(`  Sensation (region/side):\n${sregLines.join("\n")}`);
     if (dermAbnormal.length) neuroLines.push(`  Dermatomal: ${dermAbnormal.join("; ")}`);
     // Myotomes — key is "myo_<slug>_left/right", slug derived the same way
     // NeurologicalModule itself derives it from m.level.
@@ -3437,6 +3456,27 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
 
   // ── A: ASSESSMENT ──────────────────────────────────────────────────────────
   const A_parts = [];
+  // Neuro stream — clinical impression synthesis
+  try {
+    const cond = v("neuro_condition");
+    if (cond) {
+      const bits = [];
+      const pw = (side) => { const n = parseInt(String(data[`neuro_motor::${side} UE::Power (Oxford)`]||"5"),10); return isNaN(n)?5:n; };
+      const l = pw("Left"), r = pw("Right");
+      const weakSide = (l<5 && l<=r) ? "left" : (r<5 && r<l) ? "right" : "";
+      const umn = /positive/i.test(String(data.n_ref_babinski_left)+String(data.n_ref_babinski_right)) || /positive/i.test(String(data.n_ref_clonus_ankle_left)+String(data.n_ref_clonus_ankle_right));
+      bits.push(`${cond}${weakSide?` with ${weakSide} hemiparesis`:""}`);
+      if (umn) bits.push("UMN pattern (pathological reflexes positive)");
+      if (v("neuro_tardieuGrade") || v("neuro_spasticityPattern")) bits.push("spasticity present");
+      if (/neglect/i.test(v("perc_neglect_result"))) bits.push("unilateral neglect");
+      if (v("neuro_pusher") && v("neuro_pusher") !== "Absent") bits.push(`pusher behaviour (${v("neuro_pusher")})`);
+      if (v("neuro_shoulderSublux") && v("neuro_shoulderSublux") !== "None") bits.push(`shoulder subluxation (${v("neuro_shoulderSublux")})`);
+      const scales = [["NIHSS",v("neuro_nihss")],["Fugl-Meyer UE",v("neuro_fuglUE")],["ASIA",v("neuro_asiaGrade")],["UPDRS",v("neuro_updrs")],["mRS",v("neuro_mrs")],["Barthel",v("neuro_barthel")]].filter(([,x])=>x).map(([lab,x])=>`${lab} ${x}`);
+      let line = `Neurological impression: ${bits.join(", ")}.`;
+      if (scales.length) line += ` Baseline measures: ${scales.join(", ")}.`;
+      A_parts.push(line);
+    }
+  } catch (e) { /* neuro optional */ }
 
   // ── Clinician's own Clinical Impression (always first, always authoritative) ──
   const _ciItems = Array.isArray(data.clinical_impression) ? data.clinical_impression : [];
@@ -3592,6 +3632,16 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   if (extraP) P_parts.push(`\n${extraP}`);
 
   // Only add Treatment Plan header if there's actual plan content
+  // Neuro stream — plan / goals
+  try {
+    const planPhase = (neuroStream.phases||[]).find(p=>p.id==="plan");
+    const pl = [];
+    (planPhase?planPhase.sections:[]).forEach(sec=>sec.fields.forEach(fl=>{
+      if (!fl.key || ["note","component","limbtable","sensorytable"].includes(fl.type)) return;
+      const val=v(`neuro_${fl.key}`); if(val) pl.push(`  ${fl.label}: ${val}`);
+    }));
+    if (pl.length) P_parts.push("\nNeuro plan & goals:\n"+pl.join("\n"));
+  } catch (e) { /* neuro optional */ }
   if (P_parts.length > 0) P_parts.unshift("Treatment Plan:");
 
   return {

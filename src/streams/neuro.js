@@ -129,6 +129,8 @@ const neuro = {
           { type:"component", key:"cranial", widget:"Cranial", match:"cn_" },
         ]},
         { heading:"Sensory system", fields: [
+          { type:"note", tag:"⊕ Sensory", text:"Region/side grid below for CENTRAL lesions (stroke/TBI) where loss is hemisensory; dermatome map for spinal-root or peripheral lesions." },
+          { type:"component", key:"sensoryRegion", widget:"SensoryRegion", match:"sregion_" },
           { type:"component", key:"sensory", widget:"Sensory", match:["n_c","n_t","n_l","n_s"] },
           { type:"component", key:"myotomes", widget:"Myotome", match:"myo_" },
           { type:"text", key:"stereognosis", label:"Stereognosis" },
@@ -140,9 +142,7 @@ const neuro = {
           { type:"component", key:"neuraltension", widget:"NeuralTension", match:"nt_" },
         ]},
         { heading:"Motor system", fields: [
-          { type:"select", key:"tonePalpation", label:"Tone (palpation)", options:["Normal","Hypertonic","Hypotonic","Flaccid","Rigid"] },
           { type:"text", key:"spasticityPattern", label:"Spasticity pattern / distribution" },
-          { type:"select", key:"clonus", label:"Clonus", options:["Absent","Ankle — few beats","Ankle — sustained","Present elsewhere"] },
           { type:"note", tag:"⊕ Motor in UMN", text:"Isolated Oxford MMT is not valid where spasticity or synergy dominate (O’Sullivan). Grade movement quality, selective motor control and Brunnstrom stage; use Motricity Index for validated strength." },
           { type:"select", key:"tardieuGrade", label:"Tardieu spasticity grade", options:["0 — no resistance","1 — slight catch","2 — clear catch + release","3 — fatigable clonus <10s","4 — non-fatigable clonus >10s"] },
           { type:"text", key:"tardieuAngles", label:"Tardieu R1 / R2 angles" },
@@ -153,7 +153,6 @@ const neuro = {
             rows:LIMBS, columns:[
               { label:"Tone (Ashworth)", options:ASHWORTH },
               { label:"Power (Oxford)", options:OXFORD },
-              { label:"DTR", options:DTR },
               { label:"Brunnstrom", options:BRUNNSTROM }] },
           { type:"component", key:"reflexes", widget:"Reflexes", match:"n_ref_" },
           { type:"checkgrid", key:"involuntary", label:"Involuntary movements", options:[

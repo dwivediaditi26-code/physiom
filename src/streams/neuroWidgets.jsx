@@ -355,3 +355,40 @@ export function RedFlagsWidget({ data, set, PC }) {
     </div>
   );
 }
+
+/* ── Region/side sensory grid — for CENTRAL (stroke/TBI) lesions where loss
+   is hemisensory by region, not dermatomal. Shares keys sregion_<reg>_<mode>. ── */
+export const SREGIONS = ["Face","Left UE","Right UE","Trunk","Left LE","Right LE"];
+export const SMODES = ["Light touch","Pinprick","Proprioception","Vibration","Stereognosis"];
+export const SGRADES = ["Intact","Reduced","Absent","Untested"];
+export const sregSlug = (s) => s.replace(/[^a-zA-Z0-9]/g,"_");
+
+export function SensoryRegionWidget({ data, set, PC }) {
+  return (
+    <div>
+      <div style={{fontWeight:800,fontSize:"0.85rem",color:PC.text,marginBottom:10}}>Sensation by region / side (central lesions)</div>
+      <div style={{overflowX:"auto",border:`1px solid ${PC.border}`,borderRadius:10}}>
+        <table style={{minWidth:"100%",borderCollapse:"collapse",fontSize:"0.8rem"}}>
+          <thead><tr style={{background:PC.s2||"#f8fafc"}}>
+            <th style={{padding:"8px 10px",textAlign:"left",color:PC.muted,fontWeight:600}}>Region</th>
+            {SMODES.map(m=><th key={m} style={{padding:"8px 8px",textAlign:"left",color:PC.muted,fontWeight:600,whiteSpace:"nowrap"}}>{m}</th>)}
+          </tr></thead>
+          <tbody>
+            {SREGIONS.map((rg,i)=>(
+              <tr key={rg} style={{background:i%2?(PC.surface||"#fff"):(PC.s2||"#f8fafc")+"66"}}>
+                <td style={{padding:"6px 10px",fontWeight:600,color:PC.text,whiteSpace:"nowrap"}}>{rg}</td>
+                {SMODES.map(md=>{
+                  const k=`sregion_${sregSlug(rg)}_${sregSlug(md)}`;
+                  return (<td key={md} style={{padding:"5px 6px"}}>
+                    <select value={data[k]||""} onChange={e=>set(k,e.target.value)} style={{...sel(PC),padding:"5px 6px",minWidth:96}}>
+                      <option value="">—</option>
+                      {SGRADES.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select></td>);
+                })}
+              </tr>))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
