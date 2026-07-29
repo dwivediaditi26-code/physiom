@@ -18,6 +18,7 @@ import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
+import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 
 // Map a condition's authored fascia description to the specific Fascia-module
 // test cards to open, so tapping the "Fascia" suggestion deep-links straight to
@@ -3892,6 +3893,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           </div>
         </div>
       )}
+
+      {/* ── Probable Diagnoses + suggested objective assessment ─────
+          Also shown here on the Subjective tab (in addition to the SOAP
+          Assessment section) so the clinician can run/preview it alongside
+          the history. Same component, self-contained Run button + results. */}
+      <ProbableDiagnosis data={data} onNav={onNav} />
 
       {/* ── Hero Header — Subjective + AI + Regions ────────────────── */}
       <div style={{ borderRadius:14, overflow:"hidden",
