@@ -1323,7 +1323,7 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
   const modalityOptions = ["IFT","TENS","Hot pack","Cold pack","Ultrasound","Laser","Shockwave","Traction","Paraffin wax"];
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"8px 10px",fontSize:"0.8rem"};
   const lbl = {fontSize:"0.8rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
-  const sectionLbl = {fontSize:"0.82rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6};
+  const sectionLbl = {fontSize:"0.82rem",fontWeight:800,color:PC.text,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:6};
 
   const prog = Array.isArray(data.hep_programme)?data.hep_programme:[];
 

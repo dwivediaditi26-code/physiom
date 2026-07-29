@@ -1530,8 +1530,8 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="TX_SESSION_MODULE"?(
                 <div>
                   {/* ── Sessions Banner ── */}
-                  <div style={{background:`linear-gradient(135deg,${PC.accent}12,${PC.a2}08)`,border:`1.5px solid ${PC.accent}30`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
-                    <div style={{fontWeight:800,fontSize:"0.88rem",color:PC.accent,marginBottom:4}}>⚡ Sessions</div>
+                  <div style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"14px 16px",marginBottom:16}}>
+                    <div style={{fontWeight:800,fontSize:"0.88rem",color:"#0F6E56",marginBottom:4}}>⚡ Sessions</div>
                     <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:12}}>For follow-ups — fill these 4 fields and sign. Takes 60 seconds.</div>
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
