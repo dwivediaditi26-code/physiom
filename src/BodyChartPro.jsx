@@ -506,14 +506,14 @@ function AdminOverlay({ regions, onUpdate, svgRef }) {
             />
             {isSel && pts.map(([x, y], i) => (
               <g key={i}>
-                <circle cx={x} cy={y} r="0.8" fill="#7c3aed" stroke="#fff" strokeWidth="0.2"
+                <circle cx={x} cy={y} r="0.45" fill="#7c3aed" stroke="#fff" strokeWidth="0.12"
                   style={{cursor:"grab"}}
                   onMouseDown={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
                   onTouchStart={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
                   onDoubleClick={e => { e.stopPropagation(); removePoint(r.id,i); }}
                   onClick={e => { e.stopPropagation(); if(e.altKey) removePoint(r.id,i); }}
                 />
-                <circle cx={x} cy={y} r="2.2" fill="transparent" style={{cursor:"grab"}}
+                <circle cx={x} cy={y} r="1.3" fill="transparent" style={{cursor:"grab"}}
                   onMouseDown={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
                   onTouchStart={e => { e.preventDefault(); e.stopPropagation(); const d={regionId:r.id,ptIdx:i}; draggingRef.current=d; setDragging(d); }}
                 />
