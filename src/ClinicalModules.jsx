@@ -4,6 +4,7 @@ import { ALL_DIAGNOSES } from "./DiagnosisEngine.js";
 import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 import { C, getC, RegionPickerButton, RegionChips } from "./utils.jsx";
 import { MMT_DATA, ROM_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "./sharedClinicalData.js";
+import neuroStream from "./streams/neuro.js";
 import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
 import { SCALES, injectViewerControls } from "./sharedClinicalData.js";
@@ -2916,6 +2917,27 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
       if (val) percLines.push(`  ${t.label}: ${val}`);
     });
     if (percLines.length) neuroLines.push(`  Perceptual screen:\n${percLines.join("\n")}`);
+
+    // Neuro assessment stream (config-driven) — surface any filled Objective
+    // fields from the Neuro stream not already captured by the shared-key
+    // blocks above, so everything documented in the stream lands in SOAP.
+    try {
+      const objPhase = (neuroStream.phases || []).find(p => p.id === "objective");
+      const covered = new Set(["motor","reflexes","cranial","sensory","myotomes","neuraltension","coordination","vestibular","perceptual","redflags","gcs","involuntary"]);
+      (objPhase ? objPhase.sections : []).forEach(sec => {
+        (sec.fields || []).forEach(fl => {
+          if (!fl.key || covered.has(fl.key)) return;
+          if (fl.type === "note" || fl.type === "component" || fl.type === "limbtable" || fl.type === "sensorytable") return;
+          if (fl.type === "checkgrid") {
+            const on = (fl.options || []).filter(o => data[`neuro_${fl.key}::${o}`]);
+            if (on.length) neuroLines.push(`  ${fl.label}: ${on.join(", ")}`);
+          } else {
+            const val = v(`neuro_${fl.key}`);
+            if (val) neuroLines.push(`  ${fl.label}: ${val}`);
+          }
+        });
+      });
+    } catch (e) { /* neuro stream optional */ }
 
     // General neuro notes
     if (v("neuro_clinician_notes")) neuroLines.push(`  Notes: ${v("neuro_clinician_notes")}`);
