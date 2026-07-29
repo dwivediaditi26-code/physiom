@@ -106,7 +106,7 @@ function GridTable({ f, get, set, PC, rows, cols, colOptions }) {
   );
 }
 
-export default function AssessmentEngine({ config, data, set, PC }) {
+export default function AssessmentEngine({ config, data, set, PC, components }) {
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [showExport, setShowExport] = useState(false);
   const [highlightKey, setHighlightKey] = useState(null);
@@ -132,11 +132,16 @@ export default function AssessmentEngine({ config, data, set, PC }) {
   const phaseIdxById = {};
   config.phases.forEach((p,i)=>{ phaseIdxById[p.id]=i; });
   const condition = get("condition");
+  const fieldIndex = {};
+  config.phases.forEach(ph=>ph.sections.forEach(sec=>sec.fields.forEach(fl=>{ fieldIndex[fl.key]=fl; })));
   const checklist = (config.checklists && (config.checklists[condition] || config.checklists._default)) || null;
   const highlightRef = useRef(null);
-  const isFilled = (fieldKey) => Object.keys(data).some(k =>
-    (k === P+fieldKey || k.startsWith(P+fieldKey+"::")) &&
-    data[k] !== "" && data[k] != null && data[k] !== false);
+  const truthy = (val) => val !== "" && val != null && val !== false;
+  const isFilled = (fieldKey) => {
+    const fld = fieldIndex[fieldKey];
+    if (fld && fld.match) return Object.keys(data).some(k => k.startsWith(fld.match) && truthy(data[k]));
+    return Object.keys(data).some(k => (k === P+fieldKey || k.startsWith(P+fieldKey+"::")) && truthy(data[k]));
+  };
   const jumpTo = (step) => {
     if (phaseIdxById[step.phase] != null) setPhaseIdx(phaseIdxById[step.phase]);
     setHighlightKey(step.fieldKey);
@@ -158,9 +163,14 @@ export default function AssessmentEngine({ config, data, set, PC }) {
       colOptions={lbl=>{const c=f.columns.find(x=>x.label===lbl);return c?c.options:[];}}/>;
     else if (f.type === "sensorytable") inner = <GridTable f={f} get={get} set={put} PC={PC}
       rows={f.regions} cols={f.modes} colOptions={()=>f.grades}/>;
+    else if (f.type === "component") {
+      const Comp = components && components[f.widget];
+      inner = Comp ? <Comp data={data} set={set} PC={PC}/>
+        : <div style={{color:PC.muted,fontSize:"0.8rem"}}>Widget "{f.widget}" not registered.</div>;
+    }
     else inner = <Field f={f} val={get(f.key)} onChange={v=>put(f.key,v)} PC={PC}/>;
     const hl = f.key === highlightKey;
-    const full = f.type==="checkgrid"||f.type==="limbtable"||f.type==="sensorytable"||f.layout==="full";
+    const full = f.type==="checkgrid"||f.type==="limbtable"||f.type==="sensorytable"||f.type==="component"||f.layout==="full";
     return (<div key={f.key} ref={hl?highlightRef:null}
       style={{gridColumn: full?"1 / -1":(span[f.layout]||span.half),
         ...(hl?{outline:`2px solid ${PC.accent}`,outlineOffset:4,borderRadius:12,transition:"outline 0.2s"}:{})}}>{inner}</div>);

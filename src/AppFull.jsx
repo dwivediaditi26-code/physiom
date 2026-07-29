@@ -39,6 +39,7 @@ import AuthScreen from "./AuthScreen.jsx";
 import { NeurologicalModule } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
 import neuroStream from "./streams/neuro.js";
+import { GCSWidget, CranialWidget } from "./streams/neuroWidgets.jsx";
 import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
@@ -100,6 +101,7 @@ const TabFallback = () => (
 // Config-driven stream registry. A stream with a config renders via the
 // AssessmentEngine; others fall back to the "coming soon" placeholder.
 const STREAM_CONFIGS = { neuro: neuroStream };
+const STREAM_WIDGETS = { GCS: GCSWidget, Cranial: CranialWidget };
 
 const STREAMS = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
@@ -1313,7 +1315,7 @@ function AppInner({ currentUser, onSignOut }) {
           <StreamSelector stream={stream} setStream={setStream} PC={PC}/>
           {stream !== "ortho" ? (
             STREAM_CONFIGS[stream] ? (
-              <AssessmentEngine config={STREAM_CONFIGS[stream]} data={data} set={set} PC={PC}/>
+              <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC}/>
             ) : (
               <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
             )

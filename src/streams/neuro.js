@@ -104,7 +104,7 @@ const neuro = {
         ]},
         { heading:"Higher mental function", fields: [
           { type:"select", key:"consciousness", label:"Consciousness", options:["Alert","Drowsy","Confused","Lethargic","Obtunded","Stuporous","Comatose"] },
-          { type:"text", key:"gcs", label:"GCS (E/V/M)", mono:true },
+          { type:"component", key:"gcs", widget:"GCS", match:"gcs_" },
           { type:"text", key:"orientation", label:"Orientation (time/place/person)" },
           { type:"text", key:"memory", label:"Memory & attention" },
           { type:"select", key:"aphasia", label:"Speech / aphasia", options:["None","Broca's (expressive)","Wernicke's (receptive)","Global","Dysarthria only"] },
@@ -117,9 +117,7 @@ const neuro = {
             "Visual agnosia","Ideomotor apraxia","Ideational apraxia","Constructional apraxia"] },
         ]},
         { heading:"Cranial nerves", fields: [
-          { type:"limbtable", key:"cranial", label:"Cranial nerve screen",
-            rows:["CN I","CN II","CN III/IV/VI","CN V","CN VII","CN VIII","CN IX/X","CN XI","CN XII"],
-            columns:[{ label:"Status", options:NA }] },
+          { type:"component", key:"cranial", widget:"Cranial", match:"cn_" },
         ]},
         { heading:"Sensory system", fields: [
           { type:"sensorytable", key:"sensory", label:"Sensation by region",
