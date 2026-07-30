@@ -6290,9 +6290,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       {/* Assessment mode toggle: Single View vs Multi-View */}
       {assessModeToggle}
 
-      {/* Mode toggle */}
+      {/* Mode toggle — "live" entry hidden from students for now (2026-07-30).
+          Underlying live-capture pipeline (startCamera/capturePhoto/stopCamera/
+          flipCamera + the isLive-branch JSX below) is untouched — re-add
+          ["live","▣ Live"] to the array below to bring the button back. */}
       <div style={{padding: isWide?"10px 20px":"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:8}}>
-        {[["upload","↑ Upload"],["live","▣ Live"]].map(([m,label])=>(
+        {[["upload","↑ Upload"]].map(([m,label])=>(
           <button key={m} onClick={()=>{setMode(m);if(m==="live")setTab("capture");else{stopCamera();setTab("capture");}}}
             style={{flex:1,padding: isWide?"10px":"9px",borderRadius:10,border:`1px solid ${mode===m?viewMeta.colour:PC.border}`,background:mode===m?`${viewMeta.colour}15`:"transparent",color:mode===m?viewMeta.colour:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:"pointer"}}>
             {label}
