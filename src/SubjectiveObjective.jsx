@@ -4907,8 +4907,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       {/* ════════════════════════════════════════════════════
           RESULTS TAB
       ════════════════════════════════════════════════════ */}
+      {/* Was `minHeight:200` — an empty placeholder nothing else in the
+          codebase targets (checked: no portal, no test references this id).
+          The real body chart (LazyBodyChart) renders as a sibling right
+          after this whole module in AppFull.jsx, so that 200px of dead
+          space was exactly what pushed it below the fold, forcing a scroll
+          on load (2026-07-30). Left the id in case something starts using
+          it as a scroll anchor later. */}
       {activeTab === "bodychart" && (
-        <div id="subjective-bodychart-slot" style={{minHeight:200}}/>
+        <div id="subjective-bodychart-slot"/>
       )}
 
       {activeTab === "results" && !insight && (

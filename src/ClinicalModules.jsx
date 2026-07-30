@@ -6955,6 +6955,7 @@ function PalpationModule({ data, set }) {
         hotspotId: hotspot.id,
         label: hotspot.label,
         structures: hotspot.structures,
+        structure: "", // which one of `structures` the clinician confirms is the actual finding
         side: view,
         tenderness: "",
         temp: "",
@@ -7184,6 +7185,7 @@ function PalpationModule({ data, set }) {
                         </div>
                         <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:2 }}>
                           {pin.side === "front" ? "Anterior" : "Posterior"}
+                          {pin.structure ? ` · ${pin.structure}` : ""}
                           {pin.temp ? ` · ${pin.temp}` : ""}
                           {(pin.texture || []).length > 0 ? ` · ${pin.texture.join(", ")}` : ""}
                         </div>
@@ -7231,20 +7233,34 @@ function PalpationModule({ data, set }) {
                 </div>
               </div>
 
-              {/* Structures at this point */}
+              {/* Structures at this point — tap one to confirm it as the
+                  specific structure for this finding (single-select, same
+                  toggle pattern as Tenderness Grade below). */}
               <div style={{ background:C.s2, border:`1px solid ${C.border}`,
                 borderRadius:9, padding:"9px 12px", marginBottom:12 }}>
                 <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.accent,
                   textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>
                   🏗 Structures at this point
                 </div>
+                <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:7 }}>
+                  Tap the one that specifically matches this finding
+                </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                  {selPin.structures.map((s, i) => (
-                    <span key={i} style={{ fontSize:"0.75rem", padding:"2px 8px", borderRadius:20,
-                      background:C.s3, border:`1px solid ${C.border}`, color:C.text }}>
-                      {s}
-                    </span>
-                  ))}
+                  {selPin.structures.map((s, i) => {
+                    const isSel = selPin.structure === s;
+                    return (
+                      <button key={i}
+                        onClick={() => updatePin(selPin.id, "structure", isSel ? "" : s)}
+                        style={{ fontSize:"0.75rem", padding:"3px 9px", borderRadius:20,
+                          border:`1.5px solid ${isSel ? C.accent : C.border}`,
+                          background: isSel ? `${C.accent}20` : C.s3,
+                          color: isSel ? C.accent : C.text,
+                          fontWeight: isSel ? 700 : 400,
+                          cursor:"pointer", fontFamily:"inherit" }}>
+                        {isSel ? "✓ " : ""}{s}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
