@@ -4,7 +4,7 @@
 // ranked, explainable probable-diagnosis list. No LLM at runtime; same input ->
 // same output. Self-contained so the monolith only needs a one-line insertion.
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { runReasoningFromData } from "./reasoningEngine/index";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 
@@ -79,7 +79,7 @@ function Chips({ label, items, color }) {
   );
 }
 
-export default function ProbableDiagnosis({ data = {}, onNav }) {
+export default function ProbableDiagnosis({ data = {}, onNav, autoRun = false, hideButton = false }) {
   const [result, setResult] = useState(null);
   const [companionResults, setCompanionResults] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | ok | unsupported | error
@@ -114,6 +114,16 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
     }
   };
 
+  // autoRun: fire once on mount instead of waiting for the internal button.
+  // Used when an external trigger (e.g. Subjective's "Suggest probable
+  // objective assessment") already caused this component to mount — running
+  // again on every `data` keystroke would be wasteful and jarring, so this
+  // intentionally only depends on mount, not on `data` changing.
+  useEffect(() => {
+    if (autoRun) run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Merge the primary region's differentials with any companion region's, tag
   // each with its source region, and rank the combined list by match score.
   const multiRegion = companionResults.length > 0;
@@ -128,17 +138,22 @@ export default function ProbableDiagnosis({ data = {}, onNav }) {
 
   return (
     <div style={{ margin: "10px 0 4px" }}>
-      <button
-        onClick={run}
-        disabled={running}
-        style={{
-          width: "100%", padding: "12px 16px", borderRadius: 12, border: "none",
-          background: TEAL, color: "#fff", fontWeight: 800, fontSize: 14.5, letterSpacing: 0.4,
-          cursor: running ? "default" : "pointer", boxShadow: "0 2px 8px rgba(8,145,178,0.25)",
-        }}
-      >
-        {running ? "Analysing…" : "🧠 SUGGEST PROBABLE DIAGNOSIS"}
-      </button>
+      {!hideButton && (
+        <button
+          onClick={run}
+          disabled={running}
+          style={{
+            width: "100%", padding: "12px 16px", borderRadius: 12, border: "none",
+            background: TEAL, color: "#fff", fontWeight: 800, fontSize: 14.5, letterSpacing: 0.4,
+            cursor: running ? "default" : "pointer", boxShadow: "0 2px 8px rgba(8,145,178,0.25)",
+          }}
+        >
+          {running ? "Analysing…" : "🧠 SUGGEST PROBABLE DIAGNOSIS"}
+        </button>
+      )}
+      {hideButton && running && (
+        <div style={{ fontSize: 12.5, color: "#6B7280", textAlign: "center", padding: "6px 0" }}>Analysing…</div>
+      )}
       <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 4, textAlign: "center" }}>
         Deterministic decision-support from the recorded subjective + objective assessment — not a diagnosis. Verify clinically.
       </div>

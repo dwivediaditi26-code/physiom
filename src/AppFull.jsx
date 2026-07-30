@@ -1311,8 +1311,12 @@ function AppInner({ currentUser, onSignOut }) {
         {/* Main */}
         <div className="pm-main" style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
-          {/* ── STREAM SELECTOR + ROUTING SHELL (Step 1) ── */}
-          <StreamSelector stream={stream} setStream={setStream} PC={PC}/>
+          {/* ── STREAM SELECTOR + ROUTING SHELL (Step 1) ──
+              Scoped to Home + Demographics only (2026-07-30) — was rendering on
+              every screen before. New Patient is a separate full-screen modal
+              (showIntake, below) that already covers whatever's behind it, so
+              it needs no explicit case here. */}
+          {(active==="home"||active==="demographics") && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
           {stream !== "ortho" ? (
             STREAM_CONFIGS[stream] ? (
               <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>

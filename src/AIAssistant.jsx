@@ -679,23 +679,9 @@ export default function AIAssistant({ data, set, PC, onClose }) {
             {loading ? "..." : "Send"}
           </button>
         </div>
-        {set && (
-          <button
-            onClick={() => extractToRecord()}
-            disabled={!input.trim() || loading}
-            style={{
-              width: "100%", marginTop: 7, padding: "7px", borderRadius: 8,
-              border: `1px dashed ${input.trim() && !loading ? accent : border}`,
-              background: "transparent",
-              color: input.trim() && !loading ? accent : muted,
-              fontSize: "0.75rem", fontWeight: 700,
-              cursor: input.trim() && !loading ? "pointer" : "not-allowed",
-              fontFamily: "inherit",
-            }}
-          >
-            📋 Fill patient record from this instead
-          </button>
-        )}
+        {/* "📋 Fill patient record from this instead" button removed (2026-07-30)
+            — hidden from students. extractToRecord() below is untouched and
+            still callable if this gets wired back in later. */}
         <div style={{ fontSize: "0.72rem", color: muted, marginTop: 6, textAlign: "center" }}>
           Press Enter to send · Shift+Enter for new line · AI responses are assistive only
         </div>

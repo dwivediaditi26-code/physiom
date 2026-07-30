@@ -18,6 +18,7 @@ import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
+import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 
 // Map a condition's authored fascia description to the specific Fascia-module
 // test cards to open, so tapping the "Fascia" suggestion deep-links straight to
@@ -4969,6 +4970,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               </div>
             </div>
           )}
+
+          {/* ── SUGGESTED PROBABLE DIAGNOSIS (2026-07-30) ──────────────
+              Same component + reasoning engine as the SOAP/Docs Assessment
+              section's "Suggest Probable Diagnosis" card (ClinicalModules.jsx),
+              reused here so Subjective gets the same specific, per-condition
+              palpation/CPA/fascia/outcome suggestions instead of the older,
+              more generic per-region checklist below. autoRun+hideButton means
+              it fires the moment this results view opens — driven entirely by
+              the existing "Suggest probable objective assessment" button
+              upstream, no second button. Region-agnostic (12 regions already
+              supported), so this covers every region without per-region code.
+              Note: like its other usage, it detects ONE primary region from
+              the data (plus its known companion, e.g. lumbar+SI) — a
+              multi-region case spanning unrelated joints only shows the
+              first-detected region's differential, same limitation as DOCS. ── */}
+          <ProbableDiagnosis data={data} onNav={onNav} autoRun hideButton />
 
           {/* ══════════════════════════════════════════════
               PER-REGION: 7-PHASE CLINICAL REASONING
