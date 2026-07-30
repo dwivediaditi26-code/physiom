@@ -44,7 +44,7 @@ function realisticRadiculopathyData(regionKey) {
 }
 
 function runReviewAndAnalysis() {
-  fireEvent.click(screen.getByText(/Review & Run Analysis/));
+  fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
   fireEvent.click(screen.getByText(/Run analysis/));
 }
 
@@ -156,7 +156,7 @@ describe("Lumbar/SI region: AI note findings merge into scoring (regression)", (
     };
 
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     // Pass 2 resolves asynchronously -- wait for the merged reasoning

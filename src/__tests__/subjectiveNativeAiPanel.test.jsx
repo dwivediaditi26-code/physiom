@@ -45,7 +45,7 @@ describe("Subjective Assessment tab -- native AI panel, full pipeline", () => {
     const { rerender } = render(<SubjectiveModule data={dataStore} set={setMock} onNav={() => {}} onTabChange={() => {}} />);
 
     // "Review & Run Analysis" disabled before anything is selected
-    const analysisBtn = screen.getByText(/Review & Run Analysis/i).closest("button");
+    const analysisBtn = screen.getByText(/Suggest probable objective assessment/i).closest("button");
     expect(analysisBtn).toBeDisabled();
 
     // Open the AI panel, type a narrative -- the button's icon and label
@@ -74,7 +74,7 @@ describe("Subjective Assessment tab -- native AI panel, full pipeline", () => {
     // Re-render with the updated data (as the real app would after set())
     // and confirm the analysis button is now enabled in the live component.
     rerender(<SubjectiveModule data={dataStore} set={setMock} onNav={() => {}} onTabChange={() => {}} />);
-    const analysisBtnAfter = screen.getByText(/Review & Run Analysis/i).closest("button");
+    const analysisBtnAfter = screen.getByText(/Suggest probable objective assessment/i).closest("button");
     expect(analysisBtnAfter).not.toBeDisabled();
   });
 });

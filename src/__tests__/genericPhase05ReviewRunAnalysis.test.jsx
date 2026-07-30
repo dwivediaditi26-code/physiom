@@ -20,7 +20,7 @@ describe("Generic Phase 0.5 renders for laterality-suffixed families", () => {
     const data = { cx_selected_regions: JSON.stringify([key]), cc_main: cc };
     for (const [k, v] of Object.entries(fields)) data[k] = Array.isArray(v) ? v.join(SEP) : v;
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(heading)).toBeInTheDocument();
   });

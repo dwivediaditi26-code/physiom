@@ -45,7 +45,7 @@ describe("Phase 0/0.5 (Thoracic) survive a real tab-away-and-back navigation cyc
     const { unmount } = render(
       <SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />
     );
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     expect(screen.getByText(/Phase 0.5 — Thoracic Condition Matches/)).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("Phase 0/0.5 (Thoracic) survive a real tab-away-and-back navigation cyc
     const { unmount } = render(
       <SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />
     );
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Thoracic Condition Matches/)).toBeInTheDocument();
 
@@ -99,7 +99,7 @@ describe("Phase 0/0.5 (Thoracic) survive a real tab-away-and-back navigation cyc
     };
     const { get, set } = makeStore(combined);
     render(<SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     expect(JSON.parse(get().cx_cervical_variables ?? "null")).not.toBeNull();

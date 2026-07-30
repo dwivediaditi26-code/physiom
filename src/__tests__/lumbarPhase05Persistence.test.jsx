@@ -58,7 +58,7 @@ describe("Phase 0/0.5 survive a real tab-away-and-back navigation cycle", () => 
     const { unmount } = render(
       <SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />
     );
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     expect(screen.getByText(/Phase 0.5 — Lumbar Condition Matches/)).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("Phase 0/0.5 survive a real tab-away-and-back navigation cycle", () => 
     const { unmount } = render(
       <SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />
     );
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Lumbar Condition Matches/)).toBeInTheDocument();
 

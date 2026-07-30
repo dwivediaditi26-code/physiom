@@ -14,7 +14,7 @@ describe("Generic Phase 0.5 for the regions without a bespoke screen", () => {
       st_fadir_test: "Positive — anterior groin pain (FAI / labral tear)",
     });
     render(<SubjectiveModule data={get()} set={set} onNav={()=>{}} onTabChange={()=>{}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Hip \/ Groin condition matches/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Femoroacetabular impingement|labral|osteoarthritis/i).length).toBeGreaterThan(0);
@@ -28,7 +28,7 @@ describe("Generic Phase 0.5 for the regions without a bespoke screen", () => {
       st_effusion: "Large effusion (visible swelling)",
     });
     render(<SubjectiveModule data={get()} set={set} onNav={()=>{}} onTabChange={()=>{}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Knee \(R\) condition matches/i)).toBeInTheDocument();
     expect(screen.getAllByText(/ACL/i).length).toBeGreaterThan(0);
@@ -43,7 +43,7 @@ describe("Generic Phase 0.5 for the regions without a bespoke screen", () => {
       st_windlass_test: "Positive",
     });
     render(<SubjectiveModule data={get()} set={set} onNav={()=>{}} onTabChange={()=>{}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Ankle \/ Foot condition matches/i)).toBeInTheDocument();
     expect(screen.getAllByText(/plantar fasci/i).length).toBeGreaterThan(0);
@@ -57,7 +57,7 @@ describe("Generic Phase 0.5 for the regions without a bespoke screen", () => {
       st_cozens: "Positive — lateral epicondyle pain (lateral epicondylalgia)",
     });
     render(<SubjectiveModule data={get()} set={set} onNav={()=>{}} onTabChange={()=>{}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Elbow\/Wrist\/Hand condition matches/i)).toBeInTheDocument();
     expect(screen.getAllByText(/epicondylalgia/i).length).toBeGreaterThan(0);

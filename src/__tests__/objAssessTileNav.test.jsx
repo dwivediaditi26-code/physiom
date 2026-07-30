@@ -18,7 +18,7 @@ test("clicking an objective-assessment tile never passes a null nav context", ()
     hp_agg_mov: ["Deep squat"].join(SEP), hp_rf: "No red flags",
   };
   render(<SubjectiveModule data={data} set={() => {}} onNav={onNav} onTabChange={() => {}} />);
-  fireEvent.click(screen.getByText(/Review & Run Analysis/));
+  fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
   fireEvent.click(screen.getByText(/Run analysis/));
   // Click every "open module" nav button in the objective-assessment tiles.
   const opens = screen.getAllByText(/OPEN|→/i);

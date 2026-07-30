@@ -35,7 +35,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
   test("clicking Review & Run Analysis shows Phase 0 + Phase 0.5 cards with the correct top condition", () => {
     const { get, set } = makeStore(realisticImpingementData("Shoulder (L)"));
     render(<SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     expect(screen.queryByText(/Phase 0 — Extracted Clinical Variables/)).not.toBeInTheDocument(); // Phase 0 panel now hidden — runs silently
@@ -46,7 +46,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
   test("survives a real unmount/remount navigation cycle without re-clicking Review & Run Analysis", () => {
     const { get, set } = makeStore(realisticImpingementData("Shoulder (R)"));
     const { unmount } = render(<SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Shoulder Condition Matches/)).toBeInTheDocument();
 
@@ -61,7 +61,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
   test("changing region selection clears the Shoulder Phase 0.5 card (no stale cross-region leftover)", () => {
     const { get } = makeStore(realisticImpingementData("Shoulder (L)"));
     const { unmount } = render(<SubjectiveModule data={get()} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Shoulder Condition Matches/)).toBeInTheDocument();
 
@@ -96,7 +96,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
     };
     const { get, set } = makeStore(combined);
     render(<SubjectiveModule data={get()} set={set} onNav={() => {}} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     // Two regions selected -> region-tab UI kicks in (pre-existing behaviour,
@@ -116,7 +116,7 @@ describe("Phase 0/0.5 (Shoulder) -- reuses the existing reasoningEngine, wired i
     const { get, set } = makeStore(realisticImpingementData("Shoulder (L)"));
     let navCall = null;
     render(<SubjectiveModule data={get()} set={set} onNav={(...args) => { navCall = args; }} onTabChange={() => {}} />);
-    fireEvent.click(screen.getByText(/Review & Run Analysis/));
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
     fireEvent.click(screen.getByText(/Run analysis/));
 
     const chip = screen.getAllByText(/Hawkins-Kennedy Test/)[0];
