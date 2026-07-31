@@ -672,6 +672,15 @@ function AppInner({ currentUser, onSignOut }) {
   };
 
   const navTo = useCallback((key, ctx = {}) => {
+    // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
+    // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
+    // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
+    // them render while `stream !== "ortho"` (see STREAM ROUTING SHELL
+    // below). Previously navTo left `stream` untouched, so calling it from
+    // inside a live stream (e.g. Neuro) updated `active`/sidebar highlight
+    // but the main pane stayed locked on the stream engine -- looked like
+    // "every other button stopped working." Always snap back to ortho first.
+    setStream("ortho");
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
