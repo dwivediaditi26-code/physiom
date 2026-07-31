@@ -106,7 +106,7 @@ const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: Cr
 
 const STREAMS = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
-  { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:false },
+  { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:true  },
   { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c", live:false },
   { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777", live:false },
   { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626", live:false },
@@ -1317,20 +1317,35 @@ function AppInner({ currentUser, onSignOut }) {
               (showIntake, below) that already covers whatever's behind it, so
               it needs no explicit case here. */}
           {(active==="home"||active==="demographics") && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
-          {/* Bug (2026-07-30): Neuro has a real STREAM_CONFIGS entry
-              (neuroStream) even though STREAMS marks it live:false/"SOON" --
-              so this used to route straight into AssessmentEngine, which has
-              no nav/sidebar/back-out of its own. Once in it, stream stayed
-              !=="ortho" so the whole main pane ignored `active`/bottom-nav
-              clicks entirely -- every tab looked dead until a manual reload.
-              Now also require live:true, same bar as Sports/Pedia/Cardio, so
-              an unfinished stream always falls through to
-              StreamEnginePlaceholder, which has a working "Back to Ortho"
-              button. Flip STREAMS' neuro entry to live:true when it's
-              actually ready to remove this gate. */}
+          {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
+              live:true -- config (streams/neuro.js) is Step-2-complete (all
+              4 phases, condition-aware showIf, checklists) and its widgets
+              (streams/neuroWidgets.jsx) are the same ones already proven out
+              under the old Neurological/Neuro Templates sidebar screens, not
+              new/untested code. Sports/Pedia/Cardio stay live:false -- still
+              StreamEnginePlaceholder, no STREAM_CONFIGS entry for them yet.
+              Root cause of the earlier trap wasn't AssessmentEngine crashing
+              -- it's a self-contained view with no nav of its own, so once
+              rendered it ignores `active`/sidebar/bottom-nav clicks entirely.
+              StreamSelector (above) was the only escape, but it's scoped to
+              active==="home"/"demographics", so navigating away (e.g.
+              clicking a sidebar item) hid it too, with no way back except a
+              reload. Fixed by giving AssessmentEngine its own always-visible
+              "Back to Ortho" pill below, same as StreamEnginePlaceholder
+              already has -- so the escape hatch can't disappear regardless
+              of `active`. Applies to any future live stream, not just Neuro. */}
           {stream !== "ortho" ? (
             (STREAMS.find(s=>s.id===stream)?.live && STREAM_CONFIGS[stream]) ? (
-              <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>
+              <>
+                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
+                  <button type="button" onClick={()=>setStream("ortho")}
+                    style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${PC.border}`,
+                      background:PC.s2||"#f8fafc",color:PC.muted,fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
+                    ← Back to Ortho
+                  </button>
+                </div>
+                <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>
+              </>
             ) : (
               <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
             )
