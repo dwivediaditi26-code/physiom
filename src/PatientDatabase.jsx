@@ -2694,6 +2694,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                                 </div>
                                 {p.structures&&<div style={{fontSize:10.5,color:C.muted,marginBottom:4}}>{p.structures}</div>}
                                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                                  {p.structure&&<span style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:"#EDE9FE",color:C.primary}}>🏗 {p.structure}</span>}
                                   {p.tenderness&&<span style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:abnTend(p.tenderness)?"#FEF2F2":"#ECFDF5",color:abnTend(p.tenderness)?"#dc2626":C.green}}>{p.tenderness}</span>}
                                   {p.temp&&<span style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:abnTemp(p.temp)?"#FEF3C7":"#ECFDF5",color:abnTemp(p.temp)?"#92400E":C.green}}>{p.temp}</span>}
                                   {(p.texture||[]).map((tx,ti)=><span key={ti} style={{fontSize:10.5,fontWeight:700,padding:"2px 8px",borderRadius:99,background:"#F3F4F6",color:C.muted}}>{tx}</span>)}

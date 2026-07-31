@@ -2637,6 +2637,10 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
     try {
       const pins = JSON.parse(data.palp_pins || "[]");
       if (pins.length > 0) {
+        // Region label, with the clinician-confirmed specific structure
+        // (if one was picked from "Structures at this point") appended --
+        // e.g. "Abdomen — External oblique" instead of just "Abdomen".
+        const pl = p => p.label + (p.structure ? ` — ${p.structure}` : "");
         const graded = pins.filter(p => p.tenderness);
         const GRADE_LABELS = { 0:"Grade 0 (no tenderness)", 1:"Grade 1+ (mild)", 2:"Grade 2+ (moderate — grimace)", 3:"Grade 3+ (severe — withdrawal)", 4:"Grade 4+ (excruciating — jump sign)" };
         // Group by grade
@@ -2644,7 +2648,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         graded.forEach(p => {
           const g = String(p.tenderness);
           byGrade[g] = byGrade[g] || [];
-          byGrade[g].push(p.label + (p.side && p.side !== "bilateral" ? ` (${p.side})` : p.side === "bilateral" ? " (bilateral)" : ""));
+          byGrade[g].push(pl(p) + (p.side && p.side !== "bilateral" ? ` (${p.side})` : p.side === "bilateral" ? " (bilateral)" : ""));
         });
         Object.entries(byGrade).sort(([a],[b]) => Number(b)-Number(a)).forEach(([grade, labels]) => {
           const gradeLabel = GRADE_LABELS[grade] || `Grade ${grade}+`;
@@ -2654,13 +2658,13 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         const warm = pins.filter(p => p.temp === "Warm" || p.temp === "Hot");
         const tight = pins.filter(p => p.texture && p.texture.includes("Tight"));
         const crepit = pins.filter(p => p.texture && p.texture.includes("Crepitus"));
-        if (warm.length) palpRows.push(`  Increased tissue temp: ${warm.map(p=>p.label).join(", ")}`);
-        if (tight.length) palpRows.push(`  Tight/restricted: ${tight.map(p=>p.label).join(", ")}`);
-        if (crepit.length) palpRows.push(`  Crepitus: ${crepit.map(p=>p.label).join(", ")}`);
+        if (warm.length) palpRows.push(`  Increased tissue temp: ${warm.map(pl).join(", ")}`);
+        if (tight.length) palpRows.push(`  Tight/restricted: ${tight.map(pl).join(", ")}`);
+        if (crepit.length) palpRows.push(`  Crepitus: ${crepit.map(pl).join(", ")}`);
         // Clinical notes
         const withNotes = pins.filter(p => p.notes && p.notes.trim());
         if (withNotes.length) {
-          withNotes.slice(0,3).forEach(p => palpRows.push(`  ${p.label}: ${p.notes.trim().slice(0,80)}`));
+          withNotes.slice(0,3).forEach(p => palpRows.push(`  ${pl(p)}: ${p.notes.trim().slice(0,80)}`));
         }
       }
     } catch(e) {}
@@ -4678,7 +4682,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Palpation */}
           {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<div style={subCard("#065F46")}>
             {subH("Palpation — Tender","#065F46")}
-            {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
+            {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.structure?` (${p.structure})`:""}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
             {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:14.5,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:14.5,flex:1,textAlign:"right"}}>{t}</span></div>)}
           </div>}
 
@@ -7373,12 +7377,13 @@ function PalpationModule({ data, set }) {
               </div>
 
               {/* Mini summary */}
-              {(selPin.tenderness || selPin.temp || (selPin.texture||[]).length > 0) && (
+              {(selPin.tenderness || selPin.temp || selPin.structure || (selPin.texture||[]).length > 0) && (
                 <div style={{ padding:"9px 12px", background:C.s2, borderRadius:9,
                   border:`1px solid ${C.border}`, fontSize:"0.78rem", color:C.muted,
                   lineHeight:1.65 }}>
                   <span style={{ color:C.text, fontWeight:700 }}>Summary: </span>
                   {selPin.label}
+                  {selPin.structure ? ` (${selPin.structure})` : ""}
                   {selPin.tenderness ? ` — Grade ${selPin.tenderness} tenderness` : ""}
                   {selPin.temp && selPin.temp !== "Normal" ? `, ${selPin.temp.toLowerCase()} to touch` : ""}
                   {(selPin.texture||[]).length > 0 ? `, ${selPin.texture.join(" / ").toLowerCase()}` : ""}
@@ -7434,7 +7439,7 @@ function PalpationModule({ data, set }) {
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"0.78rem" }}>
               <thead>
                 <tr style={{ background:C.s2 }}>
-                  {["Anatomical Point","Side","Grade","Temp","Tissue Quality","Bilateral","Notes"].map(h => (
+                  {["Anatomical Point","Structure","Side","Grade","Temp","Tissue Quality","Bilateral","Notes"].map(h => (
                     <th key={h} style={{ padding:"7px 10px", textAlign:"left", color:C.muted,
                       fontWeight:700, fontSize:"0.8rem", textTransform:"uppercase",
                       letterSpacing:"0.8px", borderBottom:`1px solid ${C.border}` }}>
@@ -7451,6 +7456,7 @@ function PalpationModule({ data, set }) {
                       style={{ cursor:"pointer", background:selected === pin.id ? C.s2 : "transparent",
                         borderBottom:`1px solid ${C.border}` }}>
                       <td style={{ padding:"7px 10px", color:C.text, fontWeight:600 }}>{pin.label}</td>
+                      <td style={{ padding:"7px 10px", color:C.muted }}>{pin.structure || "—"}</td>
                       <td style={{ padding:"7px 10px", color:C.muted }}>
                         {pin.side === "front" ? "Ant." : "Post."}
                       </td>
