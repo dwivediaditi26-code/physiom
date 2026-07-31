@@ -1317,8 +1317,19 @@ function AppInner({ currentUser, onSignOut }) {
               (showIntake, below) that already covers whatever's behind it, so
               it needs no explicit case here. */}
           {(active==="home"||active==="demographics") && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
+          {/* Bug (2026-07-30): Neuro has a real STREAM_CONFIGS entry
+              (neuroStream) even though STREAMS marks it live:false/"SOON" --
+              so this used to route straight into AssessmentEngine, which has
+              no nav/sidebar/back-out of its own. Once in it, stream stayed
+              !=="ortho" so the whole main pane ignored `active`/bottom-nav
+              clicks entirely -- every tab looked dead until a manual reload.
+              Now also require live:true, same bar as Sports/Pedia/Cardio, so
+              an unfinished stream always falls through to
+              StreamEnginePlaceholder, which has a working "Back to Ortho"
+              button. Flip STREAMS' neuro entry to live:true when it's
+              actually ready to remove this gate. */}
           {stream !== "ortho" ? (
-            STREAM_CONFIGS[stream] ? (
+            (STREAMS.find(s=>s.id===stream)?.live && STREAM_CONFIGS[stream]) ? (
               <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>
             ) : (
               <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
