@@ -6830,6 +6830,15 @@ const BODY_OUTLINE_BACK = "M 1028.14 166.45 Q 1021.22 166.96 1021.73 176.02 C 10
 const BODY_HEAD_FRONT = "M 418.91 167.68 c 3.92 -1.77 6.58 0.47 7.06 4.32 c 1.48 11.93 -4.92 26.67 -11.75 36.45 c -2.21 3.17 -3.86 0.17 -4.74 -1.76 a 0.38 0.38 0 0 0 -0.73 0.16 c 0.02 8.31 1.01 17.01 -3.36 24.53 c -0.167 0.293 -4.39 4.62 -10.799 9.508 c -23.591 18.112 -41.591 16.112 -61.446 -0.797 c -4.736 -3.649 -5.925 -5.041 -8.805 -7.621 c -5.66 -5.07 -5.28 -17.38 -4.47 -24.92 c 0.05 -0.51 -0.468 -0.892 -0.933 -0.687 a 0.653 0.653 0 0 0 -0.357 0.397 c -0.57 1.69 -2.24 4.05 -4.07 1.48 c -6.2 -8.71 -16.02 -28.53 -11.19 -38.98 c 1.68 -3.627 3.733 -3.91 6.16 -0.85 a 182.853 182.853 0 0 1 3.78 23.29 a 1.02 1.02 0 0 0 1.56 0.77 c 2.79 -1.75 2.61 -18.93 2.63 -24.22 c 0.02 -4.53 1.12 -8.94 3.8 -13.1 c 4.36 -6.76 4.86 -11.51 5.57 -19.82 c 0.47 -5.53 4.34 -8.12 9.77 -8.21 c 6.39 -0.12 12.69 -0.07 19 -0.93 c 4.02 -0.55 7.4 -1.43 11.53 -0.75 c 6.7 1.1 13.44 1.64 20.22 1.62 c 4.607 -0.013 7.523 0.227 8.75 0.72 c 5.96 2.37 5.56 9.73 6.11 15.22 c 0.44 4.34 2.097 8.447 4.97 12.32 c 6.57 8.88 2.19 25.6 5.64 36.36 a 1.14 1.14 0 0 0 2.22 -0.23 c 0.887 -8.36 2.18 -16.45 3.88 -24.27 z z z z";
 const BODY_HEAD_BACK = "M1028.14 166.45c1.03 5.06 1.36 9.61 6.41 11.53 13.06 4.95 16.74 15.51 23.52 27.48 1.387 2.447 3.863 3.623 7.43 3.53a910.025 910.025 0 0136.94-.25c6.23.09 9.27-7.55 11.48-12.3 4.31-9.27 10.37-15.83 20.28-18.94.333-.1.603-.287.81-.56 1.92-2.58 3.043-5.43 3.37-8.55l2.31-1.51a.977.977 0 01.99-.08c11.92 5.42-3.35 35.31-8.21 42.45-.761 1.11-2.423 1.028-3.06-.15l-1.26-2.32c-.133-.253-.32-.297-.56-.13-.34.24-.48.61-.42 1.11.86 7.64.75 16.87-2.96 23.31-.173.3.839.041-3.7 4.71-3.34 3.436-74.18 3.78-75.48-1.38a1.465 1.465 0 00-.55-.82c-4.15-2.97-6.07-7.95-6.16-12.39-.03-1.68.18-14.28-.53-14.63-.207-.1-.33-.037-.37.19-.3 1.553-1.183 2.597-2.65 3.13a.951.951 0 01-1.07-.32c-7.29-9.56-12.32-22.18-12.97-33.54-.34-6.04 1.797-9.23 6.41-9.57zm29.95 61.71c.173 14.187 18.967 14.703 19.1-1.37.03-4.05-.38-6.54-4.68-7.3-4.2-.75-11.87-1.47-13.85 2.91-.413.92-.603 2.84-.57 5.76zm31.71-3.35c.36 19.647 18.59 14.82 18.87 5.94.13-3.9 1.32-9.43-2.88-10.79-4.25-1.38-16.12-2.54-15.99 4.85z";
 const BODY_HAIR_BACK = "M1138.38 168.39q-.49 4.68-3.37 8.55-.31.41-.81.56c-9.91 3.11-15.97 9.67-20.28 18.94-2.21 4.75-5.25 12.39-11.48 12.3q-18.46-.25-36.94.25-5.35.14-7.43-3.53c-6.78-11.97-10.46-22.53-23.52-27.48-5.05-1.92-5.38-6.47-6.41-11.53q-6.64-26.16 4.43-48.88c8.13-16.7 34.61-21.41 51.58-21.04 4.89.11 9.69-.11 14.42.85 18.79 3.8 33.17 8.5 39.34 28.66q6.38 20.88.47 42.35z";
+// The vendored library (see header comment above) only ships hair geometry
+// for the back-of-head view -- no front counterpart exists, which is why
+// anterior always rendered bald. This path is NOT vendored art: it's a
+// hand-built half-ellipse "cap", sized off BODY_HEAD_FRONT's own bounding
+// box (computed via svg-path-bbox: head spans x 302-426, y 126-254) --
+// centered on the same width, sitting just above the head shape, covering
+// roughly its top quarter. Reads as plain short hair, not a stylistic match
+// for the vendored asset's organic detail, but no longer blank.
+const BODY_HAIR_FRONT = "M 304 158 A 60 36 0 0 1 424 158 Z";
 const BODY_FIGURE_SCALE = 100 / 724;
 const BODY_LABEL_SPACE = 16;
 
@@ -6840,7 +6849,7 @@ const BODY_LABEL_SPACE = 16;
 
 const BODY_SVG_VIEWBOX = "0 0 210 216";
 
-function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
+function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view, hotspots }) {
   // view: "front" | "back"
   const offsetX = view === "back" ? 110 : 0;
 
@@ -6864,11 +6873,11 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
       <g transform={`translate(0, ${BODY_LABEL_SPACE}) scale(${BODY_FIGURE_SCALE}) translate(${view === "back" ? -724 : 0}, 0)`}>
         <path d={outlineD} fill={skin} stroke={sk} strokeWidth="3"/>
         <path d={headD} fill={skin} stroke={sk} strokeWidth="3"/>
-        {view === "back" && <path d={BODY_HAIR_BACK} fill="#3a2a1a" stroke={sk} strokeWidth="2"/>}
+        <path d={view === "back" ? BODY_HAIR_BACK : BODY_HAIR_FRONT} fill="#3a2a1a" stroke={sk} strokeWidth="2"/>
       </g>
 
       {/* ── HOTSPOT INTERACTIVE ZONES ── */}
-      {ANATOMICAL_HOTSPOTS.filter(h => h.side === view || h.side === "both").map(h => {
+      {hotspots.filter(h => h.side === view || h.side === "both").map(h => {
         // convert 0-100 % coords to local SVG space (100-wide box, 200-tall
         // figure with BODY_LABEL_SPACE units of label room above it)
         const sx = (h.x / 100) * 100;
@@ -6915,6 +6924,89 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view }) {
   );
 }
 
+// ─── Admin Mode — hotspot point editor ────────────────────────────────────────
+// Mirrors BodyChartPro.jsx's AdminOverlay pattern, adapted for single draggable
+// points instead of polygons. Renders as a sibling layer inside the same
+// <svg viewBox="0 0 210 216"> that already holds both BodyFigureSVG halves
+// (front at x:0-100, back at x:110-210, both offset down BODY_LABEL_SPACE
+// units for the header text) -- see the viewBox/offset comment above
+// BODY_SVG_VIEWBOX. Drag position is tracked locally for live feedback and
+// only committed to the parent (and localStorage) on release, same as
+// BodyChartPro's AdminOverlay, so dragging doesn't spam a save on every pixel.
+function AdminHotspotOverlay({ hotspots, svgRef, onMove }) {
+  const [localPos, setLocalPos] = useState({}); // hotspotId -> {x,y} while dragging
+  const draggingRef = useRef(null);
+  const localRef = useRef({});
+
+  const getViewBoxXY = useCallback((e) => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      vx: ((clientX - rect.left) / rect.width) * 210,
+      vy: ((clientY - rect.top) / rect.height) * 216,
+    };
+  }, [svgRef]);
+
+  const handleMove = useCallback((e) => {
+    const d = draggingRef.current;
+    if (!d) return;
+    const p = getViewBoxXY(e);
+    if (!p) return;
+    const offsetX = d.side === "back" ? 110 : 0;
+    const x = Math.max(0, Math.min(100, p.vx - offsetX));
+    const y = Math.max(0, Math.min(100, (p.vy - BODY_LABEL_SPACE) / 2));
+    const next = { ...localRef.current, [d.id]: { x, y } };
+    localRef.current = next;
+    setLocalPos(next);
+  }, [getViewBoxXY]);
+
+  const handleUp = useCallback(() => {
+    const d = draggingRef.current;
+    if (d && localRef.current[d.id]) {
+      onMove(d.id, localRef.current[d.id].x, localRef.current[d.id].y);
+    }
+    draggingRef.current = null;
+  }, [onMove]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("touchmove", handleMove, { passive:false });
+    window.addEventListener("touchend", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [handleMove, handleUp]);
+
+  return (
+    <g>
+      {hotspots.flatMap(h => {
+        const pos = localPos[h.id] || { x:h.x, y:h.y };
+        const sides = h.side === "both" ? ["front","back"] : [h.side];
+        return sides.map(side => {
+          const offsetX = side === "back" ? 110 : 0;
+          const sx = offsetX + pos.x;
+          const sy = BODY_LABEL_SPACE + (pos.y / 100) * 200;
+          return (
+            <circle key={h.id + side} cx={sx} cy={sy} r="2.2"
+              fill="rgba(124,58,237,0.85)" stroke="#fff" strokeWidth="0.5"
+              style={{ cursor:"grab" }}
+              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); draggingRef.current = { id:h.id, side }; }}
+              onTouchStart={e => { e.preventDefault(); e.stopPropagation(); draggingRef.current = { id:h.id, side }; }}
+            />
+          );
+        });
+      })}
+    </g>
+  );
+}
+
 // ─── Tenderness Grade Selector ────────────────────────────────────────────────
 function GradeChip({ value, selected, onClick }) {
   const color = GRADE_COLOR[value] || C.muted;
@@ -6948,8 +7040,27 @@ function PalpationModule({ data, set }) {
   const [view, setView]           = useState("front"); // "front" | "back"
   const genId = () => Math.random().toString(36).slice(2, 9);
 
+  // ── Admin Mode: drag-to-reposition hotspot editor (see AdminHotspotOverlay
+  // above). Position overrides persist to this browser's localStorage until
+  // exported as paste-ready source -- same pattern as BodyChartPro.jsx's
+  // Admin Mode for the (separate) Body Chart regions.
+  const [adminMode, setAdminMode] = useState(false);
+  const [editedHotspots, setEditedHotspots] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("palp_hotspot_overrides") || "{}"); }
+    catch { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("palp_hotspot_overrides", JSON.stringify(editedHotspots)); } catch {}
+  }, [editedHotspots]);
+  const effectiveHotspots = useMemo(() =>
+    ANATOMICAL_HOTSPOTS.map(h => editedHotspots[h.id] ? { ...h, x:editedHotspots[h.id].x, y:editedHotspots[h.id].y } : h),
+  [editedHotspots]);
+  const [exportText, setExportText] = useState(null);
+  const svgRef = useRef(null);
+
   // Click on hotspot → add or select pin
   const handleHotspotClick = useCallback((hotspot) => {
+    if (adminMode) return; // dragging, not recording findings
     const existing = pins.find(p => p.hotspotId === hotspot.id);
     if (existing) {
       setSelected(existing.id);
@@ -6969,7 +7080,7 @@ function PalpationModule({ data, set }) {
       setPins(p => [...p, newPin]);
       setSelected(newPin.id);
     }
-  }, [pins, view]);
+  }, [pins, view, adminMode]);
 
   const updatePin = (id, field, val) => {
     setPins(p => p.map(pin => pin.id === id ? { ...pin, [field]: val } : pin));
@@ -6986,6 +7097,30 @@ function PalpationModule({ data, set }) {
   const removePin = (id) => {
     setPins(p => p.filter(pin => pin.id !== id));
     if (selected === id) setSelected(null);
+  };
+
+  // Export the (possibly Admin-corrected) hotspot positions as ready-to-paste
+  // source so points fixed in Admin Mode can be made permanent in the code --
+  // same purpose as BodyChartPro.jsx's exportRegions. Coordinates rounded to
+  // 2 decimals; everything else (id/r/side/label/structures) passes through
+  // unchanged so this is safe to paste directly over ANATOMICAL_HOTSPOTS.
+  const exportHotspots = () => {
+    const r2v = v => Math.round(v * 100) / 100;
+    const merged = ANATOMICAL_HOTSPOTS.map(h => {
+      const o = editedHotspots[h.id];
+      return o ? { ...h, x:r2v(o.x), y:r2v(o.y) } : h;
+    });
+    const src = "const ANATOMICAL_HOTSPOTS = [\n" + merged.map(h =>
+      `  { id:${JSON.stringify(h.id)}, x:${h.x}, y:${h.y}, r:${h.r}, side:${JSON.stringify(h.side)}, label:${JSON.stringify(h.label)},\n    structures:${JSON.stringify(h.structures)} },`
+    ).join("\n") + "\n];";
+    try { navigator.clipboard?.writeText(src); } catch {}
+    setExportText(src);
+    return src;
+  };
+  const resetHotspots = () => {
+    if (window.confirm("Reset all palpation point positions back to the built-in defaults? Your Admin corrections will be cleared.")) {
+      setEditedHotspots({});
+    }
   };
 
   const selPin = pins.find(p => p.id === selected);
@@ -7019,6 +7154,26 @@ function PalpationModule({ data, set }) {
         @keyframes slideIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
 
+      {exportText && (
+        <div onClick={()=>setExportText(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"85vh", display:"flex", flexDirection:"column", boxShadow:"0 20px 50px rgba(0,0,0,0.35)" }}>
+            <div style={{ padding:"14px 16px", borderBottom:"1px solid #eee" }}>
+              <div style={{ fontWeight:800, fontSize:"0.95rem", color:"#1a1025" }}>📋 Corrected palpation points</div>
+              <div style={{ fontSize:"0.72rem", color:"#6b7280", marginTop:3 }}>Copy this and paste it over the ANATOMICAL_HOTSPOTS array in ClinicalModules.jsx — or send it to me to apply.</div>
+            </div>
+            <textarea readOnly value={exportText}
+              onFocus={e=>e.target.select()} onClick={e=>e.target.select()}
+              style={{ flex:1, minHeight:180, margin:"12px 16px", padding:"10px", fontFamily:"monospace", fontSize:"0.7rem", border:"1px solid #ddd", borderRadius:8, resize:"none", color:"#111", background:"#f9fafb" }}/>
+            <div style={{ display:"flex", gap:8, padding:"0 16px 16px", flexWrap:"wrap" }}>
+              <button onClick={()=>{ try{navigator.clipboard?.writeText(exportText);}catch{} }}
+                style={{ flex:1, minWidth:120, padding:"10px", borderRadius:9, border:"none", background:"#7c3aed", color:"#fff", fontWeight:800, fontSize:"0.78rem", cursor:"pointer" }}>Copy</button>
+              <button onClick={()=>setExportText(null)}
+                style={{ padding:"10px 16px", borderRadius:9, border:"1px solid #e5e7eb", background:"#fff", color:"#6b7280", fontWeight:700, fontSize:"0.78rem", cursor:"pointer" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div style={{ background:`linear-gradient(135deg,rgba(0,229,255,0.06),rgba(127,90,240,0.06))`,
         border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
@@ -7029,8 +7184,31 @@ function PalpationModule({ data, set }) {
               Tap any region on the body — anatomical point auto-generates. Record tenderness, tissue quality & findings.
             </div>
           </div>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
             <span style={{ fontSize:"0.75rem", color:C.muted }}>{pins.length} point{pins.length !== 1 ? "s" : ""} recorded</span>
+            <button onClick={() => setAdminMode(p => !p)}
+              style={{ padding:"4px 10px", borderRadius:7, border:`1.5px solid ${adminMode ? "#7c3aed" : C.border}`,
+                background: adminMode ? "rgba(124,58,237,0.12)" : "transparent",
+                color: adminMode ? "#7c3aed" : C.muted, fontSize:"0.75rem",
+                fontWeight:700, cursor:"pointer" }}>
+              {adminMode ? "🔧 Admin ON" : "🔧 Admin"}
+            </button>
+            {adminMode && (
+              <>
+                <button onClick={exportHotspots}
+                  style={{ padding:"4px 10px", borderRadius:7, border:"1.5px solid #7c3aed",
+                    background:"rgba(124,58,237,0.12)", color:"#7c3aed", fontSize:"0.75rem",
+                    fontWeight:700, cursor:"pointer" }}>
+                  📋 Export corrected points
+                </button>
+                <button onClick={resetHotspots}
+                  style={{ padding:"4px 10px", borderRadius:7, border:"1px solid #fca5a5",
+                    background:"#fef2f2", color:"#ef4444", fontSize:"0.75rem",
+                    fontWeight:700, cursor:"pointer" }}>
+                  ↺ Reset to default
+                </button>
+              </>
+            )}
             {pins.length > 0 && (
               <button onClick={() => { setPins([]); setSelected(null); }}
                 style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.red}40`,
@@ -7076,11 +7254,12 @@ function PalpationModule({ data, set }) {
         {/* SVG Body */}
         <div style={{ flex:"0 0 auto", display:"flex", flexDirection:"column", alignItems:"center", width:"100%", maxWidth:480 }}>
           <svg
+            ref={svgRef}
             viewBox={BODY_SVG_VIEWBOX}
             width="100%"
             style={{ maxWidth:460, minWidth:260, background:C.surface,
               border:`1px solid ${C.border}`, borderRadius:14,
-              cursor:"crosshair", userSelect:"none" }}
+              cursor: adminMode ? "default" : "crosshair", userSelect:"none" }}
           >
             <defs>
               <filter id="glow">
@@ -7092,6 +7271,7 @@ function PalpationModule({ data, set }) {
             {/* Front body (left) */}
             <BodyFigureSVG
               view="front"
+              hotspots={effectiveHotspots}
               pins={pins.filter(p => p.side === "front")}
               hoveredHotspot={view === "front" ? hovered : null}
               onHover={view === "front" ? setHovered : () => {}}
@@ -7101,6 +7281,7 @@ function PalpationModule({ data, set }) {
             {/* Back body (right) */}
             <BodyFigureSVG
               view="back"
+              hotspots={effectiveHotspots}
               pins={pins.filter(p => p.side === "back")}
               hoveredHotspot={view === "back" ? hovered : null}
               onHover={view === "back" ? setHovered : () => {}}
@@ -7109,7 +7290,23 @@ function PalpationModule({ data, set }) {
 
             {/* Divider */}
             <line x1="105" y1="2" x2="105" y2="216" stroke={C.border} strokeWidth="0.5" strokeDasharray="2,3"/>
+
+            {/* Admin overlay — draggable dots for every hotspot, both halves */}
+            {adminMode && (
+              <AdminHotspotOverlay
+                hotspots={effectiveHotspots}
+                svgRef={svgRef}
+                onMove={(id, x, y) => setEditedHotspots(p => ({ ...p, [id]: { x, y } }))}
+              />
+            )}
           </svg>
+          {adminMode && (
+            <div style={{ marginTop:6, padding:"6px 12px", background:"rgba(124,58,237,0.08)",
+              border:"1px solid rgba(124,58,237,0.25)", borderRadius:8, maxWidth:460,
+              fontSize:"0.72rem", color:"#7c3aed", textAlign:"center" }}>
+              🔧 Admin Mode — drag a dot to reposition that point · tapping to record findings is paused
+            </div>
+          )}
 
           {/* Hover tooltip outside SVG */}
           {hovered && (
