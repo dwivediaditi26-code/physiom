@@ -155,5 +155,16 @@ Same bug class as the Special Tests fix above, for the ROM-flavored `keyExams` e
 - 7 keyExam labels mapped this round (hip 1, knee 1, ankle 2, foot 1, elbow 1, wrist 1). Left unmapped on purpose (ambiguous / not a clean 1:1 to a ROM field, e.g. "Weight-bearing dorsiflexion lunge test", "Thumb ROM assessment", "Subtalar mobility assessment") rather than guess wrong — same honest-gap philosophy as the Special Tests map. `ROM_DATA` has no `"Hand"` region at all, so hand still has nothing to map to for either kind.
 - `SubjectiveObjective.jsx` unchanged this round — its `genericTestNav(c.engineRegion, t)` call already handled whatever `nav`/`ctx` came back generically.
 
+## 2026-08-06 (later still) — Functional Movement Screen (FMA layer card): fixed wrong-default-region, same bug class
+
+Not a `genericPhase05` keyExam this time -- the "Functional (FMA)" card is one of the six generic "assess by layer" cards (Observation/Posture/Functional/ROM/Fascia/Outcome) rendered by `layerNavButtons`/`layerNavBtn`, shared across **every** region's Phase 0.5 block (bespoke Shoulder/Cervical/Lumbar/Thoracic blocks too, not just `genericPhase05`). It opens `FunctionalScreenHub` (`RegionalFunctionalScreens.jsx`, exported as `FMASection`) -- the app's actual Functional Movement Screen (region-specific functional tests: Deep Squat, ASLR, single-leg tests, etc. per region).
+
+Same bug class as Special Tests/ROM: `layerNavBtn` never set a `ctx` for the `"fma"` key (only `"fascia"`/`"nkt"`/`"kinetic"` had special-cased ctx builders), so it always opened with `navContext={}` -- and `FunctionalScreenHub` defaults to `region:"lumbar"` whenever `navContext.fsRegion` is missing (`RegionalFunctionalScreens.jsx` ~line 4222). So clicking "Functional (FMA)" from e.g. a Hip or Knee condition card always landed on Lumbar's functional tests.
+
+- `SubjectiveObjective.jsx` — new `FS_REGION_FOR` map (same convention as the existing `NKT_REGION_FOR`/`KC_REGION_FOR` tables right above it) translating each region-loop `family` string to `FunctionalScreenHub`'s region ids (`cervical`, `thoracic`, `lumbar`, `shoulder`, `hip`, `knee`, `ankle`, `wrist`). `layerNavBtn` now sets `ctx = { fsRegion: FS_REGION_FOR[family] }` for `m.key === "fma"`.
+- `"Elbow/Wrist/Hand"` maps to `"wrist"` -- `FunctionalScreenHub` has no combined elbow+wrist+hand region, only separate `"elbow"` and `"wrist"` (labelled "Wrist/Hand" in its own UI), so `"wrist"` is the closer of the two options, not a blind guess.
+- No per-test highlight here (unlike Special Tests'/ROM's `highlightTest`/`romHighlights`) -- `FunctionalScreenHub` only has a search box, no highlight-a-specific-test state to hook into. Region-correctness is the whole fix, and it's the same fix Special Tests/ROM needed.
+- Broader blast radius than the previous two fixes on purpose: this one corrects the FMA card for **every** region's Phase 0.5 block, not just the four `genericPhase05` families, since `layerNavBtn` is shared code.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.

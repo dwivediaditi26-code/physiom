@@ -104,11 +104,26 @@ function kcCtxFromDetail(detail, family) {
   return kcHighlights.length ? { kcRegion: region, kcHighlights } : { kcRegion: region };
 }
 
+// Family -> FunctionalScreenHub (Functional Movement Screen) region id.
+// Without this, every region's "Functional (FMA)" layer card opened
+// FunctionalScreenHub with ctx:null, and FunctionalScreenHub defaults to
+// "lumbar" whenever navContext.fsRegion is missing (RegionalFunctionalScreens.jsx
+// ~line 4222) -- same wrong-default-region bug class as Special Tests/ROM had.
+// "Elbow/Wrist/Hand" -> "wrist": FunctionalScreenHub has no combined elbow+
+// wrist+hand region, only separate "elbow" and "wrist" (labelled "Wrist/Hand")
+// -- "wrist" is the closer match of the two, not a guess at a 1:1 test.
+const FS_REGION_FOR = {
+  "Cervical spine": "cervical", "Thoracic spine": "thoracic", "Lumbar / SI": "lumbar",
+  "Shoulder (L)": "shoulder", "Shoulder (R)": "shoulder", "Hip / Groin": "hip",
+  "Knee (L)": "knee", "Knee (R)": "knee", "Ankle / Foot": "ankle", "Elbow/Wrist/Hand": "wrist",
+};
+
 function layerNavBtn(m, onNav, family) {
   let ctx = null;
   if (m.key === "fascia") ctx = { fasciaHighlights: fasciaHighlightsFromDetail(m.detail) };
   else if (m.key === "nkt") ctx = nktCtxFromDetail(m.detail, family);
   else if (m.key === "kinetic") ctx = kcCtxFromDetail(m.detail, family);
+  else if (m.key === "fma") ctx = FS_REGION_FOR[family] ? { fsRegion: FS_REGION_FOR[family] } : null;
   // why = generic teaching only (shown under "?"); detail = the patient-specific
   // line, shown directly in the block below the label.
   return { label: m.label, icon: LAYER_ICON[m.key] || "\u2022", col: "#0891b2", nav: (onNav && m.key) ? m.key : null, ctx, why: LAYER_TEACH[m.key] || "", detail: m.detail };
