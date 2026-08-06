@@ -152,6 +152,14 @@ const OUTCOME_SCALE_IDS = {
   "visa-a": "visaa", visaa: "visaa", "visa-p": "visap", "visa-pf": "visap", visap: "visap",
   constant: "constant", ases: "ases", lysholm: "lysholm", ikdc: "ikdc", prtee: "prtee",
   quebec: "qbpds", "start back": "startback", nprs: "nprs",
+  // Added 2026-08-06 once oxfordhip/hoos/hagos/ihot33 existed as real
+  // scales (sharedClinicalData.js) -- previously these fell through to
+  // "no in-app questionnaire yet" even though hip.evidence.json recommends
+  // them for several conditions. Placed after "hoos-jr"/hoosjr above so a
+  // "HOOS-JR" name still matches that specific key first (object key order
+  // is checked in insertion order in outcomeScaleId's loop) -- only plain
+  // "HOOS" (no "-jr") falls through to this bare "hoos" key.
+  "oxford hip": "oxfordhip", hoos: "hoos", hagos: "hagos", "ihot-33": "ihot33",
 };
 function outcomeScaleId(name = "") {
   const n = String(name).toLowerCase();

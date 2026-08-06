@@ -283,6 +283,193 @@ Object.assign(SCALES, {
     score:(v)=>{const ids=Array.from({length:6},(_,i)=>`hoosjr_${i+1}`);const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===6?s.reduce((a,b)=>a+b,0):null;}
   },
 
+  // oxfordhip / hoos / hagos / ihot33 added 2026-08-06 -- these were
+  // recommended outcome measures in hip.evidence.json's conditionLayers
+  // (proximal hamstring tendinopathy, adductor-related groin pain) that had
+  // no matching scale, so genericTestNav's "Next best actions" showed them
+  // gray/non-clickable. Item wording sourced and cross-checked against
+  // official/publicly-distributed forms, not written from memory:
+  //  - oxfordhip: NHS trust patient-info PDF reproducing the official
+  //    Dept of Public Health, University of Oxford wording verbatim.
+  //    NOTE: the Oxford Hip/Knee Score family is a *licensed, proprietary*
+  //    instrument (innovation.ox.ac.uk) -- this app already reproduced the
+  //    Oxford Knee Score (`oks` above) under the same terms before this
+  //    change; flagging here rather than silently repeating that call.
+  //  - hoos / hagos: official item wording + subscale structure verified
+  //    against physiotutors.com's HOOS/HAGOS calculator pages (both
+  //    instruments are freely available for clinical/research use, no
+  //    license required).
+  //  - ihot33: verified against the official IHOT-33 PDF (Mohtadi et al,
+  //    University of Calgary) -- free to use, no license required.
+  // Scoring: this app's SCALES schema only supports one score()+interpret()
+  // pair (see oks/womac/hoosjr above), not per-subscale breakdowns, so HOOS
+  // and HAGOS are scored as a raw item-sum (0=best...4=worst per item,
+  // matching hoosjr/koosjr/womac's existing convention here) rather than
+  // their official per-subscale 0-100 normalized scores -- good for
+  // within-patient change tracking, but NOT the number you'd report as
+  // "the HOOS score" in a publication. iHOT-33 is scored as the official
+  // (sum of 33 items / 330) x 100 formula, which IS the standard iHOT-33
+  // score. Oxford Hip mirrors oks's 0-48/higher-is-better convention exactly
+  // (the real 2007-update Oxford scoring system).
+  oxfordhip:{id:"oxfordhip",label:"Oxford Hip",full:"Oxford Hip Score (12-item)",icon:"🦴",category:"Hip",
+    maxScore:48,unit:"/48",mcid:5,
+    interpret:(s)=>s>=40?{label:"Satisfactory joint function",color:"#16a34a"}:s>=30?{label:"Mild-moderate arthritis",color:"#0891b2"}:s>=20?{label:"Moderate-severe arthritis",color:"#d97706"}:{label:"Severe arthritis",color:"#dc2626"},
+    fields:[
+      {id:"ohs_1",label:"Pain — how would you usually describe the pain from your hip",options:["0 — Severe","1 — Moderate","2 — Mild","3 — Very mild","4 — None"]},
+      {id:"ohs_2",label:"Trouble washing and drying yourself (all over) because of your hip",options:["0 — Impossible to do","1 — Extreme trouble","2 — Moderate trouble","3 — Very little trouble","4 — No trouble at all"]},
+      {id:"ohs_3",label:"Trouble getting in/out of a car or using public transport because of your hip",options:["0 — Impossible to do","1 — Extreme difficulty","2 — Moderate trouble","3 — Very little trouble","4 — No trouble at all"]},
+      {id:"ohs_4",label:"Able to put on a pair of socks, stockings or tights",options:["0 — No, impossible","1 — With extreme difficulty","2 — With moderate difficulty","3 — With little difficulty","4 — Yes, easily"]},
+      {id:"ohs_5",label:"Able to do the household shopping on your own",options:["0 — No, impossible","1 — With extreme difficulty","2 — With moderate difficulty","3 — With little difficulty","4 — Yes, easily"]},
+      {id:"ohs_6",label:"How long can you walk before pain from your hip becomes severe (with or without a stick)",options:["0 — Not at all / pain severe on walking","1 — Around the house only","2 — 5 to 15 minutes","3 — 16 to 30 minutes","4 — More than 30 minutes / no pain"]},
+      {id:"ohs_7",label:"Able to climb a flight of stairs",options:["0 — No, impossible","1 — With extreme difficulty","2 — With moderate difficulty","3 — With little difficulty","4 — Yes, easily"]},
+      {id:"ohs_8",label:"After a meal (sat at a table), how painful is it to stand up from a chair because of your hip",options:["0 — Unbearable","1 — Very painful","2 — Moderately painful","3 — Slightly painful","4 — Not at all painful"]},
+      {id:"ohs_9",label:"Limping when walking, because of your hip",options:["0 — All of the time","1 — Most of the time","2 — Often, not just at first","3 — Sometimes, or just at first","4 — Rarely / never"]},
+      {id:"ohs_10",label:"Sudden, severe pain — \"shooting\", \"stabbing\" or \"spasms\" — from the affected hip",options:["0 — Every day","1 — Most days","2 — Some days","3 — Only 1 or 2 days","4 — No days"]},
+      {id:"ohs_11",label:"How much has pain from your hip interfered with your usual work (including housework)",options:["0 — Totally","1 — Greatly","2 — Moderately","3 — A little bit","4 — Not at all"]},
+      {id:"ohs_12",label:"Troubled by pain from your hip in bed at night",options:["0 — Every night","1 — Most nights","2 — Some nights","3 — Only 1 or 2 nights","4 — No nights"]},
+    ],
+    score:(v)=>{const ids=Array.from({length:12},(_,i)=>`ohs_${i+1}`);const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===12?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  hoos:{id:"hoos",label:"HOOS",full:"Hip disability and Osteoarthritis Outcome Score (40-item, full form)",icon:"🦴",category:"Hip",
+    maxScore:160,unit:"/160 (raw sum, lower=better -- see note)",mcid:10,
+    interpret:(s)=>s<=40?{label:"Mild",color:"#16a34a"}:s<=80?{label:"Moderate",color:"#d97706"}:{label:"Severe (raw sum -- not the official normalized 0-100 subscale score)",color:"#dc2626"},
+    fields:[
+      {id:"hoos_s1",label:"Symptoms — do you feel grinding, hear clicking or any other type of noise from your hip?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — Always"]},
+      {id:"hoos_s2",label:"Symptoms — difficulties spreading legs wide apart",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — Always"]},
+      {id:"hoos_s3",label:"Symptoms — difficulties to stride out when walking",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — Always"]},
+      {id:"hoos_s4",label:"Stiffness — how severe is your hip joint stiffness after first wakening in the morning?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_s5",label:"Stiffness — how severe is your hip stiffness after sitting, lying or resting later in the day?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p1",label:"Pain — how often is your hip painful?",options:["0 — Never","1 — Monthly","2 — Weekly","3 — Daily","4 — Always"]},
+      {id:"hoos_p2",label:"Pain — straightening your hip fully",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p3",label:"Pain — bending your hip fully",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p4",label:"Pain — walking on a flat surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p5",label:"Pain — going up or down stairs",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p6",label:"Pain — at night while in bed",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p7",label:"Pain — sitting or lying",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p8",label:"Pain — standing upright",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p9",label:"Pain — walking on a hard surface (asphalt, concrete, etc.)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_p10",label:"Pain — walking on an uneven surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a1",label:"Function — descending stairs",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a2",label:"Function — ascending stairs",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a3",label:"Function — rising from sitting",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a4",label:"Function — standing",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a5",label:"Function — bending to floor / picking up an object",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a6",label:"Function — walking on flat surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a7",label:"Function — getting in/out of car",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a8",label:"Function — going shopping",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a9",label:"Function — putting on socks/stockings",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a10",label:"Function — rising from bed",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a11",label:"Function — taking off socks/stockings",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a12",label:"Function — lying in bed (turning over, maintaining hip position)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a13",label:"Function — getting in/out of bath",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a14",label:"Function — sitting",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a15",label:"Function — getting on/off toilet",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a16",label:"Function — heavy domestic duties (moving heavy boxes, scrubbing floors, etc.)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_a17",label:"Function — light domestic duties (cooking, dusting, etc.)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_sp1",label:"Sport/Rec — squatting",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_sp2",label:"Sport/Rec — running",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_sp3",label:"Sport/Rec — twisting/pivoting on your injured hip",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_sp4",label:"Sport/Rec — walking on uneven surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hoos_q1",label:"Quality of Life — how often are you aware of your hip problem?",options:["0 — Never","1 — Monthly","2 — Weekly","3 — Daily","4 — Constantly"]},
+      {id:"hoos_q2",label:"Quality of Life — have you modified your life style to avoid potentially damaging activities to your hip?",options:["0 — Not at all","1 — Mildly","2 — Moderately","3 — Severely","4 — Totally"]},
+      {id:"hoos_q3",label:"Quality of Life — how much are you troubled with lack of confidence in your hip?",options:["0 — Not at all","1 — Mildly","2 — Moderately","3 — Severely","4 — Extremely"]},
+      {id:"hoos_q4",label:"Quality of Life — in general, how much difficulty do you have with your hip?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+    ],
+    score:(v)=>{const ids=["hoos_s1","hoos_s2","hoos_s3","hoos_s4","hoos_s5","hoos_p1","hoos_p2","hoos_p3","hoos_p4","hoos_p5","hoos_p6","hoos_p7","hoos_p8","hoos_p9","hoos_p10","hoos_a1","hoos_a2","hoos_a3","hoos_a4","hoos_a5","hoos_a6","hoos_a7","hoos_a8","hoos_a9","hoos_a10","hoos_a11","hoos_a12","hoos_a13","hoos_a14","hoos_a15","hoos_a16","hoos_a17","hoos_sp1","hoos_sp2","hoos_sp3","hoos_sp4","hoos_q1","hoos_q2","hoos_q3","hoos_q4"];const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===ids.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  hagos:{id:"hagos",label:"HAGOS",full:"Copenhagen Hip And Groin Outcome Score (37-item, full form)",icon:"🦴",category:"Hip",
+    maxScore:148,unit:"/148 (raw sum, lower=better -- see note)",mcid:10,
+    interpret:(s)=>s<=37?{label:"Mild",color:"#16a34a"}:s<=74?{label:"Moderate",color:"#d97706"}:{label:"Severe (raw sum -- not the official normalized 0-100 subscale score)",color:"#dc2626"},
+    fields:[
+      {id:"hagos_s1",label:"Symptoms — do you feel discomfort in your hip and/or groin?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — Always"]},
+      {id:"hagos_s2",label:"Symptoms — do you hear clicking or any other type of noise from your hip and/or groin?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — All the time"]},
+      {id:"hagos_s3",label:"Symptoms — do you have difficulties stretching your legs far out to the side?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_s4",label:"Symptoms — do you have difficulties taking full strides when you walk?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_s5",label:"Symptoms — do you experience sudden twinging/stabbing sensations in your hip and/or groin?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — All the time"]},
+      {id:"hagos_s6",label:"Stiffness — how severe is your hip and/or groin stiffness after first awakening in the morning?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_s7",label:"Stiffness — how severe is your hip and/or groin stiffness after sitting, lying or resting later in the day?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p1",label:"Pain — how often is your hip and/or groin painful?",options:["0 — Never","1 — Monthly","2 — Weekly","3 — Daily","4 — Always"]},
+      {id:"hagos_p2",label:"Pain — how often do you have pain in areas other than your hip and/or groin that you think may be related to your hip and/or groin problem?",options:["0 — Never","1 — Monthly","2 — Weekly","3 — Daily","4 — Always"]},
+      {id:"hagos_p3",label:"Pain — straightening your hip fully",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p4",label:"Pain — bending your hip fully",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p5",label:"Pain — walking up or down stairs",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p6",label:"Pain — at night while in bed (pain that disturbs your sleep)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p7",label:"Pain — sitting or lying",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p8",label:"Pain — standing upright",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p9",label:"Pain — walking on a hard surface (asphalt, concrete, etc.)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_p10",label:"Pain — walking on an uneven surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_a1",label:"Function — walking up stairs",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_a2",label:"Function — bending down, e.g. to pick something up from the floor",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_a3",label:"Function — getting in/out of car",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_a4",label:"Function — lying in bed (turning over or maintaining the same hip position for a long time)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_a5",label:"Function — heavy domestic duties (moving heavy boxes, scrubbing floors, etc.)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp1",label:"Sport/Rec — squatting",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp2",label:"Sport/Rec — running",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp3",label:"Sport/Rec — twisting/pivoting on your injured hip",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp4",label:"Sport/Rec — walking on uneven surface",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp5",label:"Sport/Rec — running as fast as you can",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp6",label:"Sport/Rec — bringing the leg forcefully forward and/or out to the side, such as in kicking, skating etc.",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp7",label:"Sport/Rec — sudden explosive movements that involve quick footwork, such as accelerations, decelerations, change of directions etc.",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_sp8",label:"Sport/Rec — situations where the leg is stretched into an outer position (leg placed as far away from the body as possible)",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_pa1",label:"Participation — are you able to participate in your preferred physical activities for as long as you would like?",options:["0 — Always","1 — Often","2 — Sometimes","3 — Rarely","4 — Never"]},
+      {id:"hagos_pa2",label:"Participation — are you able to participate in your preferred physical activities at your normal performance level?",options:["0 — Always","1 — Often","2 — Sometimes","3 — Rarely","4 — Never"]},
+      {id:"hagos_q1",label:"Quality of Life — how often are you aware of your hip and/or groin problem?",options:["0 — Never","1 — Monthly","2 — Weekly","3 — Daily","4 — Constantly"]},
+      {id:"hagos_q2",label:"Quality of Life — have you modified your life style to avoid potentially damaging activities to your hip and/or groin?",options:["0 — Not at all","1 — Mildly","2 — Moderately","3 — Severely","4 — Totally"]},
+      {id:"hagos_q3",label:"Quality of Life — in general, how much difficulty do you have with your hip and/or groin?",options:["0 — None","1 — Mild","2 — Moderate","3 — Severe","4 — Extreme"]},
+      {id:"hagos_q4",label:"Quality of Life — does your hip and/or groin problem affect your mood in a negative way?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — All the time"]},
+      {id:"hagos_q5",label:"Quality of Life — do you feel restricted due to your hip and/or groin problem?",options:["0 — Never","1 — Rarely","2 — Sometimes","3 — Often","4 — All the time"]},
+    ],
+    score:(v)=>{const ids=["hagos_s1","hagos_s2","hagos_s3","hagos_s4","hagos_s5","hagos_s6","hagos_s7","hagos_p1","hagos_p2","hagos_p3","hagos_p4","hagos_p5","hagos_p6","hagos_p7","hagos_p8","hagos_p9","hagos_p10","hagos_a1","hagos_a2","hagos_a3","hagos_a4","hagos_a5","hagos_sp1","hagos_sp2","hagos_sp3","hagos_sp4","hagos_sp5","hagos_sp6","hagos_sp7","hagos_sp8","hagos_pa1","hagos_pa2","hagos_q1","hagos_q2","hagos_q3","hagos_q4","hagos_q5"];const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===ids.length?s.reduce((a,b)=>a+b,0):null;}
+  },
+
+  ihot33:{id:"ihot33",label:"iHOT-33",full:"International Hip Outcome Tool (33-item, young/active population)",icon:"🏃",category:"Hip",
+    maxScore:100,unit:"/100",
+    // No iHOT-33-specific validated severity cutoffs found; using the
+    // validated iHOT-12 cutoffs (>=86 normal function, <=56 abnormal) as the
+    // best available reference since iHOT-12 is a direct short form of this
+    // instrument on the same 0-100 scale -- noted as approximate, not a
+    // dedicated iHOT-33 cutoff study.
+    interpret:(s)=>s>=86?{label:"Normal hip function (iHOT-12-derived cutoff, applied approximately)",color:"#16a34a"}:s>56?{label:"Some limitation",color:"#d97706"}:{label:"Abnormal / significant limitation (iHOT-12-derived cutoff, applied approximately)",color:"#dc2626"},
+    fields:[
+      {id:"ihot_1",label:"How often does your hip/groin ache?",options:["0 — Constantly","1","2","3","4","5","6","7","8","9","10 — Never"]},
+      {id:"ihot_2",label:"How stiff is your hip as a result of sitting/resting during the day?",options:["0 — Extremely stiff","1","2","3","4","5","6","7","8","9","10 — Not stiff at all"]},
+      {id:"ihot_3",label:"How difficult is it for you to walk long distances?",options:["0 — Extremely difficult","1","2","3","4","5","6","7","8","9","10 — Not difficult at all"]},
+      {id:"ihot_4",label:"How much pain do you have in your hip while sitting?",options:["0 — Extreme pain","1","2","3","4","5","6","7","8","9","10 — No pain at all"]},
+      {id:"ihot_5",label:"How much trouble do you have standing on your feet for a long period of time?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_6",label:"How difficult is it for you to get up and down off the floor/ground?",options:["0 — Extremely difficult","1","2","3","4","5","6","7","8","9","10 — Not difficult at all"]},
+      {id:"ihot_7",label:"How difficult is it for you to walk on uneven surfaces?",options:["0 — Extremely difficult","1","2","3","4","5","6","7","8","9","10 — Not difficult at all"]},
+      {id:"ihot_8",label:"How difficult is it for you to lie on your affected hip side?",options:["0 — Extremely difficult","1","2","3","4","5","6","7","8","9","10 — Not difficult at all"]},
+      {id:"ihot_9",label:"How much trouble do you have with stepping over obstacles?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_10",label:"How much trouble do you have climbing up/down stairs?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_11",label:"How much trouble do you have with rising from a sitting position?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_12",label:"How much discomfort do you have with taking long strides?",options:["0 — Extreme discomfort","1","2","3","4","5","6","7","8","9","10 — No discomfort at all"]},
+      {id:"ihot_13",label:"How much difficulty do you have with getting into and/or out of a car?",options:["0 — Extreme difficulty","1","2","3","4","5","6","7","8","9","10 — No difficulty at all"]},
+      {id:"ihot_14",label:"How much trouble do you have with grinding, catching, or clicking in your hip?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_15",label:"How much difficulty do you have with putting on/taking off socks, stockings, or shoes?",options:["0 — Extreme difficulty","1","2","3","4","5","6","7","8","9","10 — No difficulty at all"]},
+      {id:"ihot_16",label:"Overall, how much pain do you have in your hip/groin?",options:["0 — Extreme pain","1","2","3","4","5","6","7","8","9","10 — No pain at all"]},
+      {id:"ihot_17",label:"How concerned are you about your ability to maintain your desired fitness level?",options:["0 — Extremely concerned","1","2","3","4","5","6","7","8","9","10 — Not concerned at all"]},
+      {id:"ihot_18",label:"How much pain do you experience in your hip after activity?",options:["0 — Extreme pain","1","2","3","4","5","6","7","8","9","10 — No pain at all"]},
+      {id:"ihot_19",label:"How concerned are you that the pain in your hip will increase if you participate in sports or recreational activities?",options:["0 — Extremely concerned","1","2","3","4","5","6","7","8","9","10 — Not concerned at all"]},
+      {id:"ihot_20",label:"How much has your quality of life deteriorated because you cannot participate in sport/recreational activities?",options:["0 — Extremely deteriorated","1","2","3","4","5","6","7","8","9","10 — Not deteriorated at all"]},
+      {id:"ihot_21",label:"How concerned are you about cutting/changing directions during your sports or recreational activities?",options:["0 — Extremely concerned","1","2","3","4","5","6","7","8","9","10 — Not concerned at all"]},
+      {id:"ihot_22",label:"How much has your performance level decreased in your sport or recreational activities?",options:["0 — Extremely decreased","1","2","3","4","5","6","7","8","9","10 — Not decreased at all"]},
+      {id:"ihot_23",label:"How much trouble do you have pushing, pulling, lifting, or carrying heavy objects at work?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_24",label:"How much trouble do you have with crouching/squatting?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_25",label:"How concerned are you that your job will make your hip worse?",options:["0 — Extremely concerned","1","2","3","4","5","6","7","8","9","10 — Not concerned at all"]},
+      {id:"ihot_26",label:"How much trouble do you have at work because of reduced hip mobility?",options:["0 — Extreme difficulty","1","2","3","4","5","6","7","8","9","10 — No difficulty at all"]},
+      {id:"ihot_27",label:"How frustrated are you because of your hip problem?",options:["0 — Extremely frustrated","1","2","3","4","5","6","7","8","9","10 — Not frustrated at all"]},
+      {id:"ihot_28",label:"How much trouble do you have with sexual activity because of your hip?",options:["0 — Severe trouble","1","2","3","4","5","6","7","8","9","10 — No trouble at all"]},
+      {id:"ihot_29",label:"How much of a distraction is your hip problem?",options:["0 — Extreme distraction","1","2","3","4","5","6","7","8","9","10 — No distraction at all"]},
+      {id:"ihot_30",label:"How difficult is it for you to release tension and stress because of your hip problem?",options:["0 — Extremely difficult","1","2","3","4","5","6","7","8","9","10 — Not difficult at all"]},
+      {id:"ihot_31",label:"How discouraged are you because of your hip problem?",options:["0 — Extremely discouraged","1","2","3","4","5","6","7","8","9","10 — Not discouraged at all"]},
+      {id:"ihot_32",label:"How concerned are you about picking up or carrying children because of your hip?",options:["0 — Extremely concerned","1","2","3","4","5","6","7","8","9","10 — Not concerned at all"]},
+      {id:"ihot_33",label:"How much of the time are you aware of the disability in your hip?",options:["0 — Constantly aware","1","2","3","4","5","6","7","8","9","10 — Not aware at all"]},
+    ],
+    score:(v)=>{const ids=Array.from({length:33},(_,i)=>`ihot_${i+1}`);const s=ids.map(id=>v[id]!==undefined&&v[id]!==""?parseFloat(v[id]):null).filter(x=>x!==null&&!isNaN(x));return s.length===33?(s.reduce((a,b)=>a+b,0)/330)*100:null;}
+  },
+
   faam:{id:"faam",label:"FAAM",full:"Foot & Ankle Ability Measure — ADL subscale",icon:"🦶",category:"Foot & Ankle",
     maxScore:100,unit:"%",mcid:8,
     interpret:(s)=>s>=90?{label:"Normal function",color:"#16a34a"}:s>=70?{label:"Mild deficit",color:"#0891b2"}:s>=50?{label:"Moderate deficit",color:"#d97706"}:{label:"Severe deficit",color:"#dc2626"},

@@ -219,5 +219,24 @@ Straight merge above still had two visually separate sections per condition (a "
 - Verified with `@babel/parser` — both files parse clean. Verified all 8 new muscle-id/region pairs exist in `MMT_DATA` via a small Node script reading `sharedClinicalData.js` directly (not by eye).
 - Palpation remains unwired — intentionally, since `PalpationModule` has no `navContext` support to target. Flagged to the user as a known follow-up, not silently left broken.
 
+## 2026-08-06 (latest) — Built 4 missing hip outcome-measure scales (Oxford Hip, HOOS, HAGOS, iHOT-33)
+
+User asked why "Oxford Hip Score", "HOOS", "HAGOS (groin)", "iHOT-33 (young/sport)" showed gray/non-clickable in the Next-best-actions list. Real gap: `hip.evidence.json`'s `conditionLayers.outcome` recommends these for several conditions (greater trochanteric pain syndrome, proximal hamstring tendinopathy, adductor-related groin pain), but `sharedClinicalData.js`'s `SCALES` registry only had Oxford Knee Score + HOOS-JR/KOOS-JR (short forms) — confirmed via grep, nothing else existed. User confirmed via AskUserQuestion: build all 4, full-length, not simplified.
+
+**Content sourcing** — none of this was written from memory; each instrument's real item wording/structure was fetched and verified before coding:
+- Oxford Hip Score (12 items): official Dept of Public Health, University of Oxford wording, sourced from an NHS trust's public patient-info PDF (sath.nhs.uk). **Licensing note:** the Oxford Hip/Knee Score family is a *proprietary, licensed instrument* (innovation.ox.ac.uk) — this app already reproduced the Oxford Knee Score (`oks`, pre-existing) under the same terms before this session touched it; flagging explicitly here rather than silently repeating that call a second time. User should be aware if this app is ever distributed beyond personal/educational use.
+- HOOS (40 items, 5 domains) and HAGOS (37 items, 6 domains): official item wording + subscale structure verified against physiotutors.com's HOOS/HAGOS calculator pages (transcribed item-by-item, not paraphrased) — both freely usable for clinical/research purposes, no license required.
+- iHOT-33 (33 items): verified against the official IHOT-33 PDF (Mohtadi et al., University of Calgary) — free to use, no license required.
+
+**Scoring caveat (documented in-code too):** this app's `SCALES` schema only supports one `score()` + `interpret()` number pair (see `oks`/`womac` above), not per-subscale breakdowns. So:
+- `oxfordhip` mirrors `oks`'s real 2007-update convention exactly: 0=worst, 4=best per item, summed 0–48, higher=better. Verified item-count (12) and full-score (48) programmatically.
+- `hoos` / `hagos` are scored as a raw item-sum (0=best...4=worst per item, matching `hoosjr`/`koosjr`/`womac`'s existing convention here) rather than their official per-subscale 0–100 normalized scores. Good for within-patient change tracking over time, but **not** the number you'd report as "the HOOS score" in a publication — `interpret()`'s label says so explicitly. Verified item-count (40/37) and full-score (160/148) programmatically.
+- `ihot33` uses the actual official formula: (sum of 33 items ÷ 330) × 100 — this **is** the standard published iHOT-33 score, 0–100, higher=better. `interpret()`'s severity cutoff (≥86 normal, ≤56 abnormal) borrows the validated iHOT-**12** cutoff since no iHOT-33-specific cutoff study was found — noted as approximate in a code comment, not asserted as validated for iHOT-33 itself.
+- All 4 verified via a Node script that hand-simulates all-best/all-worst answers and checks the returned score against the expected min/max (0/48, 0/160, 0/148, 0/100) — not just "does it parse."
+
+- `sharedClinicalData.js`: added `oxfordhip`, `hoos`, `hagos`, `ihot33` to `SCALES`, placed after `hoosjr` (same `category:"Hip"` grouping). `OutcomeMeasuresPro.jsx` needed zero changes — it already builds its scale list/search dynamically off `Object.keys(SCALES)`/`Object.values(SCALES)`, no hardcoded registry to update.
+- `SubjectiveObjective.jsx`: `OUTCOME_SCALE_IDS` got 4 new keys (`"oxford hip"`, `hoos`, `hagos`, `"ihot-33"`), added *after* the existing `"hoos-jr"`/`hoosjr` keys so a "HOOS-JR" name still matches that specific key first — `outcomeScaleId()`'s loop checks `Object.keys()` in insertion order and returns on first match, so a bare `hoos` key defined earlier would have wrongly swallowed "HOOS-JR" strings too (`"hoos-jr".includes("hoos")` is true). Order was verified deliberately, not assumed.
+- Both files verified with `@babel/parser` — parse clean.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
