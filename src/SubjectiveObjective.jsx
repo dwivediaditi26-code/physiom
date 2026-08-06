@@ -19,7 +19,7 @@ import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
 import { genericTestNav } from "./genericTestNav.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
-import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
+import { Chips } from "./ProbableDiagnosis.jsx";
 
 // Map a condition's authored fascia description to the specific Fascia-module
 // test cards to open, so tapping the "Fascia" suggestion deep-links straight to
@@ -176,6 +176,135 @@ function layerNavButtons(m, mi, onNav, PC, family) {
     }
   }
   return [<NavActionBtn key={"lay" + mi} btn={layerNavBtn(m, onNav, family)} onNav={onNav} PC={PC} alwaysShowWhy />];
+}
+
+// ── Redesigned genericPhase05 condition card (2026-08-06) ─────────────────
+// Replaces the old two-section layout (a "priority tests" box, then a
+// separate "assess by layer" set of cards) with one flat, ordered "next best
+// actions" list -- both were just "go check this" actions to a clinician,
+// split into two systems for no functional reason. Also collapses the
+// supporting/against/not-tested finding chips behind a tap (they could run
+// to 7+ items) and replaces the redundant "matchTier text + score%" pair
+// with a single compact strength bar.
+const LAYER_TAG_COLOR = {
+  observation: "#6B7280", posture: "#D97706", fma: "#059669",
+  rom: "#9333ea", fascia: "#DB2777", outcome: "#0891b2",
+};
+
+function ActionRow({ a, onNav, PC }) {
+  const [showWhy, setShowWhy] = useState(false);
+  const clickable = !!a.nav;
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px",
+        background: clickable ? `${a.col}0d` : PC.s3, border:`1px solid ${clickable ? a.col+"30" : PC.border}`,
+        borderRadius:8 }}>
+        <span style={{ fontSize:"0.95rem", flexShrink:0 }}>{a.icon}</span>
+        <span
+          onClick={clickable ? () => onNav(a.nav, a.ctx || {}) : undefined}
+          style={{ flex:1, fontSize:"0.72rem", fontWeight:700, color: clickable ? PC.text : PC.muted, cursor: clickable ? "pointer" : "default" }}>
+          {a.label}
+        </span>
+        {a.tag && (
+          <span style={{ fontSize:"0.6rem", fontWeight:700, color:a.col, background:`${a.col}14`, padding:"2px 6px", borderRadius:99, whiteSpace:"nowrap" }}>
+            {a.tag}
+          </span>
+        )}
+        <button type="button" onClick={() => setShowWhy((w) => !w)}
+          style={{ padding:"2px 6px", background:"transparent", border:"none", color:PC.muted, cursor:"pointer", fontSize:"0.7rem", fontWeight:800 }}>
+          ?
+        </button>
+      </div>
+      {showWhy && a.why && (
+        <div style={{ fontSize:"0.72rem", color:PC.muted, padding:"5px 8px", lineHeight:1.5, whiteSpace:"pre-line" }}>{a.why}</div>
+      )}
+    </div>
+  );
+}
+
+function GenericConditionCard({ c, ci, regCol, tierColor, onNav, PC, family }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
+  const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
+
+  const actions = [];
+  c.keyExams.forEach((t) => {
+    const target = genericTestNav(c.engineRegion, t);
+    if (target) {
+      actions.push({
+        key: "ke" + t, icon: target.icon, label: t,
+        col: target.kind === "rom" ? "#9333ea" : "#0891b2",
+        tag: target.kind === "rom" ? "ROM" : "Special test",
+        nav: onNav ? target.nav : null, ctx: target.ctx, why: target.why,
+      });
+    } else {
+      actions.push({ key:"ke"+t, icon:"📋", label:t, col:PC.muted, tag:null, nav:null, ctx:null,
+        why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." });
+    }
+  });
+  layers.forEach((m, mi) => {
+    if (m.key === "outcome") {
+      const teachBase = LAYER_TEACH[m.key] || "";
+      splitOutcomeMeasures(m.detail).forEach((name, i) => {
+        const sid = outcomeScaleId(name);
+        actions.push(sid
+          ? { key:"om"+mi+i, icon:"📈", label:name, col:LAYER_TAG_COLOR.outcome, tag:"Outcome measure", nav:onNav?"outcome":null, ctx:{scaleId:sid}, why:teachBase }
+          : { key:"om"+mi+i, icon:"📈", label:name, col:PC.muted, tag:"Outcome measure", nav:null, ctx:null, why:"No in-app questionnaire for this measure yet -- score it externally.\n\n"+teachBase });
+      });
+    } else {
+      const btn = layerNavBtn(m, onNav, family);
+      actions.push({ key:"lay"+mi, icon:btn.icon, label: btn.detail || btn.label, col: LAYER_TAG_COLOR[m.key] || "#0891b2", tag: btn.label, nav: btn.nav, ctx: btn.ctx, why: btn.why });
+    }
+  });
+
+  const scoreSegs = Math.max(0, Math.min(5, Math.round((c.score || 0) / 20)));
+  const tierDotColor = tierColor[c.matchTier] || "#6B7280";
+
+  return (
+    <div style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:10, padding:"10px 12px", marginBottom:7 }}>
+      <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:6 }}>
+        <span style={{ fontSize:"0.8rem", fontWeight:700, color:PC.text }}>{c.name}</span>
+        <span style={{ fontSize:"0.7rem", color:PC.muted }}>{c.score}% · {String(c.matchTier).toLowerCase()}</span>
+      </div>
+      <div style={{ display:"flex", gap:3, marginBottom:8 }}>
+        {[0,1,2,3,4].map((i) => (
+          <div key={i} style={{ flex:1, height:4, borderRadius:2, background: i < scoreSegs ? tierDotColor : PC.border }} />
+        ))}
+      </div>
+
+      <button type="button" onClick={() => setExpanded((e) => !e)}
+        style={{ width:"100%", display:"flex", alignItems:"center", gap:12, fontSize:"0.68rem", padding:"4px 0", background:"transparent", border:"none", cursor:"pointer", fontFamily:"inherit" }}>
+        <span style={{ color:"#059669" }}>✓ {c.supporting.length} supports</span>
+        <span style={{ color:PC.muted }}>✕ {c.refuting.length} against</span>
+        <span style={{ color:PC.muted }}>○ {c.unknownCount} not yet tested</span>
+        <span style={{ marginLeft:"auto", color:PC.muted }}>{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div style={{ padding:"2px 0 6px", borderTop:`1px solid ${PC.border}`, marginTop:2 }}>
+          <Chips label="Supports" items={c.supporting} color="#059669" />
+          <Chips label="Against" items={c.refuting} color="#DC2626" />
+          <Chips label="Not yet tested" items={c.missing} color="#6B7280" />
+          {c.evidenceConfidence != null && <div style={{ fontSize:"0.7rem", color:PC.muted, marginTop:4 }}>Evidence confidence: <b>{c.evidenceConfidence}%</b></div>}
+          {c.note && <div style={{ fontSize:"0.7rem", color:PC.muted, marginTop:4, fontStyle:"italic" }}>{c.note}</div>}
+          {c.whyConfidenceReduced && c.whyConfidenceReduced.length > 0 && (
+            <div style={{ fontSize:"0.7rem", color:"#92400E", marginTop:4 }}>⚠ {c.whyConfidenceReduced.join(" ")}</div>
+          )}
+        </div>
+      )}
+
+      {actions.length > 0 && (
+        <div style={{ marginTop:8 }}>
+          <div style={{ fontSize:"0.62rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:PC.muted, marginBottom:6 }}>
+            Next best actions, in order
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            {actions.map((a) => <ActionRow key={a.key} a={a} onNav={onNav} PC={PC} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const TEST_SVG = {
@@ -5001,21 +5130,20 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             </div>
           )}
 
-          {/* ── SUGGESTED PROBABLE DIAGNOSIS (2026-07-30) ──────────────
-              Same component + reasoning engine as the SOAP/Docs Assessment
-              section's "Suggest Probable Diagnosis" card (ClinicalModules.jsx),
-              reused here so Subjective gets the same specific, per-condition
-              palpation/CPA/fascia/outcome suggestions instead of the older,
-              more generic per-region checklist below. autoRun+hideButton means
-              it fires the moment this results view opens — driven entirely by
-              the existing "Suggest probable objective assessment" button
-              upstream, no second button. Region-agnostic (12 regions already
-              supported), so this covers every region without per-region code.
-              Note: like its other usage, it detects ONE primary region from
-              the data (plus its known companion, e.g. lumbar+SI) — a
-              multi-region case spanning unrelated joints only shows the
-              first-detected region's differential, same limitation as DOCS. ── */}
-          <ProbableDiagnosis data={data} onNav={onNav} autoRun hideButton />
+          {/* ── SUGGESTED PROBABLE DIAGNOSIS — removed from this view 2026-08-06 ──
+              Was mounted here 2026-07-30 (<ProbableDiagnosis autoRun hideButton>).
+              Duplicated genericPhase05's card below for Hip/Knee/Ankle-Foot/
+              Elbow-Wrist-Hand -- both pull from the identical differential
+              object (same runReasoningFromData call), just different UI. User
+              decision (see HANDOFF.md): keep genericPhase05 as the one card --
+              its priority-test buttons are clickable with a "?" why-explanation
+              and (after the 2026-08-06 fixes) actually deep-link to the right
+              module/region/test, unlike ProbableDiagnosis's plain text chips.
+              genericPhase05's card below now also carries ProbableDiagnosis's
+              score badge / colored finding chips (via the shared `Chips`
+              export) so nothing is lost visually by dropping this mount.
+              ProbableDiagnosis.jsx itself, and its separate SOAP-tab "Suggest
+              Probable Diagnosis" mount in ClinicalModules.jsx, are untouched. ── */}
 
           {/* ══════════════════════════════════════════════
               PER-REGION: 7-PHASE CLINICAL REASONING
@@ -5890,43 +6018,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     return (
                       <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", marginBottom:12, borderLeft:`4px solid ${regCol}` }}>
                         <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, color: regCol, marginBottom:4 }}>
-                          Phase 0.5 — {famLabel} condition matches
+                          💡 Phase 0.5 — {famLabel} condition matches (ranked)
                         </div>
                         <div style={{ fontSize:"0.72rem", color:PC.muted, fontStyle:"italic", marginBottom:8 }}>
                           Deterministic matches against the {famLabel} differentials, run off subjective data to guide the objective exam.
                         </div>
                         {gp.conditions.slice(0,6).map((c, ci) => (
-                          <div key={c.id} style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:8, padding:"9px 12px", marginBottom:6 }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
-                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>{c.name}</span>
-                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99, background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>{c.matchTier}</span>
-                            </div>
-                            <div style={{ fontSize:"0.72rem", color:PC.muted }}>
-                              {c.supporting.length} supporting · {c.refuting.length} refuting · {c.unknownCount} not yet tested
-                              {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
-                            </div>
-                            {c.matchTier !== "Unlikely" && (c.keyExams.length > 0 || c.assessmentModules.length > 0) && (() => {
-                              const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
-                              const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
-                              return (
-                                <div style={{ marginTop:8, background:"#fff", border:"1px solid #ECE7F7", borderRadius:12, padding:"10px 12px", boxShadow:"0 2px 10px rgba(0,0,0,0.05)" }}>
-                                  <div style={{ fontSize:"0.68rem", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color: tierColor[c.matchTier], marginBottom:6 }}>
-                                    Objective assessment — for this condition (tap ? for why &amp; what it tells you)
-                                  </div>
-                                  <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
-                                    {c.keyExams.map((t, ti) => {
-                                      const target = genericTestNav(c.engineRegion, t);
-                                      const btn = target
-                                        ? { label:t, icon:target.icon, col:tierColor[c.matchTier], nav:onNav?target.nav:null, ctx:target.ctx, why:target.why }
-                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
-                                      return <NavActionBtn key={"ke"+ti} btn={btn} onNav={onNav} PC={PC}/>;
-                                    })}
-                                    {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
+                          <GenericConditionCard key={c.id} c={c} ci={ci} regCol={regCol} tierColor={tierColor} onNav={onNav} PC={PC} family={REGION_FAMILY_KEY[r.region] || r.region} />
                         ))}
                       </div>
                     );

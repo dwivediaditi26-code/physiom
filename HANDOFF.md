@@ -184,5 +184,29 @@ Also checked the other 46 matched (region, measure) pairs from the same harness 
 
 This fix is universal like the FMA one — `OUTCOME_SCALE_IDS`/`outcomeScaleId` is shared code used by every region's outcome-measure buttons, not just `genericPhase05`'s four families.
 
+## 2026-08-06 (later still) — Re-applied the genericPhase05 / ProbableDiagnosis merge, this time with explicit go-ahead
+
+Same duplicate-card issue documented earlier this session (the "Duplicate objective-assessment card" and "Reverted commit 8c4af65" entries above) — user was shown the same duplication again via screenshot, confirmed explicitly this time to redo the merge. Identical change to what commit `8c4af65` did, reapplied on top of everything since (`b13ce40`/`d7db78e`/`ea275ee`/`7e80ace`):
+
+- `src/ProbableDiagnosis.jsx` — `Chips` exported again.
+- `src/genericPhase05.js` — per-condition object carries `band`, `missing`, `evidenceConfidence`, `whyConfidenceReduced` again.
+- `src/SubjectiveObjective.jsx` — import back to `{ Chips }`; `<ProbableDiagnosis autoRun hideButton>` mount removed again (comment updated to reference this session's actual fix history instead of the original reasoning); `genericPhase05`'s card restyled with the score badge / colored finding chips / evidence-confidence line again.
+
+One meaningful difference from the first time: `genericPhase05`'s priority-test buttons are no longer just "clickable but sends everyone to Shoulder" — they're the actually-fixed, correctly-deep-linking buttons from the Special Tests/ROM/FMA/Outcome fixes above. So keeping this card as the sole one is a stronger call now than it was the first time.
+
+Verified with `@babel/parser` on all 3 files — parse OK. No leftover `ProbableDiagnosis` code references (checked via grep — only comments mention it by name now). `genericPhase05.test.jsx` / `genericPhase05ReviewRunAnalysis.test.jsx` assertions (`/Phase 0.5 — Hip \/ Groin condition matches/i` etc.) still match — new heading text is a superset (`💡 ... (ranked)` wrapped around the same core string), reasoned through manually since `npm test` still can't run in this sandbox (unrelated Mac-vs-Linux native binary issue, documented earlier).
+
+## 2026-08-06 (later still) — Redesigned the merged card (user reviewed a mockup first, then approved)
+
+Straight merge above still had two visually separate sections per condition (a "priority tests" box, then a separate set of "assess by layer" cards) and a text-heavy top (name + redundant "Weak match" pill + "45%" + a 3-line stat sentence). Showed the user a mockup via the visualize tool before touching code; got approval on this specific layout.
+
+- New `src/SubjectiveObjective.jsx` components (right after `layerNavButtons`, ~line 189): `LAYER_TAG_COLOR` (key → accent color per layer type), `ActionRow` (compact single-line action: icon, label, colored type tag, "?" why-toggle), `GenericConditionCard` (the full per-condition card, extracted into its own component specifically so it can hold its own `useState` for the new collapse toggle — can't do that inline inside a `.map()` callback).
+- Card layout, top to bottom: name + `{score}% · {tier}` (e.g. "45% · weak match") replacing the old redundant pill+text pair; a 5-segment strength bar colored by match tier; a single collapsed summary line (✓/✕/○ counts) that expands on tap into the existing `Chips` rows + evidence-confidence + confidence-reduced warning (was always-visible before, now progressive disclosure since "not yet tested" chips could run to 7+ items); one flat "Next best actions, in order" list merging what used to be two separate systems — `keyExams` (via `genericTestNav`, tagged "Special test" or "ROM") and the assessment-module "layer" cards (Observation/Posture/Functional/Fascia/Outcome, tagged with their own label) — instead of a boxed "objective assessment" section followed by a separate row of layer cards.
+- `genericTestNav.js` — added a `kind` field (`"special"` / `"rom"`) to its return object so the new UI can tag/color actions by type; previously `kind` was only used internally to build `ctx`, never exposed.
+- Outcome measures get expanded into the same flat list too (one row per named measure, tagged "Outcome measure"), replicating the existing `splitOutcomeMeasures`/`outcomeScaleId` logic (unchanged) rather than duplicating the whole `layerNavButtons` outcome branch.
+- `src/__tests__/genericPhase05.test.jsx` — one assertion updated: `/Objective assessment — for this condition/i` (text that no longer renders) → `/Next best actions, in order/i` (the new section label). The other 3 tests in that file and all of `genericPhase05ReviewRunAnalysis.test.jsx` were checking the `Phase 0.5 — ... condition matches` heading and condition names only, both unchanged, so untouched.
+- `objAssessTileNav.test.jsx` (checks no `onNav` call ever gets a `null` context) reasoned through, not run: `ActionRow`'s click handler uses the same `onNav(a.nav, a.ctx || {})` safety pattern the old `NavActionBtn` used, so the invariant holds; its `/OPEN|→/i` element-matching wasn't specific to the old layout to begin with (matches any `→` character anywhere on the rendered page, not just this card).
+- Verified with `@babel/parser` on all touched files — parse OK. `npm test` still can't run in this sandbox (documented cause: this is a Linux sandbox, `node_modules` only has the Mac-installed native binding).
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.

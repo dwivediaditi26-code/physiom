@@ -18,7 +18,7 @@ describe("Generic Phase 0.5 for the regions without a bespoke screen", () => {
     fireEvent.click(screen.getByText(/Run analysis/));
     expect(screen.getByText(/Phase 0.5 — Hip \/ Groin condition matches/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Femoroacetabular impingement|labral|osteoarthritis/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Objective assessment — for this condition/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Next best actions, in order/i).length).toBeGreaterThan(0);
   });
   test("Knee shows a Phase 0.5 card", () => {
     const { get, set } = makeStore({

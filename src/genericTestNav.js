@@ -127,6 +127,7 @@ export function genericTestNav(engineRegion, label) {
 
   if (entry.kind === "rom") {
     return {
+      kind: "rom",
       icon: "📐",
       nav: "rom",
       ctx: { romRegion: entry.romRegion, romHighlights: entry.romHighlights },
@@ -139,5 +140,5 @@ export function genericTestNav(engineRegion, label) {
   const why = meta
     ? `${meta.structure ? meta.structure + " — " : ""}positive: ${meta.positive || "see test detail"}.`
     : "Confirmatory test for this condition — opens the Special Tests module to perform and record it.";
-  return { icon: "🔬", nav: "special", ctx: { specialRegion: entry.specialRegion, highlightTest: entry.highlightTest }, why };
+  return { kind: "special", icon: "🔬", nav: "special", ctx: { specialRegion: entry.specialRegion, highlightTest: entry.highlightTest }, why };
 }
