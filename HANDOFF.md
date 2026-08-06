@@ -266,5 +266,23 @@ User pasted a second, updated `ANATOMICAL_HOTSPOTS` block — this is the exact 
 - Verified via `@babel/parser` after the edit — parses clean. `git diff --stat` confirmed exactly 75 changed lines pairs (150 lines, insertions=deletions=75), nothing else touched in the file.
 - Still local-only, same as the round above — not pushed.
 
+## 2026-08-06 (latest+4) — Vitest actually works in this sandbox now; ran full suite + new patient-data/AI-parser safety audit
+
+User asked for vigorous testing of three workflows: patient data handling, subjective assessment, AI parser. `npm test` had been undocumented-broken all session (this sandbox is Linux aarch64, `node_modules/@rolldown` only shipped `binding-darwin-arm64` since the original `npm install` ran on the Mac) -- fixed by `npm install @rolldown/binding-linux-arm64-gnu@1.1.4 --no-save --ignore-scripts` in the mounted folder. This is sandbox-local optional-dependency filler only: `package.json`/`package-lock.json` untouched, the existing darwin binding untouched, self-pruning on the user's next real `npm install` on their Mac. `--reporter=basic` doesn't exist in this vitest version (4.1.9) -- use `--reporter=dot` or omit.
+
+Ran all 98 test files (~900 tests) in ~10-file batches (single `npx vitest run` on the full suite gets killed by the tool's 45s cap before finishing). Every single failure matched an already-documented known issue 1:1, zero new regressions:
+- 3 files broken by the "Fill patient record" button removal (`aiIntakeParser`, `aiPipeline10Regions`, `aiChatReviewUI`) -- still not decided, still as-is.
+- `bodyChartRegions` posterior-thigh L/R overlap 0.57 -- still flagged, not fixed.
+- `extractionAuditTrail` region auto-defaults to "Knee (R)" -- still flagged, not fixed.
+- 6 stale tests (`cervicalTestNav`, `thoracicTestNav`, `summaryModalCrash`, `objAssessTileNav`, `subjectiveFormContinuousScroll`, and their sub-assertions) -- still stale, not updated.
+
+Had a subagent map all three workflows read-only first (Subjective → `reasoningEngine/*`, a deterministic pipeline, no LLM; AI parser → real 2-stage Groq LLM call with a verifier pass, human-confirm gate before any `set()`, red flags never auto-merged; Patient data → localStorage + Supabase, per-user-scoped keys). Flagged during that pass: `src/supabase.js` falls back to the **real production** Supabase project when `VITE_SUPABASE_URL` isn't set -- meaning this sandbox, and any local dev/test run without explicit env vars, points at production by default. RLS policies (claimed in `LegalPages.jsx` to enforce per-clinician access + AES-256 at rest) aren't verifiable from client code -- would need direct Supabase project config review. Also: full patient PHI (name, DOB, free-text clinical narrative) sits as plaintext, unencrypted in `localStorage` -- no client-side encryption-at-rest, unlike the claimed Supabase-side AES-256.
+
+New `src/__tests__/patientDataSafetyAudit.test.jsx` (9 tests, all passing) -- targeted at exactly the three areas asked about, not general feature coverage: per-user `localStorage` isolation (`dbKey`/`draftKey` never collide, one user's patient invisible loading a different user's DB, anon data never sweeps into a real account on login), `savePatientDB` tags Supabase rows with the userId active at save-initiation (not whichever finishes last -- mocked `supabase.from`, since unmocked this would hit the real production DB), and `mapParseResultToUpdates` hallucination/red-flag-safety guarantees (enum fields and red-flag verdict fields never written even if present in a malformed AI result; bladder/bowel and general flags always land in `redFlagsToReview`, never auto-merged; function verified pure).
+
+Found one real (minor) bug via this new suite: `aiIntakeParser.js`'s `extractionMeta` guard used `typeof x === "object"` for `_confidence`/`_sourceQuotes`, which is also true for arrays -- so a malformed AI response returning an array slipped through unnormalized instead of degrading to `{}` as the code's own comment promised. Fixed with an `Array.isArray()` exclusion.
+
+Verified via `@babel/parser` on both touched files. Committed locally as `44fe96e` on top of `41fe126` -- not pushed, same as the round above (user's call to make).
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
