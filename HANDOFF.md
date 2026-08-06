@@ -242,5 +242,20 @@ User asked why "Oxford Hip Score", "HOOS", "HAGOS (groin)", "iHOT-33 (young/spor
 
 User: wire palpation, skip region-targeting (PalpationModule has none, confirmed earlier). genericTestNav.js: added kind:"palpation" -> {nav:"palpation", ctx:{}, why}. 6 keyExams mapped: hip x2 (ischial tuberosity, adductor origin/pubic ramus), knee x1 (patellar tendon), foot x3 (calcaneal tubercle, heel pad, metatarsal heads/plantar plate). SubjectiveObjective.jsx: KIND_STYLE lookup replaces old 3-way ternary, palpation tag = stone gray #78716c. Parse verified both files.
 
+## 2026-08-06 (latest+2) — Palpation region-targeting added (the gap flagged above, closed)
+
+User supplied the full current `ANATOMICAL_HOTSPOTS` array (70 points, `ClinicalModules.jsx`) and asked to wire it into the 6 palpation keyExams above so they actually highlight a point instead of opening the module blind.
+
+- `genericTestNav.js`: each palpation `MAP` entry now optionally carries `hotspotIds: [...]` (real `ANATOMICAL_HOTSPOTS` ids, both L/R, since a condition-level recommendation doesn't know the affected side). `genericTestNav()`'s palpation branch returns `ctx:{ palpHotspotIds }` when present. Mapped 5 of 6 (verified against the pasted array, no guessing):
+  - Hip "Palpation of ischial tuberosity" → `hamstring_r/l` (chosen over `gmax_r/l` — both mention ischial tuberosity, but hamstring is the closer match for *proximal hamstring tendinopathy*, this test's own rationale).
+  - Hip "Palpation of adductor origin / pubic ramus" → `groin_r/l`.
+  - Knee "Palpation of patellar tendon" → `patella_r/l`.
+  - Foot "Palpation of medial calcaneal tubercle / plantar fascia origin" and "...central weight-bearing heel pad..." → both point at `plantar_r/l` (only one heel/plantar hotspot exists in the array; can't visually distinguish medial-origin vs central-fat-pad sub-locations within it — noted in-code, not silently merged).
+  - Foot "Palpation of metatarsal heads / plantar plate" → left unmapped, no forefoot/metatarsal hotspot exists in the array.
+- `ClinicalModules.jsx` `PalpationModule`: now accepts `navContext={}`. New `targetHotspotIds = navContext.palpHotspotIds` derivation + effect: switches `view` to the target's front/back side and scrolls the SVG into view. Does **not** auto-create a pin/finding — that would fabricate an unexamined result; it only highlights. New dismissible amber banner above the view toggle names the target point(s). `BodyFigureSVG` takes a new `targetHotspotIds` prop, renders a pulsing dashed ring (reuses the existing global `pulse` keyframe, same one the hover state already uses) around matching hotspots on both front/back halves — cosmetic only, doesn't gate the existing click handler.
+- `AppFull.jsx` (~line 1531): `LazyPalpation` mount gained `navContext={active==="palpation"?navContext:{}}`, same pattern every sibling module (`LazySpecial`, `LazyROM`, `LazyMMT`, etc.) already uses. `lazy_palpation.jsx` is a pure re-export (`export { PalpationModule as default }`), so no wrapper changes needed there.
+- Verified via `@babel/parser` (jsx + optionalChaining + nullishCoalescingOperator plugins) on all 3 touched files — parse OK. `npm test` still can't run in this sandbox (Linux vs the Mac-installed `@rolldown/binding-darwin-arm64`, documented earlier) — not test-confirmed, reasoned through manually.
+- **Not committed to git this round** — user asked to keep this session's edits local-files-only (no push), given the exposed token from earlier sessions is still unrevoked. Working tree has these 3 files modified, nothing else touched.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.

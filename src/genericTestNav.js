@@ -28,12 +28,22 @@
 //     -- it's "Hip & Pelvis" (not "Hip"), "Knee", "Elbow & Forearm" (not
 //     "Elbow") -- keys must match MMT_DATA exactly or MMTModule silently
 //     falls back to its default region.
+//   - kind:"palpation" -> opens PalpationModule (ClinicalModules.jsx). It has
+//     no region concept at all (just a front/back body-map of point
+//     hotspots, ANATOMICAL_HOTSPOTS), so there's no "region" to pass -- only
+//     an optional hotspotIds array naming real ANATOMICAL_HOTSPOTS ids to
+//     highlight (both L/R variants, since a condition-level recommendation
+//     doesn't know which side the patient's affected). PalpationModule
+//     switches to that hotspot's front/back view and rings it -- it does NOT
+//     auto-record a finding (that would fabricate an unexamined result).
+//     Left without hotspotIds (still opens the module, just no highlight)
+//     when no ANATOMICAL_HOTSPOTS point is a clean match -- e.g. metatarsal
+//     heads/plantar plate has no dedicated forefoot hotspot in the array.
 //
-// Labels with no dedicated module yet (imaging referrals, palpation items
-// and anything not a clean 1:1 match -- guessing wrong is worse than
-// leaving it non-clickable) resolve to null and stay a non-clickable "no
-// dedicated module" chip, same honest fallback shoulderPhase05 already uses
-// for its own gaps.
+// Labels with no dedicated module yet (imaging referrals and anything not a
+// clean 1:1 match -- guessing wrong is worse than leaving it non-clickable)
+// resolve to null and stay a non-clickable "no dedicated module" chip, same
+// honest fallback shoulderPhase05 already uses for its own gaps.
 
 import { SPECIAL_TESTS_DATA } from "./sharedClinicalData.js";
 
@@ -62,11 +72,18 @@ const MAP = {
     },
     "Palpation of ischial tuberosity": {
       kind: "palpation",
-      why: "Ischial tuberosity tenderness -- proximal hamstring tendinopathy. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      // hamstring_r/l structures list "Proximal hamstring origin (ischial
+      // tuberosity)" directly -- gmax_r/l also mentions ischial tuberosity as
+      // a secondary structure, but hamstring is the closer clinical match for
+      // *proximal hamstring tendinopathy* specifically (this test's own
+      // rationale below), so hamstring wins over gmax, not a coin flip.
+      hotspotIds: ["hamstring_r", "hamstring_l"],
+      why: "Ischial tuberosity tenderness -- proximal hamstring tendinopathy. Opens the Palpation module and highlights the proximal hamstring point (both sides -- pick the affected one).",
     },
     "Palpation of adductor origin / pubic ramus": {
       kind: "palpation",
-      why: "Adductor-origin / pubic ramus tenderness -- adductor strain / athletic pubalgia. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      hotspotIds: ["groin_r", "groin_l"],
+      why: "Adductor-origin / pubic ramus tenderness -- adductor strain / athletic pubalgia. Opens the Palpation module and highlights the groin/adductor-origin point (both sides -- pick the affected one).",
     },
   },
   knee: {
@@ -95,7 +112,8 @@ const MAP = {
     },
     "Palpation of patellar tendon": {
       kind: "palpation",
-      why: "Tenderness at the inferior pole of the patella / patellar tendon -- patellar tendinopathy. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      hotspotIds: ["patella_r", "patella_l"],
+      why: "Tenderness at the inferior pole of the patella / patellar tendon -- patellar tendinopathy. Opens the Palpation module and highlights the patella/patellar-tendon point (both sides -- pick the affected one).",
     },
   },
   ankle: {
@@ -123,15 +141,23 @@ const MAP = {
     },
     "Palpation of medial calcaneal tubercle / plantar fascia origin": {
       kind: "palpation",
-      why: "Medial calcaneal tubercle tenderness -- plantar fasciitis. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      hotspotIds: ["plantar_r", "plantar_l"],
+      why: "Medial calcaneal tubercle tenderness -- plantar fasciitis. Opens the Palpation module and highlights the plantar/heel point (both sides -- pick the affected one).",
     },
     "Palpation of central weight-bearing heel pad (vs medial origin)": {
       kind: "palpation",
-      why: "Central heel-pad tenderness vs medial origin helps differentiate fat-pad syndrome from plantar fasciitis. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      // Same single plantar_r/l hotspot as the medial-origin entry above --
+      // ANATOMICAL_HOTSPOTS has one heel/plantar point, not separate
+      // medial-origin vs central-fat-pad points, so this can highlight the
+      // area but can't visually distinguish the two sub-locations within it.
+      hotspotIds: ["plantar_r", "plantar_l"],
+      why: "Central heel-pad tenderness vs medial origin helps differentiate fat-pad syndrome from plantar fasciitis. Opens the Palpation module and highlights the plantar/heel point (both sides) -- the medial-vs-central distinction itself still needs manual palpation, no separate hotspot for it.",
     },
     "Palpation of metatarsal heads / plantar plate": {
       kind: "palpation",
-      why: "Metatarsal head / plantar plate tenderness -- metatarsalgia or plantar plate injury. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+      // No forefoot/metatarsal-head hotspot exists in ANATOMICAL_HOTSPOTS --
+      // left unmapped rather than guessing at the nearest point.
+      why: "Metatarsal head / plantar plate tenderness -- metatarsalgia or plantar plate injury. Opens the Palpation module; no matching body-map point yet, locate manually.",
     },
   },
   elbow: {
@@ -205,11 +231,16 @@ export function genericTestNav(engineRegion, label) {
   }
 
   if (entry.kind === "palpation") {
-    // PalpationModule (ClinicalModules.jsx) has no navContext support at
-    // all -- it's a free-form body-map hotspot picker, no region/highlight
-    // to target. So unlike special/rom/mmt this ctx is always {} -- opens
-    // the module, doesn't jump anywhere specific. why explains that.
-    return { kind: "palpation", icon: "🖐️", nav: "palpation", ctx: {}, why: entry.why };
+    // PalpationModule (ClinicalModules.jsx) has no region concept, just
+    // point hotspots -- ctx carries palpHotspotIds (real ANATOMICAL_HOTSPOTS
+    // ids) when a clean match exists so the module can switch view and ring
+    // the point; empty array/undefined when it doesn't (e.g. metatarsal
+    // heads), same honest-gap behavior as leaving it non-clickable.
+    return {
+      kind: "palpation", icon: "🖐️", nav: "palpation",
+      ctx: entry.hotspotIds ? { palpHotspotIds: entry.hotspotIds } : {},
+      why: entry.why,
+    };
   }
 
   // kind === "special"

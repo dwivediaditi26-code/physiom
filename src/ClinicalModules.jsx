@@ -6849,7 +6849,7 @@ const BODY_LABEL_SPACE = 16;
 
 const BODY_SVG_VIEWBOX = "0 0 210 216";
 
-function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view, hotspots }) {
+function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view, hotspots, targetHotspotIds }) {
   // view: "front" | "back"
   const offsetX = view === "back" ? 110 : 0;
 
@@ -6884,10 +6884,18 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view, hotspots 
         const sy = BODY_LABEL_SPACE + (h.y / 100) * 200;
         const pin = pins.find(p => p.hotspotId === h.id);
         const isHovered = hoveredHotspot === h.id;
+        const isTarget = targetHotspotIds && targetHotspotIds.includes(h.id);
         const gradeColor = pin ? (GRADE_COLOR[pin.tenderness] || C.accent) : null;
 
         return (
           <g key={h.id}>
+            {/* Deep-link target ring (genericTestNav.js palpation ctx) --
+                cosmetic only, does not gate/replace the click handler below */}
+            {isTarget && (
+              <circle cx={sx} cy={sy} r={h.r * 0.85 + 2.2}
+                fill="none" stroke="#f59e0b" strokeWidth="1.1" strokeDasharray="2,1.6"
+                style={{ animation:"pulse 1.2s infinite", pointerEvents:"none" }}/>
+            )}
             {/* Invisible interaction zone */}
             <circle
               data-hotspot-id={h.id}
@@ -7025,7 +7033,7 @@ function GradeChip({ value, selected, onClick }) {
 }
 
 // ─── Main PalpationModule ─────────────────────────────────────────────────────
-function PalpationModule({ data, set }) {
+function PalpationModule({ data, set, navContext={} }) {
   const C = getC();
   // Hydrate from any previously recorded findings -- this was previously
   // useState([]) with nothing to load existing data, so a useEffect below
@@ -7057,6 +7065,25 @@ function PalpationModule({ data, set }) {
   [editedHotspots]);
   const [exportText, setExportText] = useState(null);
   const svgRef = useRef(null);
+
+  // ── Deep-link targeting from genericTestNav.js's kind:"palpation" ctx
+  // (SubjectiveObjective.jsx's "Next best actions" rows). ctx.palpHotspotIds
+  // names real ANATOMICAL_HOTSPOTS ids (both L/R variants -- a condition-level
+  // recommendation doesn't know which side is affected). Switches to
+  // whichever front/back view the target lives on and rings it; does NOT
+  // auto-record a finding -- that would fabricate an unexamined result. Ids
+  // with no clean hotspot match (e.g. metatarsal heads) come through as
+  // undefined and just open the module with no ring, same honest gap as
+  // before this wiring.
+  const targetHotspotIds = navContext.palpHotspotIds || null;
+  const [targetDismissed, setTargetDismissed] = useState(false);
+  useEffect(() => {
+    setTargetDismissed(false);
+    if (!targetHotspotIds || !targetHotspotIds.length) return;
+    const first = ANATOMICAL_HOTSPOTS.find(h => targetHotspotIds.includes(h.id));
+    if (first && first.side !== "both") setView(first.side);
+    setTimeout(() => { svgRef.current?.scrollIntoView({ behavior:"smooth", block:"center" }); }, 80);
+  }, [targetHotspotIds]);
 
   // Click on hotspot → add or select pin
   const handleHotspotClick = useCallback((hotspot) => {
@@ -7235,6 +7262,27 @@ function PalpationModule({ data, set }) {
         </div>
       </div>
 
+      {/* ── Deep-link target banner (genericTestNav.js palpation ctx) ── */}
+      {targetHotspotIds && targetHotspotIds.length > 0 && !targetDismissed && (() => {
+        const targets = ANATOMICAL_HOTSPOTS.filter(h => targetHotspotIds.includes(h.id));
+        if (!targets.length) return null;
+        const names = [...new Set(targets.map(t => t.label))].join(" / ");
+        return (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+            marginBottom:12, padding:"8px 12px", background:"rgba(245,158,11,0.1)",
+            border:"1.5px solid #f59e0b", borderRadius:10, flexWrap:"wrap" }}>
+            <span style={{ fontSize:"0.78rem", color:"#92400e", fontWeight:700 }}>
+              🎯 Recommended point: {names} — ringed below (both sides shown, pick the affected one).
+            </span>
+            <button onClick={() => setTargetDismissed(true)}
+              style={{ padding:"3px 9px", borderRadius:6, border:"1px solid #f59e0b",
+                background:"transparent", color:"#92400e", fontSize:"0.72rem", fontWeight:700, cursor:"pointer" }}>
+              Dismiss
+            </button>
+          </div>
+        );
+      })()}
+
       {/* ── View toggle ── */}
       <div style={{ display:"flex", gap:6, marginBottom:12 }}>
         {[["front","Anterior View 🫀"],["back","Posterior View 🦴"]].map(([v,l]) => (
@@ -7276,6 +7324,7 @@ function PalpationModule({ data, set }) {
               hoveredHotspot={view === "front" ? hovered : null}
               onHover={view === "front" ? setHovered : () => {}}
               onClick={view === "front" ? handleHotspotClick : () => {}}
+              targetHotspotIds={targetDismissed ? null : targetHotspotIds}
             />
 
             {/* Back body (right) */}
@@ -7286,6 +7335,7 @@ function PalpationModule({ data, set }) {
               hoveredHotspot={view === "back" ? hovered : null}
               onHover={view === "back" ? setHovered : () => {}}
               onClick={view === "back" ? handleHotspotClick : () => {}}
+              targetHotspotIds={targetDismissed ? null : targetHotspotIds}
             />
 
             {/* Divider */}

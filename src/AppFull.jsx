@@ -1528,7 +1528,7 @@ function AppInner({ currentUser, onSignOut }) {
                   )}
                 </div>
               ):tests==="PALPATION_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set}/></Suspense>
+                <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="palpation"?navContext:{}}/></Suspense>
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
