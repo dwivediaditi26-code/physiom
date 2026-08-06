@@ -141,7 +141,14 @@ const OUTCOME_SCALE_IDS = {
   ndi: "ndi", odi: "odi", oswestry: "odi", lefs: "lefs", psfs: "psfs",
   "koos-jr": "koosjr", koosjr: "koosjr", "hoos-jr": "hoosjr", hoosjr: "hoosjr",
   faam: "faam", "tsk": "tsk", fabq: "fabqpa", pcs: "pcs", rmdq: "rmdq", roland: "rmdq",
-  womac: "womac", "oxford knee": "oks", oxford: "oks",
+  // "oxford" alone used to catch ANY "Oxford ___ Score" and send it to "oks"
+  // (Oxford KNEE Score) -- the app only has the knee version implemented, so
+  // hip's "Oxford Hip Score", shoulder's "Oxford Shoulder Score", and foot's
+  // "Manchester-Oxford Foot Questionnaire (MOXFQ)" were all being silently
+  // routed to the wrong questionnaire (Oxford Knee) instead of correctly
+  // falling back to "no in-app questionnaire yet". Only match the specific,
+  // actually-implemented one.
+  womac: "womac", "oxford knee": "oks",
   "visa-a": "visaa", visaa: "visaa", "visa-p": "visap", "visa-pf": "visap", visap: "visap",
   constant: "constant", ases: "ases", lysholm: "lysholm", ikdc: "ikdc", prtee: "prtee",
   quebec: "qbpds", "start back": "startback", nprs: "nprs",

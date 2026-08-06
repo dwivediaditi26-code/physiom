@@ -166,5 +166,23 @@ Same bug class as Special Tests/ROM: `layerNavBtn` never set a `ctx` for the `"f
 - No per-test highlight here (unlike Special Tests'/ROM's `highlightTest`/`romHighlights`) -- `FunctionalScreenHub` only has a search box, no highlight-a-specific-test state to hook into. Region-correctness is the whole fix, and it's the same fix Special Tests/ROM needed.
 - Broader blast radius than the previous two fixes on purpose: this one corrects the FMA card for **every** region's Phase 0.5 block, not just the four `genericPhase05` families, since `layerNavBtn` is shared code.
 
+## 2026-08-06 (later still) — Outcome measures: fixed wrong-questionnaire mismatches (worse bug class than the last three)
+
+Different from the Special Tests/ROM/FMA fixes: this one wasn't "opens the right module with no context," it was **silently opening the wrong questionnaire**. Worth flagging as more serious — a hip patient tapping "Oxford Hip Score" was being handed the Oxford *Knee* Score form.
+
+Root cause: `outcomeScaleId()` (`SubjectiveObjective.jsx`) matches a measure name against `OUTCOME_SCALE_IDS` by substring (`name.includes(key)`). The map had both `"oxford knee": "oks"` and a bare `oxford: "oks"` fallback — so *any* "Oxford ___" measure matched `"oks"` (Oxford Knee Score), the app's only implemented Oxford scale.
+
+Wrote a small Python harness against the actual `outcomeScaleId` matching logic and every region's real `conditionLayers.outcome` text (`reasoningEngine/regions/*.evidence.json`) to check all 51 distinct (region, measure) pairs for mismatches, rather than eyeballing it — found 5 real false positives, all via the same `oxford` key:
+
+- Hip: **"Oxford Hip Score"**, "HAGOS (groin) + Oxford Hip", "VISA-G + Oxford Hip" → all were going to Oxford Knee Score.
+- Shoulder: **"Oxford Shoulder Score"** → same wrong target.
+- Foot: **"Manchester-Oxford Foot Questionnaire (MOXFQ)"** → same wrong target — not even a naming coincidence, just an unrelated foot questionnaire that happens to contain "Oxford."
+
+Fix: deleted the bare `oxford: "oks"` fallback, kept only the specific `"oxford knee": "oks"`. Re-ran the same harness after the change — all 5 now correctly fall through to the existing "no in-app questionnaire yet" non-clickable state (confirmed via `sharedClinicalData.js`'s `SCALES`: no `ohs`, `oss`, or `moxfq` id exists in the app at all, so non-clickable is the honest, correct state, not a regression). "Oxford Knee Score" (knee region) still correctly matches `oks`.
+
+Also checked the other 46 matched (region, measure) pairs from the same harness run for the same class of error (compound strings like "IKDC + KOOS + Tegner", "PRTEE + DASH") — those all matched a scale that's genuinely present in the string, just not the *only* one mentioned when several are combined; not a misdirection, left as-is.
+
+This fix is universal like the FMA one — `OUTCOME_SCALE_IDS`/`outcomeScaleId` is shared code used by every region's outcome-measure buttons, not just `genericPhase05`'s four families.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
