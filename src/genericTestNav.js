@@ -21,9 +21,16 @@
 //     these regions -- reused here so the priority-test button and the
 //     layer card agree on what "ROM" means for a given region. Note ROM_DATA
 //     has no "Hand" region at all.
+//   - kind:"mmt" -> a real { mmtRegion, mmtHighlights } into MMT_DATA
+//     (sharedClinicalData.js), consumed by the MMT module (lazy_mmt.jsx ->
+//     PhysioNeuro.jsx's MMTModule) exactly like ROM's romRegion/romHighlights.
+//     Note MMT_DATA's region keys don't match ROM_DATA's/SPECIAL_TESTS_DATA's
+//     -- it's "Hip & Pelvis" (not "Hip"), "Knee", "Elbow & Forearm" (not
+//     "Elbow") -- keys must match MMT_DATA exactly or MMTModule silently
+//     falls back to its default region.
 //
-// Labels with no dedicated module yet (imaging referrals, MMT/palpation
-// items and anything not a clean 1:1 match -- guessing wrong is worse than
+// Labels with no dedicated module yet (imaging referrals, palpation items
+// and anything not a clean 1:1 match -- guessing wrong is worse than
 // leaving it non-clickable) resolve to null and stay a non-clickable "no
 // dedicated module" chip, same honest fallback shoulderPhase05 already uses
 // for its own gaps.
@@ -40,6 +47,18 @@ const MAP = {
     "Passive hip ROM with end-feel (capsular pattern)": {
       kind: "rom", romRegion: "Hip", romHighlights: ["rom_hir", "rom_her", "rom_hflex", "rom_hext", "rom_habd", "rom_hadd"],
       why: "Hip OA capsular pattern: IR most restricted, then ER, then abduction. Compare bilaterally.",
+    },
+    "Resisted hip abduction (MMT)": {
+      kind: "mmt", mmtRegion: "Hip & Pelvis", mmtHighlights: ["mmt_gmed", "mmt_gmin"],
+      why: "Gluteus medius/minimus weakness on resisted abduction -- correlates with Trendelenburg sign and lateral hip (greater trochanteric) pain.",
+    },
+    "Resisted hip extension / knee flexion (MMT)": {
+      kind: "mmt", mmtRegion: "Hip & Pelvis", mmtHighlights: ["mmt_gmax", "mmt_hamstr"],
+      why: "Pain or weakness on resisted hip extension or knee flexion, localised to the ischial tuberosity -- proximal hamstring tendinopathy.",
+    },
+    "Resisted hip adduction (MMT)": {
+      kind: "mmt", mmtRegion: "Hip & Pelvis", mmtHighlights: ["mmt_adduc"],
+      why: "Pain on resisted adduction -- adductor strain / athletic pubalgia. Compare against the adductor squeeze test threshold.",
     },
   },
   knee: {
@@ -61,6 +80,10 @@ const MAP = {
     "Passive knee ROM with end-feel": {
       kind: "rom", romRegion: "Knee", romHighlights: ["rom_kflex", "rom_kext"],
       why: "Flexion loss indicates effusion, posterior capsule tightness, or a meniscal block. Measure first.",
+    },
+    "Resisted knee extension (MMT)": {
+      kind: "mmt", mmtRegion: "Knee", mmtHighlights: ["mmt_quad"],
+      why: "Pain on resisted knee extension with tenderness at the inferior pole of the patella -- patellar tendinopathy.",
     },
   },
   ankle: {
@@ -97,6 +120,18 @@ const MAP = {
       kind: "rom", romRegion: "Elbow", romHighlights: ["rom_eflex", "rom_eext", "rom_esup", "rom_epro"],
       why: "Flexion/extension and forearm supination/pronation -- establishes mobility baseline and end-feel quality.",
     },
+    "Resisted elbow flexion/supination (biceps)": {
+      kind: "mmt", mmtRegion: "Elbow & Forearm", mmtHighlights: ["mmt_bicep"],
+      why: "Pain or weakness on resisted flexion + supination with antecubital tenderness -- distal biceps tendinopathy or rupture (look for a Popeye deformity).",
+    },
+    "Resisted supination": {
+      kind: "mmt", mmtRegion: "Elbow & Forearm", mmtHighlights: ["mmt_supinator"],
+      why: "Pain ~4cm distal to the lateral epicondyle on resisted supination -- radial tunnel / PIN entrapment (can mimic lateral epicondylalgia).",
+    },
+    "Resisted pronation with elbow flexion": {
+      kind: "mmt", mmtRegion: "Elbow & Forearm", mmtHighlights: ["mmt_pt"],
+      why: "Pain on resisted pronation with elbow flexion, proximal-volar-forearm tenderness -- pronator teres syndrome (median nerve entrapment).",
+    },
   },
   wrist: {
     "Finkelstein's test": { kind: "special", specialRegion: "elbow_wrist", highlightTest: "st_finkelstein" },
@@ -131,6 +166,16 @@ export function genericTestNav(engineRegion, label) {
       icon: "📐",
       nav: "rom",
       ctx: { romRegion: entry.romRegion, romHighlights: entry.romHighlights },
+      why: entry.why,
+    };
+  }
+
+  if (entry.kind === "mmt") {
+    return {
+      kind: "mmt",
+      icon: "💪",
+      nav: "mmt",
+      ctx: { mmtRegion: entry.mmtRegion, mmtHighlights: entry.mmtHighlights },
       why: entry.why,
     };
   }

@@ -232,10 +232,11 @@ function GenericConditionCard({ c, ci, regCol, tierColor, onNav, PC, family }) {
   c.keyExams.forEach((t) => {
     const target = genericTestNav(c.engineRegion, t);
     if (target) {
+      const kindCol = target.kind === "rom" ? "#9333ea" : target.kind === "mmt" ? "#f97316" : "#0891b2";
+      const kindTag = target.kind === "rom" ? "ROM" : target.kind === "mmt" ? "MMT" : "Special test";
       actions.push({
         key: "ke" + t, icon: target.icon, label: t,
-        col: target.kind === "rom" ? "#9333ea" : "#0891b2",
-        tag: target.kind === "rom" ? "ROM" : "Special test",
+        col: kindCol, tag: kindTag,
         nav: onNav ? target.nav : null, ctx: target.ctx, why: target.why,
       });
     } else {
@@ -1548,8 +1549,15 @@ function CyriaxModule({ data, set, navContext={} }) {
 
 
 const SEP_S="|||";
-const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":"#dc2626","Shoulder (L)":"#0891b2","Shoulder (R)":"#06b6d4","Elbow/Wrist/Hand":"#059669","Hip / Groin":"#d946ef","Knee (L)":"#f59e0b","Knee (R)":"#eab308","Ankle / Foot":"#16a34a"};
+const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":"#dc2626","Shoulder (L)":"#0891b2","Shoulder (R)":"#06b6d4","Elbow/Wrist/Hand":"#059669","Hip / Groin":"#FBCFE8","Knee (L)":"#f59e0b","Knee (R)":"#eab308","Ankle / Foot":"#16a34a"};
 const ALL_REGIONS_S=Object.keys(RC_S);
+// Baby-pink (Hip/Groin) is too light for white text/labels to stay
+// readable against it -- everywhere regCol is used as a *text* color
+// (region header title/tags, active region-tab label) needs a darker
+// on-brand variant instead. All other region colors are dark/saturated
+// enough that white or the raw color already reads fine as text, so
+// this only overrides the one region that needed it.
+const RC_TEXT_OVERRIDE={"Hip / Groin":"#9d174d"};
 function NavActionBtn({ btn, onNav, PC, alwaysShowWhy = false }) {
   const [showWhy, setShowWhy] = React.useState(false);
   const whyOpen = alwaysShowWhy || showWhy;
@@ -5096,13 +5104,14 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
               background: PC.bg, padding:"6px 0", marginBottom:2 }}>
               {allRegionResults.map((r, ri) => {
                 const regCol = r.urgentFlag ? PC.red : (RC_S[REGION_FAMILY_KEY[r.region] || r.region] || PC.accent);
+                const regTextCol = r.urgentFlag ? regCol : (RC_TEXT_OVERRIDE[REGION_FAMILY_KEY[r.region] || r.region] || regCol);
                 const isActive = r.region === effectiveActiveRegion;
                 return (
                   <button key={ri} type="button" onClick={() => setActiveReviewRegion(r.region)}
                     style={{ padding:"7px 14px", borderRadius:20, fontSize:"0.78rem", fontWeight:isActive?800:600,
                       border:`1.5px solid ${isActive?regCol:PC.border}`,
                       background: isActive ? `${regCol}18` : "transparent",
-                      color: isActive ? regCol : PC.muted, cursor:"pointer", fontFamily:"inherit",
+                      color: isActive ? regTextCol : PC.muted, cursor:"pointer", fontFamily:"inherit",
                       display:"flex", alignItems:"center", gap:5 }}>
                     {r.urgentFlag && <span>🚨</span>}
                     {r.region}
@@ -5151,6 +5160,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
           {insight.regionResults.map((r, ri) => {
             if (effectiveActiveRegion && r.region !== effectiveActiveRegion) return null;
             const regCol = RC_S[REGION_FAMILY_KEY[r.region] || r.region] || PC.accent;
+            const regTextCol = RC_TEXT_OVERRIDE[REGION_FAMILY_KEY[r.region] || r.region] || "#fff";
 
             // ── Derive observation suggestions from pattern ──
             const obsItems = [];
@@ -5273,13 +5283,15 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 {/* Region header bar */}
                 <div style={{ background: r.urgentFlag ? PC.red : regCol, padding:"10px 16px",
                   display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <div style={{ fontWeight:800, color:"#fff", fontSize:"0.82rem" }}>
+                  <div style={{ fontWeight:800, color: r.urgentFlag ? "#fff" : regTextCol, fontSize:"0.82rem" }}>
                     {r.region}
                   </div>
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", justifyContent:"flex-end" }}>
                     {r.tags.slice(0,4).map(t => (
                       <span key={t} style={{ fontSize:"0.78rem", fontWeight:700, padding:"2px 7px",
-                        borderRadius:99, background:"rgba(255,255,255,0.25)", color:"#fff" }}>{t}</span>
+                        borderRadius:99,
+                        background: r.urgentFlag ? "rgba(255,255,255,0.25)" : (regTextCol === "#fff" ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.08)"),
+                        color: r.urgentFlag ? "#fff" : regTextCol }}>{t}</span>
                     ))}
                   </div>
                 </div>
