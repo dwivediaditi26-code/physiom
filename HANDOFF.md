@@ -116,7 +116,19 @@ Root cause (unchanged from below): `genericPhase05.js` (Hip/Groin, Knee, Ankle/F
   - Scope note: this only touches the 4 `genericPhase05` families. Shoulder/Cervical/Lumbar/Thoracic each have their own bespoke Phase 0.5 block further down (not `genericPhase05`) — those were pulling from the same underlying differential as `ProbableDiagnosis` too, so removing the `ProbableDiagnosis` mount doesn't lose them anything, but their visual styling wasn't touched/upgraded this round — only asked to fix Hip/Groin-family + generic.
 - Verified with `@babel/parser` on all 3 touched files — parse OK. `npm test` still can't run in this bash sandbox — confirmed the cause is unrelated to any of this: this sandbox is Linux (`aarch64`), `node_modules/@rolldown/` only has the `binding-darwin-arm64` package because `npm install` was originally run on the user's Mac, not this sandbox. No Linux binding was ever fetched. Real test confirmation needs to happen in a Terminal on the actual Mac.
 - `src/__tests__/genericPhase05.test.jsx` and `genericPhase05ReviewRunAnalysis.test.jsx` — briefly renamed `.removed` during the first (wrong) attempt, restored to their real names. Untouched otherwise; their assertions (heading text, chip presence) should still hold against the new markup — reasoned through manually since the suite can't run here, not test-confirmed.
-- Not yet committed or pushed.
+- Committed as `8c4af65` and pushed to `origin/main`. **Reverted the same session — see next entry.**
+
+## 2026-08-05 (later) — Reverted commit 8c4af65 per user request
+
+User asked to reverse all of the above. Did a `git revert` of `8c4af65` (not a hard reset/force-push — commit was already public on `origin/main`, so the safe move is a new commit that undoes it, keeping history intact) for the 3 code files:
+
+- `src/ProbableDiagnosis.jsx` — `Chips` back to module-private (un-exported).
+- `src/genericPhase05.js` — `band`, `missing`, `evidenceConfidence`, `whyConfidenceReduced` removed from the per-condition object again.
+- `src/SubjectiveObjective.jsx` — back to importing `ProbableDiagnosis` (default) instead of `{ Chips }`; the `<ProbableDiagnosis autoRun hideButton>` mount restored in the Subjective Interpretation view; `genericPhase05`'s render block back to its plain pre-upgrade styling (no score badge/chips/evidence-confidence line).
+
+Net effect: back to the exact behavior as of `261a3c8` — both cards (the plain-chip `ProbableDiagnosis` one and the boxed-row `genericPhase05` one) render again for Hip/Groin/Knee/Ankle-Foot/Elbow-Wrist-Hand, i.e. the original "why is it showing twice" duplication is back too. **This entry (and the one above) intentionally left in the log** rather than deleted, so the next session has the full history if this gets revisited — the two competing systems and the "keep genericPhase05, borrow ProbableDiagnosis's styling" plan are already worked out above if wanted again.
+
+`src/__tests__/genericPhase05.test.jsx` / `genericPhase05ReviewRunAnalysis.test.jsx` untouched by the revert (they were already restored to their real names, and their assertions target markup unaffected by the revert either way).
 
 ---
 Generated 2026-07-30. Updated 2026-08-05.

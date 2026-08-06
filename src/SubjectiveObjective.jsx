@@ -18,7 +18,7 @@ import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
-import { Chips } from "./ProbableDiagnosis.jsx";
+import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 
 // Map a condition's authored fascia description to the specific Fascia-module
 // test cards to open, so tapping the "Fascia" suggestion deep-links straight to
@@ -4978,24 +4978,21 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
             </div>
           )}
 
-          {/* ── SUGGESTED PROBABLE DIAGNOSIS — removed from this view 2026-08-05 ──
-              Was mounted here 2026-07-30 (<ProbableDiagnosis autoRun hideButton>)
-              on the assumption it gave Subjective "more specific" suggestions
-              than the per-region Phase 0.5 blocks below (bespoke Shoulder/
-              Cervical/Lumbar/Thoracic further down, genericPhase05 for Hip/
-              Knee/Ankle-Foot/Elbow-Wrist-Hand). That assumption was wrong:
-              genericPhase05.js pulls its keyExams/assessmentModules straight
-              off the SAME differential object (same runReasoningFromData call)
-              ProbableDiagnosis reads — identical underlying content, just a
-              plainer test-list UI. Result: every region rendered its Phase 0.5
-              card twice on this same screen (confirmed via screenshots — see
-              HANDOFF.md 2026-08-05 entry). genericPhase05's block now carries
-              ProbableDiagnosis's chip/badge styling (via the shared `Chips`
-              export) so nothing is lost by dropping this mount; its clickable,
-              "?"-explained test buttons (its actual advantage) are unchanged.
-              ProbableDiagnosis.jsx / its SOAP-tab "Suggest Probable Diagnosis"
-              button (ClinicalModules.jsx) are untouched — only this Subjective-
-              view auto-mount is removed. ── */}
+          {/* ── SUGGESTED PROBABLE DIAGNOSIS (2026-07-30) ──────────────
+              Same component + reasoning engine as the SOAP/Docs Assessment
+              section's "Suggest Probable Diagnosis" card (ClinicalModules.jsx),
+              reused here so Subjective gets the same specific, per-condition
+              palpation/CPA/fascia/outcome suggestions instead of the older,
+              more generic per-region checklist below. autoRun+hideButton means
+              it fires the moment this results view opens — driven entirely by
+              the existing "Suggest probable objective assessment" button
+              upstream, no second button. Region-agnostic (12 regions already
+              supported), so this covers every region without per-region code.
+              Note: like its other usage, it detects ONE primary region from
+              the data (plus its known companion, e.g. lumbar+SI) — a
+              multi-region case spanning unrelated joints only shows the
+              first-detected region's differential, same limitation as DOCS. ── */}
+          <ProbableDiagnosis data={data} onNav={onNav} autoRun hideButton />
 
           {/* ══════════════════════════════════════════════
               PER-REGION: 7-PHASE CLINICAL REASONING
@@ -5870,30 +5867,21 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                     return (
                       <div style={{ background: PC.s2, borderRadius:10, padding:"12px 14px", marginBottom:12, borderLeft:`4px solid ${regCol}` }}>
                         <div style={{ fontSize:"0.8rem", fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, color: regCol, marginBottom:4 }}>
-                          💡 Phase 0.5 — {famLabel} condition matches (ranked)
+                          Phase 0.5 — {famLabel} condition matches
                         </div>
                         <div style={{ fontSize:"0.72rem", color:PC.muted, fontStyle:"italic", marginBottom:8 }}>
                           Deterministic matches against the {famLabel} differentials, run off subjective data to guide the objective exam.
                         </div>
                         {gp.conditions.slice(0,6).map((c, ci) => (
-                          <div key={c.id} style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:10, padding:"10px 12px", marginBottom:7 }}>
-                            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
-                              <span style={{ fontSize:"0.8rem", fontWeight:700, color:PC.text, flex:1 }}>{c.name}</span>
-                              <span style={{ padding:"2px 8px", borderRadius:99, fontSize:"0.7rem", fontWeight:700, background: tierColor[c.matchTier], color:"#fff" }}>
-                                {c.matchTier}{c.score ? ` ${c.score}%` : ""}
-                              </span>
+                          <div key={c.id} style={{ background: ci===0 ? regCol+"12" : PC.surface, border:`1px solid ${ci===0 ? regCol+"44" : PC.border}`, borderRadius:8, padding:"9px 12px", marginBottom:6 }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span style={{ fontSize:"0.8rem", fontWeight:700 }}>{c.name}</span>
+                              <span style={{ fontSize:"0.72rem", fontWeight:700, padding:"2px 7px", borderRadius:99, background: tierColor[c.matchTier]+"18", color: tierColor[c.matchTier] }}>{c.matchTier}</span>
                             </div>
-                            <div style={{ fontSize:"0.72rem", color:PC.muted, marginBottom:2 }}>
+                            <div style={{ fontSize:"0.72rem", color:PC.muted }}>
                               {c.supporting.length} supporting · {c.refuting.length} refuting · {c.unknownCount} not yet tested
-                              {c.evidenceConfidence != null && <> · Evidence confidence <b>{c.evidenceConfidence}%</b></>}
                               {c.note && <div style={{ marginTop:2, fontStyle:"italic" }}>{c.note}</div>}
                             </div>
-                            <Chips label="Supports" items={c.supporting} color="#059669" />
-                            <Chips label="Against" items={c.refuting} color="#DC2626" />
-                            <Chips label="Not yet tested" items={c.missing} color="#6B7280" />
-                            {c.whyConfidenceReduced && c.whyConfidenceReduced.length > 0 && (
-                              <div style={{ fontSize:"0.7rem", color:"#92400E", marginTop:5 }}>⚠ {c.whyConfidenceReduced.join(" ")}</div>
-                            )}
                             {c.matchTier !== "Unlikely" && (c.keyExams.length > 0 || c.assessmentModules.length > 0) && (() => {
                               const testFirst = new Set(c.keyExams.map((t) => String(t).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]).filter(Boolean));
                               const layers = c.assessmentModules.filter((m) => !REDUNDANT_LAYER_KEYS.has(m.key) && !testFirst.has(String(m.label).toLowerCase().replace(/[^a-z]+/g," ").trim().split(" ")[0]));
@@ -5916,6 +5904,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       </div>
                     );
                   })()}
+
 
                 </div>{/* end padding wrapper */}
               </div>

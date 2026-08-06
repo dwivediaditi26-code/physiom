@@ -44,17 +44,13 @@ export function runGenericPhase05(data, region) {
         name: d.name,
         engineRegion: reg,
         matchTier: tierOf(d),
-        band: d.band,
         supporting: d.supportingFindings || [],
         refuting: d.conflictingFindings || [],
-        missing: d.missingFindings || [],
         unknownCount: (d.missingFindings || []).length,
         note: d.whySuggested,
         keyExams: d.recommendedAdditional || [],
         assessmentModules: d.assessmentModules || [],
         score: d.diagnosticMatchScore || 0,
-        evidenceConfidence: d.evidenceConfidence,
-        whyConfidenceReduced: d.whyConfidenceReduced || [],
       });
     });
   });
