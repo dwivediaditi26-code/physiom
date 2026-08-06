@@ -145,5 +145,15 @@ Shoulder, Cervical, Lumbar, and Thoracic's own Phase 0.5 blocks never had this p
 
 **Process note — a mistake worth flagging:** the 2026-08-05 revert (previous entry) synced `.git` back into this mounted folder but never actually checked out the working-tree files to match the new `HEAD` — `cp -a .git` alone doesn't do that. Verification at the time only checked `git log`/`git fsck`/`HEAD` vs remote, not `git diff` against the working tree, so the stale (un-reverted) file contents sat on disk undetected until this session's edits exposed it. Caught and fixed by force-checking out `src/ProbableDiagnosis.jsx` and `src/genericPhase05.js` from `HEAD` (via `git show HEAD:path` + rewriting, since `git checkout` itself can't unlink files on this mount) before layering this fix on top. **Lesson for next time: after any `.git`-only sync-back on this mount, always confirm with `git diff` against the working tree, not just `git log`/`git fsck`.**
 
+## 2026-08-06 (later) — genericTestNav extended to also deep-link ROM
+
+Same bug class as the Special Tests fix above, for the ROM-flavored `keyExams` entries (e.g. hip's "Passive hip ROM with end-feel (capsular pattern)") -- they had no dedicated module match at all before, so they just fell back to the non-clickable "no dedicated module yet" chip.
+
+- `src/genericTestNav.js` — each `MAP[region][label]` entry now carries a `kind: "special" | "rom"` discriminator. `kind:"rom"` entries carry `{ romRegion, romHighlights }` into `ROM_DATA` (`sharedClinicalData.js`), same shape `shoulderPhase05.js` and the existing "ROM" layer card (`layerNavButtons`) already use, and `genericTestNav()` now returns `{ nav:"rom", ... }` for those instead of always assuming Special Tests.
+- Verified every `romRegion`/`romHighlights` id against the real `ROM_DATA` field lists before writing them (same no-guessing rule as the Special Tests map): Hip (`rom_hir/her/hflex/hext/habd/hadd`), Knee (`rom_kflex/kext`), Ankle (`rom_adf/apf/ainv/aev`), Foot (`rom_1mtpf/1mtpp`), Elbow (`rom_eflex/eext/esup/epro`), Wrist (`rom_wflex/wext/wrad/wuln`).
+- Note: `ROM_DATA` has a genuine separate `"Wrist"` region (distinct field set from `"Elbow"`) even though the existing "Elbow / Wrist ROM" layer-card button collapses both into one `romRegion:"Elbow"` link for convenience — the new wrist keyExam entry points at the real `"Wrist"` region instead, so it's slightly more precise than that older button.
+- 7 keyExam labels mapped this round (hip 1, knee 1, ankle 2, foot 1, elbow 1, wrist 1). Left unmapped on purpose (ambiguous / not a clean 1:1 to a ROM field, e.g. "Weight-bearing dorsiflexion lunge test", "Thumb ROM assessment", "Subtalar mobility assessment") rather than guess wrong — same honest-gap philosophy as the Special Tests map. `ROM_DATA` has no `"Hand"` region at all, so hand still has nothing to map to for either kind.
+- `SubjectiveObjective.jsx` unchanged this round — its `genericTestNav(c.engineRegion, t)` call already handled whatever `nav`/`ctx` came back generically.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
