@@ -60,6 +60,14 @@ const MAP = {
       kind: "mmt", mmtRegion: "Hip & Pelvis", mmtHighlights: ["mmt_adduc"],
       why: "Pain on resisted adduction -- adductor strain / athletic pubalgia. Compare against the adductor squeeze test threshold.",
     },
+    "Palpation of ischial tuberosity": {
+      kind: "palpation",
+      why: "Ischial tuberosity tenderness -- proximal hamstring tendinopathy. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+    },
+    "Palpation of adductor origin / pubic ramus": {
+      kind: "palpation",
+      why: "Adductor-origin / pubic ramus tenderness -- adductor strain / athletic pubalgia. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+    },
   },
   knee: {
     "Clarke's sign": { kind: "special", specialRegion: "knee", highlightTest: "st_clarkes" },
@@ -85,6 +93,10 @@ const MAP = {
       kind: "mmt", mmtRegion: "Knee", mmtHighlights: ["mmt_quad"],
       why: "Pain on resisted knee extension with tenderness at the inferior pole of the patella -- patellar tendinopathy.",
     },
+    "Palpation of patellar tendon": {
+      kind: "palpation",
+      why: "Tenderness at the inferior pole of the patella / patellar tendon -- patellar tendinopathy. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+    },
   },
   ankle: {
     "Anterior drawer test": { kind: "special", specialRegion: "ankle_foot", highlightTest: "st_ant_drawer_ankle" },
@@ -108,6 +120,18 @@ const MAP = {
     "1st MTP active/passive dorsiflexion ROM + end-feel": {
       kind: "rom", romRegion: "Foot", romHighlights: ["rom_1mtpf", "rom_1mtpp"],
       why: "1st MTP dorsiflexion loss (hallux limitus/rigidus) -- compare active vs passive range and note end-feel quality.",
+    },
+    "Palpation of medial calcaneal tubercle / plantar fascia origin": {
+      kind: "palpation",
+      why: "Medial calcaneal tubercle tenderness -- plantar fasciitis. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+    },
+    "Palpation of central weight-bearing heel pad (vs medial origin)": {
+      kind: "palpation",
+      why: "Central heel-pad tenderness vs medial origin helps differentiate fat-pad syndrome from plantar fasciitis. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
+    },
+    "Palpation of metatarsal heads / plantar plate": {
+      kind: "palpation",
+      why: "Metatarsal head / plantar plate tenderness -- metatarsalgia or plantar plate injury. Opens the Palpation module; no region auto-highlight yet, locate on the body map.",
     },
   },
   elbow: {
@@ -178,6 +202,14 @@ export function genericTestNav(engineRegion, label) {
       ctx: { mmtRegion: entry.mmtRegion, mmtHighlights: entry.mmtHighlights },
       why: entry.why,
     };
+  }
+
+  if (entry.kind === "palpation") {
+    // PalpationModule (ClinicalModules.jsx) has no navContext support at
+    // all -- it's a free-form body-map hotspot picker, no region/highlight
+    // to target. So unlike special/rom/mmt this ctx is always {} -- opens
+    // the module, doesn't jump anywhere specific. why explains that.
+    return { kind: "palpation", icon: "🖐️", nav: "palpation", ctx: {}, why: entry.why };
   }
 
   // kind === "special"

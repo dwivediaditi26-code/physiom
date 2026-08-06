@@ -240,8 +240,8 @@ function GenericConditionCard({ c, ci, regCol, tierColor, onNav, PC, family }) {
   c.keyExams.forEach((t) => {
     const target = genericTestNav(c.engineRegion, t);
     if (target) {
-      const kindCol = target.kind === "rom" ? "#9333ea" : target.kind === "mmt" ? "#f97316" : "#0891b2";
-      const kindTag = target.kind === "rom" ? "ROM" : target.kind === "mmt" ? "MMT" : "Special test";
+      const KIND_STYLE = { rom: ["#9333ea", "ROM"], mmt: ["#f97316", "MMT"], palpation: ["#78716c", "Palpation"], special: ["#0891b2", "Special test"] };
+      const [kindCol, kindTag] = KIND_STYLE[target.kind] || KIND_STYLE.special;
       actions.push({
         key: "ke" + t, icon: target.icon, label: t,
         col: kindCol, tag: kindTag,

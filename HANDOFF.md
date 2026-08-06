@@ -238,5 +238,9 @@ User asked why "Oxford Hip Score", "HOOS", "HAGOS (groin)", "iHOT-33 (young/spor
 - `SubjectiveObjective.jsx`: `OUTCOME_SCALE_IDS` got 4 new keys (`"oxford hip"`, `hoos`, `hagos`, `"ihot-33"`), added *after* the existing `"hoos-jr"`/`hoosjr` keys so a "HOOS-JR" name still matches that specific key first — `outcomeScaleId()`'s loop checks `Object.keys()` in insertion order and returns on first match, so a bare `hoos` key defined earlier would have wrongly swallowed "HOOS-JR" strings too (`"hoos-jr".includes("hoos")` is true). Order was verified deliberately, not assumed.
 - Both files verified with `@babel/parser` — parse clean.
 
+## 2026-08-06 (latest+1) — Wired palpation (no region target)
+
+User: wire palpation, skip region-targeting (PalpationModule has none, confirmed earlier). genericTestNav.js: added kind:"palpation" -> {nav:"palpation", ctx:{}, why}. 6 keyExams mapped: hip x2 (ischial tuberosity, adductor origin/pubic ramus), knee x1 (patellar tendon), foot x3 (calcaneal tubercle, heel pad, metatarsal heads/plantar plate). SubjectiveObjective.jsx: KIND_STYLE lookup replaces old 3-way ternary, palpation tag = stone gray #78716c. Parse verified both files.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
