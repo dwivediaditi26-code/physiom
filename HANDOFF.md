@@ -257,5 +257,14 @@ User supplied the full current `ANATOMICAL_HOTSPOTS` array (70 points, `Clinical
 - Verified via `@babel/parser` (jsx + optionalChaining + nullishCoalescingOperator plugins) on all 3 touched files — parse OK. `npm test` still can't run in this sandbox (Linux vs the Mac-installed `@rolldown/binding-darwin-arm64`, documented earlier) — not test-confirmed, reasoned through manually.
 - **Not committed to git this round** — user asked to keep this session's edits local-files-only (no push), given the exposed token from earlier sessions is still unrevoked. Working tree has these 3 files modified, nothing else touched.
 
+## 2026-08-06 (latest+3) — Applied Admin Mode's corrected hotspot positions
+
+User pasted a second, updated `ANATOMICAL_HOTSPOTS` block — this is the exact output of the Palpation module's own "📋 Export corrected points" button (Admin Mode, commit `c512dac`), after dragging points to better positions. Its own dialog text says "paste this over the ANATOMICAL_HOTSPOTS array... or send it to me to apply" — user did the latter.
+
+- Verified programmatically before touching anything: extracted both the in-file array and the pasted array, compared by `id`. All 82 ids matched 1:1 (none added/removed), and `r`/`side`/`label`/`structures` were byte-identical for every single entry — only `x`/`y` differ, on 75 of the 82 points (7 unchanged, e.g. `scm_r/l`, `sternum`, `abdomen`). Confirms this really is a pure coordinate correction, not a hand-edited/mixed paste.
+- Applied via a targeted per-id regex substitution (`ClinicalModules.jsx`) rather than replacing the whole array block, so the existing section comments (`// ── HEAD & NECK (front) ──...`) and formatting stayed intact — only the `x:`/`y:` numbers on each hotspot's line changed.
+- Verified via `@babel/parser` after the edit — parses clean. `git diff --stat` confirmed exactly 75 changed lines pairs (150 lines, insertions=deletions=75), nothing else touched in the file.
+- Still local-only, same as the round above — not pushed.
+
 ---
 Generated 2026-07-30. Updated 2026-08-06.
