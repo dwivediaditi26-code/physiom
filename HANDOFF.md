@@ -130,5 +130,20 @@ Net effect: back to the exact behavior as of `261a3c8` — both cards (the plain
 
 `src/__tests__/genericPhase05.test.jsx` / `genericPhase05ReviewRunAnalysis.test.jsx` untouched by the revert (they were already restored to their real names, and their assertions target markup unaffected by the revert either way).
 
+## 2026-08-06 — Fixed genericPhase05's priority-test buttons (wrong Special Tests region)
+
+Bug (found via screenshot): tapping a `genericPhase05` priority test — e.g. "Hip Scour test" under Hip/Groin — did navigate to the Special Tests screen, but always landed on **Shoulder** with nothing highlighted, because `SubjectiveObjective.jsx` built every one of these buttons with `ctx:null`, and `SpecialTestsSection` (same file, ~line 470-474) defaults its region to `"shoulder"` whenever `navContext.specialRegion` is missing. Looked broken/dead.
+
+Shoulder, Cervical, Lumbar, and Thoracic's own Phase 0.5 blocks never had this problem — each has its own `*TestNav()` resolver (e.g. `shoulderPhase05.js`'s `shoulderTestNav()`) mapping a test's label to a real `{ specialRegion, highlightTest }`. `genericPhase05` (Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand) never got one.
+
+- New file `src/genericTestNav.js` — same pattern as `shoulderTestNav()`. Cross-referenced every `keyExams` label produced by `hip/knee/ankle/foot/elbow/wrist/hand.evidence.json` against the real test catalog in `SPECIAL_TESTS_DATA` (`sharedClinicalData.js`) to build the label → `{specialRegion, highlightTest}` map by hand (no fuzzy matching — a wrong deep link is worse than none). Findings:
+  - `SPECIAL_TESTS_DATA` groups these as `"ankle_foot"` and `"elbow_wrist"` (not separate ankle/foot/elbow/wrist keys) and has **no `"hand"` category at all** — hand's keyExams currently have nothing to map to, same honest gap Shoulder already has for its own untooled items (imaging refs, etc).
+  - Knee's "Ober's test" has no knee-catalog entry — pointed it at hip's `st_ober_test` (IT band/TFL is filed under Hip), same cross-region pattern `shoulderTestNav` already uses (`spurling_positive` → cervical).
+  - Every `st_*` id referenced was verified to actually exist in `SPECIAL_TESTS_DATA` before committing (no dangling ids).
+  - Tests without a Special Tests catalog match (ROM/MMT/palpation/imaging items — those live in other modules) resolve to `null` and fall back to the same non-clickable "📋 no dedicated module yet" chip Shoulder's own gaps already use — not guessed at.
+- `SubjectiveObjective.jsx` — `genericPhase05`'s `c.keyExams.map(...)` now calls `genericTestNav(c.engineRegion, t)` and only marks a button clickable when a real target comes back, same `target ? {...} : {...fallback}` shape Shoulder's block already uses just above it in the same file.
+
+**Process note — a mistake worth flagging:** the 2026-08-05 revert (previous entry) synced `.git` back into this mounted folder but never actually checked out the working-tree files to match the new `HEAD` — `cp -a .git` alone doesn't do that. Verification at the time only checked `git log`/`git fsck`/`HEAD` vs remote, not `git diff` against the working tree, so the stale (un-reverted) file contents sat on disk undetected until this session's edits exposed it. Caught and fixed by force-checking out `src/ProbableDiagnosis.jsx` and `src/genericPhase05.js` from `HEAD` (via `git show HEAD:path` + rewriting, since `git checkout` itself can't unlink files on this mount) before layering this fix on top. **Lesson for next time: after any `.git`-only sync-back on this mount, always confirm with `git diff` against the working tree, not just `git log`/`git fsck`.**
+
 ---
-Generated 2026-07-30. Updated 2026-08-05.
+Generated 2026-07-30. Updated 2026-08-06.

@@ -17,6 +17,7 @@ import { runThoracicReasoningEngine } from "./thoracicReasoningEngine.js";
 import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
 import { spineAssessmentModules } from "./spineLayeredAssessment.js";
 import { runGenericPhase05 } from "./genericPhase05.js";
+import { genericTestNav } from "./genericTestNav.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 import ProbableDiagnosis from "./ProbableDiagnosis.jsx";
 
@@ -5891,9 +5892,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                                     Objective assessment — for this condition (tap ? for why &amp; what it tells you)
                                   </div>
                                   <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:8 }}>
-                                    {c.keyExams.map((t, ti) => (
-                                      <NavActionBtn key={"ke"+ti} btn={{ label:t, icon:"🔬", col:tierColor[c.matchTier], nav:onNav?"special":null, ctx:null, why:"Confirmatory test for this condition — opens the Special Tests module to perform and record it." }} onNav={onNav} PC={PC}/>
-                                    ))}
+                                    {c.keyExams.map((t, ti) => {
+                                      const target = genericTestNav(c.engineRegion, t);
+                                      const btn = target
+                                        ? { label:t, icon:target.icon, col:tierColor[c.matchTier], nav:onNav?target.nav:null, ctx:target.ctx, why:target.why }
+                                        : { label:t, icon:"📋", col:PC.muted, nav:null, ctx:null, why:"No dedicated module for this test in the app yet -- shown for completeness, not clickable." };
+                                      return <NavActionBtn key={"ke"+ti} btn={btn} onNav={onNav} PC={PC}/>;
+                                    })}
                                     {layers.flatMap((m, mi) => layerNavButtons(m, mi, onNav, PC, REGION_FAMILY_KEY[r.region] || r.region))}
                                   </div>
                                 </div>
@@ -5904,7 +5909,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                       </div>
                     );
                   })()}
-
 
                 </div>{/* end padding wrapper */}
               </div>
