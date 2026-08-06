@@ -270,10 +270,17 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   // reads (cc_main, dem_age, etc.) keeps storing a plain value exactly
   // as before, and nothing downstream (SOAP, interpretation engine,
   // Patient Profile) has to change or risk breaking.
+  // typeof x === "object" is also true for arrays -- guard against the AI
+  // (or a malformed response) returning _confidence/_sourceQuotes as an
+  // array instead of the expected { fieldName: value } shape. Without
+  // Array.isArray() excluded here, an array slips through unnormalized and
+  // any downstream `sourceQuotes[fieldName]` lookup silently returns
+  // undefined instead of the intended "nothing invented" empty object.
+  const isPlainObject = (v) => !!v && typeof v === "object" && !Array.isArray(v);
   const extractionMeta = {
     narrative: narrativeText || "",
-    confidence: (result._confidence && typeof result._confidence === "object") ? result._confidence : {},
-    sourceQuotes: (result._sourceQuotes && typeof result._sourceQuotes === "object") ? result._sourceQuotes : {},
+    confidence: isPlainObject(result._confidence) ? result._confidence : {},
+    sourceQuotes: isPlainObject(result._sourceQuotes) ? result._sourceQuotes : {},
     missingInfo,
   };
 
