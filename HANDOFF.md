@@ -99,5 +99,24 @@ A GitHub token and an account password were pasted into chat in earlier sessions
 4. Batch asks — list all failing test names up front for one fix pass instead of one-per-message.
 5. Prefer `npm test` (unit) over Playwright — unit failures are one-line, Playwright dumps whole-page HTML.
 
+## 2026-08-05 — Duplicate "objective assessment for this condition" card, fixed for real
+
+Root cause (unchanged from below): `genericPhase05.js` (Hip/Groin, Knee, Ankle/Foot, Elbow/Wrist/Hand — regions with no bespoke Phase 0.5 screen) and `ProbableDiagnosis.jsx` (mounted in the same Interpretation view since commit `f874525`) both call the identical `reasoningEngine/runReasoningFromData` and both rendered their own "objective assessment for this condition" card off the same "Suggest probable objective assessment" trigger.
+
+**First attempt (superseded, see below):** removed `genericPhase05`'s block, kept only `ProbableDiagnosis`'s. Wrong call — user built `genericPhase05` deliberately and its priority-test list is the better UI (each test is a clickable button that deep-links to its module + a "?" explaining why it matters); `ProbableDiagnosis`'s equivalent list was plain, non-clickable text chips. Reverted.
+
+**Final fix:** kept `genericPhase05` as the one card shown, upgraded its visual presentation to match what the user liked about `ProbableDiagnosis` (score/match-tier badge, colored Supports/Against/Not-yet-tested finding chips, evidence-confidence line, confidence-reduced warning), and removed the standalone `ProbableDiagnosis` auto-mount from this Interpretation view since it's now fully redundant.
+
+- `src/ProbableDiagnosis.jsx` — exported its local `Chips` component (was module-private) so both files render tag chips with the exact same component, not a lookalike copy.
+- `src/genericPhase05.js` — `runGenericPhase05()`'s per-condition object now also carries `band`, `missing` (full array, was previously only kept as a count), `evidenceConfidence`, `whyConfidenceReduced` — all already available on the underlying differential (`d`), just weren't being passed through before.
+- `src/SubjectiveObjective.jsx`:
+  - Import swapped from `ProbableDiagnosis` (default) to `{ Chips }` (named) from `ProbableDiagnosis.jsx`.
+  - The `<ProbableDiagnosis autoRun hideButton>` mount (was ~line 4995, added in commit `f874525`) removed — see the comment left in its place for the full reasoning. **Not touched:** `ProbableDiagnosis.jsx` itself, and its separate, unrelated mount in `ClinicalModules.jsx`'s SOAP "Suggest Probable Diagnosis" card (`<ProbableDiagnosis data={data} onNav={onNav} />`, no autoRun/hideButton) — that one stays exactly as-is.
+  - `genericPhase05`'s render block (Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand) restored and extended with the score badge, `Chips` rows, evidence-confidence line, and confidence-reduced warning. Its clickable priority-test buttons and "assess by layer" cards are unchanged.
+  - Scope note: this only touches the 4 `genericPhase05` families. Shoulder/Cervical/Lumbar/Thoracic each have their own bespoke Phase 0.5 block further down (not `genericPhase05`) — those were pulling from the same underlying differential as `ProbableDiagnosis` too, so removing the `ProbableDiagnosis` mount doesn't lose them anything, but their visual styling wasn't touched/upgraded this round — only asked to fix Hip/Groin-family + generic.
+- Verified with `@babel/parser` on all 3 touched files — parse OK. `npm test` still can't run in this bash sandbox — confirmed the cause is unrelated to any of this: this sandbox is Linux (`aarch64`), `node_modules/@rolldown/` only has the `binding-darwin-arm64` package because `npm install` was originally run on the user's Mac, not this sandbox. No Linux binding was ever fetched. Real test confirmation needs to happen in a Terminal on the actual Mac.
+- `src/__tests__/genericPhase05.test.jsx` and `genericPhase05ReviewRunAnalysis.test.jsx` — briefly renamed `.removed` during the first (wrong) attempt, restored to their real names. Untouched otherwise; their assertions (heading text, chip presence) should still hold against the new markup — reasoned through manually since the suite can't run here, not test-confirmed.
+- Not yet committed or pushed.
+
 ---
-Generated 2026-07-30.
+Generated 2026-07-30. Updated 2026-08-05.

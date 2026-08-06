@@ -66,7 +66,7 @@ const BAND_STYLE = {
   Low:      { bg: "#F9FAFB", border: "#E5E7EB", badge: "#6B7280" },
 };
 
-function Chips({ label, items, color }) {
+export function Chips({ label, items, color }) {
   if (!items || !items.length) return null;
   return (
     <div style={{ marginTop: 5 }}>
