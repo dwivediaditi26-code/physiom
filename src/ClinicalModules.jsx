@@ -6131,7 +6131,10 @@ function ExerciseBottomSheet({ ex, onClose, regionIcon="🏋" }) {
   const [imgOk, setImgOk] = React.useState(true);
   React.useEffect(() => { setImgOk(true); }, [ex?.id]);
   if (!ex) return null;
-  const thumb = `${CLOUDINARY_BASE_EX}/f_auto,q_auto,w_700,h_525,c_fill/${ex.id}`;
+  // c_limit (no h_, no c_fill) — scales down if wider than 800px but never
+  // crops. c_fill forced a fixed 4:3 box, cutting off multi-step reference
+  // images (e.g. a 4-panel Start/Step2/Step3/Step4 grid) at top and bottom.
+  const thumb = `${CLOUDINARY_BASE_EX}/f_auto,q_auto,w_800,c_limit/${ex.id}`;
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:9999, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:480, maxHeight:"80vh", overflowY:"auto", background:"#fff", borderRadius:"16px 16px 0 0", padding:"10px 18px 24px", boxSizing:"border-box" }}>
@@ -6140,9 +6143,9 @@ function ExerciseBottomSheet({ ex, onClose, regionIcon="🏋" }) {
           <div style={{ fontSize:"1rem", fontWeight:800, color:"#0D0D0D" }}>{ex.name}</div>
           <button onClick={onClose} style={{ flexShrink:0, background:"transparent", border:"none", color:"#9CA3AF", fontSize:"1.1rem", cursor:"pointer", lineHeight:1, padding:2 }}>✕</button>
         </div>
-        <div style={{ aspectRatio:"4 / 3", background:"#FAFAFA", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, fontSize:"2.4rem", overflow:"hidden" }}>
+        <div style={{ background:"#FAFAFA", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, minHeight:120, maxHeight:"55vh", fontSize:"2.4rem", overflow:"hidden" }}>
           {imgOk
-            ? <img src={thumb} alt={ex.name} onError={()=>setImgOk(false)} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+            ? <img src={thumb} alt={ex.name} onError={()=>setImgOk(false)} style={{ width:"100%", height:"auto", maxHeight:"55vh", objectFit:"contain" }}/>
             : regionIcon}
         </div>
         {ex.target && <div style={{ fontSize:"0.78rem", color:"#6B6B6B", marginBottom:8 }}>🎯 {ex.target}</div>}
