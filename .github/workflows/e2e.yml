@@ -60,6 +60,16 @@ jobs:
         run: npx playwright test
         env:
           CI: true
+          # commands.spec.ts / ortho-cases.spec.ts / therapist-mobile.spec.ts log
+          # into an EXISTING account (appMap.ts's login()) rather than signing up --
+          # only patient-journey.spec.ts self-signs-up a disposable account. Locally
+          # that existing account comes from the gitignored e2e/login.local.json;
+          # in CI there's no such file, so creds() falls back to these env vars.
+          # The account itself still has to be created once, by hand, in the
+          # TEST Supabase project (Authentication -> Users -> Add user, Auto
+          # Confirm User on) -- these secrets just need to match its email/password.
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       - name: Upload test report
         if: always()
