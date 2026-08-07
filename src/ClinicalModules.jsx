@@ -8329,13 +8329,24 @@ function LiveSOAPPanel({ data, onNavigate }) {
 
   const exportPDF = () => {
     if (!soap) return;
+    // Escaped at the point each field enters the report — same pattern as
+    // PostureEngine.jsx's generateReport() fix (postureReportXssEscaping.test.js).
+    // soap.S/O/A/P below already go through formatSection()'s own </>  escaping,
+    // but these three (clinician/diagnosis/ICD-10) were being interpolated raw
+    // into this same document.write() popup — a live stored-XSS gap, same class
+    // as the PostureEngine one, just a different field/file. Found via an
+    // adversarial-input audit of every document.write/dangerouslySetInnerHTML
+    // site reachable by patient-record free text.
+    const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
     const patName = String(data["dem_name"] || "Patient").replace(/[^a-zA-Z0-9 ]/g,"").trim();
     const dob     = data["dem_dob"] || "";
     const age2    = data["dem_age"] ? `${data["dem_age"]}y` : "";
     const sex2    = data["dem_gender"] || data["dem_sex"] || "";
-    const dx      = data["soap_a_diagnosis"] || "";
-    const icd2    = data["soap_icd10"] || "";
-    const clinician = data["soap_clinician"] || "";
+    const dx      = escHtml(data["soap_a_diagnosis"] || "");
+    const icd2    = escHtml(data["soap_icd10"] || "");
+    const clinician = escHtml(data["soap_clinician"] || "");
     const date    = new Date().toLocaleDateString("en-AU", {day:"2-digit",month:"long",year:"numeric"});
 
     const formatSection = (text) => {

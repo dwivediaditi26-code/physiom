@@ -30,6 +30,27 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   const updates = {};
   const SEP = "|||";
 
+  // Adversarial/malformed-response guard: found via adversarial testing
+  // that a truthy-but-non-array value here (e.g. the AI or a bad response
+  // returning a string instead of an array for one of these 8 fields)
+  // crashed the whole function with "x.join is not a function" --
+  // ?.length alone doesn't protect against this since strings have
+  // .length too. Normalized once, here, into safe local arrays so every
+  // later reference below (both the updates-building section and the
+  // filled/missingInfo sections) is automatically safe -- same principle
+  // as the existing Array.isArray(result.flags) / additionalRegions
+  // guards just below, applied consistently to the rest of the array
+  // fields that previously had none.
+  const asArray = (v) => Array.isArray(v) ? v : [];
+  const painQuality = asArray(result.painQuality);
+  const morningSymptoms = asArray(result.morningSymptoms);
+  const nightSymptoms = asArray(result.nightSymptoms);
+  const aggMovements = asArray(result.aggMovements);
+  const aggActivities = asArray(result.aggActivities);
+  const relMovements = asArray(result.relMovements);
+  const neuroSymptoms = asArray(result.neuroSymptoms);
+  const functionalLimitations = asArray(result.functionalLimitations);
+
   let reg = result.region || "";
   // Knee and Shoulder are stored per-side (…(L)/(R)); every other region has a
   // single key. Resolve the side from laterality. CRITICAL: this must cover
@@ -89,8 +110,8 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.nrsNow   != null) updates.cc_vas_now   = String(Math.round(result.nrsNow));
   if (result.nrsWorst != null) updates.cc_vas_worst = String(Math.round(result.nrsWorst));
   if (result.nrsBest  != null) updates.cc_vas_best  = String(Math.round(result.nrsBest));
-  if (result.painQuality?.length)
-    updates.cc_quality = result.painQuality.join(SEP);
+  if (painQuality.length)
+    updates.cc_quality = painQuality.join(SEP);
 
   // Medical history, medications, prior episodes, goals -- global
   // (not region-prefixed). These map onto fields the rest of the app
@@ -143,19 +164,19 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     if (result.diurnalPattern)
       updates[pfx + "_24hr"] = result.diurnalPattern;
 
-    if (result.morningSymptoms?.length)
-      updates[pfx + "_morning"] = result.morningSymptoms.join(SEP);
-    if (result.nightSymptoms?.length)
-      updates[pfx + "_night"] = result.nightSymptoms.join(SEP);
+    if (morningSymptoms.length)
+      updates[pfx + "_morning"] = morningSymptoms.join(SEP);
+    if (nightSymptoms.length)
+      updates[pfx + "_night"] = nightSymptoms.join(SEP);
 
-    const allAgg = [...(result.aggMovements||[]), ...(result.aggActivities||[])];
+    const allAgg = [...aggMovements, ...aggActivities];
     if (allAgg.length) {
       updates[pfx + "_agg_notes"] = allAgg.join("\n");
       updates[pfx + "_agg_worst"] = allAgg[0];
     }
-    if (result.relMovements?.length) {
-      updates[pfx + "_rel_notes"] = result.relMovements.join("\n");
-      updates[pfx + "_rel_best"] = result.relMovements[0];
+    if (relMovements.length) {
+      updates[pfx + "_rel_notes"] = relMovements.join("\n");
+      updates[pfx + "_rel_best"] = relMovements[0];
     }
 
     // {pfx}_radiation is the real field both buildRealtimeSOAP's Radiation
@@ -176,8 +197,8 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     const neuroField = pfx === "cx" ? "cx_arm_neuro"
       : pfx === "lx" ? "lx_neuro_quality"
       : pfx + "_neuro";
-    if (result.neuroSymptoms?.length) {
-      updates[neuroField] = result.neuroSymptoms.join(SEP);
+    if (neuroSymptoms.length) {
+      updates[neuroField] = neuroSymptoms.join(SEP);
     }
     if (result.hasLegNeuro && pfx === "lx")
       updates["lx_neuro_present"] = result.hasLegNeuro;
@@ -197,8 +218,8 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
       updates[neuroField] = updates[neuroField] ? updates[neuroField] + SEP + note : note;
     }
 
-    if (result.functionalLimitations?.length)
-      updates[pfx + "_fn_notes"] = result.functionalLimitations.join("\n");
+    if (functionalLimitations.length)
+      updates[pfx + "_fn_notes"] = functionalLimitations.join("\n");
   }
 
   // ── Filled-field labels, for a human-readable summary ───────────────
@@ -212,22 +233,22 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
   if (result.nrsNow != null) filled.push("NRS now");
   if (result.nrsWorst != null) filled.push("NRS worst");
   if (result.nrsBest != null) filled.push("NRS best");
-  if (result.painQuality?.length) filled.push("Pain quality (" + result.painQuality.join(", ") + ")");
+  if (painQuality.length) filled.push("Pain quality (" + painQuality.join(", ") + ")");
   if (result.symptomPattern) filled.push("Pain pattern");
   if (result.diurnalPattern) filled.push("24hr pattern");
-  if (result.morningSymptoms?.length) filled.push("Morning symptoms");
-  if (result.nightSymptoms?.length) filled.push("Night symptoms");
-  if (result.aggMovements?.length || result.aggActivities?.length) filled.push("Aggravating factors");
-  if (result.relMovements?.length) filled.push("Relieving factors");
+  if (morningSymptoms.length) filled.push("Morning symptoms");
+  if (nightSymptoms.length) filled.push("Night symptoms");
+  if (aggMovements.length || aggActivities.length) filled.push("Aggravating factors");
+  if (relMovements.length) filled.push("Relieving factors");
   if (result.hasRadiation != null) filled.push("Radiation");
-  if (result.neuroSymptoms?.length) filled.push("Neuro symptoms");
+  if (neuroSymptoms.length) filled.push("Neuro symptoms");
   if (result.hasLegNeuro) filled.push("Leg neuro");
   if (result.hasBladderBowelSymptoms != null) filled.push("Bladder/bowel screen");
   if (result.priorEpisodeCount) filled.push("Prior episodes");
   if (result.priorEpisodeOutcome) filled.push("Prior episode outcome");
   if (result.medicalHistory) filled.push("Medical history");
   if (result.medications) filled.push("Medications");
-  if (result.functionalLimitations?.length) filled.push("Functional limitations");
+  if (functionalLimitations.length) filled.push("Functional limitations");
   if (result.patientGoals) filled.push("Patient goals");
   if (result.patientConcern) filled.push("Patient's main concern/fear");
   if (result.onsetContext) filled.push("Mechanism detail (uncertain)");
@@ -248,13 +269,13 @@ function mapParseResultToUpdates(result, existingData = {}, narrativeText = "") 
     missingInfo.push("Pain scale (0-10)");
   if (!result.occupation) missingInfo.push("Occupation");
   if (!result.symptomPattern) missingInfo.push("Symptom pattern (constant vs intermittent)");
-  if (!result.diurnalPattern && !result.morningSymptoms?.length && !result.nightSymptoms?.length)
+  if (!result.diurnalPattern && !morningSymptoms.length && !nightSymptoms.length)
     missingInfo.push("Time-of-day pattern (morning/night)");
   if (result.hasRadiation == null) missingInfo.push("Radiation / referred symptoms");
-  if (!result.aggMovements?.length && !result.aggActivities?.length)
+  if (!aggMovements.length && !aggActivities.length)
     missingInfo.push("Aggravating factors");
-  if (!result.relMovements?.length) missingInfo.push("Relieving factors");
-  if (!result.painQuality?.length) missingInfo.push("Pain quality/character");
+  if (!relMovements.length) missingInfo.push("Relieving factors");
+  if (!painQuality.length) missingInfo.push("Pain quality/character");
   if (result.hasBladderBowelSymptoms == null) missingInfo.push("Bladder/bowel screen (red flag)");
   if (!result.patientGoals) missingInfo.push("Patient's own goals");
   if (!result.patientConcern) missingInfo.push("Patient's main concern/fear");
