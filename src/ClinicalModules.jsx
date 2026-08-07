@@ -6091,7 +6091,10 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, onOpenDetai
       <div style={{ aspectRatio:"4 / 3", background:"#FAFAFA", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, fontSize:"1.8rem", overflow:"hidden" }}>
         {ex.img ? <img src={ex.img} alt={ex.name} style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : regionIcon}
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:3 }}>
+      {/* Written as 4 explicit minmax tracks, not repeat(4,...) or "1fr 1fr" — the
+          global mobile stylesheet (utils.jsx) string-matches those patterns in any
+          inline style and force-collapses them to fewer columns on small phones. */}
+      <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)", gap:3 }}>
         {[["Sets","sets","customSets"],["Reps","reps","customReps"],["Hold","hold","customHold"],["Freq","freq","customFreq"]].map(([l,baseField,customField])=>{
           const val = inProg ? (ex[customField] ?? ex[baseField] ?? "") : ex[baseField];
           return (
@@ -6563,7 +6566,9 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
       {/* Exercise library — 2-col grid of tiles; tap a tile for desc/cues/progression */}
       <div style={{marginBottom:14}}>
         {templateFilter ? (
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}>
+          // minmax(0,1fr) minmax(0,1fr), not repeat(2,...) — see note in ExerciseDetailCard;
+          // this must stay 2-up on phones, not get swept into the global small-screen net.
+          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:10}}>
             {templateFilter.ids.map(id=>{
               const ex = ALL_EXERCISES.find(e=>e.id===id);
               if(!ex) return null;
@@ -6583,7 +6588,9 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
               <div style={{fontSize:"0.75rem",fontWeight:700,color:region.color,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                 <div style={{width:4,height:14,background:region.color,borderRadius:2}}/>{cat}
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}>
+              {/* minmax(0,1fr) minmax(0,1fr), not repeat(2,...) — see note in ExerciseDetailCard;
+              this must stay 2-up on phones, not get swept into the global small-screen net. */}
+          <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:10}}>
                 {exs.map(ex=>{
                   const progEntry = programme.find(p=>p.id===ex.id);
                   const inProg = !!progEntry;
