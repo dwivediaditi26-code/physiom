@@ -6062,62 +6062,73 @@ const HIP_PROTOCOLS = [
 
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
 // ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
-function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor="#7c3aed" }) {
-  const [open, setOpen] = React.useState(false);
+// Grid tile: name + phase/evidence tags, an image box (real photo once ex.img
+// is populated — that field doesn't exist in any exercise data yet, so this
+// always falls back to the region's own icon rather than guessing a picture),
+// then a compact sets/reps/hold/freq row. Tapping the tile (outside the
+// add/remove button and the customization inputs) opens ExerciseBottomSheet
+// for desc/cues/progression/evidence — those no longer live inline in the tile.
+function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, onOpenDetail, accentColor="#7c3aed", regionIcon="🏋" }) {
   const phaseColors = { "Phase 1":"#00c97a", "Phase 2":"#ffb300", "Phase 3":"#ff4d6d" };
   return (
-    <div style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:12, overflow:"hidden", marginBottom:10 }}>
-      <div onClick={()=>setOpen(o=>!o)} style={{ padding:"14px", cursor:"pointer" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:"0.94rem", fontWeight:700, color:"#0D0D0D", marginBottom:6 }}>{ex.name}</div>
-            <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:6 }}>
-              {ex.phase && <span style={{ fontSize:"0.69rem", fontWeight:700, padding:"2px 8px", borderRadius:6, background:`${phaseColors[ex.phase]||"#6B6B6B"}25`, color:phaseColors[ex.phase]||"#6B6B6B", border:`1px solid ${phaseColors[ex.phase]||"#6B6B6B"}40` }}>{ex.phase}</span>}
-              {ex.evidence && <span style={{ fontSize:"0.69rem", fontWeight:700, color:"#b45309" }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
-            </div>
-            {ex.target && <div style={{ fontSize:"0.78rem", color:"#6B6B6B" }}>{ex.target}</div>}
-          </div>
-          {(onAdd||onRemove) && (
-            <button onClick={e=>{ e.stopPropagation(); inProg ? (onRemove&&onRemove()) : (onAdd&&onAdd()); }}
-              style={{ flexShrink:0, padding:"7px 14px", borderRadius:8, fontSize:"0.78rem", fontWeight:800,
-                border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,
-                background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",
-                color:inProg?"#ff4d6d":"#00c97a", cursor:"pointer" }}>
-              {inProg?"✕ Remove":"+ Add"}
-            </button>
-          )}
-        </div>
-        {!open && (
-          <div style={{ display:"flex", justifyContent:"center", marginTop:10, paddingTop:10, borderTop:"1px solid #F1EFE8" }}>
-            <span style={{ color:"#B4B2A9", fontSize:"0.75rem" }}>▾ tap for sets, reps, cues</span>
-          </div>
+    <div onClick={onOpenDetail} style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:12, padding:10, cursor:"pointer", minWidth:0 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
+        <div style={{ fontSize:"0.82rem", fontWeight:700, color:"#0D0D0D", lineHeight:1.3, minWidth:0 }}>{ex.name}</div>
+        {(onAdd||onRemove) && (
+          <button onClick={e=>{ e.stopPropagation(); inProg ? (onRemove&&onRemove()) : (onAdd&&onAdd()); }}
+            style={{ flexShrink:0, width:24, height:24, padding:0, borderRadius:7, fontSize:"0.85rem", fontWeight:800,
+              border:`1px solid ${inProg?"rgba(255,77,109,0.4)":"rgba(0,201,122,0.4)"}`,
+              background:inProg?"rgba(255,77,109,0.12)":"rgba(0,201,122,0.12)",
+              color:inProg?"#ff4d6d":"#00c97a", cursor:"pointer", lineHeight:1 }}>
+            {inProg?"✕":"+"}
+          </button>
         )}
       </div>
-      {open && (
-        <div style={{ padding:"0 12px 12px", borderTop:"1px solid #E0E0E2" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:5, margin:"10px 0" }}>
-            {[["Sets","sets","customSets"],["Reps","reps","customReps"],["Hold (s)","hold","customHold"],["Freq","freq","customFreq"]].map(([l,baseField,customField])=>{
-              const val = inProg ? (ex[customField] ?? ex[baseField] ?? "") : ex[baseField];
-              return (
-                <div key={l} style={{ background:"#FAFAFA", borderRadius:8, padding:"7px", textAlign:"center" }}>
-                  {inProg&&onUpdate ? (
-                    <input value={val} onChange={e=>onUpdate(customField,e.target.value)}
-                      style={{ width:"100%", textAlign:"center", fontSize:"0.85rem", fontWeight:900, color:accentColor, background:"transparent", border:"none", outline:"none", fontFamily:"inherit", padding:0 }}/>
-                  ) : (
-                    <div style={{ fontSize:"0.85rem", fontWeight:900, color:accentColor }}>{baseField==="hold"?`${val}s`:val}</div>
-                  )}
-                  <div style={{ fontSize:"0.75rem", color:"#6B6B6B", textTransform:"uppercase" }}>{l}</div>
-                </div>
-              );
-            })}
-          </div>
-          {inProg&&onUpdate&&<div style={{ fontSize:"0.7rem", color:"#9CA3AF", textAlign:"center", marginTop:-4, marginBottom:6 }}>Tap a value above to adjust for this patient</div>}
-          {ex.desc && <div style={{ fontSize:"0.73rem", color:"#0D0D0D", lineHeight:1.6, marginBottom:7 }}>{ex.desc}</div>}
-          {ex.cues && <div style={{ padding:"7px 10px", background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:8, fontSize:"0.8rem", color:"#ffb300", marginBottom:7 }}>💡 {ex.cues}</div>}
-          {ex.progression && <div style={{ fontSize:"0.75rem", color:"#00c97a", marginBottom:4 }}>📈 Progression: {ex.progression}</div>}
-          {ex.evidence && <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 Evidence: {ex.evidence}</div>}
+      <div style={{ display:"flex", alignItems:"center", gap:5, flexWrap:"wrap", marginBottom:8, minHeight:18 }}>
+        {ex.phase && <span style={{ fontSize:"0.62rem", fontWeight:700, padding:"2px 6px", borderRadius:6, background:`${phaseColors[ex.phase]||"#6B6B6B"}25`, color:phaseColors[ex.phase]||"#6B6B6B", border:`1px solid ${phaseColors[ex.phase]||"#6B6B6B"}40` }}>{ex.phase}</span>}
+        {ex.evidence && <span style={{ fontSize:"0.62rem", fontWeight:700, color:"#b45309" }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
+      </div>
+      <div style={{ aspectRatio:"4 / 3", background:"#FAFAFA", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, fontSize:"1.8rem", overflow:"hidden" }}>
+        {ex.img ? <img src={ex.img} alt={ex.name} style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : regionIcon}
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:3 }}>
+        {[["Sets","sets","customSets"],["Reps","reps","customReps"],["Hold","hold","customHold"],["Freq","freq","customFreq"]].map(([l,baseField,customField])=>{
+          const val = inProg ? (ex[customField] ?? ex[baseField] ?? "") : ex[baseField];
+          return (
+            <div key={l} style={{ textAlign:"center" }}>
+              {inProg&&onUpdate ? (
+                <input onClick={e=>e.stopPropagation()} value={val} onChange={e=>onUpdate(customField,e.target.value)}
+                  style={{ width:"100%", textAlign:"center", fontSize:"0.72rem", fontWeight:900, color:accentColor, background:"transparent", border:"none", outline:"none", fontFamily:"inherit", padding:0 }}/>
+              ) : (
+                <div style={{ fontSize:"0.72rem", fontWeight:900, color:accentColor }}>{baseField==="hold"?`${val}s`:val}</div>
+              )}
+              <div style={{ fontSize:"0.6rem", color:"#9CA3AF", textTransform:"uppercase" }}>{l}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Bottom sheet: desc/cues/progression/evidence for whichever tile was tapped —
+// moved out of the tile itself since the 2-col grid has no room for it inline.
+function ExerciseBottomSheet({ ex, onClose }) {
+  if (!ex) return null;
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:9999, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:480, maxHeight:"80vh", overflowY:"auto", background:"#fff", borderRadius:"16px 16px 0 0", padding:"10px 18px 24px", boxSizing:"border-box" }}>
+        <div style={{ width:36, height:4, background:"#E0E0E2", borderRadius:2, margin:"0 auto 14px" }}/>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10, marginBottom:8 }}>
+          <div style={{ fontSize:"1rem", fontWeight:800, color:"#0D0D0D" }}>{ex.name}</div>
+          <button onClick={onClose} style={{ flexShrink:0, background:"transparent", border:"none", color:"#9CA3AF", fontSize:"1.1rem", cursor:"pointer", lineHeight:1, padding:2 }}>✕</button>
         </div>
-      )}
+        {ex.target && <div style={{ fontSize:"0.78rem", color:"#6B6B6B", marginBottom:8 }}>🎯 {ex.target}</div>}
+        {ex.desc && <div style={{ fontSize:"0.82rem", color:"#0D0D0D", lineHeight:1.6, marginBottom:10 }}>{ex.desc}</div>}
+        {ex.cues && <div style={{ padding:"8px 10px", background:"rgba(255,179,0,0.07)", border:"1px solid rgba(255,179,0,0.2)", borderRadius:8, fontSize:"0.82rem", color:"#ffb300", marginBottom:10 }}>💡 {ex.cues}</div>}
+        {ex.progression && <div style={{ fontSize:"0.78rem", color:"#00c97a", marginBottom:6 }}>📈 Progression: {ex.progression}</div>}
+        {ex.evidence && <div style={{ fontSize:"0.82rem", color:"#7f5af0" }}>📚 Evidence: {ex.evidence}</div>}
+      </div>
     </div>
   );
 }
@@ -6126,7 +6137,7 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, accentColor
 const REGION_PROTOCOLS = { Knee: KNEE_PROTOCOLS, Shoulder: SHOULDER_PROTOCOLS, Elbow: ELBOW_PROTOCOLS, Hip: HIP_PROTOCOLS };
 
 // ─── QUICK TEMPLATES PANEL ────────────────────────────────────────────────────
-function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onUpdate, onLoadTemplate, programme }) {
+function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[], onAdd, onRemove, onUpdate, onLoadTemplate, onOpenDetail, programme }) {
   const [open,       setOpen]       = useState(false);
   const [activeTab,  setActiveTab]  = useState("quick");
   const [openTpl,    setOpenTpl]    = useState(null);
@@ -6221,10 +6232,14 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
                 {item.exercises.map(ex => {
                   const progEntry = programme?.find(pp=>pp.id===ex.id);
                   const inProg = !!progEntry;
+                  const shown = progEntry||ex;
                   return (
-                    <ExerciseDetailCard key={ex.id} ex={progEntry||ex} inProg={inProg}
-                      onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
-                      onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)} accentColor="#7c3aed"/>
+                    <div key={ex.id} style={{ marginBottom:8 }}>
+                      <ExerciseDetailCard ex={shown} inProg={inProg}
+                        onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
+                        onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)}
+                        onOpenDetail={()=>onOpenDetail&&onOpenDetail(shown)} accentColor="#7c3aed"/>
+                    </div>
                   );
                 })}
               </div>
@@ -6486,7 +6501,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
   return(
     <div>
       {/* ── QUICK TEMPLATES + KNEE PROTOCOLS ── */}
-      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} addedTx={addedTechniqueLabels} onAdd={addEx} onRemove={removeEx} onUpdate={updateEx} onLoadTemplate={onLoadTemplate} programme={programme} />
+      <QuickTemplatesPanel applyTemplate={applyTemplate} appendTemplate={appendFromTemplate} addTx={addTxChip} addedTx={addedTechniqueLabels} onAdd={addEx} onRemove={removeEx} onUpdate={updateEx} onLoadTemplate={onLoadTemplate} onOpenDetail={setOpenEx} programme={programme} />
 
       <div ref={libraryRef}/>
 
@@ -6545,37 +6560,47 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
           style={{flex:1,minWidth:0,background:"transparent",border:"none",color:"#0D0D0D",fontFamily:"inherit",outline:"none",fontSize:"0.82rem"}}/>
       </div>
 
-      {/* Exercise library */}
+      {/* Exercise library — 2-col grid of tiles; tap a tile for desc/cues/progression */}
       <div style={{marginBottom:14}}>
         {templateFilter ? (
-          templateFilter.ids.map(id=>{
-            const ex = ALL_EXERCISES.find(e=>e.id===id);
-            if(!ex) return null;
-            const progEntry = programme.find(p=>p.id===id);
-            const inProg = !!progEntry;
-            return (
-              <ExerciseDetailCard key={id} ex={progEntry||ex} inProg={inProg}
-                onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)} accentColor="#7c3aed"/>
-            );
-          })
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}>
+            {templateFilter.ids.map(id=>{
+              const ex = ALL_EXERCISES.find(e=>e.id===id);
+              if(!ex) return null;
+              const progEntry = programme.find(p=>p.id===id);
+              const inProg = !!progEntry;
+              const shown = progEntry||ex;
+              return (
+                <ExerciseDetailCard key={id} ex={shown} inProg={inProg} regionIcon={region?.icon||"🏋"}
+                  onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)}
+                  onOpenDetail={()=>setOpenEx(shown)} accentColor="#7c3aed"/>
+              );
+            })}
+          </div>
         ) : (
           Object.entries(filteredCategories).map(([cat,exs])=>(
             <div key={cat} style={{marginBottom:14}}>
               <div style={{fontSize:"0.75rem",fontWeight:700,color:region.color,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                 <div style={{width:4,height:14,background:region.color,borderRadius:2}}/>{cat}
               </div>
-              {exs.map(ex=>{
-                const progEntry = programme.find(p=>p.id===ex.id);
-                const inProg = !!progEntry;
-                return (
-                  <ExerciseDetailCard key={ex.id} ex={progEntry||ex} inProg={inProg}
-                    onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)} accentColor={region.color}/>
-                );
-              })}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:10}}>
+                {exs.map(ex=>{
+                  const progEntry = programme.find(p=>p.id===ex.id);
+                  const inProg = !!progEntry;
+                  const shown = progEntry||ex;
+                  return (
+                    <ExerciseDetailCard key={ex.id} ex={shown} inProg={inProg} regionIcon={region?.icon||"🏋"}
+                      onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)}
+                      onOpenDetail={()=>setOpenEx(shown)} accentColor={region.color}/>
+                  );
+                })}
+              </div>
             </div>
           ))
         )}
       </div>
+
+      <ExerciseBottomSheet ex={openEx} onClose={()=>setOpenEx(null)}/>
 
 
 
