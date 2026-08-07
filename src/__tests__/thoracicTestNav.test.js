@@ -23,12 +23,12 @@ describe("thoracicTestNav -- T01-T11 objective test -> module mapping", () => {
     });
   });
 
-  it("maps Rib Springing to the thoracic functional/rib-mobility screen", () => {
+  it("maps Rib Springing to its own dedicated special-test entry (more precise than the generic rib-mobility screen it used to fall back to)", () => {
     expect(thoracicTestNav("Rib Springing")).toMatchObject({
-      nav: "fma", ctx: { fsRegion: "thoracic" },
+      nav: "special", ctx: { specialRegion: "thoracic", highlightTest: "st_rib_spring" },
     });
     expect(thoracicTestNav("Rib Springing (differentiate from rib dysfunction)")).toMatchObject({
-      nav: "fma", ctx: { fsRegion: "thoracic" },
+      nav: "special", ctx: { specialRegion: "thoracic", highlightTest: "st_rib_spring" },
     });
   });
 
@@ -61,11 +61,24 @@ describe("thoracicTestNav -- T01-T11 objective test -> module mapping", () => {
     expect(thoracicTestNav("Neurological screen")).toMatchObject({ nav: "neuro" });
   });
 
+  it("maps Observation to the observation module (added since; Cervical and Lumbar both already map this exact phrase the same way)", () => {
+    expect(thoracicTestNav("Observation (posture, kyphosis)")).toMatchObject({
+      nav: "observation", ctx: { obsRegion: "th" },
+    });
+  });
+
+  it("maps Passive Scapular Approximation and Forestier's Bowstring Sign to their own dedicated special-test entries (added since)", () => {
+    expect(thoracicTestNav("Passive Scapular Approximation")).toMatchObject({
+      nav: "special", ctx: { specialRegion: "thoracic", highlightTest: "st_passive_scapular_approx" },
+    });
+    expect(thoracicTestNav("Forestier's bowstring sign (ipsilateral paraspinal tightening on side flexion)")).toMatchObject({
+      nav: "special", ctx: { specialRegion: "thoracic", highlightTest: "st_forestier_bowstring" },
+    });
+  });
+
   it("leaves imaging/palpation/outcome-measure/unimplemented tests unmapped (honest gap, not a wrong pointer)", () => {
-    expect(thoracicTestNav("Observation (posture, kyphosis)")).toBeNull();
     expect(thoracicTestNav("PA central + unilateral vertebral pressures")).toBeNull();
     expect(thoracicTestNav("First Thoracic Nerve Root Stretch")).toBeNull();
-    expect(thoracicTestNav("Passive Scapular Approximation")).toBeNull();
     expect(thoracicTestNav("Evjenth and Gloeck breath-hold differentiation test (flex to pain, exhale, re-check range)")).toBeNull();
     expect(thoracicTestNav("Costovertebral expansion measurement (tape at 4th intercostal space; normal 3-7.5cm)")).toBeNull();
     expect(thoracicTestNav("Adson's Test")).toBeNull();
@@ -76,6 +89,5 @@ describe("thoracicTestNav -- T01-T11 objective test -> module mapping", () => {
     expect(thoracicTestNav("Scoliometer measurement (>5° = refer)")).toBeNull();
     expect(thoracicTestNav("Palpation (costochondral junction tenderness reproduction)")).toBeNull();
     expect(thoracicTestNav("Resisted isometric trunk movements (expect non-provocative — helps rule out a contractile/radicular source)")).toBeNull();
-    expect(thoracicTestNav("Forestier's bowstring sign (ipsilateral paraspinal tightening on side flexion)")).toBeNull();
   });
 });

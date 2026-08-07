@@ -109,8 +109,13 @@ describe("cervicalTestNav -- C01-C11 objective test -> module mapping", () => {
     });
   });
 
+  it("maps Observation to the observation module (added since; Lumbar and Thoracic both already map this exact phrase the same way)", () => {
+    expect(cervicalTestNav("Observation (posture, head position, muscle guarding)")).toMatchObject({
+      nav: "observation", ctx: { obsRegion: "cx" },
+    });
+  });
+
   it("leaves imaging/palpation/outcome-measure/unimplemented tests unmapped (honest gap, not a wrong pointer)", () => {
-    expect(cervicalTestNav("Observation (posture, head position, muscle guarding)")).toBeNull();
     expect(cervicalTestNav("Palpation (soft tissue + segmental)")).toBeNull();
     expect(cervicalTestNav("PA central + unilateral vertebral pressures")).toBeNull();
     expect(cervicalTestNav("Cervical x-ray (degenerative changes)")).toBeNull();

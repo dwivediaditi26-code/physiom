@@ -101,14 +101,26 @@ describe("mapParseResultToUpdates — the shared extraction logic", () => {
 });
 
 describe("AI Assistant chat — extraction flow", () => {
-  it("shows the 'Fill patient record' button only when a set function is provided", () => {
+  // The "Fill patient record from this instead" trigger button was
+  // deliberately removed from the chat UI on 2026-07-30 ("hidden from
+  // students" — see AIAssistant.jsx's removal comment above the chat
+  // input). extractToRecord()/confirmExtraction() themselves were left
+  // fully intact and are still callable if the button is wired back in
+  // later — this is a UI-visibility decision, not a deletion of the
+  // feature. Until that decision is revisited, the button has no
+  // reachable trigger in the rendered UI, so the 3 tests below that
+  // depend on clicking it are skipped rather than deleted (re-enable them
+  // if/when the button returns). The regression test in this block
+  // instead locks in that the button STAYS hidden, so it can't silently
+  // reappear without someone consciously updating this file.
+  it("never renders a 'Fill patient record' trigger button (intentionally hidden from students since 2026-07-30)", () => {
     const { rerender } = render(<AIAssistant data={{}} onClose={() => {}} />);
     expect(screen.queryByText(/Fill patient record/)).not.toBeInTheDocument();
     rerender(<AIAssistant data={{}} set={vi.fn()} onClose={() => {}} />);
-    expect(screen.getByText(/Fill patient record/)).toBeInTheDocument();
+    expect(screen.queryByText(/Fill patient record/)).not.toBeInTheDocument();
   });
 
-  it("extracting the user's narrative shows a review card with real fields, and confirming calls set() with the mapped updates", async () => {
+  it.skip("extracting the user's narrative shows a review card with real fields, and confirming calls set() with the mapped updates", async () => {
     const setMock = vi.fn();
     global.fetch = vi.fn(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve(shoulderRTAResult) })
@@ -131,7 +143,7 @@ describe("AI Assistant chat — extraction flow", () => {
     expect(screen.getByText(/Filled \d+ field/)).toBeInTheDocument();
   });
 
-  it("discarding a review card removes it without ever calling set()", async () => {
+  it.skip("discarding a review card removes it without ever calling set()", async () => {
     const setMock = vi.fn();
     global.fetch = vi.fn(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve({ age: 30 }) })

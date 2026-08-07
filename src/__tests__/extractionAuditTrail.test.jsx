@@ -65,9 +65,14 @@ describe("Extraction audit trail (confidence, source quotes, verbatim narrative)
 
   test("existing 2-argument calls (no narrative passed) still work -- backward compatible", () => {
     const result = { age: 30, region: "Knee", flags: [] };
-    // Old call signature, exactly as every existing caller/test uses it
+    // Old call signature, exactly as every existing caller/test uses it.
+    // Region resolves to "Knee (R)", not plain "Knee" -- unspecified
+    // laterality intentionally defaults to (R) so REGION_PREFIX_MAP
+    // resolves and region-specific fields aren't silently dropped (see
+    // aiIntakeParser.js's own comment on this + the regression test in
+    // aiIntakeParser.test.jsx that locks the same default in).
     const { updates, region, filledLabels, redFlagsToReview } = mapParseResultToUpdates(result, {});
     expect(updates.dem_age).toBe("30");
-    expect(region).toBe("Knee");
+    expect(region).toBe("Knee (R)");
   });
 });

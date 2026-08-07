@@ -3189,8 +3189,15 @@ function SmartInput({ value, onChange, PC, multiline }) {
 }
 
 // Compact pain slider — track + numeric readout in one row, no card.
-function PainSliderCompact({ value, onChange, PC }) {
+function PainSliderCompact({ value, onChange, PC, label }) {
   const num = parseInt(value || 0, 10) || 0;
+  // Found via an axe-core accessibility audit (item-5 testing pass): this
+  // range input had no accessible name at all -- a screen-reader user had
+  // no way to tell what a bare "0" was, let alone that moving it set a
+  // 0-10 pain score. aria-label falls back to a generic label when the
+  // caller doesn't pass the field's real one (defensive, not expected to
+  // trigger from renderField below since every "range"-type field has one).
+  const accessibleLabel = label || "Pain score, 0 to 10";
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
@@ -3200,6 +3207,8 @@ function PainSliderCompact({ value, onChange, PC }) {
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
         className="pm-nrs-range"
+        aria-label={accessibleLabel}
+        aria-valuetext={`${num} out of 10`}
         style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer", height: 28, touchAction: "none" }} />
       <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 16, flexShrink: 0 }}>10</span>
       <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.95rem", color: "#2D2D3A", minWidth: 34, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
@@ -3989,7 +3998,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     }
 
     if (f.type === "range") {
-      return <PainSliderCompact value={val} onChange={v => setField(f.id, v)} PC={PC} />;
+      return <PainSliderCompact value={val} onChange={v => setField(f.id, v)} PC={PC} label={f.label} />;
     }
 
     return <SmartInput value={val} onChange={e => setField(f.id, e.target.value)} PC={PC} />;

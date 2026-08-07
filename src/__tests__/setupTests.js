@@ -1,5 +1,12 @@
 // setupTests.js — vitest + jsdom global setup for RTL component tests.
 import "@testing-library/jest-dom/vitest";
+import { expect } from "vitest";
+import { toHaveNoViolations } from "jest-axe";
+
+// jest-axe's matcher is jest-flavored (uses jest's global `expect`) -- wire
+// it into vitest's `expect` explicitly so `expect(results).toHaveNoViolations()`
+// works the same way in this vitest suite as it would under jest.
+expect.extend(toHaveNoViolations);
 
 // Node 22 ships a NATIVE global `localStorage` that is unavailable unless the
 // process is started with --localstorage-file. That native global shadows the

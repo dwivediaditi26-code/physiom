@@ -15,7 +15,14 @@ Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {}
 
 const PC = { accent: "#7c3aed", a2: "#9333ea", bg: "#F7F7F8", surface: "#fff", border: "#e5e7eb", text: "#111827", muted: "#6b7280", isDark: false };
 
-describe("AI Assistant chat -- zero-hallucination review UI", () => {
+// The "Fill patient record from this instead" trigger button these tests
+// click was deliberately removed from the chat UI on 2026-07-30 ("hidden
+// from students" -- see AIAssistant.jsx's removal comment above the chat
+// input). extractToRecord()/confirmExtraction() and this whole review UI
+// are otherwise untouched and fully wired -- just unreachable via any
+// button in the rendered UI right now. Skipped (not deleted) so this
+// suite is easy to re-enable if the button is wired back in later.
+describe.skip("AI Assistant chat -- zero-hallucination review UI", () => {
   test("side-by-side narrative-vs-extraction toggle shows confidence, source quotes, and flags low confidence", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

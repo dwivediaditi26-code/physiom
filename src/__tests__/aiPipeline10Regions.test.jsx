@@ -161,7 +161,14 @@ describe("AI intake pipeline -- 10 conditions across all 10 regions", () => {
     global.fetch = vi.fn();
   });
 
-  test.each(CASES)("$label", async ({ region, prefix, narrative, parseResult }) => {
+  // Stage 2 below clicks "Fill patient record from this instead", the
+  // chat trigger button deliberately removed 2026-07-30 ("hidden from
+  // students" -- see AIAssistant.jsx). The pipeline it exercises
+  // (extractToRecord -> mapParseResultToUpdates -> confirmExtraction ->
+  // runEngineV6) is otherwise untouched, just unreachable via any button
+  // in the rendered UI right now. Skipped, not deleted, so all 10 region
+  // cases are easy to re-enable if the button is wired back in later.
+  test.skip.each(CASES)("$label", async ({ region, prefix, narrative, parseResult }) => {
     const setMock = vi.fn();
     const data = {};
 

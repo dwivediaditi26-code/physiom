@@ -23,7 +23,11 @@ describe("Summary modal — non-string aggravating/relieving/radiation fields", 
     };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
 
-    const runBtn = screen.getByText(/Run Analysis/);
+    // "Run Analysis" was renamed "🧠 Suggest probable objective assessment"
+    // in the 2026-08-06 genericPhase05 redesign -- this is the button that
+    // opens the Summary modal (setShowSummary(true)) whose v()/arr() are
+    // what this test is actually targeting.
+    const runBtn = screen.getByText(/Suggest probable objective assessment/);
     expect(() => fireEvent.click(runBtn)).not.toThrow();
 
     // Summary modal should render and include the array-derived values,

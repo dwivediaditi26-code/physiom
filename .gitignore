@@ -5,3 +5,5 @@ dist
 playwright-report
 test-results
 e2e/login.local.json
+# Added by code-review-graph
+.code-review-graph/

@@ -17,12 +17,18 @@ test("clicking an objective-assessment tile never passes a null nav context", ()
     hp_loc: ["Anterior hip / groin"].join(SEP), hp_moi: ["Insidious onset"].join(SEP),
     hp_agg_mov: ["Deep squat"].join(SEP), hp_rf: "No red flags",
   };
-  render(<SubjectiveModule data={data} set={() => {}} onNav={onNav} onTabChange={() => {}} />);
+  const { container } = render(<SubjectiveModule data={data} set={() => {}} onNav={onNav} onTabChange={() => {}} />);
   fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
   fireEvent.click(screen.getByText(/Run analysis/));
-  // Click every "open module" nav button in the objective-assessment tiles.
-  const opens = screen.getAllByText(/OPEN|→/i);
-  opens.slice(0, 8).forEach((el) => fireEvent.click(el.closest("button") || el));
+  // The 2026-08-06 genericPhase05 redesign replaced the old separate
+  // "OPEN"/"→" nav buttons with the action row's own label text being
+  // directly clickable (ActionRow's `<span onClick=... style={cursor:
+  // clickable ? "pointer" : "default"}>` in SubjectiveObjective.jsx) --
+  // find those the same way a user would, by their pointer cursor.
+  const opens = Array.from(container.querySelectorAll("span")).filter(
+    (el) => el.style.cursor === "pointer"
+  );
+  opens.slice(0, 8).forEach((el) => fireEvent.click(el));
   expect(onNav).toHaveBeenCalled();
   for (const call of onNav.mock.calls) {
     // second arg (context) must never be null

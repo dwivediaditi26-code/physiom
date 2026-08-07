@@ -71,11 +71,19 @@ describe("Subjective Assessment form: continuous scroll instead of a stepper", (
     expect(screen.queryByText(/Cervical — Location/)).not.toBeInTheDocument();
   });
 
-  test("shared filter box appears once per group, not once per multicheck section", () => {
+  // The shared-filter-box design this test originally covered never
+  // shipped -- the multicheck/select fields that landed instead
+  // (ComboField in SubjectiveObjective.jsx) are each an independent
+  // tap-to-open dropdown with no search/filter input at all, shared or
+  // per-section. Updated to assert what's actually there: every
+  // select/multicheck field in the group gets its own "Tap to select..."
+  // control, not one input shared across the group.
+  test("each multicheck/select field renders its own independent tap-to-select control, not a shared filter box", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
     openRegionGroup("Cervical (R)");
 
-    expect(screen.getAllByPlaceholderText(/Filter options/).length).toBe(1);
+    const controls = screen.getAllByPlaceholderText(/Tap to select/);
+    expect(controls.length).toBeGreaterThan(1);
   });
 });
