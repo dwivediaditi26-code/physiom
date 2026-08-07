@@ -2,7 +2,7 @@
 // Upload your anatomical image to Cloudinary with public_id = "body-chart-4view"
 // Then it auto-displays as the background. Admin Mode lets you refine polygon positions.
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 const BODY_IMAGE_URL =
@@ -230,6 +230,71 @@ const REGIONS = [
 // ─── HELPER: pts array → SVG polygon points string ───────────────────────────
 function ptsToSVG(pts) {
   return pts.map(([x, y]) => `${x},${y}`).join(" ");
+}
+
+// ─── HELPER: polygon centroid (average of its points) ────────────────────────
+function centroidOf(pts) {
+  return [
+    pts.reduce((s, p) => s + p[0], 0) / pts.length,
+    pts.reduce((s, p) => s + p[1], 0) / pts.length,
+  ];
+}
+
+// ─── Invisible tap-target hit-circle radius ──────────────────────────────────
+// Was a flat r="4.5" for every region regardless of how close its neighbors
+// are -- fine for isolated regions (limbs, head) but in densely-packed
+// clusters (posterior sacrum/SI-joint/hip, ankle/heel, wrist/hand) two full
+// 4.5-radius circles (9-unit combined diameter) centered only 2-7 units apart
+// overlap heavily. Whichever region's invisible circle happened to render
+// last in REGIONS (topmost in SVG paint order) silently ate every click/hover
+// in the overlap zone, and hover/tooltip state flickered between regions as
+// the cursor crossed the overlap boundary -- reported as "pulsating" when
+// trying to select a region on the posterior view, worst in exactly that
+// pelvis cluster (confirmed via centroid-distance analysis: posterior_sacrum
+// vs posterior_si_joint centroids are only ~2 units apart, posterior_hip_rt
+// vs posterior_sacrum ~3.9, vs posterior_hip_lt ~6.7 -- all well under the
+// old 9-unit combined radius).
+//
+// Fix has two parts, because shrinking the radius alone can't fully solve it:
+// a few landmarks (sacrum/SI-joint, ankle/heel) are anatomically THIS close
+// in real life, so no minimum-usable tap radius avoids all overlap between
+// them. So:
+//  1. Shrink each region's radius toward its nearest same-view neighbor,
+//     capped at the original 4.5 (isolated regions keep their generous
+//     mobile tap target) and floored at 1.6 (small/crowded regions stay
+//     tappable at all) -- this alone resolves the large majority of pairs.
+//  2. resolveClickRegion() below picks whichever candidate region's centroid
+//     is CLOSEST to the actual click point, among all regions (same view)
+//     whose hit-circle contains it -- deterministic nearest-wins, instead of
+//     "whichever circle happens to be on top in SVG paint order." This is
+//     what actually fixes the remaining irreducible overlaps (sacrum/SI-
+//     joint etc.), not just the geometry shrink.
+const HIT_RADIUS_MAX = 4.5;
+const HIT_RADIUS_MIN = 1.6;
+const HIT_RADIUS_MARGIN = 0.3;
+
+function computeHitRadii(regions) {
+  const byView = {};
+  for (const r of regions) (byView[r.view] ||= []).push(r);
+  const centroids = {};
+  for (const r of regions) centroids[r.id] = centroidOf(r.pts);
+  const radii = {};
+  for (const view of Object.keys(byView)) {
+    const regs = byView[view];
+    for (const r of regs) {
+      const [x1, y1] = centroids[r.id];
+      let nearest = Infinity;
+      for (const other of regs) {
+        if (other.id === r.id) continue;
+        const [x2, y2] = centroids[other.id];
+        const d = Math.hypot(x1 - x2, y1 - y2);
+        if (d < nearest) nearest = d;
+      }
+      const safe = nearest === Infinity ? HIT_RADIUS_MAX : (nearest / 2 - HIT_RADIUS_MARGIN);
+      radii[r.id] = Math.max(HIT_RADIUS_MIN, Math.min(HIT_RADIUS_MAX, safe));
+    }
+  }
+  return radii;
 }
 
 // ─── SYMPTOM PANEL ────────────────────────────────────────────────────────────
@@ -512,7 +577,7 @@ function RadiationArrows({ arrows }) {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export { REGIONS };
+export { REGIONS, computeHitRadii, centroidOf, HIT_RADIUS_MAX, HIT_RADIUS_MIN };
 export default function BodyChartPro({ data = {}, set = () => {} }) {
   // Body chart data stored as data.body_chart_pro
   const chartData = (() => {
@@ -589,6 +654,30 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
   const getRegion = (id) => REGIONS.find(r => r.id === id);
   const getEntry  = (id) => entries.find(e => e.regionId === id);
   const effectiveRegions = REGIONS.map(r => ({ ...r, pts: editedPts[r.id] || r.pts }));
+
+  // Recomputed only when Admin Mode actually moves a point -- see
+  // computeHitRadii's header comment for why this exists.
+  const hitRadii = useMemo(() => computeHitRadii(effectiveRegions), [editedPts]);
+
+  // Nearest-centroid-wins click/hover resolution -- see computeHitRadii's
+  // header comment. fallbackId is whichever region's DOM circle actually
+  // received the event; only overridden if a same-view sibling's centroid is
+  // genuinely closer to the real click point AND that sibling's own
+  // hit-circle contains the point too (never picks a region the click wasn't
+  // plausibly inside).
+  const resolveRegionAt = useCallback((e, fallbackId, view) => {
+    const p = getSVGXY(e);
+    if (!p) return fallbackId;
+    let best = fallbackId, bestDist = Infinity;
+    for (const r of effectiveRegions) {
+      if (r.view !== view) continue;
+      const [cx, cy] = centroidOf(r.pts);
+      const d = Math.hypot(p.x - cx, p.y - cy);
+      const rad = hitRadii[r.id] ?? HIT_RADIUS_MAX;
+      if (d <= rad && d < bestDist) { bestDist = d; best = r.id; }
+    }
+    return best;
+  }, [effectiveRegions, hitRadii]);
 
   const handleRegionClick = useCallback((regionId, e) => {
     if (adminMode) return;
@@ -908,28 +997,38 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
                   strokeWidth={isHov || isSel || hasData ? "0.35" : "0"}
                   style={{ cursor:"pointer", transition:"fill 0.1s, stroke 0.1s", pointerEvents:"none" }}
                 />
-                {/* Invisible hit-area circle — guarantees ≥9 SVG-unit (≈33px) tap target on mobile */}
+                {/* Invisible hit-area circle — dynamically sized so it doesn't
+                    overlap a same-view neighbor's circle when regions are
+                    densely packed (see computeHitRadii above); still up to
+                    the original 4.5 SVG units (~33px on mobile) when there's
+                    room. Hover/click both resolve to whichever candidate
+                    region's centroid is actually nearest the pointer, not
+                    just whichever circle happens to be on top. */}
                 <circle
                   cx={cx} cy={cy}
-                  r="4.5"
+                  r={hitRadii[r.id] ?? HIT_RADIUS_MAX}
                   fill="transparent"
                   stroke="none"
                   style={{ cursor:"pointer" }}
                   onMouseEnter={(e) => {
-                    setHovered(r.id);
+                    const resolved = resolveRegionAt(e, r.id, r.view);
+                    setHovered(resolved);
                     const svg = svgRef.current;
                     if (svg) {
                       const rect = svg.getBoundingClientRect();
+                      const rr = getRegion(resolved) || r;
                       setTooltip({
-                        label: r.label,
-                        view: r.view,
+                        label: rr.label,
+                        view: rr.view,
                         x: ((e.clientX - rect.left) / rect.width) * 100,
                         y: ((e.clientY - rect.top) / rect.height) * 100,
-                        entry,
+                        entry: getEntry(resolved),
                       });
                     }
                   }}
                   onMouseMove={(e) => {
+                    const resolved = resolveRegionAt(e, r.id, r.view);
+                    if (resolved !== hovered) setHovered(resolved);
                     const svg = svgRef.current;
                     if (svg) {
                       const rect = svg.getBoundingClientRect();
@@ -940,7 +1039,7 @@ export default function BodyChartPro({ data = {}, set = () => {} }) {
                     }
                   }}
                   onMouseLeave={() => { setHovered(null); setTooltip(null); }}
-                  onClick={(e) => handleRegionClick(r.id, e)}
+                  onClick={(e) => handleRegionClick(resolveRegionAt(e, r.id, r.view), e)}
                 />
               </g>
             );
