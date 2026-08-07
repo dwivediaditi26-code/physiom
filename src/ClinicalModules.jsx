@@ -6062,14 +6062,23 @@ const HIP_PROTOCOLS = [
 
 // ─── REGION TEMPLATE MAP ──────────────────────────────────────────────────────
 // ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
-// Grid tile: name + phase/evidence tags, an image box (real photo once ex.img
-// is populated — that field doesn't exist in any exercise data yet, so this
-// always falls back to the region's own icon rather than guessing a picture),
+// Same Cloudinary-by-id convention every other module already uses
+// (ClinicalImageCard/TestInfoThumb in SubjectiveObjective.jsx, MuscleBadge in
+// PhysioNeuro.jsx): public_id = the clinical id, here ex.id. No mapping to
+// maintain — upload a photo named after an exercise id and it just appears.
+const CLOUDINARY_BASE_EX = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+
+// Grid tile: name + phase/evidence tags, an image box (tries the Cloudinary
+// photo for this exercise's id, falls back to the region's own icon if none
+// has been uploaded yet — same onError-hide pattern as ClinicalImageCard),
 // then a compact sets/reps/hold/freq row. Tapping the tile (outside the
 // add/remove button and the customization inputs) opens ExerciseBottomSheet
 // for desc/cues/progression/evidence — those no longer live inline in the tile.
 function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, onOpenDetail, accentColor="#7c3aed", regionIcon="🏋" }) {
   const phaseColors = { "Phase 1":"#00c97a", "Phase 2":"#ffb300", "Phase 3":"#ff4d6d" };
+  const [imgOk, setImgOk] = React.useState(true);
+  React.useEffect(() => { setImgOk(true); }, [ex.id]);
+  const thumb = `${CLOUDINARY_BASE_EX}/f_auto,q_auto,w_300,h_225,c_fill/${ex.id}`;
   return (
     <div onClick={onOpenDetail} style={{ background:"#ffffff", border:`1px solid ${inProg?accentColor+"50":"#E0E0E2"}`, borderRadius:12, padding:10, cursor:"pointer", minWidth:0 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
@@ -6089,7 +6098,9 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, onOpenDetai
         {ex.evidence && <span style={{ fontSize:"0.62rem", fontWeight:700, color:"#b45309" }}>⭐ {ex.evidence.split(" — ")[0]}</span>}
       </div>
       <div style={{ aspectRatio:"4 / 3", background:"#FAFAFA", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:8, fontSize:"1.8rem", overflow:"hidden" }}>
-        {ex.img ? <img src={ex.img} alt={ex.name} style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : regionIcon}
+        {imgOk
+          ? <img src={thumb} alt={ex.name} onError={()=>setImgOk(false)} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+          : regionIcon}
       </div>
       {/* Written as 4 explicit minmax tracks, not repeat(4,...) or "1fr 1fr" — the
           global mobile stylesheet (utils.jsx) string-matches those patterns in any
