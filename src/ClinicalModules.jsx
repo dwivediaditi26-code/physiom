@@ -6127,8 +6127,11 @@ function ExerciseDetailCard({ ex, inProg, onAdd, onRemove, onUpdate, onOpenDetai
 
 // Bottom sheet: desc/cues/progression/evidence for whichever tile was tapped —
 // moved out of the tile itself since the 2-col grid has no room for it inline.
-function ExerciseBottomSheet({ ex, onClose }) {
+function ExerciseBottomSheet({ ex, onClose, regionIcon="🏋" }) {
+  const [imgOk, setImgOk] = React.useState(true);
+  React.useEffect(() => { setImgOk(true); }, [ex?.id]);
   if (!ex) return null;
+  const thumb = `${CLOUDINARY_BASE_EX}/f_auto,q_auto,w_700,h_525,c_fill/${ex.id}`;
   return (
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:9999, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:480, maxHeight:"80vh", overflowY:"auto", background:"#fff", borderRadius:"16px 16px 0 0", padding:"10px 18px 24px", boxSizing:"border-box" }}>
@@ -6136,6 +6139,11 @@ function ExerciseBottomSheet({ ex, onClose }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10, marginBottom:8 }}>
           <div style={{ fontSize:"1rem", fontWeight:800, color:"#0D0D0D" }}>{ex.name}</div>
           <button onClick={onClose} style={{ flexShrink:0, background:"transparent", border:"none", color:"#9CA3AF", fontSize:"1.1rem", cursor:"pointer", lineHeight:1, padding:2 }}>✕</button>
+        </div>
+        <div style={{ aspectRatio:"4 / 3", background:"#FAFAFA", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, fontSize:"2.4rem", overflow:"hidden" }}>
+          {imgOk
+            ? <img src={thumb} alt={ex.name} onError={()=>setImgOk(false)} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+            : regionIcon}
         </div>
         {ex.target && <div style={{ fontSize:"0.78rem", color:"#6B6B6B", marginBottom:8 }}>🎯 {ex.target}</div>}
         {ex.desc && <div style={{ fontSize:"0.82rem", color:"#0D0D0D", lineHeight:1.6, marginBottom:10 }}>{ex.desc}</div>}
@@ -6212,7 +6220,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
     return [...byCond.values()].sort((a,b) => a.label.localeCompare(b.label));
   };
 
-  const UnifiedRow = ({ item }) => {
+  const UnifiedRow = ({ item, regionName }) => {
     const isOpen = openTpl === item.key;
     const added = item.exercises.filter(ex => programme?.find(pp=>pp.id===ex.id)).length;
     const txAll = [...item.manual, ...item.machine];
@@ -6220,9 +6228,24 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
     const summary = `${item.exercises.length} exercises${added>0?` · ${added} added`:""}`
       + (txAll.length ? ` · ${txAll.length} manual/modality${txAdded>0?` (${txAdded} added)`:""}` : "")
       + (item.treatment.length ? ` · ${item.treatment.length} treatment` : "");
+    // Tapping the row now does two things at once: loads this row's
+    // exercises straight into the main Exercise Library grid below (was
+    // previously a separate button buried inside the expanded panel, and
+    // only worked for source==="template" rows -- protocol-only rows like
+    // most condition protocols had no way in), and expands this panel for
+    // the clinical extras that don't belong in a tile (evidence, caution
+    // notes, manual/modality chips, treatment techniques). The exercise
+    // list itself no longer renders inline here -- that was the "line
+    // wise"/extended-list behaviour; exercises now only ever render as
+    // grid tiles in the main library area.
+    const handleClick = () => {
+      const opening = !isOpen;
+      setOpenTpl(opening ? item.key : null);
+      if (opening && onLoadTemplate) onLoadTemplate(item, regionName);
+    };
     return (
       <div style={{ marginBottom:4 }}>
-        <div onClick={()=>setOpenTpl(isOpen?null:item.key)} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
+        <div onClick={handleClick} style={{ display:"flex", alignItems:"center", gap:7, padding:"7px 10px", borderRadius:8, cursor:"pointer", background:isOpen?"transparent":"#FFFFFF", border:`1px solid ${isOpen?"rgba(124,58,237,0.35)":"#E0E0E2"}` }}>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:"0.66rem", fontWeight:700, color:"#0D0D0D" }}>{item.label}</div>
             <div style={{ fontSize:"0.75rem", color:"#6B6B6B" }}>{summary}</div>
@@ -6231,32 +6254,14 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
         </div>
         {isOpen && (
           <div style={{ padding:"8px 10px", border:"1px dashed rgba(124,58,237,0.3)", borderTop:"none", borderRadius:"0 0 8px 8px", background:"transparent" }}>
+            {item.exercises.length>0 && (
+              <div style={{ fontSize:"0.63rem", color:"#7c3aed", fontWeight:700, marginBottom:8 }}>↓ {item.exercises.length} exercises loaded into the Exercise Library grid below</div>
+            )}
             {item.evidence && (
               <div style={{ fontSize:"0.6rem", color:"#7c3aed", fontWeight:700, marginBottom:8, background:"rgba(124,58,237,0.1)", display:"inline-block", padding:"2px 9px", borderRadius:5, border:"1px solid rgba(124,58,237,0.25)" }}>📚 {item.evidence}</div>
             )}
             {item.note && (
               <div style={{ padding:"7px 10px", background:"rgba(217,119,6,0.08)", border:"1px solid rgba(217,119,6,0.25)", borderRadius:7, marginBottom:8, fontSize:"0.68rem", color:"#854f0b", lineHeight:1.5 }}>⚠️ {item.note}</div>
-            )}
-            {item.source==="template" && onLoadTemplate && (
-              <button onClick={()=>{onLoadTemplate(item.templateKey);setOpenTpl(null);}} style={{ width:"100%", padding:"9px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#7c3aed,#9333ea)", color:"#fff", fontWeight:800, fontSize:"0.73rem", cursor:"pointer", marginBottom:8 }}>→ View & add {item.exercises.length} exercises in Exercise Library</button>
-            )}
-            {item.exercises.length>0 && (
-              <div style={{ marginBottom:6 }}>
-                <div style={{ fontSize:"0.51rem", fontWeight:800, color:"#6B6B6B", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>💪 Included exercises — tap to add, adjust sets/reps/hold/freq once added</div>
-                {item.exercises.map(ex => {
-                  const progEntry = programme?.find(pp=>pp.id===ex.id);
-                  const inProg = !!progEntry;
-                  const shown = progEntry||ex;
-                  return (
-                    <div key={ex.id} style={{ marginBottom:8 }}>
-                      <ExerciseDetailCard ex={shown} inProg={inProg}
-                        onAdd={()=>onAdd&&onAdd(ex)} onRemove={()=>onRemove&&onRemove(ex.id)}
-                        onUpdate={(field,val)=>onUpdate&&onUpdate(ex.id,field,val)}
-                        onOpenDetail={()=>onOpenDetail&&onOpenDetail(shown)} accentColor="#7c3aed"/>
-                    </div>
-                  );
-                })}
-              </div>
             )}
             {item.manual.length>0 && (
               <div style={{ marginBottom:5 }}>
@@ -6304,7 +6309,7 @@ function QuickTemplatesPanel({ applyTemplate, appendTemplate, addTx, addedTx=[],
         <div style={{ fontSize:"0.6rem", fontWeight:800, color:"#7c3aed", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:6 }}>
           ⚡ Protocols & templates — {regionName}
         </div>
-        {items.map(item => <UnifiedRow key={item.key} item={item}/>)}
+        {items.map(item => <UnifiedRow key={item.key} item={item} regionName={regionName}/>)}
       </div>
     );
   };
@@ -6480,12 +6485,19 @@ function ExercisePrescriptionModule({ data, set }) {
   const updateEx = (id,field,val) => syncProgramme(programme.map(e=>e.id===id?{...e,[field]:val}:e));
   const applyTemplate = (key) => { const t=PROGRAMME_TEMPLATES[key]; const exs=t.exercises.map(id=>ALL_EXERCISES.find(e=>e.id===id)).filter(Boolean); syncProgramme(exs.map(ex=>({...ex,customSets:ex.sets,customReps:ex.reps,customHold:ex.hold,customFreq:ex.freq,notes:""}))); };
 
-  const onLoadTemplate = (key) => {
-    const t = PROGRAMME_TEMPLATES[key]; if(!t) return;
-    const libRegion = PROGRAMME_REGION_TO_LIBRARY[t.region];
+  // Generalized loader: takes a unified row `item` (template- or
+  // protocol-sourced, from buildRegionItems) plus the PROGRAMME region name
+  // it was built under, and drops its exercises straight into the main
+  // library grid. Takes item.exercises directly rather than re-resolving
+  // ids through ALL_EXERCISES -- protocol-sourced exercises are synthesized
+  // inline (id like "proto_...") and were never in ALL_EXERCISES to begin
+  // with, so the old id-lookup approach silently dropped every one of them.
+  const onLoadTemplate = (item, regionName) => {
+    if (!item || !item.exercises?.length) return;
+    const libRegion = PROGRAMME_REGION_TO_LIBRARY[regionName];
     if (libRegion && EXERCISE_DB[libRegion]) setActiveRegion(libRegion);
     setActivePhase("All"); setSearch("");
-    setTemplateFilter({ key, label:t.label, ids:t.exercises });
+    setTemplateFilter({ label:item.label, exs:item.exercises });
     setTimeout(()=>{ libraryRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }); }, 60);
   };
 
@@ -6521,9 +6533,9 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
 
       {templateFilter && (
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",padding:"10px 12px",background:"rgba(124,58,237,0.06)",border:"1px solid rgba(124,58,237,0.25)",borderRadius:10,marginBottom:10}}>
-          <div style={{fontSize:"0.8rem",fontWeight:700,color:"#7c3aed"}}>📋 Loaded: {templateFilter.label} ({templateFilter.ids.length} exercises)</div>
+          <div style={{fontSize:"0.8rem",fontWeight:700,color:"#7c3aed"}}>📋 Loaded: {templateFilter.label} ({templateFilter.exs.length} exercises)</div>
           <div style={{display:"flex",gap:6,flexShrink:0}}>
-            <button onClick={()=>{ templateFilter.ids.forEach(id=>{ const ex=ALL_EXERCISES.find(e=>e.id===id); if(ex) addEx(ex); }); }}
+            <button onClick={()=>{ templateFilter.exs.forEach(ex=>addEx(ex)); }}
               style={{padding:"5px 10px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.72rem",cursor:"pointer"}}>
               + Add all
             </button>
@@ -6580,14 +6592,12 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
           // minmax(0,1fr) minmax(0,1fr), not repeat(2,...) — see note in ExerciseDetailCard;
           // this must stay 2-up on phones, not get swept into the global small-screen net.
           <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:10}}>
-            {templateFilter.ids.map(id=>{
-              const ex = ALL_EXERCISES.find(e=>e.id===id);
-              if(!ex) return null;
-              const progEntry = programme.find(p=>p.id===id);
+            {templateFilter.exs.map(ex=>{
+              const progEntry = programme.find(p=>p.id===ex.id);
               const inProg = !!progEntry;
               const shown = progEntry||ex;
               return (
-                <ExerciseDetailCard key={id} ex={shown} inProg={inProg} regionIcon={region?.icon||"🏋"}
+                <ExerciseDetailCard key={ex.id} ex={shown} inProg={inProg} regionIcon={region?.icon||"🏋"}
                   onAdd={()=>addEx(ex)} onRemove={()=>removeEx(ex.id)} onUpdate={(field,val)=>updateEx(ex.id,field,val)}
                   onOpenDetail={()=>setOpenEx(shown)} accentColor="#7c3aed"/>
               );
@@ -6618,7 +6628,7 @@ ${programme.map((ex,i)=>`<div class="ex"><div class="ex-header"><span class="ex-
         )}
       </div>
 
-      <ExerciseBottomSheet ex={openEx} onClose={()=>setOpenEx(null)}/>
+      <ExerciseBottomSheet ex={openEx} onClose={()=>setOpenEx(null)} regionIcon={region?.icon||"🏋"}/>
 
 
 
