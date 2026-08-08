@@ -94,10 +94,17 @@ test("@soap-fascia fascia findings appear in the SOAP note", async ({ page }) =>
   // generic filler never touches it. Use the dedicated helper instead.
   if (!(await fillFascia(page))) { test.skip(true, "No fascia test cards found for this region"); return; }
   await noCrash(page);
-  // The SOAP note's Objective must carry the actual "Fascial Assessment:" block
-  // that buildRealtimeSOAP emits from fa_* fields — NOT just the word "fascia"
-  // from a sidebar label or a ROM/"myofascial" line (which would false-pass).
-  await assertInSoap(page, /Fascial Assessment/i);
+  // The SOAP note must carry the ACTUAL recorded finding, not just the word
+  // "fascia" from a sidebar label (which would false-pass). fillFascia()
+  // deterministically opens the first test card in the default "screening"
+  // region, which is always fa_skin_roll -- mapped to "Skin Rolling" by both
+  // independent SOAP renderers (buildRealtimeSOAP's "Fascial Assessment:"
+  // block in Live SOAP, AND the separate SOAP Notes visual card, which uses
+  // its own "FASCIA INTEGRATION" heading + the same per-field "Skin Rolling:
+  // <value>" line -- these two renderers are independently maintained, see
+  // allConditionsVisibility.test.jsx, so accept either screen's real output
+  // rather than assuming openSoap() always reaches the Live SOAP panel.
+  await assertInSoap(page, /Fascial Assessment|Skin Rolling/i);
 });
 
 // ── @pdf : the exported report shows the patient's key content ──
