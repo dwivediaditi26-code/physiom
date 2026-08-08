@@ -39,6 +39,38 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Catches a bad E2E_SUPABASE_URL secret (missing "https://", stray
+      # quotes/spaces from a copy-paste, etc.) here with a clear message,
+      # instead of letting it through into the build where it later throws
+      # inside the browser at "new URL()" / "createClient()" time. That
+      # failure mode is nasty: the whole JS bundle crashes before React ever
+      # mounts, so #root stays permanently empty and every test just times
+      # out with a generic "expect #root toBeVisible -> hidden" -- no hint
+      # that a secret was the actual cause. (This bit us on 2026-08-07.)
+      - name: Validate test Supabase secrets look like real values
+        env:
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+        run: |
+          node -e '
+            const url = process.env.E2E_SUPABASE_URL || "";
+            const key = process.env.E2E_SUPABASE_ANON_KEY || "";
+            let bad = [];
+            if (!url) bad.push("E2E_SUPABASE_URL is empty/unset.");
+            else {
+              try { new URL(url); } catch { bad.push(`E2E_SUPABASE_URL is not a valid URL: "${url}"`); }
+              if (/["'"'"'\s]/.test(url)) bad.push(`E2E_SUPABASE_URL contains quotes or whitespace -- check for a copy-paste mistake: "${url}"`);
+            }
+            if (!key) bad.push("E2E_SUPABASE_ANON_KEY is empty/unset.");
+            else if (/["'"'"'\s]/.test(key)) bad.push("E2E_SUPABASE_ANON_KEY contains quotes or whitespace -- check for a copy-paste mistake.");
+            if (bad.length) {
+              for (const b of bad) console.log("::error::" + b);
+              console.log("::error::Fix in GitHub: Settings -> Secrets and variables -> Actions -> click the secret name -> Update -> paste ONLY the raw value, no quotes, no extra spaces, no trailing newline.");
+              process.exit(1);
+            }
+            console.log("Secrets look structurally valid (not verifying they are the CORRECT project, just that they are well-formed).");
+          '
+
       - name: Build against the disposable test Supabase project
         env:
           VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
