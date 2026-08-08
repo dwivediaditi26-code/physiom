@@ -254,10 +254,26 @@ export async function openSoap(page: Page) {
     await page.waitForTimeout(800);
     return;
   }
-  // Fallback: Documentation → SOAP Notes sidebar path
-  const doc = page.getByText("Documentation").first();
+  // Fallback: Documentation → SOAP Notes. Same dual-render issue as the mobile
+  // hamburger in openModule() -- "Documentation"/"SOAP Notes" exist in BOTH
+  // the desktop .pm-sidebar and the mobile .pm-nav-drawer at once (CSS just
+  // hides one per viewport), so an unscoped .first() could click a hidden
+  // desktop element on mobile-chrome and silently no-op, leaving nothing to
+  // click next -- a plausible path to the page/context closing unexpectedly
+  // that CI hit here.
+  const sidebar = page.locator(".pm-sidebar");
+  const onDesktop = await sidebar.isVisible({ timeout: 2000 }).catch(() => false);
+  let root = page.locator("body");
+  if (onDesktop) {
+    root = sidebar;
+  } else {
+    const menu = page.locator(".pm-mobile-hdr .pm-hamburger").first();
+    if (await menu.isVisible({ timeout: 2000 }).catch(() => false)) await menu.click().catch(() => {});
+    root = page.locator(".pm-nav-drawer");
+  }
+  const doc = root.getByText("Documentation").first();
   if (await doc.isVisible({ timeout: 3000 }).catch(() => false)) await doc.click().catch(() => {});
-  const soap = page.getByText("SOAP Notes").first();
+  const soap = root.getByText("SOAP Notes").first();
   if (await soap.isVisible({ timeout: 3000 }).catch(() => false)) await soap.click().catch(() => {});
   const cont = page.getByRole("button", { name: /Continue SOAP/i }).first();
   if (await cont.isVisible({ timeout: 2000 }).catch(() => false)) await cont.click().catch(() => {});

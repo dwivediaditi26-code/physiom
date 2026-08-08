@@ -152,10 +152,18 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   await runAnalysis(page);
   await noCrash(page);
 
-  // SOAP Notes — opened via the Documentation panel (real recorded selectors).
-  // Confirm the subjective marker carried through into SOAP Notes.
-  await page.getByText("Documentation").nth(1).click({ timeout: 5000 }).catch(() => {});
-  await page.getByText("SOAP Notes").nth(1).click({ timeout: 5000 }).catch(() => {});
+  // SOAP Notes — opened via the Documentation panel inside the mobile nav
+  // drawer. This test never opened the drawer (.pm-nav-drawer) before --
+  // "Documentation"/"SOAP Notes" text exists in the DOM at rest (closed
+  // drawer, off-canvas) so the .nth(1) clicks were silently no-op'ing the
+  // whole time (swallowed by .catch()) without ever actually navigating.
+  // That's why E2ECHECK was "missing": the SOAP Notes screen was simply
+  // never reached, not a data-loss bug in the SOAP note itself.
+  const hamburger = page.locator(".pm-mobile-hdr .pm-hamburger").first();
+  if (await hamburger.isVisible({ timeout: 3000 }).catch(() => false)) await hamburger.click().catch(() => {});
+  const drawer = page.locator(".pm-nav-drawer");
+  await drawer.getByText("Documentation").first().click({ timeout: 5000 }).catch(() => {});
+  await drawer.getByText("SOAP Notes").first().click({ timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(800);
   await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
   const suggest = page.getByRole("button", { name: /Suggest Probable Diagnosis/i }).first();
