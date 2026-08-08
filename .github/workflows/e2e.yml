@@ -122,10 +122,15 @@ jobs:
           # just never created. A --grep filter (set via the "grep" input
           # when running this workflow manually) lets a single fast test run
           # to completion so a report actually gets produced.
+          # ai-accuracy.spec.ts (@ai-accuracy) makes real, non-deterministic
+          # Groq calls and lives in its own scheduled workflow
+          # (ai-accuracy.yml) -- excluded here by default so it doesn't
+          # burn Groq quota or add LLM-output flakiness to every push/PR.
+          # An explicit grep (e.g. "@ai-accuracy") still overrides this.
           if [ -n "$GREP" ]; then
             npx playwright test --grep "$GREP"
           else
-            npx playwright test
+            npx playwright test --grep-invert "@ai-accuracy"
           fi
 
       - name: Upload test report
