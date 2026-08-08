@@ -24,7 +24,14 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Was 20. Suite has grown to 114 tests, 2 workers, 2 retries, 90s/test --
+    # a bad run (several genuine failures each burning 3x90s) can legitimately
+    # need well over 20 minutes just to finish and produce a report, let alone
+    # pass. A run that gets cut off mid-way produces confusing partial output
+    # (old errors mixed with new, empty artifacts) that looks like a fix
+    # didn't take when it's actually just an unfinished run. 45 min gives a
+    # full-suite run real room to complete either way.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
