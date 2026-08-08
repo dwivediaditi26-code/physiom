@@ -160,7 +160,15 @@ export async function openModule(page: Page, m: ModuleDef): Promise<boolean> {
   }
 
   // ── mobile fallback: open the nav drawer, then click inside it ──
-  const menu = page.getByRole("button", { name: /☰|Menu|Navigation/i }).first();
+  // Two hamburger buttons share the exact accessible name "Open navigation"
+  // (AppFull.jsx's .pm-header desktop bar AND .pm-mobile-hdr mobile bar --
+  // only one is ever visible via CSS media query, the other stays in the
+  // DOM). getByRole(...).first() always picked the desktop one, which is
+  // display:none on a mobile viewport -- the click silently no-op'd, the
+  // drawer never opened, and every module lookup that depended on it just
+  // burned its own retries until the outer test hit its 90s timeout.
+  // Scope directly to the mobile header's hamburger instead.
+  const menu = page.locator(".pm-mobile-hdr .pm-hamburger").first();
   if (await menu.isVisible({ timeout: 2000 }).catch(() => false)) await menu.click().catch(() => {});
   const drawer = page.locator(".pm-nav-drawer");
   if (m.group === "advanced") {
@@ -184,7 +192,12 @@ export async function openModule(page: Page, m: ModuleDef): Promise<boolean> {
 // Buttons that navigate away, open blocking modals, or mutate data — never
 // click these during a "click everything" crawl or they hijack the whole run
 // (e.g. New Patient opens an intake modal that blocks every later click).
-const UNSAFE_BUTTON = /new patient|switch patient|\+ *new|load patient|profile|home|dashboard|demographics|subjective|posture analysis|observation|palpation|range of motion|\bmmt\b|special tests|neurolog|outcome|functional|gait|stt|kinetic|fascia|treatment|documentation|soap|review & run|run analysis|sign|log ?out|delete|remove|save & exit|export|pdf|consent|switch|patients?\b/i;
+// "review & run" -> "suggest probable" matches the button's rename from
+// "Review & Run Analysis" to "Suggest probable objective assessment"
+// (SubjectiveObjective.jsx ~line 4833) -- the stale pattern here meant
+// clickEveryButton() would no longer skip it during a crawl and would
+// click straight into the analysis modal mid-test.
+const UNSAFE_BUTTON = /new patient|switch patient|\+ *new|load patient|profile|home|dashboard|demographics|subjective|posture analysis|observation|palpation|range of motion|\bmmt\b|special tests|neurolog|outcome|functional|gait|stt|kinetic|fascia|treatment|documentation|soap|review & run|suggest probable|run analysis|sign|log ?out|delete|remove|save & exit|export|pdf|consent|switch|patients?\b/i;
 
 export async function clickEveryButton(page: Page, opts: { max?: number; skip?: RegExp } = {}) {
   const max = opts.max ?? 30;

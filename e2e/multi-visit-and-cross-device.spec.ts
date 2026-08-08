@@ -71,7 +71,10 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await page.getByText('＋ New session', { exact: true }).click();
     await page.getByPlaceholder('e.g. 5').fill('6');
     await page.getByPlaceholder('e.g. 3').fill('3');
-    await page.getByRole('button', { name: 'Exercise therapy', exact: true }).click();
+    // Quick-add chips render as "＋ {label}" (EditableItemList, AppModules.jsx
+    // ~line 1206) -- exact:true on the bare label alone never matched, which
+    // hung the click until the 90s test timeout instead of failing fast.
+    await page.getByRole('button', { name: '＋ Exercise therapy', exact: true }).click();
     // Real CI failure: saveQuick() (AppModules.jsx) calls setSaved(true) and
     // navTo("soap") in the same synchronous handler -- the navigation
     // unmounts this form before the "Saved…" button-text change can ever
