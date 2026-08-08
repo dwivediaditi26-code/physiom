@@ -14,7 +14,12 @@ on:
     branches: [dev]
   pull_request:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Optional: only run tests whose title/tag matches this (e.g. "app loads and renders" or "@posture"). Leave blank to run the full suite.'
+        required: false
+        default: ''
 
 jobs:
   e2e:
@@ -57,9 +62,9 @@ jobs:
           fi
 
       - name: Run E2E tests
-        run: npx playwright test
         env:
           CI: true
+          GREP: ${{ github.event.inputs.grep }}
           # commands.spec.ts / ortho-cases.spec.ts / therapist-mobile.spec.ts log
           # into an EXISTING account (appMap.ts's login()) rather than signing up --
           # only patient-journey.spec.ts self-signs-up a disposable account. Locally
@@ -70,6 +75,19 @@ jobs:
           # Confirm User on) -- these secrets just need to match its email/password.
           E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: |
+          # Whole-suite runs were hitting the 20-minute job timeout before
+          # Playwright ever wrote its report (every test failing the same way
+          # at 90s x 3 retries adds up fast across ~94 tests), so the
+          # playwright-report artifact kept coming up empty -- not missing,
+          # just never created. A --grep filter (set via the "grep" input
+          # when running this workflow manually) lets a single fast test run
+          # to completion so a report actually gets produced.
+          if [ -n "$GREP" ]; then
+            npx playwright test --grep "$GREP"
+          else
+            npx playwright test
+          fi
 
       - name: Upload test report
         if: always()
@@ -77,4 +95,18 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # smoke-starter.spec.ts calls page.screenshot() unconditionally (pass
+      # or fail) to e2e-screenshot.png at the repo root -- separate from the
+      # HTML report, and the fastest way to literally see what the browser
+      # rendered without digging through the report.
+      - name: Upload smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshot
+          path: e2e-screenshot.png
+          if-no-files-found: ignore
           retention-days: 14
