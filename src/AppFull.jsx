@@ -1868,8 +1868,32 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setSession(data.session ?? null);
+    // A rejected getSession() promise is caught below, but a promise that
+    // never SETTLES at all (request goes out, no response ever comes back --
+    // seen against a cold/just-created Supabase project) is caught by
+    // neither .then() nor .catch(), and `session` would stay `undefined`
+    // forever -- permanent loading spinner, no way in, no visible error.
+    // Racing against an 8s timeout bounds the wait either way.
+    const timeout = new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), 8000));
+    Promise.race([supabase.auth.getSession(), timeout]).then((result) => {
+      if (!active) return;
+      if (result?.timedOut) {
+        console.error("supabase.auth.getSession() timed out after 8s");
+        setSession(null);
+        return;
+      }
+      setSession(result.data.session ?? null);
+    }).catch((err) => {
+      // No .catch() here previously -- if this call ever rejected (network
+      // blip, project waking from pause, any transient error), `session`
+      // stayed `undefined` forever and the app was stuck on the loading
+      // spinner permanently, with no way in and no visible error. Found via
+      // E2E tests hanging on a fresh/cold Supabase project waiting for the
+      // login screen that never appeared. Falling back to signed-out (not
+      // signed-in) on failure -- worst case a real user sees the login
+      // screen and can retry, instead of a silent infinite spinner.
+      console.error("supabase.auth.getSession() failed:", err);
+      if (active) setSession(null);
     });
     // Keeps `session` in sync with sign-in, sign-out, and token refresh —
     // this is what actually drives the app in/out of AppInner, not just the
