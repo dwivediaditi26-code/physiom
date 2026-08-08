@@ -15,7 +15,7 @@
 import { test, expect } from "@playwright/test";
 import {
   MODULES, REGIONS, login, startAssessment, selectRegion, runAnalysis,
-  openModule, clickEveryButton, exerciseModuleInputs, openSoap, soapText,
+  openModule, clickEveryButton, exerciseModuleInputs, fillFascia, openSoap, soapText,
   assertInSoap, exportReportText, noCrash,
 } from "./appMap";
 
@@ -90,7 +90,9 @@ test("@soap-fascia fascia findings appear in the SOAP note", async ({ page }) =>
   await runAnalysis(page);
   const fascia = MODULES.find(x => x.key === "fascia")!;
   if (!(await openModule(page, fascia))) { test.skip(true, "Fascia module not present for this region"); return; }
-  await exerciseModuleInputs(page);   // record some fascia findings
+  // FasciaNKT.jsx is custom click-chip cards, not <select>/<input> -- the
+  // generic filler never touches it. Use the dedicated helper instead.
+  if (!(await fillFascia(page))) { test.skip(true, "No fascia test cards found for this region"); return; }
   await noCrash(page);
   // The SOAP note's Objective must carry the actual "Fascial Assessment:" block
   // that buildRealtimeSOAP emits from fa_* fields — NOT just the word "fascia"

@@ -242,6 +242,42 @@ export async function exerciseModuleInputs(page: Page) {
   await noCrash(page);
 }
 
+// ── Best-effort Fascia entry ──────────────────────────────────────────────
+// FasciaNKT.jsx's Fascia Integration module (src/FasciaNKT.jsx) is NOT built
+// from <select>/<input> like every other objective module -- it's custom
+// click-chip cards (div onClick={()=>setOpenTest(...)} to expand, then
+// div onClick={()=>set(t.id, opt.val)} per finding option). exerciseModuleInputs()
+// only fills <select>/<input type="number">, so it silently touches zero
+// fascia fields, which is why @soap-fascia was failing: nothing was ever
+// recorded, so buildRealtimeSOAP's "Fascial Assessment:" block (ClinicalModules.jsx
+// ~line 3218, emitted whenever ANY fa_* field is truthy) never fires.
+//
+// Each test card carries a real app attribute, `data-fa-id={t.id}` (used by
+// the app itself for deep-link highlighting -- not test-only instrumentation),
+// which gives a stable hook. Default region ("screening") renders with tests
+// already visible, no region-tab click needed.
+export async function fillFascia(page: Page): Promise<boolean> {
+  const card = page.locator("[data-fa-id]").first();
+  if (!(await card.isVisible({ timeout: 4000 }).catch(() => false))) return false;
+
+  // First child div is the card header; clicking it toggles the card open
+  // (setOpenTest) and reveals the "Select Finding" option rows beneath it.
+  await card.locator(":scope > div").first().click({ timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(400);
+
+  // Option rows and the header all share `cursor:pointer` inline styling;
+  // the "How to Perform" / "Treatment Protocol" info boxes don't. The last
+  // cursor:pointer div under the card is reliably one of the finding options
+  // (same "pick the last/most-severe entry" convention as fillMmt/fillSpecial).
+  const clickable = card.locator("div[style*='cursor:pointer'], div[style*='cursor: pointer']");
+  const n = await clickable.count().catch(() => 0);
+  if (n > 1) {
+    await clickable.nth(n - 1).click({ timeout: 2000 }).catch(() => {});
+  }
+  await noCrash(page);
+  return true;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SOAP note
 // ─────────────────────────────────────────────────────────────────────────────
