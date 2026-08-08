@@ -60,8 +60,15 @@ test.describe('Multi-visit follow-up + cross-device sync', () => {
     await expect(page.getByText('Note signed and locked successfully')).toBeVisible({ timeout: 10_000 });
 
     // ── Visit 2: a real follow-up via Quick Visit (a completely separate
-    // code path from the main SOAP note -- QuickVisitForm/tx_sessions) ──
-    await sidebar.getByText('Quick Visit', { exact: true }).click();
+    // code path from the main SOAP note -- QuickVisitForm/tx_sessions).
+    // Sidebar label was renamed "Quick Visit" -> "Sessions" in the
+    // Quick-Visit-to-Sessions redesign (AppFull.jsx line ~953); component
+    // is still QuickVisitForm under the hood. That redesign also changed
+    // the default view from the entry form straight to a session LIST
+    // (sessionsRedesign.test.jsx), so a "+ New session" tap is now needed
+    // before the pain/treatment fields are reachable. ──
+    await sidebar.getByText('Sessions', { exact: true }).click();
+    await page.getByText('＋ New session', { exact: true }).click();
     await page.getByPlaceholder('e.g. 5').fill('6');
     await page.getByPlaceholder('e.g. 3').fill('3');
     await page.getByRole('button', { name: 'Exercise therapy', exact: true }).click();
