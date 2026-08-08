@@ -66,7 +66,7 @@ async function fillSome(page: Page) {
 }
 
 async function runAnalysis(page: Page) {
-  await page.getByRole("button", { name: /Review & Run Analysis/i }).click();
+  await page.getByRole("button", { name: /Suggest probable objective assessment/i }).click();
   const run = page.getByRole("button", { name: /Run analysis/i });
   if (await run.isVisible({ timeout: 8000 }).catch(() => false)) await run.click();
   await page.waitForTimeout(1500);
@@ -88,7 +88,7 @@ const REGIONS: [string, string, string][] = [
 test("logs in and opens the Subjective screen on a phone", async ({ page }) => {
   await login(page);
   await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
   await noCrash(page);
 });
 
@@ -96,7 +96,7 @@ for (const [label, group, regionName] of REGIONS) {
   test(`${label}: pick region, run analysis, click tiles — no crash`, async ({ page }) => {
     await login(page);
     await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-    await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
 
     await selectRegion(page, group, regionName);
     await fillSome(page);
@@ -129,7 +129,7 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   const MARKER = "E2ECHECK buttock pain seven days right side";
   await login(page);
   await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
 
   // chief complaint (patient's own words) — our unique marker
   // the chief-complaint free-text box (its visible placeholder is generic, so
@@ -190,7 +190,7 @@ test("Hip: saved patient profile shows the full subjective (creates a test patie
   await intake.getByRole("button", { name: "Consent", exact: true }).click();
   await intake.getByRole("checkbox").first().check();
   await intake.getByRole("button", { name: /Start Assessment/ }).first().click();
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
 
   // fill some Hip subjective; it auto-saves to the patient
   await selectRegion(page, "Lower limb", "Hip / Groin");

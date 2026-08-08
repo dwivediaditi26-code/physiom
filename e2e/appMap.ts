@@ -85,7 +85,10 @@ export async function login(page: Page) {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function startAssessment(page: Page) {
   await page.getByRole("button", { name: /Start Assessment/i }).first().click();
-  await expect(page.getByText(/Review & Run Analysis/i)).toBeVisible({ timeout: 20000 });
+  // Button was renamed from "Review & Run Analysis" to "Suggest probable
+  // objective assessment" in SubjectiveObjective.jsx (line ~4833) -- test
+  // was still waiting on the old text and failing on real, current UI.
+  await expect(page.getByText(/Suggest probable objective assessment/i)).toBeVisible({ timeout: 20000 });
 }
 
 export async function selectRegion(page: Page, group: string, regionName: string) {
@@ -99,11 +102,12 @@ export async function selectRegion(page: Page, group: string, regionName: string
 }
 
 export async function runAnalysis(page: Page) {
-  // 1) open the review/summary modal
-  await page.getByRole("button", { name: /Review & Run Analysis/i }).first()
+  // 1) open the review/summary modal (button renamed from "Review & Run
+  //    Analysis" to "Suggest probable objective assessment")
+  await page.getByRole("button", { name: /Suggest probable objective assessment/i }).first()
     .click({ timeout: 8000 }).catch(() => {});
   // 2) click the modal's "Run analysis" — scope by EXACT name so it doesn't also
-  //    match "Review & Run Analysis" (which would trigger a strict-mode error the
+  //    match the outer button (which would trigger a strict-mode error the
   //    old .catch() silently swallowed, so analysis never actually ran).
   const run = page.getByRole("button", { name: "🧠 Run analysis" }).first();
   if (await run.isVisible({ timeout: 8000 }).catch(() => false)) {
