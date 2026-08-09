@@ -8,6 +8,7 @@ import { FMASection, FasciaSection, NKTSection, CyriaxRegionTests } from "./Fasc
 import { FunctionalScreenHub } from "./RegionalFunctionalScreens.jsx";
 import { KineticChainSection, MOVEMENTS } from "./KineticChainFMS.jsx";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
+import { authHeader } from "./supabase.js";
 import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
 import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./cervicalVariableExtractor.js";
@@ -3566,7 +3567,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
     try {
       const res = await fetch("/api/parse", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ text: textToParse.trim() }),
       });
       const parsed = await res.json();

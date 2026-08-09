@@ -1,9 +1,19 @@
+import { authenticateAndRateLimit } from './_lib/rateLimit.js';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Auth + rate-limit gate (api/_lib/rateLimit.js) -- this endpoint used to
+  // have neither: any request from anywhere could spend real Groq tokens
+  // with no login and no limit. Writes its own 401/429/500 response and
+  // returns null on any rejection; the actual Groq call below never runs
+  // for a request that doesn't get past this.
+  const userId = await authenticateAndRateLimit(req, res, 'parse');
+  if (!userId) return;
 
   const { text } = req.body || {};
   if (!text || !text.trim()) return res.status(400).json({ error: 'No text provided' });

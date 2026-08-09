@@ -29,6 +29,7 @@
 // a glance before drilling into any one that looks off.
 
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
+import { authHeader } from "./supabase.js";
 
 // 15 cases: 5 fracture/post-surgical, 5 lumbar (varied presentations,
 // one with a genuine red flag), 5 other conditions across the
@@ -139,9 +140,13 @@ const EXTRA_CASES = [
 ];
 
 async function callParseOnce(narrative) {
+  // /api/parse now requires a valid Supabase session (Authorization: Bearer
+  // <token>) -- see api/_lib/rateLimit.js. Without being signed in on this
+  // tab, this call now gets a 401 instead of a real result; that's expected,
+  // not a bug in the harness.
   const res = await fetch("/api/parse", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify({ text: narrative }),
   });
   const result = await res.json();

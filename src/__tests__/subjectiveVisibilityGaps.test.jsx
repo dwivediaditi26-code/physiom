@@ -24,7 +24,7 @@ import { render } from "@testing-library/react";
 import { SOAPNoteModule } from "../ClinicalModules.jsx";
 import { PatientProfileModal } from "../PatientDatabase.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) }, authHeader: vi.fn().mockResolvedValue({}) }));
 
 // Mirrors exactly what mapParseResultToUpdates would have written for the
 // real "Priya Soni" shoulder case: goal_main, pmh_notes, and shr_fn_notes

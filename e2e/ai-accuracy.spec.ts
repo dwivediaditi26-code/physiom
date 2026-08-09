@@ -10,10 +10,20 @@
 // Supabase test project needed -- see below).
 //
 // Reuses window.physioAITest -- installed unconditionally at app boot by
-// installAiIntakeTestHarness() in src/main.jsx, BEFORE login, and touching
-// no Supabase/patient record (confirmed by reading aiIntakeTestHarness.js:
+// installAiIntakeTestHarness() in src/main.jsx, and touching no
+// Supabase/patient record (confirmed by reading aiIntakeTestHarness.js:
 // each case is an in-memory sandbox object; nothing is saved) -- rather
-// than reimplementing its 15 built-in cases or scoring logic here.
+// than reimplementing its cases or scoring logic here.
+//
+// NOTE: /api/parse now requires auth (api/_lib/rateLimit.js, added to stop
+// the endpoint being callable by anyone with no login) -- this test signs
+// in with a dedicated PRODUCTION QA account (PROD_QA_EMAIL/PROD_QA_PASSWORD
+// secrets) before calling the harness. This is deliberately NOT the same
+// E2E_EMAIL/E2E_PASSWORD used by e2e.yml -- those log into the disposable
+// TEST Supabase project; this needs a real account on PRODUCTION
+// (dlauxdokkrqbvbormxte) since that's the project physiom-sbs4.vercel.app
+// (this test's target) actually talks to. See the login step below for the
+// one-time account setup needed.
 //
 // Metric: region-detection accuracy (does the AI correctly identify which
 // body region a free-text narrative describes?), scored against a
@@ -27,7 +37,7 @@
 // handling in aiIntakeTestHarness.js) is always a hard fail: that's a
 // pipeline break, not a wrong-but-valid guess.
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 // CI retries (playwright.config.ts: retries: 2) re-run this ENTIRE test --
 // all 15 cases -- from scratch on any failure. The harness already retries
@@ -77,6 +87,31 @@ type HarnessResult = {
   mapped: { region: string | null; updates: Record<string, unknown>; redFlagsToReview: unknown[] } | null;
 };
 
+// One-time setup needed before this passes: create a QA account on the
+// PRODUCTION Supabase project (dlauxdokkrqbvbormxte) -- Dashboard ->
+// Authentication -> Users -> Add user -> turn "Auto Confirm User" ON (so no
+// confirmation email blocks login) -- then add its email/password as repo
+// secrets PROD_QA_EMAIL / PROD_QA_PASSWORD (Settings -> Secrets and
+// variables -> Actions -> New repository secret). Do NOT reuse a real
+// student/patient-bearing account here.
+async function loginToProd(page: Page) {
+  const email = process.env.PROD_QA_EMAIL || "";
+  const password = process.env.PROD_QA_PASSWORD || "";
+  expect(
+    email && password,
+    "Set PROD_QA_EMAIL / PROD_QA_PASSWORD repo secrets -- a dedicated account on the PRODUCTION Supabase project, not the disposable e2e test project E2E_EMAIL/E2E_PASSWORD points at elsewhere. See the comment above loginToProd() for the one-time setup steps."
+  ).toBeTruthy();
+
+  await page.getByRole("textbox", { name: "you@clinic.com" }).fill(email);
+  await page.getByRole("textbox", { name: "••••••••" }).fill(password);
+  await page.getByRole("button", { name: /Sign in/ }).click();
+  // Wait for the login form to clear rather than asserting a specific
+  // post-login screen -- this account may or may not have completed
+  // onboarding, and either way all we actually need is an authenticated
+  // Supabase session for authHeader() to pick up.
+  await page.waitForFunction(() => !document.querySelector('input[placeholder="you@clinic.com"]'), { timeout: 20_000 }).catch(() => {});
+}
+
 test("@ai-accuracy real Groq intake pipeline scores across built-in + extended cases", async ({ page }) => {
   // 31 cases (15 original + 16 EXTRA_CASES -- confusable pairs, extra red
   // flags, under-represented regions, hedged mechanism, multi-region) *
@@ -85,6 +120,7 @@ test("@ai-accuracy real Groq intake pipeline scores across built-in + extended c
   test.setTimeout(40 * 60_000);
 
   await page.goto("/");
+  await loginToProd(page); // /api/parse now requires a valid session -- see api/_lib/rateLimit.js
   // window.physioAITest attaches at module load (src/main.jsx), before
   // React even mounts -- wait for it defensively anyway.
   await page.waitForFunction(

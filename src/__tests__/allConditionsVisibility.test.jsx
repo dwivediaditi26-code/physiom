@@ -20,7 +20,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { buildRealtimeSOAP, LiveSOAPPanel, SOAPNoteModule } from "../ClinicalModules.jsx";
 import { PatientProfileModal } from "../PatientDatabase.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) } }));
+vi.mock("../supabase.js", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) }, authHeader: vi.fn().mockResolvedValue({}) }));
 
 const fullData = {
   dem_name: "Test Patient",

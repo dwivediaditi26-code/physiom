@@ -18,7 +18,7 @@ import { render } from "@testing-library/react";
 import { PatientProfileModal } from "../PatientDatabase.jsx";
 import { SOAPNoteModule } from "../ClinicalModules.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) } }));
+vi.mock("../supabase.js", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) }, authHeader: vi.fn().mockResolvedValue({}) }));
 
 const tbiData = {
   dem_name: "Amit Sharma",

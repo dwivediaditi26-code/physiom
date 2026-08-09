@@ -18,7 +18,7 @@ import { axe } from "jest-axe";
 import { SubjectiveModule } from "../SubjectiveObjective.jsx";
 import AIAssistant from "../AIAssistant.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } }, authHeader: vi.fn().mockResolvedValue({}) }));
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 
 describe("Accessibility — Subjective Assessment form", () => {

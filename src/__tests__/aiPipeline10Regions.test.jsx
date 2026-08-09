@@ -31,7 +31,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AIAssistant from "../AIAssistant.jsx";
 import { runEngineV6 } from "../SubjectiveObjective.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } }, authHeader: vi.fn().mockResolvedValue({}) }));
 
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 

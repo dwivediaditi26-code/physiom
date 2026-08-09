@@ -21,6 +21,7 @@ vi.mock("../supabase.js", () => ({
       upsert: vi.fn(() => Promise.resolve({ error: null })),
     })),
   },
+  authHeader: vi.fn().mockResolvedValue({}),
 }));
 
 import { supabase } from "../supabase.js";

@@ -21,7 +21,7 @@ import { render } from "@testing-library/react";
 import { buildRealtimeSOAP, SOAPNoteModule } from "../ClinicalModules.jsx";
 import { PatientProfileModal } from "../PatientDatabase.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) }, authHeader: vi.fn().mockResolvedValue({}) }));
 
 const data = {
   dem_name: "Test Patient", dem_age: "40", dem_sex: "Male",

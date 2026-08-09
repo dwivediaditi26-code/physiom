@@ -16,7 +16,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SubjectiveModule } from "../SubjectiveObjective.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } }, authHeader: vi.fn().mockResolvedValue({}) }));
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 
 describe("Subjective Assessment tab -- native AI panel, full pipeline", () => {

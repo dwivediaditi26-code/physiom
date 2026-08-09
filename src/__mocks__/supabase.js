@@ -31,3 +31,10 @@ export const supabase = {
     signOut: vi.fn(() => Promise.resolve({ error: null })),
   },
 };
+
+// Mirrors the real src/supabase.js's authHeader() (added alongside the new
+// /api/parse auth gate, api/_lib/rateLimit.js) -- signed-out here (session:
+// null above), so this returns {} just like production would for a signed-
+// out tab. Override per-test with vi.mocked(authHeader).mockResolvedValueOnce(...)
+// if a test needs to simulate a logged-in AI-parse call.
+export const authHeader = vi.fn().mockResolvedValue({});

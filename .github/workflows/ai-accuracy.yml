@@ -43,6 +43,14 @@ jobs:
         env:
           CI: true
           E2E_BASE_URL: https://physiom-sbs4.vercel.app
+          # /api/parse now requires auth (api/_lib/rateLimit.js) -- a
+          # dedicated QA account on the PRODUCTION Supabase project, set up
+          # once by hand. See the comment above loginToProd() in
+          # e2e/ai-accuracy.spec.ts for exact setup steps. NOT the same as
+          # e2e.yml's E2E_EMAIL/E2E_PASSWORD (those are for the disposable
+          # TEST project, a different backend entirely).
+          PROD_QA_EMAIL: ${{ secrets.PROD_QA_EMAIL }}
+          PROD_QA_PASSWORD: ${{ secrets.PROD_QA_PASSWORD }}
         run: npx playwright test --project=chromium --grep "@ai-accuracy"
 
       - name: Upload report

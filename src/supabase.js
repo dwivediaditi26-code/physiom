@@ -11,3 +11,14 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://dlauxdokkrqbv
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_K1TTiK_OqjI16xKkEHdtlg_9ZRVq-SK'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// Shared helper for calling our own auth-gated /api/* endpoints (api/parse.js
+// and friends). Returns { Authorization: 'Bearer <token>' } when a session
+// exists, or {} when signed out -- spread this into a fetch()'s headers.
+// Used by AIAssistant.jsx, SubjectiveObjective.jsx, and the manual
+// physioAITest console harness (aiIntakeTestHarness.js) so all three real
+// callers of /api/parse send the same thing the server now requires.
+export async function authHeader() {
+  const { data } = await supabase.auth.getSession()
+  return data?.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {}
+}

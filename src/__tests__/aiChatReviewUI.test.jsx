@@ -10,7 +10,7 @@ import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AIAssistant from "../AIAssistant.jsx";
 
-vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } } }));
+vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } }, authHeader: vi.fn().mockResolvedValue({}) }));
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 
 const PC = { accent: "#7c3aed", a2: "#9333ea", bg: "#F7F7F8", surface: "#fff", border: "#e5e7eb", text: "#111827", muted: "#6b7280", isDark: false };
