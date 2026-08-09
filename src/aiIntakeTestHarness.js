@@ -73,6 +73,71 @@ const CASES = [
     narrative: "36 year old typist, numbness and tingling in the right thumb and first two fingers for two months, worse at night, gradual onset, shakes her hand to relieve it." },
 ];
 
+// EXTRA_CASES: 16 additional cases widening coverage beyond the original 15
+// (which stay untouched above so the manual physioAITest.runAll() console
+// tool keeps its original fast ~15-case shape for quick dev checks). These
+// exist for the CI @ai-accuracy suite (e2e/ai-accuracy.spec.ts), which
+// combines CASES + EXTRA_CASES for a fuller pass, run nightly with TPM-safe
+// pacing rather than by a developer waiting at the console.
+//
+// Focus, deliberately different from the original 15:
+//  - confusable pairs within the same region (rotator cuff vs. cervical
+//    radiculopathy referring into the arm; ACL-mechanism vs. MCL-mechanism
+//    knee injuries; hip OA vs. labral tear) -- tests DISCRIMINATION, not
+//    just "did it find A region", which the original 15 mostly don't stress
+//  - regions the original 15 barely touch (cervical had 1, thoracic had 1,
+//    hip had 1, ankle had 1)
+//  - a second and third red-flag case (original 15 has exactly one -- cauda
+//    equina) -- cervical myelopathy, and an elderly fall/fracture flag
+//  - a hedged-mechanism case, directly testing the system prompt's explicit
+//    "if the patient hedges about cause, don't pick that specific mechanism"
+//    rule (api/parse.js) rather than assuming it just works
+//  - a genuine multi-region complaint (tests that the PRIMARY region is
+//    still identified correctly when two body areas are both mentioned)
+const EXTRA_CASES = [
+  // ── CONFUSABLE PAIRS ────────────────────────────────────────────────
+  { id: "cf1_mcl", label: "Confusable 1 — MCL sprain (contact/valgus), not ACL", expectedRegion: "Knee (R)",
+    narrative: "22 year old football player, someone hit the outside of his right knee during a tackle two days ago, pain on the inner side of the knee, feels a bit unstable pushing off that leg, no locking or catching." },
+  { id: "cf2_meniscus", label: "Confusable 2 — Meniscus tear (twisting, locking), not ligament", expectedRegion: "Knee (L)",
+    narrative: "33 year old woman, twisted her left knee getting out of a low car three weeks ago, pain along the inside joint line, catches and occasionally locks when straightening it out, mild swelling on and off." },
+  { id: "cf3_rotatorcuff", label: "Confusable 3 — Rotator cuff tear (true shoulder pathology)", expectedRegion: "Shoulder (R)",
+    narrative: "61 year old man, sudden weakness lifting his right arm overhead after trying to catch a falling box two weeks ago, can't hold the arm up against resistance, pain over the outer shoulder, neck feels completely fine." },
+  { id: "cf4_cervrad_arm", label: "Confusable 4 — Neck pain referring into arm (NOT shoulder pathology)", expectedRegion: "Cervical spine",
+    narrative: "47 year old man, neck pain for six weeks that shoots down the outside of his right arm into his thumb and index finger, some tingling there too, worse turning his head that direction, shoulder itself doesn't hurt to move." },
+  { id: "cf5_dequervain", label: "Confusable 5 — De Quervain's (thumb-side wrist), not carpal tunnel", expectedRegion: "Elbow/Wrist/Hand",
+    narrative: "29 year old new mother, pain on the thumb side of her right wrist for a month, worse lifting the baby with her thumb out to the side, no numbness or tingling anywhere." },
+  { id: "cf6_ankle_sprain", label: "Confusable 6 — Acute inversion ankle sprain (not fracture)", expectedRegion: "Ankle / Foot",
+    narrative: "19 year old basketball player, rolled his left ankle inward landing from a jump yesterday, swelling on the outside of the ankle, painful but can put some weight through it, no obvious deformity." },
+  { id: "cf7_achilles", label: "Confusable 7 — Achilles tendinopathy (gradual, not acute rupture)", expectedRegion: "Ankle / Foot",
+    narrative: "44 year old recreational runner, gradual ache in the back of his right heel over three months, worse the first few steps in the morning and at the start of a run, eases once warmed up." },
+  { id: "cf8_hip_oa", label: "Confusable 8 — Hip osteoarthritis (elderly, gradual)", expectedRegion: "Hip / Groin",
+    narrative: "68 year old woman, gradual deep ache in her right groin and outer hip for over a year, worse walking distances and going up stairs, morning stiffness lasting about twenty minutes, no injury." },
+  { id: "cf9_hip_labral", label: "Confusable 9 — Hip labral tear (young, pivoting, clicking)", expectedRegion: "Hip / Groin",
+    narrative: "26 year old recreational footballer, sharp catching pain deep in the left groin when pivoting or twisting to kick, an occasional clicking sensation, gradual onset over four months, no clear injury." },
+
+  // ── RED FLAGS (original 15 has exactly one) ─────────────────────────
+  { id: "cf10_myelopathy_redflag", label: "Confusable 10 — Cervical myelopathy red flag (hand clumsiness, gait)", expectedRegion: "Cervical spine", expectFlags: true,
+    narrative: "66 year old man, neck stiffness for months, but the new thing over the past few weeks is his hands feel clumsy buttoning his shirt and his wife says his walking looks unsteady, not like his usual gait." },
+  { id: "cf11_hip_fragility_redflag", label: "Confusable 11 — Elderly fall, can't weight bear (occult fracture flag)", expectedRegion: "Hip / Groin", expectFlags: true,
+    narrative: "82 year old woman, fell in the bathroom yesterday, right hip and groin pain since, unable to put any weight on that leg at all, leg looks slightly shorter and turned outward compared to the other one." },
+
+  // ── UNDER-REPRESENTED REGIONS ────────────────────────────────────────
+  { id: "cf12_whiplash", label: "Confusable 12 — Acute whiplash, MVA, no red flags", expectedRegion: "Cervical spine",
+    narrative: "35 year old woman, rear-ended at a red light three days ago, neck pain and stiffness since that evening, headache at the base of the skull, no arm symptoms, no dizziness, no red flags she's aware of." },
+  { id: "cf13_costochondritis", label: "Confusable 13 — Costochondritis (thoracic wall, reproducible on palpation)", expectedRegion: "Thoracic spine",
+    narrative: "24 year old man, sharp pain on the left side of his chest wall for ten days, worse taking a deep breath or pressing on the area himself, started after an intense upper-body gym session, no cardiac history, no shortness of breath." },
+
+  // ── HEDGED MECHANISM (tests the anti-guessing prompt rule directly) ──
+  { id: "cf14_hedged_onset", label: "Confusable 14 — Hedged mechanism (model should NOT pick a specific cause)", expectedRegion: "Lumbar / SI",
+    narrative: "50 year old man, dull low back pain for two weeks, not totally sure what caused it, maybe from a weekend of gardening, or possibly just from sitting awkwardly at his desk, honestly not certain either way." },
+
+  // ── MULTI-REGION (primary complaint should still resolve correctly) ──
+  { id: "cf15_multiregion", label: "Confusable 15 — Two distinct regions in one narrative, primary should still resolve", expectedRegion: "Lumbar / SI",
+    narrative: "39 year old man, his main complaint is low back pain for six weeks that's really limiting him at work, and separately he also mentions some mild right knee ache after long walks that started around the same time." },
+  { id: "cf16_multiregion_shoulder_primary", label: "Confusable 16 — Two distinct regions, shoulder is the primary complaint", expectedRegion: "Shoulder (L)",
+    narrative: "45 year old woman, the main reason she's here is severe left shoulder pain and stiffness for two months that's stopping her from sleeping on that side, she also briefly mentions some mild occasional ankle soreness from an old sprain years ago that doesn't really bother her." },
+];
+
 async function callParseOnce(narrative) {
   const res = await fetch("/api/parse", {
     method: "POST",
@@ -215,7 +280,7 @@ async function runAll() {
 // effect on normal app use.
 function installAiIntakeTestHarness() {
   if (typeof window === "undefined") return;
-  window.physioAITest = { runAll, runOne: (narrative, opts) => runOne(narrative, opts || {}), CASES };
+  window.physioAITest = { runAll, runOne: (narrative, opts) => runOne(narrative, opts || {}), CASES, EXTRA_CASES };
 }
 
-export { installAiIntakeTestHarness, runAll, runOne, CASES };
+export { installAiIntakeTestHarness, runAll, runOne, CASES, EXTRA_CASES };

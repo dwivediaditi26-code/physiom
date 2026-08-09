@@ -77,23 +77,29 @@ type HarnessResult = {
   mapped: { region: string | null; updates: Record<string, unknown>; redFlagsToReview: unknown[] } | null;
 };
 
-test("@ai-accuracy real Groq intake pipeline scores across built-in cases", async ({ page }) => {
-  // 15 cases * ~65s TPM-safe gap + call time + the harness's own internal
-  // per-case retry/backoff on top of any residual 429 => needs real room.
-  test.setTimeout(20 * 60_000);
+test("@ai-accuracy real Groq intake pipeline scores across built-in + extended cases", async ({ page }) => {
+  // 31 cases (15 original + 16 EXTRA_CASES -- confusable pairs, extra red
+  // flags, under-represented regions, hedged mechanism, multi-region) *
+  // ~65s TPM-safe gap + call time + the harness's own internal per-case
+  // retry/backoff on top of any residual 429 => needs real room.
+  test.setTimeout(40 * 60_000);
 
   await page.goto("/");
   // window.physioAITest attaches at module load (src/main.jsx), before
   // React even mounts -- wait for it defensively anyway.
-  await page.waitForFunction(() => Boolean((window as any).physioAITest?.runOne && (window as any).physioAITest?.CASES), { timeout: 15_000 });
+  await page.waitForFunction(
+    () => Boolean((window as any).physioAITest?.runOne && (window as any).physioAITest?.CASES && (window as any).physioAITest?.EXTRA_CASES),
+    { timeout: 15_000 }
+  );
 
   const results: HarnessResult[] = await page.evaluate(async (gapMs) => {
     // @ts-ignore -- window.physioAITest is installed at runtime by src/main.jsx, not typed
-    const { runOne, CASES } = window.physioAITest;
+    const { runOne, CASES, EXTRA_CASES } = window.physioAITest;
+    const allCases = [...CASES, ...EXTRA_CASES];
     const out = [];
-    for (let i = 0; i < CASES.length; i++) {
-      out.push(await runOne(CASES[i].narrative, CASES[i]));
-      if (i < CASES.length - 1) await new Promise((r) => setTimeout(r, gapMs)); // no trailing wait after the last case
+    for (let i = 0; i < allCases.length; i++) {
+      out.push(await runOne(allCases[i].narrative, allCases[i]));
+      if (i < allCases.length - 1) await new Promise((r) => setTimeout(r, gapMs)); // no trailing wait after the last case
     }
     return out;
   }, CALL_GAP_MS);
