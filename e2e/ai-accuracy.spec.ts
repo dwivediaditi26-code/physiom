@@ -29,6 +29,18 @@
 
 import { test, expect } from "@playwright/test";
 
+// CI retries (playwright.config.ts: retries: 2) re-run this ENTIRE test --
+// all 15 cases -- from scratch on any failure. The harness already retries
+// each individual case up to 3x with backoff (aiIntakeTestHarness.js's
+// callParse), so an outer full-test retry doesn't add resilience, it just
+// triples the real Groq call volume in a short window. First real run hit
+// 11-13/15 errors, worse than the "occasional handful" the harness's own
+// comments describe -- consistent with this test's own retries stacking
+// with the harness's internal retries and compounding a rate limit, not a
+// genuine 73-87% pipeline failure rate. Disabling retry here isolates the
+// true single-pass error rate before tuning anything else.
+test.describe.configure({ retries: 0 });
+
 const ACCURACY_THRESHOLD = 0.8; // 12/15 -- tune upward once a real baseline run establishes what's normal
 
 type HarnessResult = {
