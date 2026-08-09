@@ -43,6 +43,31 @@ test.describe.configure({ retries: 0 });
 
 const ACCURACY_THRESHOLD = 0.8; // 12/15 -- tune upward once a real baseline run establishes what's normal
 
+// Real root cause (confirmed via an actual failed run, not guessed): Groq
+// rate-limits this org's `openai/gpt-oss-120b` key at 8000 TPM on the
+// on_demand tier. api/parse.js's system prompt is large (~24KB source,
+// mostly prompt text) with max_completion_tokens: 3000 -- a single real
+// call can plausibly consume most of that 8000/min budget by itself. The
+// harness's own runAll() paces cases only 600ms apart, which is nowhere
+// near enough headroom and reliably triggers 429s under any back-to-back
+// run (12/15 cases errored on a clean single-pass run with zero outer
+// retries -- this is a hard ceiling, not occasional flakiness).
+//
+// This is bigger than this test: it means the REAL APP can likely sustain
+// only ~1 AI-intake submission/minute across ALL concurrent users before
+// others start seeing failures -- a genuine capacity risk for 100+
+// students, separate from and more urgent than this accuracy check
+// passing. Flagged to the user; not something this test can or should
+// paper over.
+//
+// Fix here: drive runOne() ourselves in a loop (also exported on
+// window.physioAITest) instead of runAll(), with a TPM-safe ~65s gap
+// between calls, rather than editing the shared harness's pacing (that
+// file backs a real manual dev tool too -- changing its behavior for
+// everyone belongs in its own deliberate change, not as a side effect of
+// this test).
+const CALL_GAP_MS = 65_000;
+
 type HarnessResult = {
   id?: string;
   label: string;
@@ -53,17 +78,25 @@ type HarnessResult = {
 };
 
 test("@ai-accuracy real Groq intake pipeline scores across built-in cases", async ({ page }) => {
-  test.setTimeout(5 * 60_000); // 15 real sequential API calls, each with up to 3 retries + backoff
+  // 15 cases * ~65s TPM-safe gap + call time + the harness's own internal
+  // per-case retry/backoff on top of any residual 429 => needs real room.
+  test.setTimeout(20 * 60_000);
 
   await page.goto("/");
   // window.physioAITest attaches at module load (src/main.jsx), before
   // React even mounts -- wait for it defensively anyway.
-  await page.waitForFunction(() => Boolean((window as any).physioAITest?.runAll), { timeout: 15_000 });
+  await page.waitForFunction(() => Boolean((window as any).physioAITest?.runOne && (window as any).physioAITest?.CASES), { timeout: 15_000 });
 
-  const results: HarnessResult[] = await page.evaluate(async () => {
+  const results: HarnessResult[] = await page.evaluate(async (gapMs) => {
     // @ts-ignore -- window.physioAITest is installed at runtime by src/main.jsx, not typed
-    return await window.physioAITest.runAll();
-  });
+    const { runOne, CASES } = window.physioAITest;
+    const out = [];
+    for (let i = 0; i < CASES.length; i++) {
+      out.push(await runOne(CASES[i].narrative, CASES[i]));
+      if (i < CASES.length - 1) await new Promise((r) => setTimeout(r, gapMs)); // no trailing wait after the last case
+    }
+    return out;
+  }, CALL_GAP_MS);
 
   const errored = results.filter((r) => r.error);
   const scored = results.filter((r) => r.expectedRegion && !r.error);
