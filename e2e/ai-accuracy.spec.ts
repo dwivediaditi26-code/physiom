@@ -98,9 +98,15 @@ test("@ai-accuracy real Groq intake pipeline scores across built-in cases", asyn
     );
   }
 
+  // Embed the ACTUAL error text (not just case labels) directly in the
+  // assertion message -- the separate ai-accuracy-summary.json attachment
+  // has the full detail, but it's proven awkward to locate in the GitHub
+  // Actions UI; putting a truncated error inline means whatever gets
+  // pasted/screenshotted from the failure already has the real diagnostic.
   expect(
     errored.length,
-    `${errored.length} case(s) errored calling the real pipeline: ${errored.map((e) => e.label).join(", ")}`
+    `${errored.length} case(s) errored calling the real pipeline:\n` +
+      errored.map((e) => `  - ${e.label}: ${(e.error || "(no message)").slice(0, 200)}`).join("\n")
   ).toBe(0);
 
   expect(
