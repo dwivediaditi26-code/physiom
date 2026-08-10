@@ -15,18 +15,20 @@ function formatExerciseList(exercises) {
 
 function buildPatientContext(data) {
   // Privacy: only clinical findings plus a strict demographic whitelist
-  // (age / sex / dominant hand). Never include name, phone, email, address,
-  // occupation, employer, GP, or any other identifying field here — this
-  // string is sent verbatim to the AI backend (see api/chat.js).
+  // (age / sex ONLY -- narrowed 2026-08-10 at the user's explicit
+  // direction; dominant hand was previously included here too but isn't
+  // needed for clinical reasoning quality the way age/sex are, so it's
+  // out). Never include name, phone, email, address, occupation, employer,
+  // GP, dominant hand, or any other field here -- this string is sent
+  // verbatim to the AI backend (see api/chat.js).
   if (!data) return "";
   const lines = [];
 
-  // ── DEMOGRAPHICS (whitelisted only) ──
+  // ── DEMOGRAPHICS (age / sex ONLY) ──
   const demoBits = [];
   if (data.dem_age)            demoBits.push(`${data.dem_age}y`);
   const sex = data.dem_sex || data.dem_gender;
   if (sex)                     demoBits.push(sex);
-  if (data.dem_dominant)       demoBits.push(`${data.dem_dominant}-hand dominant`);
   if (demoBits.length)         lines.push(`Demographics: ${demoBits.join(", ")}`);
 
   // ── SUBJECTIVE ──
