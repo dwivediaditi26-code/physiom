@@ -22,7 +22,7 @@ function Modal({title,children,onClose}){
           justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
           <div>
             <div style={{fontWeight:800,fontSize:"1.05rem",color:TX}}>{title}</div>
-            <div style={{fontSize:"0.68rem",color:MU,marginTop:2}}>PhysioMind — Last updated June 2026</div>
+            <div style={{fontSize:"0.68rem",color:MU,marginTop:2}}>PhysioMind — Last updated August 2026</div>
           </div>
           <button onClick={onClose} style={{background:S2,border:`1px solid ${BD}`,borderRadius:8,
             width:32,height:32,cursor:"pointer",fontSize:"1rem",color:MU,
@@ -44,7 +44,7 @@ export function PrivacyPolicy({onClose}){
       <p>PhysioMind ("we", "our", "us") is committed to protecting the privacy and security of personal and clinical data. This policy explains what data we collect, how we use it, and your rights.</p>
 
       <h2 style={h2}>1. Who we are</h2>
-      <p>PhysioMind is a clinical assessment platform for physiotherapists and rehabilitation professionals. We are operated by <strong>PhysioMind Technologies</strong> (India). For questions, contact: <a href="mailto:privacy@physiomind.in" style={{color:A}}>privacy@physiomind.in</a></p>
+      <p>PhysioMind is a clinical assessment platform for physiotherapists and rehabilitation professionals, operated by <strong>Aditi Dwivedi</strong> (India). PhysioMind is not yet a registered company — this policy will be updated with formal entity details if/when incorporation happens. For questions, contact: <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a></p>
 
       <h2 style={h2}>2. Data we collect</h2>
       <h3 style={h3}>2a. Clinician account data</h3>
@@ -91,6 +91,7 @@ export function PrivacyPolicy({onClose}){
         <li style={li}><strong>Supabase</strong> — database and authentication provider</li>
         <li style={li}><strong>Cloudinary</strong> — clinical image hosting (images you explicitly upload)</li>
         <li style={li}><strong>Vercel</strong> — app hosting (no patient data stored here)</li>
+        <li style={li}><strong>Groq</strong> — AI inference provider used to parse free-text patient intake narratives (AI Assistant / AI-drafted SOAP text) into structured fields. Per Groq's published policy, inputs and outputs are not used to train models, and are not retained beyond transient troubleshooting logs (kept a maximum of 30 days) unless we enable longer retention, which we do not.</li>
         <li style={li}><strong>Law enforcement</strong> — only if required by Indian law or court order</li>
       </ul>
       <p>We do <strong>not</strong> share data with insurers, pharmaceutical companies, advertisers, or data brokers.</p>
@@ -103,7 +104,7 @@ export function PrivacyPolicy({onClose}){
         <li style={li}><strong>Portability:</strong> export your full patient database as CSV/PDF</li>
         <li style={li}><strong>Objection:</strong> opt out of non-essential data processing</li>
       </ul>
-      <p>To exercise these rights, email <a href="mailto:privacy@physiomind.in" style={{color:A}}>privacy@physiomind.in</a></p>
+      <p>To exercise these rights, email <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a></p>
 
       <h2 style={h2}>7. Patient data — your responsibility</h2>
       <p>As a clinician, you are the <strong>data controller</strong> for your patients' information. You are responsible for:</p>
@@ -127,8 +128,8 @@ export function PrivacyPolicy({onClose}){
       <p>We will notify you by email at least 14 days before any material change to this privacy policy. Continued use of the service after notification constitutes acceptance.</p>
 
       <h2 style={h2}>11. Contact</h2>
-      <p>Privacy queries: <a href="mailto:privacy@physiomind.in" style={{color:A}}>privacy@physiomind.in</a><br/>
-      Grievance Officer (India): <a href="mailto:grievance@physiomind.in" style={{color:A}}>grievance@physiomind.in</a> (as required under IT Act 2000)</p>
+      <p>Privacy queries: <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a><br/>
+      Grievance Officer (India): Aditi Dwivedi — <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a> (as required under the IT Act 2000 and Digital Personal Data Protection Act 2023). We aim to acknowledge grievances within 7 days and resolve them within 30 days.</p>
     </Modal>
   );
 }
@@ -151,10 +152,11 @@ export function TermsOfService({onClose}){
 
       <h2 style={h2}>3. Free trial and subscription</h2>
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
-        <li style={li}>New accounts receive a 14-day free trial with full access</li>
-        <li style={li}>After the trial, a subscription is required to continue accessing your data</li>
-        <li style={li}>Subscriptions are billed monthly. Cancel anytime — no lock-in.</li>
-        <li style={li}>No refunds for partial months, except where required by law</li>
+        <li style={li}>New accounts receive a 1-month (30-day) free trial with full access</li>
+        <li style={li}>After the trial, continued access requires an active subscription or purchased credits</li>
+        <li style={li}>Subscriptions are billed monthly and can be cancelled anytime — no lock-in</li>
+        <li style={li}><strong>All payments are final.</strong> We do not offer refunds, except where required by applicable Indian consumer protection law</li>
+        <li style={li}>Your existing patient data remains accessible for at least 30 days after a lapsed subscription so you can export it, even if you choose not to renew</li>
       </ul>
 
       <h2 style={h2}>4. Acceptable use</h2>
@@ -191,7 +193,7 @@ export function TermsOfService({onClose}){
       <p>These terms are governed by the laws of India. Disputes shall be subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra.</p>
 
       <h2 style={h2}>10. Contact</h2>
-      <p>For terms-related queries: <a href="mailto:legal@physiomind.in" style={{color:A}}>legal@physiomind.in</a></p>
+      <p>For terms-related queries: <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a></p>
     </Modal>
   );
 }
