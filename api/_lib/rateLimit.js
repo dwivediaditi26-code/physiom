@@ -47,7 +47,16 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const GLOBAL_LIMIT_PER_MINUTE = 6; // conservative under the confirmed 8000 TPM free-tier ceiling; raise after a Groq tier upgrade
-const USER_LIMIT_PER_HOUR = 20;
+// Raised from 20 -> 40 after the first real ai-accuracy.yml full-suite run
+// (2026-08-10): 20/20 (100%) scored correctly, but the remaining 11 of 31
+// cases got a correct 429 from THIS limit -- the QA account making 31 calls
+// in ~34min from a single account isn't realistic student behaviour, but it
+// still meant we never got a complete baseline in one pass. 40/hour is still
+// a small fraction of the real budget the GLOBAL_LIMIT_PER_MINUTE cap allows
+// (6/min sustained = 360/hour theoretical ceiling across all users), so this
+// doesn't meaningfully weaken the "one account can't hog it" guarantee --
+// it just stops it from being the thing that blocks our own test coverage.
+const USER_LIMIT_PER_HOUR = 40;
 
 let adminClient = null;
 function getAdminClient() {
