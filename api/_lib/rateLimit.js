@@ -39,7 +39,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+// The URL is not secret (same value src/supabase.js already hardcodes as
+// its own fallback), so hardcode it here too -- this removes one of the two
+// ways getAdminClient() could silently return null, isolating "missing" to
+// the one value that actually has to be configured as a secret.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://dlauxdokkrqbvbormxte.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const GLOBAL_LIMIT_PER_MINUTE = 6; // conservative under the confirmed 8000 TPM free-tier ceiling; raise after a Groq tier upgrade
@@ -63,7 +67,11 @@ function getAdminClient() {
 export async function authenticateAndRateLimit(req, res, endpoint) {
   const admin = getAdminClient();
   if (!admin) {
-    console.error(`rateLimit: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL not configured for endpoint "${endpoint}"`);
+    // SUPABASE_URL now always has a hardcoded fallback (see above), so if
+    // getAdminClient() still returned null, SERVICE_ROLE_KEY is the one
+    // that's actually missing -- log/report that specifically instead of
+    // the ambiguous "one of these two" message this used to give.
+    console.error(`rateLimit: SUPABASE_SERVICE_ROLE_KEY env var is not set on this deployment -- endpoint "${endpoint}" cannot authenticate requests`);
     res.status(500).json({ error: 'Server misconfigured (missing service role key). This endpoint cannot authenticate requests right now.' });
     return null;
   }
