@@ -117,7 +117,14 @@ test("@ai-accuracy real Groq intake pipeline scores across built-in + extended c
   // flags, under-represented regions, hedged mechanism, multi-region) *
   // ~65s TPM-safe gap + call time + the harness's own internal per-case
   // retry/backoff on top of any residual 429 => needs real room.
-  test.setTimeout(40 * 60_000);
+  //
+  // 40min was NOT enough in practice: a real run hit "Test timeout of
+  // 2400000ms exceeded" with the browser forcibly closed mid-run (reported
+  // "Slow test file: 42.0m" -- it needed more than 40, not less). 30 gaps *
+  // 65s alone is 32.5min before any actual call latency or internal
+  // retry/backoff is added, so 40min left almost no slack. This is a
+  // nightly job with no reason to be stingy on time -- generous ceiling.
+  test.setTimeout(55 * 60_000);
 
   await page.goto("/");
   await loginToProd(page); // /api/parse now requires a valid session -- see api/_lib/rateLimit.js
