@@ -4172,6 +4172,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
                 style={{ background:"transparent", border:"none", color:"#7c3aed", fontSize:"1rem", cursor:"pointer" }}>✕</button>
             </div>
 
+            {/* Privacy note: unlike buildPatientContext() (AI chat), this
+                narrative is sent to Groq verbatim -- there is no identifier
+                whitelist/strip step for /api/parse. Warn students up front
+                rather than silently forwarding a real name if they say/type
+                one. */}
+            <div style={{ fontSize:"0.68rem", color:"#7c3aed", background:"#f5f3ff",
+              border:"1px solid #ddd6fe", borderRadius:8, padding:"6px 10px", marginBottom:10, lineHeight:1.4 }}>
+              🔒 Don't include the patient's name or other identifying details here — describe age, sex, and clinical findings only. This text is sent to our AI provider (Groq) to draft the fields.
+            </div>
+
             {/* Voice mode */}
             {aiMode === "voice" && aiStatus !== "done" && (
               <div>
