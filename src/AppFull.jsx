@@ -355,6 +355,7 @@ function AppInner({ currentUser, onSignOut }) {
   useEffect(() => {
     supabase.from("patients").select("*")
       .eq("user_id", currentUser?.id || "")
+      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() below
       .order("updated_at", { ascending: false })
       .then(({ data: rows, error }) => {
         if (error || !rows || rows.length === 0) return;
@@ -565,18 +566,24 @@ function AppInner({ currentUser, onSignOut }) {
   };
 
   const deletePatient = (id) => {
-    if (!window.confirm("Delete this patient? This cannot be undone.")) return;
+    if (!window.confirm("Delete this patient? This removes it from your list -- it can still be recovered if needed.")) return;
     const updated = patients.filter(p => p.id !== id);
     setPatients(updated);
     savePatientDB(updated, currentUser?.id);
-    // Also remove the row from Supabase. savePatientDB only UPSERTs the patients
-    // that remain, so without an explicit delete the cloud copy survives and the
-    // patient reappears on the next load when the remote list is merged back in
-    // (this was the "deleted patients keep coming back / still 25" bug).
+    // Soft delete: mark deleted_at instead of removing the row (see
+    // supabase/soft_delete_patients.sql). A single misclick through the
+    // confirm() dialog used to be an unrecoverable permanent DELETE with
+    // no undo path short of a full database restore -- this way the real
+    // clinical record survives and can be restored by us on request,
+    // matching the 30-day deletion grace period already promised in the
+    // Privacy Policy. savePatientDB only UPSERTs the patients that remain
+    // locally, so this explicit Supabase call is still needed, same as
+    // before -- just an UPDATE instead of a DELETE now.
     if (currentUser?.id) {
-      supabase.from("patients").delete().eq("id", id).eq("user_id", currentUser.id)
-        .then(({ error }) => { if (error) console.warn("[Supabase delete]", error.message); })
-        .catch((e) => console.warn("[Supabase delete error]", e));
+      supabase.from("patients").update({ deleted_at: new Date().toISOString() })
+        .eq("id", id).eq("user_id", currentUser.id)
+        .then(({ error }) => { if (error) console.warn("[Supabase soft-delete]", error.message); })
+        .catch((e) => console.warn("[Supabase soft-delete error]", e));
     }
     if (activePatientId === id) { setData({}); setActivePatientId(null); }
     setJsonMsg({ type:"success", text:"Patient deleted" });
