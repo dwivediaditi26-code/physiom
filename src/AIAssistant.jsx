@@ -164,7 +164,7 @@ export default function AIAssistant({ data, set, PC, onClose }) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({
           messages: newMessages,
           patientContext,

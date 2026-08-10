@@ -3787,10 +3787,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const hasAnyNote = Object.values(lv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNote) {
         setLumbarNotesLoading(true);
-        fetch("/api/extractLumbarNoteVariables", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+        authHeader().then(h => fetch("/api/extractLumbarNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: lv._notesForAiPass, alreadyKnown: already }),
-        }).then(r => r.json()).then(j => {
+        })).then(r => r.json()).then(j => {
           const findings = Array.isArray(j.findings) ? j.findings : [];
           setLumbarNoteFindings(findings);
           // Merge AI note findings into the Pass 1 variables before
@@ -3867,10 +3867,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const hasAnyNoteC = Object.values(cv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNoteC) {
         setCervicalNotesLoading(true);
-        fetch("/api/extractCervicalNoteVariables", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+        authHeader().then(h => fetch("/api/extractCervicalNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: cv._notesForAiPass, alreadyKnown: alreadyC }),
-        }).then(r => r.json()).then(j => {
+        })).then(r => r.json()).then(j => {
           const findings = Array.isArray(j.findings) ? j.findings : [];
           setCervicalNoteFindings(findings);
           const { merged, aiFilledFields, pendingRedFlagReview } = mergeCervicalVariables(cv, findings);
@@ -3934,10 +3934,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
       const hasAnyNoteT = Object.values(tv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNoteT) {
         setThoracicNotesLoading(true);
-        fetch("/api/extractThoracicNoteVariables", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+        authHeader().then(h => fetch("/api/extractThoracicNoteVariables", {
+          method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: tv._notesForAiPass, alreadyKnown: alreadyT }),
-        }).then(r => r.json()).then(j => {
+        })).then(r => r.json()).then(j => {
           const findings = Array.isArray(j.findings) ? j.findings : [];
           setThoracicNoteFindings(findings);
           const { merged, aiFilledFields, pendingRedFlagReview } = mergeThoracicVariables(tv, findings);
