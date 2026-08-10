@@ -115,16 +115,24 @@ async function loginToProd(page: Page) {
 test("@ai-accuracy real Groq intake pipeline scores across built-in + extended cases", async ({ page }) => {
   // 31 cases (15 original + 16 EXTRA_CASES -- confusable pairs, extra red
   // flags, under-represented regions, hedged mechanism, multi-region) *
-  // ~65s TPM-safe gap + call time + the harness's own internal per-case
-  // retry/backoff on top of any residual 429 => needs real room.
+  // ~65s TPM-safe gap.
   //
-  // 40min was NOT enough in practice: a real run hit "Test timeout of
-  // 2400000ms exceeded" with the browser forcibly closed mid-run (reported
-  // "Slow test file: 42.0m" -- it needed more than 40, not less). 30 gaps *
-  // 65s alone is 32.5min before any actual call latency or internal
-  // retry/backoff is added, so 40min left almost no slack. This is a
-  // nightly job with no reason to be stingy on time -- generous ceiling.
-  test.setTimeout(55 * 60_000);
+  // Two real runs (40min, then 55min) both hit "Test timeout ... exceeded"
+  // with the browser force-closed mid-run (57.8m and still not done). Root
+  // cause found: the loop was doing `await runOne()` (however long THAT
+  // takes) THEN ALSO waiting a full gapMs afterward -- actual spacing
+  // between call STARTS was call-duration + 65s, not 65s. openai/gpt-oss-120b
+  // is a reasoning model (generates internal "thinking" tokens before
+  // answering), so each call plausibly takes 20-40s+ on its own -- meaning
+  // real spacing had drifted to ~90-100s+/case, not the intended 65s. That
+  // explains the runaway total far better than "needs an even bigger
+  // timeout" did (raising the ceiling twice was treating the symptom).
+  //
+  // Fixed below: measure each gap from call-START to call-START (sleep
+  // only for whatever time is LEFT after the call itself), which is what
+  // "no more than 1 call per 65s" actually requires for TPM safety, and
+  // stops padding runtime with a call's own duration on top of the gap.
+  test.setTimeout(55 * 60_000); // kept generous -- this fix should land well under it, not exactly at it
 
   await page.goto("/");
   await loginToProd(page); // /api/parse now requires a valid session -- see api/_lib/rateLimit.js
@@ -141,8 +149,13 @@ test("@ai-accuracy real Groq intake pipeline scores across built-in + extended c
     const allCases = [...CASES, ...EXTRA_CASES];
     const out = [];
     for (let i = 0; i < allCases.length; i++) {
+      const callStart = Date.now();
       out.push(await runOne(allCases[i].narrative, allCases[i]));
-      if (i < allCases.length - 1) await new Promise((r) => setTimeout(r, gapMs)); // no trailing wait after the last case
+      if (i < allCases.length - 1) {
+        const elapsed = Date.now() - callStart;
+        const remaining = gapMs - elapsed; // could be <=0 if the call itself took longer than gapMs
+        if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
+      }
     }
     return out;
   }, CALL_GAP_MS);
