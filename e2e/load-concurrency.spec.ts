@@ -53,6 +53,34 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
   const page = await context.newPage();
   const patientName = `Load Test Patient ${Date.now()}-${index}-${Math.floor(Math.random() * 10000)}`;
 
+  // Track the actual Supabase auth network response so a login failure
+  // reports WHY (e.g. a 429 from Supabase's own sign-in rate limit) instead
+  // of just "the button never appeared". That distinction matters: a 429 is
+  // a real backend limit worth acting on (raise it / spread logins / Pro
+  // tier); a timeout with no error response at all is more likely this CI
+  // runner running out of CPU/RAM trying to render N real browsers at once
+  // -- a test-harness ceiling, not something real students on their own
+  // devices would hit. First real 50-concurrency run (2026-08-11) hit this
+  // exact ambiguity: 29/50 failed, all timing out waiting for the
+  // post-login UI with no other signal -- this is what's needed to tell
+  // those two apart on the next run.
+  let lastAuthStatus: number | null = null;
+  let lastAuthBody: string | null = null;
+  let lastNetworkError: string | null = null;
+  page.on('response', async (res) => {
+    if (res.url().includes('/auth/v1/token')) {
+      lastAuthStatus = res.status();
+      if (res.status() >= 400) {
+        lastAuthBody = (await res.text().catch(() => null))?.slice(0, 300) ?? null;
+      }
+    }
+  });
+  page.on('requestfailed', (req) => {
+    if (req.url().includes('/auth/v1/token')) {
+      lastNetworkError = req.failure()?.errorText ?? 'unknown network failure';
+    }
+  });
+
   try {
     await login(page);
 
@@ -83,7 +111,12 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
 
     return { index, ok: true, ms: Date.now() - started };
   } catch (e: any) {
-    return { index, ok: false, ms: Date.now() - started, error: String(e?.message || e).slice(0, 300) };
+    const authInfo = lastNetworkError
+      ? ` [auth request failed: ${lastNetworkError}]`
+      : lastAuthStatus !== null
+        ? ` [last auth response: ${lastAuthStatus}${lastAuthBody ? ' -- ' + lastAuthBody : ''}]`
+        : ' [no auth network activity observed -- likely never got past a prior step]';
+    return { index, ok: false, ms: Date.now() - started, error: (String(e?.message || e).slice(0, 300) + authInfo) };
   } finally {
     await context.close().catch(() => {});
   }
