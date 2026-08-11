@@ -1,5 +1,6 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
 import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
+import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
@@ -698,6 +699,14 @@ function AppInner({ currentUser, onSignOut }) {
       next.add(key);
       return next;
     });
+    // Every nav path in the app (desktop sidebar, mobile drawer, bottom nav,
+    // Home tiles, dashboard rows, deep-links) funnels through here -- single
+    // choke point, so this is the one place that needs a track() call to
+    // answer "what's the most-used module" (Vercel Web Analytics' automatic
+    // pageview tracking can't see this: it's a single-page app, module
+    // switches are internal state, not separate URLs). Fire-and-forget,
+    // silently no-ops if Web Analytics isn't enabled on the project yet.
+    try { track('module_opened', { module: key }); } catch {}
   }, []);
 
   const Field = useCallback(({t})=>{
