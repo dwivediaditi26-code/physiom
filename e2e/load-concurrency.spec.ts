@@ -123,6 +123,17 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
 }
 
 test.describe('Load / concurrency @load', () => {
+  // Override the suite-wide retries:2 (playwright.config.ts) -- a failed
+  // load-test run is real data, not flakiness to retry past. Retrying
+  // immediately re-fires the exact same N-concurrent-login flood right
+  // after the first attempt failed; if the cause is a real rate limit on
+  // Supabase's side, the retry likely hits while that window hasn't reset
+  // yet, stacking multiple punishing runs back to back and muddying the
+  // result instead of confirming it. (First real 50-run, 2026-08-11: 3
+  // attempts back to back, 40-48% each time -- consistent, but 3x the CI
+  // time for one data point.)
+  test.describe.configure({ retries: 0 });
+
   test(`${N} students creating a patient + recording a finding + opening Live SOAP at the same time`, async ({ browser }) => {
     test.setTimeout(Math.max(120_000, N * 4000));
     const { email } = creds();
