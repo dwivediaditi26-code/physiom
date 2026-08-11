@@ -1,0 +1,112 @@
+name: Load / concurrency test
+
+# On-demand only -- simulates many students logged into the same test
+# account, all creating a patient + recording a finding + opening Live SOAP
+# AT THE SAME TIME (e2e/load-concurrency.spec.ts, tagged @load). Point of
+# this: catch Supabase connection/throughput limits or write-contention
+# issues that only show up under real concurrent load, before 100+ real
+# students find them on day one.
+#
+# Same disposable TEST Supabase project as e2e.yml -- never production
+# (same secrets, same guard step). Kept as its own workflow rather than
+# folded into e2e.yml because it's heavier (N full browser contexts at
+# once) and not something every push/PR should pay for -- e2e.yml already
+# excludes @load from its default run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: 'How many concurrent "students" to simulate (default 15 -- GitHub''s standard runner has 7GB RAM, so raise gradually rather than jumping straight to 100)'
+        required: false
+        default: '15'
+      min_success_rate:
+        description: 'Minimum fraction that must succeed for the run to pass (default 0.9 = 90%)'
+        required: false
+        default: '0.9'
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (chromium only)
+        run: npx playwright install --with-deps chromium
+
+      # Same check as e2e.yml -- catches a malformed test-project secret
+      # here with a clear message instead of a confusing blank-page failure
+      # later.
+      - name: Validate test Supabase secrets look like real values
+        env:
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+        run: |
+          node -e '
+            const url = process.env.E2E_SUPABASE_URL || "";
+            const key = process.env.E2E_SUPABASE_ANON_KEY || "";
+            let bad = [];
+            if (!url) bad.push("E2E_SUPABASE_URL is empty/unset.");
+            else {
+              try { new URL(url); } catch { bad.push(`E2E_SUPABASE_URL is not a valid URL: "${url}"`); }
+              if (/["'"'"'\s]/.test(url)) bad.push(`E2E_SUPABASE_URL contains quotes or whitespace: "${url}"`);
+            }
+            if (!key) bad.push("E2E_SUPABASE_ANON_KEY is empty/unset.");
+            else if (/["'"'"'\s]/.test(key)) bad.push("E2E_SUPABASE_ANON_KEY contains quotes or whitespace.");
+            if (bad.length) {
+              for (const b of bad) console.log("::error::" + b);
+              process.exit(1);
+            }
+            console.log("Secrets look structurally valid.");
+          '
+
+      - name: Build against the disposable test Supabase project
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      # Same guard as e2e.yml -- refuse to run against production if the
+      # test-project secrets were silently empty at build time.
+      - name: Guard against silently building against production Supabase
+        run: |
+          if grep -rq "dlauxdokkrqbvbormxte" dist/; then
+            echo "::error::Build output references the PRODUCTION Supabase project. E2E_SUPABASE_URL/E2E_SUPABASE_ANON_KEY were empty or unset during build. Refusing to run the load test against production."
+            exit 1
+          fi
+
+      - name: Run load/concurrency test
+        env:
+          CI: true
+          LOAD_CONCURRENCY: ${{ github.event.inputs.concurrency }}
+          LOAD_MIN_SUCCESS_RATE: ${{ github.event.inputs.min_success_rate }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: npx playwright test --project=chromium --grep "@load"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload load-test summary JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-summary
+          path: load-test-summary.json
+          if-no-files-found: ignore
+          retention-days: 30

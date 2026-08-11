@@ -127,10 +127,15 @@ jobs:
           # (ai-accuracy.yml) -- excluded here by default so it doesn't
           # burn Groq quota or add LLM-output flakiness to every push/PR.
           # An explicit grep (e.g. "@ai-accuracy") still overrides this.
+          # load-concurrency.spec.ts (@load) spins up many concurrent
+          # browser contexts against the test Supabase project -- heavier
+          # and not something every push/PR needs to pay for either. It has
+          # its own on-demand workflow (load-test.yml). An explicit grep
+          # (e.g. "@load") still overrides this.
           if [ -n "$GREP" ]; then
             npx playwright test --grep "$GREP"
           else
-            npx playwright test --grep-invert "@ai-accuracy"
+            npx playwright test --grep-invert "@ai-accuracy|@load"
           fi
 
       - name: Upload test report
