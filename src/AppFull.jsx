@@ -56,6 +56,7 @@ import {
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
+import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
@@ -164,7 +165,7 @@ function StreamEnginePlaceholder({ stream, setStream, PC }) {
   );
 }
 
-function AppInner({ currentUser, onSignOut }) {
+function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
   // why this matters: without this, two students sharing one browser/device
   // would silently read and overwrite each other's local patient cache.
@@ -194,6 +195,23 @@ function AppInner({ currentUser, onSignOut }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+
+  // ── Guest Mode auth gate ─────────────────────────────────────────────
+  // Guests can browse and use the whole real workflow (nothing they do
+  // writes to Supabase -- every save path already guards on currentUser?.id
+  // being present, see savePatientDB / the cloud-sync effect below). The
+  // ONLY things that genuinely cannot work without a real account are the
+  // AI-backed endpoints (/api/parse, /api/chat, and friends) -- the server
+  // hard-requires a real Supabase JWT (see api/_lib/rateLimit.js), so there
+  // is no safe way to let a guest actually call them. requireAuth() is the
+  // single gate every AI-triggering button checks first: real users pass
+  // straight through, guests get a "sign in to continue" popup instead of
+  // a button that would otherwise just silently 401.
+  const [authPromptFeature, setAuthPromptFeature] = useState(null); // null | feature label string
+  const requireAuth = useCallback((featureLabel) => {
+    if (isGuest) { setAuthPromptFeature(featureLabel); return false; }
+    return true;
+  }, [isGuest]);
   // ── CLINICAL STREAM (Step 1 scaffold) ──────────────────────────────
   // Top-level specialty that drives the whole assessment flow. "ortho"
   // keeps the existing app; other streams render via the config-driven
@@ -1031,6 +1049,15 @@ function AppInner({ currentUser, onSignOut }) {
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}
 
+      {/* ── Guest Mode: "sign in to use this" popup, shown by requireAuth() ── */}
+      {authPromptFeature && (
+        <AuthRequiredPrompt
+          feature={authPromptFeature}
+          onClose={()=>setAuthPromptFeature(null)}
+          onSignIn={()=>{ setAuthPromptFeature(null); onSignOut(); }}
+        />
+      )}
+
       {/* Info Modal */}
       {infoModal&&(
         <div onClick={()=>setInfoModal(null)} className="pm-modal-wrap" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -1348,6 +1375,23 @@ function AppInner({ currentUser, onSignOut }) {
         </button>
       </div>
 
+      {/* ── GUEST MODE BANNER — always visible, never lets a guest mistake
+          this for a real saved session. Sign in / Create account here exits
+          guest mode and returns to the real login screen. ── */}
+      {isGuest && (
+        <div style={{background:"#fef9e7",borderBottom:"1px solid #f5e6a8",padding:"7px 16px",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap"}}>
+          <span style={{fontSize:"0.76rem",color:"#92720c",fontWeight:600}}>
+            👤 Guest mode — your work here isn't saved, and AI features need an account
+          </span>
+          <button onClick={onSignOut} style={{padding:"3px 12px",background:"#fff",
+            border:"1px solid #f0d98a",borderRadius:20,color:"#92720c",fontSize:"0.72rem",
+            fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+            Sign in / Create free account →
+          </button>
+        </div>
+      )}
+
       {/* ── ACTIVE PATIENT BAR ── */}
       {activePatient && (
         <div className="pm-patient-bar" style={{background:PC.isDark?"rgba(129,140,248,0.05)":"rgba(79,70,229,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"6px 16px",display:"flex",flexDirection:"column",gap:4}}>
@@ -1603,7 +1647,7 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}}/></Suspense>
+                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}} requireAuth={requireAuth}/></Suspense>
                   {subjBodyChartTab && (
                     <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
                   )}
@@ -1747,7 +1791,7 @@ function AppInner({ currentUser, onSignOut }) {
               ):tests==="SOAP_MODULE"?(
               <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set} onNav={navTo} initialTab={active==="soap"?navContext.initialTab:undefined}/></Suspense>
               ):tests==="AI_MODULE"?(
-              <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")}/>
+              <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")} requireAuth={requireAuth}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{
@@ -1946,6 +1990,13 @@ export default function App() {
   // login screen for a split second while Supabase is still resolving the
   // session on page load.
   const [session, setSession] = useState(undefined);
+  // Guest Mode: lets a visitor use the real app (not the scripted demo)
+  // without an account. Only ever set true by explicitly clicking "Continue
+  // without signing in" on AuthScreen -- never a fallback/default. Once a
+  // real `session` exists this is irrelevant (the authenticated branch below
+  // is checked first), so there's no risk of a stale true value re-trapping
+  // someone in guest mode after they actually sign in.
+  const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -1994,9 +2045,22 @@ export default function App() {
   }
 
   if (!session) {
+    if (guestMode) {
+      // isGuest=true -> requireAuth() inside AppInner gates the handful of
+      // AI-backed actions that need a real Supabase JWT; everything else in
+      // the real app works normally. onSignOut here just exits guest mode
+      // and drops back to the real login screen -- there's no real session
+      // to actually sign out of.
+      return (
+        <ErrorBoundary>
+          <AppInner currentUser={null} isGuest={true} onSignOut={() => setGuestMode(false)} />
+          <InstallPrompt />
+        </ErrorBoundary>
+      );
+    }
     // AuthScreen's onAuth is largely redundant with onAuthStateChange above
     // (Supabase fires SIGNED_IN either way) but harmless to pass through.
-    return <AuthScreen onAuth={() => {}} />;
+    return <AuthScreen onAuth={() => {}} onTryGuest={() => setGuestMode(true)} />;
   }
 
   return (

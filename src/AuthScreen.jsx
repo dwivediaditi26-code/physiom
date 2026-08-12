@@ -117,7 +117,7 @@ function Forgot({onSwitch}){
   </form>);
 }
 
-export default function AuthScreen({onAuth}){
+export default function AuthScreen({onAuth,onTryGuest}){
   const [legal,setLegal]=React.useState(null); // "privacy" | "terms" | null
   const [view,setView]=useState("login");
   const [showDemo,setShowDemo]=useState(false);
@@ -141,16 +141,31 @@ export default function AuthScreen({onAuth}){
           {view==="register" && <Register onSwitch={setView} onAuth={onAuth}/>}
           {view==="forgot"   && <Forgot   onSwitch={setView}/>}
         </div>
-        {/* Explore Demo Patient -- scripted, read-only preview of the real
-            workflow (Subjective -> AI Intake -> ROM -> SOAP) using one
-            canned patient. No sign-up needed to see it; ends with a
-            "Create free account" CTA once someone's actually curious. */}
+        {/* Two ways to try before signing up:
+            1) Real Guest Mode -- the actual app, browsable and usable end
+               to end. Nothing a guest does reaches Supabase (every save
+               path already guards on currentUser?.id), and the couple of
+               features that genuinely need a real account (AI-backed
+               endpoints -- the server requires a real Supabase JWT, no way
+               around that) show a "sign in to continue" prompt instead of
+               silently failing.
+            2) The scripted Explore Demo Patient walkthrough -- a
+               guaranteed, always-identical 4-screen preview, useful when
+               someone wants the pitch in 60 seconds rather than clicking
+               around themselves. */}
         {view!=="forgot" && (
-          <button type="button" onClick={()=>setShowDemo(true)} style={{
-            width:"100%",marginTop:14,padding:"11px",borderRadius:10,
-            background:S2,border:`1.5px dashed ${BD}`,color:A,fontWeight:700,
-            fontSize:"0.82rem",cursor:"pointer",fontFamily:"inherit",
-          }}>👤 Explore Demo Patient — see how it works first</button>
+          <>
+            <button type="button" onClick={onTryGuest} style={{
+              width:"100%",marginTop:14,padding:"12px",borderRadius:10,
+              background:S2,border:`1.5px dashed ${BD}`,color:A,fontWeight:700,
+              fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit",
+            }}>🚀 Try the full app — no sign-up needed</button>
+            <button type="button" onClick={()=>setShowDemo(true)} style={{
+              width:"100%",marginTop:8,padding:"7px",borderRadius:10,
+              background:"none",border:"none",color:MU,fontWeight:600,
+              fontSize:"0.74rem",cursor:"pointer",fontFamily:"inherit",
+            }}>or see a 60-second guided demo →</button>
+          </>
         )}
         {/* Trust badges */}
         <div style={{display:"flex",justifyContent:"center",gap:10,marginTop:20,flexWrap:"wrap"}}>

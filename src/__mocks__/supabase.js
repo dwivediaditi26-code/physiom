@@ -8,6 +8,12 @@ function chainable(result = { data: [], error: null }) {
   const chain = {
     select: () => chain,
     eq: () => chain,
+    // .is() added alongside the soft-delete feature (patients query now
+    // does .is("deleted_at", null)) -- this mock hadn't been updated to
+    // match, so every test mounting AppInner hit "chain.is is not a
+    // function" inside the patients-load effect and fell into the
+    // ErrorBoundary. Chainable like .eq()/.order(), not a terminal call.
+    is: () => chain,
     order: () => chain,
     upsert: () => Promise.resolve(result),
     insert: () => Promise.resolve(result),

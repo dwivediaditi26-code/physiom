@@ -120,7 +120,7 @@ function buildSuggestions(data) {
   return [...tailored, ...DEFAULT_SUGGESTIONS].slice(0, 6);
 }
 
-export default function AIAssistant({ data, set, PC, onClose }) {
+export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -158,6 +158,7 @@ export default function AIAssistant({ data, set, PC, onClose }) {
   async function send(text) {
     const userMsg = text || input.trim();
     if (!userMsg || loading) return;
+    if (requireAuth && !requireAuth("AI Clinical Assistant")) return;
     setInput("");
     setError("");
     const newMessages = [...messages, { role: "user", content: userMsg }];

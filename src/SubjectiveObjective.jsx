@@ -3314,7 +3314,7 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   );
 }
 
-function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
+function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requireAuth }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
@@ -3536,8 +3536,12 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
 
   // Auto-open the AI Parser when arriving here via a "jump straight to intake
   // parser" navigation (e.g. Home screen's Patient Intake quick-launch).
+  // Gated the same as the AI/Mic buttons below -- a guest landing here via
+  // that deep link gets the sign-in prompt instead of a panel that would
+  // just fail on submit.
   useEffect(() => {
     if (navContext && navContext.autoOpenAI) {
+      if (requireAuth && !requireAuth("AI Patient Intake")) return;
       setAiOpen(true);
       setAiMode(navContext.aiMode === "voice" ? "voice" : "text");
       setAiStatus("idle");
@@ -3795,7 +3799,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
       if (lv.yellowFlags.highPsychosocialLoad) already.push("highPsychosocialLoad");
 
       const hasAnyNote = Object.values(lv._notesForAiPass || {}).some(t => t && t.trim());
-      if (hasAnyNote) {
+      if (hasAnyNote && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setLumbarNotesLoading(true);
         authHeader().then(h => fetch("/api/extractLumbarNoteVariables", {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
@@ -3875,7 +3879,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
       if (cv.redFlags.other.state !== "unknown") alreadyC.push("otherSeriousPathologyConcern");
 
       const hasAnyNoteC = Object.values(cv._notesForAiPass || {}).some(t => t && t.trim());
-      if (hasAnyNoteC) {
+      if (hasAnyNoteC && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setCervicalNotesLoading(true);
         authHeader().then(h => fetch("/api/extractCervicalNoteVariables", {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
@@ -3942,7 +3946,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
       }
 
       const hasAnyNoteT = Object.values(tv._notesForAiPass || {}).some(t => t && t.trim());
-      if (hasAnyNoteT) {
+      if (hasAnyNoteT && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setThoracicNotesLoading(true);
         authHeader().then(h => fetch("/api/extractThoracicNoteVariables", {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
@@ -4103,7 +4107,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
 
           {/* ✦ AI button — white 3D block */}
           <button type="button"
-            onClick={() => { setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+            onClick={() => { if (requireAuth && !requireAuth("AI Patient Intake")) return; setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
             style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px",
               borderRadius:10, border:"none", cursor:"pointer", fontFamily:"inherit",
               background:"#ffffff",
@@ -4119,7 +4123,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
 
           {/* 🎤 Mic button — white 3D block */}
           <button type="button"
-            onClick={() => { setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
+            onClick={() => { if (requireAuth && !requireAuth("AI Patient Intake")) return; setAiOpen(true); setAiMode("voice"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
             style={{ display:"flex", alignItems:"center", gap:5, padding:"8px 12px",
               borderRadius:10, border:"none", cursor:"pointer", fontFamily:"inherit",
               background:"#ffffff",
