@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { supabase } from "./supabase.js";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
+import DemoWalkthrough from "./DemoWalkthrough.jsx";
 
 const A="#7c3aed",BG="#faf8fc",SUR="#ffffff",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a",S2="#f5f0fb",RE="#dc2626",GR="#059669";
 const inp={width:"100%",padding:"11px 14px",borderRadius:10,border:`1.5px solid ${BD}`,background:S2,color:TX,fontSize:"0.88rem",fontFamily:"inherit",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"};
@@ -119,6 +120,7 @@ function Forgot({onSwitch}){
 export default function AuthScreen({onAuth}){
   const [legal,setLegal]=React.useState(null); // "privacy" | "terms" | null
   const [view,setView]=useState("login");
+  const [showDemo,setShowDemo]=useState(false);
   const T={login:{h:"Welcome back",sub:"Sign in to your PhysioMind account"},register:{h:"Start free",sub:"Create your clinical workspace"},forgot:{h:"Reset password",sub:"We'll send a reset link to your email"}};
   const {h,sub}=T[view];
   return(
@@ -139,6 +141,17 @@ export default function AuthScreen({onAuth}){
           {view==="register" && <Register onSwitch={setView} onAuth={onAuth}/>}
           {view==="forgot"   && <Forgot   onSwitch={setView}/>}
         </div>
+        {/* Explore Demo Patient -- scripted, read-only preview of the real
+            workflow (Subjective -> AI Intake -> ROM -> SOAP) using one
+            canned patient. No sign-up needed to see it; ends with a
+            "Create free account" CTA once someone's actually curious. */}
+        {view!=="forgot" && (
+          <button type="button" onClick={()=>setShowDemo(true)} style={{
+            width:"100%",marginTop:14,padding:"11px",borderRadius:10,
+            background:S2,border:`1.5px dashed ${BD}`,color:A,fontWeight:700,
+            fontSize:"0.82rem",cursor:"pointer",fontFamily:"inherit",
+          }}>👤 Explore Demo Patient — see how it works first</button>
+        )}
         {/* Trust badges */}
         <div style={{display:"flex",justifyContent:"center",gap:10,marginTop:20,flexWrap:"wrap"}}>
           {["🔒 Secure","🏥 HIPAA-ready","🇮🇳 Built for India","✦ Free to start"].map(t=>(
@@ -154,6 +167,12 @@ export default function AuthScreen({onAuth}){
       </div>
       {legal==="privacy" && <PrivacyPolicy onClose={()=>setLegal(null)}/>}
       {legal==="terms"   && <TermsOfService onClose={()=>setLegal(null)}/>}
+      {showDemo && (
+        <DemoWalkthrough
+          onClose={()=>setShowDemo(false)}
+          onCreateAccount={()=>{ setShowDemo(false); setView("register"); }}
+        />
+      )}
     </div>
   );
 }
