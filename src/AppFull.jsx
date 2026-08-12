@@ -187,6 +187,13 @@ function AppInner({ currentUser, onSignOut }) {
 
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
+  // ── Back navigation (in-app Back button + real browser/hardware back) ──
+  // activeRef mirrors `active` synchronously so navTo (a stable useCallback)
+  // can tell whether a nav call is actually going somewhere new, without
+  // needing `active` in its dependency array.
+  const activeRef = useRef("home");
+  useEffect(() => { activeRef.current = active; }, [active]);
+  const [canGoBack, setCanGoBack] = useState(false);
   // ── CLINICAL STREAM (Step 1 scaffold) ──────────────────────────────
   // Top-level specialty that drives the whole assessment flow. "ortho"
   // keeps the existing app; other streams render via the config-driven
@@ -679,7 +686,7 @@ function AppInner({ currentUser, onSignOut }) {
     reader.readAsText(file);
   };
 
-  const navTo = useCallback((key, ctx = {}) => {
+  const navTo = useCallback((key, ctx = {}, navOpts = {}) => {
     // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
     // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
     // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
@@ -699,6 +706,20 @@ function AppInner({ currentUser, onSignOut }) {
       next.add(key);
       return next;
     });
+    // Back navigation: push a browser history entry for every *real* nav
+    // (skipped when this call is itself replaying a popstate event, and
+    // when the target is the screen we're already on -- e.g. a Home tile
+    // re-firing onNav for the current tab just to reset navContext --
+    // otherwise Back would need two presses to actually move). This makes
+    // the phone/browser hardware Back button and the in-header Back button
+    // both work off the same real history stack instead of a separate one
+    // we'd have to keep in sync by hand.
+    if (!navOpts.__fromPopState && key !== activeRef.current) {
+      try {
+        window.history.pushState({ pmNavKey: key, pmNavCtx: ctx || {} }, "", window.location.href);
+        setCanGoBack(true);
+      } catch {}
+    }
     // Every nav path in the app (desktop sidebar, mobile drawer, bottom nav,
     // Home tiles, dashboard rows, deep-links) funnels through here -- single
     // choke point, so this is the one place that needs a track() call to
@@ -707,6 +728,33 @@ function AppInner({ currentUser, onSignOut }) {
     // switches are internal state, not separate URLs). Fire-and-forget,
     // silently no-ops if Web Analytics isn't enabled on the project yet.
     try { track('module_opened', { module: key }); } catch {}
+  }, []);
+
+  // Seed the browser history stack with the starting screen once on mount,
+  // so the very first Back press has something real to land on instead of
+  // popping straight out of the app.
+  useEffect(() => {
+    try { window.history.replaceState({ pmNavKey: activeRef.current, pmNavCtx: {} }, "", window.location.href); } catch {}
+  }, []);
+
+  // Real hardware/browser Back (and Forward) button support: replays
+  // whatever nav state the browser landed on. If a user goes back further
+  // than our first replaceState entry (state is null/foreign), fall back to
+  // Home rather than leaving them on a blank pane.
+  useEffect(() => {
+    const onPopState = (e) => {
+      const s = e.state;
+      navTo(s?.pmNavKey || "home", s?.pmNavCtx || {}, { __fromPopState: true });
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [navTo]);
+
+  // In-header "← Back" button: defers to the real browser history (rather
+  // than a hand-rolled stack) so it stays perfectly in sync with the
+  // hardware back button -- one press of either always does the same thing.
+  const goBack = useCallback(() => {
+    try { window.history.back(); } catch {}
   }, []);
 
   const Field = useCallback(({t})=>{
@@ -1211,6 +1259,14 @@ function AppInner({ currentUser, onSignOut }) {
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
+            {active!=="home" && canGoBack && (
+              <button onClick={goBack} aria-label="Go back" title="Go back"
+                style={{display:"flex",alignItems:"center",gap:5,padding:"6px 10px",background:PC.s2,
+                  border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,
+                  fontSize:"0.82rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                <span style={{fontSize:"0.9rem"}}>←</span> Back
+              </button>
+            )}
             {/* Logo */}
             <img src="/logo.svg" alt="PhysioMind" style={{height:48,width:"auto",flexShrink:0,display:"block"}} />
             <div style={{minWidth:0}}>
@@ -1259,6 +1315,15 @@ function AppInner({ currentUser, onSignOut }) {
             border:"none",borderRadius:8,color:PC.accent,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
           ☰
         </button>
+        {active!=="home" && canGoBack && (
+          <button onClick={goBack} aria-label="Go back" title="Go back"
+            style={{minHeight:34,minWidth:34,padding:"6px 8px",fontSize:"1.05rem",
+              background: PC.isDark?"rgba(124,58,237,0.15)":"transparent",
+              border:"none",borderRadius:8,color:PC.accent,cursor:"pointer",flexShrink:0,
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+            ←
+          </button>
+        )}
         {/* Logo — plain, bigger */}
         <img src="/logo.svg" alt="PhysioMind" style={{height:40,width:"auto",flexShrink:0}} />
         {/* Text */}
