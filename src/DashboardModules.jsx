@@ -487,7 +487,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
   ];
 
   const AI_ASSISTANT = [
-    { icon:"🎙️", label:"Patient Intake",        action:()=>onNav("ai_assistant") },
+    { icon:"🎙️", label:"Patient Intake",        action:()=>onNav("subjective", { autoOpenAI: true }) },
     { icon:"🧠", label:"Suggest Assessment",     action:()=>onNav("subjective") },
     { icon:"📄", label:"Generate SOAP",          action:()=>onNav("soap") },
     { icon:"💡", label:"Clinical Assistant",     action:()=>onNav("ai_assistant") },

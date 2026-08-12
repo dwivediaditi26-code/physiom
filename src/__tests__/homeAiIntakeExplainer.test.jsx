@@ -54,7 +54,7 @@ describe("Home screen -- redesigned layout", () => {
     const onNav = vi.fn();
     render(<HomeModule onNav={onNav} />);
     fireEvent.click(screen.getByText("Patient Intake"));
-    expect(onNav).toHaveBeenCalledWith("ai_assistant");
+    expect(onNav).toHaveBeenCalledWith("subjective", { autoOpenAI: true });
     fireEvent.click(screen.getByText("Generate SOAP"));
     expect(onNav).toHaveBeenCalledWith("soap");
   });

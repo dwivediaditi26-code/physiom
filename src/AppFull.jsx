@@ -1538,7 +1538,7 @@ function AppInner({ currentUser, onSignOut }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")}/></Suspense>
+                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}}/></Suspense>
                   {subjBodyChartTab && (
                     <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
                   )}

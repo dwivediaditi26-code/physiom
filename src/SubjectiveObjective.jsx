@@ -3314,7 +3314,7 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   );
 }
 
-function SubjectiveModule({ data, set, onNav, onTabChange }) {
+function SubjectiveModule({ data, set, onNav, onTabChange, navContext={} }) {
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
@@ -3533,6 +3533,16 @@ function SubjectiveModule({ data, set, onNav, onTabChange }) {
 
   const [aiSuccess, setAiSuccess] = useState(null); // { count, fields[] }
   const aiRecognitionRef = React.useRef(null);
+
+  // Auto-open the AI Parser when arriving here via a "jump straight to intake
+  // parser" navigation (e.g. Home screen's Patient Intake quick-launch).
+  useEffect(() => {
+    if (navContext && navContext.autoOpenAI) {
+      setAiOpen(true);
+      setAiMode(navContext.aiMode === "voice" ? "voice" : "text");
+      setAiStatus("idle");
+    }
+  }, [navContext]);
 
   const stopRecording = React.useCallback(() => {
     if (aiRecognitionRef.current) { try { aiRecognitionRef.current.stop(); } catch(e){} aiRecognitionRef.current = null; }
