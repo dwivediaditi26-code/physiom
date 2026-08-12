@@ -66,10 +66,27 @@ describe("Home screen -- redesigned layout", () => {
     expect(onNav).toHaveBeenCalledWith("mmt");
   });
 
-  test("Evidence section shows starter content, no dead-end links", () => {
+  test("Evidence section shows real, sourced content -- not fabricated citations", () => {
     render(<HomeModule onNav={() => {}} />);
-    expect(screen.getByText(/Exercise therapy vs usual care/i)).toBeInTheDocument();
-    expect(screen.getByText(/Updated evidence on shoulder rehabilitation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Exercise for knee\/hip osteoarthritis/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rotator cuff tendinopathy/i)).toBeInTheDocument();
+    // Each card names a real, checkable source + date + evidence type,
+    // not just a vague "read time" -- lets a therapist judge credibility.
+    expect(screen.getByText(/RMD Open \(BMJ\) · Feb 2026 · Umbrella Systematic Review/i)).toBeInTheDocument();
+    expect(screen.getByText(/JOSPT — Desmeules et al\. · 2025 · Clinical Practice Guideline/i)).toBeInTheDocument();
+  });
+
+  test("zero-patient account gets a 'let's get started' guide instead of a wall of 0s", () => {
+    render(<HomeModule onNav={() => {}} patients={[]} />);
+    expect(screen.getByText("Let's assess your first patient")).toBeInTheDocument();
+    expect(screen.queryByText("Today at a Glance")).not.toBeInTheDocument();
+  });
+
+  test("greeting uses the signed-in therapist's real name, not a hardcoded placeholder", () => {
+    const currentUser = { user_metadata: { full_name: "Chandan Nagar" } };
+    render(<HomeModule onNav={() => {}} currentUser={currentUser} />);
+    expect(screen.getByText(/Chandan/)).toBeInTheDocument();
+    expect(screen.queryByText(/Aditi/)).not.toBeInTheDocument();
   });
 
   test("Ad slot is an honest reserved placeholder, not fabricated product content", () => {

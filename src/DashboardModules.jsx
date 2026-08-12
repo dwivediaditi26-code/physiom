@@ -439,7 +439,7 @@ function PostureDefectModule() {
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
 // ═══════════════════════════════════════════════════════════════════════════
-function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
+function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser }) {
   const { useMemo } = React;
 
   // ── Lightweight derived "today" stats -- deliberately read-only, never
@@ -502,12 +502,19 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
   ];
 
   // Starter curated set -- a real evidence feed needs an actual content
-  // pipeline (out of scope for a UI pass). These two are the same example
-  // headlines from the approved design mock, kept as real placeholder
-  // content rather than inventing new fake citations.
+  // pipeline (out of scope for a UI pass). Real, currently-published,
+  // independently verifiable sources (not invented citations) so a
+  // therapist can actually trust and check these -- each links straight to
+  // the primary source (journal DOI).
   const EVIDENCE = [
-    { tag:"Systematic Review", badge:"New", title:"Exercise therapy vs usual care for knee osteoarthritis", read:"2 min read" },
-    { tag:"Clinical Summary",  badge:"New", title:"Updated evidence on shoulder rehabilitation",             read:"3 min read" },
+    { tag:"Umbrella Systematic Review", badge:"New",
+      title:"Exercise for knee/hip osteoarthritis: benefit likely minimal and short-lived",
+      source:"RMD Open (BMJ)", date:"Feb 2026",
+      url:"https://rmdopen.bmj.com/lookup/doi/10.1136/rmdopen-2025-006275" },
+    { tag:"Clinical Practice Guideline", badge:"New",
+      title:"Rotator cuff tendinopathy: 2025 CPG for diagnosis, non-surgical care & rehab",
+      source:"JOSPT — Desmeules et al.", date:"2025",
+      url:"https://doi.org/10.2519/jospt.2025.13182" },
   ];
 
   const SectionLabel = ({ children }) => (
@@ -521,7 +528,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:22,flexWrap:"wrap"}}>
         <div>
           <div style={{fontSize:19,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
-            {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, {data?.dem_name ? "Doctor" : "Aditi"} 👋
+            {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, {currentUser?.user_metadata?.full_name?.split(" ")[0] || "Doctor"} 👋
           </div>
           <div style={{fontSize:12.5,color:"#6B7280",marginTop:3}}>Ready to help your patients today.</div>
         </div>
@@ -549,25 +556,49 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
         </div>
       </div>
 
-      {/* ── Today at a glance ── */}
-      <div style={{marginBottom:26}}>
-        <SectionLabel>Today at a Glance</SectionLabel>
-        <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px 8px",
-          display:"flex",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
-          {[
-            {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9"},
-            {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706"},
-            {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669"},
-            {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444"},
-          ].map(s=>(
-            <div key={s.l} onClick={()=>onNav("dashboard")} style={{flex:"1 1 0",minWidth:0,textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
-              <div style={{fontSize:"1.3rem",lineHeight:1}}>{s.icon}</div>
-              <div style={{fontSize:"1.2rem",fontWeight:800,color:"#111827",marginTop:4}}>{s.v}</div>
-              <div style={{fontSize:9.5,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.3px",marginTop:1}}>{s.l}</div>
+      {/* ── Today at a glance -- OR, for a brand-new zero-patient account,
+          a "let's get started" workflow guide instead of a wall of 0s.
+          A fresh account seeing "0 Patients / 0 Pending / 0 Completed /
+          0 Alerts" as its very first number reads as broken, not empty. ── */}
+      {stats.patients === 0 ? (
+        <div style={{marginBottom:26}}>
+          <div style={{background:"linear-gradient(135deg,#f5f3ff,#faf5ff)",border:"1px solid #ddd6fe",
+            borderRadius:16,padding:"18px 16px"}}>
+            <div style={{fontSize:"0.95rem",fontWeight:800,color:"#111827",marginBottom:4}}>Let's assess your first patient</div>
+            <div style={{fontSize:"0.78rem",color:"#6B7280",marginBottom:14,lineHeight:1.5}}>
+              Every assessment follows the same five steps — start whenever you're ready.
             </div>
-          ))}
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {["Subjective","Objective","Assessment","Treatment Plan","SOAP"].map((step,i)=>(
+                <div key={step} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",
+                  background:"#fff",border:"1px solid #E5E7EB",borderRadius:99}}>
+                  <span style={{fontSize:10,fontWeight:800,color:"#7c3aed"}}>{i+1}</span>
+                  <span style={{fontSize:"0.75rem",fontWeight:700,color:"#374151"}}>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{marginBottom:26}}>
+          <SectionLabel>Today at a Glance</SectionLabel>
+          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px 8px",
+            display:"flex",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
+            {[
+              {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9"},
+              {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706"},
+              {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669"},
+              {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444"},
+            ].map(s=>(
+              <div key={s.l} onClick={()=>onNav("dashboard")} style={{flex:"1 1 0",minWidth:0,textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
+                <div style={{fontSize:"1.3rem",lineHeight:1}}>{s.icon}</div>
+                <div style={{fontSize:"1.2rem",fontWeight:800,color:"#111827",marginTop:4}}>{s.v}</div>
+                <div style={{fontSize:9.5,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.3px",marginTop:1}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Continue where you left off ── */}
       {active && (
@@ -650,15 +681,17 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
         <SectionLabel>PhysioMind Evidence</SectionLabel>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {EVIDENCE.map(e=>(
-            <div key={e.title} style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"13px 14px",
-              display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+            <a key={e.title} href={e.url} target="_blank" rel="noopener noreferrer"
+              style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"13px 14px",
+              display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,
+              textDecoration:"none",cursor:"pointer"}}>
               <div>
                 <div style={{fontSize:"0.85rem",fontWeight:700,color:"#111827",lineHeight:1.35,marginBottom:4}}>{e.title}</div>
-                <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{e.tag} · {e.read}</div>
+                <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{e.source} · {e.date} · {e.tag}</div>
               </div>
               <span style={{fontSize:9,fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",
                 borderRadius:99,padding:"1px 8px",textTransform:"uppercase",letterSpacing:"0.4px",flexShrink:0}}>{e.badge}</span>
-            </div>
+            </a>
           ))}
         </div>
       </div>
