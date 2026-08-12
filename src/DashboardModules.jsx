@@ -553,14 +553,14 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
       <div style={{marginBottom:26}}>
         <SectionLabel>Today at a Glance</SectionLabel>
         <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px 8px",
-          display:"grid",gridTemplateColumns:"repeat(4,1fr)",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
+          display:"flex",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
           {[
             {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9"},
             {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706"},
             {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669"},
             {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444"},
           ].map(s=>(
-            <div key={s.l} onClick={()=>onNav("dashboard")} style={{textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
+            <div key={s.l} onClick={()=>onNav("dashboard")} style={{flex:"1 1 0",minWidth:0,textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
               <div style={{fontSize:"1.3rem",lineHeight:1}}>{s.icon}</div>
               <div style={{fontSize:"1.2rem",fontWeight:800,color:"#111827",marginTop:4}}>{s.v}</div>
               <div style={{fontSize:9.5,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.3px",marginTop:1}}>{s.l}</div>
@@ -1020,10 +1020,10 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
         <div className="dc" style={{
           background:"white",borderRadius:16,padding:"12px 6px",
           border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-          display:"grid",gridTemplateColumns:"repeat(4,1fr)",
+          display:"flex",
         }}>
           {STATS.map((st)=>(
-            <div key={st.label} style={{textAlign:"center",cursor:"pointer",padding:"2px 2px"}}
+            <div key={st.label} style={{flex:"1 1 0",minWidth:0,textAlign:"center",cursor:"pointer",padding:"2px 2px"}}
               onClick={()=>{ if(st.nav==="dashboard") setActiveTab("pending"); else onNav(st.nav); }}>
               <div style={{fontSize:14,marginBottom:4}}>{st.icon}</div>
               <div style={{fontSize:20,fontWeight:800,color:"#111827",letterSpacing:"-0.5px",lineHeight:1}}>
