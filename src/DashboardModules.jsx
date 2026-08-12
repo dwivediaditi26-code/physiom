@@ -439,200 +439,239 @@ function PostureDefectModule() {
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
 // ═══════════════════════════════════════════════════════════════════════════
-function HomeModule({ onNav }) {
-  const PC = getC();
-  const features = [
-    { icon:"📝", title:"Subjective Assessment", desc:"Comprehensive history-taking with VAS pain scale, red flag screening, 24hr behaviour patterns, and patient goals.", nav:"subjective", color:"#7c3aed" },
-    { icon:"🖐️", title:"Palpation", desc:"Systematic tissue assessment with tenderness grading, quality descriptors, and clinical significance.", nav:"palpation", color:"#9333ea" },
-    { icon:"🧍", title:"Posture Screening", desc:"Camera-assisted posture screening with AI landmark detection, 30+ posture observations, movement-pattern mapping, and PDF export. Education only — not a diagnosis.", nav:"posture", color:"#7c3aed" },
-    { icon:"📐", title:"Range of Motion", desc:"Full-body ROM assessment with bilateral comparison, normal values, end-feel grading, and clinical interpretation.", nav:"rom", color:"#9333ea" },
-    { icon:"💪", title:"Muscle Strength (MMT)", desc:"Oxford Scale manual muscle testing across all major muscle groups with clinical grading.", nav:"mmt", color:"#7c3aed" },
-    { icon:"🔬", title:"100+ Special Tests", desc:"Evidence-based special tests for cervical, shoulder, elbow, wrist, hip, knee, and ankle with sensitivity/specificity data.", nav:"special", color:"#9333ea" },
-    { icon:"⚡", title:"Neurological Assessment", desc:"Dermatomes, myotomes, reflexes, neural tension tests, and red flag neurological screening.", nav:"neuro", color:"#7c3aed" },
-    { icon:"🚶", title:"Gait Analysis", desc:"Observational gait analysis across stance, swing, and double support phases with clinical correlations.", nav:"gait", color:"#9333ea" },
-    { icon:"🧠", title:"CPA Assessment", desc:"Compensation Pattern Analysis — functional muscle testing to identify inhibitor-facilitator relationships across regions.", nav:"nkt", color:"#7c3aed" },
-    { icon:"⛓️", title:"Kinetic Chain", desc:"Joint-by-joint analysis of the kinetic chain from foot to cervical spine.", nav:"kinetic", color:"#9333ea" },
-    { icon:"💊", title:"Treatment Prescription", desc:"Evidence-based exercise programming, HEP generation, treatment technique logging, and session records.", nav:"exercise", color:"#7c3aed" },
-    { icon:"🤖", title:"SOAP Notes + AI", desc:"AI-powered SOAP note generation from your assessment data using Groq AI.", nav:"soap", color:"#9333ea" },
+function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient }) {
+  const { useMemo } = React;
+
+  // ── Lightweight derived "today" stats -- deliberately read-only, never
+  // calls onAddTask here. TherapistDashboardModule owns auto-generating
+  // tasks (its own useEffect); duplicating that here would double-create
+  // tasks the moment both Home and Dashboard have ever been mounted, since
+  // each generated task gets a fresh Date.now()-based id. Home only reads
+  // taskDB/patients, same source of truth, no side effects. ──
+  const stats = useMemo(() => {
+    const today = new Date().toDateString();
+    const pending = taskDB.filter(t => t.status !== "completed");
+    const completedToday = taskDB.filter(t =>
+      t.status === "completed" && t.completedAt && new Date(t.completedAt).toDateString() === today
+    ).length;
+    const alerts = patients.filter(p => p.hasRedFlags).length;
+    return { patients: patients.length, pending: pending.length, completedToday, alerts };
+  }, [patients, taskDB]);
+
+  // ── "Continue where you left off" -- the currently active patient (same
+  // `data` state TherapistDashboardModule's Active Patient card already
+  // uses), not just the most-recently-touched row in the list. ──
+  const active = useMemo(() => {
+    const d = data || {};
+    const name = d.dem_name || "";
+    if (!name) return null;
+    const cc = (d.cc_main || "").slice(0, 48);
+    // Rough overall-completion proxy across the core assessment stages --
+    // not meant to be exact, just enough to give "continue where you left
+    // off" a meaningful number instead of a fake static one.
+    const hasCC    = !!d.cc_main;
+    const hasROM   = Object.keys(d).some(k => k.startsWith("rom_") && d[k]);
+    const hasMMT   = Object.keys(d).some(k => k.startsWith("mmt_") && d[k]);
+    const hasSpecial = Object.keys(d).some(k => k.startsWith("st_") && d[k]);
+    const hasSOAP  = !!(d.tx_techniques || (Array.isArray(d.tx_sessions) && d.tx_sessions.length > 0));
+    const stagesDone = [hasCC, hasROM, hasMMT, hasSpecial, hasSOAP].filter(Boolean).length;
+    const pct = Math.round((stagesDone / 5) * 100);
+    return { name, cc: cc || "Assessment in progress", pct };
+  }, [data]);
+
+  const QUICK_START = [
+    { icon:"👤", label:"New Patient",    action:()=>onNewPatient ? onNewPatient() : onNav("subjective") },
+    { icon:"🩺", label:"Assess Patient", action:()=>onNav("subjective") },
+    { icon:"💊", label:"Treatment",      action:()=>onNav("exercise") },
+    { icon:"📄", label:"Documents",      action:()=>onNav("soap") },
   ];
 
+  const AI_ASSISTANT = [
+    { icon:"🎙️", label:"Patient Intake",        action:()=>onNav("ai_assistant") },
+    { icon:"🧠", label:"Suggest Assessment",     action:()=>onNav("subjective") },
+    { icon:"📄", label:"Generate SOAP",          action:()=>onNav("soap") },
+    { icon:"💡", label:"Clinical Assistant",     action:()=>onNav("ai_assistant") },
+  ];
+
+  const CLINICAL_TOOLS = [
+    { icon:"🔬", label:"Special Tests", nav:"special" },
+    { icon:"💪", label:"MMT",           nav:"mmt" },
+    { icon:"📐", label:"ROM",           nav:"rom" },
+    { icon:"⚡", label:"Neurological",  nav:"neuro" },
+    { icon:"🏋️", label:"Exercises",     nav:"exercise" },
+  ];
+
+  // Starter curated set -- a real evidence feed needs an actual content
+  // pipeline (out of scope for a UI pass). These two are the same example
+  // headlines from the approved design mock, kept as real placeholder
+  // content rather than inventing new fake citations.
+  const EVIDENCE = [
+    { tag:"Systematic Review", badge:"New", title:"Exercise therapy vs usual care for knee osteoarthritis", read:"2 min read" },
+    { tag:"Clinical Summary",  badge:"New", title:"Updated evidence on shoulder rehabilitation",             read:"3 min read" },
+  ];
+
+  const SectionLabel = ({ children }) => (
+    <div style={{fontSize:11,fontWeight:800,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:10}}>{children}</div>
+  );
+
   return (
-    <div style={{maxWidth:900, margin:"0 auto"}}>
-      {/* Hero */}
-      <div style={{
-        background:`linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #c026d3 100%)`,
-        borderRadius:20, padding:"40px 32px", marginBottom:32, position:"relative", overflow:"hidden",
-        boxShadow:"0 8px 40px rgba(124,58,237,0.25)"
-      }}>
-        <div style={{position:"absolute",top:-40,right:-40,width:200,height:200,background:"rgba(255,255,255,0.06)",borderRadius:"50%"}}/>
-        <div style={{position:"absolute",bottom:-60,left:-20,width:160,height:160,background:"rgba(255,255,255,0.04)",borderRadius:"50%"}}/>
-        <div style={{position:"relative",zIndex:1}}>
-          <div style={{fontSize:"2.4rem",marginBottom:8}}>🩺</div>
-          <h1 style={{fontSize:"clamp(1.4rem,4vw,2rem)",fontWeight:900,color:"#fff",margin:"0 0 10px",letterSpacing:"-0.5px",lineHeight:1.1}}>
-            PhysioMind Pro
-          </h1>
-          <p style={{fontSize:"clamp(0.85rem,2vw,1rem)",color:"rgba(255,255,255,0.85)",margin:"0 0 24px",lineHeight:1.6,maxWidth:520}}>
-            A posture screening & education platform. AI-assisted posture screening, notes, and organisation tools — all in one place. For education and screening only; not a medical device and not a substitute for professional care.
-          </p>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <button onClick={()=>onNav("subjective")} style={{padding:"12px 22px",background:"#fff",border:"none",borderRadius:12,color:"#7c3aed",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
-              Start Assessment →
-            </button>
-            <button onClick={()=>onNav("dashboard")} style={{padding:"12px 22px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:12,color:"#fff",fontWeight:700,fontSize:"0.88rem",cursor:"pointer"}}>
-              View Dashboard
-            </button>
+    <div style={{maxWidth:640, margin:"0 auto", fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
+
+      {/* ── Greeting + primary action ── */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:22,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:19,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
+            {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, {data?.dem_name ? "Doctor" : "Aditi"} 👋
           </div>
+          <div style={{fontSize:12.5,color:"#6B7280",marginTop:3}}>Ready to help your patients today.</div>
+        </div>
+        <button onClick={()=>onNewPatient ? onNewPatient() : onNav("subjective")} style={{
+          padding:"11px 18px",background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",border:"none",
+          borderRadius:12,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",
+          boxShadow:"0 3px 14px rgba(109,40,217,0.28)",whiteSpace:"nowrap",
+        }}>+ New Patient</button>
+      </div>
+
+      {/* ── Quick Start ── */}
+      <div style={{marginBottom:26}}>
+        <SectionLabel>Quick Start</SectionLabel>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
+          {QUICK_START.map(q=>(
+            <button key={q.label} onClick={q.action} style={{
+              background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:"16px 12px",
+              display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8,cursor:"pointer",
+              boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+            }}>
+              <span style={{fontSize:"1.3rem"}}>{q.icon}</span>
+              <span style={{fontSize:"0.8rem",fontWeight:700,color:"#111827"}}>{q.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Stats row */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:32}}>
-        {[
-          {num:"100+",label:"Special Tests",icon:"🔬"},
-          {num:"30+",label:"Postural Defects",icon:"🧍"},
-          {num:"AI",label:"SOAP Generation",icon:"🤖"},
-          {num:"PDF",label:"Report Export",icon:"📄"},
-        ].map((s,i)=>(
-          <div key={i} style={{background:"#fff",border:"1px solid #E0E0E2",borderRadius:14,padding:"18px 16px",textAlign:"center",boxShadow:"0 2px 12px rgba(124,58,237,0.07)"}}>
-            <div style={{fontSize:"1.5rem",marginBottom:6}}>{s.icon}</div>
-            <div style={{fontSize:"1.6rem",fontWeight:900,color:"#7c3aed",lineHeight:1}}>{s.num}</div>
-            <div style={{fontSize:"0.75rem",fontWeight:700,color:"#6B6B6B",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* AI Patient Intake explainer -- how the AI Assistant chat turns a
-          spoken/typed patient narrative into filled-in assessment fields.
-          Built as a step-by-step visual so a student opening this for the
-          first time understands the whole pipeline before ever using it,
-          not just a feature blurb. */}
-      <div style={{
-        background:"linear-gradient(180deg, #faf5ff 0%, #ffffff 100%)",
-        border:"1px solid #E9D5FF", borderRadius:18, padding:"24px 20px",
-        marginBottom:28, boxShadow:"0 2px 16px rgba(124,58,237,0.06)",
-      }}>
-        <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:18}}>
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <span style={{fontSize:"1.3rem"}}>🤖</span>
-              <h2 style={{fontSize:"clamp(1rem,3vw,1.2rem)",fontWeight:900,color:"#0D0D0D",margin:0,letterSpacing:"-0.3px"}}>
-                AI Patient Intake
-              </h2>
-              <span style={{fontSize:"0.65rem",fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",borderRadius:99,padding:"2px 9px",textTransform:"uppercase",letterSpacing:"0.4px"}}>New</span>
-            </div>
-            <p style={{fontSize:"0.82rem",color:"#6B6B6B",margin:0,lineHeight:1.55,maxWidth:560}}>
-              Describe a patient in plain language — speak or type — and the AI Assistant chat drafts the Subjective fields for you. Nothing saves until you say so.
-            </p>
-          </div>
-          <button onClick={()=>onNav("ai_assistant")} style={{
-            padding:"11px 20px", background:"linear-gradient(135deg, #7c3aed, #9333ea)",
-            border:"none", borderRadius:11, color:"#fff", fontWeight:800, fontSize:"0.82rem",
-            cursor:"pointer", boxShadow:"0 3px 14px rgba(124,58,237,0.28)", whiteSpace:"nowrap", flexShrink:0,
-          }}>
-            Try AI Assistant →
-          </button>
-        </div>
-
-        {/* 5-step pipeline */}
-        <div style={{display:"flex", alignItems:"stretch", flexWrap:"wrap", gap:0, marginBottom:20}}>
+      {/* ── Today at a glance ── */}
+      <div style={{marginBottom:26}}>
+        <SectionLabel>Today at a Glance</SectionLabel>
+        <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px 8px",
+          display:"grid",gridTemplateColumns:"repeat(4,1fr)",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
           {[
-            {n:1, icon:"🎙️", title:"Speak or type", desc:"Natural narrative, no structure needed"},
-            {n:2, icon:"🧠", title:"AI extracts", desc:"Drafts fields, never saves yet"},
-            {n:3, icon:"👀", title:"You review", desc:"Confirm or edit each field"},
-            {n:4, icon:"✅", title:"Auto-fills tabs", desc:"Same fields as manual entry"},
-            {n:5, icon:"📊", title:"Review & Analysis", desc:"Your existing engine, unchanged"},
-          ].map((s,i,arr)=>(
-            <React.Fragment key={s.n}>
-              <div style={{
-                flex:"1 1 150px", minWidth:130, background:"#fff", border:"1px solid #E9D5FF",
-                borderRadius:14, padding:"14px 12px", position:"relative",
-              }}>
-                <div style={{
-                  width:22, height:22, borderRadius:"50%", background:"#7c3aed", color:"#fff",
-                  fontSize:"0.68rem", fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center",
-                  marginBottom:8,
-                }}>{s.n}</div>
-                <div style={{fontSize:"1.25rem", marginBottom:6}}>{s.icon}</div>
-                <div style={{fontSize:"0.8rem", fontWeight:800, color:"#0D0D0D", marginBottom:3, lineHeight:1.2}}>{s.title}</div>
-                <div style={{fontSize:"0.7rem", color:"#6B6B6B", lineHeight:1.4}}>{s.desc}</div>
-              </div>
-              {i < arr.length - 1 && (
-                <div style={{
-                  flex:"0 0 auto", display:"flex", alignItems:"center", justifyContent:"center",
-                  width:26, color:"#c4b5fd", fontSize:"1.1rem", fontWeight:900,
-                }}>→</div>
-              )}
-            </React.Fragment>
+            {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9"},
+            {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706"},
+            {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669"},
+            {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444"},
+          ].map(s=>(
+            <div key={s.l} onClick={()=>onNav("dashboard")} style={{textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
+              <div style={{fontSize:"1.3rem",lineHeight:1}}>{s.icon}</div>
+              <div style={{fontSize:"1.2rem",fontWeight:800,color:"#111827",marginTop:4}}>{s.v}</div>
+              <div style={{fontSize:9.5,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.3px",marginTop:1}}>{s.l}</div>
+            </div>
           ))}
-        </div>
-
-        {/* Concrete example, so the pipeline above isn't abstract */}
-        <div style={{
-          background:"#fff", border:"1px solid #E0E0E2", borderRadius:14,
-          padding:"16px 16px", display:"grid", gridTemplateColumns:"minmax(220px,1fr) auto minmax(220px,1fr)",
-          gap:14, alignItems:"center",
-        }}>
-          <div>
-            <div style={{fontSize:"0.68rem", fontWeight:800, color:"#9333ea", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6}}>You say</div>
-            <div style={{fontSize:"0.78rem", color:"#0D0D0D", lineHeight:1.55, fontStyle:"italic", background:"#faf5ff", borderRadius:8, padding:"9px 11px", border:"1px solid #f0e6ff"}}>
-              "25 year old, post-op stiffness and limited ROM right shoulder — two months after a greater tuberosity fracture from an RTA."
-            </div>
-          </div>
-          <div style={{fontSize:"1.3rem", color:"#c4b5fd", justifySelf:"center", transform:"rotate(0deg)"}}>→</div>
-          <div>
-            <div style={{fontSize:"0.68rem", fontWeight:800, color:"#9333ea", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6}}>AI drafts</div>
-            <div style={{display:"flex", flexWrap:"wrap", gap:5}}>
-              {["Age: 25","Region: Shoulder (R)","Onset: Post-surgical","Duration: 6wk–3mo","Agg: Overhead reaching"].map((chip,i)=>(
-                <span key={i} style={{fontSize:"0.68rem", padding:"3px 9px", borderRadius:99, background:"#f5f3ff", color:"#5b21b6", border:"1px solid #ddd6fe", fontWeight:600}}>{chip}</span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Features grid */}
-      <div style={{marginBottom:16}}>
-        <h2 style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,color:"#0D0D0D",margin:"0 0 6px",letterSpacing:"-0.3px"}}>Clinical Features</h2>
-        <p style={{fontSize:"0.82rem",color:"#6B6B6B",margin:"0 0 20px"}}>Tap any feature to navigate directly to that assessment tool.</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
-          {features.map((f,i)=>(
-            <button key={i} onClick={()=>onNav(f.nav)} style={{
-              background:"#fff",border:`1px solid #E0E0E2`,borderRadius:14,padding:"18px 16px",
-              textAlign:"left",cursor:"pointer",transition:"all 0.18s",
-              boxShadow:"0 2px 10px transparent",
-            }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=f.color;e.currentTarget.style.boxShadow=`0 4px 20px rgba(124,58,237,0.14)`;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor="#E0E0E2";e.currentTarget.style.boxShadow="0 2px 10px transparent";}}
-            >
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                <div style={{width:36,height:36,background:`${f.color}14`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>
-                  {f.icon}
-                </div>
-                <div style={{fontSize:"0.85rem",fontWeight:700,color:"#0D0D0D",lineHeight:1.2}}>{f.title}</div>
+      {/* ── Continue where you left off ── */}
+      {active && (
+        <div style={{marginBottom:26}}>
+          <SectionLabel>Continue Where You Left Off</SectionLabel>
+          <div style={{background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
+            borderRadius:18,padding:"18px",boxShadow:"0 6px 24px rgba(109,40,217,0.25)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{active.name}</div>
+                <div style={{fontSize:11.5,color:"rgba(255,255,255,0.75)",marginTop:2}}>{active.cc}</div>
               </div>
-              <div style={{fontSize:"0.75rem",color:"#6B6B6B",lineHeight:1.55}}>{f.desc}</div>
-              <div style={{marginTop:10,fontSize:"0.78rem",fontWeight:700,color:f.color}}>Open →</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{active.pct}%</div>
+            </div>
+            <div style={{height:6,background:"rgba(255,255,255,0.25)",borderRadius:99,overflow:"hidden",marginBottom:14}}>
+              <div style={{height:"100%",width:`${active.pct}%`,background:"#fff",borderRadius:99}}/>
+            </div>
+            <button onClick={()=>onNav("subjective")} style={{
+              width:"100%",padding:"11px",background:"rgba(255,255,255,0.16)",border:"1px solid rgba(255,255,255,0.3)",
+              borderRadius:11,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",
+            }}>Continue Assessment →</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── AI Assistant ── */}
+      <div style={{marginBottom:26}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+          <SectionLabel>AI Assistant</SectionLabel>
+          <span style={{fontSize:9,fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",
+            borderRadius:99,padding:"1px 8px",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>New</span>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
+          {AI_ASSISTANT.map(a=>(
+            <button key={a.label} onClick={a.action} style={{
+              background:"#faf5ff",border:"1px solid #E9D5FF",borderRadius:13,padding:"13px 12px",
+              display:"flex",alignItems:"center",gap:9,cursor:"pointer",textAlign:"left",
+            }}>
+              <span style={{fontSize:"1.1rem"}}>{a.icon}</span>
+              <span style={{fontSize:"0.78rem",fontWeight:700,color:"#111827"}}>{a.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Workflow guide */}
-      <div style={{background:"#FFFFFF",border:"1px solid #E0E0E2",borderRadius:16,padding:"22px 20px",marginTop:24}}>
-        <h3 style={{fontSize:"0.88rem",fontWeight:800,color:"#7c3aed",margin:"0 0 14px",letterSpacing:"-0.2px"}}>📋 Recommended Assessment Workflow</h3>
-        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-          {[
-            "1. Subjective","2. Palpation","3. Posture","4. ROM","5. MMT",
-            "6. Special Tests","7. Neurological","8. Gait","9. Kinetic Chain",
-            "10. Treatment Plan","11. SOAP + AI"
-          ].map((step,i)=>(
-            <div key={i} style={{
-              padding:"5px 12px",background:"#fff",border:"1px solid #E0E0E2",
-              borderRadius:8,fontSize:"0.82rem",fontWeight:600,color:"#0D0D0D"
-            }}>{step}</div>
+      {/* ── Clinical Tools ── */}
+      <div style={{marginBottom:26}}>
+        <SectionLabel>Clinical Tools</SectionLabel>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:10}}>
+          {CLINICAL_TOOLS.map(t=>(
+            <button key={t.label} onClick={()=>onNav(t.nav)} style={{
+              background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"14px 8px",
+              display:"flex",flexDirection:"column",alignItems:"center",gap:7,cursor:"pointer",
+            }}>
+              <span style={{fontSize:"1.2rem"}}>{t.icon}</span>
+              <span style={{fontSize:"0.72rem",fontWeight:700,color:"#374151",textAlign:"center"}}>{t.label}</span>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* ── Clinical Areas (trimmed -- no dead-end "SOON" buttons) ── */}
+      <div style={{marginBottom:26}}>
+        <SectionLabel>Clinical Areas</SectionLabel>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+          <button onClick={()=>onNav("subjective")} style={{
+            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
+            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
+          }}>🦴 Ortho</button>
+          <button onClick={()=>onNav("neuro")} style={{
+            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
+            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
+          }}>🧠 Neuro</button>
+          <span style={{fontSize:"0.75rem",color:"#9CA3AF",fontWeight:600}}>More specialties coming soon</span>
+        </div>
+      </div>
+
+      {/* ── PhysioMind Evidence ── */}
+      <div style={{marginBottom:24}}>
+        <SectionLabel>PhysioMind Evidence</SectionLabel>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {EVIDENCE.map(e=>(
+            <div key={e.title} style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"13px 14px",
+              display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+              <div>
+                <div style={{fontSize:"0.85rem",fontWeight:700,color:"#111827",lineHeight:1.35,marginBottom:4}}>{e.title}</div>
+                <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{e.tag} · {e.read}</div>
+              </div>
+              <span style={{fontSize:9,fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",
+                borderRadius:99,padding:"1px 8px",textTransform:"uppercase",letterSpacing:"0.4px",flexShrink:0}}>{e.badge}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Ad slot -- a real reserved placement, not a fabricated ad. No
+          monetization/ad partner exists yet, so this stays a clearly-labelled
+          empty slot rather than fake product content. ── */}
+      <div style={{background:"#F9FAFB",border:"1px dashed #E5E7EB",borderRadius:14,padding:"18px",
+        textAlign:"center",marginBottom:8}}>
+        <div style={{fontSize:9.5,fontWeight:800,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:4}}>Advertisement</div>
+        <div style={{fontSize:"0.75rem",color:"#C4C4C4"}}>Reserved ad placement — no active partner yet</div>
+      </div>
+
     </div>
   );
 }
@@ -785,6 +824,15 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
     const assessPct= Math.round((patients.filter(p=>p.data&&p.data.cc_main).length/total)*100);
     const safetyPct= Math.round(((total-patients.filter(p=>p.hasRedFlags).length)/total)*100);
 
+    // Weekly totals -- real numbers from createdAt/savedAt timestamps, not
+    // static placeholder text.
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    const patientsThisWeek = patients.filter(p => p.createdAt && new Date(p.createdAt).getTime() >= weekAgo).length;
+    const sessionsThisWeek = patients.reduce((sum,p) => {
+      const sess = Array.isArray(p.data?.tx_sessions) ? p.data.tx_sessions : [];
+      return sum + sess.filter(s => s.savedAt && new Date(s.savedAt).getTime() >= weekAgo).length;
+    }, 0);
+
     // Trend
     let trendData = [0,0,0,0,0,0,0,0,0,0,0,0];
     if (activeSess.length > 0) {
@@ -803,14 +851,16 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
     return { pendingTasks, completedTasks, todayCompleted, overdueTasks,
              schedule, todayCount, recoveryPct, activeName, activeCC,
-             activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData };
+             activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData,
+             patientsThisWeek, sessionsThisWeek };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patients, data]); // taskDB intentionally excluded — adding it creates infinite loop
 
   const {
     pendingTasks, completedTasks, todayCompleted, overdueTasks,
     schedule, todayCount, recoveryPct, activeName, activeCC,
-    activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData
+    activeNRS, worstNRS, activeSess, soapPct, romPct, assessPct, safetyPct, trendData,
+    patientsThisWeek, sessionsThisWeek
   } = derived;
 
   // ── COMPLETE TASK with animation ──────────────────────────────────────────
@@ -963,22 +1013,24 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
 
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
 
-        {/* ── QUICK STATS ── */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {STATS.map((st,i)=>(
-            <div key={st.label} className="dc" style={{
-              background:"white",borderRadius:16,padding:"14px",
-              border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-              animationDelay:`${i*0.07}s`,cursor:"pointer",
-            }} onClick={()=>{ if(st.nav==="dashboard") setActiveTab("pending"); else onNav(st.nav); }}>
-              <div style={{width:32,height:32,borderRadius:9,background:st.bg,
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:14,marginBottom:10}}>{st.icon}</div>
-              <div style={{fontSize:26,fontWeight:800,color:"#111827",letterSpacing:"-1px",lineHeight:1}}>
+        {/* ── TODAY STRIP -- compressed from a 2x2 grid (4 tall cards, real
+            vertical scroll cost) into one row, one card. Same data, same
+            click targets, far less space before the therapist reaches
+            anything actionable. ── */}
+        <div className="dc" style={{
+          background:"white",borderRadius:16,padding:"12px 6px",
+          border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+          display:"grid",gridTemplateColumns:"repeat(4,1fr)",
+        }}>
+          {STATS.map((st)=>(
+            <div key={st.label} style={{textAlign:"center",cursor:"pointer",padding:"2px 2px"}}
+              onClick={()=>{ if(st.nav==="dashboard") setActiveTab("pending"); else onNav(st.nav); }}>
+              <div style={{fontSize:14,marginBottom:4}}>{st.icon}</div>
+              <div style={{fontSize:20,fontWeight:800,color:"#111827",letterSpacing:"-0.5px",lineHeight:1}}>
                 {st.value}
               </div>
-              <div style={{fontSize:11,color:"#6B7280",marginTop:3}}>
-                {st.label} <span style={{color:st.color}}>{st.sub}</span>
+              <div style={{fontSize:9.5,fontWeight:700,color:st.color,marginTop:3,textTransform:"uppercase",letterSpacing:"0.3px"}}>
+                {st.label}
               </div>
             </div>
           ))}
@@ -1021,6 +1073,13 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
               ))}
             </div>
 
+            {/* Explicit CTA -- previously the whole card was clickable with no
+                visible affordance saying what clicking it does. */}
+            <button onClick={(e)=>{ e.stopPropagation(); onNav("subjective"); }} style={{
+              width:"100%",padding:"10px",background:"rgba(255,255,255,0.16)",
+              border:"1px solid rgba(255,255,255,0.3)",borderRadius:11,
+              color:"white",fontWeight:800,fontSize:"0.8rem",cursor:"pointer",
+            }}>Continue Assessment →</button>
           </div>
         ) : (
           <div className="dc" style={{background:"white",borderRadius:20,padding:"20px",
@@ -1326,6 +1385,19 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           {patients.length===0&&(
             <div style={{textAlign:"center",color:"#9CA3AF",fontSize:11,marginTop:12}}>
               Add patients to see outcome analytics
+            </div>
+          )}
+          {patients.length>0&&(
+            <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:16,
+              paddingTop:14,borderTop:"1px solid #F1F5F9"}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>{sessionsThisWeek}</div>
+                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>Sessions this week</div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>{patientsThisWeek}</div>
+                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>Patients this week</div>
+              </div>
             </div>
           )}
         </div>
