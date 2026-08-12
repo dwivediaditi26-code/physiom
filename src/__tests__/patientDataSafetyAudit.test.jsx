@@ -7,7 +7,7 @@
 // violation would be a real data-safety or privacy bug, not a UI nit.
 //
 // IMPORTANT: src/supabase.js falls back to the real production Supabase
-// project (dlauxdokkrqbvbormxte.supabase.co) whenever VITE_SUPABASE_URL isn't
+// project (gkhcysvayjrkrufcnqvz.supabase.co) whenever VITE_SUPABASE_URL isn't
 // set — which it isn't in this test environment. savePatientDB() calls
 // syncPatientsToSupabase() unconditionally, so without mocking `supabase`
 // here, running this file would silently attempt real network writes against

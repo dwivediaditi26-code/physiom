@@ -43,7 +43,7 @@ import { createClient } from '@supabase/supabase-js';
 // its own fallback), so hardcode it here too -- this removes one of the two
 // ways getAdminClient() could silently return null, isolating "missing" to
 // the one value that actually has to be configured as a secret.
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://dlauxdokkrqbvbormxte.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const GLOBAL_LIMIT_PER_MINUTE = 6; // conservative under the confirmed 8000 TPM free-tier ceiling; raise after a Groq tier upgrade

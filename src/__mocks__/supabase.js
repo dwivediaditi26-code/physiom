@@ -1,6 +1,6 @@
 // Mock Supabase client for tests — CRITICAL SAFETY MEASURE.
 // The real src/supabase.js points at the actual production project
-// (dlauxdokkrqbvbormxte). Tests that mount AppFull/AppInner must never be
+// (gkhcysvayjrkrufcnqvz). Tests that mount AppFull/AppInner must never be
 // allowed to make a real network call against it — a simulated test patient
 // could otherwise get upserted into the real patients table. Every test file
 // that renders app components MUST vi.mock("../supabase.js", ...) using this.

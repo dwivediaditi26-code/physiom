@@ -21,7 +21,7 @@
 // secrets) before calling the harness. This is deliberately NOT the same
 // E2E_EMAIL/E2E_PASSWORD used by e2e.yml -- those log into the disposable
 // TEST Supabase project; this needs a real account on PRODUCTION
-// (dlauxdokkrqbvbormxte) since that's the project physiom-sbs4.vercel.app
+// (gkhcysvayjrkrufcnqvz) since that's the project physiom-sbs4.vercel.app
 // (this test's target) actually talks to. See the login step below for the
 // one-time account setup needed.
 //
@@ -88,7 +88,7 @@ type HarnessResult = {
 };
 
 // One-time setup needed before this passes: create a QA account on the
-// PRODUCTION Supabase project (dlauxdokkrqbvbormxte) -- Dashboard ->
+// PRODUCTION Supabase project (gkhcysvayjrkrufcnqvz) -- Dashboard ->
 // Authentication -> Users -> Add user -> turn "Auto Confirm User" ON (so no
 // confirmation email blocks login) -- then add its email/password as repo
 // secrets PROD_QA_EMAIL / PROD_QA_PASSWORD (Settings -> Secrets and

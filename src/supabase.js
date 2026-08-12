@@ -7,8 +7,8 @@ import { createClient } from '@supabase/supabase-js'
 // a build explicitly sets those env vars -- e.g. a CI job building the app
 // against a separate, disposable test Supabase project for E2E tests, so
 // automated browser tests can never touch real student data.
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://dlauxdokkrqbvbormxte.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_K1TTiK_OqjI16xKkEHdtlg_9ZRVq-SK'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_v-dPE6_pd7a88gOFVuoDag_DmLUbgrT'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 

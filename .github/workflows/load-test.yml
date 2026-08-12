@@ -79,7 +79,7 @@ jobs:
       # test-project secrets were silently empty at build time.
       - name: Guard against silently building against production Supabase
         run: |
-          if grep -rq "dlauxdokkrqbvbormxte" dist/; then
+          if grep -rq "gkhcysvayjrkrufcnqvz" dist/; then
             echo "::error::Build output references the PRODUCTION Supabase project. E2E_SUPABASE_URL/E2E_SUPABASE_ANON_KEY were empty or unset during build. Refusing to run the load test against production."
             exit 1
           fi
