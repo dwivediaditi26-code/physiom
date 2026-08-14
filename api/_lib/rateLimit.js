@@ -7,15 +7,15 @@
 // '*', meaning literally anyone who found the URL could call it directly
 // and spend real Groq tokens with no login, no limit, nothing stopping them.
 //
-// Two things enforced here:
+// Three things enforced here:
 //   1. Auth -- reject any request without a valid Supabase session. This
 //      alone stops anonymous/internet-wide abuse.
-//   2. Rate limits -- even a real logged-in student can accidentally (a
-//      retry loop, a double-submit) or deliberately hammer the endpoint.
-//      Two limits, both against the real Groq constraint discovered via
-//      e2e/ai-accuracy.spec.ts (this org's openai/gpt-oss-120b key is
-//      capped at 8000 TPM on the free/on_demand tier -- confirmed from an
-//      actual failed run, not assumed):
+//   2. Short-window rate limits -- even a real logged-in student can
+//      accidentally (a retry loop, a double-submit) or deliberately hammer
+//      the endpoint. Two limits, both against the real Groq constraint
+//      discovered via e2e/ai-accuracy.spec.ts (this org's openai/gpt-oss-120b
+//      key is capped at 8000 TPM on the free/on_demand tier -- confirmed
+//      from an actual failed run, not assumed):
 //        - GLOBAL_LIMIT_PER_MINUTE: caps total calls across ALL users in
 //          any rolling 60s window, tuned to the actual TPM ceiling rather
 //          than a guess. This is the one that actually protects the shared
@@ -25,6 +25,15 @@
 //        - USER_LIMIT_PER_HOUR: stops one account (compromised, buggy
 //          client, deliberate abuse) from starving every other student even
 //          if the global limit alone would technically allow it.
+//   3. Daily per-feature caps (DAILY_LIMITS below) -- closes the real gap
+//      that USER_LIMIT_PER_HOUR alone leaves: 40/hour sustained across 24h
+//      is 960 calls/day on a single account, which at real Groq cost
+//      (~₹0.10-0.175/parse call) is a genuine platform-cost exposure, not
+//      just a fairness one. Scoped per feature category (parser vs. note
+//      analysis) rather than one number across all endpoints, since the two
+//      features have very different real usage patterns (parser is the
+//      high-frequency one, note analysis is a manual "Run Analysis" click).
+//      Chat intentionally excluded -- not shipping (see api/chat.js status).
 //
 // Both counters live in a Supabase table (api_calls -- see
 // supabase/api_rate_limit_setup.sql) read/written via the SERVICE ROLE key,
@@ -57,6 +66,33 @@ const GLOBAL_LIMIT_PER_MINUTE = 6; // conservative under the confirmed 8000 TPM 
 // doesn't meaningfully weaken the "one account can't hog it" guarantee --
 // it just stops it from being the thing that blocks our own test coverage.
 const USER_LIMIT_PER_HOUR = 40;
+
+// Per-feature daily caps, keyed by a feature name (not the raw endpoint
+// string) so the three note-analysis endpoints share one combined budget --
+// a student doing 4 lumbar + 4 cervical + 2 thoracic analyses in a day has
+// used the same "note analysis" feature 10 times, not three separate
+// features 4/4/2 times. `endpoints` lists every api_calls.endpoint value
+// that counts toward that feature's daily total.
+const DAILY_LIMITS = {
+  parser: { endpoints: ['parse'], limit: 5 },
+  noteAnalysis: { endpoints: ['extractThoracic', 'extractCervical', 'extractLumbar'], limit: 10 },
+  // Chat is still live in the UI (AIAssistant.jsx / AppFull.jsx) despite the
+  // "not shipping" cost decision -- that decision was never actually wired
+  // into code until now. Capped tighter than the others (3, not 5-10)
+  // because chat runs on llama-3.3-70b at ~2.5-3x the per-call cost of the
+  // parser (~Rs.0.35-0.47/call vs ~Rs.0.10-0.175), and was the single
+  // biggest AI cost driver historically. Adjust this number directly if 3/day
+  // turns out too tight or too loose in practice.
+  chat: { endpoints: ['chat'], limit: 3 },
+};
+
+// Reverse lookup: endpoint string -> { featureKey, limit, endpoints }.
+// Every endpoint that calls authenticateAndRateLimit() now has a daily cap.
+const ENDPOINT_TO_DAILY_LIMIT = Object.fromEntries(
+  Object.entries(DAILY_LIMITS).flatMap(([featureKey, cfg]) =>
+    cfg.endpoints.map((ep) => [ep, { featureKey, limit: cfg.limit, endpoints: cfg.endpoints }])
+  )
+);
 
 let adminClient = null;
 function getAdminClient() {
@@ -102,15 +138,24 @@ export async function authenticateAndRateLimit(req, res, endpoint) {
   const nowMs = Date.now();
   const oneMinuteAgo = new Date(nowMs - 60_000).toISOString();
   const oneHourAgo = new Date(nowMs - 60 * 60_000).toISOString();
+  const oneDayAgo = new Date(nowMs - 24 * 60 * 60_000).toISOString();
+
+  const dailyCfg = ENDPOINT_TO_DAILY_LIMIT[endpoint] || null;
 
   try {
-    const [globalRes, userRes] = await Promise.all([
+    const queries = [
       admin.from('api_calls').select('id', { count: 'exact', head: true }).eq('endpoint', endpoint).gte('called_at', oneMinuteAgo),
       admin.from('api_calls').select('id', { count: 'exact', head: true }).eq('endpoint', endpoint).eq('user_id', userId).gte('called_at', oneHourAgo),
-    ]);
+    ];
+    if (dailyCfg) {
+      queries.push(
+        admin.from('api_calls').select('id', { count: 'exact', head: true }).in('endpoint', dailyCfg.endpoints).eq('user_id', userId).gte('called_at', oneDayAgo)
+      );
+    }
+    const [globalRes, userRes, dailyRes] = await Promise.all(queries);
 
-    if (globalRes.error || userRes.error) {
-      console.error('rateLimit: count query failed, failing OPEN', globalRes.error || userRes.error);
+    if (globalRes.error || userRes.error || (dailyCfg && dailyRes.error)) {
+      console.error('rateLimit: count query failed, failing OPEN', globalRes.error || userRes.error || dailyRes?.error);
     } else {
       if ((globalRes.count ?? 0) >= GLOBAL_LIMIT_PER_MINUTE) {
         res.status(429).json({ error: 'The AI assistant is busy right now -- please try again in about a minute.' });
@@ -118,6 +163,10 @@ export async function authenticateAndRateLimit(req, res, endpoint) {
       }
       if ((userRes.count ?? 0) >= USER_LIMIT_PER_HOUR) {
         res.status(429).json({ error: `You've hit the limit of ${USER_LIMIT_PER_HOUR} AI requests per hour. Please try again later.` });
+        return null;
+      }
+      if (dailyCfg && (dailyRes.count ?? 0) >= dailyCfg.limit) {
+        res.status(429).json({ error: `You've hit today's limit of ${dailyCfg.limit} AI requests for this feature. Please try again tomorrow.` });
         return null;
       }
     }
