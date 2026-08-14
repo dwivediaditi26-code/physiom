@@ -120,6 +120,56 @@ function buildSuggestions(data) {
   return [...tailored, ...DEFAULT_SUGGESTIONS].slice(0, 6);
 }
 
+// Turns AI reply text into real list markup instead of one run-on paragraph
+// -- students kept saying the answer text was "hard to read"; the actual
+// problem was numbered/bulleted points arriving as plain "\n"-joined text
+// rendered with white-space:pre-wrap, so a 5-point list read as one dense
+// block. Detects "1. " / "1) " / "- " / "* " / "• " line starts and
+// groups consecutive matches into a real <ol>/<ul>; everything else stays
+// as normal paragraphs. Pure text-in, JSX-out -- no markdown lib needed for
+// what our prompts actually produce.
+function renderAnswerContent(content, textColor) {
+  const lines = String(content || "").split("\n");
+  const elements = [];
+  let list = null; // { type: "ol" | "ul", items: [] }
+
+  function flushList() {
+    if (!list) return;
+    const Tag = list.type;
+    elements.push(
+      <Tag key={`list-${elements.length}`} style={{
+        margin: "2px 0 10px", paddingLeft: 20, fontSize: 15, lineHeight: 1.8, color: textColor,
+      }}>
+        {list.items.map((t, i) => <li key={i}>{t}</li>)}
+      </Tag>
+    );
+    list = null;
+  }
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { flushList(); continue; }
+    const numMatch = line.match(/^(\d+)[.)]\s+(.*)$/);
+    const bulletMatch = line.match(/^[-*•]\s+(.*)$/);
+    if (numMatch) {
+      if (!list || list.type !== "ol") { flushList(); list = { type: "ol", items: [] }; }
+      list.items.push(numMatch[2]);
+    } else if (bulletMatch) {
+      if (!list || list.type !== "ul") { flushList(); list = { type: "ul", items: [] }; }
+      list.items.push(bulletMatch[1]);
+    } else {
+      flushList();
+      elements.push(
+        <p key={`p-${elements.length}`} style={{ margin: "0 0 8px", fontSize: 15, lineHeight: 1.7, color: textColor }}>
+          {line}
+        </p>
+      );
+    }
+  }
+  flushList();
+  return elements;
+}
+
 export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -581,23 +631,28 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
             }}>
               {m.role === "user" ? "U" : "🤖"}
             </div>
-            {/* Bubble */}
-            <div style={{
-              maxWidth: "72%",
-              background: m.role === "user"
-                ? `linear-gradient(135deg,${accent},${a2})`
-                : surface,
-              border: m.role === "user" ? "none" : `1px solid ${border}`,
-              borderRadius: m.role === "user" ? "12px 4px 12px 12px" : "4px 12px 12px 12px",
-              padding: "9px 13px",
-              fontSize: "0.85rem",
-              color: m.role === "user" ? "#fff" : text,
-              lineHeight: 1.6,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}>
-              {m.content}
-            </div>
+            {/* Bubble -- user keeps the filled chat bubble; AI replies render
+                as flat structured text (real lists, 15px, full contrast)
+                instead of a bordered box of pre-wrapped run-on text. */}
+            {m.role === "user" ? (
+              <div style={{
+                maxWidth: "72%",
+                background: `linear-gradient(135deg,${accent},${a2})`,
+                borderRadius: "12px 4px 12px 12px",
+                padding: "9px 13px",
+                fontSize: "0.9rem",
+                color: "#fff",
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}>
+                {m.content}
+              </div>
+            ) : (
+              <div style={{ maxWidth: "88%", paddingTop: 2, wordBreak: "break-word" }}>
+                {renderAnswerContent(m.content, text)}
+              </div>
+            )}
           </div>
           )
         ))}
