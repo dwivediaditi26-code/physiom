@@ -89,14 +89,55 @@ export function CranialWidget({ data, set, PC }) {
 import { REFLEXES, COORDINATION_TESTS } from "../sharedClinicalData.js";
 
 const DTR_OPTS = ["0 Absent","1+ Diminished","2+ Normal","3+ Brisk","4+ Clonus"];
+const DTR_SHORT = ["0","1+","2+","3+","4+"];
 const POSNEG = ["Negative","Positive"];
+const TONE_OPTS = ["Normal — smooth low resistance","Spastic — clasp-knife (UMN)","Rigid — lead-pipe (extrapyramidal)","Cogwheel (Parkinson)","Flaccid — no resistance (LMN)"];
+const TONE_SHORT = ["Normal","Spastic","Rigid","Cogwheel","Flaccid"];
 const GROUP_LABEL = { DTR:"Deep tendon reflexes", UMN:"Pathological / UMN signs", Clonus:"Clonus", LMN:"LMN signs & tone" };
 
+// Same option values as before (nothing here changes what gets stored) --
+// TONE_OPTS is now a named constant instead of an inline literal so
+// reflexShortLabels() below can match it by reference.
 function reflexOpts(r){
   if (r.group === "DTR") return DTR_OPTS;
-  if (r.id === "n_ref_lmn_tone") return ["Normal — smooth low resistance","Spastic — clasp-knife (UMN)","Rigid — lead-pipe (extrapyramidal)","Cogwheel (Parkinson)","Flaccid — no resistance (LMN)"];
+  if (r.id === "n_ref_lmn_tone") return TONE_OPTS;
   if (r.group === "LMN") return ["Absent","Present"];
   return POSNEG; // UMN, Clonus
+}
+// Short button labels for the tap row -- falls back to the full option
+// text for option sets that are already short (POSNEG, Absent/Present).
+function reflexShortLabels(r){
+  const opts = reflexOpts(r);
+  if (opts === DTR_OPTS) return DTR_SHORT;
+  if (opts === TONE_OPTS) return TONE_SHORT;
+  return opts;
+}
+
+// Single-tap replacement for the old L/R <select> pair. Writes the exact
+// same value strings to the exact same `${id}_left` / `${id}_right` keys
+// as before -- this is a rendering swap only, existing saved patient
+// records read back identically.
+function TapRow({ side, options, shortLabels, value, onChange, PC }){
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+      <span style={{width:13,flexShrink:0,fontSize:11,fontWeight:700,color:PC.muted,fontFamily:"ui-monospace,monospace"}}>{side}</span>
+      <div style={{display:"flex",flex:1,minWidth:0,gap:2,background:PC.bg||PC.s2||"#f4f4f6",border:`1px solid ${PC.border}`,borderRadius:9,padding:2}}>
+        {options.map((o,i)=>{
+          const on = value===o;
+          return (
+            <button key={o} type="button" onClick={()=>onChange(on?"":o)}
+              title={o}
+              style={{flex:1,minWidth:0,border:"none",borderRadius:7,cursor:"pointer",
+                padding:"7px 3px",background:on?(PC.accent||"#6C4DFF"):"transparent",
+                color:on?"#fff":PC.text,fontWeight:on?700:500,fontSize:11.5,
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {shortLabels[i]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export function ReflexWidget({ data, set, PC }) {
@@ -120,21 +161,21 @@ export function ReflexWidget({ data, set, PC }) {
             <div style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>{GROUP_LABEL[g]}</div>
             {rows.map(r=>{
               const opts = reflexOpts(r);
+              const shorts = reflexShortLabels(r);
+              const lv = data[`${r.id}_left`], rv = data[`${r.id}_right`];
               return (
                 <div key={r.id} style={{background:PC.surface||"#fff",border:`1px solid ${PC.border}`,borderRadius:10,padding:"9px 11px",marginBottom:7}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    <div><span style={{fontWeight:700,fontSize:"0.78rem",color:PC.text}}>{r.label}</span>
-                      <span style={{fontSize:"0.7rem",color:PC.muted,marginLeft:6}}>{r.level}</span></div>
-                    <div style={{display:"flex",gap:6}}>
-                      {["left","right"].map(side=>(
-                        <select key={side} value={data[`${r.id}_${side}`]||""} onChange={e=>set(`${r.id}_${side}`,e.target.value)}
-                          title={side==="left"?"Left":"Right"}
-                          style={{...sel(PC),width:"auto",minWidth:110,padding:"6px 8px",fontSize:"0.76rem"}}>
-                          <option value="">{side==="left"?"L —":"R —"}</option>
-                          {opts.map(o=><option key={o} value={o}>{side==="left"?"L: ":"R: "}{o}</option>)}
-                        </select>))}
-                    </div>
+                  <div style={{marginBottom:8}}>
+                    <span style={{fontWeight:700,fontSize:"0.78rem",color:PC.text}}>{r.label}</span>
+                    <span style={{fontSize:"0.7rem",color:PC.muted,marginLeft:6}}>{r.level}</span>
                   </div>
+                  <TapRow side="L" options={opts} shortLabels={shorts} value={lv} onChange={v=>set(`${r.id}_left`,v)} PC={PC} />
+                  <TapRow side="R" options={opts} shortLabels={shorts} value={rv} onChange={v=>set(`${r.id}_right`,v)} PC={PC} />
+                  {(lv || rv) && (
+                    <div style={{fontSize:11,color:PC.muted,marginTop:2,lineHeight:1.5}}>
+                      {lv && `L: ${lv}`}{lv && rv && "  ·  "}{rv && `R: ${rv}`}
+                    </div>
+                  )}
                 </div>);
             })}
           </div>);

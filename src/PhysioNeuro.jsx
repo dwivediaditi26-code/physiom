@@ -45,6 +45,41 @@ function ClinicalImage({ name, title, size=52 }) {
 
 // Small badge for muscle-card headers: shows an uploaded Cloudinary photo (named by
 // the muscle id, e.g. "mmt_adduc") if one exists, falling back to the region emoji.
+function shortReflexLabels(opts){
+  const MAP = {
+    "Normal 2+":"2+","Trace 1+":"Trace","Diminished 1+":"Dim","Absent 0":"0","Brisk 3+":"3+","Clonus 4+":"4+",
+    "Not tested":"N/T","Negative (normal)":"Neg","Equivocal":"Equiv","Positive — present":"Pos","Positive — sustained":"Sust",
+    "Not assessed":"N/A","Normal — smooth low resistance":"Normal","Spastic — clasp-knife (UMN)":"Spastic","Rigid — lead-pipe (extrapyramidal)":"Rigid","Flaccid — no resistance (LMN)":"Flaccid","Cogwheel rigidity (Parkinson)":"Cogwheel",
+    "Absent":"Absent","Mild/equivocal":"Mild","Moderate — clearly present":"Mod","Severe — marked":"Severe",
+  };
+  return opts.map(o=>MAP[o]||o);
+}
+
+// Single-tap replacement for the reflex grading <select>. Writes the exact
+// same value strings via the same onChange(value) contract as before --
+// rendering swap only, nothing about what gets stored changes.
+function ReflexTapRow({ side, options, shortLabels, value, onChange, activeColor, mutedColor }) {
+  return (
+    <div style={{marginBottom:6}}>
+      <div style={{fontSize:"0.62rem",fontWeight:700,color:mutedColor,marginBottom:3}}>{side}</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+        {options.map((o,i)=>{
+          const on = value===o;
+          return (
+            <button key={o} type="button" onClick={()=>onChange(on?"":o)} title={o}
+              style={{flex:"1 1 0",minWidth:44,border:"none",borderRadius:6,cursor:"pointer",
+                padding:"8px 4px",background:on?activeColor:"rgba(127,90,240,0.08)",
+                color:on?"#fff":mutedColor,fontWeight:on?700:600,fontSize:"0.64rem",
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {shortLabels[i]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MovementIcon({ size=20, color="#7c3aed" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
@@ -1341,7 +1376,7 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,gap:8}}>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:2}}>
-                            <ClinicalImage name={r.id} title={r.label} size={36}/>
+                            <ClinicalImage name={r.id} title={r.label} size={64}/>
                           <span style={{fontWeight:700,color:urgent?groupMeta.color:abnormal?groupMeta.color:C.text,fontSize:"0.84rem"}}>{r.label}</span>
                             {(r.umnSign)&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(255,77,109,0.2)",color:C.red,fontSize:"0.58rem",fontWeight:700}}>UMN SIGN</span>}
                             {(grp==="Clonus")&&<span style={{padding:"1px 6px",borderRadius:8,background:"rgba(127,90,240,0.2)",color:C.purple,fontSize:"0.58rem",fontWeight:700}}>CLONUS</span>}
@@ -1363,18 +1398,13 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                           </div>
                         </div>
                       )}
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                        {[["_left","LEFT",lv,lCol],["_right","RIGHT",rv,rCol]].map(([sfx,side,sv,col])=>(
-                          <div key={sfx}>
-                            <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>
-                              {side} {(sv.includes("Positive")||sv.includes("Brisk")||sv.includes("Clonus")||sv.includes("Severe")||sv.includes("Sustained"))?"🔴":sv.includes("Absent")||sv.includes("Trace")||sv.includes("Flaccid")||sv.includes("Moderate")?"⚠":""}
-                            </div>
-                            <select value={sv} onChange={e=>set(r.id+sfx,e.target.value)} style={{...inp,borderColor:(sv.includes("Positive")||sv.includes("Brisk")||sv.includes("Clonus"))?(urgent?groupMeta.color:C.border):sv.includes("Absent")||sv.includes("Flaccid")?C.yellow:C.border}}>
-                              <option value="">— select —</option>
-                              {opts.map(o=><option key={o} value={o}>{o}</option>)}
-                            </select>
-                          </div>
-                        ))}
+                      <div>
+                        <ReflexTapRow side={`LEFT ${(lv.includes("Positive")||lv.includes("Brisk")||lv.includes("Clonus")||lv.includes("Severe")||lv.includes("Sustained"))?"🔴":lv.includes("Absent")||lv.includes("Trace")||lv.includes("Flaccid")||lv.includes("Moderate")?"⚠":""}`}
+                          options={opts} shortLabels={shortReflexLabels(opts)} value={lv}
+                          onChange={v=>set(r.id+"_left",v)} activeColor={urgent?groupMeta.color:C.a2||groupMeta.color} mutedColor={lCol}/>
+                        <ReflexTapRow side={`RIGHT ${(rv.includes("Positive")||rv.includes("Brisk")||rv.includes("Clonus")||rv.includes("Severe")||rv.includes("Sustained"))?"🔴":rv.includes("Absent")||rv.includes("Trace")||rv.includes("Flaccid")||rv.includes("Moderate")?"⚠":""}`}
+                          options={opts} shortLabels={shortReflexLabels(opts)} value={rv}
+                          onChange={v=>set(r.id+"_right",v)} activeColor={urgent?groupMeta.color:C.a2||groupMeta.color} mutedColor={rCol}/>
                       </div>
                       {/* UMN alert when positive */}
                       {urgent&&(pathL||pathR)&&(
