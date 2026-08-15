@@ -51,27 +51,42 @@ function shortReflexLabels(opts){
     "Not tested":"N/T","Negative (normal)":"Neg","Equivocal":"Equiv","Positive — present":"Pos","Positive — sustained":"Sust",
     "Not assessed":"N/A","Normal — smooth low resistance":"Normal","Spastic — clasp-knife (UMN)":"Spastic","Rigid — lead-pipe (extrapyramidal)":"Rigid","Flaccid — no resistance (LMN)":"Flaccid","Cogwheel rigidity (Parkinson)":"Cogwheel",
     "Absent":"Absent","Mild/equivocal":"Mild","Moderate — clearly present":"Mod","Severe — marked":"Severe",
+    // Sensory (dermatomes)
+    "Normal":"Normal","Reduced":"Reduced","Hyperaesthetic":"Hyper",
+    // Myotome strength (MRC scale) -- shorten "5/5 Normal" etc to just the fraction
+    "5/5 Normal":"5/5","4/5 Good":"4/5","3/5 Fair":"3/5","2/5 Poor":"2/5","1/5 Trace":"1/5","0/5 Zero":"0/5",
   };
   return opts.map(o=>MAP[o]||o);
+}
+
+// Word-only labels for the myotome strength scale, shown as a small
+// second line under the fraction on each tap button (e.g. "5/5" / "Normal").
+function strengthWords(opts){
+  const MAP = {
+    "5/5 Normal":"Normal","4/5 Good":"Good","3/5 Fair":"Fair","2/5 Poor":"Poor","1/5 Trace":"Trace","0/5 Zero":"Zero",
+  };
+  return opts.map(o=>MAP[o]||"");
 }
 
 // Single-tap replacement for the reflex grading <select>. Writes the exact
 // same value strings via the same onChange(value) contract as before --
 // rendering swap only, nothing about what gets stored changes.
-function ReflexTapRow({ side, options, shortLabels, value, onChange, activeColor, mutedColor }) {
+function ReflexTapRow({ side, options, shortLabels, subLabels, value, onChange, activeColor, mutedColor }) {
   return (
     <div style={{marginBottom:6}}>
       <div style={{fontSize:"0.62rem",fontWeight:700,color:mutedColor,marginBottom:3}}>{side}</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
         {options.map((o,i)=>{
           const on = value===o;
+          const sub = subLabels && subLabels[i];
           return (
             <button key={o} type="button" onClick={()=>onChange(on?"":o)} title={o}
               style={{flex:"1 1 0",minWidth:44,border:"none",borderRadius:6,cursor:"pointer",
-                padding:"8px 4px",background:on?activeColor:"rgba(127,90,240,0.08)",
-                color:on?"#fff":mutedColor,fontWeight:on?700:600,fontSize:"0.64rem",
-                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {shortLabels[i]}
+                padding:sub?"6px 4px":"8px 4px",background:on?activeColor:"rgba(127,90,240,0.08)",
+                color:on?"#fff":mutedColor,display:"flex",flexDirection:"column",alignItems:"center",
+                gap:1,whiteSpace:"nowrap",overflow:"hidden"}}>
+              <span style={{fontWeight:on?700:600,fontSize:"0.64rem"}}>{shortLabels[i]}</span>
+              {sub && <span style={{fontWeight:500,fontSize:"0.52rem",opacity:on?0.9:0.75,overflow:"hidden",textOverflow:"ellipsis"}}>{sub}</span>}
             </button>
           );
         })}
@@ -1095,7 +1110,7 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
               <div key={d.id} data-neuro-id={d.id} style={{background:C.surface,border:`1px solid ${abnormal?C.red+"50":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <ClinicalImage name={d.id} title={`${d.level} — ${d.region}`} size={40}/>
+                    <ClinicalImage name={d.id} title={`${d.level} — ${d.region}`} size={64}/>
                     <div>
                       <span style={{fontWeight:800,color:abnormal?C.red:C.accent,marginRight:8}}>{d.level}</span>
                       <span style={{fontSize:"0.76rem",color:C.text}}>{d.region}</span>
@@ -1114,16 +1129,11 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                     <div style={{marginTop:6,color:C.text}}>Test with: light touch (cotton) + pin-prick at key point. Compare side to side. Hyperaesthesia = early irritation; Reduced/Absent = axonal compromise.</div>
                   </div>
                 )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[["_left","LEFT",lv,lCol],["_right","RIGHT",rv,rCol]].map(([sfx,side,sv,col])=>(
-                    <div key={sfx}>
-                      <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {sv&&sv!=="Normal"?"⚠":""}</div>
-                      <select value={sv} onChange={e=>set(d.id+sfx,e.target.value)} style={{...inp,borderColor:sv&&sv!=="Normal"?col:C.border}}>
-                        <option value="">— select —</option>
-                        {SENSORY_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                <div>
+                  <ReflexTapRow side={`LEFT ${lv&&lv!=="Normal"?"⚠":""}`} options={SENSORY_OPTIONS} shortLabels={shortReflexLabels(SENSORY_OPTIONS)}
+                    value={lv} onChange={v=>set(d.id+"_left",v)} activeColor={abnormal?C.red:C.accent} mutedColor={lCol}/>
+                  <ReflexTapRow side={`RIGHT ${rv&&rv!=="Normal"?"⚠":""}`} options={SENSORY_OPTIONS} shortLabels={shortReflexLabels(SENSORY_OPTIONS)}
+                    value={rv} onChange={v=>set(d.id+"_right",v)} activeColor={abnormal?C.red:C.accent} mutedColor={rCol}/>
                 </div>
               </div>
             );
@@ -1166,16 +1176,11 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                     {isCauda&&<div style={{marginTop:6,padding:"6px 10px",borderRadius:6,background:"rgba(255,77,109,0.1)",color:C.red,fontWeight:600}}>⚠️ Any deficit here = potential cauda equina emergency. Ask about bladder/bowel dysfunction and perianal sensation immediately.</div>}
                   </div>
                 )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[["_left","LEFT",lv,lCol],["_right","RIGHT",rv,rCol]].map(([sfx,side,sv,col])=>(
-                    <div key={sfx}>
-                      <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {sv&&sv!=="Normal"?"⚠":""}</div>
-                      <select value={sv} onChange={e=>set(d.id+sfx,e.target.value)} style={{...inp,borderColor:sv&&sv!=="Normal"?col:C.border}}>
-                        <option value="">— select —</option>
-                        {SENSORY_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                <div>
+                  <ReflexTapRow side={`LEFT ${lv&&lv!=="Normal"?"⚠":""}`} options={SENSORY_OPTIONS} shortLabels={shortReflexLabels(SENSORY_OPTIONS)}
+                    value={lv} onChange={v=>set(d.id+"_left",v)} activeColor={isCauda?C.red:C.a3} mutedColor={lCol}/>
+                  <ReflexTapRow side={`RIGHT ${rv&&rv!=="Normal"?"⚠":""}`} options={SENSORY_OPTIONS} shortLabels={shortReflexLabels(SENSORY_OPTIONS)}
+                    value={rv} onChange={v=>set(d.id+"_right",v)} activeColor={isCauda?C.red:C.a3} mutedColor={rCol}/>
                 </div>
               </div>
             );
@@ -1236,7 +1241,7 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
               <div key={m.level} style={{background:C.surface,border:`1px solid ${abnormal?C.yellow+"60":C.border}`,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <ClinicalImage name={safeId} title={`${m.level} — ${m.action}`} size={36}/>
+                    <ClinicalImage name={safeId} title={`${m.level} — ${m.action}`} size={64}/>
                     <div>
                       <span style={{fontWeight:800,color:abnormal?C.yellow:C.text,fontSize:"0.88rem",marginRight:8}}>{m.level}</span>
                       <span style={{fontSize:"0.78rem",color:C.text}}>{m.action}</span>
@@ -1253,16 +1258,11 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
                     <div style={{color:C.yellow,fontWeight:600}}>⚠ Compensation: <span style={{color:C.text,fontWeight:400}}>{m.compensation}</span></div>
                   </div>
                 )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[["_left","LEFT",lv,lCol],["_right","RIGHT",rv,rCol]].map(([sfx,side,sv,col])=>(
-                    <div key={sfx}>
-                      <div style={{fontSize:"0.62rem",fontWeight:700,color:col,marginBottom:3}}>{side} {sv&&!sv.startsWith("5")?"⚠":""}</div>
-                      <select value={sv} onChange={e=>set(safeId+sfx,e.target.value)} style={{...inp,borderColor:sv&&!sv.startsWith("5")?col:C.border}}>
-                        <option value="">— select —</option>
-                        {STRENGTH_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                <div>
+                  <ReflexTapRow side={`LEFT ${lv&&!lv.startsWith("5")?"⚠":""}`} options={STRENGTH_OPTIONS} shortLabels={shortReflexLabels(STRENGTH_OPTIONS)} subLabels={strengthWords(STRENGTH_OPTIONS)}
+                    value={lv} onChange={v=>set(safeId+"_left",v)} activeColor={abnormal?C.yellow:C.accent} mutedColor={lCol}/>
+                  <ReflexTapRow side={`RIGHT ${rv&&!rv.startsWith("5")?"⚠":""}`} options={STRENGTH_OPTIONS} shortLabels={shortReflexLabels(STRENGTH_OPTIONS)} subLabels={strengthWords(STRENGTH_OPTIONS)}
+                    value={rv} onChange={v=>set(safeId+"_right",v)} activeColor={abnormal?C.yellow:C.accent} mutedColor={rCol}/>
                 </div>
               </div>
             );
