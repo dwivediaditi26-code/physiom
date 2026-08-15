@@ -68,13 +68,37 @@ function strengthWords(opts){
   return opts.map(o=>MAP[o]||"");
 }
 
+// Cranial nerve option strings are the full clinical text, e.g.
+// "UMN pattern — forehead spared, lower face weak". The button shows
+// just the part before " — "; the full string is still what gets stored.
+function cnShortLabel(opt){
+  return opt.split(" — ")[0];
+}
+
+// Splits cn.test (one long comma-separated instruction string) into
+// bullet points for "How to perform", without breaking on commas that
+// are inside parentheses (several entries have parenthetical asides
+// like "Weber test (... lateralizes ..., away from it in ...)").
+function bulletizeTest(text){
+  const parts = [];
+  let depth = 0, cur = "";
+  for (const ch of text) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) { parts.push(cur.trim()); cur = ""; }
+    else cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+
 // Single-tap replacement for the reflex grading <select>. Writes the exact
 // same value strings via the same onChange(value) contract as before --
 // rendering swap only, nothing about what gets stored changes.
 function ReflexTapRow({ side, options, shortLabels, subLabels, value, onChange, activeColor, mutedColor }) {
   return (
     <div style={{marginBottom:6}}>
-      <div style={{fontSize:"0.62rem",fontWeight:700,color:mutedColor,marginBottom:3}}>{side}</div>
+      {side && <div style={{fontSize:"0.62rem",fontWeight:700,color:mutedColor,marginBottom:3}}>{side}</div>}
       <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
         {options.map((o,i)=>{
           const on = value===o;
@@ -1811,20 +1835,29 @@ function NeurologicalModule({ data, set, navContext={}, navTo }) {
           {CRANIAL_NERVES.map(cn=>{
             const val = data[`cn_${cn.id}_status`]||"";
             const flagged = /Impaired|UMN pattern|LMN pattern|Conductive|Sensorineural|Deviates|Weak/.test(val);
+            const cnOpts = cn.record.split(" / ");
             return (
               <div key={cn.id} data-neuro-id={`cn_${cn.id}`} style={{background:C.surface,border:`1px solid ${flagged?C.red+"50":C.border}`,borderRadius:10,padding:"11px 13px",marginBottom:9}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}}>
-                  <div>
-                    <span style={{fontWeight:800,fontSize:"0.8rem",color:C.text}}>CN {cn.numeral}</span>
-                    <span style={{fontSize:"0.76rem",color:C.muted,marginLeft:6}}>{cn.name}</span>
+                {/* Image, name and "How to perform" sit in one row that
+                    wraps naturally -- side by side on a tablet/desktop
+                    width, stacking on a narrow phone width instead of
+                    forcing three columns into no space. */}
+                <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:8}}>
+                  <ClinicalImage name={cn.id} title={`CN ${cn.numeral} — ${cn.name}`} size={72}/>
+                  <div style={{minWidth:110}}>
+                    <div style={{fontWeight:800,fontSize:"0.82rem",color:C.text}}>CN {cn.numeral}</div>
+                    <div style={{fontSize:"0.76rem",color:C.muted}}>{cn.name}</div>
                   </div>
-                  <select value={val} onChange={e=>set(`cn_${cn.id}_status`,e.target.value)} style={{...inp,width:"auto",minWidth:150,flexShrink:0,borderColor:flagged?C.red:C.border,color:flagged?C.red:C.text}}>
-                    <option value="">Not tested</option>
-                    {cn.record.split(" / ").map(opt=><option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <div style={{flex:"1 1 180px",minWidth:180}}>
+                    <div style={{fontSize:"0.7rem",color:C.a2,fontWeight:700,marginBottom:3}}>How to perform</div>
+                    <ul style={{margin:0,paddingLeft:16,fontSize:"0.7rem",color:C.muted,lineHeight:1.6}}>
+                      {bulletizeTest(cn.test).map((b,i)=><li key={i}>{b}</li>)}
+                    </ul>
+                  </div>
                 </div>
-                <div style={{fontSize:"0.7rem",color:C.muted,lineHeight:1.5,marginBottom:5}}><strong style={{color:C.a2}}>Test:</strong> {cn.test}</div>
-                <div style={{fontSize:"0.68rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px"}}>{cn.note}</div>
+                <ReflexTapRow options={cnOpts} shortLabels={cnOpts.map(cnShortLabel)} value={val}
+                  onChange={v=>set(`cn_${cn.id}_status`,v)} activeColor={flagged?C.red:C.green} mutedColor={C.muted}/>
+                <div style={{fontSize:"0.68rem",color:C.muted,lineHeight:1.5,background:C.s2,borderRadius:6,padding:"6px 8px",marginTop:6}}>{cn.note}</div>
               </div>
             );
           })}
