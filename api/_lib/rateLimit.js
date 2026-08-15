@@ -73,21 +73,26 @@ const USER_LIMIT_PER_HOUR = 40;
 // used the same "note analysis" feature 10 times, not three separate
 // features 4/4/2 times. `endpoints` lists every api_calls.endpoint value
 // that counts toward that feature's daily total.
-const DAILY_LIMITS = {
-  parser: { endpoints: ['parse'], limit: 5 },
-  noteAnalysis: { endpoints: ['extractThoracic', 'extractCervical', 'extractLumbar'], limit: 10 },
-  // Chat is still live in the UI (AIAssistant.jsx / AppFull.jsx) despite the
-  // "not shipping" cost decision -- that decision was never actually wired
-  // into code until now. Capped tighter than the others (3, not 5-10)
-  // because chat runs on llama-3.3-70b at ~2.5-3x the per-call cost of the
-  // parser (~Rs.0.35-0.47/call vs ~Rs.0.10-0.175), and was the single
-  // biggest AI cost driver historically. Adjust this number directly if 3/day
-  // turns out too tight or too loose in practice.
-  chat: { endpoints: ['chat'], limit: 3 },
-};
+// ALL daily per-feature caps intentionally removed (2026-08-15), same day
+// they were added -- the parser's 5/day cap was hit mid-test-run by the QA
+// account running window.physioAITest (5 real cases succeeded, the rest
+// 429'd), not a parser bug, and the decision was made to pull all three
+// (parser/noteAnalysis/chat) rather than leave a partial cap in place.
+// Known, deliberate tradeoff: every endpoint is back to being protected
+// ONLY by the pre-existing GLOBAL_LIMIT_PER_MINUTE (6/min, shared across
+// all users) and USER_LIMIT_PER_HOUR (40/hour/user) below -- no per-day
+// ceiling on any account. At today's real per-call costs (parser
+// ~Rs.0.175, note-analysis ~Rs.0.09-0.12, chat ~Rs.0.35-0.47), a single
+// account sustaining 40/hour for 24h is a real cost exposure again
+// (~Rs.336-450/day on chat alone, worst case). Re-add entries to
+// DAILY_LIMITS below (parser/noteAnalysis/chat, as they were) before any
+// of this goes in front of real students -- not just before the next test
+// run.
+const DAILY_LIMITS = {};
 
 // Reverse lookup: endpoint string -> { featureKey, limit, endpoints }.
-// Every endpoint that calls authenticateAndRateLimit() now has a daily cap.
+// Empty for every endpoint right now (see note above) -- everything falls
+// through to only the GLOBAL_LIMIT_PER_MINUTE / USER_LIMIT_PER_HOUR checks.
 const ENDPOINT_TO_DAILY_LIMIT = Object.fromEntries(
   Object.entries(DAILY_LIMITS).flatMap(([featureKey, cfg]) =>
     cfg.endpoints.map((ep) => [ep, { featureKey, limit: cfg.limit, endpoints: cfg.endpoints }])
