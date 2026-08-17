@@ -1886,11 +1886,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {key:"profile",    icon:"profile",    label:"Profile"},
             ].map(item=>{
               const isClinical = item.key==="__clinical";
-              // Clinical is "active" whenever the drawer is open OR we're
-              // already inside any clinical section (not one of the 4 outer
-              // screens) -- mirrors the old Menu tab's own active logic.
-              const isActive = isClinical ? (navOpen || !outerKeys.includes(active)) : active===item.key;
-              const handleClick = () => { if (isClinical) setNavOpen(true); else navTo(item.key); };
+              // Clinical opens straight into Subjective Assessment -- same
+              // real, tested entry point HomeModule's own "Assess Patient"
+              // quick-start action already uses. Real regression fixed here:
+              // an earlier version of this tab opened the section drawer
+              // instead (to preserve access to Demographics/ROM/MMT/SOAP/etc
+              // without the old Menu button), but that silently changed what
+              // tapping Clinical actually does, which is exactly the
+              // "normal working" behaviour that must stay unchanged.
+              const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
+              const handleClick = () => { if (isClinical) navTo("subjective"); else navTo(item.key); };
               return item.center ? (
                 <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
