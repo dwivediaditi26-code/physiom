@@ -8,9 +8,18 @@
 // its findings as one JSON blob per body region (lfs_data, sfs_data, etc.),
 // not one flat field per test. Fixed to check those 10 real region-data
 // keys the same way every other section's percentage already does.
+//
+// Updated when the mobile bottom nav was rebuilt (old Menu/Patient/Assess/
+// Adv./Treat/Docs quick-tabs retired): "Functional Assessment" used to be
+// findable un-clicked because the old bnav rendered a flat, CSS-collapsed
+// (but DOM-present) copy of every section link. That's gone now -- the only
+// remaining copies live inside the "Advanced Assessment" SidebarGroup
+// (desktop .pm-sidebar + mobile .pm-nav-drawer, same shared component and
+// shared open/closed state), which is a real accordion that doesn't render
+// its children until expanded. Tests now click it open first.
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, cleanup, within } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, within, fireEvent } from "@testing-library/react";
 
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
@@ -64,17 +73,28 @@ describe("Sidebar completion percentage — Functional Assessment", () => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: patientId, data }));
 
     render(<App />);
-    // Real gotcha hit writing this test: "Functional Assessment" itself
-    // renders twice in the DOM (desktop .pm-sidebar's collapsible "Advanced
-    // Assessment" group + the mobile .pm-nav-drawer's flat list) -- the
-    // exact same dual-render pattern this project's E2E specs already had
-    // to work around repeatedly. Rather than fight DOM-climbing from
-    // whichever copy resolves first, check the document as a whole for the
-    // computed "10%" instead: with this synthetic patient's `data` holding
-    // ONLY lfs_data, every other section's own percentage calc still has a
-    // real (nonzero) total but zero matching fields, so no other section
-    // can coincidentally also show exactly "10%" here.
-    await screen.findByText("Functional Assessment", { exact: true }, { timeout: 10_000 });
+    // "Advanced Assessment" is a real accordion (children unmount when
+    // closed) -- expand it before looking for "Functional Assessment"
+    // inside it. Desktop sidebar + mobile nav-drawer share one open/closed
+    // state, so clicking either copy's header opens both. Real gotcha: the
+    // app keeps re-rendering this subtree while patient/draft data loads
+    // async, which can replace a DOM node clicked slightly too early with a
+    // fresh one -- a silent no-op, not a thrown error. Wrapping the
+    // query+click+assert in one waitFor re-grabs a live node on every retry
+    // instead of clicking a possibly-stale one once.
+    await waitFor(() => {
+      const headers = screen.getAllByText("Advanced Assessment", { exact: true });
+      fireEvent.click(headers[0]);
+      expect(screen.queryAllByText("Functional Assessment", { exact: true }).length).toBeGreaterThan(0);
+    }, { timeout: 10_000 });
+    // "Functional Assessment" itself still renders twice in the DOM (same
+    // shared-component dual-render pattern as before). Rather than fight
+    // DOM-climbing from whichever copy resolves first, check the document
+    // as a whole for the computed "10%" instead: with this synthetic
+    // patient's `data` holding ONLY lfs_data, every other section's own
+    // percentage calc still has a real (nonzero) total but zero matching
+    // fields, so no other section can coincidentally also show exactly
+    // "10%" here.
     await waitFor(() => {
       expect(document.body.textContent).toMatch(/10%/);
     }, { timeout: 10_000 });
@@ -92,7 +112,12 @@ describe("Sidebar completion percentage — Functional Assessment", () => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: patientId, data }));
 
     render(<App />);
-    const label = await screen.findByText("Functional Assessment", { exact: true }, { timeout: 10_000 });
+    await waitFor(() => {
+      const headers = screen.getAllByText("Advanced Assessment", { exact: true });
+      fireEvent.click(headers[0]);
+      expect(screen.queryAllByText("Functional Assessment", { exact: true }).length).toBeGreaterThan(0);
+    }, { timeout: 10_000 });
+    const label = screen.getAllByText("Functional Assessment", { exact: true })[0];
     const sidebarItem = label.closest("div").parentElement.parentElement;
     // pct===0 renders no progress bar and no "%" badge at all (see
     // AppFull.jsx's SidebarItem: both are gated on pct>0) -- absence of any

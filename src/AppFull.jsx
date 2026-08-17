@@ -966,6 +966,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
         </button>
+        {data.dem_name && (
+          <button onClick={()=>{ setNavOpen(false); setShowPdfReports(true); }} style={{width:"100%",marginTop:5,padding:"8px 10px",background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:8,color:"#2563eb",fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
+            📄 PDF Reports
+          </button>
+        )}
 
         {/* ── Active patient + PDF buttons ── */}
         {data.dem_name && (
@@ -1852,192 +1857,52 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
       </div>
 
-      {/* ── BOTTOM NAV DRAWER (mobile) — always visible ── */}
-      <nav className="pm-bnav" aria-label="Section navigation">
-
-        {/* ── Expandable sub-panel ── */}
-        {(()=>{
-          const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","special","neuro","outcome"];
-          const advKeys=["fma","gait","cyriax_full","kinetic","nkt","fascia"];
-          const treatKeys=["treatment","exercise","tx_techniques"];
-          const docKeys=["tx_sessions","soap"];
-
-          const BnavItem = ({navKey,icon,label}) => {
-            const isAct = active===navKey;
-            const pct = getSectionPct(navKey);
-            return (
-              <button className={`pm-bnav-item${isAct?" active":""}`}
-                onClick={()=>{ navTo(navKey); setBnavTab(null); }}>
-                <span className="pm-bnav-item-icon">{icon}</span>
-                <span className="pm-bnav-item-label">{label}</span>
-                {pct===100 && <span className="pm-bnav-item-done">✓</span>}
-                {pct>0&&pct<100 && <span className="pm-bnav-item-pct">{pct}%</span>}
-              </button>
-            );
-          };
-
-          return (
-            <>
-              <div className={`pm-bnav-panel${bnavTab==="assessment"?" open":""}`}>
-                <BnavItem navKey="demographics" icon="👤" label="Demographics"/>
-                <BnavItem navKey="subjective"  icon="📝" label="Subjective Assessment"/>
-                <BnavItem navKey="posture"     icon="🧍" label="Posture Analysis"/>
-                <BnavItem navKey="observation" icon="👁️" label="Observation"/>
-                <BnavItem navKey="palpation"   icon="🖐️" label="Palpation"/>
-                <BnavItem navKey="rom"         icon="📐" label="Range of Motion"/>
-                <BnavItem navKey="mmt"         icon="💪" label="MMT"/>
-                <BnavItem navKey="special"     icon="🔬" label="Special Tests (100+)"/>
-                <BnavItem navKey="neuro"       icon="⚡" label="Neurological"/>
-                <BnavItem navKey="outcome"     icon="📈" label="Outcome Measures"/>
-              </div>
-              <div className={`pm-bnav-panel${bnavTab==="advanced"?" open":""}`}>
-                <BnavItem navKey="fma"         icon="🏃" label="Functional Assessment"/>
-                <BnavItem navKey="gait"        icon="🚶" label="Gait Analysis"/>
-                <BnavItem navKey="cyriax_full" icon="🦴" label="STTT"/>
-                <BnavItem navKey="kinetic"     icon="⛓️" label="Kinetic Chain"/>
-                <BnavItem navKey="nkt"         icon="🧠" label="CPA"/>
-                <BnavItem navKey="fascia"      icon="🕸️" label="Fascia Integration"/>
-              </div>
-              <div className={`pm-bnav-panel${bnavTab==="treatment"?" open":""}`}>
-                {[["exercise","🏋","Exercise Prescription"],["tx","🤲","Tx Techniques"],["hep","🏠","Home Protocol"]].map(([key,icon,label])=>(
-                  <button key={key} className={`pm-bnav-item${active==="treatment"&&txTab===key?" active":""}`}
-                    onClick={()=>{ navTo("treatment"); setTxTab(key); setBnavTab(null); }}>
-                    <span className="pm-bnav-item-icon">{icon}</span>
-                    <span className="pm-bnav-item-label">{label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className={`pm-bnav-panel${bnavTab==="documentation"?" open":""}`}>
-                <BnavItem navKey="tx_sessions" icon="⚡" label="Sessions"/>
-                <BnavItem navKey="soap"        icon="📋" label="SOAP Notes"/>
-                <BnavItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
-              </div>
-              <div className={`pm-bnav-panel${bnavTab==="patient"?" open":""}`}>
-                {data.dem_name ? (
-                  <div style={{padding:"4px 2px 8px"}}>
-                    {/* Patient pill */}
-                    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"rgba(124,58,237,0.07)",borderRadius:10,marginBottom:8,border:"1px solid rgba(124,58,237,0.15)"}}>
-                      <span style={{fontSize:"1.3rem"}}>👤</span>
-                      <div style={{minWidth:0}}>
-                        <div style={{fontWeight:800,fontSize:"0.95rem",color:"#0D0D0D",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.dem_name}</div>
-                        {data.dem_age && <div style={{fontSize:"0.72rem",color:"#7c3aed",fontWeight:600}}>Age {data.dem_age}</div>}
-                      </div>
-                    </div>
-                    {/* PDF buttons */}
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                      <button className="pm-bnav-pdf-btn"
-                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="assessment"]'); if(el) el.click(); },350); }}>
-                        <span style={{fontSize:"1.1rem"}}>📋</span>
-                        <span>Assessment PDF</span>
-                      </button>
-                      <button className="pm-bnav-pdf-btn"
-                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="treatment"]'); if(el) el.click(); },350); }}>
-                        <span style={{fontSize:"1.1rem"}}>🗒️</span>
-                        <span>Treatment PDF</span>
-                      </button>
-                      <button className="pm-bnav-pdf-btn"
-                        onClick={()=>{ setBnavTab(null); setShowPdfReports(true); setTimeout(()=>{ const el=document.querySelector('[data-pdf-type="hep"]'); if(el) el.click(); },350); }}>
-                        <span style={{fontSize:"1.1rem"}}>🏃</span>
-                        <span>HEP PDF</span>
-                      </button>
-                    </div>
-                    {/* Switch patient */}
-                    <button className="pm-bnav-dx" style={{marginTop:10}}
-                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
-                      👥 Switch / Load Patient
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{padding:"6px 2px"}}>
-                    <div style={{textAlign:"center",padding:"16px 12px",color:"#6B6B6B",fontSize:"0.85rem",fontWeight:600}}>No patient loaded</div>
-                    <button className="pm-bnav-dx"
-                      onClick={()=>{ setBnavTab(null); setShowPatientDb(true); }}>
-                      👥 Load Patient
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          );
-        })()}
-
-        {/* ── Tab strip ── */}
+      {/* ── BOTTOM NAV (mobile) — always visible. Old Menu/Patient/Assess/Adv./
+          Treat/Docs quick-tabs retired -- every section they linked to is
+          still reachable via the full section drawer (SidebarItems), which
+          "Clinical" now opens directly. Nothing is actually removed from the
+          app, just this one redundant quick-access bar. ── */}
+      <nav className="pm-bnav" aria-label="Main navigation">
         <div className="pm-bnav-tabs">
-          {["home","physiofeed","learn","profile"].includes(active) ? (
-            /* Main app nav (Home / Clinical / PhysioFeed / Learn / Profile) --
-               only shown outside a clinical workflow. Clinical re-uses the
-               same, already-live "Assess Patient" action, so tapping it opens
-               the exact same normal assessment flow as before, unchanged.
-               Plain outline SVG icons (no emoji -- emoji render inconsistently
-               across OS/browser, which is why the satellite emoji looked odd). */
-            (()=>{
-              const NavIcon = ({name}) => {
-                const common = {width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"};
-                if (name==="home") return (<svg {...common}><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>);
-                if (name==="clinical") return (<svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
-                if (name==="physiofeed") return (<svg {...common} width={22} height={22}><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>);
-                if (name==="learn") return (<svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
-                if (name==="profile") return (<svg {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
-                return null;
-              };
-              return [
-                {key:"home",       icon:"home",       label:"Home"},
-                {key:"__clinical", icon:"clinical",   label:"Clinical"},
-                {key:"physiofeed", icon:"physiofeed", label:"PhysioFeed", center:true},
-                {key:"learn",      icon:"learn",      label:"Learn"},
-                {key:"profile",    icon:"profile",    label:"Profile"},
-              ].map(item=>{
-                const isClinical = item.key==="__clinical";
-                const isActive = !isClinical && active===item.key;
-                const handleClick = () => { if (isClinical) navTo("subjective"); else navTo(item.key); };
-                return item.center ? (
-                  <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
-                    alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
-                    <span style={{width:46,height:46,borderRadius:"50%",background:isActive?"#6D28D9":"#7c3aed",
-                      color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
-                      marginTop:-18,boxShadow:"0 2px 8px rgba(124,58,237,0.35)"}}><NavIcon name={item.icon}/></span>
-                    <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
-                  </button>
-                ) : (
-                  <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
-                    <span className="pm-bnav-tab-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name={item.icon}/></span>
-                    <span className="pm-bnav-tab-label">{item.label}</span>
-                  </button>
-                );
-              });
-            })()
-          ) : (()=>{
-            const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","special","neuro","outcome"];
-            const advKeys=["fma","gait","cyriax_full","kinetic","nkt","fascia"];
-            const treatKeys=["treatment","exercise","tx_techniques"];
-            const docKeys=["tx_sessions","soap"];
-            const topKeys=["home","dashboard"];
-
-            const TabBtn = ({id,icon,label,matchKeys}) => {
-              const isActive = bnavTab===id || (matchKeys&&matchKeys.includes(active));
-              return (
-                <button className={`pm-bnav-tab${isActive?" active":""}`}
-                  onClick={()=>setBnavTab(t=> t===id ? null : id)}>
-                  <span className="pm-bnav-tab-icon">{icon}</span>
-                  <span className="pm-bnav-tab-label">{label}</span>
+          {(()=>{
+            const NavIcon = ({name}) => {
+              const common = {width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"};
+              if (name==="home") return (<svg {...common}><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>);
+              if (name==="clinical") return (<svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
+              if (name==="physiofeed") return (<svg {...common} width={22} height={22}><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>);
+              if (name==="learn") return (<svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
+              if (name==="profile") return (<svg {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>);
+              return null;
+            };
+            const outerKeys = ["home","physiofeed","learn","profile"];
+            return [
+              {key:"home",       icon:"home",       label:"Home"},
+              {key:"__clinical", icon:"clinical",   label:"Clinical"},
+              {key:"physiofeed", icon:"physiofeed", label:"PhysioFeed", center:true},
+              {key:"learn",      icon:"learn",      label:"Learn"},
+              {key:"profile",    icon:"profile",    label:"Profile"},
+            ].map(item=>{
+              const isClinical = item.key==="__clinical";
+              // Clinical is "active" whenever the drawer is open OR we're
+              // already inside any clinical section (not one of the 4 outer
+              // screens) -- mirrors the old Menu tab's own active logic.
+              const isActive = isClinical ? (navOpen || !outerKeys.includes(active)) : active===item.key;
+              const handleClick = () => { if (isClinical) setNavOpen(true); else navTo(item.key); };
+              return item.center ? (
+                <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
+                  alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
+                  <span style={{width:46,height:46,borderRadius:"50%",background:isActive?"#6D28D9":"#7c3aed",
+                    color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
+                    marginTop:-18,boxShadow:"0 2px 8px rgba(124,58,237,0.35)"}}><NavIcon name={item.icon}/></span>
+                  <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
+                </button>
+              ) : (
+                <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
+                  <span className="pm-bnav-tab-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name={item.icon}/></span>
+                  <span className="pm-bnav-tab-label">{item.label}</span>
                 </button>
               );
-            };
-
-            return (
-              <>
-                <button className={`pm-bnav-tab${navOpen||topKeys.includes(active)?" active":""}`}
-                  onClick={()=>{ setBnavTab(null); setNavOpen(true); }}>
-                  <span className="pm-bnav-tab-icon">☰</span>
-                  <span className="pm-bnav-tab-label">Menu</span>
-                </button>
-                <TabBtn id="patient"       icon="👤" label="Patient" matchKeys={[]}/>
-                <TabBtn id="assessment"    icon="🩺" label="Assess"  matchKeys={assessKeys}/>
-                <TabBtn id="advanced"      icon="🔭" label="Adv."    matchKeys={advKeys}/>
-                <TabBtn id="treatment"     icon="💊" label="Treat"   matchKeys={treatKeys}/>
-                <TabBtn id="documentation" icon="📋" label="Docs"    matchKeys={docKeys}/>
-              </>
-            );
+            });
           })()}
         </div>
       </nav>
