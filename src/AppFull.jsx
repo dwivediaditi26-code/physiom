@@ -1550,6 +1550,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {activePatient && (() => {
             const d2 = data;
             const oKeys = ["rom","mmt","special","neuro","neurotemplates","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+            // Only render this stepper on the actual clinical-workflow
+            // screens it navigates between -- it was gated on activePatient
+            // alone, so once a patient existed it kept showing at the top
+            // of Home/PhysioFeed/Learn/Profile too (those aren't part of
+            // this workflow at all). Scope it to the exact screens wfSteps
+            // below can land on.
+            const wfScreens = ["demographics","subj_region","subjective","subj_ai","chart_palpation","objective","treatment","exercise","soap",...oKeys];
+            if (!wfScreens.includes(active)) return null;
             // Expanded from 5 to 9 steps (2026-08-17) -- Subjective's region
             // picker / AI panel / body-chart+palpation were previously all
             // bundled into one long "Subjective" scroll. They're broken out

@@ -103,4 +103,18 @@ describe("Screening Workflow stepper — 9 steps, each its own page", () => {
       expect(screen.getByText("🏠 Home Protocol")).toBeInTheDocument();
     });
   });
+
+  // Regression: the stepper was gated on activePatient alone, so once a
+  // patient existed it kept showing at the top of Home/PhysioFeed/Learn/
+  // Profile too -- screens that have nothing to do with this workflow.
+  it("does not show on Home, PhysioFeed, Learn, or Profile once a patient is active", async () => {
+    await createOrthoPatient();
+    for (const label of ["Home", "PhysioFeed", "Learn", "Profile"]) {
+      const [navItem] = screen.getAllByText(label);
+      fireEvent.click(navItem);
+      await waitFor(() => {
+        expect(screen.queryByText("Screening Workflow")).not.toBeInTheDocument();
+      });
+    }
+  });
 });
