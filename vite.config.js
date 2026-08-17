@@ -38,11 +38,22 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React core — tiny, loads first
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'react-core';
-          }
-          // All other node_modules → vendor
+          // Real incident (PhysioFeed integration, this session): splitting
+          // react/react-dom into their own 'react-core' chunk, separate from
+          // a 'vendor' chunk holding all other node_modules, worked fine
+          // until react-router-dom was added -- it needs React internals at
+          // module-evaluation time in a way that made Rollup's own chunk
+          // graph genuinely circular (vendor -> react-core -> vendor, real
+          // build warning: "Circular chunk"). Circular ES module chunks can
+          // load fine in dev but fail hard in production -- a live binding
+          // gets read before the other chunk has finished initializing,
+          // producing a silent, uncaught error with no visible message: a
+          // fully blank white page in the built app, nothing broken in
+          // tests or `vite build` succeeding (both run differently from a
+          // real browser loading real <script type="module"> chunks in
+          // this exact order). All node_modules now share one chunk so the
+          // circularity can't exist by construction -- confirmed no
+          // "Circular chunk" warning on rebuild after this change.
           if (id.includes('node_modules/')) {
             return 'vendor';
           }
