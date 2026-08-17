@@ -37,12 +37,14 @@ describe("Learn tab — Study mode", () => {
     const thumbnails = screen.getAllByRole("button", { name: /^Open / });
     expect(thumbnails.length).toBeGreaterThan(0);
 
-    // Tap the first thumbnail -- opens the full detail page (large image
-    // + real data), not an inline-expanding card.
+    // Tap the first thumbnail -- opens the full detail page (large,
+    // uncropped image + real data cards matching the real clinical
+    // screen's own expanded card -- Goniometer placement is the first
+    // one it shows for ROM), not an inline-expanding card.
     fireEvent.click(thumbnails[0]);
     await waitFor(() => {
       expect(screen.getByText("Back")).toBeTruthy();
-      expect(screen.getByText(/how to perform/i)).toBeTruthy();
+      expect(screen.getByText(/goniometer placement/i)).toBeTruthy();
     });
 
     // Back returns to the grid, not all the way out to Learn.

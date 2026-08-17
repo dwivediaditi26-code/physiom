@@ -1,26 +1,39 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { SPECIAL_TESTS_DATA } from "../../sharedClinicalData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
+import InfoBox from "./InfoBox.jsx";
 
 const REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 
 // Real data from SPECIAL_TESTS_DATA -- same source the actual Special
-// Tests clinical screen uses. Unlike ROM/MMT, each test already has one
-// real, full "how" field written as proper technique text, plus real
-// sensitivity/specificity figures -- used directly, nothing composed.
+// Tests clinical screen uses. Detail sections mirror that real screen's
+// own expanded card exactly (How to perform, then Negative/Positive
+// meaning side by side) -- just without the result-recording select,
+// since this view is read-only.
 function toCard(t) {
   return {
     id: t.id,
     image: t.id,
     title: t.label,
     subtitle: t.structure,
-    technique: t.how,
-    extra: [
-      (t.sensitivity || t.specificity) && { label: "Sensitivity / Specificity", value: `${t.sensitivity || "—"} / ${t.specificity || "—"}` },
-      t.positive && { label: "Positive sign", value: t.positive },
-    ].filter(Boolean),
+    sections: (
+      <Fragment>
+        {(t.sensitivity || t.specificity) && (
+          <div className="text-xs text-slate-500">Sens: {t.sensitivity || "—"} · Spec: {t.specificity || "—"}</div>
+        )}
+        {t.how && (
+          <InfoBox icon="👐" label="How to perform" tint="amber">{t.how}</InfoBox>
+        )}
+        {(t.negative || t.positive) && (
+          <div className="grid grid-cols-2 gap-3">
+            {t.negative && <InfoBox icon="✓" label="Negative means" tint="green">{t.negative}</InfoBox>}
+            {t.positive && <InfoBox icon="⚠" label="Positive means" tint="red">{t.positive}</InfoBox>}
+          </div>
+        )}
+      </Fragment>
+    ),
   };
 }
 
@@ -30,7 +43,7 @@ export default function SpecialStudy({ onBack }) {
   const bucket = SPECIAL_TESTS_DATA[region];
   const cards = useMemo(() => (bucket?.tests || []).map(toCard), [bucket]);
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}/>;
+  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
 
   return (
     <StudyShell

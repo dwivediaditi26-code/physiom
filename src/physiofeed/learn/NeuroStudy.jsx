@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { DERMATOMES, MYOTOMES, REFLEXES, CRANIAL_NERVES } from "../../sharedClinicalData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
+import InfoBox from "./InfoBox.jsx";
 
 const SUB_TABS = [
   { key: "reflexes", label: "Reflexes" },
@@ -18,6 +19,14 @@ const LEVEL_GROUPS = [
   { key: "L", label: "Lumbar" },
   { key: "S", label: "Sacral" },
 ];
+
+// Same real "Test with: ..." instruction shown for every dermatome in the
+// actual clinical screen -- fixed, hardcoded copy in that screen (not
+// pulled from a per-item field), reused verbatim here rather than
+// inventing new wording.
+const DERMATOME_TEST_METHOD =
+  "Test with: light touch (cotton) + pin-prick at key point. Compare side to side. " +
+  "Hyperaesthesia = early irritation; Reduced/Absent = axonal compromise.";
 
 // Splits a comma-separated "test" string into bullets the same way the
 // real Cranial Nerve clinical screen already does (bulletizeTest in
@@ -40,33 +49,56 @@ function bulletize(text) {
 function reflexCard(r) {
   return {
     id: r.id, image: r.id, title: r.label, subtitle: r.level,
-    technique: r.technique,
-    extra: [r.finding && { label: "Clinical finding", value: r.finding }].filter(Boolean),
+    sections: (
+      <Fragment>
+        {r.technique && <InfoBox icon="📋" label="Technique" tint="violet">{r.technique}</InfoBox>}
+        {r.finding && <InfoBox icon="⚕" label="Clinical finding" tint="amber">{r.finding}</InfoBox>}
+      </Fragment>
+    ),
   };
 }
 function dermatomeCard(d) {
   return {
     id: d.id, image: d.id, title: d.level, subtitle: d.region,
-    extra: [
-      d.reflex && { label: "Associated reflex", value: d.reflex },
-      d.myotome && { label: "Associated myotome", value: d.myotome },
-      d.disc && { label: "Disc level", value: d.disc },
-    ].filter(Boolean),
+    sections: (
+      <Fragment>
+        <InfoBox label="Reference guide" tint="gray">
+          {d.disc && <div><span className="font-semibold text-amber-600">Disc level:</span> {d.disc}</div>}
+          {d.myotome && <div className="mt-1"><span className="font-semibold text-violet-600">Myotome:</span> {d.myotome}</div>}
+          {d.reflex && <div className="mt-1"><span className="font-semibold text-emerald-600">Reflex:</span> {d.reflex}</div>}
+          <div className="mt-2 text-slate-600">{DERMATOME_TEST_METHOD}</div>
+        </InfoBox>
+      </Fragment>
+    ),
   };
 }
 function myotomeCard(m) {
   const id = `myo_${m.level.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}`;
   return {
     id, image: id, title: m.level, subtitle: m.action,
-    technique: m.test,
-    extra: [m.compensation && { label: "Watch for compensation", value: m.compensation }].filter(Boolean),
+    sections: (
+      <Fragment>
+        {m.test && <InfoBox icon="🔬" label="Test" tint="violet">{m.test}</InfoBox>}
+        {m.compensation && <InfoBox icon="⚠" label="Compensation" tint="amber">{m.compensation}</InfoBox>}
+      </Fragment>
+    ),
   };
 }
 function cranialCard(cn) {
   return {
     id: cn.id, image: cn.id, title: `CN ${cn.numeral} — ${cn.name}`,
-    technique: bulletize(cn.test),
-    extra: [cn.note && { label: "Note", value: cn.note }].filter(Boolean),
+    sections: (
+      <Fragment>
+        {cn.test && (
+          <InfoBox icon="👐" label="How to perform" tint="violet">
+            <ul className="list-disc pl-4 space-y-1">
+              {bulletize(cn.test).map((b, i) => <li key={i}>{b}</li>)}
+            </ul>
+          </InfoBox>
+        )}
+        {cn.note && <InfoBox label="Note" tint="gray">{cn.note}</InfoBox>}
+      </Fragment>
+    ),
   };
 }
 
@@ -74,8 +106,8 @@ function cranialCard(cn) {
 // straight from sharedClinicalData.js, same source the real Neurological
 // clinical screen uses. Dermatomes genuinely have no technique/how-to-
 // perform field in the real data (confirmed) -- rather than invent one,
-// they're shown as reference info only (level/reflex/myotome/disc), no
-// fabricated "how to perform" text.
+// they're shown as reference info only (disc/myotome/reflex + the same
+// fixed test-method copy production shows for every dermatome).
 export default function NeuroStudy({ onBack }) {
   const [subTab, setSubTab] = useState("reflexes");
   const [reflexGroup, setReflexGroup] = useState("DTR");
@@ -87,7 +119,7 @@ export default function NeuroStudy({ onBack }) {
   const myotomeCards = useMemo(() => MYOTOMES.filter((m) => m.level.startsWith(levelGroup)).map(myotomeCard), [levelGroup]);
   const cranialCards = useMemo(() => CRANIAL_NERVES.map(cranialCard), []);
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}/>;
+  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
 
   return (
     <StudyShell

@@ -1,10 +1,12 @@
 import { ChevronRight } from "lucide-react";
 import StudyImage from "./StudyImage.jsx";
 
-// Overview list -- small square thumbnail on the left, topic name + a
-// short real-data subtitle beside it, one full-width row per item.
-// Tapping a row opens the full detail page for that item (StudyDetail),
-// it does not expand inline.
+// Overview list -- a real, larger square thumbnail on the left (bigger
+// than the small 40-64px avatars production's own compact list rows use,
+// since study mode is deliberately the "bigger blocks to learn" view) +
+// topic name + a short real-data subtitle beside it, one full-width row
+// per item. Tapping a row opens the full detail page for that item
+// (StudyDetail), it does not expand inline.
 export default function StudyGrid({ items, onSelect }) {
   return (
     <div>
@@ -13,9 +15,9 @@ export default function StudyGrid({ items, onSelect }) {
           key={item.id}
           onClick={() => onSelect(item)}
           aria-label={`Open ${item.title}`}
-          className={`w-full flex items-center gap-3 py-2.5 text-left ${i < items.length - 1 ? "border-b border-slate-100" : ""}`}
+          className={`w-full flex items-center gap-3 py-3 text-left ${i < items.length - 1 ? "border-b border-slate-100" : ""}`}
         >
-          <div className="w-[52px] h-[52px] shrink-0 rounded-lg overflow-hidden bg-slate-100">
+          <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-slate-100">
             <StudyImage name={item.image} square/>
           </div>
           <div className="min-w-0 flex-1">
