@@ -2,9 +2,19 @@ import { useState, useMemo } from "react";
 import {
   Search, Bell, User, ClipboardList, PersonStanding, Eye, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
-  Waves, Pill, HandMetal,
+  Waves, Pill, HandMetal, GraduationCap,
 } from "lucide-react";
+import StudyMode from "./learn/StudyMode.jsx";
 import "./physiofeed.css";
+
+// These 4 Assessment Library items have real, structured per-item data
+// (technique/position/finding fields in sharedClinicalData.js), so they
+// get a second "Study" entry point into the read-only big-image study
+// mode, alongside their existing card that opens the real clinical
+// screen. Everything else (Demographics, Subjective, Posture,
+// Observation, Palpation, Outcome Measures) has no such per-item data,
+// so it keeps its single card as before -- no study mode invented for it.
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
@@ -47,26 +57,37 @@ const TINTS = {
   teal: "bg-teal-50 text-teal-600",
 };
 
-function Card({ item, onNav }) {
+function Card({ item, onNav, onStudy }) {
   const Icon = item.icon;
+  const studyable = STUDY_TYPES.has(item.key);
   return (
-    <button onClick={() => onNav(item.key)} className="text-left bg-white border border-slate-200 rounded-2xl p-4 hover:border-violet-200 transition-colors">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[item.tint]}`}>
-        <Icon size={20} strokeWidth={2}/>
-      </div>
-      <div className="font-semibold text-sm text-slate-900">{item.label}</div>
-      <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
-    </button>
+    <div className="relative bg-white border border-slate-200 rounded-2xl hover:border-violet-200 transition-colors">
+      <button onClick={() => onNav(item.key)} className="text-left w-full p-4">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[item.tint]}`}>
+          <Icon size={20} strokeWidth={2}/>
+        </div>
+        <div className="font-semibold text-sm text-slate-900">{item.label}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
+      </button>
+      {studyable && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onStudy(item.key); }}
+          className="flex items-center gap-1 mx-4 mb-3.5 -mt-1 text-[11px] font-semibold text-violet-600 bg-violet-50 rounded-full px-2.5 py-1 w-fit"
+        >
+          <GraduationCap size={12}/> Study mode
+        </button>
+      )}
+    </div>
   );
 }
 
-function Section({ title, items, onNav }) {
+function Section({ title, items, onNav, onStudy }) {
   if (items.length === 0) return null;
   return (
     <div className="mb-6">
       <div className="font-semibold text-slate-900 mb-3">{title}</div>
       <div className="grid grid-cols-2 gap-3">
-        {items.map((item) => <Card key={item.key} item={item} onNav={onNav}/>)}
+        {items.map((item) => <Card key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
       </div>
     </div>
   );
@@ -74,6 +95,7 @@ function Section({ title, items, onNav }) {
 
 export default function LearnTabEntry({ onNav }) {
   const [query, setQuery] = useState("");
+  const [studyType, setStudyType] = useState(null);
 
   const filter = (items) => {
     if (!query.trim()) return items;
@@ -88,6 +110,14 @@ export default function LearnTabEntry({ onNav }) {
   }), [query]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.tx.length === 0;
+
+  if (studyType) {
+    return (
+      <div className="physiofeed-root max-w-2xl mx-auto">
+        <StudyMode type={studyType} onBack={() => setStudyType(null)}/>
+      </div>
+    );
+  }
 
   return (
     <div className="physiofeed-root max-w-2xl mx-auto">
@@ -115,9 +145,9 @@ export default function LearnTabEntry({ onNav }) {
         <div className="text-center py-14 text-slate-400 text-sm">No matches for "{query}".</div>
       ) : (
         <>
-          <Section title="Assessment Library" items={filtered.assess} onNav={onNav}/>
-          <Section title="Advanced Assessment" items={filtered.adv} onNav={onNav}/>
-          <Section title="Treatment & Exercise" items={filtered.tx} onNav={onNav}/>
+          <Section title="Assessment Library" items={filtered.assess} onNav={onNav} onStudy={setStudyType}/>
+          <Section title="Advanced Assessment" items={filtered.adv} onNav={onNav} onStudy={setStudyType}/>
+          <Section title="Treatment & Exercise" items={filtered.tx} onNav={onNav} onStudy={setStudyType}/>
         </>
       )}
     </div>
