@@ -1565,6 +1565,33 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser}/>
+              ):tests==="PHYSIOFEED_MODULE"?(
+                <div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>
+                  <div style={{fontSize:"2.2rem",marginBottom:12}}>📡</div>
+                  <div style={{fontWeight:800,fontSize:"1.05rem",color:"#111827",marginBottom:6}}>PhysioFeed is coming soon</div>
+                  <div style={{fontSize:13,maxWidth:340,margin:"0 auto"}}>A space for case discussions and community updates. Not built yet -- nothing is faked here.</div>
+                </div>
+              ):tests==="LEARN_MODULE"?(
+                <div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>
+                  <div style={{fontSize:"2.2rem",marginBottom:12}}>📚</div>
+                  <div style={{fontWeight:800,fontSize:"1.05rem",color:"#111827",marginBottom:6}}>Learn is coming soon</div>
+                  <div style={{fontSize:13,maxWidth:340,margin:"0 auto"}}>A clinical learning library -- techniques, references, how-to guides. Not built yet.</div>
+                </div>
+              ):tests==="PROFILE_MODULE"?(
+                <div style={{maxWidth:360,margin:"0 auto",padding:"24px 4px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+                    <div style={{width:52,height:52,borderRadius:"50%",background:"#F5F3FF",color:"#6D28D9",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,flexShrink:0}}>
+                      {(currentUser?.user_metadata?.full_name || currentUser?.email || "?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
+                    </div>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontWeight:800,fontSize:"1rem",color:"#111827"}}>{currentUser?.user_metadata?.full_name || "Therapist"}</div>
+                      <div style={{fontSize:12,color:"#6B7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{currentUser?.email || ""}</div>
+                    </div>
+                  </div>
+                  <button onClick={onSignOut} style={{width:"100%",padding:"11px",background:"#fff",border:"1px solid #E5E7EB",
+                    borderRadius:10,fontWeight:700,fontSize:13.5,color:"#DC2626",cursor:"pointer"}}>Sign out</button>
+                </div>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
@@ -1936,7 +1963,37 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
         {/* ── Tab strip ── */}
         <div className="pm-bnav-tabs">
-          {(()=>{
+          {["home","physiofeed","learn","profile"].includes(active) ? (
+            /* Main app nav (Home / Patients / PhysioFeed / Learn / Profile) --
+               only shown outside a clinical workflow. Patients re-uses the
+               same, already-live "Assess Patient" action, so tapping it opens
+               the exact same normal assessment flow as before, unchanged. */
+            [
+              {key:"home",       icon:"🏠", label:"Home"},
+              {key:"__patients", icon:"👤", label:"Patients"},
+              {key:"physiofeed", icon:"📡", label:"PhysioFeed", center:true},
+              {key:"learn",      icon:"📚", label:"Learn"},
+              {key:"profile",    icon:"⚙️", label:"Profile"},
+            ].map(item=>{
+              const isPatients = item.key==="__patients";
+              const isActive = !isPatients && active===item.key;
+              const handleClick = () => { if (isPatients) navTo("subjective"); else navTo(item.key); };
+              return item.center ? (
+                <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
+                  alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
+                  <span style={{width:46,height:46,borderRadius:"50%",background:isActive?"#6D28D9":"#7c3aed",
+                    color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.35rem",
+                    marginTop:-18,boxShadow:"0 2px 8px rgba(124,58,237,0.35)"}}>{item.icon}</span>
+                  <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
+                </button>
+              ) : (
+                <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
+                  <span className="pm-bnav-tab-icon">{item.icon}</span>
+                  <span className="pm-bnav-tab-label">{item.label}</span>
+                </button>
+              );
+            })
+          ) : (()=>{
             const assessKeys=["demographics","subjective","posture","palpation","rom","mmt","special","neuro","outcome"];
             const advKeys=["fma","gait","cyriax_full","kinetic","nkt","fascia"];
             const treatKeys=["treatment","exercise","tx_techniques"];

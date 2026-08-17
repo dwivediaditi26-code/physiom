@@ -1157,6 +1157,9 @@ Object.assign(SCALES, {
 const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
   dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
+  physiofeed:{ label:"PhysioFeed", icon:"📡", desc:"Community & Case Discussions", groups:{ "PhysioFeed":"PHYSIOFEED_MODULE" }},
+  learn:{ label:"Learn", icon:"📚", desc:"Clinical Learning Library", groups:{ "Learn":"LEARN_MODULE" }},
+  profile:{ label:"Profile", icon:"⚙️", desc:"Account & Settings", groups:{ "Profile":"PROFILE_MODULE" }},
   demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},
