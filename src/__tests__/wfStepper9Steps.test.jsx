@@ -62,10 +62,14 @@ describe("Screening Workflow stepper — 9 steps, each its own page", () => {
     await createOrthoPatient();
     fireEvent.click(screen.getByTestId("wf-step-region"));
     // Region selector accordion lives under this step; the hero AI/mic
-    // buttons and hero title text must not.
+    // buttons and hero title text must not. Regression: the accordion body
+    // only rendered when regionPickerOpen was true, and the only button
+    // that ever set it true (Row 2's chip row) lives on the AI step now --
+    // so this step used to render completely blank.
     await waitFor(() => {
-      expect(screen.queryByText("History & Complaint")).not.toBeInTheDocument();
+      expect(screen.getByText("Spine")).toBeInTheDocument();
     });
+    expect(screen.queryByText("History & Complaint")).not.toBeInTheDocument();
     expect(screen.queryByText("✦")).not.toBeInTheDocument();
   });
 
@@ -79,13 +83,15 @@ describe("Screening Workflow stepper — 9 steps, each its own page", () => {
     expect(screen.getByText("🎤")).toBeInTheDocument();
   });
 
-  it("Subjective step shows the form header but not the AI buttons", async () => {
+  it("Subjective step shows the form header but not the AI buttons or a duplicate Body Chart tab", async () => {
     await createOrthoPatient();
     fireEvent.click(screen.getByTestId("wf-step-subjective"));
     await waitFor(() => {
       expect(screen.getByText("History & Complaint")).toBeInTheDocument();
     });
     expect(screen.queryByText("✦")).not.toBeInTheDocument();
+    // Body Chart now lives only on its own combined Chart/Palpation step.
+    expect(screen.queryByText("🫁 Body Chart")).not.toBeInTheDocument();
   });
 
   it("Chart/Palp step shows a Body Chart / Palpation toggle", async () => {

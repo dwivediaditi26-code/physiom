@@ -4555,7 +4555,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
         const sideColors = { L:"#3B82F6", R:"#10B981", B:"#7c3aed" };
         const sideLabels = { L:"Left", R:"Right", B:"Both" };
 
-        return regionPickerOpen ? (
+        // On its own dedicated step page there's no reason to collapse
+        // this -- regionPickerOpen only toggles the compact accordion
+        // launched from the AI step's chip row now.
+        return (viewStep==="region" || regionPickerOpen) ? (
           <div style={{ background:PC.surface, borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden",
             boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
 
@@ -4832,7 +4835,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
 
       {/* ── Tabs ── */}
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
-        {[["form","📝 Assessment"],["bodychart","🫁 Body Chart"],["results","🧠 Interpretation"]].map(([t, label]) => (
+        {/* "bodychart" tab removed (2026-08-17) -- Body Chart now has
+            its own dedicated Chart/Palpation step, showing it here too
+            was a duplicate entry point into the same LazyBodyChart. */}
+        {[["form","📝 Assessment"],["results","🧠 Interpretation"]].map(([t, label]) => (
           <button key={t} type="button" onClick={() => { setActiveTab(t); onTabChange&&onTabChange(t); }} style={{
             padding:"8px 16px", background:"transparent", border:"none", cursor:"pointer",
             borderBottom: activeTab===t ? `2px solid ${PC.accent}` : "2px solid transparent",
