@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { X } from "lucide-react";
 import Header from "./Header.jsx";
 import Sidebar from "./Sidebar.jsx";
 import { Icon } from "../shared/icons.jsx";
@@ -33,9 +35,14 @@ function MobileTabs() {
 }
 
 function DemoBanner() {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-medium text-center py-1.5 px-4">
-      Demo content — these people and posts aren't real. PhysioFeed will show your real community once it's live.
+    <div className="flex items-center gap-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-[11px] font-medium py-1 px-3">
+      <span className="flex-1">Demo content — people and posts aren't real yet.</span>
+      <button onClick={() => setDismissed(true)} aria-label="Dismiss" className="shrink-0 text-amber-500 hover:text-amber-700">
+        <X size={13}/>
+      </button>
     </div>
   );
 }

@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Preflight (Tailwind's browser-default reset) is turned off globally in
+   tailwind.config.js -- turning it on would reset headings/buttons/lists
+   across the REST of physiom too, which isn't wrapped in Tailwind classes
+   and would visually break. But that means, without Preflight, every
+   <button>/<input>/<textarea> in PhysioFeed was falling back to the
+   browser's own native chrome (grey border, background, padding, and on
+   some browsers a visible bevel/shadow) -- exactly the "black shadow" /
+   boxy-looking stories and category pills. This re-applies just the
+   essential reset rules, scoped to .physiofeed-root only, so it can't leak
+   out and affect anything else in the app. */
+.physiofeed-root button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.physiofeed-root input,
+.physiofeed-root textarea {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.physiofeed-root input:focus,
+.physiofeed-root textarea:focus,
+.physiofeed-root button:focus {
+  outline: none;
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

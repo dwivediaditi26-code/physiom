@@ -12,10 +12,12 @@ import "./physiofeed.css";
 // and invisible to the browser's address bar and back button.
 export default function PhysioFeedEntry() {
   return (
-    <MemoryRouter initialEntries={["/feed"]}>
-      <AppDataProvider>
-        <PhysioFeedRoutes/>
-      </AppDataProvider>
-    </MemoryRouter>
+    <div className="physiofeed-root">
+      <MemoryRouter initialEntries={["/feed"]}>
+        <AppDataProvider>
+          <PhysioFeedRoutes/>
+        </AppDataProvider>
+      </MemoryRouter>
+    </div>
   );
 }
