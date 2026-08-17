@@ -61,6 +61,7 @@ import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
+const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
@@ -1536,7 +1537,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && (
+          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -1565,7 +1566,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
-              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && (
+              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && tests!=="LEARN_MODULE" && (
               <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
@@ -1581,11 +1582,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   </Suspense>
                 </div>
               ):tests==="LEARN_MODULE"?(
-                <div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>
-                  <div style={{fontSize:"2.2rem",marginBottom:12}}>📚</div>
-                  <div style={{fontWeight:800,fontSize:"1.05rem",color:"#111827",marginBottom:6}}>Learn is coming soon</div>
-                  <div style={{fontSize:13,maxWidth:340,margin:"0 auto"}}>A clinical learning library -- techniques, references, how-to guides. Not built yet.</div>
-                </div>
+                <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading…</div>}>
+                  <LazyLearnTabEntry onNav={navTo}/>
+                </Suspense>
               ):tests==="PROFILE_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
                   <LazyProfileTabEntry onSignOut={onSignOut}/>
