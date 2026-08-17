@@ -9,6 +9,18 @@ import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, r
 import { NKT_REGIONS, injectViewerControls } from "./sharedClinicalData.js";
 import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinicalData.js";
 import BodyChartPro from "./BodyChartPro.jsx";
+import { LazyTab } from "./utils.jsx";
+import HowToPerformDrawer, { romInfoSections, mmtInfoSections } from "./HowToPerformDrawer.jsx";
+// Dynamic import (not a static one) so each module's code stays in its own
+// lazy chunk instead of bloating the main bundle -- matches how AppFull.jsx
+// already lazy-loads the same files for the full-page nav flow.
+const LazyROM = React.lazy(() => import("./lazy_rom.jsx"));
+const LazyMMT = React.lazy(() => import("./lazy_mmt.jsx"));
+const LazySpecial = React.lazy(() => import("./lazy_special.jsx"));
+const LazyNeuro = React.lazy(() => import("./lazy_neuro.jsx"));
+const LazyOutcomes = React.lazy(() => import("./lazy_outcomes.jsx"));
+const LazyKinetic = React.lazy(() => import("./lazy_kinetic.jsx"));
+const LazyFascia = React.lazy(() => import("./lazy_fascia.jsx"));
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their
 // own slot, so signing in as student B can never inherit student A's
@@ -1441,7 +1453,19 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
   const [tab, setTab] = useState(initialTab||"overview");
   const [assessView, setAssessView]     = useState("latest");
   const [treatCat, setTreatCat]         = useState("exercises");
+  // Which assessment section (rom/mmt/special/...) is expanded in place on
+  // the Assessment tab -- one at a time, so opening a card doesn't require
+  // leaving Patient Profile. Content for the "ⓘ How to Perform" overlay.
   const [expanded, setExpanded]         = useState(null);
+  const [howTo, setHowTo]               = useState(null);
+  // Same dual-signature contract as AppFull.jsx's own `set` (single
+  // key/value, or a merged object), backed by the real onSaveField
+  // local+cloud persistence path instead of a duplicate save mechanism.
+  const setAssessField = (idOrObj, val) => {
+    if (typeof onSaveField !== "function" || !patient?.id) return;
+    if (typeof idOrObj === "object" && idOrObj !== null) onSaveField(patient.id, idOrObj);
+    else onSaveField(patient.id, { [idOrObj]: val });
+  };
   const [exDone,     setExDone]     = useState({});
   const [mounted,    setMounted]    = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -2460,22 +2484,33 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
             {/* helper: clickable section card */}
             {(()=>{
-              const Sec=({icon,title,navKey,hasData,children,emptyMsg,emptyNav})=>(
-                <div onClick={()=>onNav&&onNav(navKey)}
-                  style={{background:C.white,borderRadius:14,padding:14,marginBottom:10,
-                    boxShadow:"0 1px 6px rgba(0,0,0,0.05)",cursor:"pointer",
-                    border:`1px solid ${C.border}`,transition:"box-shadow 0.15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.boxShadow="0 3px 12px rgba(124,58,237,0.12)"}
-                  onMouseLeave={e=>e.currentTarget.style.boxShadow="0 1px 6px rgba(0,0,0,0.05)"}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?10:0}}>
-                    <span style={{fontSize:12,fontWeight:800,color:C.text}}>{icon} {title}</span>
-                    <span style={{fontSize:11,color:C.primary,fontWeight:700}}>
-                      {hasData?"Open →":"Add →"}
-                    </span>
+              // `expandable` sections (currently: ROM) expand IN PLACE below the
+              // summary instead of navigating away to a separate full-page module
+              // -- everything else keeps its original onNav behavior unchanged
+              // until it's migrated the same way (tasks #25/#26).
+              const Sec=({icon,title,navKey,hasData,children,emptyMsg,emptyNav,expandable,isExpanded,onToggle,renderExpanded})=>(
+                <div style={{background:C.white,borderRadius:14,marginBottom:10,
+                    boxShadow:"0 1px 6px rgba(0,0,0,0.05)",
+                    border:`1px solid ${C.border}`,transition:"box-shadow 0.15s",overflow:"hidden"}}>
+                  <div onClick={()=>expandable?(onToggle&&onToggle()):(onNav&&onNav(navKey))}
+                    style={{padding:14,cursor:"pointer"}}
+                    onMouseEnter={e=>{e.currentTarget.parentElement.style.boxShadow="0 3px 12px rgba(124,58,237,0.12)";}}
+                    onMouseLeave={e=>{e.currentTarget.parentElement.style.boxShadow="0 1px 6px rgba(0,0,0,0.05)";}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasData?10:0}}>
+                      <span style={{fontSize:12,fontWeight:800,color:C.text}}>{icon} {title}</span>
+                      <span style={{fontSize:11,color:C.primary,fontWeight:700}}>
+                        {expandable?(isExpanded?"Close ↑":(hasData?"Edit →":"Add →")):(hasData?"Open →":"Add →")}
+                      </span>
+                    </div>
+                    {hasData ? children : (
+                      <div style={{textAlign:"center",padding:"8px 0",color:C.muted,fontSize:11}}>
+                        {emptyMsg||"Not recorded yet — tap to add"}
+                      </div>
+                    )}
                   </div>
-                  {hasData ? children : (
-                    <div style={{textAlign:"center",padding:"8px 0",color:C.muted,fontSize:11}}>
-                      {emptyMsg||"Not recorded yet — tap to add"}
+                  {expandable&&isExpanded&&(
+                    <div onClick={e=>e.stopPropagation()} style={{borderTop:`1px solid ${C.border}`,background:C.bg,padding:"10px 4px"}}>
+                      {renderExpanded&&renderExpanded()}
                     </div>
                   )}
                 </div>
@@ -2529,7 +2564,14 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                 <div>
 
                   {/* ── ROM ── */}
-                  <Sec icon="📐" title="Range of Motion" navKey="rom" hasData={romKeys.length>0}>
+                  <Sec icon="📐" title="Range of Motion" navKey="rom" hasData={romKeys.length>0}
+                    expandable isExpanded={expanded==="rom"} onToggle={()=>setExpanded(x=>x==="rom"?null:"rom")}
+                    renderExpanded={()=>(
+                      <LazyTab>
+                        <LazyROM data={d} set={setAssessField} navContext={{}} compact
+                          onShowInfo={(m,region)=>setHowTo({title:m.mv,subtitle:`${region?region.charAt(0).toUpperCase()+region.slice(1):""}${m.normal?` · Normal ${m.normal}${m.unit||""}`:""}`,sections:romInfoSections(m)})}/>
+                      </LazyTab>
+                    )}>
                     {(()=>{
                       const filtered=romKeys.filter(k=>!k.endsWith("_pain")&&!k.endsWith("_ef"));
                       return(
@@ -2570,7 +2612,14 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── MMT ── */}
-                  <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}>
+                  <Sec icon="💪" title="Manual Muscle Testing" navKey="mmt" hasData={mmtKeys.length>0}
+                    expandable isExpanded={expanded==="mmt"} onToggle={()=>setExpanded(x=>x==="mmt"?null:"mmt")}
+                    renderExpanded={()=>(
+                      <LazyTab>
+                        <LazyMMT data={d} set={setAssessField} navContext={{}} compact
+                          onShowInfo={(m,region,rehab)=>setHowTo({title:m.muscle,subtitle:`${m.action||""}${region?` · ${region.charAt(0).toUpperCase()+region.slice(1)}`:""}`,sections:mmtInfoSections(m,rehab)})}/>
+                      </LazyTab>
+                    )}>
                     {(()=>{
                       // Pair L and R for each muscle. Keys are stored as mmt_<id>_L / mmt_<id>_R
                       // (capital, from MMTModule) — legacy _left/_right also supported.
@@ -2627,7 +2676,17 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── Special Tests ── */}
-                  <Sec icon="🔬" title="Special Tests" navKey="special" hasData={stKeys.length>0}>
+                  <Sec icon="🔬" title="Special Tests" navKey="special" hasData={stKeys.length>0}
+                    expandable isExpanded={expanded==="special"} onToggle={()=>setExpanded(x=>x==="special"?null:"special")}
+                    renderExpanded={()=>(
+                      // SpecialTestsSection already has its own non-navigating
+                      // "info" overlay (the ⓘ thumb -> modalTest), so it needs
+                      // no compact/onShowInfo wiring -- rendering it inline
+                      // as-is already satisfies "info overlays, never navigates".
+                      <LazyTab>
+                        <LazySpecial data={d} set={setAssessField} navContext={{}}/>
+                      </LazyTab>
+                    )}>
                     {(()=>{
                       const seen=new Set(), rows=[];
                       stKeys.forEach(k=>{
@@ -2712,7 +2771,21 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   {/* ── Neurological ── */}
                   <Sec icon="⚡" title="Neurological" navKey="neuro" hasData={neuroKeys.length>0||!!d.neuro_clinician_notes||!!d.gcs_eye||
                     Object.keys(d).some(k=>(k.startsWith("cn_")||k.startsWith("cog_")||k.startsWith("coord_")||k.startsWith("vest_")||k.startsWith("perc_")||k.startsWith("moca_")||k.startsWith("mmse_")||k.startsWith("minicog_")||k.startsWith("brunnstrom_")||k.startsWith("rankin_")||k.startsWith("hoehnyahr_")||k.startsWith("pdrigidity_")||k.startsWith("updrs_")||k.startsWith("edss_")||k.startsWith("sci_")||k.startsWith("rancho_")||k.startsWith("goat_")||k.startsWith("barthel_")||k.startsWith("asia_")||k.startsWith("nihss_")||k==="nrf_autonomic_dysreflexia")&&d[k])
-                  }>
+                  }
+                    expandable isExpanded={expanded==="neuro"} onToggle={()=>setExpanded(x=>x==="neuro"?null:"neuro")}
+                    renderExpanded={()=>(
+                      // Reflex/dermatome/myotome/cranial-nerve reference info
+                      // (technique, finding, etc.) is already shown inline as
+                      // part of normal data entry here -- unlike ROM/MMT there
+                      // is no separate big reference block to hide behind a
+                      // compact prop, so this renders as-is. navTo is bridged
+                      // to the same in-place expand mechanism (e.g. Neuro's
+                      // "jump to Outcome measure" link) instead of a real
+                      // page navigation.
+                      <LazyTab>
+                        <LazyNeuro data={d} set={setAssessField} navContext={{}} navTo={(key)=>setExpanded(key)}/>
+                      </LazyTab>
+                    )}>
                     {(()=>{
                       // Group into Reflexes / Dermatomes / Myotomes / Neural
                       // Tension with L/R pairing. Neural Tension (nt_ keys)
@@ -2920,7 +2993,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── Outcome Measures ── */}
-                  <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeysAll.length>0}>
+                  <Sec icon="📊" title="Outcome Measures" navKey="outcome" hasData={omKeysAll.length>0}
+                    expandable isExpanded={expanded==="outcome"} onToggle={()=>setExpanded(x=>x==="outcome"?null:"outcome")}
+                    renderExpanded={()=>(
+                      <LazyTab>
+                        <LazyOutcomes data={d} set={setAssessField} navTo={(key)=>setExpanded(key)} navContext={{}}/>
+                      </LazyTab>
+                    )}>
                     {(()=>{
                       const OM_MAX={odi:100,ndi:100,dash:100,quickdash:100,lefs:80,vas:10,nprs:10,psfs1:10,psfs2:10,psfs3:10,psfs:10,tsk:44,fabq:96,fabqpa:24,pcs:52,womac:96,koos:100,koosjr:28,spadi:100,hoos:100,hoosjr:24,faam:100,dgi:24,tug:60,bbs:56,abc:100,sf36:100,eq5d:100,pdi:70,rmdq:24,mwt10:3,fac:5,asia:100,oks:48,startback:9,visaa:100,visap:100,lysholm:100,ikdc:100,ases:100,constant:100,prtee:100,qbpds:100};
                       const OM_NAMES={odi:"ODI — Oswestry Disability",ndi:"NDI — Neck Disability",dash:"DASH — Arm/Shoulder/Hand",quickdash:"QuickDASH",lefs:"LEFS — Lower Extremity",vas:"VAS — Pain",nprs:"NPRS — Pain Rating",psfs:"PSFS — Patient-Specific",tsk:"TSK-11 — Kinesiophobia",fabq:"FABQ — Fear Avoidance",fabqpa:"FABQ-PA — Fear Avoidance",pcs:"PCS — Catastrophising",womac:"WOMAC",koos:"KOOS",koosjr:"KOOS-JR — Knee",spadi:"SPADI — Shoulder Pain",hoos:"HOOS",hoosjr:"HOOS-JR — Hip",faam:"FAAM — Foot & Ankle",dgi:"DGI — Dynamic Gait",tug:"TUG — Timed Up & Go",bbs:"BBS — Berg Balance",abc:"ABC — Balance Confidence",rmdq:"RMDQ — Roland-Morris"};
@@ -2969,7 +3048,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                   </Sec>
 
                   {/* ── Kinetic Chain ── */}
-                  <Sec icon="⛓️" title="Kinetic Chain" navKey="kinetic" hasData={kcKeys.length>0||!!d.kinetic_chain}>
+                  <Sec icon="⛓️" title="Kinetic Chain" navKey="kinetic" hasData={kcKeys.length>0||!!d.kinetic_chain}
+                    expandable isExpanded={expanded==="kinetic"} onToggle={()=>setExpanded(x=>x==="kinetic"?null:"kinetic")}
+                    renderExpanded={()=>(
+                      <LazyTab>
+                        <LazyKinetic data={d} set={setAssessField} navContext={{}}/>
+                      </LazyTab>
+                    )}>
                     {d.kinetic_chain&&(
                       <div style={{padding:"8px 10px",background:"#F0FDF4",borderRadius:8,borderLeft:"3px solid #059669",marginBottom:kcKeys.length?8:0}}>
                         <div style={{fontSize:10,color:"#059669",fontWeight:800,marginBottom:3}}>POSTURE ANALYSIS PATTERN</div>
@@ -3002,7 +3087,13 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
                   {/* ── Fascia ── */}
                   {faKeys.length>0&&(
-                    <Sec icon="🕸️" title="Fascia Integration" navKey="fascia" hasData={true}>
+                    <Sec icon="🕸️" title="Fascia Integration" navKey="fascia" hasData={true}
+                      expandable isExpanded={expanded==="fascia"} onToggle={()=>setExpanded(x=>x==="fascia"?null:"fascia")}
+                      renderExpanded={()=>(
+                        <LazyTab>
+                          <LazyFascia data={d} set={setAssessField} navContext={{}}/>
+                        </LazyTab>
+                      )}>
                       {(()=>{
                         const FA_LBL={fa_sbl:"Superficial Back Line",fa_sfl:"Superficial Front Line",fa_ll:"Lateral Line",fa_spl:"Spiral Line",fa_dfl:"Deep Front Line",fa_abl:"Arm Back Line",fa_afl:"Arm Front Line",fa_fl:"Functional Line"};
                         const rows=faKeys.map(k=>({k,label:FA_LBL[k]||k.replace("fa_","").replace(/_/g," ").replace(/\b\w/g,l=>l.toUpperCase()),val:d[k]}));
@@ -3699,6 +3790,9 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
           </button>
         )}
       </div>
+
+      <HowToPerformDrawer open={!!howTo} onClose={()=>setHowTo(null)}
+        title={howTo?.title} subtitle={howTo?.subtitle} sections={howTo?.sections}/>
     </div>
   );
 }

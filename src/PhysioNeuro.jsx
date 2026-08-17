@@ -201,7 +201,7 @@ if (typeof document !== "undefined" && !document.getElementById("physio-hl-style
   document.head.appendChild(st);
 }
 
-function ROMModule({data,set,navContext={}}){
+function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
   const [region,setRegion]=useState(()=>{
     if(navContext.romRegion && ROM_REGIONS.includes(navContext.romRegion)) return navContext.romRegion;
     return ROM_REGIONS[0];
@@ -446,6 +446,8 @@ function ROMModule({data,set,navContext={}}){
               {isOpen&&(
                 <div style={{padding:"0 12px 12px",borderTop:`1px solid ${C.border}`}}>
 
+                  {!compact && (
+                  <>
                   {/* Goniometer */}
                   <div style={{marginTop:10,padding:"8px 10px",background:C.s2,borderRadius:8,marginBottom:8}}>
                     <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a2,textTransform:"uppercase",letterSpacing:"1px",marginBottom:5}}>📐 Goniometer Placement</div>
@@ -506,6 +508,15 @@ function ROMModule({data,set,navContext={}}){
                       <div style={{fontSize:"0.73rem",color:C.text}}>{m.redflag}</div>
                     </div>
                   )}
+                  </>
+                  )}
+
+                  {compact && (
+                    <button type="button" onClick={e=>{e.stopPropagation();onShowInfo&&onShowInfo(m,region);}}
+                      style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer",width:"100%",justifyContent:"center"}}>
+                      ⓘ How to perform
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -519,7 +530,7 @@ function ROMModule({data,set,navContext={}}){
 // ═══════════════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function MMTModule({data,set,navContext={}}){
+function MMTModule({data,set,navContext={},compact=false,onShowInfo}){
   const [region,setRegion]=useState(()=>{
     if(navContext.mmtRegion && MMT_REGIONS.includes(navContext.mmtRegion)) return navContext.mmtRegion;
     return MMT_REGIONS[0];
@@ -729,6 +740,8 @@ function MMTModule({data,set,navContext={}}){
               {/* Expanded Detail */}
               {isOpen&&(
                 <div style={{padding:"0 12px 12px 12px",borderTop:`1px solid ${C.border}`}}>
+                  {!compact && (
+                  <>
                   {/* Anatomy */}
                   <div style={{marginTop:10,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                     {[["Action",m.action],["Nerve",m.nerve],["Root",m.root],["Origin",m.origin],["Insertion",m.insertion]].map(([lbl,val])=>(
@@ -775,6 +788,15 @@ function MMTModule({data,set,navContext={}}){
                       <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a3,marginBottom:4}}>🏋️ REHAB RECOMMENDATION</div>
                       <div style={{fontSize:"0.73rem",color:C.text}}>{rehab}</div>
                     </div>
+                  )}
+                  </>
+                  )}
+
+                  {compact && (
+                    <button type="button" onClick={e=>{e.stopPropagation();onShowInfo&&onShowInfo(m,region,rehab);}}
+                      style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:C.s2,border:`1px solid ${C.border}`,borderRadius:8,color:C.a2,fontSize:"0.75rem",fontWeight:700,cursor:"pointer",width:"100%",justifyContent:"center"}}>
+                      ⓘ How to perform
+                    </button>
                   )}
                 </div>
               )}

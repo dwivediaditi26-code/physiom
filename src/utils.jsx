@@ -137,6 +137,28 @@ const MOBILE_CSS = `
   }
   .pm-nav-drawer.open { transform: translateX(0); }
 
+  /* ── How-to-Perform drawer (inline assessment help) ──
+     Bottom sheet on mobile, right-side drawer on desktop -- an overlay on
+     top of the still-visible Patient Profile, never a navigation away. */
+  .pm-howto-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9500;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .pm-howto-sheet {
+    background: #ffffff; width: 100%; max-width: 480px; max-height: 85vh;
+    overflow-y: auto; border-radius: 16px 16px 0 0; padding: 18px 18px 24px;
+    animation: pmHowToUp 0.22s ease;
+  }
+  @keyframes pmHowToUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes pmHowToRight { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @media (min-width: 768px) {
+    .pm-howto-overlay { align-items: stretch; justify-content: flex-end; background: rgba(0,0,0,0.35); }
+    .pm-howto-sheet {
+      max-width: 420px; max-height: 100vh; height: 100%; border-radius: 0;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15); animation: pmHowToRight 0.22s ease;
+    }
+  }
+
   /* ── Sidebar (desktop only) ── */
   .pm-sidebar {
     width: 195px; min-width: 195px; display: flex; flex-direction: column;
