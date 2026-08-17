@@ -239,6 +239,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Once mounted, component stays mounted (data preserved)
   const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
   const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
+  const [chartPalpTab, setChartPalpTab] = useState("chart");  // "chart" | "palpation" -- combined Body Chart/Palpation step
   const [txTab, setTxTab] = useState("exercise");  // "exercise" | "tx" | "hep"
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
@@ -1549,12 +1550,26 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {activePatient && (() => {
             const d2 = data;
             const oKeys = ["rom","mmt","special","neuro","neurotemplates","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
+            // Expanded from 5 to 9 steps (2026-08-17) -- Subjective's region
+            // picker / AI panel / body-chart+palpation were previously all
+            // bundled into one long "Subjective" scroll. They're broken out
+            // into their own steps here so each opens as its own page, per
+            // the requested line-by-line workflow. No new logic anywhere --
+            // "region"/"ai" reuse SubjectiveModule itself (viewStep prop
+            // controls which part of it is visible), "chart" reuses the
+            // existing BodyChart + Palpation modules behind a small toggle,
+            // and "home" reuses the existing Treatment screen's HEP tab
+            // (txTab==="hep") instead of being a new screen.
             const wfSteps = [
-              { key:"demographics", label:"Demographics", short:"Demo",  nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
-              { key:"subjective",   label:"Subjective",   short:"Sub",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
-              { key:"objective",    label:"Objective",    short:"Obj",   nav:"objective",     done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
-              { key:"treatment",    label:"Treatment",    short:"Treat", nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_exercise_prescription||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
-              { key:"soap",         label:"SOAP",         short:"SOAP",  nav:"soap",          done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
+              { key:"demographics", label:"Demographics",  short:"Demo",   nav:"demographics",    done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
+              { key:"region",       label:"Body Regions",  short:"Region", nav:"subj_region",     done:!!(d2.cx_selected_regions&&d2.cx_selected_regions!=="[]"), active:active==="subj_region" },
+              { key:"subjective",   label:"Subjective",    short:"Sub",    nav:"subjective",      done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
+              { key:"ai",           label:"AI",            short:"AI",     nav:"subj_ai",         done:!!(d2.ai_extraction_audit), active:active==="subj_ai" },
+              { key:"chart",        label:"Chart/Palp",    short:"Chart",  nav:"chart_palpation", done:!!(d2.body_chart_pro||d2.palpation_site), active:active==="chart_palpation" },
+              { key:"objective",    label:"Objective",     short:"Obj",    nav:"objective",       done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
+              { key:"treatment",    label:"Treatment",     short:"Treat",  nav:"treatment",       done:!!(d2.soap_modalities||d2.soap_frequency||d2.tx_exercise_prescription||d2.tx_techniques), active:(active==="treatment"||active==="exercise")&&txTab!=="hep" },
+              { key:"home",         label:"Home Protocol", short:"Home",   nav:"treatment",       done:!!(d2.hep_programme), active:active==="treatment"&&txTab==="hep" },
+              { key:"soap",         label:"SOAP",          short:"SOAP",   nav:"soap",            done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
             ];
             const doneCount = wfSteps.filter(s => s.done).length;
             const pct = Math.round((doneCount / wfSteps.length) * 100);
@@ -1569,7 +1584,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     const isLast = i === wfSteps.length - 1;
                     return (
                       <React.Fragment key={step.key}>
-                        <div onClick={()=>navTo(step.nav)} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto",minWidth:0}}>
+                        <div onClick={()=>{
+                          if (step.key==="home") { navTo("treatment"); setTxTab("hep"); }
+                          else if (step.key==="treatment") { navTo("treatment"); if (txTab==="hep") setTxTab("exercise"); }
+                          else navTo(step.nav);
+                        }} data-testid={`wf-step-${step.key}`} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto",minWidth:0}}>
                           <div className="pm-stepper-dot" style={{width:30,height:30,borderRadius:"50%",background:step.done?"#6D28D9":step.active?"#EDE9FE":PC.s2,border:`2px solid ${step.done?"#6D28D9":step.active?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,boxShadow:step.active?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s",flexShrink:0}}>
                             {step.done ? <span style={{fontSize:13,color:"#fff",fontWeight:900}}>✓</span> : <span style={{fontSize:11,color:step.active?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
                           </div>
@@ -1621,6 +1640,45 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="objective" && (
             <div style={{marginBottom:22}}>
               <Suspense fallback={<TabFallback/>}><LazyObjectiveHub data={data} set={set} navTo={navTo} PC={PC}/></Suspense>
+            </div>
+          )}
+
+          {/* Body region selection — its own step page now (2026-08-17),
+              was previously bundled into the top of the Subjective scroll.
+              Reuses SubjectiveModule itself (same region-picker state/logic)
+              via the viewStep prop, which just controls what part of that
+              component's render is visible -- nothing about the region
+              picker's own behaviour changed. */}
+          {active==="subj_region" && (
+            <div style={{marginBottom:22}}>
+              <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={{}} requireAuth={requireAuth} viewStep="region"/></Suspense>
+            </div>
+          )}
+
+          {/* AI — its own step page now, same reuse pattern as region above:
+              same SubjectiveModule mount, viewStep="ai" shows only the
+              hero AI/mic buttons + expandable AI panel. */}
+          {active==="subj_ai" && (
+            <div style={{marginBottom:22}}>
+              <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={{}} requireAuth={requireAuth} viewStep="ai"/></Suspense>
+            </div>
+          )}
+
+          {/* Body Chart / Palpation — combined into one step page per
+              request, via a small Chart|Palpation toggle. Reuses the exact
+              same LazyBodyChart/LazyPalpation modules already used
+              elsewhere (Body Chart tab inside Subjective, Palpation
+              sidebar item) -- no new assessment logic, just a shared page
+              for two things that used to live on separate screens. */}
+          {active==="chart_palpation" && (
+            <div style={{marginBottom:22}}>
+              <div style={{display:"flex",gap:8,marginBottom:14}}>
+                <button type="button" onClick={()=>setChartPalpTab("chart")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${chartPalpTab==="chart"?PC.accent:PC.border}`,background:chartPalpTab==="chart"?`${PC.accent}15`:PC.s2,color:chartPalpTab==="chart"?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>🧍 Body Chart</button>
+                <button type="button" onClick={()=>setChartPalpTab("palpation")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${chartPalpTab==="palpation"?PC.accent:PC.border}`,background:chartPalpTab==="palpation"?`${PC.accent}15`:PC.s2,color:chartPalpTab==="palpation"?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>🤚 Palpation</button>
+              </div>
+              {chartPalpTab==="chart"
+                ? <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
+                : <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="chart_palpation"?navContext:{}}/></Suspense>}
             </div>
           )}
 
@@ -1732,7 +1790,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}} requireAuth={requireAuth}/></Suspense>
+                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}} requireAuth={requireAuth} viewStep="form"/></Suspense>
                   {subjBodyChartTab && (
                     <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
                   )}

@@ -3314,7 +3314,15 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   );
 }
 
-function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requireAuth }) {
+function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requireAuth, viewStep }) {
+  // viewStep lets the master workflow stepper (AppFull.jsx) show this
+  // component's Hero/AI panel, Region picker, and main form as separate
+  // full-page steps instead of one long scroll. Omitting the prop (or any
+  // other call site not passing it) shows everything, unchanged from
+  // before -- so this is purely additive.
+  const showHeroAI = !viewStep || viewStep === "ai";
+  const showRegionPicker = !viewStep || viewStep === "region";
+  const showFormArea = !viewStep || viewStep === "form";
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
     accent:"#7c3aed", a2:"#9333ea", a3:"#059669", text:"#0D0D0D",
@@ -4090,6 +4098,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
         </div>
       )}
 
+      {(showHeroAI || showFormArea) && (<>
       {/* ── Hero Header — Subjective + AI + Regions ────────────────── */}
       <div style={{ borderRadius:14, overflow:"hidden",
         background:"linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)",
@@ -4105,6 +4114,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
               textTransform:"uppercase", marginTop:1 }}>History &amp; Complaint</div>
           </div>
 
+          {showHeroAI && (<>
           {/* ✦ AI button — white 3D block */}
           <button type="button"
             onClick={() => { if (requireAuth && !requireAuth("AI Patient Intake")) return; setAiOpen(true); setAiMode("text"); setAiStatus("idle"); setAiText(""); setAiResult(null); setAiReview(false); }}
@@ -4135,8 +4145,10 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
           >
             <span style={{ fontSize:"0.85rem" }}>🎤</span>
           </button>
+          </>)}
         </div>
 
+        {showHeroAI && (<>
         {/* Row 2: Body region chips — white 3D blocks */}
         <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 14px 12px",
           overflowX:"auto", scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
@@ -4173,7 +4185,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
             </>
           )}
         </div>
+        </>)}
 
+        {showHeroAI && (<>
         {/* Expanded AI panel — slides in below hero when aiOpen */}
         {aiOpen && (
           <div style={{ background:"#fff", borderTop:"1px solid rgba(255,255,255,0.15)", padding:"12px 14px" }}>
@@ -4447,10 +4461,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
             )}
           </div>
         )}
+        </>)}
       </div>
 
       {/* ── AI success banner ── */}
-      {aiSuccess && (
+      {showHeroAI && aiSuccess && (
         <div style={{ background:"#f0fdf4", border:"1px solid #86efac", borderRadius:10,
           padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
           <span style={{ fontSize:"1.1rem" }}>✅</span>
@@ -4470,7 +4485,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
               fontSize:"1rem", lineHeight:1, padding:0 }}>×</button>
         </div>
       )}
+      </>)}
 
+      {showRegionPicker && (<>
       {/* ── Region selector — two-level collapsible accordion ── */}
       {(()=>{
         const REGION_GROUPS = [
@@ -4624,7 +4641,9 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
           </div>
         ) : null;
       })()}
+      </>)}
 
+      {showFormArea && (<>
       {/* ── Progress bar — grouped status pills (removed per request) ── */}
       {false && (()=>{
         // Core group: complaint + universal sections
@@ -6150,6 +6169,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
           </div>
         </div>
         ); })()}
+      </>)}
 
       {/* ── Saved confirmation toast ── */}
       {showSavedToast && (
