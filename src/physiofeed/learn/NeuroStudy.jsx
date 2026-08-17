@@ -60,6 +60,7 @@ function reflexCard(r) {
 function dermatomeCard(d) {
   return {
     id: d.id, image: d.id, title: d.level, subtitle: d.region,
+    tags: d.disc ? [d.disc] : [],
     sections: (
       <Fragment>
         <InfoBox label="Reference guide" tint="gray">

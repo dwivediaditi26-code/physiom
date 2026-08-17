@@ -25,7 +25,8 @@ function toCard(m) {
     id: m.id,
     image: m.id,
     title: m.muscle,
-    subtitle: m.nerve ? `${m.action} · ${m.nerve}` : m.action,
+    subtitle: m.action,
+    tags: [m.nerve, m.root].filter(Boolean),
     sections: (
       <Fragment>
         {anatomy.length > 0 && (

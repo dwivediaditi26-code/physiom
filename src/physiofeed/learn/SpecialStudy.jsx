@@ -18,6 +18,7 @@ function toCard(t) {
     image: t.id,
     title: t.label,
     subtitle: t.structure,
+    tags: [t.sensitivity && `Sens ${t.sensitivity}`, t.specificity && `Spec ${t.specificity}`].filter(Boolean),
     sections: (
       <Fragment>
         {(t.sensitivity || t.specificity) && (
