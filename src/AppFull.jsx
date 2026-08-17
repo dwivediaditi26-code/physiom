@@ -60,6 +60,7 @@ import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
+const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
@@ -1535,7 +1536,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && (
+          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -1564,7 +1565,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
-              {tests!=="PHYSIOFEED_MODULE" && (
+              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && (
               <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
@@ -1586,20 +1587,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <div style={{fontSize:13,maxWidth:340,margin:"0 auto"}}>A clinical learning library -- techniques, references, how-to guides. Not built yet.</div>
                 </div>
               ):tests==="PROFILE_MODULE"?(
-                <div style={{maxWidth:360,margin:"0 auto",padding:"24px 4px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
-                    <div style={{width:52,height:52,borderRadius:"50%",background:"#F5F3FF",color:"#6D28D9",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,flexShrink:0}}>
-                      {(currentUser?.user_metadata?.full_name || currentUser?.email || "?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
-                    </div>
-                    <div style={{minWidth:0}}>
-                      <div style={{fontWeight:800,fontSize:"1rem",color:"#111827"}}>{currentUser?.user_metadata?.full_name || "Therapist"}</div>
-                      <div style={{fontSize:12,color:"#6B7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{currentUser?.email || ""}</div>
-                    </div>
-                  </div>
-                  <button onClick={onSignOut} style={{width:"100%",padding:"11px",background:"#fff",border:"1px solid #E5E7EB",
-                    borderRadius:10,fontWeight:700,fontSize:13.5,color:"#DC2626",cursor:"pointer"}}>Sign out</button>
-                </div>
+                <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
+                  <LazyProfileTabEntry onSignOut={onSignOut}/>
+                </Suspense>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
