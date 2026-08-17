@@ -12,33 +12,44 @@
    boxy-looking stories and category pills. This re-applies just the
    essential reset rules, scoped to .physiofeed-root only, so it can't leak
    out and affect anything else in the app. */
-.physiofeed-root button {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  color: inherit;
-  text-align: inherit;
-  cursor: pointer;
-  box-shadow: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.physiofeed-root input,
-.physiofeed-root textarea {
-  border: 0;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-  box-shadow: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.physiofeed-root input:focus,
-.physiofeed-root textarea:focus,
-.physiofeed-root button:focus {
-  outline: none;
+/* Wrapped in Tailwind's "base" layer (not left as plain CSS) --
+   plain ".physiofeed-root button {...}" has higher specificity (class +
+   element) than a single Tailwind utility class like ".border" or
+   ".bg-white", so it was silently overriding every real border/background
+   utility applied to a <button> (e.g. the bold bordered cards in Learn's
+   study mode) regardless of source order. Cascade layers fix this
+   correctly: anything in the "base" layer always loses to a utility
+   class, matching the intent -- these are fallback defaults, not
+   overrides. */
+@layer base {
+  .physiofeed-root button {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .physiofeed-root input,
+  .physiofeed-root textarea {
+    border: 0;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .physiofeed-root input:focus,
+  .physiofeed-root textarea:focus,
+  .physiofeed-root button:focus {
+    outline: none;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
