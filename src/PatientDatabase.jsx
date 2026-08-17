@@ -3875,6 +3875,21 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
+  // Specialty filter for the Clinical landing page's patient list. Matches
+  // the New Assessment specialty picker's STREAMS registry (AppFull.jsx) --
+  // duplicated here as a small static array rather than imported, since
+  // it's just 5 display labels/icons/colors, to avoid coupling this panel
+  // to AppFull.jsx's module scope. Patients created before this field
+  // existed have no assessment_specialty and simply show under "All".
+  const [filterSpecialty, setFilterSpecialty] = useState("all");
+  const SPECIALTY_CHIPS = [
+    { id:"all",    label:"All",    icon:"👥", color:"#6D28D9" },
+    { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed" },
+    { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488" },
+    { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c" },
+    { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777" },
+    { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626" },
+  ];
   const [profilePatient, setProfilePatient] = useState(null);
   const [localPatients, setLocalPatients] = useState(patients);
   const fileRef = useRef(null);
@@ -3901,6 +3916,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const filtered = localPatients
     .filter(p => {
       if (filterFlag && !p.hasRedFlags) return false;
+      if (filterSpecialty !== "all" && p.data?.assessment_specialty !== filterSpecialty) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (p.name||"").toLowerCase().includes(q) ||
@@ -3983,6 +3999,19 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
                 outline:"none",padding:"8px 12px 8px 30px",fontSize:"0.76rem",boxSizing:"border-box"}}/>
           </div>
 
+          {/* Specialty filter row */}
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+            {SPECIALTY_CHIPS.map(sp=>(
+              <button key={sp.id} onClick={()=>setFilterSpecialty(sp.id)}
+                style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:20,
+                  border:`1.5px solid ${filterSpecialty===sp.id?sp.color:"#E5E7EB"}`,
+                  background:filterSpecialty===sp.id?sp.color+"18":"white",
+                  color:filterSpecialty===sp.id?sp.color:"#6B7280",fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
+                <span>{sp.icon}</span>{sp.label}
+              </button>
+            ))}
+          </div>
+
           {/* Filters row */}
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {[["updated","🕐 Recent"],["name","A–Z"],["age","Age"],["fields","Complete"]].map(([v,l])=>(
@@ -4048,7 +4077,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
             style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
               border:"none",borderRadius:12,color:"white",fontWeight:900,fontSize:"0.9rem",cursor:"pointer",
               boxShadow:"0 4px 12px rgba(124,58,237,0.3)"}}>
-            ＋ New Patient
+            ＋ New Assessment
           </button>
           <div style={{display:"flex",gap:7}}>
             <button onClick={()=>fileRef.current?.click()}

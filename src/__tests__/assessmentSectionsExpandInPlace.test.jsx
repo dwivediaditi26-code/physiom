@@ -85,7 +85,9 @@ describe("Assessment tab — remaining sections expand in place", () => {
   it("Outcome Measures: expands inline (real OutcomeMeasuresPro)", async () => {
     const { onNav } = renderProfile({ om_history_ndi: JSON.stringify([{ score: 20, date: "2026-01-01" }]) });
     fireEvent.click(screen.getByText(/Outcome Measures/));
-    await screen.findByText(/validated scales/i);
+    // OutcomeMeasuresPro is a large lazy chunk -- same slow-cold-transform
+    // reasoning as the Special Tests timeout bump above.
+    await screen.findByText(/validated scales/i, {}, { timeout: 8000 });
     expect(onNav).not.toHaveBeenCalled();
   });
 });

@@ -39,6 +39,12 @@ import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { NeurologicalModule, NeuroTemplatesHub } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
+// Dynamic import -- ObjectiveHub statically imports REGION_NAV/REGION_FAMILY_KEY
+// from SubjectiveObjective.jsx (the same big shared file lazy_special.jsx,
+// lazy_subjective.jsx etc re-export from). A static import here would pull
+// that whole file into the main bundle, same class of bug as the earlier
+// lazy_rom static-import regression -- keep it lazy like every other tab.
+const LazyObjectiveHub = lazy(() => import("./ObjectiveHub.jsx"));
 import neuroStream from "./streams/neuro.js";
 import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget, SensoryRegionWidget } from "./streams/neuroWidgets.jsx";
 import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
@@ -504,6 +510,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [profileTab, setProfileTab] = useState(null);
   const [showIntake, setShowIntake] = useState(false);
   const [intakeData, setIntakeData] = useState({});
+  // Clinical tab landing: "+ New Assessment" asks which specialty stream
+  // before creating the patient, instead of always assuming Ortho.
+  const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
 
   // Auto-save current data to active patient whenever data changes
   useEffect(() => {
@@ -542,11 +551,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
   const finaliseNewPatient = (intake) => {
     const name = intake.dem_name || "New Patient";
-    const newP = { id: genId(), name, data: intake, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
+    // Stamp which specialty stream this assessment was started under (set by
+    // the New Assessment specialty picker just before createNewPatient()) --
+    // a new, additive field. Patients created before this change simply have
+    // no value here, so they show up under "All" in the Clinical patient
+    // list's specialty filter rather than a guessed/fabricated specialty.
+    const intakeWithSpecialty = { ...intake, assessment_specialty: stream };
+    const newP = { id: genId(), name, data: intakeWithSpecialty, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
     const updated = [newP, ...patients];
     setPatients(updated);
     savePatientDB(updated, currentUser?.id);
-    setData(intake);
+    setData(intakeWithSpecialty);
     setActivePatientId(newP.id);
     setShowIntake(false);
     navTo("subjective");
@@ -1087,7 +1102,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           patients={patients}
           activeId={activePatientId}
           onSelect={selectPatient}
-          onNew={createNewPatient}
+          onNew={()=>setShowSpecialtyPicker(true)}
           onDelete={deletePatient}
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
@@ -1126,6 +1141,42 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       )}
 
       {/* ── NEW PATIENT INTAKE MODAL ── */}
+      {/* ── NEW ASSESSMENT: SPECIALTY PICKER ──
+          Reuses the same STREAMS registry the Home/Demographics
+          StreamSelector already uses -- Ortho/Neuro are live, Sports/Pedia/
+          Cardio show the same SOON badge and just don't proceed yet. */}
+      {showSpecialtyPicker && (
+        <div data-testid="specialty-picker-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{width:"100%",maxWidth:420,background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
+            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Choose a specialty to start</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {STREAMS.map(st => (
+                <button key={st.id} type="button"
+                  onClick={()=>{
+                    if (!st.live) return;
+                    setStream(st.id);
+                    setShowSpecialtyPicker(false);
+                    createNewPatient();
+                  }}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,
+                    cursor:st.live?"pointer":"not-allowed",fontFamily:"inherit",
+                    border:`1.5px solid ${st.live?st.color+"50":PC.border}`,
+                    background:st.live?st.color+"10":PC.s2,opacity:st.live?1:0.6,textAlign:"left"}}>
+                  <span style={{fontSize:"1.3rem"}}>{st.icon}</span>
+                  <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:st.live?st.color:PC.muted}}>{st.label}</span>
+                  {!st.live && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:PC.border,color:PC.muted}}>SOON</span>}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={()=>setShowSpecialtyPicker(false)}
+              style={{marginTop:16,width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {showIntake && (
         <div data-testid="intake-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <div style={{width:"100%",maxWidth:420,maxHeight:"90vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",WebkitOverflowScrolling:"touch"}}>
@@ -1501,7 +1552,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             const wfSteps = [
               { key:"demographics", label:"Demographics", short:"Demo",  nav:"demographics", done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
               { key:"subjective",   label:"Subjective",   short:"Sub",   nav:"subjective",   done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
-              { key:"objective",    label:"Objective",    short:"Obj",   nav:"rom",           done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:oKeys.includes(active) },
+              { key:"objective",    label:"Objective",    short:"Obj",   nav:"objective",     done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
               { key:"treatment",    label:"Treatment",    short:"Treat", nav:"treatment",     done:!!(d2.soap_modalities||d2.soap_frequency||d2.hep_programme||d2.tx_exercise_prescription||d2.tx_techniques), active:active==="treatment"||active==="exercise" },
               { key:"soap",         label:"SOAP",         short:"SOAP",  nav:"soap",          done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
             ];
@@ -1560,6 +1611,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="posture" && !mountedTabs.has("posture") && (
             <div style={{marginBottom:22}}>
               <TabLoader/>
+            </div>
+          )}
+
+          {/* Objective hub — ROM/MMT/Special/Neuro expand in place, scoped to
+              the region(s) picked in Subjective. Not part of the ALL_TESTS/
+              currentSection group system (there's no "objective" entry there),
+              same standalone-block pattern as Posture above. */}
+          {active==="objective" && (
+            <div style={{marginBottom:22}}>
+              <Suspense fallback={<TabFallback/>}><LazyObjectiveHub data={data} set={set} navTo={navTo} PC={PC}/></Suspense>
             </div>
           )}
 
@@ -1875,16 +1936,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {key:"profile",    icon:"profile",    label:"Profile"},
             ].map(item=>{
               const isClinical = item.key==="__clinical";
-              // Clinical opens straight into Subjective Assessment -- same
-              // real, tested entry point HomeModule's own "Assess Patient"
-              // quick-start action already uses. Real regression fixed here:
-              // an earlier version of this tab opened the section drawer
-              // instead (to preserve access to Demographics/ROM/MMT/SOAP/etc
-              // without the old Menu button), but that silently changed what
-              // tapping Clinical actually does, which is exactly the
-              // "normal working" behaviour that must stay unchanged.
-              const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
-              const handleClick = () => { if (isClinical) navTo("subjective"); else navTo(item.key); };
+              // Clinical now opens the patient list + specialty picker
+              // (PatientDatabasePanel, already a real full-screen panel with
+              // search/sort/New/Import) instead of jumping straight into
+              // Subjective Assessment with no patient loaded. "+ New
+              // Assessment" (PatientDatabasePanel's onNew) asks which
+              // specialty stream to start, then opens the same real intake
+              // -> subjective -> objective flow as before.
+              const isActive = isClinical ? (showPatientDb || !outerKeys.includes(active)) : active===item.key;
+              const handleClick = () => { if (isClinical) setShowPatientDb(true); else navTo(item.key); };
               return item.center ? (
                 <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
