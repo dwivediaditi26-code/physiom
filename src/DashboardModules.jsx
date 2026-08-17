@@ -455,8 +455,29 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
       t.status === "completed" && t.completedAt && new Date(t.completedAt).toDateString() === today
     ).length;
     const alerts = patients.filter(p => p.hasRedFlags).length;
-    return { patients: patients.length, pending: pending.length, completedToday, alerts };
+    const addedToday = patients.filter(p => p.createdAt && new Date(p.createdAt).toDateString() === today).length;
+    return { patients: patients.length, pending: pending.length, completedToday, alerts, addedToday };
   }, [patients, taskDB]);
+
+  // Real, sorted by last-touched -- no invented appointment times (that
+  // data doesn't exist in the patient record). Shows what actually
+  // happened, not a fabricated schedule.
+  const recentPatients = useMemo(() => {
+    return [...patients]
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+      .slice(0, 4);
+  }, [patients]);
+
+  function relTime(iso){
+    if (!iso) return "";
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
+  }
 
   // ── "Continue where you left off" -- the currently active patient (same
   // `data` state TherapistDashboardModule's Active Patient card already
@@ -581,19 +602,53 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
         </div>
       ) : (
         <div style={{marginBottom:26}}>
-          <SectionLabel>Today at a Glance</SectionLabel>
-          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px 8px",
-            display:"flex",boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
             {[
-              {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9"},
-              {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706"},
-              {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669"},
-              {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444"},
+              {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9", sub:stats.addedToday ? `${stats.addedToday} new today` : "total on file"},
+              {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706", sub:"awaiting action"},
+              {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669", sub:"done today"},
+              {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444", sub:"red flags to review"},
             ].map(s=>(
-              <div key={s.l} onClick={()=>onNav("dashboard")} style={{flex:"1 1 0",minWidth:0,textAlign:"center",cursor:"pointer",padding:"4px 2px"}}>
-                <div style={{fontSize:"1.3rem",lineHeight:1}}>{s.icon}</div>
-                <div style={{fontSize:"1.2rem",fontWeight:800,color:"#111827",marginTop:4}}>{s.v}</div>
-                <div style={{fontSize:9.5,fontWeight:700,color:s.color,textTransform:"uppercase",letterSpacing:"0.3px",marginTop:1}}>{s.l}</div>
+              <div key={s.l} onClick={()=>onNav("dashboard")} style={{
+                background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px",cursor:"pointer",
+                boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+              }}>
+                <div style={{width:34,height:34,borderRadius:10,background:`${s.color}14`,display:"flex",
+                  alignItems:"center",justifyContent:"center",fontSize:"1rem",marginBottom:10}}>{s.icon}</div>
+                <div style={{fontSize:"1.35rem",fontWeight:800,color:"#111827",lineHeight:1}}>{s.v}</div>
+                <div style={{fontSize:11,fontWeight:700,color:"#111827",marginTop:4}}>{s.l}</div>
+                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Recent Patients -- real, sorted by last-touched. No invented
+          appointment times: the patient record doesn't have a scheduled
+          time field, so this shows what was actually last worked on
+          instead of fabricating a schedule. ── */}
+      {recentPatients.length > 0 && (
+        <div style={{marginBottom:26}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+            <SectionLabel>Recent Patients</SectionLabel>
+            <button onClick={()=>onNav("dashboard")} style={{background:"none",border:"none",color:"#7c3aed",
+              fontSize:11,fontWeight:700,cursor:"pointer",padding:0}}>View all</button>
+          </div>
+          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,overflow:"hidden",
+            boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
+            {recentPatients.map((p,i)=>(
+              <div key={p.id} onClick={()=>onNav("dashboard")} style={{display:"flex",alignItems:"center",gap:10,
+                padding:"12px 14px",borderBottom:i<recentPatients.length-1?"1px solid #F3F4F6":"none",cursor:"pointer"}}>
+                <div style={{width:34,height:34,borderRadius:"50%",background:"#F5F3FF",color:"#6D28D9",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>
+                  {(p.name||"?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#111827"}}>{p.name || "Unnamed Patient"}</div>
+                  <div style={{fontSize:11,color:"#6B7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.lastDx || "No diagnosis recorded yet"}</div>
+                </div>
+                <div style={{fontSize:10.5,color:"#9CA3AF",flexShrink:0}}>{relTime(p.updatedAt || p.createdAt)}</div>
               </div>
             ))}
           </div>
