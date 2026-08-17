@@ -3,11 +3,12 @@ import StudyImage from "./StudyImage.jsx";
 // Overview grid -- 2-column colorful tile cards, matching the same card
 // style Learn's own Assessment Library already uses (white bg, border,
 // rounded-2xl) so study mode feels consistent with the rest of Learn.
-// Each tile's image fills the full card width (much bigger than a list
-// thumbnail), title below, short real-data tag pills where the item has
-// genuine discrete fields worth calling out. Tapping a tile opens the
-// full detail page for that item (StudyDetail), it does not expand
-// inline.
+// Image sits in a fixed 128px-tall box (not scaled to the tile's own
+// width) so it stays a contained thumbnail instead of growing to fill
+// the whole card on a wide screen. Title below, short real-data tag pills
+// where the item has genuine discrete fields worth calling out. Tapping a
+// tile opens the full detail page for that item (StudyDetail), it does
+// not expand inline.
 export default function StudyGrid({ items, onSelect }) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -18,8 +19,8 @@ export default function StudyGrid({ items, onSelect }) {
           aria-label={`Open ${item.title}`}
           className="text-left bg-white border border-slate-200 rounded-2xl p-3"
         >
-          <div className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 mb-2.5">
-            <StudyImage name={item.image} square/>
+          <div className="h-32 w-full rounded-xl overflow-hidden bg-slate-100 mb-2.5">
+            <StudyImage name={item.image} size={128}/>
           </div>
           <div className="text-sm font-semibold text-slate-900 leading-tight line-clamp-2">{item.title}</div>
           {item.subtitle && <div className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</div>}
