@@ -59,6 +59,7 @@ import InstallPrompt from "./InstallPrompt.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
+const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
@@ -1571,10 +1572,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser}/>
               ):tests==="PHYSIOFEED_MODULE"?(
-                <div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>
-                  <div style={{fontSize:"2.2rem",marginBottom:12}}>📡</div>
-                  <div style={{fontWeight:800,fontSize:"1.05rem",color:"#111827",marginBottom:6}}>PhysioFeed is coming soon</div>
-                  <div style={{fontSize:13,maxWidth:340,margin:"0 auto"}}>A space for case discussions and community updates. Not built yet -- nothing is faked here.</div>
+                <div style={{margin:"-24px -20px 0"}}>
+                  <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
+                    <LazyPhysioFeedEntry/>
+                  </Suspense>
                 </div>
               ):tests==="LEARN_MODULE"?(
                 <div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>

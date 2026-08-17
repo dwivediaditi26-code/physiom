@@ -16,7 +16,9 @@
     "@supabase/supabase-js": "^2.45.0",
     "@vercel/analytics": "^2.0.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.26.2",
+    "lucide-react": "^0.383.0"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.7",
@@ -29,6 +31,9 @@
     "jsdom": "^29.1.1",
     "typescript": "^5.6.3",
     "vite": "^5.0.0",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "tailwindcss": "^3.4.13",
+    "postcss": "^8.4.47",
+    "autoprefixer": "^10.4.20"
   }
 }
