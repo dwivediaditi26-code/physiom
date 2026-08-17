@@ -1535,7 +1535,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && (
+          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -1564,10 +1564,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
+              {tests!=="PHYSIOFEED_MODULE" && (
               <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
               </div>
+              )}
 
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser}/>
