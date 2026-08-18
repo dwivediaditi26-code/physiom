@@ -7,11 +7,23 @@
 // mockData.js, so the app is fully interactive with zero configuration.
 // Each function has a comment showing the Supabase query it becomes in
 // Phase 6 (see /supabase/schema.sql for the matching table definitions).
+//
+// getProfile() is the one exception (Phase 1 of the real-world rollout,
+// done first because nothing else -- posts/likes/follows -- means anything
+// without real per-user identity underneath it). It reuses the SAME
+// Supabase client the clinical app already signs clinicians in with
+// (src/supabase.js), so the real signed-in clinician's session is picked
+// up automatically -- no separate PhysioFeed login, no new env vars.
+// Deliberately defensive: if the `profiles` table doesn't exist yet (SQL
+// not run), or the user isn't signed in, or anything else goes wrong, it
+// falls back to the old shared demo CURRENT_USER instead of breaking the
+// app. Safe to ship before or after the SQL migration runs.
 // -----------------------------------------------------------------------
 import {
   INITIAL_POSTS, STORIES, PEOPLE, NOTIFICATIONS, EXERCISES, EDUCATION,
   ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER,
 } from "./mockData.js";
+import { supabase } from "../../supabase.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
 let _stories = STORIES.map((s) => ({ ...s }));
@@ -88,9 +100,48 @@ export async function markStorySeen(id) {
 
 /* ---------------- profile ---------------- */
 
-// SUPABASE: supabase.from('profiles').select('*').eq('id', userId).single()
+// Phase 1: real per-user identity. See the file header comment above for
+// why this one function is wired to Supabase already while everything
+// else still runs on the in-memory mock store.
 export async function getProfile() {
-  return clone(CURRENT_USER);
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return clone(CURRENT_USER); // signed out / guest mode -- keep the demo profile
+
+    let { data: row } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+    if (!row) {
+      // First time this clinician has opened PhysioFeed -- create their
+      // real row now instead of leaving them on the shared demo identity.
+      const defaults = {
+        id: user.id,
+        name: user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : "New Physiotherapist"),
+        role: "Physiotherapist",
+        verified: false,
+        gradient: "violet",
+        initials: (user.email ? user.email[0] : "P").toUpperCase(),
+        location: "",
+        bio: "",
+        quote: "Welcome to PhysioFeed.",
+        followers_count: 0,
+        following_count: 0,
+      };
+      const { data: inserted } = await supabase.from("profiles").insert(defaults).select().single();
+      row = inserted || defaults;
+    }
+
+    // Map DB column names to the shape every PhysioFeed screen already
+    // expects (ProfileHeader.jsx etc.) -- zero UI changes needed for this step.
+    return clone({
+      id: row.id, name: row.name, role: row.role, verified: row.verified,
+      gradient: row.gradient, initials: row.initials, location: row.location,
+      bio: row.bio, quote: row.quote,
+      followers: row.followers_count, following: row.following_count,
+    });
+  } catch (e) {
+    console.error("getProfile(): falling back to demo profile --", e?.message || e);
+    return clone(CURRENT_USER); // `profiles` table not created yet, or any other failure
+  }
 }
 
 // SUPABASE: supabase.from('skill_endorsements').upsert/delete matching { skill, endorser_id, profile_id }
