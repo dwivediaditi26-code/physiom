@@ -21,16 +21,32 @@ export default function Header() {
   const location = useLocation();
 
   const trimmedQuery = query.trim();
+  const qLower = trimmedQuery.toLowerCase();
   const matches = trimmedQuery
     ? people.filter((p) =>
-        p.name.toLowerCase().includes(trimmedQuery.toLowerCase()) ||
-        (p.role || "").toLowerCase().includes(trimmedQuery.toLowerCase()) ||
-        (p.location || "").toLowerCase().includes(trimmedQuery.toLowerCase())
+        p.name.toLowerCase().includes(qLower) ||
+        (p.role || "").toLowerCase().includes(qLower) ||
+        (p.location || "").toLowerCase().includes(qLower)
       ).slice(0, 5)
     : [];
+  // Bug fix (2026-08-18): getPeople() deliberately excludes you from the
+  // "people to follow" list (see the matching comment in PeoplePage.jsx),
+  // so searching your own name here always came back empty -- looked
+  // broken even though it was working as designed. Surface yourself as a
+  // distinct "You" row (goes to your real profile, not the People list)
+  // whenever the search matches you.
+  const selfMatches = !!trimmedQuery && !!profile && (
+    profile.name.toLowerCase().includes(qLower) ||
+    (profile.role || "").toLowerCase().includes(qLower) ||
+    (profile.location || "").toLowerCase().includes(qLower)
+  );
 
   const goToPeople = (q) => {
     navigate(`/people?q=${encodeURIComponent(q)}`);
+    setQuery("");
+  };
+  const goToOwnProfile = () => {
+    navigate("/profile");
     setQuery("");
   };
 
@@ -66,6 +82,18 @@ export default function Header() {
           </div>
           {trimmedQuery && (
             <div className="absolute left-0 top-full mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-lg p-2 z-30">
+              {selfMatches && (
+                <button
+                  onClick={goToOwnProfile}
+                  className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50 text-left"
+                >
+                  <Avatar size={30} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-800 truncate">{profile.name} <span className="text-violet-500 font-medium">(You)</span></p>
+                    <p className="text-[10px] text-slate-400 truncate">{profile.role}{profile.location ? ` · ${profile.location}` : ""}</p>
+                  </div>
+                </button>
+              )}
               {matches.length > 0 ? (
                 <>
                   {matches.map((p) => (
@@ -88,9 +116,9 @@ export default function Header() {
                     See all results in People
                   </button>
                 </>
-              ) : (
+              ) : !selfMatches ? (
                 <p className="text-xs text-slate-400 px-2 py-3 text-center">No physios found for "{trimmedQuery}"</p>
-              )}
+              ) : null}
             </div>
           )}
         </div>
