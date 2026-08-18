@@ -59,6 +59,16 @@ export const SUBJ_TIER = {
   // from the data model, still fully documentable, just not front-loaded.
   grf: { core: ["grf_action"], triggers: [], gates: [] },
 
+  // ── Chief Complaint (cc_*, universal Core section) ──
+  // Was previously untiered like grf above -- classifyField() falls
+  // through to "core" for any prefix with no SUBJ_TIER entry, so
+  // cc_vas_best ("Best pain past week") always rendered as a second NRS
+  // slider alongside cc_vas_now. 2026-08-18 user feedback: only one Pain
+  // NRS slider in Core. cc_vas_best is NOT removed from the data model --
+  // it's just deep-tier now, one tap away under Core's own "+ more
+  // detail" expander like everything else demoted this way.
+  cc: { core: ["cc_main","cc_onset","cc_duration","cc_vas_now","cc_quality"], triggers: [], gates: [] },
+
   // ── Cervical — trimmed 2026-08-18 per direct user feedback: the
   // original 15-field core list (agreed spec) was still too long for a
   // phone screen mid-interview. Dropped to the fields that actually change

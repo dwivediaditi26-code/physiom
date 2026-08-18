@@ -3392,20 +3392,30 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
+      {/* 2026-08-18: small chevron restored as a tap-affordance (was
+          dropped when matching the read-only AI panel, but these rows
+          ARE interactive -- a bare bold value looked identical to plain
+          text, so it wasn't obvious you could tap to change it). Height
+          stays ~40px minimum; the value can still wrap taller when long. */}
       <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
-        cursor: "pointer", padding: "2px 0", boxSizing: "border-box",
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+        padding: "2px 0", minHeight: 34, boxSizing: "border-box",
       }}>
         <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
           placeholder="Tap to select..."
           className="pm-cfield-text"
           style={{
-            width: "100%", boxSizing: "border-box", border: "none", outline: "none", background: "transparent",
+            flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent",
             fontSize: "0.82rem", fontWeight: textValue ? 700 : 400,
             color: textValue ? PC.text : "#9A98AC", fontFamily: "inherit",
             resize: "none", overflow: "hidden", whiteSpace: "pre-wrap", wordBreak: "break-word",
             textAlign: "right", lineHeight: 1.4, padding: 0, margin: 0,
           }} />
+        <span className="pm-cfield-chevron" style={{
+          flexShrink: 0, color: "#C9C9CE", fontSize: "1.05rem", fontWeight: 700,
+          lineHeight: 1, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
+        }}>›</span>
       </div>
 
       {open && (
@@ -3460,6 +3470,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
 
   const [activeSection, setActiveSection] = useState("complaint");
   const [deepOpen, setDeepOpen] = useState({}); // section key -> show deep-dive fields
+  // 2026-08-18: region sections are now collapsed-by-default accordion
+  // cards (per user's detailed card-based redesign spec) -- section key ->
+  // whether that whole card is expanded. Separate from deepOpen above,
+  // which still controls the inner "+N more details" toggle once a card
+  // is open. Chief Complaint ("complaint" key) never uses this -- it's
+  // not a card, stays directly visible like before.
+  const [secOpen, setSecOpen] = useState({});
   const [moreOpen, setMoreOpen] = useState(false); // "More details" -- Goals/History/PMH/Lifestyle/Psychosocial etc, collapsed by default (2026-08-18 clean-list redesign)
   const sectionTopRef = React.useRef(null);
   const groupTabsRef = React.useRef(null); // the region/group tab card — scroll target so a tab tap lands at the top of the region, keeping the tabs visible
@@ -5109,84 +5126,116 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                   const s = sections[key]; if (!s) return null;
                   const sColor = s.color || PC.accent;
                   const isPlain = key === "complaint";
-                  return (
-                    // 2026-08-18: dropped the bordered/shadowed card per
-                    // section -- per user feedback ("why this box is
-                    // present, it should be form line... congested, not
-                    // scattered") this is now one continuous flowing list,
-                    // matching the flat "Extracted Patient Information" AI
-                    // review card's layout. Only a small header line (icon
-                    // + label) still marks where one clinical topic ends
-                    // and the next begins -- everything else is tightly
-                    // packed rows with no box/gap between sections.
-                    <div key={key} id={`subj-sec-${key}`} style={{ marginBottom: 4 }}>
 
-                      {/* Small, subtle section header — icon lives here only */}
-                      <div style={{ display:"flex", alignItems:"center", gap:6, padding: isPlain ? "0 4px 6px" : "10px 2px 2px" }}>
-                        <span style={{ fontSize:"0.72rem" }}>{s.icon}</span>
-                        <span style={{ fontSize:"0.68rem", fontWeight:800, letterSpacing:"0.06em",
-                          textTransform:"uppercase", color: sColor }}>{s.label}</span>
+                  // Adaptive tiering: CORE + triggered CONDITIONAL are what a
+                  // card shows when opened; DEEP-dive detail AND free-text
+                  // Notes fields sit one more tap behind "Add more detail"
+                  // inside the card. Non-visible gated fields are omitted
+                  // (their data, if ever set, still flows to the engine).
+                  const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
+                  const mainFields = classified.filter((c) => c.visible && c.tier !== "deep" && c.tier !== "note");
+                  const deepFields = classified.filter((c) => c.visible && (c.tier === "deep" || c.tier === "note"));
+                  const deepIsOpen = !!deepOpen[key];
+
+                  const fieldsBody = (
+                    <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                      {mainFields.map(({ field }, fi) => (
+                        // 2026-08-18: cc_main skips the row label -- the
+                        // "CHIEF COMPLAINT" header right above it already
+                        // says what this is, so a second "Patient's own
+                        // words" label was a redundant line.
+                        field.id === "cc_main" ? (
+                          <div key={field.id} style={{ padding: "2px 2px 10px" }}>{renderField(field)}</div>
+                        ) : (
+                          <AssessmentRow key={field.id} label={field.label}
+                            helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                            {renderField(field)}
+                          </AssessmentRow>
+                        )
+                      ))}
+                      {deepFields.length > 0 && (
+                        <>
+                          <button type="button" data-testid={`subj-deep-toggle-${key}`}
+                            onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
+                            style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:4,
+                              padding:"6px 2px 8px", border:"none", background:"transparent",
+                              cursor:"pointer", fontFamily:"inherit",
+                              color:sColor, fontSize:"0.78rem", fontWeight:700 }}>
+                            {deepIsOpen ? "︿ Hide extra detail" : `+ ${deepFields.length} more detail${deepFields.length===1?"":"s"} ⌄`}
+                          </button>
+                          {deepIsOpen && deepFields.map(({ field }, fi) => (
+                            <AssessmentRow key={field.id} label={field.label}
+                              helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
+                              {renderField(field)}
+                            </AssessmentRow>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  );
+
+                  // Chief Complaint / Core stays directly visible, no card --
+                  // "Core stays page-level", everything else is one tap away.
+                  if (isPlain) {
+                    return (
+                      <div key={key} id={`subj-sec-${key}`} style={{ marginBottom: 4 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
+                          <span style={{ fontSize:"0.72rem" }}>{s.icon}</span>
+                          <span style={{ fontSize:"0.68rem", fontWeight:800, letterSpacing:"0.06em",
+                            textTransform:"uppercase", color: sColor }}>{s.label}</span>
+                        </div>
+                        {s.description && (
+                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
+                            {s.description}
+                          </div>
+                        )}
+                        {fieldsBody}
                       </div>
-                      {s.description && (
-                        <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
-                          {s.description}
+                    );
+                  }
+
+                  // 2026-08-18: every other section is now a collapsed-by-
+                  // default accordion card -- per user's detailed card-based
+                  // redesign spec ("region-wise sections should NOT all be
+                  // expanded... allow the therapist to expand ONLY the
+                  // section they need"). Closed state shows a one-line
+                  // preview of whatever's already filled, so nothing looks
+                  // empty/scary before it's opened.
+                  const cardOpen = !!secOpen[key];
+                  const previewParts = mainFields
+                    .map(({ field }) => data[field.id])
+                    .filter(v => v != null && String(v).trim() !== "")
+                    .map(v => String(v).replace(/\|\|\|/g, ", "))
+                    .slice(0, 2);
+                  const preview = previewParts.length ? previewParts.join(" · ") : "Not yet recorded";
+
+                  return (
+                    <div key={key} id={`subj-sec-${key}`} style={{
+                      marginBottom: 8, border:`1px solid ${PC.border}`, borderRadius: 14,
+                      background: PC.surface, overflow: "hidden",
+                    }}>
+                      <div data-testid={`subj-card-toggle-${key}`} onClick={() => setSecOpen(o => ({ ...o, [key]: !o[key] }))}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", cursor:"pointer",
+                          background: cardOpen ? `${sColor}08` : "transparent" }}>
+                        <span style={{ width:28, height:28, borderRadius:9, background:`${sColor}14`, display:"flex",
+                          alignItems:"center", justifyContent:"center", fontSize:"0.8rem", flexShrink:0 }}>{s.icon}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:"0.78rem", fontWeight:800, color:PC.text }}>{s.label}</div>
+                          <div style={{ fontSize:"0.68rem", color:PC.muted, marginTop:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{preview}</div>
+                        </div>
+                        <span style={{ fontSize:"0.95rem", color:"#C9C9CE", fontWeight:700, flexShrink:0,
+                          transform: cardOpen ? "rotate(90deg)" : "none", transition:"transform 120ms ease" }}>›</span>
+                      </div>
+                      {cardOpen && (
+                        <div style={{ padding:"0 14px 8px", borderTop:`1px solid ${PC.border}` }}>
+                          {s.description && (
+                            <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"8px 4px 2px", lineHeight:1.5 }}>
+                              {s.description}
+                            </div>
+                          )}
+                          {fieldsBody}
                         </div>
                       )}
-
-                      {/* Adaptive tiering: CORE + triggered CONDITIONAL render
-                          inline; DEEP-dive detail AND free-text Notes fields
-                          (2026-08-18: notes were previously always inline,
-                          even blank, adding 2-3 empty boxes per section) both
-                          sit behind the same "Add more detail" expander.
-                          Non-visible gated fields are omitted (their data, if
-                          ever set, still flows to the engine). */}
-                      {(() => {
-                        const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
-                        const mainFields = classified.filter((c) => c.visible && c.tier !== "deep" && c.tier !== "note");
-                        const deepFields = classified.filter((c) => c.visible && (c.tier === "deep" || c.tier === "note"));
-                        const open = !!deepOpen[key];
-                        return (
-                          <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-                            {mainFields.map(({ field }, fi) => (
-                              // 2026-08-18: cc_main skips the row label --
-                              // the "CHIEF COMPLAINT" section header right
-                              // above it already says what this is, so a
-                              // second "Patient's own words" label was a
-                              // redundant line the approved mockup didn't have.
-                              field.id === "cc_main" ? (
-                                <div key={field.id} style={{ padding: "2px 2px 10px" }}>{renderField(field)}</div>
-                              ) : (
-                                <AssessmentRow key={field.id} label={field.label} icon={isPlain ? undefined : s.icon} iconColor={sColor}
-                                  helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
-                                  {renderField(field)}
-                                </AssessmentRow>
-                              )
-                            ))}
-                            {deepFields.length > 0 && (
-                              <>
-                                {/* 2026-08-18: was a heavy dashed pill -- now
-                                    small purple text, same tap target, much
-                                    less visual weight ("+ Add 4 more details"
-                                    per user feedback). */}
-                                <button type="button" data-testid={`subj-deep-toggle-${key}`}
-                                  onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
-                                  style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:4,
-                                    padding:"6px 2px 8px", border:"none", background:"transparent",
-                                    cursor:"pointer", fontFamily:"inherit",
-                                    color:sColor, fontSize:"0.78rem", fontWeight:700 }}>
-                                  {open ? "︿ Hide extra detail" : `+ ${deepFields.length} more detail${deepFields.length===1?"":"s"} ⌄`}
-                                </button>
-                                {open && deepFields.map(({ field }, fi) => (
-                                  <AssessmentRow key={field.id} label={field.label} icon={s.icon} iconColor={sColor}
-                                    helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
-                                    {renderField(field)}
-                                  </AssessmentRow>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })()}
                     </div>
                   );
                 })}
