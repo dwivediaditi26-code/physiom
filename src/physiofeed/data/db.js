@@ -423,7 +423,14 @@ export async function updateProfile(fields) {
   if (fields.name) {
     patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
   }
-  patch.updated_at = new Date().toISOString();
+  // Deliberately NOT setting updated_at here (2026-08-18 fix): Supabase's
+  // API layer caches the table schema, and right after a column is added
+  // via SQL that cache can lag behind reality -- this showed up as "could
+  // not find the updated_at column of profiles in the schema cache" even
+  // though the column genuinely exists (add_profiles_table.sql created
+  // it). updated_at isn't read anywhere in the app, so there's nothing to
+  // lose by not touching it here -- avoids depending on a column whose
+  // cache-visibility can't be guaranteed at save time.
   const { error } = await supabase.from("profiles").update(patch).eq("id", uid);
   if (error) throw error;
   return getProfile();
