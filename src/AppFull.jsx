@@ -1573,13 +1573,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           <>
 
           {/* ── CLINICAL WORKFLOW HEADER ── */}
-          {/* Also shown on Demographics itself even before a patient
-              exists -- New Assessment's specialty picker now lands there
-              directly with no patient created yet (that only happens once
-              "Create Patient & Continue" is pressed), so gating this purely
-              on activePatient meant the very first screen of the workflow
-              showed no stepper at all. */}
-          {(activePatient || active==="demographics") && (() => {
+          {/* Shown on every step of the workflow, patient or no patient --
+              New Assessment's specialty picker lands on Demographics with
+              no patient created yet (that only happens once "Create
+              Patient & Continue" is pressed), and someone should be able to
+              freely jump between steps (Subjective, Body Regions, etc.) to
+              edit/review while still mid-assessment, before a patient
+              record formally exists. Screen-scoping is handled below by
+              wfScreens.includes(active) -- no separate activePatient gate
+              needed on top of that. */}
+          {(() => {
             const d2 = data;
             const oKeys = ["rom","mmt","special","neuro","neurotemplates","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
             // Only render this stepper on the actual clinical-workflow
