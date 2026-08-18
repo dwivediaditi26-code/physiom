@@ -315,7 +315,7 @@ const MOBILE_CSS = `
     display: flex; overflow-x: auto; scrollbar-width: none;
     border-top: 1px solid #E4E4E6; flex-shrink: 0;
     padding-bottom: env(safe-area-inset-bottom);
-    background: #F2F2F4;
+    background: #ffffff;
   }
   .pm-bnav-tabs::-webkit-scrollbar { display: none; }
   .pm-bnav-tab {

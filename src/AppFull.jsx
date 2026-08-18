@@ -2110,7 +2110,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
                   <span style={{width:46,height:46,borderRadius:"50%",background:isActive?"#6D28D9":"#7c3aed",
                     color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
-                    marginTop:-18,boxShadow:"0 2px 8px rgba(124,58,237,0.35)"}}><NavIcon name={item.icon}/></span>
+                    marginTop:-18,boxShadow:"0 0 0 6px rgba(255,255,255,0.55), 0 2px 8px rgba(124,58,237,0.35)"}}><NavIcon name={item.icon}/></span>
                   <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
                 </button>
               ) : (
