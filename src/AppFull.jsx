@@ -1531,7 +1531,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               every screen before. New Patient is a separate full-screen modal
               (showIntake, below) that already covers whatever's behind it, so
               it needs no explicit case here. */}
-          {(active==="home"||active==="demographics") && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
+          {/* Demographics dropped from this gate: by the time someone reaches
+              it (via New Assessment's specialty picker) the specialty is
+              already chosen -- showing the Ortho/Neuro/... picker row again
+              here was redundant and pushed the real 9-step workflow stepper
+              (below) out of view. */}
+          {active==="home" && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
               4 phases, condition-aware showIf, checklists) and its widgets
@@ -1568,7 +1573,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           <>
 
           {/* ── CLINICAL WORKFLOW HEADER ── */}
-          {activePatient && (() => {
+          {/* Also shown on Demographics itself even before a patient
+              exists -- New Assessment's specialty picker now lands there
+              directly with no patient created yet (that only happens once
+              "Create Patient & Continue" is pressed), so gating this purely
+              on activePatient meant the very first screen of the workflow
+              showed no stepper at all. */}
+          {(activePatient || active==="demographics") && (() => {
             const d2 = data;
             const oKeys = ["rom","mmt","special","neuro","neurotemplates","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
             // Only render this stepper on the actual clinical-workflow
