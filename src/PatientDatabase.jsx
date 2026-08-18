@@ -3892,46 +3892,54 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 //    only: id/dx/updatedAt are the same fields PatientCard already reads,
 //    just displayed differently. Delete is a small X (secondary, matches
 //    the mockup's clean row) instead of a full button. --
-function PatientRowCompact({ patient, isActive, onSelect, onDelete, onProfile }) {
+function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile }) {
   const pid = patient?.id ? "PT-" + patient.id.slice(0,6).toUpperCase() : "";
   const dx = patient.lastDx || "No diagnosis yet";
   const day = relativeDay(patient.updatedAt);
-  const isToday = day === "Today";
   return (
-    <div onClick={onSelect} style={{
-      display:"flex", alignItems:"center", gap:12, padding:"10px 4px",
-      borderBottom:"1px solid #F1F0FA", cursor:"pointer",
+    <div style={{
+      padding:"10px 4px", borderBottom:"1px solid #F1F0FA",
       background: isActive ? "#F5F3FF" : "transparent", borderRadius:10,
     }}>
-      <div style={{width:44,height:44,borderRadius:"50%",background:avatarGrad(patient.id),
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:"0.8rem",fontWeight:800,color:"#fff",flexShrink:0}}>
-        {getInitials(patient.name)}
-      </div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {patient.name || "Unnamed patient"}
-          {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:44,height:44,borderRadius:"50%",background:avatarGrad(patient.id),
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:"0.8rem",fontWeight:800,color:"#fff",flexShrink:0}}>
+          {getInitials(patient.name)}
         </div>
-        <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {pid} · {dx}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {patient.name || "Unnamed patient"}
+            {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
+          </div>
+          <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {pid} · {dx}
+          </div>
+        </div>
+        <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
+          <button onClick={onDelete} title="Delete" style={{
+            background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
         </div>
       </div>
-      <div style={{flexShrink:0,textAlign:"right"}}>
-        <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{day}</div>
-        <button onClick={e=>{e.stopPropagation();onSelect();}} style={{
-          background:"none",border:"none",padding:0,marginTop:2,cursor:"pointer",
-          fontSize:"0.78rem",fontWeight:800,color:"#7c3aed"}}>
-          {isToday ? "Continue" : "Open"} →
+      {/* Two clear actions per patient: jump into the assessment workflow,
+          or open their profile -- previously just a tiny "Continue →" text
+          link and an icon-only 👤 button, easy to miss. */}
+      <div style={{display:"flex",gap:8,marginTop:8,marginLeft:56}}>
+        <button onClick={onEdit} style={{
+          flex:1,padding:"7px 10px",borderRadius:8,border:"none",background:"#7c3aed",
+          color:"#fff",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+          ✏️ Edit Assessment
         </button>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
-        <button onClick={e=>{e.stopPropagation();onProfile();}} title="Profile" style={{
-          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.72rem",color:"#C4C4CE"}}>👤</button>
-        <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
-          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.72rem",color:"#C4C4CE"}}>✕</button>
+        <button onClick={onProfile} style={{
+          flex:1,padding:"7px 10px",borderRadius:8,border:"1px solid #E5E7EB",background:"#fff",
+          color:"#374151",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+          👤 Profile
+        </button>
       </div>
     </div>
   );
@@ -4140,7 +4148,7 @@ const innerBody = (
                 key={p.id}
                 patient={p}
                 isActive={p.id === activeId}
-                onSelect={()=>onSelect(p)}
+                onEdit={()=>{ onSelect(p); if (onNav) onNav("demographics"); }}
                 onDelete={()=>onDelete(p.id)}
                 onProfile={()=>setProfilePatient(p)}
               />
