@@ -3,13 +3,36 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { Icon } from "../shared/icons.jsx";
+import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
+// Search-a-physio (2026-08-18): this bar used to be a decorative
+// placeholder input that did nothing. Now it live-filters the same
+// `people` list PeoplePage.jsx already searches (name/role/location),
+// shows up to 5 matches in a dropdown, and hands off to the full People
+// page (with the query carried over via ?q=) for anything beyond a quick
+// lookup -- there's no "view a stranger's profile" page yet, so a result
+// row takes you to the People list rather than a profile you can't reach.
 export default function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
-  const { notifications, profile } = useAppData();
+  const [query, setQuery] = useState("");
+  const { notifications, profile, people } = useAppData();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const trimmedQuery = query.trim();
+  const matches = trimmedQuery
+    ? people.filter((p) =>
+        p.name.toLowerCase().includes(trimmedQuery.toLowerCase()) ||
+        (p.role || "").toLowerCase().includes(trimmedQuery.toLowerCase()) ||
+        (p.location || "").toLowerCase().includes(trimmedQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
+
+  const goToPeople = (q) => {
+    navigate(`/people?q=${encodeURIComponent(q)}`);
+    setQuery("");
+  };
 
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-slate-200">
@@ -27,9 +50,49 @@ export default function Header() {
           </div>
         </Link>
 
-        <div className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-9">
-          <Search size={15} className="text-slate-400" />
-          <input placeholder="Search posts, people, topics…" className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400" />
+        <div className="hidden md:block relative flex-1 max-w-md">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-9">
+            <Search size={15} className="text-slate-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && trimmedQuery) goToPeople(trimmedQuery);
+                if (e.key === "Escape") setQuery("");
+              }}
+              placeholder="Search physios by name, specialty, or city…"
+              className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
+            />
+          </div>
+          {trimmedQuery && (
+            <div className="absolute left-0 top-full mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-lg p-2 z-30">
+              {matches.length > 0 ? (
+                <>
+                  {matches.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => goToPeople(p.name)}
+                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50 text-left"
+                    >
+                      <Avatar size={30} grad={p.grad} initials={initialsOf(p.name)} photoUrl={p.avatarUrl} />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-800 truncate">{p.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{p.role}{p.location ? ` · ${p.location}` : ""}</p>
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => goToPeople(trimmedQuery)}
+                    className="w-full text-center text-xs font-semibold text-violet-600 hover:text-violet-700 px-2 py-2 mt-1 border-t border-slate-100"
+                  >
+                    See all results in People
+                  </button>
+                </>
+              ) : (
+                <p className="text-xs text-slate-400 px-2 py-3 text-center">No physios found for "{trimmedQuery}"</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 ml-auto">

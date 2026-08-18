@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import PersonCard from "../components/people/PersonCard.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 export default function PeoplePage() {
   const { people } = useAppData();
-  const [query, setQuery] = useState("");
-  const filtered = people.filter((p) => !query.trim() || p.name.toLowerCase().includes(query.toLowerCase()) || p.role.toLowerCase().includes(query.toLowerCase()));
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get("q") || "";
+  const [query, setQuery] = useState(urlQuery);
+  // Header.jsx's search dropdown hands off here via ?q=... -- keep the
+  // local box in sync whenever that changes (e.g. searching again from
+  // the header while already on this page), without overwriting
+  // whatever the person then types directly into this page's own box.
+  useEffect(() => { setQuery(urlQuery); }, [urlQuery]);
+  const filtered = people.filter((p) => !query.trim() || p.name.toLowerCase().includes(query.toLowerCase()) || p.role.toLowerCase().includes(query.toLowerCase()) || (p.location || "").toLowerCase().includes(query.toLowerCase()));
 
   return (
     <main className="flex-1 min-w-0">
