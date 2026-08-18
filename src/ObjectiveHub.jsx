@@ -15,6 +15,7 @@ const LazyMMT = React.lazy(() => import("./lazy_mmt.jsx"));
 const LazySpecial = React.lazy(() => import("./lazy_special.jsx"));
 const LazyNeuro = React.lazy(() => import("./lazy_neuro.jsx"));
 const LazyObservation = React.lazy(() => import("./lazy_observation.jsx"));
+const LazyDiagnosis = React.lazy(() => import("./lazy_diagnosis.jsx"));
 
 function Sec({ icon, title, PC, expanded, onToggle, children }) {
   return (
@@ -132,6 +133,16 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           </div>
         );
       })}
+
+      {/* Suggest Probable Diagnosis -- same deterministic engine + button
+          already used in SOAP Notes' Provisional Diagnosis section, added
+          here too so a clinician can run it right after completing the
+          objective exam instead of only from SOAP. Reads data.cx_selected_
+          regions + all recorded subjective/objective fields, nothing new
+          invented. */}
+      <Sec icon="🧠" title="Suggest Probable Diagnosis" PC={PC} expanded={expandedKey === "diagnosis"} onToggle={() => setExpandedKey(k => k === "diagnosis" ? null : "diagnosis")}>
+        <LazyTab><LazyDiagnosis data={data} onNav={navTo} /></LazyTab>
+      </Sec>
 
       <HowToPerformDrawer open={!!howTo} onClose={() => setHowTo(null)} title={howTo?.title} subtitle={howTo?.subtitle} sections={howTo?.sections} />
     </div>

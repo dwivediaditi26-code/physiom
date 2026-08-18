@@ -48,4 +48,18 @@ describe("ObjectiveHub", () => {
     await screen.findByText(/General Observation/i, {}, { timeout: 5000 });
     expect(navTo).not.toHaveBeenCalled();
   });
+
+  it("shows a Suggest Probable Diagnosis card that expands the real ProbableDiagnosis button in place", async () => {
+    const navTo = vi.fn();
+    const data = { cx_selected_regions: JSON.stringify(["Shoulder (L)"]) };
+    render(<ObjectiveHub data={data} set={vi.fn()} navTo={navTo} PC={PC} />);
+
+    fireEvent.click(screen.getByText(/Suggest Probable Diagnosis/));
+    // ProbableDiagnosis's own button label -- proves the real component
+    // (already used in SOAP Notes' Provisional Diagnosis section) rendered
+    // inline here too. Longer timeout for the same large lazy-chunk reason
+    // as the Observation card above.
+    await screen.findByText(/SUGGEST PROBABLE DIAGNOSIS/i, {}, { timeout: 5000 });
+    expect(navTo).not.toHaveBeenCalled();
+  });
 });
