@@ -3261,17 +3261,29 @@ function fieldIcon_S(f) {
 // every row lines up), the field's input on the right (~70%). A
 // hairline divider is the only separator — rows are compact at rest
 // and grow only as far as their content needs.
-function AssessmentRow({ label, helpText, PC, children, last, stacked }) {
+// 2026-08-18: restyled to match the "Extracted Patient Information" AI
+// review card's row pattern (icon avatar + label on the left, bold value
+// wrapping and right-aligned on the right, thin divider, no per-field
+// box) -- label is sized to its own content instead of a fixed 42%
+// column, so short labels don't leave a wide gap ("congested, not
+// scattered" per user feedback), and the value area never truncates.
+function AssessmentRow({ label, helpText, PC, children, last, stacked, icon, iconColor }) {
   return (
     <div className="pm-arow" style={{
       display: "flex",
       flexDirection: stacked ? "column" : "row",
       alignItems: stacked ? "stretch" : "center",
       gap: stacked ? 6 : 10,
-      padding: "8px 2px",
+      padding: "9px 2px",
       borderBottom: last ? "none" : "0.5px solid #EFEDF7",
     }}>
-      <span className="pm-arow-label" style={{ width: stacked ? "100%" : "42%", flexShrink: 0, fontSize: "0.84rem", fontWeight: 400, color: "#5C5C6B", lineHeight: 1.25 }}>
+      {icon && !stacked && (
+        <span style={{
+          width: 24, height: 24, borderRadius: 7, background: `${iconColor || PC.accent}12`,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", flexShrink: 0,
+        }}>{icon}</span>
+      )}
+      <span className="pm-arow-label" style={{ maxWidth: stacked ? "100%" : "46%", flexShrink: 0, fontSize: "0.8rem", fontWeight: 400, color: "#5C5C6B", lineHeight: 1.25 }}>
         {label}
         {helpText && (
           <span title={helpText} style={{
@@ -3342,13 +3354,18 @@ function PainSliderCompact({ value, onChange, PC, label }) {
 // option fills the text; the text stays editable afterward. Used for both
 // single-select and multi-select fields — multi joins picks into a
 // comma-separated line that's still hand-editable.
-// 2026-08-18: was an auto-growing textarea + 24px filled purple circle
-// (the tallest, heaviest-looking control on the whole screen) -- replaced
-// with a plain <input> (naturally single-line, no auto-grow needed) and a
-// small text chevron, per user feedback that this was "much too tall".
+// 2026-08-18: value display now matches the "Extracted Patient
+// Information" AI review card's row style exactly -- bold, right-aligned,
+// WRAPS onto multiple lines (was a single-line <input> that ellipsis-
+// truncated long values like "Down arm to elbow (R), To..."). An
+// auto-growing borderless <textarea> gets wrapping for free (a native
+// text <input> can never wrap, no matter the CSS); no chevron circle,
+// matching the reference -- the whole row is still the tap target that
+// opens the option list, same as before.
 function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
+  const taRef = useRef(null);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -3357,6 +3374,8 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
+  useEffect(() => { autoGrow_S(taRef.current); }, [val]);
 
   const selectedList = isMulti ? (val ? String(val).split(SEP_S).filter(Boolean) : []) : [];
   const textValue = isMulti ? selectedList.join(", ") : (val || "");
@@ -3368,34 +3387,25 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
     } else {
       setField(f.id, v);
     }
+    autoGrow_S(taRef.current);
   };
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
-      {/* 2026-08-18: dropped the box border/background entirely -- the
-          approved mockup showed a plain text row (value + light chevron,
-          no pill), not a bordered field. Filled values are now dark/bold
-          like any other clinical text instead of purple -- purple is
-          reserved for actions/selected-state/AI per the same mockup. */}
       <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
-        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
-        padding: "2px 0", minHeight: 34, boxSizing: "border-box",
+        cursor: "pointer", padding: "2px 0", boxSizing: "border-box",
       }}>
-        <input type="text" value={textValue} onChange={handleTyped}
+        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
           placeholder="Tap to select..."
           className="pm-cfield-text"
           style={{
-            flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
+            width: "100%", boxSizing: "border-box", border: "none", outline: "none", background: "transparent",
             fontSize: "0.82rem", fontWeight: textValue ? 700 : 400,
             color: textValue ? PC.text : "#9A98AC", fontFamily: "inherit",
-            overflow: "hidden", textOverflow: "ellipsis", padding: 0, margin: 0,
+            resize: "none", overflow: "hidden", whiteSpace: "pre-wrap", wordBreak: "break-word",
+            textAlign: "right", lineHeight: 1.4, padding: 0, margin: 0,
           }} />
-        <span onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-          className="pm-cfield-chevron" style={{
-          flexShrink: 0, color: "#C9C9CE", fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
-          lineHeight: 1, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
-        }}>›</span>
       </div>
 
       {open && (
@@ -5098,24 +5108,24 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                 {g.keys.map(key => {
                   const s = sections[key]; if (!s) return null;
                   const sColor = s.color || PC.accent;
-                  // 2026-08-18: every section except Chief Complaint (Core's
-                  // only section -- kept plain, matching the "Core stays
-                  // page-level" mockup) now sits inside one subtle bordered
-                  // card instead of being separated by a big header + open
-                  // whitespace -- "compact clinical workspace" redesign.
                   const isPlain = key === "complaint";
                   return (
-                    <div key={key} id={`subj-sec-${key}`} style={isPlain ? { marginBottom: 18 } : {
-                      marginBottom: 14, border:`1px solid ${PC.border}`, borderRadius: 14,
-                      background: PC.surface, padding: "2px 12px 4px",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-                    }}>
+                    // 2026-08-18: dropped the bordered/shadowed card per
+                    // section -- per user feedback ("why this box is
+                    // present, it should be form line... congested, not
+                    // scattered") this is now one continuous flowing list,
+                    // matching the flat "Extracted Patient Information" AI
+                    // review card's layout. Only a small header line (icon
+                    // + label) still marks where one clinical topic ends
+                    // and the next begins -- everything else is tightly
+                    // packed rows with no box/gap between sections.
+                    <div key={key} id={`subj-sec-${key}`} style={{ marginBottom: 4 }}>
 
                       {/* Small, subtle section header — icon lives here only */}
-                      <div style={{ display:"flex", alignItems:"center", gap:6, padding: isPlain ? "0 4px 6px" : "10px 2px 4px" }}>
-                        <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
-                        <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
-                          textTransform:"uppercase", color: PC.text }}>{s.label}</span>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, padding: isPlain ? "0 4px 6px" : "10px 2px 2px" }}>
+                        <span style={{ fontSize:"0.72rem" }}>{s.icon}</span>
+                        <span style={{ fontSize:"0.68rem", fontWeight:800, letterSpacing:"0.06em",
+                          textTransform:"uppercase", color: sColor }}>{s.label}</span>
                       </div>
                       {s.description && (
                         <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
@@ -5146,7 +5156,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                               field.id === "cc_main" ? (
                                 <div key={field.id} style={{ padding: "2px 2px 10px" }}>{renderField(field)}</div>
                               ) : (
-                                <AssessmentRow key={field.id} label={field.label}
+                                <AssessmentRow key={field.id} label={field.label} icon={isPlain ? undefined : s.icon} iconColor={sColor}
                                   helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
                                   {renderField(field)}
                                 </AssessmentRow>
@@ -5161,13 +5171,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                                 <button type="button" data-testid={`subj-deep-toggle-${key}`}
                                   onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
                                   style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:4,
-                                    padding:"8px 2px 10px", border:"none", background:"transparent",
+                                    padding:"6px 2px 8px", border:"none", background:"transparent",
                                     cursor:"pointer", fontFamily:"inherit",
                                     color:sColor, fontSize:"0.78rem", fontWeight:700 }}>
                                   {open ? "︿ Hide extra detail" : `+ ${deepFields.length} more detail${deepFields.length===1?"":"s"} ⌄`}
                                 </button>
                                 {open && deepFields.map(({ field }, fi) => (
-                                  <AssessmentRow key={field.id} label={field.label}
+                                  <AssessmentRow key={field.id} label={field.label} icon={s.icon} iconColor={sColor}
                                     helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
                                     {renderField(field)}
                                   </AssessmentRow>
