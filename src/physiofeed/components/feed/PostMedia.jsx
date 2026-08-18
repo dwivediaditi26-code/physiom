@@ -16,10 +16,22 @@ export default function PostMedia({ post, onDoubleTap, burst, size = "large" }) 
   if (hasRealMedia && (post.media === "photo" || post.media === "video")) {
     const idx = post.mediaIndex || 0;
     const currentUrl = post.mediaUrls[idx];
+    // Bug fix (2026-08-18): real uploaded photos in the main feed were
+    // being force-cropped to a fixed h-56/h-72 rectangle via object-cover,
+    // cutting off the top/bottom of portrait phone photos (the common
+    // case). Let the photo keep its own aspect ratio here instead --
+    // object-contain inside a height-capped box, nothing gets cut off.
+    // The profile grid ("small") deliberately keeps the fixed square-ish
+    // crop -- that's normal, expected grid-thumbnail behavior, not a bug.
+    const naturalAspect = size === "large" && post.media === "photo";
     return (
-      <div onDoubleClick={onDoubleTap} className={`relative ${h} rounded-2xl bg-slate-900 overflow-hidden select-none`}>
+      <div onDoubleClick={onDoubleTap} className={`relative ${naturalAspect ? "" : h} rounded-2xl bg-slate-900 overflow-hidden select-none`}>
         {post.media === "photo" ? (
-          <img src={currentUrl} alt={post.heading} className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={currentUrl}
+            alt={post.heading}
+            className={naturalAspect ? "w-full max-h-[600px] object-contain mx-auto block" : "absolute inset-0 w-full h-full object-cover"}
+          />
         ) : (
           <video src={currentUrl} controls className="absolute inset-0 w-full h-full object-contain bg-black" />
         )}
