@@ -4732,17 +4732,22 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
         // (small drop-down inside another screen), left alone so as not to
         // risk that separately-tested interaction.
         if (viewStep === "region") {
-          const flatRows = REGION_GROUPS.flatMap(group => group.regions.flatMap(reg =>
-            reg.lr
-              ? [{ reg, side:"L", label:`Left ${reg.name}` }, { reg, side:"R", label:`Right ${reg.name}` }]
-              : [{ reg, side:"B", label:reg.name }]
-          ));
+          // Grouped card list (Spine / Upper limb / Lower limb / ...),
+          // matching the reference design the clinic asked to copy: a
+          // category header (icon + label + rule) above a stack of white
+          // rounded cards, one per region, each with its own icon avatar.
+          // Real difference from the reference: physiom regions need a
+          // Left/Right/Both pick (the reference had none), so each card
+          // carries a compact L/R/B side-selector instead of doubling into
+          // two separate rows the way the old flat list used to.
           const q = regionSearch.trim().toLowerCase();
-          const visibleRows = q ? flatRows.filter(row => row.label.toLowerCase().includes(q)) : flatRows;
           const chips = allRegs
             .map(reg => ({ reg, side: getActiveSide(reg.id, reg.lr) }))
             .filter(x => x.side)
             .map(x => ({ ...x, label: x.reg.lr ? `${sideLabels[x.side]} ${x.reg.name}` : x.reg.name }));
+          const visibleGroups = REGION_GROUPS
+            .map(group => ({ ...group, regions: group.regions.filter(reg => !q || reg.name.toLowerCase().includes(q)) }))
+            .filter(group => group.regions.length > 0);
 
           return (
             <div style={{ background:PC.surface, borderRadius:14, border:`1px solid ${PC.border}` }}>
@@ -4765,32 +4770,65 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                   value={regionSearch}
                   onChange={e=>setRegionSearch(e.target.value)}
                   placeholder="Search body region..."
-                  style={{ width:"100%", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:10, color:PC.text, fontFamily:"inherit", outline:"none", padding:"11px 14px", fontSize:"0.88rem", boxSizing:"border-box", marginBottom:8 }}
+                  style={{ width:"100%", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:10, color:PC.text, fontFamily:"inherit", outline:"none", padding:"11px 14px", fontSize:"0.88rem", boxSizing:"border-box", marginBottom:4 }}
                 />
               </div>
 
-              <div>
-                {visibleRows.map(row => {
-                  const isSelected = getActiveSide(row.reg.id, row.reg.lr) === row.side;
-                  const isDisabled = !isSelected && totalSlots >= 3;
-                  return (
-                    <div key={row.reg.id+row.side}
-                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderTop:`1px solid ${PC.border}` }}>
-                      <span style={{ fontSize:"0.92rem", color:PC.text, fontWeight:500 }}>{row.label}</span>
-                      <button type="button"
-                        disabled={isDisabled}
-                        onClick={()=>handleSidePick(row.reg, row.side)}
-                        aria-label={`${isSelected?"Remove":"Add"} ${row.label}`}
-                        style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${isSelected?PC.accent:PC.border}`,
-                          background: isSelected?PC.accent:PC.s2, color: isSelected?"#fff":PC.muted,
-                          fontSize:"1.1rem", fontWeight:700, lineHeight:1, cursor:isDisabled?"not-allowed":"pointer",
-                          opacity:isDisabled?0.4:1, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        {isSelected ? "✓" : "+"}
-                      </button>
+              <div style={{ padding:"8px 16px 16px" }}>
+                {visibleGroups.map(group => (
+                  <div key={group.id} style={{ marginBottom:18 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                      <span style={{ fontSize:"1rem" }}>{group.icon}</span>
+                      <span style={{ fontSize:"0.78rem", fontWeight:800, color:PC.text, textTransform:"uppercase", letterSpacing:"0.5px", whiteSpace:"nowrap" }}>{group.label}</span>
+                      <div style={{ flex:1, height:1, background:PC.border }}/>
                     </div>
-                  );
-                })}
-                {visibleRows.length===0 && (
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      {group.regions.map(reg => {
+                        const activeSide = getActiveSide(reg.id, reg.lr);
+                        const isSelected = !!activeSide;
+                        const isDisabled = !isSelected && totalSlots >= 3;
+                        return (
+                          <div key={reg.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10,
+                            padding:"11px 14px", borderRadius:12, background:isSelected?`${PC.accent}12`:"#fff",
+                            border:`1.5px solid ${isSelected?PC.accent:PC.border}` }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+                              <span style={{ width:32, height:32, borderRadius:9, background:`${PC.accent}15`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.95rem", flexShrink:0 }}>{group.icon}</span>
+                              <span style={{ fontSize:"0.92rem", fontWeight:700, color:PC.text }}>{reg.name}</span>
+                            </div>
+                            {reg.lr ? (
+                              <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+                                {["L","R","B"].map(side => {
+                                  const on = activeSide === side;
+                                  const dis = !on && isDisabled;
+                                  return (
+                                    <button key={side} type="button" disabled={dis}
+                                      onClick={()=>handleSidePick(reg, side)}
+                                      aria-label={`${on ? "Remove" : "Add"} ${sideLabels[side]} ${reg.name}`}
+                                      style={{ width:28, height:26, borderRadius:7, fontSize:"0.68rem", fontWeight:800,
+                                        border:`1px solid ${on?PC.accent:PC.border}`, background:on?PC.accent:"#fff", color:on?"#fff":PC.muted,
+                                        cursor:dis?"not-allowed":"pointer", opacity:dis?0.4:1 }}>
+                                      {side}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <button type="button" disabled={isDisabled} onClick={()=>handleSidePick(reg,"B")}
+                                aria-label={`${isSelected?"Remove":"Add"} ${reg.name}`}
+                                style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${isSelected?PC.accent:PC.border}`,
+                                  background:isSelected?PC.accent:"#fff", color:isSelected?"#fff":PC.muted,
+                                  fontSize:"1.1rem", fontWeight:700, lineHeight:1, cursor:isDisabled?"not-allowed":"pointer",
+                                  opacity:isDisabled?0.4:1, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                                {isSelected ? "✓" : "+"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {visibleGroups.length===0 && (
                   <div style={{ padding:"20px 16px", textAlign:"center", fontSize:"0.85rem", color:PC.muted }}>No regions match "{regionSearch}"</div>
                 )}
               </div>

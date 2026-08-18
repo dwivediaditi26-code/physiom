@@ -468,6 +468,12 @@ const MOBILE_CSS = `
     [style*="repeat(4,"] { grid-template-columns: 1fr !important; }
     [style*="80px 1fr"]  { grid-template-columns: 1fr !important; }
     [style*="90px 1fr"]  { grid-template-columns: 1fr !important; }
+
+    /* Opt-out for pairs that must always stay side-by-side (e.g. Demographics
+       Date of Birth + Age) -- class selector + attribute beats the bare
+       attribute selector above regardless of source order (higher
+       specificity), so this wins even though it's declared right after it. */
+    .pm-nowrap-2col[style*="1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
   }
 
   /* Action bars (space-between) → wrap on tiny screens */

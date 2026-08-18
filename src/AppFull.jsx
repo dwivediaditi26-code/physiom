@@ -1650,7 +1650,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && (
+          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -1799,8 +1799,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       <div style={{fontSize:"1.15rem",fontWeight:800,color:PC.text}}>Demographics</div>
 
                       {nField("Full Name",<input id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>,true,"dem_name")}
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                        <div>{nField("Date of Birth",<input id="dem_dob" style={nInp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,false,"dem_dob")}</div>
+                      {/* className (not just the inline grid style) so this
+                          survives the global [style*="1fr 1fr"] mobile
+                          override in utils.jsx, which force-collapses ANY
+                          "1fr 1fr" inline grid to 1 column below 400px --
+                          catching this DOB/Age pair even though it's meant
+                          to always stay side-by-side (see .pm-nowrap-2col
+                          override rule added alongside that block). Date
+                          input also gets -webkit-appearance:none -- without
+                          it, iOS Safari renders type="date" with its own
+                          oversized native control instead of respecting
+                          nInp's padding/font-size, which is what was making
+                          the DOB box look huge. */}
+                      <div className="pm-nowrap-2col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                        <div>{nField("Date of Birth",<input id="dem_dob" style={{...nInp,WebkitAppearance:"none",appearance:"none"}} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,false,"dem_dob")}</div>
                         <div>{nField("Age",<input id="dem_age" style={nInp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,true,"dem_age")}</div>
                       </div>
                       <div style={{marginBottom:16}}>
