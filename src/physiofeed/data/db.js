@@ -309,43 +309,200 @@ export async function getExercises() { return clone(EXERCISES); }
 
 /* ---------------- people ---------------- */
 
-// SUPABASE: supabase.from('profiles').select('*').neq('id', userId)
+// Phase 3a: reuses the profiles + follows tables Phase 1/2 already created --
+// no new schema needed for this one. Same rules as everything else in this
+// file: try the real query, fall back to the mock PEOPLE list on any
+// failure (not signed in, tables not created yet, etc). Once real
+// clinicians exist as profiles rows, they show up here automatically
+// alongside (never replacing) the demo people, since the demo entries
+// aren't real auth users and can never collide with a real profile id.
+//
+// "mutual" (mutual connections) is left at 0 for real profiles -- it needs
+// its own intersection query (people you and they both follow) that's a
+// real design decision on its own, not something to bolt on here. Every
+// other field maps directly.
 export async function getPeople() {
-  return clone(_people);
+  try {
+    const uid = await currentUserId();
+    let query = supabase.from("profiles").select("id, name, role, location, gradient");
+    if (uid) query = query.neq("id", uid);
+    const { data: profiles, error } = await query;
+    if (error) throw error;
+    if (!profiles || profiles.length === 0) return clone(_people);
+
+    const { data: follows } = uid
+      ? await supabase.from("follows").select("following_id").eq("follower_id", uid)
+      : { data: [] };
+    const followingSet = new Set((follows || []).map((f) => f.following_id));
+
+    const real = profiles.map((p) => ({
+      id: p.id, name: p.name, role: p.role || "", location: p.location || "",
+      mutual: 0, grad: p.gradient || "violet", following: followingSet.has(p.id),
+    }));
+    // Demo people stay visible alongside real ones so the People tab never
+    // looks sparse while PhysioFeed only has a handful of real clinicians.
+    return clone([...real, ..._people]);
+  } catch (e) {
+    console.error("getPeople(): falling back to demo people --", e?.message || e);
+    return clone(_people);
+  }
 }
-// SUPABASE: supabase.from('follows').upsert/delete matching { follower_id, following_id }
+
 export async function toggleFollowPerson(id) {
-  _people = _people.map((p) => (p.id === id ? { ...p, following: !p.following } : p));
-  return clone(_people);
-}
-
-/* ---------------- notifications ---------------- */
-
-// SUPABASE: supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-export async function getNotifications() {
-  return clone(NOTIFICATIONS);
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { data: existing, error: selErr } = await supabase.from("follows").select("follower_id").eq("follower_id", uid).eq("following_id", id).maybeSingle();
+    if (selErr) throw selErr;
+    if (existing) {
+      const { error } = await supabase.from("follows").delete().eq("follower_id", uid).eq("following_id", id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("follows").insert({ follower_id: uid, following_id: id });
+      if (error) throw error;
+    }
+  } catch (e) {
+    // Covers both "not signed in" and "id is a demo person, not a real
+    // profile" (foreign key violation) -- same fallback shape as posts.
+    _people = _people.map((p) => (p.id === id ? { ...p, following: !p.following } : p));
+  }
+  return getPeople();
 }
 
 /* ---------------- evidence ---------------- */
 
-// SUPABASE: supabase.from('research_articles').select('*').order('year', { ascending: false })
+// Phase 3b (see supabase/add_evidence_communities.sql). research_articles is
+// admin-curated content -- there's no "submit an article" flow in the app
+// yet, so this table starts out empty and getEvidence() keeps showing the
+// demo library (same "don't look empty" rule as getPosts()) until an admin
+// adds real rows via SQL/a future admin panel.
 export async function getEvidence() {
-  return clone(_evidence);
+  try {
+    const uid = await currentUserId();
+    const { data: articles, error } = await supabase
+      .from("research_articles")
+      .select("id, title, journal, type, year, level, category, tags, gradient")
+      .order("year", { ascending: false });
+    if (error) throw error;
+    if (!articles || articles.length === 0) return clone(_evidence);
+
+    const { data: saves } = uid
+      ? await supabase.from("research_saves").select("article_id").eq("user_id", uid)
+      : { data: [] };
+    const savedSet = new Set((saves || []).map((s) => s.article_id));
+
+    return articles.map((a) => ({
+      id: a.id, title: a.title, journal: a.journal, type: a.type, year: a.year,
+      level: a.level, category: a.category, tags: a.tags || [], grad: a.gradient,
+      saved: savedSet.has(a.id),
+    }));
+  } catch (e) {
+    console.error("getEvidence(): falling back to demo evidence --", e?.message || e);
+    return clone(_evidence);
+  }
 }
-// SUPABASE: supabase.from('research_saves').upsert/delete matching { article_id, user_id }
+
 export async function toggleSaveEvidence(id) {
-  _evidence = _evidence.map((e) => (e.id === id ? { ...e, saved: !e.saved } : e));
-  return clone(_evidence);
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { data: existing, error: selErr } = await supabase.from("research_saves").select("article_id").eq("article_id", id).eq("user_id", uid).maybeSingle();
+    if (selErr) throw selErr;
+    if (existing) {
+      const { error } = await supabase.from("research_saves").delete().eq("article_id", id).eq("user_id", uid);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("research_saves").insert({ article_id: id, user_id: uid });
+      if (error) throw error;
+    }
+  } catch (e) {
+    _evidence = _evidence.map((ev) => (ev.id === id ? { ...ev, saved: !ev.saved } : ev));
+  }
+  return getEvidence();
 }
 
 /* ---------------- communities ---------------- */
 
-// SUPABASE: supabase.from('communities').select('*, community_members(count)')
+// Phase 3b. Same "admin-curated, starts empty, demo list shows until real
+// rows exist" pattern as evidence above. Member counts are computed live
+// via Supabase's embedded count (`community_members(count)`) rather than a
+// stored counter -- see the migration file's comment for why.
 export async function getCommunities() {
-  return clone(_communities);
+  try {
+    const uid = await currentUserId();
+    const { data: communities, error } = await supabase
+      .from("communities")
+      .select("id, name, description, gradient, community_members(count)");
+    if (error) throw error;
+    if (!communities || communities.length === 0) return clone(_communities);
+
+    const { data: memberships } = uid
+      ? await supabase.from("community_members").select("community_id").eq("user_id", uid)
+      : { data: [] };
+    const joinedSet = new Set((memberships || []).map((m) => m.community_id));
+
+    return communities.map((c) => ({
+      id: c.id, name: c.name, desc: c.description, grad: c.gradient,
+      members: c.community_members?.[0]?.count || 0,
+      joined: joinedSet.has(c.id),
+    }));
+  } catch (e) {
+    console.error("getCommunities(): falling back to demo communities --", e?.message || e);
+    return clone(_communities);
+  }
 }
-// SUPABASE: supabase.from('community_members').upsert/delete matching { community_id, user_id }
+
 export async function toggleJoinCommunity(id) {
-  _communities = _communities.map((c) => (c.id === id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
-  return clone(_communities);
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { data: existing, error: selErr } = await supabase.from("community_members").select("community_id").eq("community_id", id).eq("user_id", uid).maybeSingle();
+    if (selErr) throw selErr;
+    if (existing) {
+      const { error } = await supabase.from("community_members").delete().eq("community_id", id).eq("user_id", uid);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("community_members").insert({ community_id: id, user_id: uid });
+      if (error) throw error;
+    }
+  } catch (e) {
+    _communities = _communities.map((c) => (c.id === id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
+  }
+  return getCommunities();
+}
+
+/* ---------------- notifications ---------------- */
+
+// Phase 4 (see supabase/add_notifications.sql). Notifications are written
+// server-side by SECURITY DEFINER triggers the instant a like/comment/
+// follow happens -- this function only ever reads. Falls back to the demo
+// NOTIFICATIONS list when signed out or the table doesn't exist yet.
+export async function getNotifications() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(NOTIFICATIONS);
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("id, icon_name, text, tone, read, created_at")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) return clone(NOTIFICATIONS);
+    return data.map((n) => ({ id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read }));
+  } catch (e) {
+    console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
+    return clone(NOTIFICATIONS);
+  }
+}
+
+export async function markNotificationRead(id) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", uid);
+    if (error) throw error;
+  } catch (e) {
+    console.error("markNotificationRead(): no-op --", e?.message || e);
+  }
+  return getNotifications();
 }
