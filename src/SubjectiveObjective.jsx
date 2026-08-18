@@ -5107,15 +5107,17 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                         </div>
                       )}
 
-                      {/* Adaptive tiering: CORE + triggered CONDITIONAL (+ any
-                          legacy note that already holds data) render inline;
-                          DEEP-dive detail sits behind an "Add more detail"
-                          expander. Non-visible gated fields are omitted (their
-                          data, if ever set, still flows to the engine). */}
+                      {/* Adaptive tiering: CORE + triggered CONDITIONAL render
+                          inline; DEEP-dive detail AND free-text Notes fields
+                          (2026-08-18: notes were previously always inline,
+                          even blank, adding 2-3 empty boxes per section) both
+                          sit behind the same "Add more detail" expander.
+                          Non-visible gated fields are omitted (their data, if
+                          ever set, still flows to the engine). */}
                       {(() => {
                         const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
-                        const mainFields = classified.filter((c) => c.visible && c.tier !== "deep");
-                        const deepFields = classified.filter((c) => c.visible && c.tier === "deep");
+                        const mainFields = classified.filter((c) => c.visible && c.tier !== "deep" && c.tier !== "note");
+                        const deepFields = classified.filter((c) => c.visible && (c.tier === "deep" || c.tier === "note"));
                         const open = !!deepOpen[key];
                         return (
                           <div style={{ display:"flex", flexDirection:"column", gap:0 }}>

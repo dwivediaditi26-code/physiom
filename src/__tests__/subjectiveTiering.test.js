@@ -33,14 +33,28 @@ describe("conditional gating (the reported bug)", () => {
     expect(y.tier).toBe("conditional");
   });
   it("gates the Headache block on cx_ha_present", () => {
-    expect(classifyField({ id: "cx_ha_triggers" }, {}).visible).toBe(false);
-    expect(classifyField({ id: "cx_ha_triggers" }, { cx_ha_present: "Yes — secondary to neck pain" }).visible).toBe(true);
+    // 2026-08-18: the headache gate was trimmed from 5 fields to 2
+    // (location, frequency) per user feedback that a "yes" shouldn't reveal
+    // every related field, only the ones that change what's asked next.
+    // cx_ha_triggers is no longer in that gate at all -- it's permanently
+    // deep-tier now (still reachable, just under "+ Add more detail",
+    // never auto-revealed by cx_ha_present).
+    expect(classifyField({ id: "cx_ha_triggers" }, {}).tier).toBe("deep");
+    expect(classifyField({ id: "cx_ha_triggers" }, { cx_ha_present: "Yes — secondary to neck pain" }).tier).toBe("deep");
+    expect(classifyField({ id: "cx_ha_location" }, {}).visible).toBe(false);
+    expect(classifyField({ id: "cx_ha_location" }, { cx_ha_present: "Yes — secondary to neck pain" }).visible).toBe(true);
   });
-  it("reveals WAD / dermatomal only on trauma / radiation", () => {
+  it("reveals WAD only on trauma; dermatomal no longer auto-reveals at all", () => {
     expect(classifyField({ id: "cx_moi_wad" }, { cx_moi: "No clear mechanism — insidious onset" }).visible).toBe(false);
     expect(classifyField({ id: "cx_moi_wad" }, { cx_moi: "Whiplash — rear-end MVA" }).visible).toBe(true);
-    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "No radiation — local only" }).visible).toBe(false);
-    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "Down arm to elbow (R)" }).visible).toBe(true);
+    // 2026-08-18: dermatomal distribution's radiation-triggered gate was
+    // removed entirely per user feedback -- "you don't need to expose
+    // dermatomal distribution during the first interview, that's an
+    // objective/neuro-exam determination". It's permanently deep-tier now,
+    // regardless of the radiation answer -- still fully documentable one
+    // tap under "+ Add more detail", just never auto-surfaced.
+    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "No radiation — local only" }).tier).toBe("deep");
+    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "Down arm to elbow (R)" }).tier).toBe("deep");
   });
   it("keeps the gate QUESTION itself always visible", () => {
     expect(classifyField({ id: "cx_arm_present" }, {}).visible).toBe(true);
