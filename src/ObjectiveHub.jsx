@@ -6,7 +6,7 @@
 // NeurologicalModule via their existing lazy_*.jsx wrappers) already used
 // everywhere else in the app -- nothing invented, workflow only.
 import React, { useState } from "react";
-import { REGION_NAV, REGION_FAMILY_KEY } from "./SubjectiveObjective.jsx";
+import { REGION_NAV, REGION_FAMILY_KEY, buildDocumentedSummary, DocumentedSummaryModal } from "./SubjectiveObjective.jsx";
 import { LazyTab } from "./utils.jsx";
 import HowToPerformDrawer, { romInfoSections, mmtInfoSections } from "./HowToPerformDrawer.jsx";
 
@@ -15,7 +15,6 @@ const LazyMMT = React.lazy(() => import("./lazy_mmt.jsx"));
 const LazySpecial = React.lazy(() => import("./lazy_special.jsx"));
 const LazyNeuro = React.lazy(() => import("./lazy_neuro.jsx"));
 const LazyObservation = React.lazy(() => import("./lazy_observation.jsx"));
-const LazyDiagnosis = React.lazy(() => import("./lazy_diagnosis.jsx"));
 
 function Sec({ icon, title, PC, expanded, onToggle, children }) {
   return (
@@ -36,6 +35,7 @@ function Sec({ icon, title, PC, expanded, onToggle, children }) {
 export default function ObjectiveHub({ data, set, navTo, PC }) {
   const [expandedKey, setExpandedKey] = useState(null); // `${region}:${type}`
   const [howTo, setHowTo] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   let selectedRegions = [];
   try { selectedRegions = JSON.parse(data.cx_selected_regions || "[]"); } catch { selectedRegions = []; }
@@ -58,14 +58,17 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
 
   return (
     <div>
-      {/* Suggest Probable Diagnosis -- moved to the top (2026-08-18) and
-          restyled to match Subjective's "Suggest probable objective
-          assessment" button (solid gradient, full width, region-count
-          pill) instead of a plain accordion card. Same deterministic
-          engine + button already used in SOAP Notes' Provisional Diagnosis
-          section -- reads data.cx_selected_regions + all recorded
-          subjective/objective fields, nothing new invented. */}
-      <button type="button" onClick={() => setExpandedKey(k => k === "diagnosis" ? null : "diagnosis")}
+      {/* Suggest probable objective assessment -- top button (2026-08-18),
+          styled and worded to match Subjective's own button exactly. It
+          now opens the SAME "What you've documented" summary Subjective
+          shows (buildDocumentedSummary / DocumentedSummaryModal, shared
+          from SubjectiveObjective.jsx) instead of the unrelated
+          ProbableDiagnosis/differential-diagnosis tool it was wrongly
+          wired to before -- this button's job is to remind the clinician
+          what's already been documented in Subjective, not to suggest a
+          diagnosis (that's SOAP Notes' separate "Suggest Probable
+          Diagnosis" feature). */}
+      <button type="button" onClick={() => setShowSummary(true)}
         style={{
           width: "100%", padding: "12px 16px", borderRadius: 10, border: "none",
           background: `linear-gradient(135deg, ${PC.accent}, ${PC.a2 || PC.accent})`,
@@ -78,11 +81,15 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""}
         </span>
       </button>
-      {expandedKey === "diagnosis" && (
-        <div style={{ marginBottom: 16 }}>
-          <LazyTab><LazyDiagnosis data={data} onNav={navTo} /></LazyTab>
-        </div>
-      )}
+      {showSummary && (() => {
+        const { rows, hasBlocker } = buildDocumentedSummary(data);
+        return (
+          <DocumentedSummaryModal rows={rows} hasBlocker={hasBlocker} PC={PC}
+            onClose={() => setShowSummary(false)}
+            primaryLabel="Edit in Subjective →"
+            onPrimary={() => { setShowSummary(false); navTo("subjective"); }} />
+        );
+      })()}
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <button type="button" onClick={() => navTo("subjective")}

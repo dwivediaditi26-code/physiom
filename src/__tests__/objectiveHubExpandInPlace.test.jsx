@@ -49,17 +49,22 @@ describe("ObjectiveHub", () => {
     expect(navTo).not.toHaveBeenCalled();
   });
 
-  it("shows a Suggest Probable Diagnosis card that expands the real ProbableDiagnosis button in place", async () => {
+  it("shows a Suggest probable objective assessment button that opens the same 'What you've documented' summary as Subjective", async () => {
+    // 2026-08-18: this button used to (wrongly) open ProbableDiagnosis --
+    // it now opens the shared DocumentedSummaryModal (buildDocumentedSummary
+    // / DocumentedSummaryModal, exported from SubjectiveObjective.jsx), the
+    // exact same read-only summary of filled Subjective data that
+    // Subjective's own "Suggest probable objective assessment" button shows.
     const navTo = vi.fn();
-    const data = { cx_selected_regions: JSON.stringify(["Shoulder (L)"]) };
+    const data = { cx_selected_regions: JSON.stringify(["Shoulder (L)"]), cc_main: "Right shoulder pain on overhead reaching" };
     render(<ObjectiveHub data={data} set={vi.fn()} navTo={navTo} PC={PC} />);
 
-    fireEvent.click(screen.getByText(/Suggest Probable Diagnosis/));
-    // ProbableDiagnosis's own button label -- proves the real component
-    // (already used in SOAP Notes' Provisional Diagnosis section) rendered
-    // inline here too. Longer timeout for the same large lazy-chunk reason
-    // as the Observation card above.
-    await screen.findByText(/SUGGEST PROBABLE DIAGNOSIS/i, {}, { timeout: 5000 });
+    fireEvent.click(screen.getByText(/Suggest probable objective assessment/));
+    await screen.findByText(/What you've documented/i);
+    expect(screen.getByText(/Right shoulder pain on overhead reaching/)).toBeInTheDocument();
     expect(navTo).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText(/Edit in Subjective/));
+    expect(navTo).toHaveBeenCalledWith("subjective");
   });
 });

@@ -22,6 +22,127 @@ import { genericTestNav } from "./genericTestNav.js";
 import { LAYER_ICON, LAYER_TEACH } from "./layerTeaching.js";
 import { Chips } from "./ProbableDiagnosis.jsx";
 
+// ── "What you've documented" summary (shared with ObjectiveHub) ─────────
+// Extracted 2026-08-18 so Objective's "Suggest probable objective
+// assessment" button can show the EXACT same read-only summary of filled
+// Subjective data as Subjective's own button does, instead of the
+// unrelated ProbableDiagnosis/differential-diagnosis tool it was
+// previously (wrongly) wired to. Pure function of `data` -- no
+// component-scope state needed.
+export function buildDocumentedSummary(data) {
+  const SEP = "|";
+  const v = (k) => {
+    const val = data[k];
+    if (Array.isArray(val)) return val.filter(Boolean).join(SEP);
+    return typeof val === "string" ? val : (val ? String(val) : "");
+  };
+  const arr = (k) => {
+    const val = data[k];
+    if (Array.isArray(val)) return val.filter(Boolean);
+    return v(k) ? v(k).split(SEP).filter(Boolean) : [];
+  };
+
+  const rows = [];
+
+  const dem = [data.dem_name, data.dem_age && `${data.dem_age}${data.dem_sex ? ` ${data.dem_sex}` : ""}`, data.dem_occupation].filter(Boolean).join(" · ");
+  if (dem) rows.push({ label: "Patient", val: dem, col: "#534AB7" });
+
+  if (v("cc_main")) rows.push({ label: "Complaint", val: v("cc_main"), col: "#dc2626" });
+  const pain = [v("cc_vas_now") && `Pain now ${v("cc_vas_now")}/10`, v("cc_vas_worst") && `Worst ${v("cc_vas_worst")}/10`].filter(Boolean).join(" · ");
+  if (pain) rows.push({ label: "Pain score", val: pain, col: "#dc2626" });
+
+  const onset = [v("cc_onset_date") || v("cx_onset_date"), v("cc_duration"), v("cc_mechanism") || v("cc_mech_type")].filter(Boolean).join(" · ");
+  if (onset) rows.push({ label: "Onset", val: onset, col: "#d97706" });
+
+  const loc = Object.entries(data).filter(([k]) => k.endsWith("_loc") || k.endsWith("_location")).map(([, val]) => val).filter(Boolean).join("; ");
+  if (loc) rows.push({ label: "Location", val: loc, col: "#7c3aed" });
+
+  const aggKeys = Object.keys(data).filter(k => k.includes("_agg") && data[k]);
+  const aggVals = [...new Set(aggKeys.flatMap(k => arr(k)))].filter(v2 => v2 && v2.length > 2).slice(0, 6).join(", ");
+  if (aggVals) rows.push({ label: "Aggravating", val: aggVals, col: "#dc2626" });
+
+  const relKeys = Object.keys(data).filter(k => k.includes("_rel") && data[k]);
+  const relVals = [...new Set(relKeys.flatMap(k => arr(k)))].filter(v2 => v2 && v2.length > 2).slice(0, 5).join(", ");
+  if (relVals) rows.push({ label: "Relieving", val: relVals, col: "#059669" });
+
+  const patKeys = ["cc_24hr", "cx_24hr", "lx_24hr", "kn_24hr", "hp_24hr", "sh_24hr", "af_24hr"];
+  const pat = patKeys.map(k => v(k)).filter(Boolean)[0];
+  if (pat) rows.push({ label: "24-hr pattern", val: pat, col: "#7c3aed" });
+
+  const trajKeys = ["cx_trajectory", "lx_trajectory", "kn_trajectory", "hp_trajectory", "sh_trajectory"];
+  const traj = trajKeys.map(k => v(k)).filter(Boolean)[0];
+  if (traj) rows.push({ label: "Trajectory", val: traj, col: "#7c3aed" });
+
+  const radKeys = Object.keys(data).filter(k => k.includes("radiation") || k.includes("_rad") && data[k]);
+  const radVals = [...new Set(radKeys.flatMap(k => arr(k)))].filter(v2 => v2 && v2.length > 2 && !v2.toLowerCase().includes("no rad")).slice(0, 4).join(", ");
+  if (radVals) rows.push({ label: "Radiation", val: radVals, col: "#f97316" });
+
+  const rfAction = v("grf_action");
+  if (rfAction) rows.push({ label: "Red flags", val: rfAction, col: rfAction.includes("No red flags") ? "#059669" : "#dc2626" });
+
+  const goals = [v("ar_goal_function"), v("ar_goal_pain"), v("ar_goal_return"), v("sub_goals")].filter(Boolean).slice(0, 2).join("; ");
+  if (goals) rows.push({ label: "Goals", val: goals, col: "#059669" });
+
+  const pmh = arr("pmh_conditions").filter(v2 => !v2.includes("No significant")).slice(0, 3).join(", ");
+  if (pmh) rows.push({ label: "Past history", val: pmh, col: "#6b7280" });
+
+  const meds = arr("med_current").filter(v2 => !v2.includes("None")).slice(0, 3).join(", ");
+  if (meds) rows.push({ label: "Medications", val: meds, col: "#6b7280" });
+
+  const rfSkipped = (UNIV_S.red_flags?.fields || []).filter(f => !data[f.id] || data[f.id] === "").length;
+  const hasBlocker = rfSkipped > 0;
+
+  return { rows, hasBlocker };
+}
+
+// Same bottom-sheet modal markup Subjective has always used, just with the
+// primary action (and its label) made configurable so ObjectiveHub can
+// point it at "Go to Subjective" instead of "Run analysis".
+export function DocumentedSummaryModal({ rows, hasBlocker, PC, onClose, primaryLabel, onPrimary, primaryDisabled, secondaryLabel = "Continue editing" }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: PC.surface, borderRadius: "16px 16px 0 0", padding: "20px 16px 28px", maxHeight: "82vh", overflowY: "auto" }}>
+        <div style={{ width: 40, height: 4, borderRadius: 99, background: PC.border, margin: "0 auto 16px" }} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: PC.text, marginBottom: 14 }}>What you've documented</div>
+        {rows.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "24px 0", color: PC.muted, fontSize: 13 }}>Nothing filled yet — complete the assessment sections first.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 14, borderRadius: 12, overflow: "hidden", border: `1px solid ${PC.border}` }}>
+            {rows.map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", background: i % 2 === 0 ? PC.s2 : PC.surface, borderBottom: i < rows.length - 1 ? `1px solid ${PC.border}` : "none", alignItems: "flex-start" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: r.col, minWidth: 86, flexShrink: 0, paddingTop: 1, textTransform: "uppercase", letterSpacing: "0.4px" }}>{r.label}</span>
+                <span style={{ fontSize: 12.5, color: PC.text, lineHeight: 1.55, flex: 1 }}>{r.val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {hasBlocker && (
+          <div style={{ padding: "10px 12px", background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, marginBottom: 12 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: "#A32D2D", marginBottom: 2 }}>⚠ Red flag screen incomplete</div>
+            <div style={{ fontSize: 10.5, color: "#991B1B" }}>Complete before running the clinical engine</div>
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: onPrimary ? "1fr 1fr" : "1fr", gap: 8 }}>
+          <button onClick={onClose}
+            style={{ padding: "11px", borderRadius: 10, border: `1px solid ${PC.border}`, background: "transparent", color: PC.muted, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+            {secondaryLabel}
+          </button>
+          {onPrimary && (
+            <button onClick={onPrimary} disabled={primaryDisabled}
+              style={{ padding: "11px", borderRadius: 10, border: "none",
+                background: !primaryDisabled ? `linear-gradient(135deg,${PC.accent},${PC.a2})` : PC.s3,
+                color: !primaryDisabled ? "#fff" : PC.muted, fontWeight: 800, fontSize: 13,
+                cursor: !primaryDisabled ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+              {primaryLabel}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Map a condition's authored fascia description to the specific Fascia-module
 // test cards to open, so tapping the "Fascia" suggestion deep-links straight to
 // the relevant line (e.g. deep-front-arm line) instead of the section top.
@@ -4805,130 +4926,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       })()}
 
       {/* ── Summary modal — shows filled values as readable text ── */}
-      {showSummary && (()=>{
-        const SEP = "|";
-        // Some fields matched by the broad *_agg/*_rel/*radiation* key scans
-        // below are written as arrays by multi-select/checkbox-group inputs
-        // elsewhere in this file (see rget()'s loc_radiation/cc_onset
-        // handling above for the same class of field) rather than as a
-        // SEP-joined string -- v()/arr() need to tolerate that instead of
-        // assuming every matched key is always a string.
-        const v = (k) => {
-          const val = data[k];
-          if (Array.isArray(val)) return val.filter(Boolean).join(SEP);
-          return typeof val === "string" ? val : (val ? String(val) : "");
-        };
-        const arr = (k) => {
-          const val = data[k];
-          if (Array.isArray(val)) return val.filter(Boolean);
-          return v(k) ? v(k).split(SEP).filter(Boolean) : [];
-        };
-        const hasAny = (keys) => keys.some(k=>v(k));
-
-        // Build readable summary rows from actual filled data
-        const rows = [];
-
-        // Demographics
-        const dem = [data.dem_name, data.dem_age&&`${data.dem_age}${data.dem_sex?` ${data.dem_sex}`:""}`, data.dem_occupation].filter(Boolean).join(" · ");
-        if(dem) rows.push({label:"Patient",val:dem,col:"#534AB7"});
-
-        // Chief complaint
-        if(v("cc_main")) rows.push({label:"Complaint",val:v("cc_main"),col:"#dc2626"});
-        const pain=[v("cc_vas_now")&&`Pain now ${v("cc_vas_now")}/10`,v("cc_vas_worst")&&`Worst ${v("cc_vas_worst")}/10`].filter(Boolean).join(" · ");
-        if(pain) rows.push({label:"Pain score",val:pain,col:"#dc2626"});
-
-        // Onset & duration
-        const onset=[v("cc_onset_date")||v("cx_onset_date"),v("cc_duration"),v("cc_mechanism")||v("cc_mech_type")].filter(Boolean).join(" · ");
-        if(onset) rows.push({label:"Onset",val:onset,col:"#d97706"});
-
-        // Location
-        const loc=Object.entries(data).filter(([k,val])=>k.endsWith("_loc")||k.endsWith("_location")).map(([,val])=>val).filter(Boolean).join("; ");
-        if(loc) rows.push({label:"Location",val:loc,col:"#7c3aed"});
-
-        // Aggravating — collect all *_agg* fields
-        const aggKeys=Object.keys(data).filter(k=>k.includes("_agg")&&data[k]);
-        const aggVals=[...new Set(aggKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,6).join(", ");
-        if(aggVals) rows.push({label:"Aggravating",val:aggVals,col:"#dc2626"});
-
-        // Relieving
-        const relKeys=Object.keys(data).filter(k=>k.includes("_rel")&&data[k]);
-        const relVals=[...new Set(relKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2).slice(0,5).join(", ");
-        if(relVals) rows.push({label:"Relieving",val:relVals,col:"#059669"});
-
-        // Symptom pattern / 24hr
-        const patKeys=["cc_24hr","cx_24hr","lx_24hr","kn_24hr","hp_24hr","sh_24hr","af_24hr"];
-        const pat=patKeys.map(k=>v(k)).filter(Boolean)[0];
-        if(pat) rows.push({label:"24-hr pattern",val:pat,col:"#7c3aed"});
-
-        const trajKeys=["cx_trajectory","lx_trajectory","kn_trajectory","hp_trajectory","sh_trajectory"];
-        const traj=trajKeys.map(k=>v(k)).filter(Boolean)[0];
-        if(traj) rows.push({label:"Trajectory",val:traj,col:"#7c3aed"});
-
-        // Radiation
-        const radKeys=Object.keys(data).filter(k=>k.includes("radiation")||k.includes("_rad")&&data[k]);
-        const radVals=[...new Set(radKeys.flatMap(k=>arr(k)))].filter(v2=>v2&&v2.length>2&&!v2.toLowerCase().includes("no rad")).slice(0,4).join(", ");
-        if(radVals) rows.push({label:"Radiation",val:radVals,col:"#f97316"});
-
-        // Red flags
-        const rfAction=v("grf_action");
-        if(rfAction) rows.push({label:"Red flags",val:rfAction,col:rfAction.includes("No red flags")?"#059669":"#dc2626"});
-
-        // Goals
-        const goals=[v("ar_goal_function"),v("ar_goal_pain"),v("ar_goal_return"),v("sub_goals")].filter(Boolean).slice(0,2).join("; ");
-        if(goals) rows.push({label:"Goals",val:goals,col:"#059669"});
-
-        // PMH
-        const pmh=arr("pmh_conditions").filter(v2=>!v2.includes("No significant")).slice(0,3).join(", ");
-        if(pmh) rows.push({label:"Past history",val:pmh,col:"#6b7280"});
-
-        // Medications
-        const meds=arr("med_current").filter(v2=>!v2.includes("None")).slice(0,3).join(", ");
-        if(meds) rows.push({label:"Medications",val:meds,col:"#6b7280"});
-
-        const rfSec=Object.entries(sections).find(([k])=>k==="red_flags");
-        const rfSkipped=rfSec?rfSec[1].fields.filter(f=>!data[f.id]||data[f.id]==="").length:0;
-        const hasBlocker=rfSkipped>0;
-
-        return(
-          <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
-            onClick={()=>setShowSummary(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,background:PC.surface,borderRadius:"16px 16px 0 0",padding:"20px 16px 28px",maxHeight:"82vh",overflowY:"auto"}}>
-              <div style={{width:40,height:4,borderRadius:99,background:PC.border,margin:"0 auto 16px"}}/>
-              <div style={{fontSize:15,fontWeight:800,color:PC.text,marginBottom:14}}>What you've documented</div>
-              {rows.length===0?(
-                <div style={{textAlign:"center",padding:"24px 0",color:PC.muted,fontSize:13}}>Nothing filled yet — complete the assessment sections first.</div>
-              ):(
-                <div style={{display:"flex",flexDirection:"column",gap:0,marginBottom:14,borderRadius:12,overflow:"hidden",border:`1px solid ${PC.border}`}}>
-                  {rows.map((r,i)=>(
-                    <div key={i} style={{display:"flex",gap:10,padding:"10px 14px",background:i%2===0?PC.s2:PC.surface,borderBottom:i<rows.length-1?`1px solid ${PC.border}`:"none",alignItems:"flex-start"}}>
-                      <span style={{fontSize:11,fontWeight:700,color:r.col,minWidth:86,flexShrink:0,paddingTop:1,textTransform:"uppercase",letterSpacing:"0.4px"}}>{r.label}</span>
-                      <span style={{fontSize:12.5,color:PC.text,lineHeight:1.55,flex:1}}>{r.val}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {hasBlocker&&(
-                <div style={{padding:"10px 12px",background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:10,marginBottom:12}}>
-                  <div style={{fontSize:11.5,fontWeight:800,color:"#A32D2D",marginBottom:2}}>⚠ Red flag screen incomplete</div>
-                  <div style={{fontSize:10.5,color:"#991B1B"}}>Complete before running the clinical engine</div>
-                </div>
-              )}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <button onClick={()=>setShowSummary(false)}
-                  style={{padding:"11px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
-                  Continue editing
-                </button>
-                <button onClick={()=>{setShowSummary(false);runInterpretation();}}
-                  disabled={selectedRegions.length===0}
-                  style={{padding:"11px",borderRadius:10,border:"none",
-                    background:selectedRegions.length>0?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
-                    color:selectedRegions.length>0?"#fff":PC.muted,fontWeight:800,fontSize:13,
-                    cursor:selectedRegions.length>0?"pointer":"not-allowed",fontFamily:"inherit"}}>
-                  🧠 Run analysis
-                </button>
-              </div>
-            </div>
-          </div>
+      {showSummary && (() => {
+        const { rows, hasBlocker } = buildDocumentedSummary(data);
+        return (
+          <DocumentedSummaryModal rows={rows} hasBlocker={hasBlocker} PC={PC}
+            onClose={() => setShowSummary(false)}
+            primaryLabel="🧠 Run analysis" primaryDisabled={selectedRegions.length === 0}
+            onPrimary={() => { setShowSummary(false); runInterpretation(); }} />
         );
       })()}
 
