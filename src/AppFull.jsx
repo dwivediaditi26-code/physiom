@@ -514,6 +514,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Clinical tab landing: "+ New Assessment" asks which specialty stream
   // before creating the patient, instead of always assuming Ortho.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  // Demographics step redesign: the 6 core fields (name/dob/age/gender/
+  // phone/email/occupation) show up front; everything else the clinic
+  // still needs on file (sex detail, work info, address, emergency
+  // contact, referral, insurance, medical history, consent) lives behind
+  // this "More details" toggle instead of disappearing.
+  const [demMoreOpen, setDemMoreOpen] = useState(false);
 
   // Auto-save current data to active patient whenever data changes
   useEffect(() => {
@@ -1156,9 +1162,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <button key={st.id} type="button"
                   onClick={()=>{
                     if (!st.live) return;
-                    setStream(st.id);
                     setShowSpecialtyPicker(false);
-                    createNewPatient();
+                    if (st.id === "ortho") {
+                      // Ortho has its own full-page Demographics step (part
+                      // of the 9-step stepper) -- land there directly
+                      // instead of the old floating intake-form popup.
+                      // Blank slate: a fresh assessment must never show the
+                      // previous patient's leftover data.
+                      setStream("ortho");
+                      setData({});
+                      setActivePatientId(null);
+                      navTo("demographics");
+                    } else {
+                      // Other live streams (e.g. Neuro) don't have their own
+                      // Demographics step yet -- keep using the existing
+                      // intake-form popup for them until they do.
+                      setStream(st.id);
+                      createNewPatient();
+                    }
                   }}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,
                     cursor:st.live?"pointer":"not-allowed",fontFamily:"inherit",
@@ -1738,80 +1759,115 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
                   {(()=>{
+                    // Legacy styling, reused only inside "More details" below.
                     const inp={width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
                     const lbl={fontSize:"0.78rem",fontWeight:700,color:PC.muted,marginBottom:5,display:"block"};
                     const sel=(id,opts)=>(<select style={inp} value={data[id]||""} onChange={e=>set(id,e.target.value)}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>);
                     const field=(label,el)=>(<div style={{marginBottom:12}}><label style={lbl}>{label}</label>{el}</div>);
                     const card=(title,children)=>(<div style={{background:PC.s2,borderRadius:12,border:`1px solid ${PC.border}`,padding:"14px 16px"}}><div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{title}</div>{children}</div>);
+
+                    // New front-and-center styling for the 6 core fields.
+                    const nInp={width:"100%",background:PC.surface,border:`1.5px solid ${PC.border}`,borderRadius:10,color:PC.text,fontFamily:"inherit",outline:"none",padding:"11px 13px",fontSize:"0.9rem",boxSizing:"border-box"};
+                    const nLbl={fontSize:"0.82rem",fontWeight:700,color:PC.text,marginBottom:6,display:"block"};
+                    const req=<span style={{color:"#dc2626"}}> *</span>;
+                    // id/htmlFor pairing: real accessibility win (screen
+                    // readers, click-to-focus on the label), and lets tests
+                    // target fields like Date of Birth that have no visible
+                    // placeholder text.
+                    const nField=(label,el,required,id)=>(<div style={{marginBottom:16}}><label htmlFor={id} style={nLbl}>{label}{required&&req}</label>{el}</div>);
+
+                    const requiredOk = !!(data.dem_name?.trim() && data.dem_dob && data.dem_sex && data.dem_phone?.trim());
+                    const genderOpts = ["Male","Female","Other"];
+
                     return(<>
-                      {card("Personal Details",<>
-                        {field("Full Name",<input style={inp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>)}
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                          <div>{field("Date of Birth",<input style={inp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
-                          <div>{field("Age",<input style={inp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
+                      <div style={{fontSize:"1.15rem",fontWeight:800,color:PC.text}}>Demographics</div>
+
+                      {nField("Full Name",<input id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>,true,"dem_name")}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                        <div>{nField("Date of Birth",<input id="dem_dob" style={nInp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,true,"dem_dob")}</div>
+                        <div>{nField("Age",<input id="dem_age" style={nInp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,false,"dem_age")}</div>
+                      </div>
+                      <div style={{marginBottom:16}}>
+                        <label style={nLbl}>Gender{req}</label>
+                        <div style={{display:"flex",gap:8}}>
+                          {genderOpts.map(g=>(
+                            <button key={g} type="button" onClick={()=>set("dem_sex",g)}
+                              style={{flex:1,padding:"11px 0",textAlign:"center",borderRadius:10,fontSize:"0.85rem",fontWeight:700,
+                                border:`1.5px solid ${data.dem_sex===g?PC.accent:PC.border}`,
+                                background:data.dem_sex===g?PC.accent:PC.surface,
+                                color:data.dem_sex===g?"#fff":PC.text,cursor:"pointer"}}>
+                              {g}
+                            </button>
+                          ))}
                         </div>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                          <div>{field("Sex",sel("dem_sex",["Female","Male","Non-binary","Prefer not to say"]))}</div>
-                          <div>{field("Dominant Hand",sel("dem_dominant",["Right","Left","Ambidextrous"]))}</div>
+                      </div>
+                      {nField("Phone",<input id="dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={data.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,true,"dem_phone")}
+                      {nField("Email",<input id="dem_email" style={nInp} type="email" placeholder="patient@email.com" value={data.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>,false,"dem_email")}
+                      {nField("Occupation",<input id="dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"dem_occupation")}
+                      {nField("Address",<input id="dem_address" style={nInp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"dem_address")}
+                      {nField("Referring Doctor / Hospital",<input id="dem_referral_dr" style={nInp} placeholder="Dr. Name, Hospital" value={data.dem_referral_dr||data.dem_gp||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>,false,"dem_referral_dr")}
+
+                      {/* ── More details toggle: everything the clinic still needs on file, just tucked away by default ── */}
+                      <button type="button" onClick={()=>setDemMoreOpen(v=>!v)}
+                        style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",padding:"4px 0 8px",color:PC.accent,fontWeight:700,fontSize:"0.82rem",cursor:"pointer",width:"fit-content"}}>
+                        <span style={{transform:demMoreOpen?"rotate(90deg)":"none",transition:"transform .15s",display:"inline-block"}}>▶</span>
+                        More details {demMoreOpen?"(dominant hand, work, emergency contact, insurance, medical history…)":""}
+                      </button>
+
+                      {demMoreOpen && (
+                        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:4}}>
+                          {card("Personal Details",<>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                              <div>{field("Dominant Hand",sel("dem_dominant",["Right","Left","Ambidextrous"]))}</div>
+                              <div>{field("Work Status",sel("dem_work_status",["Full time","Part time","Self employed","Off work — injury","Off work — illness","Retired","Unemployed","Student","Home duties"]))}</div>
+                            </div>
+                            {field("Employer / Industry",<input style={inp} placeholder="e.g. ABC Corp, Healthcare" value={data.dem_employer||""} onChange={e=>set("dem_employer",e.target.value)}/>)}
+                          </>)}
+                          {card("Contact Details",<>
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                              <div>{field("Emergency Contact Name",<input style={inp} placeholder="Full name" value={data.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
+                              <div>{field("Emergency Contact Phone",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
+                            </div>
+                          </>)}
+                          {card("Clinical & Referral",<>
+                            {field("Referral Source",sel("dem_referral",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
+                            {field("Insurance / Fund",<input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={data.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
+                            {field("Policy / Member Number",<input style={inp} placeholder="Optional" value={data.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
+                            {field("Relevant Medical History",<textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={data.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
+                            {field("Current Medications",<input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={data.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
+                          </>)}
+                          {card("Consent",<>
+                            {field("Consent to Treatment",sel("dem_consent",["Yes — verbal","Yes — written","Not yet"]))}
+                            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginTop:4}}>
+                              <input type="checkbox" checked={!!data.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{width:16,height:16,flexShrink:0}}/>
+                              <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>Written consent obtained</span>
+                            </label>
+                          </>)}
                         </div>
-                        {field("Occupation",<input style={inp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
-                        {field("Employer / Industry",<input style={inp} placeholder="e.g. ABC Corp, Healthcare" value={data.dem_employer||""} onChange={e=>set("dem_employer",e.target.value)}/>)}
-                        {field("Work Status",sel("dem_work_status",["Full time","Part time","Self employed","Off work — injury","Off work — illness","Retired","Unemployed","Student","Home duties"]))}
-                      </>)}
-                      {card("Contact Details",<>
-                        {field("Phone Number",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
-                        {field("Email Address",<input style={inp} type="email" placeholder="patient@email.com" value={data.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
-                        {field("Address",<input style={inp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                          <div>{field("Emergency Contact Name",<input style={inp} placeholder="Full name" value={data.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
-                          <div>{field("Emergency Contact Phone",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
-                        </div>
-                      </>)}
-                      {card("Clinical & Referral",<>
-                        {field("Referring Doctor / GP",<input style={inp} placeholder="Dr. Name, Hospital" value={data.dem_referral_dr||data.dem_gp||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>)}
-                        {field("Referral Source",sel("dem_referral",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
-                        {field("Insurance / Fund",<input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={data.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
-                        {field("Policy / Member Number",<input style={inp} placeholder="Optional" value={data.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
-                        {field("Relevant Medical History",<textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={data.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
-                        {field("Current Medications",<input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={data.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
-                      </>)}
-                      {card("Consent",<>
-                        {field("Consent to Treatment",sel("dem_consent",["Yes — verbal","Yes — written","Not yet"]))}
-                        <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginTop:4}}>
-                          <input type="checkbox" checked={!!data.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{width:16,height:16,flexShrink:0}}/>
-                          <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>Written consent obtained</span>
-                        </label>
-                      </>)}
-                    </>);
-                  })()}
-                  {/* ── Save Patient Button ── */}
-                  <div style={{marginTop:20,padding:"14px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:14,display:"flex",flexDirection:"column",gap:10}}>
-                    {!activePatientId ? (
-                      <div style={{textAlign:"center"}}>
-                        <div style={{fontSize:12,color:PC.muted,marginBottom:10}}>Fill in the patient name above, then save to create their record.</div>
-                        <button
-                          disabled={!data.dem_name?.trim()}
-                          onClick={()=>{
-                            if(!data.dem_name?.trim()) return;
+                      )}
+
+                      {/* ── Create/Continue CTA ── */}
+                      <button
+                        disabled={!requiredOk}
+                        onClick={()=>{
+                          if(!requiredOk) return;
+                          if(!activePatientId){
                             const newP={id:genId(),name:data.dem_name,data,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),hasRedFlags:false,lastDx:data.cc_main||""};
                             setPatients(prev=>{const updated=[newP,...prev];savePatientDB(updated, currentUser?.id);return updated;});
                             setActivePatientId(newP.id);
                             setJsonMsg({type:"success",text:`✅ Patient saved: ${data.dem_name}`});
                             setTimeout(()=>setJsonMsg(null),2500);
-                          }}
-                          style={{padding:"12px 32px",background:data.dem_name?.trim()?PC.accent:"#D1D5DB",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.9rem",cursor:data.dem_name?.trim()?"pointer":"not-allowed",width:"100%"}}>
-                          💾 Save Patient to Database
-                        </button>
+                          }
+                          navTo("subjective");
+                        }}
+                        style={{marginTop:6,padding:"15px",background:requiredOk?PC.accent:"#D1D5DB",border:"none",borderRadius:12,color:"#fff",fontWeight:800,fontSize:"0.95rem",cursor:requiredOk?"pointer":"not-allowed",width:"100%"}}>
+                        {activePatientId?"Save & Continue →":"Create Patient & Continue →"}
+                      </button>
+                      <div style={{textAlign:"center",fontSize:"0.72rem",color:PC.muted,lineHeight:1.5,padding:"2px 8px 4px"}}>
+                        Enter basic patient information.<br/>Patient ID is generated automatically.
                       </div>
-                    ) : (
-                      <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
-                        <span style={{fontSize:13,color:"#059669",fontWeight:700}}>✅ Patient record auto-saving</span>
-                        <button onClick={()=>navTo("subjective")} style={{padding:"8px 20px",background:PC.accent,border:"none",borderRadius:8,color:"#fff",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>
-                          Next → Subjective
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    </>);
+                  })()}
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>

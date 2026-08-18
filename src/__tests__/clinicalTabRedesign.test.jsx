@@ -52,15 +52,18 @@ describe("Clinical tab — patient list + specialty picker", () => {
     expect(soonBadges.length).toBe(3); // Sports, Pedia, Cardio
   });
 
-  it("picking Ortho in the specialty picker opens the real Demographics intake form", async () => {
+  it("picking Ortho in the specialty picker lands on the real full-page Demographics step, not a floating popup", async () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
     await screen.findByPlaceholderText("Search patients…");
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Ortho"));
-    expect(await screen.findByTestId("intake-modal")).toBeInTheDocument();
-    expect(screen.getByText("New patient")).toBeInTheDocument();
+    // No floating modal of any kind -- a real page in the normal tab flow.
+    expect(screen.queryByTestId("intake-modal")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("specialty-picker-modal")).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Create Patient & Continue/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("e.g. Riya Sharma")).toBeInTheDocument(); // Full Name field, blank
   });
 
   it("picking a SOON specialty (Sports) does not close the picker or create a patient", async () => {

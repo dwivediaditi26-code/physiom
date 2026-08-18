@@ -89,11 +89,12 @@ describe("Clinical landing page redesign", () => {
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Ortho"));
-    await screen.findByTestId("intake-modal");
-    fireEvent.change(screen.getByPlaceholderText("e.g. Riya Sharma"), { target: { value: "Ortho Patient" } });
-    fireEvent.click(screen.getByText("Consent"));
-    fireEvent.click(screen.getByLabelText(/I consent to physiotherapy assessment and treatment/i));
-    fireEvent.click(screen.getByText("Start Assessment →"));
+    // Lands directly on the full-page Demographics step now.
+    fireEvent.change(await screen.findByLabelText(/^Full Name/), { target: { value: "Ortho Patient" } });
+    fireEvent.change(screen.getByLabelText(/^Date of Birth/), { target: { value: "1996-07-17" } });
+    fireEvent.click(screen.getByRole("button", { name: "Male" }));
+    fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "9876543210" } });
+    fireEvent.click(screen.getByRole("button", { name: /Create Patient & Continue/i }));
     await screen.findByText("Screening Workflow");
 
     // Back to Clinical -- the new patient should show under Recent Patients.
