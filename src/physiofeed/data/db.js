@@ -79,7 +79,7 @@ export async function getPosts() {
     const uid = await currentUserId();
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("id, author_id, category, heading, caption, media_type, media, tags, created_at")
+      .select("id, author_id, category, heading, caption, media_type, media, media_urls, tags, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     if (!posts || posts.length === 0) return clone(_posts); // no real posts yet -- keep the demo feed visible
@@ -119,6 +119,7 @@ export async function getPosts() {
         media: p.media_type, gradient: media.gradient || author?.gradient || "violet", iconName: media.iconName || "Sparkles",
         heading: p.heading, caption: p.caption,
         checklist: media.checklist || [], images: media.images || [], duration: media.duration, phases: media.phases || [],
+        mediaUrls: p.media_urls || [],
         tags: p.tags || [],
         likes: postLikes.length, liked: uid ? postLikes.some((l) => l.user_id === uid) : false, saved: savedSet.has(p.id),
         likedByPreview: postLikes.slice(0, 2).map((l) => profileById[l.user_id]?.name).filter(Boolean),
@@ -205,13 +206,23 @@ export async function addComment(postId, text) {
   return clone(_posts.find((p) => p.id === postId)) || null;
 }
 
-export async function createPost({ text, category }) {
+// `media` is optional: { type: "photo" | "video", urls: string[], duration?: number }
+// built by Composer.jsx after it's already compressed/validated/uploaded
+// the real files via uploadPostImage()/uploadPostVideo() below. When
+// omitted, posts stay text-only ("checklist" media_type with no items --
+// matches how a plain text post already rendered before this feature
+// existed, just via PostMedia's empty-checklist branch instead of a
+// special "no media" case).
+export async function createPost({ text, category, media }) {
   const heading = text.length > 60 ? text.slice(0, 60) + "…" : text;
+  const mediaType = media?.type || "checklist";
+  const mediaUrls = media?.urls || [];
+  const mediaJson = media?.type === "video" && media?.duration ? { duration: Math.round(media.duration) } : {};
   try {
     const uid = await currentUserId();
     if (!uid) throw new Error("not signed in");
     const { data, error } = await supabase.from("posts")
-      .insert({ author_id: uid, category, heading, caption: text, media_type: "checklist", media: {}, tags: [] })
+      .insert({ author_id: uid, category, heading, caption: text, media_type: mediaType, media: mediaJson, media_urls: mediaUrls, tags: [] })
       .select().single();
     if (error) throw error;
     return clone(data);
@@ -219,14 +230,45 @@ export async function createPost({ text, category }) {
     console.error("createPost(): falling back to local mock post --", e?.message || e);
     const post = {
       id: `p${Date.now()}`, authorId: CURRENT_USER.id, author: CURRENT_USER.name, isSelf: true,
-      verified: true, role: CURRENT_USER.role, time: "now", category, media: "checklist",
+      verified: true, role: CURRENT_USER.role, time: "now", category, media: mediaType,
       gradient: "violet", iconName: "Sparkles", heading,
       checklist: [], caption: text, tags: [], likes: 0, liked: false, saved: false,
-      likedByPreview: [], commentList: [],
+      likedByPreview: [], commentList: [], mediaUrls, duration: mediaJson.duration,
     };
     _posts = [post, ...(_posts)];
     return clone(post);
   }
+}
+
+/* ---------------- media upload ---------------- */
+//
+// Phase 6 (see supabase/add_media_storage.sql). Pure Storage I/O -- file
+// validation/compression lives in lib/media.js (browser-only, no Supabase
+// import), Composer.jsx wires the two together. No local/demo fallback
+// here, same reasoning as moderation: there's nothing sensible to fall
+// back to for "upload this photo" when signed out or the bucket doesn't
+// exist yet, so these throw a real, user-facing error instead of quietly
+// pretending an upload worked when it didn't.
+
+async function uploadToBucket(bucket, uid, fileOrBlob, ext) {
+  const path = `${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, fileOrBlob, { contentType: fileOrBlob.type, upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function uploadPostImage(blob) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload photos.");
+  return uploadToBucket("post-images", uid, blob, "jpg");
+}
+
+export async function uploadPostVideo(file) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload videos.");
+  const ext = (file.name?.split(".").pop() || "mp4").toLowerCase();
+  return uploadToBucket("post-videos", uid, file, ext);
 }
 
 // Real posts can't be carousel-type yet -- Composer.jsx only takes text +

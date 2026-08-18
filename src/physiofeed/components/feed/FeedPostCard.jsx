@@ -14,7 +14,10 @@ export default function FeedPostCard({ post }) {
 
   const handleDoubleTap = (dir) => {
     if (dir === "prev" || dir === "next") {
-      const len = post.images.length, cur = post.mediaIndex || 0;
+      // Real multi-photo posts carry their URLs in mediaUrls; demo carousel
+      // posts (mockData.js) carry theirs in images. Same index field either way.
+      const arr = post.mediaUrls?.length ? post.mediaUrls : post.images;
+      const len = arr.length, cur = post.mediaIndex || 0;
       setCarousel(post.id, dir === "next" ? (cur + 1) % len : (cur - 1 + len) % len);
       return;
     }
@@ -51,7 +54,7 @@ export default function FeedPostCard({ post }) {
         )}
       </div>
 
-      {post.media !== "image" && <h3 className="font-bold text-slate-900 text-base mb-2">{post.heading}</h3>}
+      {post.media !== "image" && post.media !== "photo" && <h3 className="font-bold text-slate-900 text-base mb-2">{post.heading}</h3>}
 
       <PostMedia post={post} onDoubleTap={handleDoubleTap} burst={burst} size="large" />
 

@@ -36,7 +36,9 @@ export function AppDataProvider({ children }) {
   const savePost = useCallback(async (id) => { await db.toggleSave(id); setPosts(await db.getPosts()); }, []);
   const followAuthor = useCallback(async (id) => { await db.toggleFollowAuthor(id); setPosts(await db.getPosts()); }, []);
   const commentOnPost = useCallback(async (id, text) => { await db.addComment(id, text); setPosts(await db.getPosts()); }, []);
-  const publishPost = useCallback(async ({ text, category }) => { await db.createPost({ text, category }); setPosts(await db.getPosts()); }, []);
+  const publishPost = useCallback(async ({ text, category, media }) => { await db.createPost({ text, category, media }); setPosts(await db.getPosts()); }, []);
+  const uploadImage = useCallback((blob) => db.uploadPostImage(blob), []);
+  const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
   const viewStory = useCallback(async (id) => { setStories(await db.markStorySeen(id)); }, []);
   const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
@@ -50,6 +52,7 @@ export function AppDataProvider({ children }) {
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost,
+    uploadImage, uploadVideo,
     composerOpen, setComposerOpen,
   };
 

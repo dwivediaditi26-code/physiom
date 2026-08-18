@@ -31,11 +31,18 @@ function makeChain(table) {
 }
 
 let currentUser = null;
+let storageUploadError = null;
 
 vi.mock("../supabase.js", () => ({
   supabase: {
     from: vi.fn((table) => makeChain(table)),
     auth: { getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })) },
+    storage: {
+      from: vi.fn((bucket) => ({
+        upload: vi.fn((path) => Promise.resolve({ data: storageUploadError ? null : { path }, error: storageUploadError })),
+        getPublicUrl: vi.fn((path) => ({ data: { publicUrl: `https://fake.test/storage/${bucket}/${path}` } })),
+      })),
+    },
   },
 }));
 
@@ -44,6 +51,7 @@ import * as db from "../physiofeed/data/db.js";
 beforeEach(() => {
   for (const k of Object.keys(tableData)) delete tableData[k];
   currentUser = null;
+  storageUploadError = null;
 });
 
 describe("PhysioFeed db.js Supabase wiring", () => {
@@ -240,5 +248,54 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     setTable("posts", { data: null, error: null });
     expect(await db.dismissReport(7)).toBe(true);
     expect(await db.removeReportedPost(7, "p1")).toBe(true);
+  });
+
+  it("uploadPostImage()/uploadPostVideo() throw a clear error when signed out", async () => {
+    currentUser = null;
+    await expect(db.uploadPostImage(new Blob())).rejects.toThrow(/sign in/i);
+    await expect(db.uploadPostVideo(new File([], "clip.mp4"))).rejects.toThrow(/sign in/i);
+  });
+
+  it("uploadPostImage() returns a public URL when signed in and the upload succeeds", async () => {
+    currentUser = { id: "u-me" };
+    const url = await db.uploadPostImage(new Blob(["fake"], { type: "image/jpeg" }));
+    expect(url).toMatch(/^https:\/\/fake\.test\/storage\/post-images\/u-me\//);
+  });
+
+  it("uploadPostVideo() propagates a real Storage error instead of silently swallowing it", async () => {
+    currentUser = { id: "u-me" };
+    storageUploadError = { message: "The resource already exists" };
+    await expect(db.uploadPostVideo(new File([], "clip.mp4"))).rejects.toBeTruthy();
+  });
+
+  it("createPost() with media stores media_type/media_urls and maps them back out via getPosts()", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: { id: "p_photo1" }, error: null });
+    const result = await db.createPost({
+      text: "Look at this ROM improvement",
+      category: "Case Studies",
+      media: { type: "photo", urls: ["https://fake.test/storage/post-images/u-me/a.jpg"] },
+    });
+    expect(result.id).toBe("p_photo1");
+
+    setTable("posts", {
+      data: [{
+        id: "p_photo1", author_id: "u-me", category: "Case Studies",
+        heading: "Look at this ROM improvement", caption: "Look at this ROM improvement",
+        media_type: "photo", media: {}, media_urls: ["https://fake.test/storage/post-images/u-me/a.jpg"],
+        tags: [], created_at: new Date().toISOString(),
+      }],
+      error: null,
+    });
+    setTable("profiles", { data: [{ id: "u-me", name: "Dr Me", role: "PT", verified: false, gradient: "violet", initials: "M" }], error: null });
+    const posts = await db.getPosts();
+    expect(posts[0]).toMatchObject({ media: "photo", mediaUrls: ["https://fake.test/storage/post-images/u-me/a.jpg"] });
+  });
+
+  it("createPost() falls back to a local mock post carrying mediaUrls when signed out", async () => {
+    currentUser = null;
+    const result = await db.createPost({ text: "Guest photo post", category: "General", media: { type: "photo", urls: ["blob://local"] } });
+    expect(result.media).toBe("photo");
+    expect(result.mediaUrls).toEqual(["blob://local"]);
   });
 });
