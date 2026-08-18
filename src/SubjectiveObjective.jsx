@@ -3302,10 +3302,10 @@ function SmartInput({ value, onChange, PC, multiline }) {
       placeholder="Type or tap to enter..."
       className="pm-sinput-box pm-sinput-text"
       style={{
-        width: "100%", boxSizing: "border-box", border: "1px solid #E4E1F5",
-        borderRadius: 10, background: "#fff", padding: "8px 12px", fontSize: "0.82rem", fontWeight: 500,
+        width: "100%", boxSizing: "border-box", border: "1px solid #ECEAF7",
+        borderRadius: 8, background: "transparent", padding: "6px 4px", fontSize: "0.84rem", fontWeight: 500,
         color: "#2D2D3A", fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
-        lineHeight: 1.3, minHeight: 36,
+        lineHeight: 1.4, minHeight: 30,
       }} />
   );
 }
@@ -3322,33 +3322,33 @@ function PainSliderCompact({ value, onChange, PC, label }) {
   const accessibleLabel = label || "Pain score, 0 to 10";
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10, width: "100%", boxSizing: "border-box",
-      border: "1px solid #E4E1F5", borderRadius: 10, background: "#fff", padding: "6px 12px", minHeight: 36,
+      display: "flex", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box",
+      height: 40,
     }}>
-      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 12, flexShrink: 0 }}>0</span>
       <input type="range" min={0} max={10} step={1} value={num}
         onChange={e => onChange(e.target.value)}
         className="pm-nrs-range"
         aria-label={accessibleLabel}
         aria-valuetext={`${num} out of 10`}
-        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer", height: 28, touchAction: "none" }} />
-      <span className="pm-slider-end" style={{ fontSize: "0.8rem", color: "#9A98AC", width: 16, flexShrink: 0 }}>10</span>
-      <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.95rem", color: "#2D2D3A", minWidth: 34, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
+        style={{ flex: 1, minWidth: 0, accentColor: "#6C5CE7", cursor: "pointer", height: 24, touchAction: "none" }} />
+      <span className="pm-slider-val" style={{ fontWeight: 700, fontSize: "0.8rem", color: "#2D2D3A", minWidth: 30, textAlign: "right", flexShrink: 0 }}>{num}/10</span>
     </div>
   );
 }
 
-// Combo field: pick-or-type. An auto-growing textarea that the
-// therapist can type into directly, plus a small round arrow beside
-// it that opens a compact list anchored to THIS field only (not a
-// full-screen sheet). Selecting an option fills the text; the text
-// stays editable afterward. Used for both single-select and
-// multi-select fields — multi joins picks into a comma-separated
-// line that's still hand-editable.
+// Combo field: pick-or-type. A single-line, fixed-height (~44px) row --
+// tap it to open a compact list anchored to THIS field only (not a
+// full-screen sheet), or type directly to free-text/filter. Selecting an
+// option fills the text; the text stays editable afterward. Used for both
+// single-select and multi-select fields — multi joins picks into a
+// comma-separated line that's still hand-editable.
+// 2026-08-18: was an auto-growing textarea + 24px filled purple circle
+// (the tallest, heaviest-looking control on the whole screen) -- replaced
+// with a plain <input> (naturally single-line, no auto-grow needed) and a
+// small text chevron, per user feedback that this was "much too tall".
 function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
-  const taRef = useRef(null);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -3357,8 +3357,6 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
-
-  useEffect(() => { autoGrow_S(taRef.current); }, [val]);
 
   const selectedList = isMulti ? (val ? String(val).split(SEP_S).filter(Boolean) : []) : [];
   const textValue = isMulti ? selectedList.join(", ") : (val || "");
@@ -3370,35 +3368,30 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
     } else {
       setField(f.id, v);
     }
-    autoGrow_S(taRef.current);
   };
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
       <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
-        display: "flex", alignItems: "flex-start", gap: 6, cursor: "pointer",
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
         border: `1px solid ${textValue ? "#C9C1F0" : "#E4E1F5"}`, borderRadius: 10,
-        background: "#fff", padding: "0 8px 0 12px", minHeight: 36, boxSizing: "border-box",
+        background: "#fff", padding: "0 10px", height: 40, boxSizing: "border-box",
       }}>
-        <textarea ref={taRef} rows={1} value={textValue} onChange={handleTyped}
+        <input type="text" value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
-          placeholder={isMulti ? "Tap to select..." : "Tap to select..."}
+          placeholder="Tap to select..."
           className="pm-cfield-text"
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
             fontSize: "0.82rem", fontWeight: textValue ? 600 : 400,
             color: textValue ? "#7B68EE" : "#9A98AC", fontFamily: "inherit",
-            resize: "none", overflow: "hidden", whiteSpace: "pre-wrap", wordBreak: "break-word",
-            lineHeight: 1.35, padding: "7px 0", margin: 0,
+            overflow: "hidden", textOverflow: "ellipsis", padding: 0, margin: 0,
           }} />
-        <button type="button" onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        <span onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, width: 24, height: 24, marginTop: 6,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "#6C5CE7", color: "#fff", fontSize: "0.85rem", cursor: "pointer",
-          borderRadius: "50%", border: "none", lineHeight: 1,
-          transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease",
-        }}>⌄</button>
+          flexShrink: 0, color: "#9A98AC", fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
+          lineHeight: 1, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
+        }}>›</span>
       </div>
 
       {open && (
@@ -4968,27 +4961,32 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                sticky so it stays visible while scrolling through the
                section list below instead of only being reachable after
                scrolling all the way to the bottom of a long form ── */}
+          {/* 2026-08-18: shrunk from a full-width gradient CTA (looked like
+              primary navigation) to a compact "assistant" card -- sits
+              inside the assessment rather than competing with it, per
+              user's "don't make it look like the primary navigation, it
+              should feel like an intelligent assistant" note. */}
           <button type="button" onClick={()=>setShowSummary(true)}
             disabled={selectedRegions.length === 0}
             style={{
               position:"sticky", top:0, zIndex:20,
-              width:"100%", padding:"12px 16px", borderRadius:10, border:"none",
-              background: selectedRegions.length > 0
-                ? `linear-gradient(135deg, ${PC.accent}, ${PC.a2})`
-                : PC.s3,
-              color: selectedRegions.length > 0 ? "#fff" : PC.muted,
-              fontWeight:800, fontSize:"0.85rem",
+              width:"100%", height:52, padding:"0 14px", borderRadius:12,
+              border:`1px solid ${selectedRegions.length > 0 ? PC.accent+"30" : PC.border}`,
+              background: selectedRegions.length > 0 ? `${PC.accent}0f` : PC.s2,
               cursor: selectedRegions.length > 0 ? "pointer" : "not-allowed",
-              boxShadow: selectedRegions.length > 0 ? `0 4px 14px ${PC.accent}33` : "none",
               fontFamily:"inherit", display:"flex", alignItems:"center",
-              justifyContent:"center", gap:8, marginBottom:12,
+              justifyContent:"space-between", gap:8, marginBottom:12, textAlign:"left",
             }}>
-            🧠 Suggest probable objective assessment
-            {selectedRegions.length > 0 && (
-              <span style={{ fontSize:"0.75rem", background:"rgba(255,255,255,0.2)",
-                padding:"2px 8px", borderRadius:10, fontWeight:600 }}>
-                {selectedRegions.length} region{selectedRegions.length>1?"s":""}
+            <span style={{ display:"flex", flexDirection:"column", gap:1, minWidth:0 }}>
+              <span style={{ fontSize:"0.78rem", fontWeight:800, color: PC.accent, display:"flex", alignItems:"center", gap:5 }}>
+                🧠 Suggested assessment
               </span>
+              <span style={{ fontSize:"0.7rem", color: PC.muted }}>
+                {selectedRegions.length > 0 ? `${selectedRegions.join(", ")}` : "Select a region to begin"}
+              </span>
+            </span>
+            {selectedRegions.length > 0 && (
+              <span style={{ fontSize:"0.76rem", fontWeight:800, color: PC.accent, flexShrink:0 }}>Review →</span>
             )}
           </button>
 
@@ -5096,11 +5094,21 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                 {g.keys.map(key => {
                   const s = sections[key]; if (!s) return null;
                   const sColor = s.color || PC.accent;
+                  // 2026-08-18: every section except Chief Complaint (Core's
+                  // only section -- kept plain, matching the "Core stays
+                  // page-level" mockup) now sits inside one subtle bordered
+                  // card instead of being separated by a big header + open
+                  // whitespace -- "compact clinical workspace" redesign.
+                  const isPlain = key === "complaint";
                   return (
-                    <div key={key} id={`subj-sec-${key}`} style={{ marginBottom: 18 }}>
+                    <div key={key} id={`subj-sec-${key}`} style={isPlain ? { marginBottom: 18 } : {
+                      marginBottom: 14, border:`1px solid ${PC.border}`, borderRadius: 14,
+                      background: PC.surface, padding: "2px 12px 4px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    }}>
 
                       {/* Small, subtle section header — icon lives here only */}
-                      <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, padding: isPlain ? "0 4px 6px" : "10px 2px 4px" }}>
                         <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
                         <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
                           textTransform:"uppercase", color: PC.text }}>{s.label}</span>
@@ -5127,23 +5135,27 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                           <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
                             {mainFields.map(({ field }, fi) => (
                               <AssessmentRow key={field.id} label={field.label}
-                                helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                                helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
                                 {renderField(field)}
                               </AssessmentRow>
                             ))}
                             {deepFields.length > 0 && (
                               <>
+                                {/* 2026-08-18: was a heavy dashed pill -- now
+                                    small purple text, same tap target, much
+                                    less visual weight ("+ Add 4 more details"
+                                    per user feedback). */}
                                 <button type="button" data-testid={`subj-deep-toggle-${key}`}
                                   onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
-                                  style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:6,
-                                    padding:"7px 12px", borderRadius:99, cursor:"pointer", fontFamily:"inherit",
-                                    border:`1.5px dashed ${sColor}66`, background:"transparent",
-                                    color:sColor, fontSize:"0.72rem", fontWeight:700, marginTop: 6 }}>
-                                  {open ? "▲ Hide extra detail" : `＋ Add more detail (${deepFields.length})`}
+                                  style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:4,
+                                    padding:"8px 2px 10px", border:"none", background:"transparent",
+                                    cursor:"pointer", fontFamily:"inherit",
+                                    color:sColor, fontSize:"0.78rem", fontWeight:700 }}>
+                                  {open ? "︿ Hide extra detail" : `+ ${deepFields.length} more detail${deepFields.length===1?"":"s"} ⌄`}
                                 </button>
                                 {open && deepFields.map(({ field }, fi) => (
                                   <AssessmentRow key={field.id} label={field.label}
-                                    helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === deepFields.length - 1}>
+                                    helpText={FIELD_HELP[field.id]} PC={PC} last={fi === deepFields.length - 1}>
                                     {renderField(field)}
                                   </AssessmentRow>
                                 ))}

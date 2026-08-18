@@ -67,19 +67,25 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           wired to before -- this button's job is to remind the clinician
           what's already been documented in Subjective, not to suggest a
           diagnosis (that's SOAP Notes' separate "Suggest Probable
-          Diagnosis" feature). */}
+          Diagnosis" feature). Shrunk from a full-width gradient CTA to a
+          compact "assistant" card, matching Subjective's own button after
+          its "compact clinical workspace" redesign (2026-08-18) -- it
+          should feel like an intelligent assistant sitting inside the
+          assessment, not primary navigation. */}
       <button type="button" onClick={() => setShowSummary(true)}
         style={{
-          width: "100%", padding: "12px 16px", borderRadius: 10, border: "none",
-          background: `linear-gradient(135deg, ${PC.accent}, ${PC.a2 || PC.accent})`,
-          color: "#fff", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer",
-          boxShadow: `0 4px 14px ${PC.accent}33`, fontFamily: "inherit",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12,
+          width: "100%", height: 52, padding: "0 14px", borderRadius: 12,
+          border: `1px solid ${PC.accent}30`, background: `${PC.accent}0f`,
+          cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: 8, marginBottom: 12, textAlign: "left",
         }}>
-        🧠 Suggest probable objective assessment
-        <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 10, fontWeight: 600 }}>
-          {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""}
+        <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+          <span style={{ fontSize: "0.78rem", fontWeight: 800, color: PC.accent }}>🧠 Suggested assessment</span>
+          <span style={{ fontSize: "0.7rem", color: PC.muted }}>
+            {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""} documented
+          </span>
         </span>
+        <span style={{ fontSize: "0.76rem", fontWeight: 800, color: PC.accent, flexShrink: 0 }}>Review →</span>
       </button>
       {showSummary && (() => {
         const { rows, hasBlocker } = buildDocumentedSummary(data);
