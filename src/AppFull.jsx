@@ -2077,7 +2077,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               const common = {width:20,height:20,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"};
               if (name==="home") return (<svg {...common}><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>);
               if (name==="clinical") return (<svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
-              if (name==="physiofeed") return (<svg {...common} width={22} height={22}><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>);
+              if (name==="physiofeed") return (<svg {...common} width={16} height={16} style={{filter:"drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))"}}><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>);
               if (name==="learn") return (<svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
               if (name==="profile") return (<svg {...common}><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>);
               return null;
@@ -2108,9 +2108,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               return item.center ? (
                 <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
-                  <span style={{width:46,height:46,borderRadius:"50%",background:isActive?"#6D28D9":"#7c3aed",
+                  {/* 3D glossy bubble -- gradient fill + bottom ridge + inset
+                      top highlight, same "raised button" formula already used
+                      for the AI/Mic 3D blocks elsewhere in the app, on top of
+                      the white glow ring. Icon shrunk (22->16px) to sit
+                      smaller inside the circle, per "small and 3D" feedback. */}
+                  <span style={{width:46,height:46,borderRadius:"50%",
+                    background:isActive?"linear-gradient(180deg,#7c3aed,#5b21b6)":"linear-gradient(180deg,#9061f9,#7c3aed)",
                     color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",
-                    marginTop:-18,boxShadow:"0 0 0 6px rgba(255,255,255,0.55), 0 2px 8px rgba(124,58,237,0.35)"}}><NavIcon name={item.icon}/></span>
+                    marginTop:-18,boxShadow:"0 0 0 6px rgba(255,255,255,0.55), 0 3px 0 rgba(76,29,149,0.4), 0 5px 10px rgba(124,58,237,0.4), inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.15)"}}><NavIcon name={item.icon}/></span>
                   <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
                 </button>
               ) : (
