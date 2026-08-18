@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, UserPlus, Check, MessageSquare, MoreHorizontal, Link2, Share2 } from "lucide-react";
+import { BadgeCheck, MapPin, Pencil, MoreHorizontal, Link2, Share2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { GRADIENTS } from "../shared/constants.js";
+import EditProfileModal from "./EditProfileModal.jsx";
 
+// Bug fix (2026-08-18): this page only ever shows YOUR OWN profile (there's
+// no "view someone else's profile" route yet), so showing "Follow"/
+// "Message" buttons here never made sense -- they didn't do anything real
+// (local-only useState, never wired to the actual follow system) and there
+// was no way to edit your own profile at all. Replaced with a real "Edit
+// Profile" button that opens EditProfileModal.jsx.
 export default function ProfileHeader({ profile, postCount }) {
-  const [following, setFollowing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const quoteLines = profile.quote.replace(/\.$/, "").split(". ");
 
@@ -38,11 +45,10 @@ export default function ProfileHeader({ profile, postCount }) {
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setFollowing((v) => !v)}
-              className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${following ? "bg-slate-50 text-slate-600 border border-slate-200" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
-              {following ? <><Check size={15} /> Following</> : <><UserPlus size={15} /> Follow</>}
+            <button onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <Pencil size={14} /> Edit Profile
             </button>
-            <button className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><MessageSquare size={15} /> Message</button>
             <div className="relative">
               <button onClick={() => setMoreOpen((v) => !v)} className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"><MoreHorizontal size={16} /></button>
               {moreOpen && (
@@ -62,6 +68,7 @@ export default function ProfileHeader({ profile, postCount }) {
         </div>
         <p className="text-sm text-slate-600 mt-3 max-w-xl">{profile.bio}</p>
       </div>
+      {editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
     </div>
   );
 }

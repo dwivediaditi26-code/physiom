@@ -103,6 +103,52 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(p.time).toMatch(/^\d+h$/);
   });
 
+  it("REGRESSION (2026-08-18 bug): toggleLike()/toggleSave()/addComment() on a REAL post resolve without throwing", async () => {
+    // This is the exact bug Aditi reported ("likes and comments are not
+    // working"): the old code did `clone(_posts.find(...)) || null` as its
+    // final return in every one of these functions. For a real post (not
+    // present in the local demo _posts array), .find() returns undefined,
+    // and JSON.parse(JSON.stringify(undefined)) throws a SyntaxError --
+    // AFTER the real Supabase write had already succeeded. That crash
+    // rejected the promise, so AppDataContext's `setPosts(await
+    // db.getPosts())` line right after never ran and the UI never updated,
+    // even though the like/save/comment silently succeeded server-side.
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [{
+        id: "p_real_regression", author_id: "u-other", category: "Techniques",
+        heading: "Real post", caption: "Real post", media_type: "checklist", media: {}, media_urls: [], tags: [],
+        post_type: "post", created_at: new Date().toISOString(),
+      }],
+      error: null,
+    });
+    setTable("post_likes", { data: [], error: null });
+    setTable("saved_posts", { data: [], error: null });
+    setTable("comments", { data: [], error: null });
+    setTable("profiles", { data: [{ id: "u-other", name: "Dr Other" }], error: null });
+
+    // Each of these would have thrown a SyntaxError before the fix -- if
+    // any of them reject, this test fails (no try/catch needed: an
+    // unhandled rejection from an awaited call fails the test directly).
+    await db.toggleLike("p_real_regression");
+    await db.toggleSave("p_real_regression");
+    await db.addComment("p_real_regression", "Nice!");
+
+    const posts = await db.toggleLike("p_real_regression");
+    expect(Array.isArray(posts)).toBe(true); // returns the full posts list (via getPosts()), not a single stale/undefined post
+  });
+
+  it("REGRESSION: toggleFollowAuthor() on a REAL post resolves without throwing", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [{ id: "p_real_regression2", author_id: "u-other", category: "Techniques", heading: "Real post", caption: "Real post", media_type: "checklist", media: {}, media_urls: [], tags: [], post_type: "post", created_at: new Date().toISOString() }],
+      error: null,
+    });
+    setTable("follows", { data: [], error: null });
+    setTable("profiles", { data: [{ id: "u-other", name: "Dr Other" }], error: null });
+    await db.toggleFollowAuthor("p_real_regression2");
+  });
+
   it("toggleLike() on a demo post (not in the real table) falls back to the local mock toggle without throwing", async () => {
     currentUser = { id: "u-me" };
     setTable("posts", { data: [], error: null }); // keeps getPosts() on the demo feed
@@ -248,6 +294,25 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     setTable("posts", { data: null, error: null });
     expect(await db.dismissReport(7)).toBe(true);
     expect(await db.removeReportedPost(7, "p1")).toBe(true);
+  });
+
+  it("updateProfile() writes real changes and returns the refreshed profile", async () => {
+    currentUser = { id: "u-me" };
+    setTable("profiles", { data: { id: "u-me", name: "Dr New Name", role: "Sports PT", location: "Pune", bio: "", quote: "", followers_count: 0, following_count: 0, gradient: "blue" }, error: null });
+    const updated = await db.updateProfile({ name: "Dr New Name", gradient: "blue" });
+    expect(updated.name).toBe("Dr New Name");
+    expect(updated.gradient).toBe("blue");
+  });
+
+  it("updateProfile() throws (does not silently no-op) when signed out, so the edit form can show a real error", async () => {
+    currentUser = null;
+    await expect(db.updateProfile({ name: "Someone" })).rejects.toThrow(/sign in/i);
+  });
+
+  it("updateProfile() throws when the real Supabase update fails, instead of pretending it saved", async () => {
+    currentUser = { id: "u-me" };
+    setTable("profiles", { data: null, error: { message: "relation \"profiles\" does not exist" } });
+    await expect(db.updateProfile({ name: "Someone" })).rejects.toBeTruthy();
   });
 
   it("uploadPostImage()/uploadPostVideo() throw a clear error when signed out", async () => {

@@ -48,13 +48,14 @@ export function AppDataProvider({ children }) {
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
   const joinCommunity = useCallback(async (id) => { setCommunities(await db.toggleJoinCommunity(id)); }, []);
   const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
+  const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
 
   const value = {
     loading, posts, stories, people, notifications, evidence, communities,
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost,
-    uploadImage, uploadVideo, votePoll,
+    uploadImage, uploadVideo, votePoll, updateProfile,
     composerOpen, setComposerOpen, composerType, setComposerType,
   };
 

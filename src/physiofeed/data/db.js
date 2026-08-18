@@ -163,7 +163,15 @@ export async function toggleLike(postId) {
   } catch (e) {
     _posts = _posts.map((p) => (p.id === postId ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p));
   }
-  return clone(_posts.find((p) => p.id === postId)) || null; // callers always re-fetch getPosts() right after; this is just for anything reading the return value directly
+  // BUG FIX (2026-08-18): this used to `return clone(_posts.find(...)) || null`,
+  // which crashed with a SyntaxError for any REAL post (not present in the
+  // local demo array, so .find() returns undefined and
+  // JSON.parse(JSON.stringify(undefined)) throws). That crash happened
+  // AFTER the real like/unlike had already saved to Supabase, so the click
+  // silently did nothing on screen even though the like actually went
+  // through -- exactly what "likes aren't working" looks like. getPosts()
+  // always reflects the current state correctly for both real and demo posts.
+  return getPosts();
 }
 
 export async function toggleSave(postId) {
@@ -182,7 +190,7 @@ export async function toggleSave(postId) {
   } catch (e) {
     _posts = _posts.map((p) => (p.id === postId ? { ...p, saved: !p.saved } : p));
   }
-  return clone(_posts.find((p) => p.id === postId)) || null;
+  return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
 }
 
 export async function toggleFollowAuthor(postId) {
@@ -205,7 +213,7 @@ export async function toggleFollowAuthor(postId) {
   } catch (e) {
     _posts = _posts.map((p) => (p.id === postId ? { ...p, following: !p.following } : p));
   }
-  return clone(_posts.find((p) => p.id === postId)) || null;
+  return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
 }
 
 export async function addComment(postId, text) {
@@ -218,7 +226,7 @@ export async function addComment(postId, text) {
     const comment = { id: `c${Date.now()}`, author: CURRENT_USER.name, text };
     _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: [...p.commentList, comment] } : p));
   }
-  return clone(_posts.find((p) => p.id === postId)) || null;
+  return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
 }
 
 // `media` is optional: { type: "photo" | "video", urls: string[], duration?: number }
@@ -319,14 +327,21 @@ export async function uploadPostVideo(file) {
   return uploadToBucket("post-videos", uid, file, ext);
 }
 
-// Real posts can't be carousel-type yet -- Composer.jsx only takes text +
-// category (no real media upload exists yet, see the PhysioFeed rollout
-// plan's "V1 step 4"), so this only ever needs to handle demo carousel
-// posts from mockData.js. Left as a local-only mutation on purpose --
-// revisit once real image/carousel posting exists.
+// Local-only mutation -- mediaIndex ("which photo am I looking at") is
+// pure viewer navigation state, never written to Supabase for either demo
+// carousel posts or real multi-photo posts. NOTE: since real multi-photo
+// posts (post.mediaUrls.length > 1, added in the real-media-upload phase)
+// don't exist in the local `_posts` array, this is currently a no-op for
+// them -- the prev/next arrows won't visibly move for a real multi-photo
+// post yet. Guarded against the crash the other mutations in this file
+// had (see the BUG FIX comment on toggleLike()) so it fails silently
+// instead of throwing, but the underlying "real carousels don't navigate"
+// gap is still open; the real fix is to make mediaIndex local component
+// state in FeedPostCard.jsx instead of routing it through db.js at all.
 export async function setCarouselIndex(postId, index) {
   _posts = _posts.map((p) => (p.id === postId ? { ...p, mediaIndex: index } : p));
-  return clone(_posts.find((p) => p.id === postId));
+  const found = _posts.find((p) => p.id === postId);
+  return found ? clone(found) : null;
 }
 
 /* ---------------- stories ---------------- */
@@ -389,6 +404,29 @@ export async function getProfile() {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
     return clone(CURRENT_USER); // `profiles` table not created yet, or any other failure
   }
+}
+
+// Bug fix (2026-08-18): there was previously no way to edit your profile
+// at all after the auto-created default row from your first PhysioFeed
+// visit -- ProfileHeader.jsx now has a real "Edit Profile" form that calls
+// this. Unlike likes/comments/etc, a failed save here is NOT silently
+// swallowed -- it re-throws so the edit form can show a real error instead
+// of closing as if it worked when it didn't (that exact silent-failure
+// shape is what made the like/comment bug so confusing to track down).
+export async function updateProfile(fields) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your profile.");
+  const patch = {};
+  for (const key of ["name", "role", "location", "bio", "quote", "gradient"]) {
+    if (fields[key] !== undefined) patch[key] = fields[key];
+  }
+  if (fields.name) {
+    patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
+  }
+  patch.updated_at = new Date().toISOString();
+  const { error } = await supabase.from("profiles").update(patch).eq("id", uid);
+  if (error) throw error;
+  return getProfile();
 }
 
 // SUPABASE: supabase.from('skill_endorsements').upsert/delete matching { skill, endorser_id, profile_id }
