@@ -73,7 +73,7 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           boxShadow: `0 4px 14px ${PC.accent}33`, fontFamily: "inherit",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12,
         }}>
-        🧠 Suggest Probable Diagnosis
+        🧠 Suggest probable objective assessment
         <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 10, fontWeight: 600 }}>
           {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""}
         </span>
