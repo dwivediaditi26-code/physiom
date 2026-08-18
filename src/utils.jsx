@@ -312,7 +312,7 @@ const MOBILE_CSS = `
 
   /* ── Tab strip ── */
   .pm-bnav-tabs {
-    display: flex; overflow-x: auto; scrollbar-width: none;
+    display: flex; overflow: visible; scrollbar-width: none;
     border-top: 1px solid #E4E4E6; flex-shrink: 0;
     padding-bottom: env(safe-area-inset-bottom);
     background: #ffffff;
