@@ -3302,10 +3302,10 @@ function SmartInput({ value, onChange, PC, multiline }) {
       placeholder="Type or tap to enter..."
       className="pm-sinput-box pm-sinput-text"
       style={{
-        width: "100%", boxSizing: "border-box", border: "1px solid #ECEAF7",
-        borderRadius: 8, background: "transparent", padding: "6px 4px", fontSize: "0.84rem", fontWeight: 500,
+        width: "100%", boxSizing: "border-box", border: "none",
+        borderRadius: 8, background: "transparent", padding: "2px 2px", fontSize: "0.84rem", fontWeight: 500,
         color: "#2D2D3A", fontFamily: "inherit", outline: "none", resize: "none", overflow: "hidden",
-        lineHeight: 1.4, minHeight: 30,
+        lineHeight: 1.4, minHeight: 26,
       }} />
   );
 }
@@ -3372,10 +3372,14 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
+      {/* 2026-08-18: dropped the box border/background entirely -- the
+          approved mockup showed a plain text row (value + light chevron,
+          no pill), not a bordered field. Filled values are now dark/bold
+          like any other clinical text instead of purple -- purple is
+          reserved for actions/selected-state/AI per the same mockup. */}
       <div className="pm-cfield-box" onClick={() => setOpen(o => !o)} style={{
         display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
-        border: `1px solid ${textValue ? "#C9C1F0" : "#E4E1F5"}`, borderRadius: 10,
-        background: "#fff", padding: "0 10px", height: 40, boxSizing: "border-box",
+        padding: "2px 0", minHeight: 34, boxSizing: "border-box",
       }}>
         <input type="text" value={textValue} onChange={handleTyped}
           onClick={e => e.stopPropagation()}
@@ -3383,13 +3387,13 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
           className="pm-cfield-text"
           style={{
             flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent",
-            fontSize: "0.82rem", fontWeight: textValue ? 600 : 400,
-            color: textValue ? "#7B68EE" : "#9A98AC", fontFamily: "inherit",
+            fontSize: "0.82rem", fontWeight: textValue ? 700 : 400,
+            color: textValue ? PC.text : "#9A98AC", fontFamily: "inherit",
             overflow: "hidden", textOverflow: "ellipsis", padding: 0, margin: 0,
           }} />
         <span onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
           className="pm-cfield-chevron" style={{
-          flexShrink: 0, color: "#9A98AC", fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
+          flexShrink: 0, color: "#C9C9CE", fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
           lineHeight: 1, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms ease",
         }}>›</span>
       </div>
@@ -5134,10 +5138,19 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
                         return (
                           <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
                             {mainFields.map(({ field }, fi) => (
-                              <AssessmentRow key={field.id} label={field.label}
-                                helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
-                                {renderField(field)}
-                              </AssessmentRow>
+                              // 2026-08-18: cc_main skips the row label --
+                              // the "CHIEF COMPLAINT" section header right
+                              // above it already says what this is, so a
+                              // second "Patient's own words" label was a
+                              // redundant line the approved mockup didn't have.
+                              field.id === "cc_main" ? (
+                                <div key={field.id} style={{ padding: "2px 2px 10px" }}>{renderField(field)}</div>
+                              ) : (
+                                <AssessmentRow key={field.id} label={field.label}
+                                  helpText={FIELD_HELP[field.id]} PC={PC} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                                  {renderField(field)}
+                                </AssessmentRow>
+                              )
                             ))}
                             {deepFields.length > 0 && (
                               <>
