@@ -769,3 +769,86 @@ export async function removeReportedPost(reportId, postId) {
     return false;
   }
 }
+
+/* ---------------- direct messages ---------------- */
+//
+// Phase 8 (see supabase/add_direct_messages.sql). Like moderation, DMs are
+// a purely real-backend feature -- there's no sensible "demo conversation"
+// to fall back to -- so these throw a real, user-facing error on failure
+// instead of quietly pretending it worked. A "conversation" is derived
+// client-side from the flat direct_messages table (every row where you're
+// either party, grouped by the other person) rather than needing its own
+// conversations table.
+
+// One entry per person you've ever exchanged a message with -- most
+// recent message text/time and how many of THEIR messages to you are
+// still unread. MessagesPage.jsx's inbox list.
+export async function getConversations() {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("direct_messages")
+    .select("id, sender_id, recipient_id, text, created_at, read")
+    .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  const byOther = new Map();
+  for (const m of data) {
+    const otherId = m.sender_id === uid ? m.recipient_id : m.sender_id;
+    if (!byOther.has(otherId)) byOther.set(otherId, { lastText: m.text, lastAt: m.created_at, unread: 0 });
+    if (m.recipient_id === uid && !m.read) byOther.get(otherId).unread += 1;
+  }
+  const otherIds = [...byOther.keys()];
+  const { data: profiles } = await supabase.from("profiles").select("*").in("id", otherIds);
+  const profileById = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
+
+  return otherIds
+    .map((id) => {
+      const c = byOther.get(id);
+      const p = profileById[id];
+      return {
+        userId: id, name: p?.name || "Unknown", role: p?.role || "",
+        gradient: p?.gradient || "violet", initials: p?.initials || "?", avatarUrl: p?.avatar_url || null,
+        lastText: c.lastText, lastAt: c.lastAt, unread: c.unread,
+      };
+    })
+    .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+}
+
+// Full thread with one other person, oldest first (chat reading order).
+export async function getMessages(otherUserId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to view messages.");
+  const { data, error } = await supabase
+    .from("direct_messages")
+    .select("id, sender_id, recipient_id, text, created_at, read")
+    .or(`and(sender_id.eq.${uid},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${uid})`)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data || []).map((m) => ({ id: m.id, text: m.text, isSelf: m.sender_id === uid, createdAt: m.created_at }));
+}
+
+export async function sendMessage(otherUserId, text) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to send a message.");
+  const { error } = await supabase.from("direct_messages").insert({ sender_id: uid, recipient_id: otherUserId, text });
+  if (error) throw error;
+  return getMessages(otherUserId);
+}
+
+// Marks every unread message FROM otherUserId TO you as read. Deliberately
+// swallows errors (no-op, like markNotificationRead) -- this fires as a
+// side effect of opening a conversation, not a user-initiated action with
+// its own error UI to show.
+export async function markConversationRead(otherUserId) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return;
+    const { error } = await supabase.from("direct_messages").update({ read: true }).eq("sender_id", otherUserId).eq("recipient_id", uid).eq("read", false);
+    if (error) throw error;
+  } catch (e) {
+    console.error("markConversationRead(): no-op --", e?.message || e);
+  }
+}

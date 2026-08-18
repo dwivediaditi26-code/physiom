@@ -144,7 +144,7 @@ export default function Header() {
               </div>
             )}
           </div>
-          <button className="hidden sm:block p-2 rounded-lg hover:bg-slate-50"><MessageSquare size={19} className="text-slate-500" /></button>
+          <button onClick={() => navigate("/messages")} aria-label="Messages" className="hidden sm:block p-2 rounded-lg hover:bg-slate-50"><MessageSquare size={19} className="text-slate-500" /></button>
           {profile && (
             <Link to="/profile" className="hidden sm:flex items-center gap-2 focus:outline-none">
               <Avatar size={32} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />

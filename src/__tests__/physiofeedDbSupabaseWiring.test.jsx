@@ -19,6 +19,7 @@ function makeChain(table) {
     eq: () => chain,
     neq: () => chain,
     in: () => chain,
+    or: () => chain,
     order: () => chain,
     maybeSingle: () => chain,
     single: () => chain,
@@ -527,6 +528,75 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     setTable("posts", { data: { id: "p_poll_new", post_type: "poll" }, error: null });
     const result = await db.createPost({ text: "Best knee OA measure?", category: "Techniques", postType: "poll", pollOptions: ["KOOS", "WOMAC"] });
     expect(result.id).toBe("p_poll_new");
+  });
+
+  it("getConversations() returns [] when signed out, without throwing", async () => {
+    currentUser = null;
+    expect(await db.getConversations()).toEqual([]);
+  });
+
+  it("getConversations() groups messages by the other person, with an unread count and the latest preview", async () => {
+    currentUser = { id: "u-me" };
+    // Data is given newest-first, matching what the real
+    // .order("created_at", { ascending: false }) query in getConversations()
+    // would return -- the mock doesn't sort for us.
+    setTable("direct_messages", {
+      data: [
+        { id: 2, sender_id: "u-me", recipient_id: "u-other", text: "Reply", created_at: new Date().toISOString(), read: true },
+        { id: 1, sender_id: "u-other", recipient_id: "u-me", text: "First message", created_at: new Date(Date.now() - 60_000).toISOString(), read: false },
+      ],
+      error: null,
+    });
+    setTable("profiles", { data: [{ id: "u-other", name: "Dr Other", role: "PT", gradient: "blue", initials: "O", avatar_url: null }], error: null });
+    const conversations = await db.getConversations();
+    expect(conversations).toHaveLength(1);
+    expect(conversations[0]).toMatchObject({ userId: "u-other", name: "Dr Other", lastText: "Reply" });
+  });
+
+  it("getMessages() maps isSelf per message for the chat bubble alignment", async () => {
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", {
+      data: [
+        { id: 1, sender_id: "u-other", recipient_id: "u-me", text: "Hi", created_at: new Date().toISOString(), read: true },
+        { id: 2, sender_id: "u-me", recipient_id: "u-other", text: "Hello!", created_at: new Date().toISOString(), read: false },
+      ],
+      error: null,
+    });
+    const messages = await db.getMessages("u-other");
+    expect(messages.find((m) => m.text === "Hi").isSelf).toBe(false);
+    expect(messages.find((m) => m.text === "Hello!").isSelf).toBe(true);
+  });
+
+  it("getMessages() throws when signed out, so the UI can show a real sign-in prompt instead of an empty thread", async () => {
+    currentUser = null;
+    await expect(db.getMessages("u-other")).rejects.toThrow(/sign in/i);
+  });
+
+  it("sendMessage() inserts as the signed-in sender and returns the refreshed thread", async () => {
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", { data: [{ id: 1, sender_id: "u-me", recipient_id: "u-other", text: "Hey!", created_at: new Date().toISOString(), read: false }], error: null });
+    const thread = await db.sendMessage("u-other", "Hey!");
+    expect(thread).toHaveLength(1);
+    expect(thread[0]).toMatchObject({ text: "Hey!", isSelf: true });
+  });
+
+  it("sendMessage() throws when signed out, instead of silently no-op'ing", async () => {
+    currentUser = null;
+    await expect(db.sendMessage("u-other", "Hey!")).rejects.toThrow(/sign in/i);
+  });
+
+  it("sendMessage() propagates a real Supabase error (e.g. a blocked self-message) instead of swallowing it", async () => {
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", { data: null, error: { message: "new row violates check constraint \"direct_messages_no_self_message\"" } });
+    await expect(db.sendMessage("u-me", "talking to myself")).rejects.toBeTruthy();
+  });
+
+  it("markConversationRead() no-ops (never throws) when signed out or the update fails", async () => {
+    currentUser = null;
+    await expect(db.markConversationRead("u-other")).resolves.toBeUndefined();
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", { data: null, error: { message: "boom" } });
+    await expect(db.markConversationRead("u-other")).resolves.toBeUndefined();
   });
 
   it("votePoll() falls back to a local vote-count bump for a demo poll and blocks double voting", async () => {

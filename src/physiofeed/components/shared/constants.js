@@ -24,6 +24,7 @@ export const PRO_NAV = [
   { path: "/explore", label: "Explore", icon: "Compass" },
   { path: "/communities", label: "Communities", icon: "UsersRound" },
   { path: "/people", label: "People", icon: "User" },
+  { path: "/messages", label: "Messages", icon: "MessageSquare" },
   { path: "/saved", label: "Saved", icon: "Bookmark" },
 ];
 
