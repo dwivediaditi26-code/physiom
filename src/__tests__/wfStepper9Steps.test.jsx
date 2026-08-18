@@ -47,6 +47,7 @@ async function createOrthoPatient() {
   // required fields (Name/DOB/Gender/Phone) and continue.
   fireEvent.change(await screen.findByLabelText(/^Full Name/), { target: { value: "Test Patient" } });
   fireEvent.change(screen.getByLabelText(/^Date of Birth/), { target: { value: "1996-07-17" } });
+  fireEvent.change(screen.getByLabelText(/^Age/), { target: { value: "28" } });
   fireEvent.click(screen.getByRole("button", { name: "Male" }));
   fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "9876543210" } });
   fireEvent.click(screen.getByRole("button", { name: /Create Patient & Continue/i }));
@@ -61,17 +62,19 @@ describe("Screening Workflow stepper — 9 steps, each its own page", () => {
     }
   });
 
-  it("Body Regions step shows the region picker without the AI buttons", async () => {
+  it("Body Regions step shows the flat region picker without the AI buttons", async () => {
     await createOrthoPatient();
     fireEvent.click(screen.getByTestId("wf-step-region"));
-    // Region selector accordion lives under this step; the hero AI/mic
-    // buttons and hero title text must not. Regression: the accordion body
-    // only rendered when regionPickerOpen was true, and the only button
-    // that ever set it true (Row 2's chip row) lives on the AI step now --
-    // so this step used to render completely blank.
+    // Region selector (flat searchable list, redesigned 2026-08-18) lives
+    // under this step; the hero AI/mic buttons and hero title text must
+    // not. Regression: the picker body only rendered when regionPickerOpen
+    // was true, and the only button that ever set it true (Row 2's chip
+    // row) lives on the AI step now -- so this step used to render
+    // completely blank.
     await waitFor(() => {
-      expect(screen.getByText("Spine")).toBeInTheDocument();
+      expect(screen.getByText("Select Body Region")).toBeInTheDocument();
     });
+    expect(screen.getByPlaceholderText("Search body region...")).toBeInTheDocument();
     expect(screen.queryByText("History & Complaint")).not.toBeInTheDocument();
     expect(screen.queryByText("✦")).not.toBeInTheDocument();
   });

@@ -92,6 +92,7 @@ describe("Clinical landing page redesign", () => {
     // Lands directly on the full-page Demographics step now.
     fireEvent.change(await screen.findByLabelText(/^Full Name/), { target: { value: "Ortho Patient" } });
     fireEvent.change(screen.getByLabelText(/^Date of Birth/), { target: { value: "1996-07-17" } });
+    fireEvent.change(screen.getByLabelText(/^Age/), { target: { value: "28" } });
     fireEvent.click(screen.getByRole("button", { name: "Male" }));
     fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "9876543210" } });
     fireEvent.click(screen.getByRole("button", { name: /Create Patient & Continue/i }));

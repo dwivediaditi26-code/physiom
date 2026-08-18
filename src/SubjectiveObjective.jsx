@@ -3490,6 +3490,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState({});
   const [openRegions, setOpenRegions] = useState({});
+  const [regionSearch, setRegionSearch] = useState(""); // flat-list search, dedicated Body Regions step only
 
   // ── Field update helpers ────────────────────────────────────────────
   const setField = useCallback((id, val) => set({ ...data, [id]: val }), [data, set]);
@@ -4555,10 +4556,85 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
         const sideColors = { L:"#3B82F6", R:"#10B981", B:"#7c3aed" };
         const sideLabels = { L:"Left", R:"Right", B:"Both" };
 
-        // On its own dedicated step page there's no reason to collapse
-        // this -- regionPickerOpen only toggles the compact accordion
-        // launched from the AI step's chip row now.
-        return (viewStep==="region" || regionPickerOpen) ? (
+        // Flat, searchable list for the dedicated Body Regions step (matches
+        // the provided reference design: white cards, chips-with-× row up
+        // top, plain "+ " list below, no grouping/accordion). The compact
+        // popup opened from the AI step's chip row (regionPickerOpen)
+        // keeps the original grouped accordion below -- different context
+        // (small drop-down inside another screen), left alone so as not to
+        // risk that separately-tested interaction.
+        if (viewStep === "region") {
+          const flatRows = REGION_GROUPS.flatMap(group => group.regions.flatMap(reg =>
+            reg.lr
+              ? [{ reg, side:"L", label:`Left ${reg.name}` }, { reg, side:"R", label:`Right ${reg.name}` }]
+              : [{ reg, side:"B", label:reg.name }]
+          ));
+          const q = regionSearch.trim().toLowerCase();
+          const visibleRows = q ? flatRows.filter(row => row.label.toLowerCase().includes(q)) : flatRows;
+          const chips = allRegs
+            .map(reg => ({ reg, side: getActiveSide(reg.id, reg.lr) }))
+            .filter(x => x.side)
+            .map(x => ({ ...x, label: x.reg.lr ? `${sideLabels[x.side]} ${x.reg.name}` : x.reg.name }));
+
+          return (
+            <div style={{ background:PC.surface, borderRadius:14, border:`1px solid ${PC.border}` }}>
+              <div style={{ padding:"16px 16px 4px" }}>
+                <div style={{ fontSize:"1.1rem", fontWeight:800, color:PC.text, marginBottom:4 }}>Select Body Region</div>
+                <div style={{ fontSize:"0.82rem", color:PC.muted, marginBottom:14 }}>Select up to 3 regions</div>
+
+                {chips.length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
+                    {chips.map(c => (
+                      <span key={c.reg.id+c.side} style={{ display:"inline-flex", alignItems:"center", gap:8, fontSize:"0.85rem", fontWeight:700, padding:"8px 14px", borderRadius:99, background:PC.accent, color:"#fff" }}>
+                        {c.label}
+                        <span onClick={()=>handleSidePick(c.reg, c.side)} style={{ cursor:"pointer", fontSize:"0.95rem", lineHeight:1, opacity:0.85 }}>×</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  value={regionSearch}
+                  onChange={e=>setRegionSearch(e.target.value)}
+                  placeholder="Search body region..."
+                  style={{ width:"100%", background:PC.s2, border:`1px solid ${PC.border}`, borderRadius:10, color:PC.text, fontFamily:"inherit", outline:"none", padding:"11px 14px", fontSize:"0.88rem", boxSizing:"border-box", marginBottom:8 }}
+                />
+              </div>
+
+              <div>
+                {visibleRows.map(row => {
+                  const isSelected = getActiveSide(row.reg.id, row.reg.lr) === row.side;
+                  const isDisabled = !isSelected && totalSlots >= 3;
+                  return (
+                    <div key={row.reg.id+row.side}
+                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderTop:`1px solid ${PC.border}` }}>
+                      <span style={{ fontSize:"0.92rem", color:PC.text, fontWeight:500 }}>{row.label}</span>
+                      <button type="button"
+                        disabled={isDisabled}
+                        onClick={()=>handleSidePick(row.reg, row.side)}
+                        aria-label={`${isSelected?"Remove":"Add"} ${row.label}`}
+                        style={{ width:30, height:30, borderRadius:"50%", border:`1px solid ${isSelected?PC.accent:PC.border}`,
+                          background: isSelected?PC.accent:PC.s2, color: isSelected?"#fff":PC.muted,
+                          fontSize:"1.1rem", fontWeight:700, lineHeight:1, cursor:isDisabled?"not-allowed":"pointer",
+                          opacity:isDisabled?0.4:1, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        {isSelected ? "✓" : "+"}
+                      </button>
+                    </div>
+                  );
+                })}
+                {visibleRows.length===0 && (
+                  <div style={{ padding:"20px 16px", textAlign:"center", fontSize:"0.85rem", color:PC.muted }}>No regions match "{regionSearch}"</div>
+                )}
+              </div>
+
+              <div style={{ padding:"12px 16px", borderTop:`1px solid ${PC.border}`, textAlign:"center", fontSize:"0.82rem", fontWeight:600, color:PC.muted }}>
+                {totalSlots} of 3 selected
+              </div>
+            </div>
+          );
+        }
+
+        return regionPickerOpen ? (
           <div style={{ background:PC.surface, borderRadius:10, border:`1px solid ${PC.border}`, overflow:"hidden",
             boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
 

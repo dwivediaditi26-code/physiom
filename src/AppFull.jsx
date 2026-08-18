@@ -1768,14 +1768,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
-                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
-                    // Legacy styling, reused only inside "More details" below.
-                    const inp={width:"100%",background:PC.s3,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
+                    // "More details" styling -- plain white, matches the
+                    // core-fields look above instead of the old lavender
+                    // card treatment.
+                    const inp={width:"100%",background:"#fff",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
                     const lbl={fontSize:"0.78rem",fontWeight:700,color:PC.muted,marginBottom:5,display:"block"};
                     const sel=(id,opts)=>(<select style={inp} value={data[id]||""} onChange={e=>set(id,e.target.value)}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>);
                     const field=(label,el)=>(<div style={{marginBottom:12}}><label style={lbl}>{label}</label>{el}</div>);
-                    const card=(title,children)=>(<div style={{background:PC.s2,borderRadius:12,border:`1px solid ${PC.border}`,padding:"14px 16px"}}><div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{title}</div>{children}</div>);
+                    const card=(title,children)=>(<div style={{background:"#fff",borderRadius:12,border:`1px solid ${PC.border}`,padding:"14px 16px"}}><div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{title}</div>{children}</div>);
 
                     // New front-and-center styling for the 6 core fields.
                     const nInp={width:"100%",background:PC.surface,border:`1.5px solid ${PC.border}`,borderRadius:10,color:PC.text,fontFamily:"inherit",outline:"none",padding:"11px 13px",fontSize:"0.9rem",boxSizing:"border-box"};
@@ -1787,7 +1789,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     // placeholder text.
                     const nField=(label,el,required,id)=>(<div style={{marginBottom:16}}><label htmlFor={id} style={nLbl}>{label}{required&&req}</label>{el}</div>);
 
-                    const requiredOk = !!(data.dem_name?.trim() && data.dem_dob && data.dem_sex && data.dem_phone?.trim());
+                    const requiredOk = !!(data.dem_name?.trim() && data.dem_age && data.dem_sex && data.dem_phone?.trim());
                     const genderOpts = ["Male","Female","Other"];
 
                     return(<>
@@ -1795,8 +1797,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
                       {nField("Full Name",<input id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>,true,"dem_name")}
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                        <div>{nField("Date of Birth",<input id="dem_dob" style={nInp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,true,"dem_dob")}</div>
-                        <div>{nField("Age",<input id="dem_age" style={nInp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,false,"dem_age")}</div>
+                        <div>{nField("Date of Birth",<input id="dem_dob" style={nInp} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,false,"dem_dob")}</div>
+                        <div>{nField("Age",<input id="dem_age" style={nInp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,true,"dem_age")}</div>
                       </div>
                       <div style={{marginBottom:16}}>
                         <label style={nLbl}>Gender{req}</label>
