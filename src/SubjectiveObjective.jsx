@@ -4542,12 +4542,34 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
             const allKeys = Object.values(reg.keys);
             let next = prev.filter(r => !allKeys.includes(r));
             const curSide = getActiveSide(reg.id, reg.lr);
-            if (curSide === side) return next;
+            if (curSide === side) {
+              // Removing -- still needs to persist below (matching the add
+              // path), not just the local-only early return this used to
+              // do. Without this, a pick here only ever updated local
+              // selectedRegions state, never data.cx_selected_regions --
+              // which reads as "region deselects itself" the moment
+              // anything reads from `data` instead of this component's own
+              // state (the workflow stepper's done-check, and critically
+              // Subjective/Objective, which decide which region-specific
+              // fields to show from data.cx_selected_regions, not from
+              // this local array).
+              set({ cx_selected_regions: JSON.stringify(next) });
+              return next;
+            }
             if (countSlots(next) >= 3) return next;
             const toAdd = reg.lr
               ? (side === "L" ? [reg.keys.L] : side === "R" ? [reg.keys.R] : [reg.keys.B_L, reg.keys.B_R])
               : [reg.keys.B];
-            return [...next, ...toAdd];
+            next = [...next, ...toAdd];
+            // Persist immediately -- same reasoning as above. Also clears
+            // stale region-specific AI variables (same fields toggleRegion
+            // already clears) so switching/adding a region doesn't leave
+            // another region's AI-derived findings hanging around.
+            set({ cx_selected_regions: JSON.stringify(next), cx_insight: null,
+              cx_lumbar_variables: null, cx_lumbar_note_findings: null, cx_lumbar_ai_filled: null, cx_lumbar_pending_rf: null,
+              cx_cervical_variables: null, cx_cervical_note_findings: null, cx_cervical_ai_filled: null, cx_cervical_pending_rf: null,
+              cx_thoracic_variables: null, cx_thoracic_note_findings: null, cx_thoracic_ai_filled: null, cx_thoracic_pending_rf: null });
+            return next;
           });
           setInsight(null);
         };
