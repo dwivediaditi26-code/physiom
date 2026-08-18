@@ -145,7 +145,7 @@ export async function getPosts() {
         postType, case: media.case || null, research: media.research || null, poll,
         likes: postLikes.length, liked: uid ? postLikes.some((l) => l.user_id === uid) : false, saved: savedSet.has(p.id),
         likedByPreview: postLikes.slice(0, 2).map((l) => profileById[l.user_id]?.name).filter(Boolean),
-        commentList: postComments.map((c) => ({ id: String(c.id), author: profileById[c.author_id]?.name || "Unknown", text: c.text })),
+        commentList: postComments.map((c) => ({ id: String(c.id), author: profileById[c.author_id]?.name || "Unknown", text: c.text, isSelf: uid ? c.author_id === uid : false })),
       };
     });
   } catch (e) {
@@ -230,10 +230,42 @@ export async function addComment(postId, text) {
     const { error } = await supabase.from("comments").insert({ post_id: postId, author_id: uid, text });
     if (error) throw error;
   } catch (e) {
-    const comment = { id: `c${Date.now()}`, author: CURRENT_USER.name, text };
+    const comment = { id: `c${Date.now()}`, author: CURRENT_USER.name, text, isSelf: true };
     _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: [...p.commentList, comment] } : p));
   }
   return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
+}
+
+// Added 2026-08-18 for the delete post/comment feature. Both mirror the
+// "try the real table, fall back to the local mock array" shape every
+// other mutation in this file uses -- a demo post/comment id never exists
+// in the real table, so it naturally falls into the catch and gets
+// removed from the local array instead. RLS (posts_delete_own /
+// comments_delete_own, see add_social_tables.sql) is the real guard
+// against deleting someone else's post/comment; the extra .eq() here is
+// belt-and-braces, not the only thing stopping it.
+export async function deletePost(postId) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { error } = await supabase.from("posts").delete().eq("id", postId).eq("author_id", uid);
+    if (error) throw error;
+  } catch (e) {
+    _posts = _posts.filter((p) => p.id !== postId);
+  }
+  return getPosts();
+}
+
+export async function deleteComment(postId, commentId) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("author_id", uid);
+    if (error) throw error;
+  } catch (e) {
+    _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: p.commentList.filter((c) => c.id !== commentId) } : p));
+  }
+  return getPosts();
 }
 
 // `media` is optional: { type: "photo" | "video", urls: string[], duration?: number }

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck, UserPlus, Check, Send } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck, UserPlus, Check, Send, Trash2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import PostMedia from "./PostMedia.jsx";
 import ReportButton from "./ReportButton.jsx";
+import DeletePostButton from "./DeletePostButton.jsx";
 import CaseBody from "./CaseBody.jsx";
 import ResearchBody from "./ResearchBody.jsx";
 import PollBody from "./PollBody.jsx";
@@ -10,7 +11,7 @@ import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
 export default function FeedPostCard({ post }) {
-  const { likePost, savePost, followAuthor, commentOnPost, setCarousel, profile } = useAppData();
+  const { likePost, savePost, followAuthor, commentOnPost, deleteComment, setCarousel, profile } = useAppData();
   const [commentText, setCommentText] = useState("");
   const [burst, setBurst] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
@@ -86,6 +87,7 @@ export default function FeedPostCard({ post }) {
         </div>
         <div className="flex items-center gap-1">
           {!post.isSelf && <ReportButton postId={post.id} />}
+          {post.isSelf && <DeletePostButton postId={post.id} />}
           <button onClick={() => savePost(post.id)} className="focus:outline-none">
             <Bookmark size={19} className={post.saved ? "fill-violet-600 text-violet-600" : "text-slate-400 hover:text-violet-600"} />
           </button>
@@ -113,7 +115,20 @@ export default function FeedPostCard({ post }) {
           {!showAllComments && post.commentList.length > 1 && (
             <button onClick={() => setShowAllComments(true)} className="text-xs text-slate-400 hover:text-slate-600">View all {post.commentList.length} comments</button>
           )}
-          {visibleComments.map((c) => <p key={c.id} className="text-xs text-slate-600"><span className="font-semibold text-slate-800">{c.author}</span> {c.text}</p>)}
+          {visibleComments.map((c) => (
+            <div key={c.id} className="flex items-start justify-between gap-2 group">
+              <p className="text-xs text-slate-600"><span className="font-semibold text-slate-800">{c.author}</span> {c.text}</p>
+              {c.isSelf && (
+                <button
+                  onClick={() => deleteComment(post.id, c.id)}
+                  aria-label="Delete comment"
+                  className="shrink-0 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

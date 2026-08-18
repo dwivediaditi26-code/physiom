@@ -48,6 +48,8 @@ export function AppDataProvider({ children }) {
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
   const joinCommunity = useCallback(async (id) => { setCommunities(await db.toggleJoinCommunity(id)); }, []);
   const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
+  const deletePost = useCallback(async (id) => { setPosts(await db.deletePost(id)); }, []);
+  const deleteComment = useCallback(async (postId, commentId) => { setPosts(await db.deleteComment(postId, commentId)); }, []);
   const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
   const uploadProfileImage = useCallback((blob) => db.uploadProfileImage(blob), []);
 
@@ -55,7 +57,7 @@ export function AppDataProvider({ children }) {
     loading, posts, stories, people, notifications, evidence, communities,
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
-    viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost,
+    viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     composerOpen, setComposerOpen, composerType, setComposerType,
   };

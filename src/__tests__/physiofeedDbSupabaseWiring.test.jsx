@@ -99,7 +99,7 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(p.likes).toBe(2);
     expect(p.liked).toBe(true); // u-me is in post_likes
     expect(p.saved).toBe(true);
-    expect(p.commentList).toEqual([{ id: "1", author: "Dr Author", text: "Nice work" }]);
+    expect(p.commentList).toEqual([{ id: "1", author: "Dr Author", text: "Nice work", isSelf: false }]);
     expect(p.time).toMatch(/^\d+h$/);
   });
 
@@ -168,6 +168,59 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     setTable("follows", { data: [], error: null });
     setTable("profiles", { data: [{ id: "u-other", name: "Dr Other" }], error: null });
     await db.toggleFollowAuthor("p_real_regression2");
+  });
+
+  it("getPosts() marks isSelf on comments authored by the signed-in user, for the delete-comment UI", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [{ id: "p_comment_isself", author_id: "u-other", category: "Techniques", heading: "h", caption: "c", media_type: "checklist", media: {}, media_urls: [], tags: [], post_type: "post", created_at: new Date().toISOString() }],
+      error: null,
+    });
+    setTable("comments", {
+      data: [
+        { id: 10, post_id: "p_comment_isself", author_id: "u-me", text: "mine", created_at: new Date().toISOString() },
+        { id: 11, post_id: "p_comment_isself", author_id: "u-other", text: "not mine", created_at: new Date().toISOString() },
+      ],
+      error: null,
+    });
+    setTable("profiles", { data: [{ id: "u-me", name: "Dr Me" }, { id: "u-other", name: "Dr Other" }], error: null });
+    const commentList = (await db.getPosts())[0].commentList;
+    expect(commentList.find((c) => c.id === "10").isSelf).toBe(true);
+    expect(commentList.find((c) => c.id === "11").isSelf).toBe(false);
+  });
+
+  it("deletePost() on a REAL post (as its own author) resolves without throwing and returns the refreshed feed", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [{ id: "p_real_delete", author_id: "u-me", category: "Techniques", heading: "h", caption: "c", media_type: "checklist", media: {}, media_urls: [], tags: [], post_type: "post", created_at: new Date().toISOString() }],
+      error: null,
+    });
+    setTable("profiles", { data: [{ id: "u-me", name: "Dr Me" }], error: null });
+    const posts = await db.deletePost("p_real_delete");
+    expect(Array.isArray(posts)).toBe(true);
+  });
+
+  it("deletePost() falls back to a local mock removal for a demo-only post id, without throwing", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: [], error: null }); // keeps getPosts() on the demo feed
+    const posts = await db.deletePost("p_nonexistent_demo_id_for_delete_test");
+    expect(Array.isArray(posts)).toBe(true);
+  });
+
+  it("deleteComment() on a REAL comment (as its own author) resolves without throwing", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: [], error: null });
+    setTable("comments", { data: null, error: null });
+    const posts = await db.deleteComment("p_any", "123");
+    expect(Array.isArray(posts)).toBe(true);
+  });
+
+  it("deleteComment() falls back to a local mock removal without throwing when the real delete fails", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: [], error: null });
+    setTable("comments", { data: null, error: { message: "not found" } });
+    const posts = await db.deleteComment("p_nonexistent_demo_post_for_comment_delete_test", "c_nonexistent");
+    expect(Array.isArray(posts)).toBe(true);
   });
 
   it("toggleLike() on a demo post (not in the real table) falls back to the local mock toggle without throwing", async () => {
