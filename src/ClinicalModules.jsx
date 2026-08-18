@@ -8475,7 +8475,7 @@ ${dx ? `<div class="dx-banner"><div class="dx-label">Provisional Diagnosis</div>
       // Round floating button — sits above the bottom navigation, never covers it
       return (
         <button onClick={()=>setOpen(true)} title="Open Live SOAP Panel" style={{
-          position:"fixed", bottom:"calc(96px + env(safe-area-inset-bottom))", right:14, zIndex:138,
+          position:"fixed", bottom:"calc(96px + env(safe-area-inset-bottom))", right:14, zIndex:141,
           width:56, height:56, borderRadius:"50%",
           display:"flex", alignItems:"center", justifyContent:"center",
           background:"linear-gradient(135deg,#7c3aed,#9333ea)", border:"none",
