@@ -12,19 +12,37 @@
    boxy-looking stories and category pills. This re-applies just the
    essential reset rules, scoped to .physiofeed-root only, so it can't leak
    out and affect anything else in the app. */
-/* Wrapped in Tailwind's "base" layer (not left as plain CSS) --
-   plain ".physiofeed-root button {...}" has higher specificity (class +
-   element) than a single Tailwind utility class like ".border" or
-   ".bg-white", so it was silently overriding every real border/background
-   utility applied to a <button> (e.g. the bold bordered cards in Learn's
-   study mode) regardless of source order. Cascade layers fix this
-   correctly: anything in the "base" layer always loses to a utility
-   class, matching the intent -- these are fallback defaults, not
-   overrides. */
+/* NOTE: an earlier version of this comment claimed wrapping this in
+   Tailwind's `@layer base {}` was enough to make utility classes always
+   win, via CSS cascade layers. Verified (2026-08-18) that's NOT what
+   happens in this build: Tailwind's compiled output here is flat, plain
+   CSS with no real `@layer` at-rules surviving -- `@layer base` is purely
+   a build-time grouping hint, not a runtime cascade layer. So the actual
+   winner was decided by plain CSS specificity, and ".physiofeed-root
+   button" (class + element = 0,1,1) OUT-SPECIFIES a single utility class
+   like ".bg-violet-600" or ".border" (0,1,0) -- meaning this reset was
+   silently stripping the background/border/padding off EVERY button that
+   relied on a plain utility class for those properties: the Learn study
+   grid's card tiles (no visible box) and the region/category pill
+   selectors (Cervical/Thoracic/..., Reflexes/Dermatomes/..., rendering as
+   bare unstyled text with no selected-state indicator). Confirmed via
+   getComputedStyle in a live render -- background/border/padding were
+   all zeroed out despite the correct classes being present in the DOM.
+   Fix: wrap the scoping class in :where(), which matches identically but
+   contributes ZERO to specificity, dropping this rule to (0,0,1) -- lower
+   than any single utility class, so utilities now always win as
+   originally intended, while unstyled buttons/inputs (nothing overriding
+   these properties) still get the native-chrome-removal fallback exactly
+   as before. */
 @layer base {
-  .physiofeed-root button {
+  :where(.physiofeed-root) button {
     background: transparent;
-    border: 0;
+    /* border-width only (not the `border` shorthand) -- the shorthand
+       also resets border-style to "none", which (being on a same-or-lower
+       specificity button-type selector) was beating the border-style:solid
+       default below and keeping every bordered button invisible even
+       after border-width/color started working. */
+    border-width: 0;
     padding: 0;
     margin: 0;
     font: inherit;
@@ -35,9 +53,9 @@
     -webkit-appearance: none;
     appearance: none;
   }
-  .physiofeed-root input,
-  .physiofeed-root textarea {
-    border: 0;
+  :where(.physiofeed-root) input,
+  :where(.physiofeed-root) textarea {
+    border-width: 0;
     background: transparent;
     font: inherit;
     color: inherit;
@@ -45,10 +63,31 @@
     -webkit-appearance: none;
     appearance: none;
   }
-  .physiofeed-root input:focus,
-  .physiofeed-root textarea:focus,
-  .physiofeed-root button:focus {
+  :where(.physiofeed-root) input:focus,
+  :where(.physiofeed-root) textarea:focus,
+  :where(.physiofeed-root) button:focus {
     outline: none;
+  }
+
+  /* Second half of the same Preflight gap: Tailwind's `.border*` utility
+     classes (e.g. `.border { border-width: 1px }`) only ever set
+     border-WIDTH, never border-style -- normally Tailwind's Preflight
+     supplies a global `border-style: solid` default so a bare `.border`
+     class alone is enough to draw a line. With Preflight off, border-style
+     stays at the CSS initial value of `none`, so every `.border` /
+     `.border-slate-200` pairing in Learn/PhysioFeed (study grid card
+     tiles, region/category pill selectors, etc.) has been computing to
+     "border-width: 1px; border-style: none" -- i.e. literally invisible,
+     confirmed via getComputedStyle. Restoring just this one Preflight
+     rule, scoped + zero-specificity the same way as above, so any
+     `.border*` utility in this section actually draws. border-width: 0
+     first (also from Preflight) keeps this purely corrective -- nothing
+     gets a border it didn't already have a width utility for. */
+  :where(.physiofeed-root) *,
+  :where(.physiofeed-root) *::before,
+  :where(.physiofeed-root) *::after {
+    border-width: 0;
+    border-style: solid;
   }
 }
 
