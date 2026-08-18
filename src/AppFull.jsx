@@ -1606,13 +1606,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             const wfSteps = [
               { key:"demographics", label:"Demographics",  short:"Demo",   nav:"demographics",    done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
               { key:"region",       label:"Body Regions",  short:"Region", nav:"subj_region",     done:!!(d2.cx_selected_regions&&d2.cx_selected_regions!=="[]"), active:active==="subj_region" },
-              { key:"subjective",   label:"Subjective",    short:"Sub",    nav:"subjective",      done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
               { key:"ai",           label:"AI",            short:"AI",     nav:"subj_ai",         done:!!(d2.ai_extraction_audit), active:active==="subj_ai" },
+              { key:"subjective",   label:"Subjective",    short:"Sub",    nav:"subjective",      done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
               { key:"chart",        label:"Chart/Palp",    short:"Chart",  nav:"chart_palpation", done:!!(d2.body_chart_pro||d2.palpation_site), active:active==="chart_palpation" },
               { key:"objective",    label:"Objective",     short:"Obj",    nav:"objective",       done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
               { key:"treatment",    label:"Treatment",     short:"Treat",  nav:"treatment",       done:!!(d2.soap_modalities||d2.soap_frequency||d2.tx_exercise_prescription||d2.tx_techniques), active:(active==="treatment"||active==="exercise")&&txTab!=="hep" },
-              { key:"home",         label:"Home Protocol", short:"Home",   nav:"treatment",       done:!!(d2.hep_programme), active:active==="treatment"&&txTab==="hep" },
               { key:"soap",         label:"SOAP",          short:"SOAP",   nav:"soap",            done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
+              { key:"home",         label:"Home Protocol", short:"Home",   nav:"treatment",       done:!!(d2.hep_programme), active:active==="treatment"&&txTab==="hep" },
             ];
             const doneCount = wfSteps.filter(s => s.done).length;
             const pct = Math.round((doneCount / wfSteps.length) * 100);
