@@ -58,6 +58,32 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
 
   return (
     <div>
+      {/* Suggest Probable Diagnosis -- moved to the top (2026-08-18) and
+          restyled to match Subjective's "Suggest probable objective
+          assessment" button (solid gradient, full width, region-count
+          pill) instead of a plain accordion card. Same deterministic
+          engine + button already used in SOAP Notes' Provisional Diagnosis
+          section -- reads data.cx_selected_regions + all recorded
+          subjective/objective fields, nothing new invented. */}
+      <button type="button" onClick={() => setExpandedKey(k => k === "diagnosis" ? null : "diagnosis")}
+        style={{
+          width: "100%", padding: "12px 16px", borderRadius: 10, border: "none",
+          background: `linear-gradient(135deg, ${PC.accent}, ${PC.a2 || PC.accent})`,
+          color: "#fff", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer",
+          boxShadow: `0 4px 14px ${PC.accent}33`, fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12,
+        }}>
+        🧠 Suggest Probable Diagnosis
+        <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 10, fontWeight: 600 }}>
+          {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""}
+        </span>
+      </button>
+      {expandedKey === "diagnosis" && (
+        <div style={{ marginBottom: 16 }}>
+          <LazyTab><LazyDiagnosis data={data} onNav={navTo} /></LazyTab>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <button type="button" onClick={() => navTo("subjective")}
           style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${PC.border}`, background: PC.s2 || "#F8FAFC", color: PC.muted, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}>
@@ -133,16 +159,6 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           </div>
         );
       })}
-
-      {/* Suggest Probable Diagnosis -- same deterministic engine + button
-          already used in SOAP Notes' Provisional Diagnosis section, added
-          here too so a clinician can run it right after completing the
-          objective exam instead of only from SOAP. Reads data.cx_selected_
-          regions + all recorded subjective/objective fields, nothing new
-          invented. */}
-      <Sec icon="🧠" title="Suggest Probable Diagnosis" PC={PC} expanded={expandedKey === "diagnosis"} onToggle={() => setExpandedKey(k => k === "diagnosis" ? null : "diagnosis")}>
-        <LazyTab><LazyDiagnosis data={data} onNav={navTo} /></LazyTab>
-      </Sec>
 
       <HowToPerformDrawer open={!!howTo} onClose={() => setHowTo(null)} title={howTo?.title} subtitle={howTo?.subtitle} sections={howTo?.sections} />
     </div>
