@@ -33,4 +33,19 @@ describe("ObjectiveHub", () => {
     await screen.findByText("Active ROM");
     expect(navTo).not.toHaveBeenCalled();
   });
+
+  it("shows a Clinical Observation card (general, not region-scoped) that expands the real ObservationModule in place", async () => {
+    const navTo = vi.fn();
+    const data = { cx_selected_regions: JSON.stringify(["Shoulder (L)"]) };
+    render(<ObjectiveHub data={data} set={vi.fn()} navTo={navTo} PC={PC} />);
+
+    fireEvent.click(screen.getByText(/Clinical Observation/));
+    // ObservationModule's own section header -- proves the real module
+    // (already used standalone via the sidebar) rendered inline here too.
+    // Longer timeout: ClinicalModules.jsx (where ObservationModule lives)
+    // is a large chunk and the lazy import needs more than the default
+    // 1000ms to resolve in the test environment.
+    await screen.findByText(/General Observation/i, {}, { timeout: 5000 });
+    expect(navTo).not.toHaveBeenCalled();
+  });
 });

@@ -14,6 +14,7 @@ const LazyROM = React.lazy(() => import("./lazy_rom.jsx"));
 const LazyMMT = React.lazy(() => import("./lazy_mmt.jsx"));
 const LazySpecial = React.lazy(() => import("./lazy_special.jsx"));
 const LazyNeuro = React.lazy(() => import("./lazy_neuro.jsx"));
+const LazyObservation = React.lazy(() => import("./lazy_observation.jsx"));
 
 function Sec({ icon, title, PC, expanded, onToggle, children }) {
   return (
@@ -62,6 +63,14 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
           + Add / change regions
         </button>
       </div>
+
+      {/* Clinical Observation -- general visual inspection (posture,
+          gait, swelling, deformity, skin, etc.), not tied to any one
+          selected region like ROM/MMT/Special Tests below, so it sits
+          above the per-region sections instead of inside one of them. */}
+      <Sec icon="👁️" title="Clinical Observation" PC={PC} expanded={expandedKey === "observation"} onToggle={() => setExpandedKey(k => k === "observation" ? null : "observation")}>
+        <LazyTab><LazyObservation data={data} set={set} navContext={{}} /></LazyTab>
+      </Sec>
 
       {selectedRegions.map(region => {
         const familyKey = REGION_FAMILY_KEY[region] || region;
