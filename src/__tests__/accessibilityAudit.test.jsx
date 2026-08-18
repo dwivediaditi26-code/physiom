@@ -32,10 +32,11 @@ describe("Accessibility — Subjective Assessment form", () => {
 
   test("no axe violations with a region selected and its fields rendered (Cervical)", async () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
-    const { container, getByTestId } = render(
+    const { container } = render(
       <SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />
     );
-    getByTestId("subj-group-tab-Cervical (R)").click();
+    // Cervical's fields now render inline immediately -- no group tab to
+    // click (the tab switcher was removed in the 2026-08-18 redesign).
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

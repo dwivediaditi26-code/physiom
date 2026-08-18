@@ -1,10 +1,18 @@
-// Regression coverage for the Subjective Assessment form redesign: every
-// section within the active group (Core / a body region / General / ...)
-// now renders top to bottom in one continuous scroll, instead of showing
-// only the single "active" section behind a "N / M" counter with
-// Prev/Next buttons to step through them one at a time. Confirmed via
-// several rounds of mockups in chat, landing on: "it should be long
-// line wise vertical form till last."
+// Regression coverage for the Subjective Assessment form redesign.
+//
+// History: first landed as "every section within the active GROUP (Core /
+// a body region / General / ...) renders top to bottom in one continuous
+// scroll" -- i.e. within a group, no more one-section-at-a-time stepper.
+// That still used a tab row to switch which GROUP was active.
+//
+// Redesigned again (2026-08-18, confirmed via several rounds of chat
+// mockups) to drop the group-tab switcher entirely: Core, every selected
+// region, and the universal Red Flag safety screen now ALL render inline,
+// simultaneously, in one pass -- no tab click needed to see a different
+// region's fields. Everything else (Goals, Previous Episodes, PMH &
+// Medications, Lifestyle, Psychosocial) is collapsed by default behind a
+// single "More details" toggle instead, so the default view stays a
+// reasonably short scroll instead of a wall of mostly-empty fields.
 import React from "react";
 import { describe, test, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -12,24 +20,15 @@ import { SubjectiveModule } from "../SubjectiveObjective.jsx";
 
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 
-// Selecting a region does not auto-switch the active group tab (unchanged,
-// pre-existing behavior) -- the "Core" group (Chief complaint) still shows
-// by default. Tests that need a region's own sections click that region's
-// group tab first, matching what a real user would do. Targeted via
-// data-testid since the region-picker chip elsewhere on the page renders
-// the exact same isolated text ("Cervical (R)") inside its own button.
-function openRegionGroup(regionLabel) {
-  fireEvent.click(screen.getByTestId(`subj-group-tab-${regionLabel}`));
-}
-
-describe("Subjective Assessment form: continuous scroll instead of a stepper", () => {
-  test("every section in the active group renders simultaneously, not one at a time", () => {
+describe("Subjective Assessment form: continuous scroll, no group-tab switcher", () => {
+  test("a selected region's sections render immediately, with no tab click needed", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    openRegionGroup("Cervical (R)");
 
-    // All of these belong to the same "Cervical (R)" group -- previously
-    // only ONE of these section headers would be in the DOM at a time.
+    // All of these belong to the same Cervical region module -- previously
+    // only ONE of these section headers would be in the DOM at a time, and
+    // only after clicking a "subj-group-tab-Cervical (R)" tab that no
+    // longer exists.
     expect(screen.getByText(/Cervical — Location/)).toBeInTheDocument();
     expect(screen.getByText(/Cervical — Mechanism/)).toBeInTheDocument();
     expect(screen.getByText(/Cervical — Aggravating/)).toBeInTheDocument();
@@ -38,50 +37,51 @@ describe("Subjective Assessment form: continuous scroll instead of a stepper", (
   test("no step counter or Prev/Next controls remain", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    openRegionGroup("Cervical (R)");
 
     expect(screen.queryByText(/^\d+ \/ \d+$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/All done ✓/)).not.toBeInTheDocument();
   });
 
-  test("clicking a section pill scrolls to it without removing the other sections", () => {
+  test("no group-tab switcher remains -- Core, Chief Complaint always show alongside the region", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    openRegionGroup("Cervical (R)");
 
-    const pill = screen.getAllByText(/Aggravating/).find(el => el.tagName === "SPAN" && el.closest("button"));
-    fireEvent.click(pill.closest("button"));
-
-    // Location and Mechanism must still be present -- the click only jumps
-    // the scroll position, it doesn't hide sibling sections.
+    expect(screen.queryByTestId("subj-group-tab-Core")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("subj-group-tab-Cervical (R)")).not.toBeInTheDocument();
+    expect(screen.getByText(/Chief Complaint/)).toBeInTheDocument();
     expect(screen.getByText(/Cervical — Location/)).toBeInTheDocument();
-    expect(screen.getByText(/Cervical — Mechanism/)).toBeInTheDocument();
-    expect(screen.getByText(/Cervical — Aggravating/)).toBeInTheDocument();
   });
 
-  test("switching the top-level group tab still switches which region's sections show", () => {
+  test("two selected regions both render at once -- no switching required to see the second one", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)", "Lumbar/SI (L)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    openRegionGroup("Cervical (R)");
 
     expect(screen.getByText(/Cervical — Location/)).toBeInTheDocument();
-
-    openRegionGroup("Lumbar/SI (L)");
-
-    expect(screen.queryByText(/Cervical — Location/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Lumbar — Location/)).toBeInTheDocument();
   });
 
-  // The shared-filter-box design this test originally covered never
-  // shipped -- the multicheck/select fields that landed instead
-  // (ComboField in SubjectiveObjective.jsx) are each an independent
-  // tap-to-open dropdown with no search/filter input at all, shared or
-  // per-section. Updated to assert what's actually there: every
-  // select/multicheck field in the group gets its own "Tap to select..."
-  // control, not one input shared across the group.
+  test("the universal Red Flag safety screen always shows inline, not tucked behind More details", () => {
+    const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
+    render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
+
+    expect(screen.getByText(/General Red Flag Screen/)).toBeInTheDocument();
+  });
+
+  test("Goals/History/PMH/Lifestyle/Psychosocial are collapsed behind a single 'More details' toggle by default", () => {
+    const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
+    render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
+
+    expect(screen.queryByText(/Patient Goals & Beliefs/)).not.toBeInTheDocument();
+    expect(screen.getByTestId("subj-more-toggle")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("subj-more-toggle"));
+
+    expect(screen.getByText(/Patient Goals & Beliefs/)).toBeInTheDocument();
+  });
+
   test("each multicheck/select field renders its own independent tap-to-select control, not a shared filter box", () => {
     const data = { cx_selected_regions: JSON.stringify(["Cervical (R)"]) };
     render(<SubjectiveModule data={data} set={() => {}} onNav={() => {}} onTabChange={() => {}} />);
-    openRegionGroup("Cervical (R)");
 
     const controls = screen.getAllByPlaceholderText(/Tap to select/);
     expect(controls.length).toBeGreaterThan(1);

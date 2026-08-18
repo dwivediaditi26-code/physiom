@@ -3332,6 +3332,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
 
   const [activeSection, setActiveSection] = useState("complaint");
   const [deepOpen, setDeepOpen] = useState({}); // section key -> show deep-dive fields
+  const [moreOpen, setMoreOpen] = useState(false); // "More details" -- Goals/History/PMH/Lifestyle/Psychosocial etc, collapsed by default (2026-08-18 clean-list redesign)
   const sectionTopRef = React.useRef(null);
   const groupTabsRef = React.useRef(null); // the region/group tab card — scroll target so a tab tap lands at the top of the region, keeping the tabs visible
   const [selectedRegions, setSelectedRegions] = useState(()=>{
@@ -4988,18 +4989,27 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
           </button>
 
           {/* ══════════════════════════════════════════════════════
-              Section nav + continuous field list. One top-level group
-              (Core / a body region / General / ...) is active at a time --
-              switching groups still switches which region's fields you're
-              viewing, same as before. But WITHIN a group, every section is
-              now rendered top to bottom in one continuous scroll instead of
-              being stepped through one section at a time behind a
-              "N / M" counter and Prev/Next buttons.
-          ══════════════════════════════════════════════════════ */}
+              Clean single-scroll list (2026-08-18 redesign, replacing the
+              tabbed Core/Region/General/Psychosocial group-switcher).
+              Confirmed via several rounds of chat mockups: no more
+              tab-clicking to see a different group's fields -- Core, every
+              selected region's sections, and the universal Red Flag safety
+              screen now all render inline, top to bottom, in one pass.
+              Everything else that used to live behind the "General"/
+              "Sleep"/"Sport"/"Psychosocial" tabs (patient goals, previous
+              episodes, PMH/meds, lifestyle, BPS -- usually a lot of fields,
+              often empty on a first visit) is tucked behind a single
+              "More details" toggle at the bottom instead, mirroring the
+              Demographics screen's "More details" pattern. Per-section
+              CORE/CONDITIONAL-vs-DEEP tiering (classifyField) and the
+              per-section "+ Add more detail" expander are unchanged --
+              only the outer grouping/navigation changed, not how any one
+              field renders or edits. */}
           {(() => {
             // Build groups: core universal keys, then one group per selected region, then trailing universal
             const CORE_KEYS = ["complaint"];
-            const TRAILING_KEYS = ["goals","history","red_flags","pmh","lifestyle","paediatric","hypermobility"];
+            const SAFETY_KEYS = ["red_flags"]; // universal Red Flag screen -- always shown inline, never behind "More details"
+            const TRAILING_KEYS = ["goals","history","pmh","lifestyle","paediatric","hypermobility"];
             const SLEEP_KEYS = ["sleep","sleep_pattern","sleep_impact"];
             const SPORT_KEYS = ["sport","sport_load","sport_return"];
             const BPS_KEYS = ["bps","bps_social","bps_psycho"];
@@ -5037,191 +5047,165 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
 
             // Gather remaining keys that don't fit above buckets
             const knownKeys = new Set([
-              ...CORE_KEYS,
+              ...CORE_KEYS, ...SAFETY_KEYS,
               ...regionGroups.flatMap(g => g.keys),
               ...TRAILING_KEYS, ...SLEEP_KEYS, ...SPORT_KEYS, ...BPS_KEYS,
             ]);
+            const safetyPresent = allKeys.filter(k => SAFETY_KEYS.includes(k));
             const trailingPresent = allKeys.filter(k => TRAILING_KEYS.includes(k));
             const sleepPresent = allKeys.filter(k => SLEEP_KEYS.includes(k));
             const sportPresent = allKeys.filter(k => SPORT_KEYS.includes(k));
             const bpsPresent = allKeys.filter(k => BPS_KEYS.includes(k));
             const extraPresent = allKeys.filter(k => !knownKeys.has(k));
 
-            const groups = [
+            // Always shown inline: Core (chief complaint), every selected
+            // region, and the universal Red Flag safety screen.
+            const mainGroups = [
               { label:"Core", col: PC.accent, keys: CORE_KEYS.filter(k => allKeys.includes(k)) },
               ...regionGroups,
+              ...(safetyPresent.length ? [{ label:"Safety Screen", col: PC.red, keys: safetyPresent }] : []),
+            ].filter(g => g.keys.length > 0);
+
+            // Tucked behind one "More details" toggle: goals, previous
+            // episodes/treatment, PMH & meds, lifestyle, sleep, sport,
+            // psychosocial -- usually a lot of fields, often blank on a
+            // first visit, so keeping them collapsed by default avoids a
+            // wall of empty boxes on the main screen.
+            const moreGroups = [
               ...(trailingPresent.length ? [{ label:"General", col:"#6b7280", keys: trailingPresent }] : []),
               ...(sleepPresent.length ? [{ label:"Sleep", col:"#7c3aed", keys: sleepPresent }] : []),
               ...(sportPresent.length ? [{ label:"Sport", col:"#16a34a", keys: sportPresent }] : []),
               ...(bpsPresent.length ? [{ label:"Psychosocial", col:"#d97706", keys: bpsPresent }] : []),
               ...(extraPresent.length ? [{ label:"Other", col: PC.muted, keys: extraPresent }] : []),
             ].filter(g => g.keys.length > 0);
+            const moreFieldCount = moreGroups.reduce((n, g) => n + g.keys.reduce((n2, k) => n2 + (sections[k]?.fields?.length || 0), 0), 0);
 
-            // Find active group
-            const activeGroup = groups.find(g => g.keys.includes(activeSection)) || groups[0];
-            const agCol = activeGroup ? activeGroup.col : PC.accent;
+            // Renders one group: a small uppercase group label, then every
+            // section in it stacked top to bottom -- each section's
+            // CORE+CONDITIONAL fields inline, its DEEP fields behind a
+            // per-section "+ Add more detail" (unchanged from before).
+            const renderGroup = (g) => (
+              <div key={g.label} style={{ marginBottom: 22 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: g.col, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10, padding: "0 2px" }}>
+                  {g.label}
+                </div>
+                {g.keys.map(key => {
+                  const s = sections[key]; if (!s) return null;
+                  const sColor = s.color || PC.accent;
+                  return (
+                    <div key={key} id={`subj-sec-${key}`} style={{ marginBottom: 18 }}>
 
-            const jumpToGroup = (key) => {
-              setActiveSection(key);
-              setSearchTerm("");
-              setTimeout(() => {
-                // Scroll to the tab card (not the section body) so the tabs stay
-                // visible and the region's first section shows right below,
-                // instead of flinging the page into the middle of the content.
-                const target = groupTabsRef.current || sectionTopRef.current;
-                if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
-              }, 30);
-            };
-            const jumpToSection = (key) => {
-              setActiveSection(key);
-              const el = document.getElementById(`subj-sec-${key}`);
-              if (el) el.scrollIntoView({ behavior:"smooth", block:"start" });
-            };
+                      {/* Small, subtle section header — icon lives here only */}
+                      <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
+                        <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
+                        <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
+                          textTransform:"uppercase", color: PC.text }}>{s.label}</span>
+                      </div>
+                      {s.description && (
+                        <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
+                          {s.description}
+                        </div>
+                      )}
 
-            const groupSections = activeGroup ? activeGroup.keys.map(k => sections[k]).filter(Boolean) : [];
-            const groupHasMulticheck = groupSections.some((s, i) => activeGroup.keys[i] !== "complaint" && s.fields.some(f => f.type === "multicheck"));
-            // Continuous "N." numbering across every field in the active group
-            // (matches the confirmed mockup) -- resets to 1 whenever the group
-            // tab changes, since this is recomputed fresh on every render.
-            let fieldNum = 0;
+                      {/* Adaptive tiering: CORE + triggered CONDITIONAL (+ any
+                          legacy note that already holds data) render inline;
+                          DEEP-dive detail sits behind an "Add more detail"
+                          expander. Non-visible gated fields are omitted (their
+                          data, if ever set, still flows to the engine). */}
+                      {(() => {
+                        const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
+                        const mainFields = classified.filter((c) => c.visible && c.tier !== "deep");
+                        const deepFields = classified.filter((c) => c.visible && c.tier === "deep");
+                        const open = !!deepOpen[key];
+                        return (
+                          <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                            {mainFields.map(({ field }, fi) => (
+                              <AssessmentRow key={field.id} label={field.label}
+                                helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === mainFields.length - 1 && deepFields.length === 0}>
+                                {renderField(field)}
+                              </AssessmentRow>
+                            ))}
+                            {deepFields.length > 0 && (
+                              <>
+                                <button type="button" data-testid={`subj-deep-toggle-${key}`}
+                                  onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
+                                  style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:6,
+                                    padding:"7px 12px", borderRadius:99, cursor:"pointer", fontFamily:"inherit",
+                                    border:`1.5px dashed ${sColor}66`, background:"transparent",
+                                    color:sColor, fontSize:"0.72rem", fontWeight:700, marginTop: 6 }}>
+                                  {open ? "▲ Hide extra detail" : `＋ Add more detail (${deepFields.length})`}
+                                </button>
+                                {open && deepFields.map(({ field }, fi) => (
+                                  <AssessmentRow key={field.id} label={field.label}
+                                    helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === deepFields.length - 1}>
+                                    {renderField(field)}
+                                  </AssessmentRow>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })}
+              </div>
+            );
 
             return (
               <>
-                <div ref={groupTabsRef} style={{ background:"#fff", borderRadius:14, overflow:"hidden",
-                  border:"1px solid rgba(0,0,0,0.07)",
-                  boxShadow:"0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)" }}>
-
-                  {/* ── Row 1: Group tabs — plain text, purple underline ── */}
-                  <div style={{ display:"flex", overflowX:"auto", scrollbarWidth:"none",
-                    WebkitOverflowScrolling:"touch", borderBottom:"1px solid #F0F0F0",
-                    padding:"0 4px" }}>
-                    {groups.map((g) => {
-                      const isAct = activeGroup && g.label === activeGroup.label;
-                      return (
-                        <button key={g.label} type="button" data-testid={`subj-group-tab-${g.label}`}
-                          onClick={()=>jumpToGroup(g.keys[0])}
-                          style={{
-                            padding:"10px 12px 8px",
-                            background:"transparent",
-                            borderBottom: isAct ? `2.5px solid ${g.col}` : "2.5px solid transparent",
-                            border:"none", borderRadius:0, cursor:"pointer", fontFamily:"inherit",
-                            flexShrink:0, whiteSpace:"nowrap", transition:"color 120ms",
-                          }}>
-                          <span style={{
-                            fontSize:"0.75rem", fontWeight: isAct ? 700 : 500,
-                            color: isAct ? g.col : "#888",
-                          }}>{g.label}</span>
-                        </button>
-                      );
-                    })}
+                {/* Selected-region chips — quick "what am I looking at"
+                    context now that switching regions no longer requires a
+                    tab click (everything already shows below). */}
+                {selectedRegions.length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 }}>
+                    {selectedRegions.map(r => (
+                      <span key={r} style={{ display:"inline-flex", alignItems:"center", gap:6,
+                        padding:"5px 12px", borderRadius:999, background:`${RC_S[r]||PC.accent}18`,
+                        color: RC_S[r]||PC.accent, fontSize:"0.72rem", fontWeight:800 }}>
+                        🧭 {r}
+                      </span>
+                    ))}
                   </div>
-
-                  {/* ── Row 2: Section pills — jump to that section below; every
-                       section stays visible, this just scrolls to it ── */}
-                  {activeGroup && (
-                    <div style={{ display:"flex", overflowX:"auto", gap:6, padding:"8px 10px",
-                      scrollbarWidth:"none", WebkitOverflowScrolling:"touch", flexWrap:"nowrap" }}>
-                      {activeGroup.keys.map(key => {
-                        const s = sections[key]; if (!s) return null;
-                        const isAct = key === activeSection;
-                        return (
-                          <button key={key} type="button"
-                            onClick={()=>jumpToSection(key)}
-                            style={{
-                              display:"flex", alignItems:"center", gap:5,
-                              padding:"6px 13px",
-                              borderRadius:99, cursor:"pointer", fontFamily:"inherit",
-                              flexShrink:0, whiteSpace:"nowrap", transition:"all 120ms",
-                              border: isAct ? "none" : "1.5px solid #E8E8E8",
-                              background: isAct ? agCol : "#F5F5F5",
-                              boxShadow: isAct ? `0 2px 8px ${agCol}40` : "none",
-                            }}>
-                            <span style={{ fontSize:"0.8rem", lineHeight:1 }}>{s.icon}</span>
-                            <span style={{
-                              fontSize:"0.72rem", fontWeight: isAct ? 700 : 500,
-                              color: isAct ? "#fff" : "#555",
-                            }}>
-                              {s.label.replace(/^[^—]+ — /,"").replace(/^[^—]+ \(.\) — /,"")}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* No region selected prompt */}
-                {selectedRegions.length === 0 && !["complaint","goals","history","red_flags","pmh","lifestyle"].includes(activeSection) && (
+                {selectedRegions.length === 0 && (
                   <div style={{ background:"#fffbeb", border:`1px solid ${PC.yellow}55`, borderRadius:10,
-                    padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem" }}>
+                    padding:"12px 16px", color: PC.yellow, fontSize:"0.78rem", marginBottom:16 }}>
                     ⚠ Select at least one region above to load the region-specific assessment module
                   </div>
                 )}
 
-                {/* Every section in the active group, stacked top to bottom --
-                    one continuous scroll instead of one section at a time. */}
-                <div ref={sectionTopRef} style={{ display:"flex", flexDirection:"column", gap:20 }}>
-                  {groupSections.map((s, si) => {
-                    const key = activeGroup.keys[si];
-                    const sColor = s.color || PC.accent;
-                    return (
-                      <div key={key} id={`subj-sec-${key}`}>
-
-                        {/* Small, subtle section header — icon lives here only */}
-                        <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 4px 6px" }}>
-                          <span style={{ fontSize:"0.78rem" }}>{s.icon}</span>
-                          <span style={{ fontSize:"0.74rem", fontWeight:800, letterSpacing:"0.06em",
-                            textTransform:"uppercase", color: PC.text }}>{s.label}</span>
-                        </div>
-                        {s.description && (
-                          <div style={{ fontSize:"0.76rem", color: PC.muted, fontStyle:"italic", padding:"0 4px 6px", lineHeight:1.5 }}>
-                            {s.description}
-                          </div>
-                        )}
-
-                        {/* Adaptive tiering: CORE + triggered CONDITIONAL (+ any
-                            legacy note that already holds data) render inline;
-                            DEEP-dive detail sits behind an "Add more detail"
-                            expander. Non-visible gated fields are omitted (their
-                            data, if ever set, still flows to the engine). */}
-                        {(() => {
-                          const classified = s.fields.map((field) => ({ field, ...classifyField(field, data) }));
-                          const mainFields = classified.filter((c) => c.visible && c.tier !== "deep");
-                          const deepFields = classified.filter((c) => c.visible && c.tier === "deep");
-                          const open = !!deepOpen[key];
-                          return (
-                            <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-                              {mainFields.map(({ field }, fi) => (
-                                <AssessmentRow key={field.id} label={field.label}
-                                  helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === mainFields.length - 1 && deepFields.length === 0}>
-                                  {renderField(field)}
-                                </AssessmentRow>
-                              ))}
-                              {deepFields.length > 0 && (
-                                <>
-                                  <button type="button" data-testid={`subj-deep-toggle-${key}`}
-                                    onClick={() => setDeepOpen((o) => ({ ...o, [key]: !o[key] }))}
-                                    style={{ alignSelf:"flex-start", display:"flex", alignItems:"center", gap:6,
-                                      padding:"7px 12px", borderRadius:99, cursor:"pointer", fontFamily:"inherit",
-                                      border:`1.5px dashed ${sColor}66`, background:"transparent",
-                                      color:sColor, fontSize:"0.72rem", fontWeight:700 }}>
-                                    {open ? "▲ Hide extra detail" : `＋ Add more detail (${deepFields.length})`}
-                                  </button>
-                                  {open && deepFields.map(({ field }, fi) => (
-                                    <AssessmentRow key={field.id} label={field.label}
-                                      helpText={FIELD_HELP[field.id]} PC={PC} stacked={field.type === "range"} last={fi === deepFields.length - 1}>
-                                      {renderField(field)}
-                                    </AssessmentRow>
-                                  ))}
-                                </>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    );
-                  })}
+                {/* Core, every selected region, and the safety screen — one
+                    continuous scroll, always visible. */}
+                <div ref={sectionTopRef}>
+                  {mainGroups.map(renderGroup)}
                 </div>
+
+                {/* Everything else, collapsed by default. */}
+                {moreGroups.length > 0 && (
+                  <div style={{ border:`1px solid ${PC.border}`, borderRadius:14, overflow:"hidden", marginTop:4 }}>
+                    <div onClick={() => setMoreOpen(o => !o)} data-testid="subj-more-toggle"
+                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                        padding:"14px 16px", cursor:"pointer", background: PC.s2 || "#F8FAFC" }}>
+                      <div>
+                        <div style={{ fontSize:"0.82rem", fontWeight:800, color: PC.text }}>More details</div>
+                        <div style={{ fontSize:"0.72rem", color: PC.muted, marginTop:1 }}>
+                          Goals, previous episodes, PMH &amp; medications, lifestyle{bpsPresent.length ? ", psychosocial" : ""} — {moreFieldCount} fields
+                        </div>
+                      </div>
+                      <span style={{ fontSize:11, color: PC.accent, fontWeight:800, flexShrink:0, marginLeft:10 }}>
+                        {moreOpen ? "Close ↑" : "Open →"}
+                      </span>
+                    </div>
+                    {moreOpen && (
+                      <div style={{ padding:"14px 16px 4px", background:"#fdfcff" }}>
+                        {moreGroups.map(renderGroup)}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             );
           })()}
