@@ -6,7 +6,7 @@
 // images) compress -> db.js uploads -> createPost().
 
 export const MAX_IMAGE_MB = 10;
-export const MAX_IMAGES = 4;
+export const MAX_IMAGES = 10; // matches the "1-10 images per post" spec
 export const MAX_VIDEO_MB = 100;
 export const MAX_VIDEO_SECONDS = 90;
 

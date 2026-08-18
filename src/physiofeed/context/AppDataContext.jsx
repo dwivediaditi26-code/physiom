@@ -17,6 +17,7 @@ export function AppDataProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [composerType, setComposerType] = useState(null); // null | 'post' | 'case' | 'research' | 'video' | 'photo' | 'poll'
 
   useEffect(() => {
     (async () => {
@@ -36,9 +37,10 @@ export function AppDataProvider({ children }) {
   const savePost = useCallback(async (id) => { await db.toggleSave(id); setPosts(await db.getPosts()); }, []);
   const followAuthor = useCallback(async (id) => { await db.toggleFollowAuthor(id); setPosts(await db.getPosts()); }, []);
   const commentOnPost = useCallback(async (id, text) => { await db.addComment(id, text); setPosts(await db.getPosts()); }, []);
-  const publishPost = useCallback(async ({ text, category, media }) => { await db.createPost({ text, category, media }); setPosts(await db.getPosts()); }, []);
+  const publishPost = useCallback(async (fields) => { await db.createPost(fields); setPosts(await db.getPosts()); }, []);
   const uploadImage = useCallback((blob) => db.uploadPostImage(blob), []);
   const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
+  const votePoll = useCallback(async (id, optionIndex) => { setPosts(await db.votePoll(id, optionIndex)); }, []);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
   const viewStory = useCallback(async (id) => { setStories(await db.markStorySeen(id)); }, []);
   const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
@@ -52,8 +54,8 @@ export function AppDataProvider({ children }) {
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost,
-    uploadImage, uploadVideo,
-    composerOpen, setComposerOpen,
+    uploadImage, uploadVideo, votePoll,
+    composerOpen, setComposerOpen, composerType, setComposerType,
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

@@ -85,6 +85,48 @@ export const INITIAL_POSTS = [
     likes: 219, liked: false, saved: false,
     likedByPreview: ["Dr. Rahul Mehta"],
     commentList: [{ id: "c7", author: "Dr. Rahul Mehta", text: "Sharing this with my juniors." }] },
+  // The three structured content types below (Case/Research/Poll) exist so
+  // the demo feed shows what each one looks like before any real one has
+  // been posted -- same "never look empty/broken before the SQL runs"
+  // rule as every other demo post here.
+  { id: "p8", authorId: "u-wei", author: "Dr. Wei Zhang, PT", isSelf: false, verified: true, following: false,
+    role: "Manual Therapy Specialist · Singapore", time: "6h", category: "Case Studies",
+    postType: "case", media: "checklist", gradient: "teal", iconName: "Stethoscope",
+    heading: "Chronic shoulder pain in a recreational swimmer",
+    case: {
+      patientAge: "35", patientSex: "Female", patientOccupation: "", patientActivity: "Swimming",
+      presentation: "Pain for 6 months, aggravated by overhead activity.",
+      assessment: "Reduced overhead ROM, positive Hawkins-Kennedy, weak external rotators on MMT.",
+      management: "Rotator cuff strengthening, scapular control drills, gradual return to overhead loading.",
+      outcome: "Improved pain and overhead function after 6 weeks.",
+      question: "Would you have included a different special test?",
+    },
+    caption: "Pain for 6 months, aggravated by overhead activity.",
+    tags: ["Shoulder", "Swimming", "CaseStudy"],
+    likes: 87, liked: false, saved: false, likedByPreview: ["Dr. Sarah Chen"],
+    commentList: [{ id: "c8", author: "Dr. Sarah Chen", text: "Would've added an empty can test too, but great writeup." }] },
+  { id: "p9", authorId: "u-james", author: "Dr. James Okafor, PT", isSelf: false, verified: true, following: false,
+    role: "Sports Physiotherapist · Lagos", time: "10h", category: "Research",
+    postType: "research", media: "checklist", gradient: "blue", iconName: "FlaskConical",
+    heading: "Progressive loading for Achilles tendinopathy",
+    research: {
+      type: "Systematic Review", journal: "British Journal of Sports Medicine", year: "2026",
+      keyFinding: "Progressive loading protocols outperform passive rest for mid-portion Achilles tendinopathy.",
+      takeaway: "I've started front-loading isometrics earlier in the irritable phase.",
+      reference: "https://pubmed.ncbi.nlm.nih.gov/",
+    },
+    caption: "I've started front-loading isometrics earlier in the irritable phase.",
+    tags: ["Achilles", "Tendinopathy", "EvidenceBased"],
+    likes: 156, liked: false, saved: false, likedByPreview: ["Dr. Aditi Sharma"],
+    commentList: [] },
+  { id: "p10", authorId: "u-kevin", author: "Dr. Kevin Park, PT", isSelf: false, verified: true, following: false,
+    role: "Sports Rehab Specialist · Seoul", time: "1d", category: "Techniques",
+    postType: "poll", media: "checklist", gradient: "violet", iconName: "BarChart3",
+    heading: "Which outcome measure do you commonly use for knee OA?",
+    poll: { options: ["KOOS", "WOMAC", "LEFS", "Other"], counts: [18, 11, 6, 2], total: 37, myVote: null },
+    caption: "Which outcome measure do you commonly use for knee OA?",
+    tags: ["KneeOA", "OutcomeMeasures"],
+    likes: 41, liked: false, saved: false, likedByPreview: [], commentList: [] },
 ];
 
 export const STORIES = [

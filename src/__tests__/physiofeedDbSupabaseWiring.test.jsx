@@ -298,4 +298,65 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(result.media).toBe("photo");
     expect(result.mediaUrls).toEqual(["blob://local"]);
   });
+
+  it("getPosts() maps a real poll post's post_type + vote counts + my vote", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [{
+        id: "p_poll1", author_id: "u-me", category: "Techniques", heading: "Which test do you use?",
+        caption: "Which test do you use?", media_type: "checklist",
+        media: { poll: { options: ["A", "B", "C"] } }, media_urls: [], tags: [],
+        post_type: "poll", created_at: new Date().toISOString(),
+      }],
+      error: null,
+    });
+    setTable("poll_votes", {
+      data: [
+        { post_id: "p_poll1", user_id: "u-me", option_index: 1 },
+        { post_id: "p_poll1", user_id: "u-other", option_index: 0 },
+      ],
+      error: null,
+    });
+    setTable("profiles", { data: [{ id: "u-me", name: "Dr Me" }], error: null });
+    const posts = await db.getPosts();
+    expect(posts).toHaveLength(1);
+    expect(posts[0].postType).toBe("poll");
+    expect(posts[0].poll).toMatchObject({ options: ["A", "B", "C"], counts: [1, 1, 0], total: 2, myVote: 1 });
+  });
+
+  it("getPosts() maps a real case post's structured fields", async () => {
+    currentUser = null;
+    setTable("posts", {
+      data: [{
+        id: "p_case1", author_id: "u-me", category: "Case Studies", heading: "Shoulder pain case",
+        caption: "6 months of pain", media_type: "checklist",
+        media: { case: { presentation: "6 months of pain", assessment: "Reduced ROM", management: "Strengthening", outcome: "Improved", question: "Thoughts?" } },
+        media_urls: [], tags: [], post_type: "case", created_at: new Date().toISOString(),
+      }],
+      error: null,
+    });
+    const posts = await db.getPosts();
+    expect(posts[0].postType).toBe("case");
+    expect(posts[0].case).toMatchObject({ presentation: "6 months of pain", assessment: "Reduced ROM" });
+  });
+
+  it("createPost() with postType 'poll' stores post_type + poll options for real inserts", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: { id: "p_poll_new", post_type: "poll" }, error: null });
+    const result = await db.createPost({ text: "Best knee OA measure?", category: "Techniques", postType: "poll", pollOptions: ["KOOS", "WOMAC"] });
+    expect(result.id).toBe("p_poll_new");
+  });
+
+  it("votePoll() falls back to a local vote-count bump for a demo poll and blocks double voting", async () => {
+    currentUser = null;
+    const before = (await db.getPosts()).find((p) => p.postType === "poll");
+    expect(before.poll.myVote).toBeNull();
+    const afterFirst = (await db.votePoll(before.id, 0)).find((p) => p.id === before.id);
+    expect(afterFirst.poll.myVote).toBe(0);
+    expect(afterFirst.poll.total).toBe(before.poll.total + 1);
+    // voting again should be a no-op (already voted)
+    const afterSecond = (await db.votePoll(before.id, 1)).find((p) => p.id === before.id);
+    expect(afterSecond.poll.myVote).toBe(0);
+    expect(afterSecond.poll.total).toBe(before.poll.total + 1);
+  });
 });

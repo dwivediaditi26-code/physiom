@@ -79,19 +79,22 @@ export async function getPosts() {
     const uid = await currentUserId();
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("id, author_id, category, heading, caption, media_type, media, media_urls, tags, created_at")
+      .select("id, author_id, category, heading, caption, media_type, media, media_urls, tags, post_type, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
     if (!posts || posts.length === 0) return clone(_posts); // no real posts yet -- keep the demo feed visible
 
     const postIds = posts.map((p) => p.id);
-    const [likesRes, commentsRes, savesRes, followsRes] = await Promise.all([
+    const pollPostIds = posts.filter((p) => p.post_type === "poll").map((p) => p.id);
+    const [likesRes, commentsRes, savesRes, followsRes, pollVotesRes] = await Promise.all([
       supabase.from("post_likes").select("post_id, user_id").in("post_id", postIds),
       supabase.from("comments").select("id, post_id, author_id, text, created_at").in("post_id", postIds).order("created_at", { ascending: true }),
       uid ? supabase.from("saved_posts").select("post_id").eq("user_id", uid) : Promise.resolve({ data: [] }),
       uid ? supabase.from("follows").select("following_id").eq("follower_id", uid) : Promise.resolve({ data: [] }),
+      pollPostIds.length ? supabase.from("poll_votes").select("post_id, user_id, option_index").in("post_id", pollPostIds) : Promise.resolve({ data: [] }),
     ]);
     const likes = likesRes.data || [], comments = commentsRes.data || [], saves = savesRes.data || [], follows = followsRes.data || [];
+    const pollVotes = pollVotesRes.data || [];
 
     // One batched profiles lookup covering every post author, comment
     // author, and liker we're about to need a name/avatar for -- instead
@@ -112,6 +115,17 @@ export async function getPosts() {
       const postLikes = likes.filter((l) => l.post_id === p.id);
       const postComments = comments.filter((c) => c.post_id === p.id);
       const media = p.media || {};
+      const postType = p.post_type || "post";
+
+      let poll = null;
+      if (postType === "poll") {
+        const votesForPost = pollVotes.filter((v) => v.post_id === p.id);
+        const options = media.poll?.options || [];
+        const counts = options.map((_, i) => votesForPost.filter((v) => v.option_index === i).length);
+        const myVote = uid ? votesForPost.find((v) => v.user_id === uid)?.option_index ?? null : null;
+        poll = { options, counts, total: votesForPost.length, myVote };
+      }
+
       return {
         id: p.id, authorId: p.author_id, author: author?.name || "Unknown",
         isSelf: p.author_id === uid, verified: !!author?.verified, following: followingSet.has(p.author_id),
@@ -121,6 +135,7 @@ export async function getPosts() {
         checklist: media.checklist || [], images: media.images || [], duration: media.duration, phases: media.phases || [],
         mediaUrls: p.media_urls || [],
         tags: p.tags || [],
+        postType, case: media.case || null, research: media.research || null, poll,
         likes: postLikes.length, liked: uid ? postLikes.some((l) => l.user_id === uid) : false, saved: savedSet.has(p.id),
         likedByPreview: postLikes.slice(0, 2).map((l) => profileById[l.user_id]?.name).filter(Boolean),
         commentList: postComments.map((c) => ({ id: String(c.id), author: profileById[c.author_id]?.name || "Unknown", text: c.text })),
@@ -213,16 +228,27 @@ export async function addComment(postId, text) {
 // matches how a plain text post already rendered before this feature
 // existed, just via PostMedia's empty-checklist branch instead of a
 // special "no media" case).
-export async function createPost({ text, category, media }) {
-  const heading = text.length > 60 ? text.slice(0, 60) + "…" : text;
+// `postType` ('post' | 'case' | 'research' | 'poll', default 'post') plus
+// its matching structured fields (caseFields/researchFields/pollOptions)
+// are the Phase 7 addition (see supabase/add_content_types.sql) -- see
+// that file's header comment for why Case/Research/Poll are the only
+// types that need a real post_type (Video/Photo are still plain 'post'
+// rows, just with a required media attachment).
+export async function createPost({ text, category, media, postType = "post", title, caseFields, researchFields, pollOptions }) {
+  const heading = title ? title : (text.length > 60 ? text.slice(0, 60) + "…" : text);
   const mediaType = media?.type || "checklist";
   const mediaUrls = media?.urls || [];
-  const mediaJson = media?.type === "video" && media?.duration ? { duration: Math.round(media.duration) } : {};
+  const mediaJson = {
+    ...(media?.type === "video" && media?.duration ? { duration: Math.round(media.duration) } : {}),
+    ...(postType === "case" && caseFields ? { case: caseFields } : {}),
+    ...(postType === "research" && researchFields ? { research: researchFields } : {}),
+    ...(postType === "poll" && pollOptions ? { poll: { options: pollOptions } } : {}),
+  };
   try {
     const uid = await currentUserId();
     if (!uid) throw new Error("not signed in");
     const { data, error } = await supabase.from("posts")
-      .insert({ author_id: uid, category, heading, caption: text, media_type: mediaType, media: mediaJson, media_urls: mediaUrls, tags: [] })
+      .insert({ author_id: uid, category, heading, caption: text, media_type: mediaType, media: mediaJson, media_urls: mediaUrls, tags: [], post_type: postType })
       .select().single();
     if (error) throw error;
     return clone(data);
@@ -234,10 +260,32 @@ export async function createPost({ text, category, media }) {
       gradient: "violet", iconName: "Sparkles", heading,
       checklist: [], caption: text, tags: [], likes: 0, liked: false, saved: false,
       likedByPreview: [], commentList: [], mediaUrls, duration: mediaJson.duration,
+      postType, case: mediaJson.case || null, research: mediaJson.research || null,
+      poll: postType === "poll" && pollOptions ? { options: pollOptions, counts: pollOptions.map(() => 0), total: 0, myVote: null } : null,
     };
     _posts = [post, ...(_posts)];
     return clone(post);
   }
+}
+
+// One vote per person per poll, cast as yourself, final (no changing your
+// vote in V1 -- see add_content_types.sql). Falls back to a local counter
+// bump for demo polls, same fallback shape as every other mutation here.
+export async function votePoll(postId, optionIndex) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { error } = await supabase.from("poll_votes").insert({ post_id: postId, user_id: uid, option_index: optionIndex });
+    if (error) throw error;
+  } catch (e) {
+    _posts = _posts.map((p) => {
+      if (p.id !== postId || !p.poll || p.poll.myVote !== null) return p;
+      const counts = p.poll.counts.slice();
+      counts[optionIndex] = (counts[optionIndex] || 0) + 1;
+      return { ...p, poll: { ...p.poll, counts, total: p.poll.total + 1, myVote: optionIndex } };
+    });
+  }
+  return getPosts();
 }
 
 /* ---------------- media upload ---------------- */

@@ -3,6 +3,9 @@ import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck, UserPlus, Check, Se
 import Avatar from "../shared/Avatar.jsx";
 import PostMedia from "./PostMedia.jsx";
 import ReportButton from "./ReportButton.jsx";
+import CaseBody from "./CaseBody.jsx";
+import ResearchBody from "./ResearchBody.jsx";
+import PollBody from "./PollBody.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
@@ -54,11 +57,20 @@ export default function FeedPostCard({ post }) {
         )}
       </div>
 
-      {post.media !== "image" && post.media !== "photo" && <h3 className="font-bold text-slate-900 text-base mb-2">{post.heading}</h3>}
+      {post.postType === "case" ? (
+        <CaseBody post={post} />
+      ) : post.postType === "research" ? (
+        <ResearchBody post={post} />
+      ) : post.postType === "poll" ? (
+        <PollBody post={post} />
+      ) : (
+        <>
+          {post.media !== "image" && post.media !== "photo" && <h3 className="font-bold text-slate-900 text-base mb-2">{post.heading}</h3>}
+          <PostMedia post={post} onDoubleTap={handleDoubleTap} burst={burst} size="large" />
+          <p className="text-sm text-slate-600 mt-3">{post.caption}</p>
+        </>
+      )}
 
-      <PostMedia post={post} onDoubleTap={handleDoubleTap} burst={burst} size="large" />
-
-      <p className="text-sm text-slate-600 mt-3">{post.caption}</p>
       <div className="flex flex-wrap gap-1.5 mt-2">
         {post.tags.map((t) => <span key={t} className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">#{t}</span>)}
       </div>
