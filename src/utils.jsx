@@ -615,7 +615,7 @@ function MobileStyleInjector() {
 const THEMES = {
   dark: {
     // Mauve & White — elegant clinical
-    bg:"#F7F7F8",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#FFFFFF",
+    bg:"#ffffff",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#FFFFFF",
     border:"#E0E0E2",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
     a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#6B6B6B",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
@@ -629,7 +629,7 @@ const THEMES = {
   },
   light: {
     // Same mauve/white palette
-    bg:"#F7F7F8",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#FFFFFF",
+    bg:"#ffffff",      surface:"#ffffff",  s2:"#FFFFFF",  s3:"#FFFFFF",
     border:"#E0E0E2",  accent:"#7c3aed",  a2:"#9333ea",  a3:"#059669",
     a4:"#b45309",      a5:"#dc2626",      text:"#0D0D0D", muted:"#6B6B6B",
     red:"#dc2626",     green:"#059669",   yellow:"#b45309", purple:"#7c3aed",
