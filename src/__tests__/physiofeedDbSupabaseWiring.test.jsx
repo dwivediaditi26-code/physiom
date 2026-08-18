@@ -207,4 +207,38 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(notifications[0]).toMatchObject({ id: "1", iconName: "Heart", read: false });
     expect(notifications[0].time).toMatch(/^\d+m$/);
   });
+
+  it("reportPost() inserts a report when signed in", async () => {
+    currentUser = { id: "u-me" };
+    setTable("reports", { data: null, error: null });
+    const ok = await db.reportPost("p1", "Spam");
+    expect(ok).toBe(true);
+  });
+
+  it("reportPost() no-ops (returns false, never throws) when signed out", async () => {
+    currentUser = null;
+    const ok = await db.reportPost("p1", "Spam");
+    expect(ok).toBe(false);
+  });
+
+  it("getReports() maps joined post + reporter fields for the admin view", async () => {
+    setTable("reports", {
+      data: [{
+        id: 7, post_id: "p1", reason: "Spam", status: "open", created_at: new Date().toISOString(),
+        posts: { heading: "Reported heading", caption: "Reported caption" },
+        profiles: { name: "Dr Reporter" },
+      }],
+      error: null,
+    });
+    const reports = await db.getReports();
+    expect(reports).toHaveLength(1);
+    expect(reports[0]).toMatchObject({ id: 7, postId: "p1", reason: "Spam", postHeading: "Reported heading", reporterName: "Dr Reporter" });
+  });
+
+  it("dismissReport() and removeReportedPost() resolve true on success", async () => {
+    setTable("reports", { data: null, error: null });
+    setTable("posts", { data: null, error: null });
+    expect(await db.dismissReport(7)).toBe(true);
+    expect(await db.removeReportedPost(7, "p1")).toBe(true);
+  });
 });

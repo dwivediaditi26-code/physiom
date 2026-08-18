@@ -7,6 +7,7 @@ import ExplorePage from "./pages/ExplorePage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import PeoplePage from "./pages/PeoplePage.jsx";
 import SavedPage from "./pages/SavedPage.jsx";
+import AdminReportsPage from "./pages/AdminReportsPage.jsx";
 
 // The original version of this file also had stub routes (/dashboard,
 // /patients, /assessments, /ai, /soap, /exercises, /programs, /analytics)
@@ -27,6 +28,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/communities" element={<CommunitiesPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/saved" element={<SavedPage />} />
+        <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>
     </AppShell>

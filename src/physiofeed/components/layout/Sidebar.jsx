@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { Icon } from "../shared/icons.jsx";
 import { PRO_NAV } from "../shared/constants.js";
+import { useAppData } from "../../context/AppDataContext.jsx";
 
 function NavSection({ title, items }) {
   return (
@@ -38,9 +39,13 @@ function NavSection({ title, items }) {
 // confusing duplicates, and "Upgrade to Premium" was a fabricated feature
 // that doesn't exist in this app.
 export default function Sidebar() {
+  const { profile } = useAppData();
   return (
     <aside className="hidden md:block w-60 shrink-0">
       <NavSection title="PhysioFeed" items={PRO_NAV} />
+      {profile?.isAdmin && (
+        <NavSection title="Admin" items={[{ path: "/admin/reports", label: "Reported posts", icon: "ShieldCheck" }]} />
+      )}
     </aside>
   );
 }

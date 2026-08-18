@@ -43,12 +43,13 @@ export function AppDataProvider({ children }) {
   const endorseSkill = useCallback(async (name) => { setExpertise(await db.toggleEndorse(name)); }, []);
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
   const joinCommunity = useCallback(async (id) => { setCommunities(await db.toggleJoinCommunity(id)); }, []);
+  const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
 
   const value = {
     loading, posts, stories, people, notifications, evidence, communities,
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
-    viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity,
+    viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost,
     composerOpen, setComposerOpen,
   };
 

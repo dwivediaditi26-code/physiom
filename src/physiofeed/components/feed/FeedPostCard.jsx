@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck, UserPlus, Check, Send } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import PostMedia from "./PostMedia.jsx";
+import ReportButton from "./ReportButton.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
@@ -68,9 +69,12 @@ export default function FeedPostCard({ post }) {
           <span className="flex items-center gap-1.5"><MessageCircle size={19} className="text-slate-400" /><span className="text-xs font-medium text-slate-500">{post.commentList.length}</span></span>
           <button className="flex items-center gap-1.5 group focus:outline-none"><Share2 size={19} className="text-slate-400 group-hover:text-violet-600" /></button>
         </div>
-        <button onClick={() => savePost(post.id)} className="focus:outline-none">
-          <Bookmark size={19} className={post.saved ? "fill-violet-600 text-violet-600" : "text-slate-400 hover:text-violet-600"} />
-        </button>
+        <div className="flex items-center gap-1">
+          {!post.isSelf && <ReportButton postId={post.id} />}
+          <button onClick={() => savePost(post.id)} className="focus:outline-none">
+            <Bookmark size={19} className={post.saved ? "fill-violet-600 text-violet-600" : "text-slate-400 hover:text-violet-600"} />
+          </button>
+        </div>
       </div>
 
       {post.likedByPreview?.length > 0 && (

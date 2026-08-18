@@ -285,11 +285,15 @@ export async function getProfile() {
 
     // Map DB column names to the shape every PhysioFeed screen already
     // expects (ProfileHeader.jsx etc.) -- zero UI changes needed for this step.
+    // isAdmin defaults to false on rows from before the moderation
+    // migration (or if that migration hasn't run yet) since row.is_admin
+    // would just be undefined -- nobody accidentally becomes an admin.
     return clone({
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
       bio: row.bio, quote: row.quote,
       followers: row.followers_count, following: row.following_count,
+      isAdmin: !!row.is_admin,
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
@@ -505,4 +509,72 @@ export async function markNotificationRead(id) {
     console.error("markNotificationRead(): no-op --", e?.message || e);
   }
   return getNotifications();
+}
+
+/* ---------------- moderation ---------------- */
+//
+// Phase 5 (see supabase/add_moderation.sql). There's no local mock
+// fallback for any of this -- reports are a purely real-backend feature
+// with no demo-mode equivalent (there's nothing to fall back to before the
+// migration runs, so these quietly no-op instead of throwing, same
+// "never break the UI" rule as everywhere else in this file).
+
+export async function reportPost(postId, reason) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) throw new Error("not signed in");
+    const { error } = await supabase.from("reports").insert({ post_id: postId, reporter_id: uid, reason });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error("reportPost(): no-op --", e?.message || e);
+    return false;
+  }
+}
+
+// Admin-only (RLS enforces this server-side too -- a non-admin calling
+// this just gets an empty list back, not an error).
+export async function getReports() {
+  try {
+    const { data, error } = await supabase
+      .from("reports")
+      .select("id, post_id, reason, status, created_at, posts(heading, caption), profiles(name)")
+      .eq("status", "open")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map((r) => ({
+      id: r.id, postId: r.post_id, reason: r.reason, status: r.status, createdAt: r.created_at,
+      postHeading: r.posts?.heading || "(post removed)", postCaption: r.posts?.caption || "",
+      reporterName: r.profiles?.name || "Unknown",
+    }));
+  } catch (e) {
+    console.error("getReports(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function dismissReport(id) {
+  try {
+    const { error } = await supabase.from("reports").update({ status: "dismissed" }).eq("id", id);
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error("dismissReport(): --", e?.message || e);
+    return false;
+  }
+}
+
+// Removes the reported post outright (admin-only delete policy on posts)
+// and marks the report resolved.
+export async function removeReportedPost(reportId, postId) {
+  try {
+    const { error: delErr } = await supabase.from("posts").delete().eq("id", postId);
+    if (delErr) throw delErr;
+    const { error: updErr } = await supabase.from("reports").update({ status: "removed" }).eq("id", reportId);
+    if (updErr) throw updErr;
+    return true;
+  } catch (e) {
+    console.error("removeReportedPost(): --", e?.message || e);
+    return false;
+  }
 }
