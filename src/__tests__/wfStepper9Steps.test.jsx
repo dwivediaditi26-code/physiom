@@ -38,7 +38,7 @@ async function renderLoggedIn() {
 async function createOrthoPatient() {
   await renderLoggedIn();
   fireEvent.click(screen.getByText("Clinical"));
-  await screen.findByText(/Patient Database/i);
+  await screen.findByPlaceholderText("Search patients…");
   fireEvent.click(screen.getByText("＋ New Assessment"));
   const picker = within(await screen.findByTestId("specialty-picker-modal"));
   fireEvent.click(picker.getByText("Ortho"));

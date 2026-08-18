@@ -514,6 +514,21 @@ function avatarGrad(id="") {
   return `linear-gradient(135deg,${AVATAR_GRADIENTS[i][0]},${AVATAR_GRADIENTS[i][1]})`;
 }
 
+// ── Relative day label for the Clinical landing page's Recent Patients
+//    list ("Today"/"Yesterday"/"N days ago") -- real updatedAt, not a
+//    fabricated timestamp. ──
+function relativeDay(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 0) return "Today";
+  return `${diffDays} days ago`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BODY CHART — Interactive pain location mapper
 // ─── Interactive Body Chart ────────────────────────────────────────────────────
@@ -3870,11 +3885,65 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   );
 }
 
+// -- Compact patient row for the redesigned Clinical landing page's Recent
+//    Patients list (2026-08-17) -- separate from PatientCard above (kept
+//    as-is, not reused elsewhere) so this row's much lighter layout
+//    doesn't have to fight PatientCard's card/button styling. Real data
+//    only: id/dx/updatedAt are the same fields PatientCard already reads,
+//    just displayed differently. Delete is a small X (secondary, matches
+//    the mockup's clean row) instead of a full button. --
+function PatientRowCompact({ patient, isActive, onSelect, onDelete, onProfile }) {
+  const pid = patient?.id ? "PT-" + patient.id.slice(0,6).toUpperCase() : "";
+  const dx = patient.lastDx || "No diagnosis yet";
+  const day = relativeDay(patient.updatedAt);
+  const isToday = day === "Today";
+  return (
+    <div onClick={onSelect} style={{
+      display:"flex", alignItems:"center", gap:12, padding:"10px 4px",
+      borderBottom:"1px solid #F1F0FA", cursor:"pointer",
+      background: isActive ? "#F5F3FF" : "transparent", borderRadius:10,
+    }}>
+      <div style={{width:44,height:44,borderRadius:"50%",background:avatarGrad(patient.id),
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:"0.8rem",fontWeight:800,color:"#fff",flexShrink:0}}>
+        {getInitials(patient.name)}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {patient.name || "Unnamed patient"}
+          {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
+        </div>
+        <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {pid} · {dx}
+        </div>
+      </div>
+      <div style={{flexShrink:0,textAlign:"right"}}>
+        <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{day}</div>
+        <button onClick={e=>{e.stopPropagation();onSelect();}} style={{
+          background:"none",border:"none",padding:0,marginTop:2,cursor:"pointer",
+          fontSize:"0.78rem",fontWeight:800,color:"#7c3aed"}}>
+          {isToday ? "Continue" : "Open"} →
+        </button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
+        <button onClick={e=>{e.stopPropagation();onProfile();}} title="Profile" style={{
+          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.72rem",color:"#C4C4CE"}}>👤</button>
+        <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
+          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.72rem",color:"#C4C4CE"}}>✕</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
 function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: closePanel, onImport, onNav, liveData={} }) {
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
+  const [showAllPatients, setShowAllPatients] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   // Specialty filter for the Clinical landing page's patient list. Matches
   // the New Assessment specialty picker's STREAMS registry (AppFull.jsx) --
   // duplicated here as a small static array rather than imported, since
@@ -3882,13 +3951,12 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // to AppFull.jsx's module scope. Patients created before this field
   // existed have no assessment_specialty and simply show under "All".
   const [filterSpecialty, setFilterSpecialty] = useState("all");
-  const SPECIALTY_CHIPS = [
-    { id:"all",    label:"All",    icon:"👥", color:"#6D28D9" },
+  const CLINICAL_AREAS = [
     { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed" },
     { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488" },
-    { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c" },
-    { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777" },
     { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626" },
+    { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777" },
+    { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c" },
   ];
   const [profilePatient, setProfilePatient] = useState(null);
   const [localPatients, setLocalPatients] = useState(patients);
@@ -3931,6 +3999,13 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
 
+  // "Recent Patients" shows the top 5 most-recently-touched records by
+  // default (matches the mockup's short preview list) -- any active
+  // search/specialty filter, or tapping "View all", reveals the complete
+  // filtered list instead. Real underlying data either way, just capped.
+  const isNarrowed = !!search || filterSpecialty !== "all" || filterFlag;
+  const visiblePatients = (isNarrowed || showAllPatients) ? filtered : filtered.slice(0, 5);
+
   const handleImportFile = (e) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
@@ -3939,6 +4014,21 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   };
 
   const redFlagCount = localPatients.filter(p=>p.hasRedFlags).length;
+
+  // Real, computed clinic-status counts (2026-08-17) -- not placeholders.
+  // "In progress": has some real clinical content beyond a bare demographic
+  // record, but SOAP hasn't been finalised yet.
+  // "SOAP pending": objective testing has started (rom_/mmt_/st_ prefixed
+  // fields present) but there's still no SOAP diagnosis.
+  // "Home protocols today": a home exercise programme (hep_programme) was
+  // set on a record last touched today.
+  const isSoapDone = d => !!(d?.soap_a_diagnosis || d?.soap_a);
+  const hasStarted = d => !!(d?.cc_main || d?.lx_loc || d?.cx_loc);
+  const hasObjective = d => Object.keys(d||{}).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"));
+  const isToday = dateStr => dateStr && new Date(dateStr).toDateString() === new Date().toDateString();
+  const assessmentsInProgress = localPatients.filter(p => hasStarted(p.data) && !isSoapDone(p.data)).length;
+  const soapPending = localPatients.filter(p => hasObjective(p.data) && !isSoapDone(p.data)).length;
+  const homeProtocolsToday = localPatients.filter(p => p.data?.hep_programme && isToday(p.updatedAt)).length;
 
   return (
     <>
@@ -3968,138 +4058,181 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,
       display:"flex",alignItems:"stretch",justifyContent:"flex-start"}}>
-      <div style={{width:"100%",maxWidth:480,background:"#F8F7FF",
+      <div data-testid="clinical-panel" style={{width:"100%",maxWidth:480,background:"#FFFFFF",
         borderRight:"1px solid #E5E7EB",display:"flex",
         flexDirection:"column",height:"100%",boxShadow:"4px 0 24px rgba(0,0,0,0.15)"}}>
 
-        {/* Header */}
-        <div style={{padding:"20px 18px 14px",borderBottom:"1px solid #E5E7EB",flexShrink:0,background:"white"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <div>
-              <div style={{fontWeight:900,fontSize:"1.1rem",color:"#7c3aed",letterSpacing:"-0.3px"}}>
-                👥 Patient Database
+        <div style={{flex:1,overflowY:"auto"}}>
+
+          {/* Header */}
+          <div style={{padding:"20px 18px 4px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{fontWeight:900,fontSize:"1.4rem",color:"#111827",letterSpacing:"-0.4px"}}>Clinical</div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{position:"relative",fontSize:"1.15rem"}}>
+                🔔
+                {redFlagCount>0 && (
+                  <span style={{position:"absolute",top:-4,right:-6,background:"#ef4444",color:"#fff",
+                    borderRadius:99,fontSize:"0.6rem",fontWeight:800,padding:"1px 4px",minWidth:14,textAlign:"center"}}>
+                    {redFlagCount}
+                  </span>
+                )}
               </div>
-              <div style={{fontSize:"0.78rem",color:"#6B7280",marginTop:2}}>
-                {localPatients.length} patient{localPatients.length!==1?"s":""} · {redFlagCount} with flags
-              </div>
+              <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
+                borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700}}>✕</button>
             </div>
-            <button onClick={closePanel}
-              style={{background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:10,
-                color:"#374151",cursor:"pointer",padding:"9px 16px",fontSize:"0.8rem",fontWeight:700}}>✕ Close</button>
           </div>
 
           {/* Search */}
-          <div style={{position:"relative",marginBottom:8}}>
-            <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",
-              fontSize:"0.8rem",color:"#3a5070"}}>🔍</span>
-            <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Search name, diagnosis, occupation…"
-              style={{width:"100%",
-                border:"1px solid #E5E7EB",borderRadius:9,color:"#111827",background:"#F9FAFB",
-                outline:"none",padding:"8px 12px 8px 30px",fontSize:"0.76rem",boxSizing:"border-box"}}/>
+          <div style={{padding:"14px 18px 0"}}>
+            <div style={{position:"relative"}}>
+              <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
+                fontSize:"0.85rem",color:"#9CA3AF"}}>🔍</span>
+              <input value={search} onChange={e=>setSearch(e.target.value)}
+                placeholder="Search patients…"
+                style={{width:"100%",border:"1px solid #EEEDF5",borderRadius:14,color:"#111827",background:"#F8F7FC",
+                  outline:"none",padding:"12px 14px 12px 38px",fontSize:"0.85rem",boxSizing:"border-box"}}/>
+            </div>
           </div>
 
-          {/* Specialty filter row */}
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {SPECIALTY_CHIPS.map(sp=>(
-              <button key={sp.id} onClick={()=>setFilterSpecialty(sp.id)}
-                style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:20,
-                  border:`1.5px solid ${filterSpecialty===sp.id?sp.color:"#E5E7EB"}`,
-                  background:filterSpecialty===sp.id?sp.color+"18":"white",
-                  color:filterSpecialty===sp.id?sp.color:"#6B7280",fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
-                <span>{sp.icon}</span>{sp.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Filters row */}
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-            {[["updated","🕐 Recent"],["name","A–Z"],["age","Age"],["fields","Complete"]].map(([v,l])=>(
-              <button key={v} onClick={()=>setSortBy(v)}
-                style={{padding:"6px 12px",borderRadius:20,
-                  border:`1px solid ${sortBy===v?"#7c3aed":"#E5E7EB"}`,
-                  background:sortBy===v?"#7c3aed":"white",
-                  color:sortBy===v?"white":"#6B7280",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
-                {l}
-              </button>
-            ))}
-            <button onClick={()=>setFilterFlag(f=>!f)}
-              style={{padding:"6px 12px",borderRadius:20,marginLeft:"auto",
-                border:`1px solid ${filterFlag?"#ef4444":"#E5E7EB"}`,
-                background:filterFlag?"#FEF2F2":"white",
-                color:filterFlag?"#ef4444":"#6B7280",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>
-              🚩 Flags only
+          {/* New Assessment CTA */}
+          <div style={{padding:"14px 18px 0"}}>
+            <button onClick={onNew}
+              style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
+                boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
+              ＋ New Assessment
             </button>
           </div>
-        </div>
 
-        {/* Stats strip */}
-        <div style={{display:"flex",borderBottom:"1px solid #E5E7EB",flexShrink:0,background:"white"}}>
-          {[
-            {label:"Total", val:localPatients.length, color:"#7c3aed"},
-            {label:"Active", val:localPatients.filter(p=>activeId===p.id).length, color:"#059669"},
-            {label:"🚩 Flags", val:redFlagCount, color:"#ef4444"},
-            {label:"Today", val:localPatients.filter(p=>new Date(p.updatedAt).toDateString()===new Date().toDateString()).length, color:"#d97706"},
-          ].map(s=>(
-            <div key={s.label} style={{flex:1,padding:"10px 4px",textAlign:"center",
-              borderRight:"1px solid #E5E7EB"}}>
-              <div style={{fontWeight:900,fontSize:"1rem",color:s.color}}>{s.val}</div>
-              <div style={{fontSize:"0.8rem",color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.5px",marginTop:2}}>{s.label}</div>
+          {/* Clinical Areas */}
+          <div style={{padding:"22px 18px 0"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>Clinical Areas</div>
+              <button onClick={()=>setFilterSpecialty("all")}
+                style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,color:"#7c3aed"}}>
+                View all →
+              </button>
             </div>
-          ))}
-        </div>
+            <div style={{display:"flex",justifyContent:"space-between",gap:6}}>
+              {CLINICAL_AREAS.map(a => {
+                const active = filterSpecialty === a.id;
+                return (
+                  <button key={a.id}
+                    onClick={()=>setFilterSpecialty(active ? "all" : a.id)}
+                    style={{background:"none",border:"none",cursor:"pointer",display:"flex",
+                      flexDirection:"column",alignItems:"center",gap:6,flex:1,padding:0}}>
+                    <div style={{width:52,height:52,borderRadius:"50%",background:a.color+"18",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem",
+                      boxShadow: active ? `0 0 0 2px ${a.color}` : "none"}}>
+                      {a.icon}
+                    </div>
+                    <div style={{fontSize:"0.74rem",fontWeight:600,color:active?a.color:"#374151"}}>{a.label}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        {/* Patient list */}
-        <div style={{flex:1,overflowY:"auto",padding:"12px 14px",background:"#F8F7FF"}}>
-          {filtered.length === 0 && (
-            <div style={{textAlign:"center",padding:"40px 20px",color:"#9CA3AF"}}>
-              <div style={{fontSize:"2.5rem",marginBottom:8}}>👤</div>
-              <div style={{fontSize:"0.82rem",color:"#6B7280"}}>
-                {search ? "No patients match your search" : "No patients — tap New Patient to start"}
+          {/* Recent Patients */}
+          <div style={{padding:"24px 18px 0"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>
+                {isNarrowed ? "Patients" : "Recent Patients"}
               </div>
+              {!isNarrowed && filtered.length > 5 && (
+                <button onClick={()=>setShowAllPatients(s=>!s)}
+                  style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,color:"#7c3aed"}}>
+                  {showAllPatients ? "Show less ↑" : "View all →"}
+                </button>
+              )}
             </div>
-          )}
-          {filtered.map(p => (
-            <PatientCard
-              key={p.id}
-              patient={p}
-              isActive={p.id === activeId}
-              onSelect={()=>onSelect(p)}
-              onDelete={()=>onDelete(p.id)}
-              onProfile={()=>setProfilePatient(p)}
-            />
-          ))}
-        </div>
 
-        {/* Footer */}
-        <div style={{padding:"14px 14px",borderTop:"1px solid #E5E7EB",flexShrink:0,display:"flex",flexDirection:"column",gap:8,background:"white"}}>
-          <button onClick={onNew}
-            style={{width:"100%",padding:"14px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-              border:"none",borderRadius:12,color:"white",fontWeight:900,fontSize:"0.9rem",cursor:"pointer",
-              boxShadow:"0 4px 12px rgba(124,58,237,0.3)"}}>
-            ＋ New Assessment
-          </button>
-          <div style={{display:"flex",gap:7}}>
-            <button onClick={()=>fileRef.current?.click()}
-              style={{flex:1,padding:"9px",background:"rgba(0,201,122,0.08)",
-                border:"1px solid rgba(0,201,122,0.2)",borderRadius:9,
-                color:"#00c97a",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
-              📂 Import JSON
+            {visiblePatients.length === 0 && (
+              <div style={{textAlign:"center",padding:"30px 10px",color:"#9CA3AF"}}>
+                <div style={{fontSize:"2rem",marginBottom:6}}>👤</div>
+                <div style={{fontSize:"0.82rem"}}>
+                  {search ? "No patients match your search" : "No patients yet — tap New Assessment to start"}
+                </div>
+              </div>
+            )}
+            {visiblePatients.map(p => (
+              <PatientRowCompact
+                key={p.id}
+                patient={p}
+                isActive={p.id === activeId}
+                onSelect={()=>onSelect(p)}
+                onDelete={()=>onDelete(p.id)}
+                onProfile={()=>setProfilePatient(p)}
+              />
+            ))}
+          </div>
+
+          {/* Stats cards */}
+          <div style={{padding:"22px 18px 18px",display:"flex",gap:10}}>
+            {[
+              {val:assessmentsInProgress, label:"Assessments in progress", color:"#7c3aed"},
+              {val:soapPending, label:"SOAP notes pending", color:"#0d9488"},
+              {val:homeProtocolsToday, label:"Home protocols today", color:"#059669"},
+            ].map(s => (
+              <div key={s.label} style={{flex:1,background:"#F8F7FC",borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
+                <div style={{fontWeight:900,fontSize:"1.4rem",color:s.color}}>{s.val}</div>
+                <div style={{fontSize:"0.7rem",color:"#6B7280",marginTop:4,lineHeight:1.3}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Secondary tools -- sort/flags/import/export. Real, kept
+              functional, just tucked below the fold so the primary
+              layout above matches the design as closely as possible. */}
+          <div style={{padding:"0 18px 20px"}}>
+            <button onClick={()=>setShowTools(s=>!s)}
+              style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.76rem",fontWeight:700,color:"#9CA3AF"}}>
+              {showTools ? "Hide options ↑" : "Sort, filters & backup ↓"}
             </button>
-            <input ref={fileRef} type="file" accept=".json" onChange={handleImportFile} style={{display:"none"}}/>
-            <button onClick={()=>{
-                const data = JSON.stringify(localPatients,null,2);
-                const blob = new Blob([data],{type:"application/json"});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href=url; a.download="physio_patients_backup.json"; a.click();
-                URL.revokeObjectURL(url);
-              }}
-              style={{flex:1,padding:"9px",background:"rgba(127,90,240,0.08)",
-                border:"1px solid rgba(127,90,240,0.2)",borderRadius:9,
-                color:"#7f5af0",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
-              💾 Export All
-            </button>
+            {showTools && (
+              <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                  {[["updated","🕐 Recent"],["name","A–Z"],["age","Age"],["fields","Complete"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>setSortBy(v)}
+                      style={{padding:"6px 12px",borderRadius:20,
+                        border:`1px solid ${sortBy===v?"#7c3aed":"#E5E7EB"}`,
+                        background:sortBy===v?"#7c3aed":"white",
+                        color:sortBy===v?"white":"#6B7280",fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
+                      {l}
+                    </button>
+                  ))}
+                  <button onClick={()=>setFilterFlag(f=>!f)}
+                    style={{padding:"6px 12px",borderRadius:20,marginLeft:"auto",
+                      border:`1px solid ${filterFlag?"#ef4444":"#E5E7EB"}`,
+                      background:filterFlag?"#FEF2F2":"white",
+                      color:filterFlag?"#ef4444":"#6B7280",fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
+                    🚩 Flags only
+                  </button>
+                </div>
+                <div style={{display:"flex",gap:7}}>
+                  <button onClick={()=>fileRef.current?.click()}
+                    style={{flex:1,padding:"9px",background:"rgba(0,201,122,0.08)",
+                      border:"1px solid rgba(0,201,122,0.2)",borderRadius:9,
+                      color:"#00c97a",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                    📂 Import JSON
+                  </button>
+                  <input ref={fileRef} type="file" accept=".json" onChange={handleImportFile} style={{display:"none"}}/>
+                  <button onClick={()=>{
+                      const data = JSON.stringify(localPatients,null,2);
+                      const blob = new Blob([data],{type:"application/json"});
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href=url; a.download="physio_patients_backup.json"; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    style={{flex:1,padding:"9px",background:"rgba(127,90,240,0.08)",
+                      border:"1px solid rgba(127,90,240,0.2)",borderRadius:9,
+                      color:"#7f5af0",fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                    💾 Export All
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

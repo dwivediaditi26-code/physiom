@@ -33,7 +33,7 @@ describe("Clinical tab — patient list + specialty picker", () => {
   it("tapping Clinical opens the patient database panel, not the empty Subjective wizard", async () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
-    expect(await screen.findByText(/Patient Database/i)).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText("Search patients…")).toBeInTheDocument();
     // The old behaviour landed on Subjective step 2 with no patient loaded --
     // that specific "no patient" wizard heading must not be what's shown.
     expect(screen.queryByText(/No patient loaded/i)).not.toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("Clinical tab — patient list + specialty picker", () => {
   it("+ New Assessment opens the specialty picker (Ortho/Neuro live, others marked SOON)", async () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByText(/Patient Database/i);
+    await screen.findByPlaceholderText("Search patients…");
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     expect(picker.getByText("New assessment")).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("Clinical tab — patient list + specialty picker", () => {
   it("picking Ortho in the specialty picker opens the real Demographics intake form", async () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByText(/Patient Database/i);
+    await screen.findByPlaceholderText("Search patients…");
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Ortho"));
@@ -66,7 +66,7 @@ describe("Clinical tab — patient list + specialty picker", () => {
   it("picking a SOON specialty (Sports) does not close the picker or create a patient", async () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByText(/Patient Database/i);
+    await screen.findByPlaceholderText("Search patients…");
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Sports"));
