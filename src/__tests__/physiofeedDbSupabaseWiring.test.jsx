@@ -103,6 +103,27 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(p.time).toMatch(/^\d+h$/);
   });
 
+  it("getPosts() maps the author's avatar_url onto authorAvatarUrl, and null when the author has none", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", {
+      data: [
+        { id: "p_avatar1", author_id: "u-has-avatar", category: "Techniques", heading: "h1", caption: "c1", media_type: "checklist", media: {}, media_urls: [], tags: [], post_type: "post", created_at: new Date().toISOString() },
+        { id: "p_avatar2", author_id: "u-no-avatar", category: "Techniques", heading: "h2", caption: "c2", media_type: "checklist", media: {}, media_urls: [], tags: [], post_type: "post", created_at: new Date().toISOString() },
+      ],
+      error: null,
+    });
+    setTable("profiles", {
+      data: [
+        { id: "u-has-avatar", name: "Dr Has Avatar", avatar_url: "https://fake.test/storage/profile-images/u-has-avatar/photo.jpg" },
+        { id: "u-no-avatar", name: "Dr No Avatar" },
+      ],
+      error: null,
+    });
+    const posts = await db.getPosts();
+    expect(posts.find((p) => p.id === "p_avatar1").authorAvatarUrl).toBe("https://fake.test/storage/profile-images/u-has-avatar/photo.jpg");
+    expect(posts.find((p) => p.id === "p_avatar2").authorAvatarUrl).toBeNull();
+  });
+
   it("REGRESSION (2026-08-18 bug): toggleLike()/toggleSave()/addComment() on a REAL post resolve without throwing", async () => {
     // This is the exact bug Aditi reported ("likes and comments are not
     // working"): the old code did `clone(_posts.find(...)) || null` as its
@@ -194,6 +215,18 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(real.location).toBe("Pune");
     // demo people (u-priya etc.) still present
     expect(people.some((p) => p.id === "u-priya")).toBe(true);
+  });
+
+  it("getPeople() maps avatar_url onto avatarUrl, and null when a profile has none", async () => {
+    currentUser = { id: "u-me" };
+    setTable("profiles", {
+      data: [{ id: "u-other", name: "Dr Other", role: "PT", location: "Pune", gradient: "blue", avatar_url: "https://fake.test/storage/profile-images/u-other/photo.jpg" }],
+      error: null,
+    });
+    setTable("follows", { data: [], error: null });
+    const people = await db.getPeople();
+    const real = people.find((p) => p.id === "u-other");
+    expect(real.avatarUrl).toBe("https://fake.test/storage/profile-images/u-other/photo.jpg");
   });
 
   it("toggleFollowPerson() on a demo person falls back to the local mock toggle", async () => {
@@ -331,6 +364,37 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     currentUser = { id: "u-me" };
     storageUploadError = { message: "The resource already exists" };
     await expect(db.uploadPostVideo(new File([], "clip.mp4"))).rejects.toBeTruthy();
+  });
+
+  it("uploadProfileImage() throws a clear error when signed out", async () => {
+    currentUser = null;
+    await expect(db.uploadProfileImage(new Blob())).rejects.toThrow(/sign in/i);
+  });
+
+  it("uploadProfileImage() returns a public URL from the profile-images bucket when signed in", async () => {
+    currentUser = { id: "u-me" };
+    const url = await db.uploadProfileImage(new Blob(["fake"], { type: "image/jpeg" }));
+    expect(url).toMatch(/^https:\/\/fake\.test\/storage\/profile-images\/u-me\//);
+  });
+
+  it("getProfile() maps avatar_url onto avatarUrl for a real profile row", async () => {
+    currentUser = { id: "u-me" };
+    setTable("profiles", {
+      data: { id: "u-me", name: "Dr Me", role: "PT", location: "", bio: "", quote: "", followers_count: 0, following_count: 0, gradient: "violet", initials: "M", avatar_url: "https://fake.test/storage/profile-images/u-me/photo.jpg" },
+      error: null,
+    });
+    const profile = await db.getProfile();
+    expect(profile.avatarUrl).toBe("https://fake.test/storage/profile-images/u-me/photo.jpg");
+  });
+
+  it("getProfile() falls back to avatarUrl: null (not undefined/crash) on rows from before add_profile_avatar.sql runs", async () => {
+    currentUser = { id: "u-me" };
+    setTable("profiles", {
+      data: { id: "u-me", name: "Dr Me", role: "PT", location: "", bio: "", quote: "", followers_count: 0, following_count: 0, gradient: "violet", initials: "M" },
+      error: null,
+    });
+    const profile = await db.getProfile();
+    expect(profile.avatarUrl).toBeNull();
   });
 
   it("createPost() with media stores media_type/media_urls and maps them back out via getPosts()", async () => {

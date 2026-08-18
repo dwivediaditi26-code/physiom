@@ -15,7 +15,7 @@ export default function ComposerFrame({ profile, title, onBack, onClose, error, 
             <ChevronLeft size={18} />
           </button>
         )}
-        <Avatar size={36} grad={profile.gradient} initials={profile.initials} />
+        <Avatar size={36} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
         <div className="min-w-0">
           <span className="text-sm font-semibold text-slate-900 block truncate">{profile.name}</span>
           <span className="text-[11px] text-violet-600 font-medium">{title}</span>

@@ -7,7 +7,7 @@ export default function PersonCard({ person }) {
   const { followPerson } = useAppData();
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-      <Avatar size={44} grad={person.grad} initials={initialsOf(person.name)} />
+      <Avatar size={44} grad={person.grad} initials={initialsOf(person.name)} photoUrl={person.avatarUrl} />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-slate-800 truncate">{person.name}</p>
         <p className="text-xs text-slate-400 truncate">{person.role}</p>

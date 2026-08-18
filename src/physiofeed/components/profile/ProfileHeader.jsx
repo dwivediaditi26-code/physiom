@@ -30,7 +30,7 @@ export default function ProfileHeader({ profile, postCount }) {
       <div className="px-5 sm:px-8 pb-6">
         <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-3">
           <div className="relative">
-            <div className="rounded-full ring-4 ring-white"><Avatar size={88} grad={profile.gradient} initials={profile.initials} /></div>
+            <div className="rounded-full ring-4 ring-white"><Avatar size={88} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} /></div>
             <span className="absolute bottom-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" />
           </div>
         </div>

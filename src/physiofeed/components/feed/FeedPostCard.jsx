@@ -10,7 +10,7 @@ import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
 export default function FeedPostCard({ post }) {
-  const { likePost, savePost, followAuthor, commentOnPost, setCarousel } = useAppData();
+  const { likePost, savePost, followAuthor, commentOnPost, setCarousel, profile } = useAppData();
   const [commentText, setCommentText] = useState("");
   const [burst, setBurst] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
@@ -41,7 +41,7 @@ export default function FeedPostCard({ post }) {
   return (
     <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5">
       <div className="flex items-center gap-3 mb-3">
-        <Avatar size={38} grad={post.gradient} initials={initialsOf(post.author)} />
+        <Avatar size={38} grad={post.gradient} initials={initialsOf(post.author)} photoUrl={post.authorAvatarUrl} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <span className="font-semibold text-slate-900 text-sm truncate">{post.author}</span>
@@ -118,7 +118,10 @@ export default function FeedPostCard({ post }) {
       )}
 
       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-        <Avatar size={26} grad="violet" initials="AS" />
+        {/* Bug fix (2026-08-18): this was hardcoded to grad="violet"
+            initials="AS" regardless of who was actually signed in --
+            now shows the real signed-in user's avatar. */}
+        <Avatar size={26} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
         <input value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
           placeholder="Add a comment…" className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent" />
         <button onClick={submitComment} disabled={!commentText.trim()} className="text-violet-600 disabled:text-slate-300"><Send size={16} /></button>

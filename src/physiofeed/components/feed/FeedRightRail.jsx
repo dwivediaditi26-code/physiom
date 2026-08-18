@@ -15,7 +15,7 @@ export default function FeedRightRail() {
         <div className="space-y-3">
           {suggestions.map((p) => (
             <div key={p.id} className="flex items-center gap-2.5">
-              <Avatar size={34} grad={p.grad} initials={initialsOf(p.name)} />
+              <Avatar size={34} grad={p.grad} initials={initialsOf(p.name)} photoUrl={p.avatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-slate-800 truncate">{p.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{p.role} · {p.mutual} mutual</p>

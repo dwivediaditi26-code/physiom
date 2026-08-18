@@ -23,7 +23,7 @@ export default function Composer() {
         onClick={() => setComposerOpen(true)}
         className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3 text-left hover:border-violet-200 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-300"
       >
-        <Avatar size={36} grad={profile.gradient} initials={profile.initials} />
+        <Avatar size={36} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
         <span className="text-sm text-slate-400">Share a clinical tip, case, or research with the community…</span>
       </button>
     );

@@ -103,7 +103,13 @@ export async function getPosts() {
     comments.forEach((c) => profileIds.add(c.author_id));
     likes.forEach((l) => profileIds.add(l.user_id));
     const { data: profiles } = profileIds.size
-      ? await supabase.from("profiles").select("id, name, role, verified, gradient, initials").in("id", [...profileIds])
+      // select("*") rather than a named column list on purpose: an unknown
+      // column in an explicit list makes the WHOLE query fail (every post's
+      // author would blank out to "Unknown"), so adding avatar_url here
+      // would have broken every author's name/role/gradient too until
+      // add_profile_avatar.sql is run. select("*") just picks up avatar_url
+      // once it exists and costs nothing meaningful at this app's scale.
+      ? await supabase.from("profiles").select("*").in("id", [...profileIds])
       : { data: [] };
     const profileById = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
 
@@ -128,6 +134,7 @@ export async function getPosts() {
 
       return {
         id: p.id, authorId: p.author_id, author: author?.name || "Unknown",
+        authorAvatarUrl: author?.avatar_url || null,
         isSelf: p.author_id === uid, verified: !!author?.verified, following: followingSet.has(p.author_id),
         role: author?.role || "", time: timeAgo(p.created_at), category: p.category,
         media: p.media_type, gradient: media.gradient || author?.gradient || "violet", iconName: media.iconName || "Sparkles",
@@ -327,6 +334,15 @@ export async function uploadPostVideo(file) {
   return uploadToBucket("post-videos", uid, file, ext);
 }
 
+// Added 2026-08-18 for real profile-photo upload -- uses the
+// profile-images bucket add_media_storage.sql already created (RLS: your
+// own folder, public read, same as post-images/post-videos).
+export async function uploadProfileImage(blob) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload a profile photo.");
+  return uploadToBucket("profile-images", uid, blob, "jpg");
+}
+
 // Local-only mutation -- mediaIndex ("which photo am I looking at") is
 // pure viewer navigation state, never written to Supabase for either demo
 // carousel posts or real multi-photo posts. NOTE: since real multi-photo
@@ -399,6 +415,9 @@ export async function getProfile() {
       bio: row.bio, quote: row.quote,
       followers: row.followers_count, following: row.following_count,
       isAdmin: !!row.is_admin,
+      // undefined (not null) on rows from before add_profile_avatar.sql runs
+      // -- Avatar.jsx treats any falsy photoUrl as "show the gradient instead".
+      avatarUrl: row.avatar_url || null,
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
@@ -420,6 +439,7 @@ export async function updateProfile(fields) {
   for (const key of ["name", "role", "location", "bio", "quote", "gradient"]) {
     if (fields[key] !== undefined) patch[key] = fields[key];
   }
+  if (fields.avatarUrl !== undefined) patch.avatar_url = fields.avatarUrl;
   if (fields.name) {
     patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
   }
@@ -463,7 +483,10 @@ export async function getExercises() { return clone(EXERCISES); }
 export async function getPeople() {
   try {
     const uid = await currentUserId();
-    let query = supabase.from("profiles").select("id, name, role, location, gradient");
+    // select("*") rather than a named list -- see the matching comment in
+    // getPosts() above. Avoids the whole real People list vanishing back to
+    // demo content if avatar_url doesn't exist yet on this database.
+    let query = supabase.from("profiles").select("*");
     if (uid) query = query.neq("id", uid);
     const { data: profiles, error } = await query;
     if (error) throw error;
@@ -476,7 +499,8 @@ export async function getPeople() {
 
     const real = profiles.map((p) => ({
       id: p.id, name: p.name, role: p.role || "", location: p.location || "",
-      mutual: 0, grad: p.gradient || "violet", following: followingSet.has(p.id),
+      mutual: 0, grad: p.gradient || "violet", avatarUrl: p.avatar_url || null,
+      following: followingSet.has(p.id),
     }));
     // Demo people stay visible alongside real ones so the People tab never
     // looks sparse while PhysioFeed only has a handful of real clinicians.
