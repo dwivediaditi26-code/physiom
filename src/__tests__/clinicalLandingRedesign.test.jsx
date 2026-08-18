@@ -43,6 +43,24 @@ async function openClinical() {
 }
 
 describe("Clinical landing page redesign", () => {
+  // Regression: Clinical used to open PatientDatabasePanel as a fixed,
+  // partial-width overlay on top of whatever screen was behind it (Home
+  // stayed mounted, dimmed backdrop visible down the right side) --
+  // instead of swapping the main content area the way Home/PhysioFeed/
+  // Learn/Profile already do. It's a real tab now: opening it unmounts
+  // whatever was there before, and leaving it unmounts Clinical in turn.
+  it("is a real tab -- opening it unmounts Home, leaving it unmounts Clinical", async () => {
+    await renderLoggedIn();
+    expect(screen.getByText("New Patient")).toBeInTheDocument(); // Home's Quick Start grid
+    fireEvent.click(screen.getByText("Clinical"));
+    await screen.findByPlaceholderText("Search patients…");
+    expect(screen.queryByText("New Patient")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Learn"));
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText("Search patients…")).not.toBeInTheDocument();
+    });
+  });
+
   it("shows the reference layout: header, CTA, Clinical Areas, Recent Patients, stat cards", async () => {
     const panel = await openClinical();
     expect(panel.getByText("＋ New Assessment")).toBeInTheDocument();

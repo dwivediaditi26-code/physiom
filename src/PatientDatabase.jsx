@@ -3938,7 +3938,16 @@ function PatientRowCompact({ patient, isActive, onSelect, onDelete, onProfile })
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: closePanel, onImport, onNav, liveData={} }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: onCloseProp, onImport, onNav, liveData={}, embedded=false }) {
+  // embedded=true (2026-08-17): renders as a normal full-width tab page
+  // (mounted from the "clinical" ALL_TESTS entry in AppFull.jsx, same
+  // pattern as Home/PhysioFeed/Learn/Profile) instead of the original
+  // fixed-overlay modal, which only covered part of the screen width
+  // and needed an explicit Close button -- the other bottom-nav tabs
+  // don't work that way. Still used as a modal by the sidebar/"Switch
+  // Patient"/"Load Patient" buttons (embedded left false there), so
+  // this stays backward compatible rather than a hard cutover.
+  const closePanel = embedded ? (()=>{}) : onCloseProp;
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
@@ -4030,39 +4039,8 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const soapPending = localPatients.filter(p => hasObjective(p.data) && !isSoapDone(p.data)).length;
   const homeProtocolsToday = localPatients.filter(p => p.data?.hep_programme && isToday(p.updatedAt)).length;
 
-  return (
-    <>
-    {/* Profile modal */}
-    {profilePatient && (
-      <PatientProfileModal
-        patient={(()=>{
-          const fresh = patients.find(p=>p.id===profilePatient.id) || profilePatient;
-          return fresh.id===activeId ? {...fresh, data:{...fresh.data,...liveData}} : fresh;
-        })()}
-        onClose={()=>{
-          // ← back from nested profile: activate patient + close DB panel → land in main app
-          if(profilePatient.id !== activeId) onSelect(profilePatient);
-          setProfilePatient(null);
-          closePanel();
-        }}
-        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); closePanel(); }}
-        onSaveField={handleSaveField}
-        onNav={(key)=>{
-          setProfilePatient(null);
-          if(profilePatient.id !== activeId) onSelect(profilePatient);
-          closePanel();
-          setTimeout(()=>onNav&&onNav(key), 80);
-        }}
-      />
-    )}
-
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,
-      display:"flex",alignItems:"stretch",justifyContent:"flex-start"}}>
-      <div data-testid="clinical-panel" style={{width:"100%",maxWidth:480,background:"#FFFFFF",
-        borderRight:"1px solid #E5E7EB",display:"flex",
-        flexDirection:"column",height:"100%",boxShadow:"4px 0 24px rgba(0,0,0,0.15)"}}>
-
-        <div style={{flex:1,overflowY:"auto"}}>
+const innerBody = (
+    <div style={{flex:1,overflowY:embedded?"visible":"auto"}}>
 
           {/* Header */}
           <div style={{padding:"20px 18px 4px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -4077,8 +4055,10 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
                   </span>
                 )}
               </div>
-              <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
-                borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700}}>✕</button>
+              {!embedded && (
+                <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
+                  borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700}}>✕</button>
+              )}
             </div>
           </div>
 
@@ -4234,12 +4214,52 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Click outside */}
-      <div style={{flex:1}} onClick={closePanel}/>
     </div>
+);
+
+  return (
+    <>
+    {/* Profile modal */}
+    {profilePatient && (
+      <PatientProfileModal
+        patient={(()=>{
+          const fresh = patients.find(p=>p.id===profilePatient.id) || profilePatient;
+          return fresh.id===activeId ? {...fresh, data:{...fresh.data,...liveData}} : fresh;
+        })()}
+        onClose={()=>{
+          // ← back from nested profile: activate patient + close DB panel → land in main app
+          if(profilePatient.id !== activeId) onSelect(profilePatient);
+          setProfilePatient(null);
+          closePanel();
+        }}
+        onLoadAssessment={(p)=>{ onSelect(p); setProfilePatient(null); closePanel(); }}
+        onSaveField={handleSaveField}
+        onNav={(key)=>{
+          setProfilePatient(null);
+          if(profilePatient.id !== activeId) onSelect(profilePatient);
+          closePanel();
+          setTimeout(()=>onNav&&onNav(key), 80);
+        }}
+      />
+    )}
+
+    {embedded ? (
+      <div data-testid="clinical-panel" style={{width:"100%",background:"#FFFFFF",display:"flex",flexDirection:"column"}}>
+        {innerBody}
+      </div>
+    ) : (
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,
+        display:"flex",alignItems:"stretch",justifyContent:"flex-start"}}>
+        <div data-testid="clinical-panel" style={{width:"100%",maxWidth:480,background:"#FFFFFF",
+          borderRight:"1px solid #E5E7EB",display:"flex",
+          flexDirection:"column",height:"100%",boxShadow:"4px 0 24px rgba(0,0,0,0.15)"}}>
+          {innerBody}
+        </div>
+
+        {/* Click outside */}
+        <div style={{flex:1}} onClick={closePanel}/>
+      </div>
+    )}
     </>
   );
 }

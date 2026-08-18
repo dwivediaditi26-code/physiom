@@ -1160,6 +1160,7 @@ const ALL_TESTS = {
   physiofeed:{ label:"PhysioFeed", icon:"📡", desc:"Community & Case Discussions", groups:{ "PhysioFeed":"PHYSIOFEED_MODULE" }},
   learn:{ label:"Learn", icon:"📚", desc:"Clinical Learning Library", groups:{ "Learn":"LEARN_MODULE" }},
   profile:{ label:"Profile", icon:"⚙️", desc:"Account & Settings", groups:{ "Profile":"PROFILE_MODULE" }},
+  clinical:{ label:"Clinical", icon:"🩺", desc:"Patients & Assessments", groups:{ "Clinical":"CLINICAL_MODULE" }},
   demographics:{ label:"Demographics", icon:"👤", desc:"Patient Information", groups:{ "Demographic Data":"DEMOGRAPHICS_MODULE" }},
   subjective:{ label:"Subjective", icon:"📝", desc:"History & Complaint", groups:{ "Full Subjective Assessment":"SUBJECTIVE_MODULE" }},
   palpation:{ label:"Palpation", icon:"🖐️", desc:"Tissue Assessment", groups:{ "Palpation Findings":"PALPATION_MODULE" }},

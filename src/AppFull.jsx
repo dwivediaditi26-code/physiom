@@ -1716,6 +1716,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
                   <LazyProfileTabEntry onSignOut={onSignOut}/>
                 </Suspense>
+              ):tests==="CLINICAL_MODULE"?(
+                // Same negative-margin full-bleed trick PhysioFeed uses just
+                // above -- Clinical's own header/search/CTA want the full
+                // tab width, not the standard pm-main content padding.
+                <div style={{margin:"-24px -20px 0"}}>
+                  <PatientDatabasePanel
+                    embedded
+                    patients={patients}
+                    activeId={activePatientId}
+                    onSelect={selectPatient}
+                    onNew={()=>setShowSpecialtyPicker(true)}
+                    onDelete={deletePatient}
+                    onImport={importPatientFromJSON}
+                    onNav={navTo}
+                    liveData={data}
+                  />
+                </div>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
@@ -2002,15 +2019,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {key:"profile",    icon:"profile",    label:"Profile"},
             ].map(item=>{
               const isClinical = item.key==="__clinical";
-              // Clinical now opens the patient list + specialty picker
-              // (PatientDatabasePanel, already a real full-screen panel with
-              // search/sort/New/Import) instead of jumping straight into
-              // Subjective Assessment with no patient loaded. "+ New
-              // Assessment" (PatientDatabasePanel's onNew) asks which
-              // specialty stream to start, then opens the same real intake
-              // -> subjective -> objective flow as before.
-              const isActive = isClinical ? (showPatientDb || !outerKeys.includes(active)) : active===item.key;
-              const handleClick = () => { if (isClinical) setShowPatientDb(true); else navTo(item.key); };
+              // Clinical is a real tab now (2026-08-17), same as Home/
+              // PhysioFeed/Learn/Profile -- navTo("clinical") swaps the main
+              // content area in place, instead of opening PatientDatabasePanel
+              // as a fixed-overlay modal (which only covered part of the
+              // screen width and needed an explicit Close button, unlike
+              // every other bottom-nav tab). "+ New Assessment" still asks
+              // which specialty stream to start, then opens the same real
+              // intake -> subjective -> objective flow as before. Active
+              // whenever the current screen isn't one of the other four
+              // named tabs -- covers "clinical" itself plus every
+              // assessment screen reached from it (demographics/subjective/
+              // objective/etc, none of which have their own bottom-nav tab).
+              const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
+              const handleClick = () => { if (isClinical) navTo("clinical"); else navTo(item.key); };
               return item.center ? (
                 <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
