@@ -1685,7 +1685,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               same standalone-block pattern as Posture above. */}
           {active==="objective" && (
             <div style={{marginBottom:22}}>
-              <Suspense fallback={<TabFallback/>}><LazyObjectiveHub data={data} set={set} navTo={navTo} PC={PC}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyObjectiveHub data={data} set={set} navTo={navTo} PC={PC} requireAuth={requireAuth}/></Suspense>
             </div>
           )}
 

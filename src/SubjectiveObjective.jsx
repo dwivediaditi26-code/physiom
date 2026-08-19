@@ -3452,14 +3452,29 @@ function ComboField({ f, val, PC, isMulti, setField, toggleMulti, SEP_S }) {
   );
 }
 
-function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requireAuth, viewStep }) {
+function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requireAuth, viewStep, resultsOnly=false }) {
   // viewStep lets the master workflow stepper (AppFull.jsx) show this
   // component's Hero/AI panel, Region picker, and main form as separate
   // full-page steps instead of one long scroll. Omitting the prop (or any
   // other call site not passing it) shows everything, unchanged from
   // before -- so this is purely additive.
-  const showHeroAI = !viewStep || viewStep === "ai";
-  const showRegionPicker = !viewStep || viewStep === "region";
+  //
+  // resultsOnly (2026-08-19): ObjectiveHub mounts this same component,
+  // with the caller's real patient data/set, just to reuse its clinical
+  // reasoning engine (runEngineV6 + the Lumbar/Cervical/Thoracic/generic
+  // Phase 0/0.5 engines below) and its "Suggested assessment" ->
+  // "Run analysis" -> Interpretation results flow -- Objective's own
+  // "Suggest probable objective assessment" button used to only show a
+  // plain documented-fields summary, not real interpretation, because
+  // that engine's home (the old Subjective form) stopped being the live
+  // Subjective screen once SubjectiveAssessmentNew.jsx took over. Rather
+  // than duplicate ~1000 lines of per-region reasoning JSX, resultsOnly
+  // hides everything except the Red Flag banner (always shown, above)
+  // and the Suggested-assessment/Interpretation area -- no field entry,
+  // no AI panel, no region picker (Objective already has those via its
+  // own flow) -- and forces straight into the Interpretation tab.
+  const showHeroAI = !resultsOnly && (!viewStep || viewStep === "ai");
+  const showRegionPicker = !resultsOnly && (!viewStep || viewStep === "region");
   const showFormArea = !viewStep || viewStep === "form";
   const PC = typeof getC === "function" ? getC() : {
     surface:"#ffffff", s2:"#FFFFFF", s3:"#FFFFFF", border:"#E0E0E2",
@@ -3616,7 +3631,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
   const [shoulderReasoning, setShoulderReasoning] = useState(()=>{
     try{ return dataHasShoulderRegionSelected ? runShoulderPhase05(data) : null; }catch{ return null; }
   });
-  const [activeTab, setActiveTab] = useState(()=>data.cx_insight?"results":"form");
+  const [activeTab, setActiveTab] = useState(()=>resultsOnly?"results":(data.cx_insight?"results":"form"));
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummary, setShowSummary] = useState(false);
   // Re-sync selected regions from the loaded patient's saved record.
@@ -4928,7 +4943,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       })()}
       </>)}
 
-      {showFormArea && (<>
+      {(showFormArea || resultsOnly) && (<>
       {/* ── Progress bar — grouped status pills (removed per request) ── */}
       {false && (()=>{
         // Core group: complaint + universal sections
@@ -4998,7 +5013,11 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
         );
       })()}
 
-      {/* ── Tabs ── */}
+      {/* ── Tabs ──
+          resultsOnly hides this switcher entirely -- Objective only ever
+          wants the Interpretation side, never the (Subjective-specific)
+          field-entry form, and activeTab is forced to "results" above. */}
+      {!resultsOnly && (
       <div style={{ display:"flex", borderBottom:`1px solid ${PC.border}`, gap:0 }}>
         {/* "bodychart" tab removed (2026-08-17) -- Body Chart now has
             its own dedicated Chart/Palpation step, showing it here too
@@ -5020,21 +5039,21 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
           </button>
         ))}
       </div>
+      )}
 
-      {/* ════════════════════════════════════════════════════
-          FORM TAB
-      ════════════════════════════════════════════════════ */}
-      {activeTab === "form" && (
-        <>
-          {/* ── Run Analysis — pinned to the top of the Assessment tab,
-               sticky so it stays visible while scrolling through the
-               section list below instead of only being reachable after
-               scrolling all the way to the bottom of a long form ── */}
-          {/* 2026-08-18: shrunk from a full-width gradient CTA (looked like
-              primary navigation) to a compact "assistant" card -- sits
-              inside the assessment rather than competing with it, per
-              user's "don't make it look like the primary navigation, it
-              should feel like an intelligent assistant" note. */}
+      {/* ── Run Analysis — pinned to the top of the Assessment tab,
+           sticky so it stays visible while scrolling through the
+           section list below instead of only being reachable after
+           scrolling all the way to the bottom of a long form ── */}
+      {/* 2026-08-18: shrunk from a full-width gradient CTA (looked like
+          primary navigation) to a compact "assistant" card -- sits
+          inside the assessment rather than competing with it, per
+          user's "don't make it look like the primary navigation, it
+          should feel like an intelligent assistant" note.
+          2026-08-19: pulled out from inside the "form" tab below so it
+          also renders in resultsOnly mode, where the "form" tab (and its
+          tab switcher above) never render at all. */}
+      {(activeTab === "form" || resultsOnly) && (
           <button type="button" onClick={()=>setShowSummary(true)}
             disabled={selectedRegions.length === 0}
             style={{
@@ -5048,7 +5067,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
             }}>
             <span style={{ display:"flex", flexDirection:"column", gap:1, minWidth:0 }}>
               <span style={{ fontSize:"0.78rem", fontWeight:800, color: PC.accent, display:"flex", alignItems:"center", gap:5 }}>
-                🧠 Suggested assessment
+                🧠 Suggest probable objective assessment
               </span>
               <span style={{ fontSize:"0.7rem", color: PC.muted }}>
                 {selectedRegions.length > 0 ? `${selectedRegions.join(", ")}` : "Select a region to begin"}
@@ -5058,7 +5077,13 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
               <span style={{ fontSize:"0.76rem", fontWeight:800, color: PC.accent, flexShrink:0 }}>Review →</span>
             )}
           </button>
+      )}
 
+      {/* ════════════════════════════════════════════════════
+          FORM TAB
+      ════════════════════════════════════════════════════ */}
+      {activeTab === "form" && !resultsOnly && (
+        <>
           {/* ══════════════════════════════════════════════════════
               Clean single-scroll list (2026-08-18 redesign, replacing the
               tabbed Core/Region/General/Psychosocial group-switcher).

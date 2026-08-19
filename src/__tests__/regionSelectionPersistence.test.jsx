@@ -19,6 +19,13 @@ import App from "../App.jsx";
 import { supabase } from "../supabase.js";
 
 describe("region selection persists across navigation", () => {
+  // 2026-08-19: Objective now mounts the real interpretation engine
+  // (SubjectiveModule in resultsOnly mode, see ObjectiveHub.jsx) instead of
+  // a lightweight summary -- this test's four full navigations (region ->
+  // subjective -> region -> objective) push past the default 5000ms test
+  // timeout purely on render cost, not a hang (verified: passes comfortably
+  // with more headroom). Bumping the timeout here rather than the global
+  // default, which would mask a real hang elsewhere.
   it("selecting a region survives navigating away and back, and shows in Objective", async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: { id: "test-user-123", email: "student@example.com" } } },
@@ -65,5 +72,5 @@ describe("region selection persists across navigation", () => {
     await waitFor(() => {
       expect(screen.queryByText("No body region selected yet")).not.toBeInTheDocument();
     });
-  });
+  }, 15000);
 });

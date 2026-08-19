@@ -6,7 +6,7 @@
 // NeurologicalModule via their existing lazy_*.jsx wrappers) already used
 // everywhere else in the app -- nothing invented, workflow only.
 import React, { useState } from "react";
-import { REGION_NAV, REGION_FAMILY_KEY, buildDocumentedSummary, DocumentedSummaryModal } from "./SubjectiveObjective.jsx";
+import { REGION_NAV, REGION_FAMILY_KEY, SubjectiveModule } from "./SubjectiveObjective.jsx";
 import { LazyTab } from "./utils.jsx";
 import HowToPerformDrawer, { romInfoSections, mmtInfoSections } from "./HowToPerformDrawer.jsx";
 
@@ -32,10 +32,9 @@ function Sec({ icon, title, PC, expanded, onToggle, children }) {
   );
 }
 
-export default function ObjectiveHub({ data, set, navTo, PC }) {
+export default function ObjectiveHub({ data, set, navTo, PC, requireAuth }) {
   const [expandedKey, setExpandedKey] = useState(null); // `${region}:${type}`
   const [howTo, setHowTo] = useState(null);
-  const [showSummary, setShowSummary] = useState(false);
 
   let selectedRegions = [];
   try { selectedRegions = JSON.parse(data.cx_selected_regions || "[]"); } catch { selectedRegions = []; }
@@ -58,44 +57,24 @@ export default function ObjectiveHub({ data, set, navTo, PC }) {
 
   return (
     <div>
-      {/* Suggest probable objective assessment -- top button (2026-08-18),
-          styled and worded to match Subjective's own button exactly. It
-          now opens the SAME "What you've documented" summary Subjective
-          shows (buildDocumentedSummary / DocumentedSummaryModal, shared
-          from SubjectiveObjective.jsx) instead of the unrelated
-          ProbableDiagnosis/differential-diagnosis tool it was wrongly
-          wired to before -- this button's job is to remind the clinician
-          what's already been documented in Subjective, not to suggest a
-          diagnosis (that's SOAP Notes' separate "Suggest Probable
-          Diagnosis" feature). Shrunk from a full-width gradient CTA to a
-          compact "assistant" card, matching Subjective's own button after
-          its "compact clinical workspace" redesign (2026-08-18) -- it
-          should feel like an intelligent assistant sitting inside the
-          assessment, not primary navigation. */}
-      <button type="button" onClick={() => setShowSummary(true)}
-        style={{
-          width: "100%", height: 52, padding: "0 14px", borderRadius: 12,
-          border: `1px solid ${PC.accent}30`, background: `${PC.accent}0f`,
-          cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center",
-          justifyContent: "space-between", gap: 8, marginBottom: 12, textAlign: "left",
-        }}>
-        <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-          <span style={{ fontSize: "0.78rem", fontWeight: 800, color: PC.accent }}>🧠 Suggested assessment</span>
-          <span style={{ fontSize: "0.7rem", color: PC.muted }}>
-            {selectedRegions.length} region{selectedRegions.length > 1 ? "s" : ""} documented
-          </span>
-        </span>
-        <span style={{ fontSize: "0.76rem", fontWeight: 800, color: PC.accent, flexShrink: 0 }}>Review →</span>
-      </button>
-      {showSummary && (() => {
-        const { rows, hasBlocker } = buildDocumentedSummary(data);
-        return (
-          <DocumentedSummaryModal rows={rows} hasBlocker={hasBlocker} PC={PC}
-            onClose={() => setShowSummary(false)}
-            primaryLabel="Edit in Subjective →"
-            onPrimary={() => { setShowSummary(false); navTo("subjective"); }} />
-        );
-      })()}
+      {/* Suggest probable objective assessment -- top button (2026-08-18,
+          moved 2026-08-19). Originally opened just a "What you've
+          documented" summary (buildDocumentedSummary / DocumentedSummaryModal).
+          The REAL clinical-interpretation engine -- runEngineV6 plus the
+          Lumbar/Cervical/Thoracic/generic Phase 0/0.5 reasoning, urgent
+          red-flag banner, and priority-test suggestions -- lived inside
+          the old Subjective form's own "Suggested assessment" button and
+          "🧠 Interpretation" tab, and became unreachable in the live app
+          once SubjectiveAssessmentNew.jsx replaced that form as the real
+          Subjective screen (it only survives in the standalone "Subjective
+          — New vs Old" comparison view). Per request, that engine now
+          lives here instead -- reusing SubjectiveModule itself in
+          `resultsOnly` mode (see SubjectiveObjective.jsx) rather than
+          duplicating its ~1000 lines of per-region reasoning JSX, so
+          there is one engine, one set of tests, in the place a clinician
+          actually wants it: Objective, where the suggested tests apply. */}
+      <SubjectiveModule data={data} set={set} onNav={navTo} requireAuth={requireAuth}
+        viewStep="objective" resultsOnly />
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <button type="button" onClick={() => navTo("subjective")}
