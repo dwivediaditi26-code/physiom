@@ -1163,12 +1163,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
             <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Choose a specialty to start</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {STREAMS.map(st => (
+              {STREAMS.map(st => {
+                // Cardio: standalone Cardiopulmonary Assessment tool is
+                // live, but STREAMS.cardio.live stays false on purpose --
+                // that flag also drives StreamSelector/test filtering
+                // elsewhere, untouched. Just make this one button open it.
+                const clickable = st.live || st.id === "cardio";
+                return (
                 <button key={st.id} type="button"
                   onClick={()=>{
-                    if (!st.live) return;
+                    if (!clickable) return;
                     setShowSpecialtyPicker(false);
-                    if (st.id === "ortho") {
+                    if (st.id === "cardio") {
+                      navTo("cardio_assessment");
+                    } else if (st.id === "ortho") {
                       // Ortho has its own full-page Demographics step (part
                       // of the 9-step stepper) -- land there directly
                       // instead of the old floating intake-form popup.
@@ -1187,14 +1195,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     }
                   }}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,
-                    cursor:st.live?"pointer":"not-allowed",fontFamily:"inherit",
-                    border:`1.5px solid ${st.live?st.color+"50":PC.border}`,
-                    background:st.live?st.color+"10":PC.s2,opacity:st.live?1:0.6,textAlign:"left"}}>
+                    cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
+                    border:`1.5px solid ${clickable?st.color+"50":PC.border}`,
+                    background:clickable?st.color+"10":PC.s2,opacity:clickable?1:0.6,textAlign:"left"}}>
                   <span style={{fontSize:"1.3rem"}}>{st.icon}</span>
-                  <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:st.live?st.color:PC.muted}}>{st.label}</span>
-                  {!st.live && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:PC.border,color:PC.muted}}>SOON</span>}
+                  <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:PC.muted}}>{st.label}</span>
+                  {!clickable && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:PC.border,color:PC.muted}}>SOON</span>}
                 </button>
-              ))}
+                );
+              })}
             </div>
             <button type="button" onClick={()=>setShowSpecialtyPicker(false)}
               style={{marginTop:16,width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
