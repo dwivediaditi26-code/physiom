@@ -9,6 +9,10 @@ export const MAX_IMAGE_MB = 10;
 export const MAX_IMAGES = 10; // matches the "1-10 images per post" spec
 export const MAX_VIDEO_MB = 100;
 export const MAX_VIDEO_SECONDS = 90;
+// Stories are short-form (2026-08-19) -- same size limit as a regular
+// post video, but capped much shorter since a story is meant to be a
+// quick clip, not a full video post.
+export const MAX_STORY_VIDEO_SECONDS = 30;
 
 const COMPRESS_MAX_DIMENSION = 1600;
 const COMPRESS_QUALITY = 0.82;

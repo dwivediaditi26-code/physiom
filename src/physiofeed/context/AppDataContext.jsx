@@ -43,6 +43,10 @@ export function AppDataProvider({ children }) {
   const votePoll = useCallback(async (id, optionIndex) => { setPosts(await db.votePoll(id, optionIndex)); }, []);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
   const viewStory = useCallback(async (id) => { setStories(await db.markStorySeen(id)); }, []);
+  const addStory = useCallback(async (fields) => { setStories(await db.addStory(fields)); }, []);
+  const deleteStory = useCallback(async (id) => { setStories(await db.deleteStory(id)); }, []);
+  const uploadStoryImage = useCallback((blob) => db.uploadStoryImage(blob), []);
+  const uploadStoryVideo = useCallback((file) => db.uploadStoryVideo(file), []);
   const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
   const endorseSkill = useCallback(async (name) => { setExpertise(await db.toggleEndorse(name)); }, []);
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
@@ -70,7 +74,8 @@ export function AppDataProvider({ children }) {
     loading, posts, stories, people, notifications, evidence, communities,
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
-    viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment,
+    viewStory, addStory, deleteStory, uploadStoryImage, uploadStoryVideo,
+    followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
     addAchievement, updateAchievement, deleteAchievement,

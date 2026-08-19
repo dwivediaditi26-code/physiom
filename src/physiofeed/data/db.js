@@ -26,7 +26,10 @@ import {
 import { supabase } from "../../supabase.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
-let _stories = STORIES.map((s) => ({ ...s }));
+// Cosmetic-only fallback for the Stories bar (see the real getStories()
+// below) -- these five never had real media behind them, so "viewing" one
+// just flips its ring gray locally instead of opening anything.
+let _demoStories = STORIES.map((s) => ({ ...s, items: s.items.map((i) => ({ ...i })) }));
 let _people = PEOPLE.map((p) => ({ ...p }));
 let _evidence = EVIDENCE.map((e) => ({ ...e }));
 let _communities = COMMUNITIES.map((c) => ({ ...c }));
@@ -375,6 +378,21 @@ export async function uploadProfileImage(blob) {
   return uploadToBucket("profile-images", uid, blob, "jpg");
 }
 
+// Feature (2026-08-19): real stories -- uses the story-media bucket
+// supabase/add_stories.sql creates (RLS: your own folder, public read,
+// same shape as every other bucket here).
+export async function uploadStoryImage(blob) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to add a story.");
+  return uploadToBucket("story-media", uid, blob, "jpg");
+}
+export async function uploadStoryVideo(file) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to add a story.");
+  const ext = (file.name?.split(".").pop() || "mp4").toLowerCase();
+  return uploadToBucket("story-media", uid, file, ext);
+}
+
 // Local-only mutation -- mediaIndex ("which photo am I looking at") is
 // pure viewer navigation state, never written to Supabase for either demo
 // carousel posts or real multi-photo posts. NOTE: since real multi-photo
@@ -394,14 +412,120 @@ export async function setCarouselIndex(postId, index) {
 
 /* ---------------- stories ---------------- */
 
-// SUPABASE: supabase.from('stories').select('*, author:profiles(*)').gt('expires_at', now())
+// Feature (2026-08-19): real stories (photo/video, 24h expiry), backed by
+// supabase/add_stories.sql. Before this, StoriesBar.jsx was pure
+// decoration -- five fixed fake names, "seen" was a local-only toggle,
+// and there was nothing behind a tap. This groups real story rows by
+// author (one ring per person, like Instagram, even if they've posted
+// several) and marks a group "seen" only once the current viewer has
+// watched EVERY item in it -- a new story from someone you'd already
+// seen today should light their ring back up.
+//
+// Same real-first/demo-fallback shape as getPosts(): if no real stories
+// exist yet (or the migration hasn't run), the old five-name placeholder
+// bar keeps showing so the feed never looks empty or broken. Unlike
+// getPosts() this doesn't personalize by uid on the read itself (public,
+// time-boxed by the stories_select_active RLS policy) -- uid is only
+// needed to know which of the real stories THIS viewer has already seen,
+// same "uid ? real query : empty" pattern posts uses for saved_posts/follows.
 export async function getStories() {
-  return clone(_stories);
+  try {
+    const uid = await currentUserId();
+    const { data, error } = await supabase
+      .from("stories")
+      .select("id, author_id, media_url, media_type, duration, created_at")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    if (!data || data.length === 0) return clone(_demoStories); // nobody's posted a real story yet
+
+    const authorIds = [...new Set(data.map((s) => s.author_id))];
+    const [profilesRes, viewsRes] = await Promise.all([
+      supabase.from("profiles").select("id, name, gradient, initials, avatar_url").in("id", authorIds),
+      uid ? supabase.from("story_views").select("story_id").eq("viewer_id", uid) : Promise.resolve({ data: [] }),
+    ]);
+    const profiles = profilesRes.data || [];
+    const seenIds = new Set((viewsRes.data || []).map((v) => v.story_id));
+
+    const groups = new Map();
+    for (const row of data) {
+      if (!groups.has(row.author_id)) groups.set(row.author_id, []);
+      groups.get(row.author_id).push(row);
+    }
+
+    const result = [...groups.entries()].map(([authorId, items]) => {
+      const p = profiles.find((pr) => pr.id === authorId);
+      return {
+        authorId,
+        name: p?.name || "PhysioFeed user",
+        grad: p?.gradient || "violet",
+        initials: p?.initials || "P",
+        avatarUrl: p?.avatar_url || null,
+        isDemo: false,
+        seen: items.every((it) => seenIds.has(it.id)),
+        items: items.map((it) => ({ id: it.id, mediaUrl: it.media_url, mediaType: it.media_type, duration: it.duration, createdAt: it.created_at })),
+      };
+    });
+
+    // Your own reel first (Instagram convention), then unseen authors
+    // before already-seen ones.
+    result.sort((a, b) => {
+      if (a.authorId === uid) return -1;
+      if (b.authorId === uid) return 1;
+      if (a.seen !== b.seen) return a.seen ? 1 : -1;
+      return 0;
+    });
+    return result;
+  } catch (e) {
+    console.error("getStories(): falling back to demo list --", e?.message || e);
+    return clone(_demoStories);
+  }
 }
-// SUPABASE: supabase.from('story_views').insert({ story_id, user_id })
-export async function markStorySeen(id) {
-  _stories = _stories.map((s) => (s.id === id ? { ...s, seen: true } : s));
-  return clone(_stories);
+
+// Adding is NOT given the silent-fallback treatment above -- same
+// reasoning as createPost() for real media: a failed upload/insert should
+// surface as a real error in the create-story modal, not pretend to post.
+export async function addStory({ mediaUrl, mediaType, duration }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to add a story.");
+  const { error } = await supabase.from("stories").insert({
+    author_id: uid, media_url: mediaUrl, media_type: mediaType, duration: duration ? Math.round(duration) : null,
+  });
+  if (error) throw error;
+  return getStories();
+}
+
+// Records that the current viewer has watched one story item. Upserts
+// with ON CONFLICT DO NOTHING (verified locally against story_views'
+// unique(story_id, viewer_id) constraint -- this only needs INSERT
+// privileges, not UPDATE, so re-viewing a story you've already seen today
+// never errors and never needs a story_views update policy at all.
+//
+// Falls back to the old cosmetic-only toggle for "demo-" story ids (see
+// mockData.js) or when nobody's signed in (a guest can still watch a real
+// story, there's just no viewer id to record a view against).
+export async function markStorySeen(storyItemId) {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return getStories();
+    const { error } = await supabase
+      .from("story_views")
+      .upsert({ story_id: storyItemId, viewer_id: uid }, { onConflict: "story_id,viewer_id", ignoreDuplicates: true });
+    if (error) throw error;
+    return getStories();
+  } catch (e) {
+    _demoStories = _demoStories.map((s) => (s.items.some((it) => it.id === storyItemId) ? { ...s, seen: true } : s));
+    return clone(_demoStories);
+  }
+}
+
+// Manual early delete (Instagram lets you take your own story down before
+// it expires too) -- owner-only via stories_delete_own RLS.
+export async function deleteStory(storyItemId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your story.");
+  const { error } = await supabase.from("stories").delete().eq("id", storyItemId).eq("author_id", uid);
+  if (error) throw error;
+  return getStories();
 }
 
 /* ---------------- profile ---------------- */

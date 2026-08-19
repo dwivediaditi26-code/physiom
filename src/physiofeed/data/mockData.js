@@ -129,12 +129,19 @@ export const INITIAL_POSTS = [
     likes: 41, liked: false, saved: false, likedByPreview: [], commentList: [] },
 ];
 
+// Grouped shape (2026-08-19, real stories feature) -- matches what
+// db.js's real getStories() returns (one entry per author, an `items`
+// array for however many stories they have up). These five are pure
+// decoration though: `items[].mediaUrl` is null since there was never any
+// real photo/video behind them, so StoriesBar.jsx knows (via `isDemo`) to
+// just flip the ring gray locally on tap instead of opening a viewer with
+// nothing to show.
 export const STORIES = [
-  { id: "s2", name: "Rahul Mehta", grad: "blue", seen: false },
-  { id: "s3", name: "Sarah Chen", grad: "rose", seen: false },
-  { id: "s4", name: "Kevin Park", grad: "teal", seen: true },
-  { id: "s5", name: "Maria Silva", grad: "amber", seen: true },
-  { id: "s6", name: "Imran Ali", grad: "slate", seen: false },
+  { authorId: "demo-s2", name: "Rahul Mehta", grad: "blue", avatarUrl: null, isDemo: true, seen: false, items: [{ id: "demo-s2-1", mediaUrl: null, mediaType: "image" }] },
+  { authorId: "demo-s3", name: "Sarah Chen", grad: "rose", avatarUrl: null, isDemo: true, seen: false, items: [{ id: "demo-s3-1", mediaUrl: null, mediaType: "image" }] },
+  { authorId: "demo-s4", name: "Kevin Park", grad: "teal", avatarUrl: null, isDemo: true, seen: true, items: [{ id: "demo-s4-1", mediaUrl: null, mediaType: "image" }] },
+  { authorId: "demo-s5", name: "Maria Silva", grad: "amber", avatarUrl: null, isDemo: true, seen: true, items: [{ id: "demo-s5-1", mediaUrl: null, mediaType: "image" }] },
+  { authorId: "demo-s6", name: "Imran Ali", grad: "slate", avatarUrl: null, isDemo: true, seen: false, items: [{ id: "demo-s6-1", mediaUrl: null, mediaType: "image" }] },
 ];
 
 export const PEOPLE = [
