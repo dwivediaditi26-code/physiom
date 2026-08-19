@@ -148,6 +148,44 @@ const ALL_FIELD_IDS = SECTIONS.flatMap((s) => s.fields.map((f) => f.id));
 const STORAGE_PREFIX = "simple_";
 const storageKey = (fieldId) => STORAGE_PREFIX + fieldId;
 
+// Body region is already picked on its own dedicated "Body Regions" step
+// elsewhere in the app (SubjectiveObjective.jsx's region picker, viewStep
+// ="region", writes data.cx_selected_regions as side-specific keys like
+// "Lumbar/SI (L)"). Aditi asked not to duplicate that picker in here --
+// when connected to real data, this component reads that existing
+// selection instead of asking again, just to know which region's option
+// lists to show. Maps a side-specific key back to this file's own region
+// ids (see subjectiveRegionOptions.js); side (L/R) doesn't matter for
+// which option list to show, so it's stripped.
+const OLD_REGION_BASE_TO_ID = {
+  "Cervical": "cervical",
+  "Thoracic": "thoracic",
+  "Lumbar/SI": "lumbar",
+  "Shoulder": "shoulder",
+  "Elbow": "elbow",
+  "Wrist/Hand": "wrist",
+  "Hip/Groin": "hip",
+  "Knee": "knee",
+  "Ankle/Foot": "ankle",
+  "Thorax": "thorax",
+  "Ribs": "ribs",
+  "TMJ": "tmj",
+  "Head / Face": "head",
+};
+function regionIdFromOldSelection(cxSelectedRegionsJson) {
+  let list = [];
+  try {
+    list = JSON.parse(cxSelectedRegionsJson || "[]");
+  } catch {
+    return null;
+  }
+  for (const key of list) {
+    const base = String(key).replace(/\s*\((L|R)\)\s*$/, "").trim();
+    if (OLD_REGION_BASE_TO_ID[base]) return OLD_REGION_BASE_TO_ID[base];
+  }
+  return null;
+}
+
 function useClock() {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -308,12 +346,17 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
         })
       )
     : localValues;
-  const selectedRegion = connected ? data.simple_region || null : localRegion;
+  // Connected mode: read the region already picked on the separate "Body
+  // Regions" step instead of maintaining its own (no picker rendered here
+  // at all, see below). Disconnected/preview mode: its own local pick.
+  const selectedRegion = connected ? regionIdFromOldSelection(data.cx_selected_regions) : localRegion;
 
-  // Region counts as one more thing to fill in, same as any other field.
-  const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0) + 1;
+  // Region only counts as "one more field" in the standalone preview,
+  // where this component owns picking it. Connected mode doesn't own that
+  // field -- the Body Regions step does -- so it's excluded here.
+  const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0) + (connected ? 0 : 1);
   const completed =
-    Object.values(values).filter((v) => v && v.trim()).length + (selectedRegion ? 1 : 0);
+    Object.values(values).filter((v) => v && v.trim()).length + (connected ? 0 : selectedRegion ? 1 : 0);
 
   function showToast(msg) {
     setToast(msg);
@@ -372,25 +415,27 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
     }
   }
 
+  // Only used by the standalone preview's own region-chip picker (hidden
+  // entirely when connected -- see the render below).
   function selectRegion(id) {
-    const next = selectedRegion === id ? null : id;
-    if (connected) set({ simple_region: next });
-    else setLocalRegion(next);
+    setLocalRegion((prev) => (prev === id ? null : id));
     setOpenDropdown(null);
   }
 
   return (
-    <div style={styles.page}>
+    <div style={connected ? styles.pageConnected : styles.page}>
       <style>{css}</style>
-      <div style={styles.frame}>
-        <StatusBar />
+      <div style={connected ? styles.frameConnected : styles.frame}>
+        {!connected && <StatusBar />}
 
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerTop}>
-            <button style={styles.backBtn} aria-label="Back">
-              ←
-            </button>
+            {!connected && (
+              <button style={styles.backBtn} aria-label="Back">
+                ←
+              </button>
+            )}
             <div style={styles.headerTitles}>
               <div style={styles.headerTitle}>Subjective Assessment</div>
               <div style={styles.headerSubtitle}>History &amp; Patient Report</div>
@@ -403,9 +448,11 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
                 ✨ AI Extracted
               </button>
             )}
-            <button style={styles.menuBtn} aria-label="More">
-              ⋮
-            </button>
+            {!connected && (
+              <button style={styles.menuBtn} aria-label="More">
+                ⋮
+              </button>
+            )}
           </div>
           <div style={styles.progressRow}>
             <span style={styles.progressLabel}>SUBJECTIVE</span>
@@ -415,37 +462,42 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
           </div>
         </div>
 
-        {/* Scrollable content */}
-        <div style={styles.content}>
-          {/* Body Region — picking one personalises the ▾ option lists for
-              Location / Mechanism / Aggravating / Relieving below instead
-              of showing every region's sub-fields at once. */}
-          <div>
-            <div style={styles.sectionHeader}>
-              <span style={styles.sectionIcon}>🧭</span>
-              <span style={styles.sectionTitle}>BODY REGION</span>
-            </div>
-            <div style={styles.regionWrap}>
-              {!selectedRegion && (
-                <div style={styles.regionHint}>Select a region to personalise the options below</div>
-              )}
-              <div style={styles.regionChipRow}>
-                {REGIONS.map((r) => {
-                  const on = selectedRegion === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => selectRegion(r.id)}
-                      style={{ ...styles.regionChip, ...(on ? styles.regionChipActive : {}) }}
-                    >
-                      <span>{r.icon}</span> {r.name}
-                    </button>
-                  );
-                })}
+        {/* Content */}
+        <div style={connected ? styles.contentConnected : styles.content}>
+          {/* Body Region picker — preview/demo mode only. When connected to
+              a real patient, region is already picked on the separate
+              "Body Regions" workflow step; showing a second picker here
+              would just be a confusing duplicate, so this reads that
+              existing selection instead (see regionIdFromOldSelection
+              above) rather than rendering its own chip row. */}
+          {!connected && (
+            <div>
+              <div style={styles.sectionHeader}>
+                <span style={styles.sectionIcon}>🧭</span>
+                <span style={styles.sectionTitle}>BODY REGION</span>
+              </div>
+              <div style={styles.regionWrap}>
+                {!selectedRegion && (
+                  <div style={styles.regionHint}>Select a region to personalise the options below</div>
+                )}
+                <div style={styles.regionChipRow}>
+                  {REGIONS.map((r) => {
+                    const on = selectedRegion === r.id;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => selectRegion(r.id)}
+                        style={{ ...styles.regionChip, ...(on ? styles.regionChipActive : {}) }}
+                      >
+                        <span>{r.icon}</span> {r.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {SECTIONS.map((section) => (
             <div key={section.id}>
@@ -478,17 +530,17 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
         </div>
 
         {/* Bottom action */}
-        <div style={styles.bottomBar}>
+        <div style={connected ? styles.bottomBarConnected : styles.bottomBar}>
           <button style={styles.saveBtn} onClick={() => showToast("Assessment saved")}>
             📋 Review &amp; Save Assessment
           </button>
         </div>
-        <div style={styles.homeIndicator} />
+        {!connected && <div style={styles.homeIndicator} />}
 
         {openDropdown && <div style={styles.dropdownBackdrop} onClick={closeDropdown} />}
 
         {/* Toast */}
-        {toast && <div style={styles.toast}>{toast}</div>}
+        {toast && <div style={connected ? styles.toastConnected : styles.toast}>{toast}</div>}
       </div>
     </div>
   );
@@ -525,6 +577,49 @@ const styles = {
     boxShadow: "0 24px 60px rgba(20,15,50,0.22), 0 2px 8px rgba(20,15,50,0.08)",
     display: "flex",
     flexDirection: "column",
+  },
+  // Connected mode (real Subjective Assessment tab): a normal full-width
+  // card that flows with the rest of the app's page -- no fake phone
+  // frame/status bar/home-indicator pill, no fixed 390x844 size or gray
+  // backdrop centering it. Aditi: "why it is showing like we are using
+  // phone ... make full screen like normal."
+  pageConnected: {
+    width: "100%",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif',
+  },
+  frameConnected: {
+    width: "100%",
+    maxWidth: "100%",
+    background: "#fff",
+    borderRadius: 16,
+    border: `1px solid ${DIVIDER}`,
+    overflow: "visible",
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+  },
+  contentConnected: {
+    overflowY: "visible",
+  },
+  bottomBarConnected: {
+    padding: "16px",
+    background: "#fff",
+  },
+  toastConnected: {
+    position: "fixed",
+    bottom: 24,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "rgba(28,28,40,0.92)",
+    color: "#fff",
+    fontSize: 13.5,
+    fontWeight: 600,
+    padding: "10px 18px",
+    borderRadius: 20,
+    animation: "fadeIn 0.15s ease-out",
+    zIndex: 50,
+    whiteSpace: "nowrap",
   },
   statusBar: {
     height: 44,
