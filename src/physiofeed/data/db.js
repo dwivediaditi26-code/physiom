@@ -494,8 +494,116 @@ export async function toggleEndorse(skillName) {
   return clone(_expertise);
 }
 export async function getExpertise() { return clone(_expertise); }
-export async function getEducation() { return clone(EDUCATION); }
-export async function getAchievements() { return clone(ACHIEVEMENTS); }
+
+// Feature (2026-08-19): real education/certification + achievements
+// editing, backed by supabase/add_profile_education_achievements.sql.
+// Same "real query first, fall back to the old placeholder list on ANY
+// failure" shape as getProfile() -- not signed in, table not created yet,
+// or a network blip all land on the same demo EDUCATION/ACHIEVEMENTS
+// list this card has always shown, so the About tab never looks empty or
+// broken before the migration runs. Once a clinician is signed in AND the
+// table exists, this switches to their real (possibly empty) list -- an
+// empty real list is a legitimate state (they just haven't added
+// anything yet), unlike the demo list which is placeholder text nobody
+// actually wrote.
+export async function getEducation() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(EDUCATION); // signed out / guest mode -- keep the demo list
+    const { data, error } = await supabase
+      .from("education_entries")
+      .select("id, title, subtitle, icon_name")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name }));
+  } catch (e) {
+    console.error("getEducation(): falling back to demo list --", e?.message || e);
+    return clone(EDUCATION);
+  }
+}
+
+// Adding/editing/deleting is NOT given the same silent-fallback treatment
+// as the read above -- same reasoning as updateProfile(): if a save here
+// silently failed and pretended to work, a clinician could walk away
+// thinking their real credentials were saved when they weren't. Errors
+// (not signed in, migration not run yet, RLS block) surface for real so
+// the edit modal can show them instead of quietly closing.
+export async function addEducationEntry({ title, subtitle, iconName }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your education & certifications.");
+  const { error } = await supabase.from("education_entries").insert({
+    user_id: uid, title: title.trim(), subtitle: (subtitle || "").trim(), icon_name: iconName || "GraduationCap",
+  });
+  if (error) throw error;
+  return getEducation();
+}
+export async function updateEducationEntry(id, { title, subtitle, iconName }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your education & certifications.");
+  const patch = {};
+  if (title !== undefined) patch.title = title.trim();
+  if (subtitle !== undefined) patch.subtitle = subtitle.trim();
+  if (iconName !== undefined) patch.icon_name = iconName;
+  const { error } = await supabase.from("education_entries").update(patch).eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getEducation();
+}
+export async function deleteEducationEntry(id) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your education & certifications.");
+  const { error } = await supabase.from("education_entries").delete().eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getEducation();
+}
+
+// Same real-first/demo-fallback shape as getEducation() above.
+export async function getAchievements() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(ACHIEVEMENTS);
+    const { data, error } = await supabase
+      .from("achievements")
+      .select("id, title, subtitle, icon_name, tone")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone }));
+  } catch (e) {
+    console.error("getAchievements(): falling back to demo list --", e?.message || e);
+    return clone(ACHIEVEMENTS);
+  }
+}
+export async function addAchievement({ title, subtitle, iconName, tone }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your achievements.");
+  const { error } = await supabase.from("achievements").insert({
+    user_id: uid, title: title.trim(), subtitle: (subtitle || "").trim(),
+    icon_name: iconName || "Trophy", tone: tone || "text-amber-500",
+  });
+  if (error) throw error;
+  return getAchievements();
+}
+export async function updateAchievement(id, { title, subtitle, iconName, tone }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your achievements.");
+  const patch = {};
+  if (title !== undefined) patch.title = title.trim();
+  if (subtitle !== undefined) patch.subtitle = subtitle.trim();
+  if (iconName !== undefined) patch.icon_name = iconName;
+  if (tone !== undefined) patch.tone = tone;
+  const { error } = await supabase.from("achievements").update(patch).eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getAchievements();
+}
+export async function deleteAchievement(id) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your achievements.");
+  const { error } = await supabase.from("achievements").delete().eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getAchievements();
+}
+
 export async function getExercises() { return clone(EXERCISES); }
 
 /* ---------------- people ---------------- */

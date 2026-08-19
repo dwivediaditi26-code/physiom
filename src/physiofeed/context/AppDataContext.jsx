@@ -53,12 +53,27 @@ export function AppDataProvider({ children }) {
   const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
   const uploadProfileImage = useCallback((blob) => db.uploadProfileImage(blob), []);
 
+  // Education & achievements editing (2026-08-19) -- each wrapper re-fetches
+  // the real list from db.js and updates local state, same "await the
+  // mutation, then set state from its return value" shape as every other
+  // action above. Errors are NOT caught here -- they propagate to the edit
+  // modal so it can show what actually went wrong instead of closing as if
+  // the save worked.
+  const addEducationEntry = useCallback(async (fields) => { setEducation(await db.addEducationEntry(fields)); }, []);
+  const updateEducationEntry = useCallback(async (id, fields) => { setEducation(await db.updateEducationEntry(id, fields)); }, []);
+  const deleteEducationEntry = useCallback(async (id) => { setEducation(await db.deleteEducationEntry(id)); }, []);
+  const addAchievement = useCallback(async (fields) => { setAchievements(await db.addAchievement(fields)); }, []);
+  const updateAchievement = useCallback(async (id, fields) => { setAchievements(await db.updateAchievement(id, fields)); }, []);
+  const deleteAchievement = useCallback(async (id) => { setAchievements(await db.deleteAchievement(id)); }, []);
+
   const value = {
     loading, posts, stories, people, notifications, evidence, communities,
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
+    addEducationEntry, updateEducationEntry, deleteEducationEntry,
+    addAchievement, updateAchievement, deleteAchievement,
     composerOpen, setComposerOpen, composerType, setComposerType,
   };
 

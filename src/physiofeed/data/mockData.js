@@ -160,17 +160,23 @@ export const EXERCISES = [
   { id: "e4", title: "Calf Raise", subtitle: "Strength", grad: "teal", likes: 98 },
 ];
 
+// "demo-" prefixed ids (2026-08-19, education/achievements editing feature)
+// mark these as placeholder rows -- db.js's addEducationEntry() etc. only
+// ever produce real numeric ids from the education_entries/achievements
+// tables, so a stable string prefix here is enough for the UI to tell "can
+// this be edited for real" apart from "still showing the placeholder list"
+// without a separate flag.
 export const EDUCATION = [
-  { title: "MPT — Orthopaedics", subtitle: "XYZ University, India", iconName: "GraduationCap" },
-  { title: "BPT — Physiotherapy", subtitle: "ABC College of Physiotherapy", iconName: "GraduationCap" },
-  { title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2", iconName: "Award" },
-  { title: "Dry Needling — Level 1", subtitle: "Kinetacore", iconName: "Award" },
+  { id: "demo-edu-1", title: "MPT — Orthopaedics", subtitle: "XYZ University, India", iconName: "GraduationCap" },
+  { id: "demo-edu-2", title: "BPT — Physiotherapy", subtitle: "ABC College of Physiotherapy", iconName: "GraduationCap" },
+  { id: "demo-edu-3", title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2", iconName: "Award" },
+  { id: "demo-edu-4", title: "Dry Needling — Level 1", subtitle: "Kinetacore", iconName: "Award" },
 ];
 
 export const ACHIEVEMENTS = [
-  { title: "Top Contributor", subtitle: "PhysioLink Community · 2024", iconName: "Trophy", tone: "text-amber-500" },
-  { title: "Research Contributor", subtitle: "5+ research posts published", iconName: "Award", tone: "text-violet-600" },
-  { title: "Most Helpful Physio", subtitle: "Top rated by peers", iconName: "Star", tone: "text-rose-500" },
+  { id: "demo-ach-1", title: "Top Contributor", subtitle: "PhysioLink Community · 2024", iconName: "Trophy", tone: "text-amber-500" },
+  { id: "demo-ach-2", title: "Research Contributor", subtitle: "5+ research posts published", iconName: "Award", tone: "text-violet-600" },
+  { id: "demo-ach-3", title: "Most Helpful Physio", subtitle: "Top rated by peers", iconName: "Star", tone: "text-rose-500" },
 ];
 
 export const EXPERTISE = [
