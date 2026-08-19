@@ -4390,4 +4390,26 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
   );
 }
 
-export { FunctionalScreenHub };
+// Feature (2026-08-19): PhysioFeed's Learn "Functional Screen" study mode
+// needs the same real test data FunctionalScreenHub already uses, in the
+// same {region: {label, tests}} shape KC_REGIONS/SPECIAL_TESTS_DATA
+// already use elsewhere (see sharedClinicalData.js) -- so its study grid
+// can reuse the exact same StudyShell/StudyGrid pattern ROM/MMT/Special/
+// Neuro already do, no new UI shape needed. Just re-exports the SAME
+// LUMBAR_TESTS/SHOULDER_TESTS/etc. consts this file already defines and
+// FunctionalScreenHub already renders -- nothing duplicated or
+// invented, real clinical content only.
+const FUNCTIONAL_SCREEN_DATA = {
+  lumbar:   { label: "Lumbar",     tests: LUMBAR_TESTS },
+  shoulder: { label: "Shoulder",   tests: SHOULDER_TESTS },
+  hip:      { label: "Hip",        tests: HIP_TESTS },
+  knee:     { label: "Knee",       tests: KNEE_TESTS },
+  ankle:    { label: "Ankle",      tests: ANKLE_TESTS },
+  cervical: { label: "Cervical",   tests: CERVICAL_TESTS },
+  thoracic: { label: "Thoracic",   tests: THORACIC_TESTS },
+  elbow:    { label: "Elbow",      tests: ELBOW_TESTS },
+  wrist:    { label: "Wrist/Hand", tests: WRIST_TESTS },
+  tmj:      { label: "TMJ",        tests: TMJ_TESTS },
+};
+
+export { FunctionalScreenHub, FUNCTIONAL_SCREEN_DATA };

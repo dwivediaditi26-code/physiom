@@ -7,14 +7,18 @@ import {
 import StudyMode from "./learn/StudyMode.jsx";
 import "./physiofeed.css";
 
-// These 4 Assessment Library items have real, structured per-item data
-// (technique/position/finding fields in sharedClinicalData.js), so they
-// get a second "Study" entry point into the read-only big-image study
-// mode, alongside their existing card that opens the real clinical
-// screen. Everything else (Demographics, Subjective, Posture,
-// Observation, Palpation, Outcome Measures) has no such per-item data,
-// so it keeps its single card as before -- no study mode invented for it.
-const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro"]);
+// These 7 Assessment Library / Advanced Assessment items have real,
+// structured per-item data (technique/position/finding fields in
+// sharedClinicalData.js or RegionalFunctionalScreens.jsx), so they get a
+// second "Study" entry point into the read-only big-image study mode,
+// alongside their existing card that opens the real clinical screen.
+// Outcome Measures/Kinetic Chain/Functional Movement joined ROM/MMT/
+// Special/Neuro here 2026-08-19 (Aditi's request: same grid treatment).
+// Everything else (Demographics, Subjective, Posture, Observation,
+// Palpation, and the rest of Advanced Assessment/Treatment & Exercise)
+// still has no such per-item data, so it keeps its single card as before
+// -- no study mode invented for it.
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the

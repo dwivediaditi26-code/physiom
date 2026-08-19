@@ -14,8 +14,8 @@ export default function StudyDetail({ item, onBack, children }) {
         <ChevronLeft size={18}/> Back
       </button>
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div className="bg-slate-50 flex items-center justify-center">
-          <StudyImage name={item.image} full/>
+        <div className="bg-slate-50 flex items-center justify-center" style={item.emoji ? { minHeight: 160 } : undefined}>
+          {item.emoji ? <span className="text-8xl py-6" aria-hidden="true">{item.emoji}</span> : <StudyImage name={item.image} full/>}
         </div>
         <div className="p-4">
           <div className="text-xl font-semibold text-slate-900">{item.title}</div>

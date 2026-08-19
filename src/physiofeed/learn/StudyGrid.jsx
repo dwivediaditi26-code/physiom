@@ -9,6 +9,12 @@ import StudyImage from "./StudyImage.jsx";
 // where the item has genuine discrete fields worth calling out. Tapping a
 // tile opens the full detail page for that item (StudyDetail), it does
 // not expand inline.
+//
+// `item.emoji` (2026-08-19, Outcome Measures/Functional Screen study
+// mode): those datasets have a real emoji icon per item (same one the
+// actual clinical screen shows) but no uploaded Cloudinary photo -- shows
+// the real emoji large instead of StudyImage's "no image" placeholder.
+// ROM/MMT/Special/Neuro cards don't set this, so they're unaffected.
 export default function StudyGrid({ items, onSelect }) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -19,8 +25,8 @@ export default function StudyGrid({ items, onSelect }) {
           aria-label={`Open ${item.title}`}
           className="text-left bg-white border border-slate-200 rounded-2xl p-3"
         >
-          <div className="h-32 w-full rounded-xl overflow-hidden bg-slate-100 mb-2.5">
-            <StudyImage name={item.image} size={128}/>
+          <div className="h-32 w-full rounded-xl overflow-hidden bg-slate-100 mb-2.5 flex items-center justify-center">
+            {item.emoji ? <span className="text-5xl" aria-hidden="true">{item.emoji}</span> : <StudyImage name={item.image} size={128}/>}
           </div>
           <div className="text-sm font-semibold text-slate-900 leading-tight line-clamp-2">{item.title}</div>
           {item.subtitle && <div className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</div>}

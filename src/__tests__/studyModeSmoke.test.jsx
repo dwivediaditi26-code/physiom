@@ -19,12 +19,14 @@ describe("Learn tab — Study mode", () => {
 
     expect(screen.getByText("Assessment Library")).toBeTruthy();
 
-    // Of the 10 Assessment Library cards, only ROM/MMT/Special/Neuro get a
-    // "Study mode" button, and ROM is the first of those four in display
-    // order (Demographics/Subjective/Posture/Observation/Palpation come
-    // first but aren't studyable) -- so the first match is ROM's.
+    // ROM/MMT/Special/Neuro (Assessment Library) plus, as of 2026-08-19,
+    // Outcome Measures (Assessment Library) and Kinetic Chain/Functional
+    // Movement (Advanced Assessment) all get a "Study mode" button -- 7
+    // total. ROM is the first of those seven in display order
+    // (Demographics/Subjective/Posture/Observation/Palpation come first
+    // but aren't studyable) -- so the first match is still ROM's.
     const studyBtns = screen.getAllByText(/study mode/i);
-    expect(studyBtns.length).toBe(4);
+    expect(studyBtns.length).toBe(7);
     fireEvent.click(studyBtns[0]);
 
     // Grid overview: real ROM region pills + square thumbnails, each
