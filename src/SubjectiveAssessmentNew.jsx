@@ -130,6 +130,24 @@ const DEMO_AI_DATA = {
   numbness: "No neurological symptoms",
 };
 
+// Flat list of every field id across all sections, e.g. for building the
+// real-data storage-key map below.
+const ALL_FIELD_IDS = SECTIONS.flatMap((s) => s.fields.map((f) => f.id));
+
+// When mounted with real patient `data`/`set` props (the real Subjective
+// Assessment tab), this component's own fields are stored under new
+// `simple_*` keys rather than reusing the old engine's field ids
+// (cc_main/lx_loc/rf_malignancy/etc.) -- those old ids carry specific
+// meaning for the reasoning engine, SOAP note builder and red-flag
+// detection that this simplified form doesn't attempt to replicate, so
+// reusing them risks writing values downstream code doesn't expect.
+// `chiefComplaint` is the one field mirrored into the old `cc_main` key
+// too, since that's a plain free-text field elsewhere in the app already
+// (workflow-stepper "done" check, patient-list chief-complaint preview) --
+// safe to mirror verbatim, not reinterpreted by anything.
+const STORAGE_PREFIX = "simple_";
+const storageKey = (fieldId) => STORAGE_PREFIX + fieldId;
+
 function useClock() {
   const [time, setTime] = useState(new Date());
   useEffect(() => {
@@ -256,17 +274,41 @@ function FieldRow({
   );
 }
 
-export default function SubjectiveAssessmentDemo() {
-  const [values, setValues] = useState({});
+// `data`/`set` are optional -- pass them (the same props the old
+// SubjectiveModule took) to wire this into a real patient record; the real
+// Subjective Assessment tab in AppFull.jsx does this now. Omit them (as
+// SubjectiveCompare.jsx's preview column still does) to get the original
+// self-contained demo behaviour with its own local state and demo AI-fill
+// button -- nothing about the preview screen changes.
+export default function SubjectiveAssessmentDemo({ data, set } = {}) {
+  const connected = !!(data && set);
+
+  const [localValues, setLocalValues] = useState({});
+  const [localRegion, setLocalRegion] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [aiFilled, setAiFilled] = useState(false);
   const [toast, setToast] = useState("");
-  // Which body region is selected -- drives the region-specific option
-  // lists (max 10 each, see subjectiveRegionOptions.js) for Location,
-  // Mechanism, Aggravating Factors and Relieving Factors, so those don't
-  // need to be broken into the old design's many per-region sub-fields.
-  const [selectedRegion, setSelectedRegion] = useState(null);
+
+  // Single source of truth for read access, regardless of mode -- avoids
+  // every field-reading call site below needing its own if/else.
+  const values = connected
+    ? Object.fromEntries(
+        ALL_FIELD_IDS.map((id) => {
+          if (id === "chiefComplaint") {
+            // Read-only fallback: a patient assessed before this design
+            // existed may already have a chief complaint saved under the
+            // old engine's cc_main field. Show it here rather than looking
+            // blank -- the first edit here re-saves it under this design's
+            // own key too (see updateValue's cc_main mirror), so this
+            // fallback only ever matters until that first edit.
+            return [id, data.simple_chiefComplaint || data.cc_main || ""];
+          }
+          return [id, data[storageKey(id)] || ""];
+        })
+      )
+    : localValues;
+  const selectedRegion = connected ? data.simple_region || null : localRegion;
 
   // Region counts as one more thing to fill in, same as any other field.
   const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0) + 1;
@@ -284,7 +326,13 @@ export default function SubjectiveAssessmentDemo() {
   }
 
   function updateValue(id, val) {
-    setValues((v) => ({ ...v, [id]: val }));
+    if (connected) {
+      const patch = { [storageKey(id)]: val };
+      if (id === "chiefComplaint") patch.cc_main = val;
+      set(patch);
+    } else {
+      setLocalValues((v) => ({ ...v, [id]: val }));
+    }
   }
 
   function deactivateField() {
@@ -306,21 +354,28 @@ export default function SubjectiveAssessmentDemo() {
     setOpenDropdown(null);
   }
 
+  // Demo-only: fills canned example data so the preview isn't empty. Never
+  // shown when connected to a real patient -- filling a real chart with
+  // fake "AI extracted" postpartum-back-pain text would be actively
+  // misleading, so this whole feature is preview-only for now (see the
+  // header button below, which is hidden when `connected`).
   function toggleAI() {
     if (!aiFilled) {
-      setValues((v) => ({ ...v, ...DEMO_AI_DATA }));
-      setSelectedRegion("lumbar");
+      setLocalValues((v) => ({ ...v, ...DEMO_AI_DATA }));
+      setLocalRegion("lumbar");
       setAiFilled(true);
       showToast("AI extracted 9 fields");
     } else {
-      setValues({});
-      setSelectedRegion(null);
+      setLocalValues({});
+      setLocalRegion(null);
       setAiFilled(false);
     }
   }
 
   function selectRegion(id) {
-    setSelectedRegion((prev) => (prev === id ? null : id));
+    const next = selectedRegion === id ? null : id;
+    if (connected) set({ simple_region: next });
+    else setLocalRegion(next);
     setOpenDropdown(null);
   }
 
@@ -340,12 +395,14 @@ export default function SubjectiveAssessmentDemo() {
               <div style={styles.headerTitle}>Subjective Assessment</div>
               <div style={styles.headerSubtitle}>History &amp; Patient Report</div>
             </div>
-            <button
-              style={{ ...styles.aiPill, opacity: aiFilled ? 1 : 0.75 }}
-              onClick={toggleAI}
-            >
-              ✨ AI Extracted
-            </button>
+            {!connected && (
+              <button
+                style={{ ...styles.aiPill, opacity: aiFilled ? 1 : 0.75 }}
+                onClick={toggleAI}
+              >
+                ✨ AI Extracted
+              </button>
+            )}
             <button style={styles.menuBtn} aria-label="More">
               ⋮
             </button>

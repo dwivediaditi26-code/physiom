@@ -89,13 +89,22 @@ describe("Screening Workflow stepper — 9 steps, each its own page", () => {
     expect(screen.getByText("🎤")).toBeInTheDocument();
   });
 
-  it("Subjective step shows the form header but not the AI buttons or a duplicate Body Chart tab", async () => {
+  it("Subjective step shows the new simplified form header, not the old AI buttons or a duplicate Body Chart tab", async () => {
+    // 2026-08-19: this step now renders the new simplified Subjective
+    // design (SubjectiveAssessmentNew.jsx), not the old SubjectiveModule --
+    // "History & Complaint" was the old form's header; swapped for the new
+    // one's own header text. The old design's "✦"/duplicate Body Chart tab
+    // never existed in the new design to begin with, and its own demo
+    // "✨ AI Extracted" fill button is hidden when connected to a real
+    // patient (see SubjectiveAssessmentNew.jsx) -- both still correctly
+    // absent here, just for a different reason than before.
     await createOrthoPatient();
     fireEvent.click(screen.getByTestId("wf-step-subjective"));
     await waitFor(() => {
-      expect(screen.getByText("History & Complaint")).toBeInTheDocument();
+      expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
     });
     expect(screen.queryByText("✦")).not.toBeInTheDocument();
+    expect(screen.queryByText("✨ AI Extracted")).not.toBeInTheDocument();
     // Body Chart now lives only on its own combined Chart/Palpation step.
     expect(screen.queryByText("🫁 Body Chart")).not.toBeInTheDocument();
   });

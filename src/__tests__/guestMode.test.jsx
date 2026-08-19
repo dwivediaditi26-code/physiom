@@ -38,34 +38,29 @@ describe("Guest Mode -- real app, no login wall on entry", () => {
     expect(screen.getByText(/Guest mode/i)).toBeInTheDocument();
   });
 
-  it("clicking an AI-backed feature shows a sign-in prompt instead of running it", async () => {
+  it("Home's 'Patient Intake' quick action opens the Subjective form for a guest with no sign-in gate", async () => {
+    // 2026-08-19: the Subjective tab now renders the new simplified design
+    // (SubjectiveAssessmentNew.jsx), which has no AI-triggering action at
+    // all (its own demo-only "AI Extracted" fill button only exists when
+    // NOT connected to a real patient -- see that file). The old
+    // SubjectiveModule's requireAuth("AI Patient Intake") gate lived
+    // entirely inside that removed AI panel, so there's nothing left here
+    // for a guest to be gated on -- "Patient Intake" now behaves like any
+    // other ordinary navigation for guests, same as "Assess Patient" below.
+    // Real AI gating for guests is still covered separately -- AIAssistant
+    // ("Clinical Assistant" quick action) keeps its own requireAuth check
+    // untouched by this change.
     await enterGuestMode();
-    // Home's AI Assistant quick-launch -> Patient Intake navigates to
-    // Subjective with autoOpenAI, which is gated by requireAuth().
     fireEvent.click(screen.getByText("Patient Intake"));
     await waitFor(() => {
-      expect(screen.getByText(/Sign in to use AI Patient Intake/i)).toBeInTheDocument();
+      expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
     });
+    expect(screen.queryByText(/Sign in to use/i)).not.toBeInTheDocument();
   });
 
   it("the guest banner's CTA exits guest mode back to the real login screen", async () => {
     await enterGuestMode();
     fireEvent.click(screen.getByText("Sign in / Create free account →"));
-    await waitFor(() => {
-      expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
-    });
-  });
-
-  it("the AI sign-in prompt's CTA also exits guest mode back to login", async () => {
-    await enterGuestMode();
-    fireEvent.click(screen.getByText("Patient Intake"));
-    await screen.findByText(/Sign in to use AI Patient Intake/i);
-    // The persistent guest banner and this popup share the same CTA copy
-    // by design (consistent messaging) -- the popup's is the first one in
-    // the tree (AuthRequiredPrompt renders earlier in AppInner's JSX than
-    // the header's guest banner).
-    const ctas = screen.getAllByText("Sign in / Create free account →");
-    fireEvent.click(ctas[0]);
     await waitFor(() => {
       expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
     });
@@ -77,8 +72,9 @@ describe("Guest Mode -- real app, no login wall on entry", () => {
     // "Subjective Assessment" also appears as a nav-item label regardless
     // of which screen is active, so assert on content unique to the
     // rendered Subjective screen itself.
+    // (2026-08-19: new design's header text, was "History & Complaint".)
     await waitFor(() => {
-      expect(screen.getByText("History & Complaint")).toBeInTheDocument();
+      expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
     });
     expect(screen.queryByText(/Sign in to use/i)).not.toBeInTheDocument();
   });

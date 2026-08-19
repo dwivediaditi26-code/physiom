@@ -50,8 +50,11 @@ describe("region selection persists across navigation", () => {
     // Navigate away to Subjective and back to Region -- old bug: local
     // state reset on remount because data.cx_selected_regions was never
     // actually written.
+    // (2026-08-19: Subjective step now renders the new simplified design,
+    // not the old SubjectiveModule -- "History & Complaint" was that old
+    // form's header; the new one's is "History & Patient Report".)
     fireEvent.click(screen.getByTestId("wf-step-subjective"));
-    await waitFor(() => expect(screen.getByText("History & Complaint")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("History & Patient Report")).toBeInTheDocument());
     fireEvent.click(screen.getByTestId("wf-step-region"));
     await screen.findByText("Select Body Region");
     await screen.findByRole("button", { name: /Remove Right Knee/i });

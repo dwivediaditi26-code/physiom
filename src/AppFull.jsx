@@ -69,6 +69,7 @@ const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
 const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
+const LazySubjectiveNew = lazy(() => import("./SubjectiveAssessmentNew.jsx"));
 const LazySubjectiveCompare = lazy(() => import("./SubjectiveCompare.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
@@ -1912,10 +1913,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
                 <div>
-                  <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={active==="subjective"?navContext:{}} requireAuth={requireAuth} viewStep="form"/></Suspense>
-                  {subjBodyChartTab && (
-                    <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
-                  )}
+                  {/* 2026-08-19: swapped in the simplified redesign at Aditi's
+                      request (real patient data now, via data/set -- same
+                      props the old SubjectiveModule used, so autosave/
+                      Supabase sync keep working exactly as before since
+                      those watch the whole `data` object generically, not
+                      specific field names). Its own fields are stored under
+                      new simple_* keys (see SubjectiveAssessmentNew.jsx) to
+                      avoid colliding with the old engine's field semantics;
+                      chiefComplaint is mirrored into cc_main so the
+                      workflow-stepper "done" check and the patient-list
+                      chief-complaint preview still light up. The old
+                      SubjectiveModule/LazySubjective is untouched and still
+                      reachable from the sidebar's "Subjective — New vs Old"
+                      compare screen (SubjectiveCompare.jsx) -- not removed,
+                      per instruction. Body Chart is no longer inlined here
+                      (the new design has no internal tab for it) -- still
+                      available via the separate "Chart/Palp" workflow step. */}
+                  <Suspense fallback={<TabFallback/>}><LazySubjectiveNew data={data} set={set}/></Suspense>
                 </div>
               ):tests==="PALPATION_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="palpation"?navContext:{}}/></Suspense>
