@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { REGIONS, REGION_FIELD_OPTIONS } from "./subjectiveRegionOptions.js";
 
 const PURPLE = "#6C4DFF";
 const PURPLE_LIGHT = "#F3F1FC";
@@ -31,7 +32,7 @@ const SECTIONS = [
         id: "mechanism",
         icon: "💥",
         label: "Mechanism of Injury",
-        options: ["Post-partum", "Sports injury", "Road traffic accident", "Fall", "Repetitive strain", "Insidious / unknown", "Post-surgical"],
+        dynamic: true,
       },
       { id: "painIntensity", icon: "📊", label: "Pain Intensity (Now)" },
       {
@@ -45,7 +46,7 @@ const SECTIONS = [
           "Chemical — constant, unrelated to movement",
         ],
       },
-      { id: "location", icon: "📍", label: "Location" },
+      { id: "location", icon: "📍", label: "Location", dynamic: true },
       {
         id: "radiation",
         icon: "🔄",
@@ -65,8 +66,8 @@ const SECTIONS = [
     title: "SYMPTOM BEHAVIOUR",
     icon: "⚙️",
     fields: [
-      { id: "aggravating", icon: "⚡", label: "Aggravating Factors" },
-      { id: "relieving", icon: "🍃", label: "Relieving Factors" },
+      { id: "aggravating", icon: "⚡", label: "Aggravating Factors", dynamic: true },
+      { id: "relieving", icon: "🍃", label: "Relieving Factors", dynamic: true },
       {
         id: "hour24",
         icon: "🕐",
@@ -227,7 +228,7 @@ function FieldRow({
           <span style={styles.placeholder}>Tap to add</span>
         )}
       </div>
-      {field.options && (
+      {field.options && field.options.length > 0 && (
         <button
           type="button"
           aria-label={`Choose ${field.label} from list`}
@@ -261,9 +262,16 @@ export default function SubjectiveAssessmentDemo() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [aiFilled, setAiFilled] = useState(false);
   const [toast, setToast] = useState("");
+  // Which body region is selected -- drives the region-specific option
+  // lists (max 10 each, see subjectiveRegionOptions.js) for Location,
+  // Mechanism, Aggravating Factors and Relieving Factors, so those don't
+  // need to be broken into the old design's many per-region sub-fields.
+  const [selectedRegion, setSelectedRegion] = useState(null);
 
-  const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0);
-  const completed = Object.values(values).filter((v) => v && v.trim()).length;
+  // Region counts as one more thing to fill in, same as any other field.
+  const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0) + 1;
+  const completed =
+    Object.values(values).filter((v) => v && v.trim()).length + (selectedRegion ? 1 : 0);
 
   function showToast(msg) {
     setToast(msg);
@@ -301,12 +309,19 @@ export default function SubjectiveAssessmentDemo() {
   function toggleAI() {
     if (!aiFilled) {
       setValues((v) => ({ ...v, ...DEMO_AI_DATA }));
+      setSelectedRegion("lumbar");
       setAiFilled(true);
       showToast("AI extracted 9 fields");
     } else {
       setValues({});
+      setSelectedRegion(null);
       setAiFilled(false);
     }
+  }
+
+  function selectRegion(id) {
+    setSelectedRegion((prev) => (prev === id ? null : id));
+    setOpenDropdown(null);
   }
 
   return (
@@ -345,26 +360,61 @@ export default function SubjectiveAssessmentDemo() {
 
         {/* Scrollable content */}
         <div style={styles.content}>
+          {/* Body Region — picking one personalises the ▾ option lists for
+              Location / Mechanism / Aggravating / Relieving below instead
+              of showing every region's sub-fields at once. */}
+          <div>
+            <div style={styles.sectionHeader}>
+              <span style={styles.sectionIcon}>🧭</span>
+              <span style={styles.sectionTitle}>BODY REGION</span>
+            </div>
+            <div style={styles.regionWrap}>
+              {!selectedRegion && (
+                <div style={styles.regionHint}>Select a region to personalise the options below</div>
+              )}
+              <div style={styles.regionChipRow}>
+                {REGIONS.map((r) => {
+                  const on = selectedRegion === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => selectRegion(r.id)}
+                      style={{ ...styles.regionChip, ...(on ? styles.regionChipActive : {}) }}
+                    >
+                      <span>{r.icon}</span> {r.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           {SECTIONS.map((section) => (
             <div key={section.id}>
               <div style={styles.sectionHeader}>
                 <span style={styles.sectionIcon}>{section.icon}</span>
                 <span style={styles.sectionTitle}>{section.title}</span>
               </div>
-              {section.fields.map((field) => (
-                <FieldRow
-                  key={field.id}
-                  field={field}
-                  value={values[field.id]}
-                  isEditing={editingId === field.id}
-                  onActivate={activateField}
-                  onChange={updateValue}
-                  onDeactivate={deactivateField}
-                  isDropdownOpen={openDropdown === field.id}
-                  onToggleDropdown={toggleDropdown}
-                  onSelectOption={selectOption}
-                />
-              ))}
+              {section.fields.map((field) => {
+                const resolvedField = field.dynamic
+                  ? { ...field, options: selectedRegion ? REGION_FIELD_OPTIONS[selectedRegion]?.[field.id] || [] : [] }
+                  : field;
+                return (
+                  <FieldRow
+                    key={field.id}
+                    field={resolvedField}
+                    value={values[field.id]}
+                    isEditing={editingId === field.id}
+                    onActivate={activateField}
+                    onChange={updateValue}
+                    onDeactivate={deactivateField}
+                    isDropdownOpen={openDropdown === field.id}
+                    onToggleDropdown={toggleDropdown}
+                    onSelectOption={selectOption}
+                  />
+                );
+              })}
             </div>
           ))}
           <div style={{ height: 8 }} />
@@ -506,6 +556,27 @@ const styles = {
     fontWeight: 700,
     color: PURPLE,
     letterSpacing: 0.6,
+  },
+  regionWrap: { padding: "10px 16px 14px" },
+  regionHint: { fontSize: 12.5, color: TEXT_GRAY, marginBottom: 10 },
+  regionChipRow: { display: "flex", flexWrap: "wrap", gap: 8 },
+  regionChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    border: `1.5px solid ${PURPLE_BORDER}`,
+    background: "#fff",
+    color: TEXT_DARK,
+    fontSize: 13,
+    fontWeight: 600,
+    padding: "7px 12px",
+    borderRadius: 999,
+    cursor: "pointer",
+  },
+  regionChipActive: {
+    border: `1.5px solid ${PURPLE}`,
+    background: PURPLE,
+    color: "#fff",
   },
   fieldRow: {
     display: "flex",
