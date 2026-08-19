@@ -172,18 +172,105 @@ const OLD_REGION_BASE_TO_ID = {
   "TMJ": "tmj",
   "Head / Face": "head",
 };
-function regionIdFromOldSelection(cxSelectedRegionsJson) {
+function deriveOldRegionSelection(cxSelectedRegionsJson) {
   let list = [];
   try {
     list = JSON.parse(cxSelectedRegionsJson || "[]");
   } catch {
-    return null;
+    return { id: null, side: null };
   }
   for (const key of list) {
-    const base = String(key).replace(/\s*\((L|R)\)\s*$/, "").trim();
-    if (OLD_REGION_BASE_TO_ID[base]) return OLD_REGION_BASE_TO_ID[base];
+    const str = String(key);
+    const sideMatch = str.match(/\((L|R)\)\s*$/);
+    const base = str.replace(/\s*\((L|R)\)\s*$/, "").trim();
+    if (OLD_REGION_BASE_TO_ID[base]) {
+      return { id: OLD_REGION_BASE_TO_ID[base], side: sideMatch ? sideMatch[1] : null };
+    }
   }
-  return null;
+  return { id: null, side: null };
+}
+
+// The real AI Patient Intake step (SubjectiveObjective.jsx's viewStep=
+// "ai", still fully real -- narrative/voice -> AI extraction -> clinician
+// review -> apply) is untouched by this redesign and keeps writing its
+// results under the *old* engine's field ids (aiIntakeParser.js's
+// mapParseResultToUpdates). Aditi asked for that real AI output to also
+// show up in this simplified form, not just Chief Complaint. Region-
+// specific old fields are prefixed (e.g. "lx_loc_notes" for Lumbar) --
+// this table resolves this file's region id (+ side, where the old model
+// tracks Shoulder/Knee per side) to that prefix. Regions the AI parser
+// has no coverage for (Thorax/Ribs/TMJ/Head) resolve to no prefix, so
+// those fields simply have nothing to fall back to -- same as before.
+const REGION_ID_TO_PFX = {
+  cervical: () => "cx",
+  lumbar: () => "lx",
+  thoracic: () => "tx",
+  shoulder: (side) => (side === "L" ? "shl" : "shr"),
+  knee: (side) => (side === "L" ? "knl" : "knr"),
+  hip: () => "hp",
+  ankle: () => "af",
+  elbow: () => "ew",
+  wrist: () => "ew",
+};
+
+const AI_SEP = "|||";
+const joinSep = (v) => (v ? String(v).split(AI_SEP).filter(Boolean).join(", ") : "");
+
+// Read-only fallback for a field this design owns (simple_<id>) from
+// whatever the real AI intake step already wrote under the old engine's
+// field ids -- exactly the same "show it until the clinician edits it
+// here" pattern chiefComplaint/cc_main already uses (see the `values`
+// computation below), just extended to every field the AI parser has a
+// reasonable source for. Deliberately has NO case for "redFlags" or
+// "medication": mapParseResultToUpdates itself never auto-writes a red-
+// flag verdict or a medication enum for the same reason (forcing AI
+// output into a safety-relevant field or a fixed enum is a real
+// hallucination/mismatch risk) -- this form keeps that same rule rather
+// than inventing a new path around it.
+function aiFallbackValue(fieldId, data, pfx) {
+  switch (fieldId) {
+    case "onset":
+      return data.cc_onset || "";
+    case "duration":
+      return data.cc_duration || "";
+    case "painIntensity":
+      return data.cc_vas_now || "";
+    case "painBehaviour":
+      return (pfx && data[pfx + "_pattern"]) || joinSep(data.cc_quality);
+    case "location":
+      return (pfx && data[pfx + "_loc_notes"]) || "";
+    case "mechanism":
+      return (pfx && data[pfx + "_moi_notes"]) || "";
+    case "radiation":
+      return (pfx && data[pfx + "_radiation"]) || "";
+    case "numbness": {
+      if (!pfx) return "";
+      const key = pfx === "cx" ? "cx_arm_neuro" : pfx === "lx" ? "lx_neuro_quality" : pfx + "_neuro";
+      return joinSep(data[key]);
+    }
+    case "aggravating":
+      return (pfx && data[pfx + "_agg_notes"]) || "";
+    case "relieving":
+      return (pfx && data[pfx + "_rel_notes"]) || "";
+    case "hour24":
+      return (pfx && data[pfx + "_24hr"]) || "";
+    case "medicalHistory":
+      return data.pmh_notes || "";
+    case "prevEpisodes":
+      return data.hx_episodes || "";
+    case "prevTreatment":
+      return data.hx_notes || data.hx_resolve || "";
+    case "patientGoals": {
+      const parts = [];
+      if (data.goal_main) parts.push(data.goal_main);
+      if (data.goal_concern) parts.push("Concern: " + data.goal_concern);
+      return parts.join("; ");
+    }
+    case "functionalLimitations":
+      return (pfx && data[pfx + "_fn_notes"]) || "";
+    default:
+      return "";
+  }
 }
 
 function useClock() {
@@ -328,28 +415,36 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
   const [aiFilled, setAiFilled] = useState(false);
   const [toast, setToast] = useState("");
 
+  // Connected mode: read the region (and side, for Shoulder/Knee) already
+  // picked on the separate "Body Regions" step instead of maintaining its
+  // own (no picker rendered here at all, see below). Disconnected/preview
+  // mode: its own local pick, no old-engine data to derive from.
+  const oldRegionSel = connected ? deriveOldRegionSelection(data.cx_selected_regions) : null;
+  const selectedRegion = connected ? oldRegionSel.id : localRegion;
+  // Which old-engine field prefix (e.g. "lx" for Lumbar) the real AI
+  // Patient Intake step would have written region-specific results under,
+  // for this same region -- null for regions the AI parser has no
+  // coverage for (Thorax/Ribs/TMJ/Head), same limitation the AI step
+  // itself already has.
+  const aiPfx = selectedRegion ? REGION_ID_TO_PFX[selectedRegion]?.(oldRegionSel.side) || null : null;
+
   // Single source of truth for read access, regardless of mode -- avoids
-  // every field-reading call site below needing its own if/else.
+  // every field-reading call site below needing its own if/else. In
+  // connected mode, a field this design hasn't been edited under yet
+  // (simple_<id> empty) falls back to whatever the real AI Patient Intake
+  // step already extracted under the old engine's field ids -- read-only
+  // until the clinician actually edits it here, same pattern chiefComplaint
+  // /cc_main already used before this was generalised to every field.
   const values = connected
     ? Object.fromEntries(
         ALL_FIELD_IDS.map((id) => {
-          if (id === "chiefComplaint") {
-            // Read-only fallback: a patient assessed before this design
-            // existed may already have a chief complaint saved under the
-            // old engine's cc_main field. Show it here rather than looking
-            // blank -- the first edit here re-saves it under this design's
-            // own key too (see updateValue's cc_main mirror), so this
-            // fallback only ever matters until that first edit.
-            return [id, data.simple_chiefComplaint || data.cc_main || ""];
-          }
-          return [id, data[storageKey(id)] || ""];
+          const own = data[storageKey(id)];
+          if (own) return [id, own];
+          if (id === "chiefComplaint") return [id, data.cc_main || ""];
+          return [id, aiFallbackValue(id, data, aiPfx) || ""];
         })
       )
     : localValues;
-  // Connected mode: read the region already picked on the separate "Body
-  // Regions" step instead of maintaining its own (no picker rendered here
-  // at all, see below). Disconnected/preview mode: its own local pick.
-  const selectedRegion = connected ? regionIdFromOldSelection(data.cx_selected_regions) : localRegion;
 
   // Region only counts as "one more field" in the standalone preview,
   // where this component owns picking it. Connected mode doesn't own that
@@ -468,7 +563,7 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
               a real patient, region is already picked on the separate
               "Body Regions" workflow step; showing a second picker here
               would just be a confusing duplicate, so this reads that
-              existing selection instead (see regionIdFromOldSelection
+              existing selection instead (see deriveOldRegionSelection
               above) rather than rendering its own chip row. */}
           {!connected && (
             <div>
