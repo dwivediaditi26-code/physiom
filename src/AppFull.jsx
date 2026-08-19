@@ -69,6 +69,7 @@ const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
 const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
+const LazySubjectiveCompare = lazy(() => import("./SubjectiveCompare.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazySOAP          = lazy(() => import("./lazy_clinical.jsx"));
@@ -1035,6 +1036,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
+        <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
         <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
@@ -1695,6 +1697,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="subj_region" && (
             <div style={{marginBottom:22}}>
               <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={{}} requireAuth={requireAuth} viewStep="region"/></Suspense>
+            </div>
+          )}
+
+          {/* Subjective — New vs Old comparison. Review-only screen for
+              evaluating a proposed redesign against the current live
+              Subjective Assessment, side by side. Fully isolated from any
+              real patient data (own local state inside SubjectiveCompare.jsx)
+              -- nothing entered on either side here is saved. */}
+          {active==="subjective_compare" && (
+            <div style={{marginBottom:22}}>
+              <Suspense fallback={<TabFallback/>}><LazySubjectiveCompare onBack={()=>navTo("subjective")}/></Suspense>
             </div>
           )}
 
