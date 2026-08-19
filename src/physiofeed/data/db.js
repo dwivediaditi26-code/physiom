@@ -555,6 +555,13 @@ export async function getProfile() {
         quote: "Welcome to PhysioFeed.",
         followers_count: 0,
         following_count: 0,
+        // About-card fields (2026-08-19) -- deliberately blank/false, not
+        // the old hardcoded "5+ years of experience" placeholder text. See
+        // add_profile_about_fields.sql's header comment for why.
+        experience: "",
+        languages: "",
+        memberships: "",
+        available_for_consults: false,
       };
       const { data: inserted } = await supabase.from("profiles").insert(defaults).select().single();
       row = inserted || defaults;
@@ -574,6 +581,14 @@ export async function getProfile() {
       // undefined (not null) on rows from before add_profile_avatar.sql runs
       // -- Avatar.jsx treats any falsy photoUrl as "show the gradient instead".
       avatarUrl: row.avatar_url || null,
+      // "" (not undefined) on rows from before add_profile_about_fields.sql
+      // runs -- AboutCard.jsx already treats an empty string as "don't show
+      // this row", same as it would for a real user who just hasn't filled
+      // it in yet.
+      experience: row.experience || "",
+      languages: row.languages || "",
+      memberships: row.memberships || "",
+      availableForConsults: !!row.available_for_consults,
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
@@ -592,10 +607,13 @@ export async function updateProfile(fields) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your profile.");
   const patch = {};
-  for (const key of ["name", "role", "location", "bio", "quote", "gradient"]) {
+  for (const key of ["name", "role", "location", "bio", "quote", "gradient", "experience", "languages", "memberships"]) {
     if (fields[key] !== undefined) patch[key] = fields[key];
   }
   if (fields.avatarUrl !== undefined) patch.avatar_url = fields.avatarUrl;
+  // Boolean, so this has to check `!== undefined` rather than truthiness --
+  // `false` is a real, meaningful value here (not "field omitted").
+  if (fields.availableForConsults !== undefined) patch.available_for_consults = fields.availableForConsults;
   if (fields.name) {
     patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
   }

@@ -22,6 +22,12 @@ const LABEL = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide 
 // written to your profile row when you hit Save (see add_profile_avatar.sql
 // for the migration this needs). The gradient color picker stays as the
 // fallback avatar for whenever there's no photo (or it fails to load).
+//
+// Feature (2026-08-19): the About card (AboutCard.jsx) was the last piece
+// of the profile with no way to edit it -- also opens this same modal
+// (via its own pencil button) rather than a separate one, since these
+// fields are just more columns on the same profiles row. Requires
+// supabase/add_profile_about_fields.sql.
 export default function EditProfileModal({ profile, onClose }) {
   const { updateProfile, uploadProfileImage } = useAppData();
   const [name, setName] = useState(profile.name || "");
@@ -29,6 +35,10 @@ export default function EditProfileModal({ profile, onClose }) {
   const [location, setLocation] = useState(profile.location || "");
   const [bio, setBio] = useState(profile.bio || "");
   const [quote, setQuote] = useState(profile.quote || "");
+  const [experience, setExperience] = useState(profile.experience || "");
+  const [languages, setLanguages] = useState(profile.languages || "");
+  const [memberships, setMemberships] = useState(profile.memberships || "");
+  const [availableForConsults, setAvailableForConsults] = useState(!!profile.availableForConsults);
   const [gradient, setGradient] = useState(profile.gradient || "violet");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -61,7 +71,10 @@ export default function EditProfileModal({ profile, onClose }) {
     setSaving(true);
     setError(null);
     try {
-      await updateProfile({ name: name.trim(), role: role.trim(), location: location.trim(), bio: bio.trim(), quote: quote.trim(), gradient, avatarUrl });
+      await updateProfile({
+        name: name.trim(), role: role.trim(), location: location.trim(), bio: bio.trim(), quote: quote.trim(), gradient, avatarUrl,
+        experience: experience.trim(), languages: languages.trim(), memberships: memberships.trim(), availableForConsults,
+      });
       onClose();
     } catch (e) {
       setError(e.message || "Couldn't save your profile -- please try again.");
@@ -139,6 +152,20 @@ export default function EditProfileModal({ profile, onClose }) {
 
         <label className={LABEL}>Quote</label>
         <input value={quote} onChange={(e) => setQuote(e.target.value)} className={`${FIELD} mb-3`} />
+
+        <label className={LABEL}>Experience</label>
+        <input value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 5+ years of experience" className={`${FIELD} mb-3`} />
+
+        <label className={LABEL}>Languages</label>
+        <input value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="e.g. English, Hindi, Marathi" className={`${FIELD} mb-3`} />
+
+        <label className={LABEL}>Memberships</label>
+        <input value={memberships} onChange={(e) => setMemberships(e.target.value)} placeholder="e.g. IAP, WCPT" className={`${FIELD} mb-3`} />
+
+        <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+          <input type="checkbox" checked={availableForConsults} onChange={(e) => setAvailableForConsults(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-300" />
+          <span className="text-sm text-slate-700">Available for online consults</span>
+        </label>
 
         {error && (
           <div className="flex items-start gap-1.5 mb-3 text-xs text-rose-600">

@@ -14,6 +14,13 @@ export const CURRENT_USER = {
   followers: 1200,
   following: 486,
   quote: "Evidence guides us. Experience shapes us. Compassion drives us.",
+  // About-card fields (2026-08-19) -- these keep the demo profile looking
+  // exactly like it did before AboutCard.jsx became editable. Real
+  // signed-in users get a blank slate instead (see db.js's getProfile()).
+  experience: "5+ years of experience",
+  languages: "English, Hindi, Marathi",
+  memberships: "IAP, WCPT",
+  availableForConsults: true,
 };
 
 export const INITIAL_POSTS = [
