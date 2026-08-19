@@ -71,6 +71,7 @@ const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySubjectiveNew = lazy(() => import("./SubjectiveAssessmentNew.jsx"));
 const LazySubjectiveCompare = lazy(() => import("./SubjectiveCompare.jsx"));
+const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazySOAP          = lazy(() => import("./lazy_clinical.jsx"));
@@ -1038,6 +1039,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
         <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
+        <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
         <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
@@ -1709,6 +1711,21 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="subjective_compare" && (
             <div style={{marginBottom:22}}>
               <Suspense fallback={<TabFallback/>}><LazySubjectiveCompare onBack={()=>navTo("subjective")}/></Suspense>
+            </div>
+          )}
+
+          {/* Cardiopulmonary Assessment -- standalone tool, uploaded as-is
+              (CardiopulmonaryAssessment.jsx unmodified). It manages its own
+              internal step flow and local data, so it takes no props --
+              this exit button lives outside the component, not inside it. */}
+          {active==="cardio_assessment" && (
+            <div style={{marginBottom:22}}>
+              <button type="button" onClick={()=>navTo("home")}
+                style={{marginBottom:10,padding:"7px 14px",borderRadius:8,border:`1px solid ${PC.border}`,
+                  background:PC.s2||"#F8FAFC",color:PC.muted,fontSize:"0.78rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                ← Exit Cardiopulmonary Assessment
+              </button>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment/></Suspense>
             </div>
           )}
 
