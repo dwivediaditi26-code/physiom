@@ -1455,7 +1455,42 @@ function fmtVal(v) {
   return String(v);
 }
 
-function SummarySection({ setting, system, data, assessSteps }) {
+// Exported (2026-08-20, Aditi: "assessment should show like this image...
+// i command you put summary and review same to same not change at all in
+// assessment section") so SpecialtyPatientProfile.jsx's Assessments tab can
+// render the EXACT same summary component the wizard's own last step uses,
+// instead of a separately-built generic renderer (AssessmentReportView.jsx)
+// that dumped raw internal fields like `meta` as if they were clinical
+// content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
+// the profile view sees the same section list/labels/icons the wizard did.
+export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
+  const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🩺", label: customStepsMeta[id]?.label || "Assessment" });
+}
+// The CSS classes SummarySection/SectionIntro/primary-btn depend on
+// normally come from the big <style> block inside the default-exported
+// wizard component (below) -- not present when SummarySection is embedded
+// standalone in SpecialtyPatientProfile.jsx. Exported so that screen can
+// render it once alongside SummarySection, verbatim copy of the same rules
+// so the profile view is pixel-identical to the wizard's own last step.
+export function SummaryStyles() {
+  return (
+    <style>{`
+      .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
+      .section-intro-icon { font-size: 26px; line-height: 1; }
+      .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+      .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
+      .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+      .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+      .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
+      .summary-row:first-child { border-top: none; }
+      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
+      .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+      .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+    `}</style>
+  );
+}
+export function SummarySection({ setting, system, data, assessSteps }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
@@ -1557,8 +1592,8 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [system, setSystem] = useState(() => (hasExisting ? seed.meta?.system || "combined" : null));
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(ASSESS_STEPS.map((s) => s.id));
-  const [customStepsMeta, setCustomStepsMeta] = useState({});
+  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? seed.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
 
   // Re-hydrate when switching to a different patient -- deliberately keyed
@@ -1572,8 +1607,8 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
-    setStepOrder(ASSESS_STEPS.map((s) => s.id));
-    setCustomStepsMeta({});
+    setStepOrder(existing ? s.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id));
+    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
 
@@ -1584,13 +1619,19 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // Remember the chosen setting/system template on the record itself so
-  // re-opening this patient later (see hasExisting above) can skip the
-  // picker instead of asking again.
+  // Remember the chosen setting/system/stepOrder/customStepsMeta template
+  // on the record itself so re-opening this patient later (see hasExisting
+  // above) can skip the picker and keep any added custom steps instead of
+  // asking again / silently dropping them.
   useEffect(() => {
     if (!setting && !system) return;
-    setData((prev) => (prev.meta?.setting === setting && prev.meta?.system === system ? prev : { ...prev, meta: { setting, system } }));
-  }, [setting, system]);
+    setData((prev) => {
+      const meta = { setting, system, stepOrder, customStepsMeta };
+      const p = prev.meta;
+      if (p && p.setting === meta.setting && p.system === meta.system && p.stepOrder === meta.stepOrder && p.customStepsMeta === meta.customStepsMeta) return prev;
+      return { ...prev, meta };
+    });
+  }, [setting, system, stepOrder, customStepsMeta]);
 
   // One shared patient identity, not two separate ones (Aditi's request:
   // "use the profile of patient of ortho ... make profile of patient").

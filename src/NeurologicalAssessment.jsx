@@ -1316,7 +1316,34 @@ function fmtVal(v) {
   return String(v);
 }
 
-function SummarySection({ setting, data, assessSteps }) {
+// Exported (2026-08-20, Aditi: "assessment should show like this image...
+// i command you put summary and review same to same not change at all in
+// assessment section") -- same reasoning as
+// CardiopulmonaryAssessment.jsx's matching export.
+export function buildNeuroAssessSteps(stepOrder, customStepsMeta = {}) {
+  const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🧠", label: customStepsMeta[id]?.label || "Assessment" });
+}
+// Same reasoning as CardiopulmonaryAssessment.jsx's matching export -- see
+// its comment.
+export function SummaryStyles() {
+  return (
+    <style>{`
+      .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
+      .section-intro-icon { font-size: 26px; line-height: 1; }
+      .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+      .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
+      .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+      .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+      .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
+      .summary-row:first-child { border-top: none; }
+      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
+      .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+      .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+    `}</style>
+  );
+}
+export function SummarySection({ setting, data, assessSteps }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;

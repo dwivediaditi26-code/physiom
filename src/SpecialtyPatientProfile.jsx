@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { SpecialtyDocument } from "./AssessmentReportView.jsx";
+import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
+import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
 
 // Simple, separate profile for Cardio/Neuro patients (2026-08-20, Aditi's
 // request) -- deliberately NOT the existing Ortho PatientProfileModal
@@ -105,8 +106,32 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack }) {
             </div>
           ) : (
             <>
-              {hasCardio && <SpecialtyDocument icon="🫀" title="Cardiopulmonary Assessment" color="#dc2626" specialtyData={d.cardio} patient={patient} onEdit={() => onNav?.("cardio_assessment")} />}
-              {hasNeuro && <SpecialtyDocument icon="🧠" title="Neurological Assessment" color="#7c3aed" specialtyData={d.neuro} patient={patient} onEdit={() => onNav?.("neuro_assessment")} />}
+              {/* Renders the EXACT same Summary & Review the wizard's own
+                  last step shows (2026-08-20, Aditi: "put summary and
+                  review same to same not change at all in assessment
+                  section") -- not a separately-built generic renderer. */}
+              {hasCardio && <CardioSummaryStyles />}
+              {hasCardio && (
+                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "22px 20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <span style={{ fontSize: 24 }}>🫀</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
+                    <button onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✏️ Edit</button>
+                  </div>
+                  <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
+                </div>
+              )}
+              {hasNeuro && <NeuroSummaryStyles />}
+              {hasNeuro && (
+                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "22px 20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <span style={{ fontSize: 24 }}>🧠</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
+                    <button onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✏️ Edit</button>
+                  </div>
+                  <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} />
+                </div>
+              )}
             </>
           )}
         </>

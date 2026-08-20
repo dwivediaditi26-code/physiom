@@ -3969,9 +3969,20 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // the New Assessment specialty picker's STREAMS registry (AppFull.jsx) --
   // duplicated here as a small static array rather than imported, since
   // it's just 5 display labels/icons/colors, to avoid coupling this panel
-  // to AppFull.jsx's module scope. Patients created before this field
-  // existed have no assessment_specialty and simply show under "All".
+  // to AppFull.jsx's module scope.
   const [filterSpecialty, setFilterSpecialty] = useState("all");
+  // Bug fix (2026-08-20, Aditi: "clicking on this ortho neuro, cardio it
+  // doesnot show specific patient list...ortho shows..but neuro cardio
+  // doesnot") -- no patient-creation path anywhere actually sets
+  // `data.assessment_specialty` (grepped: only the old, unused intake-form
+  // fallback for non-live streams did), so filtering by it just showed
+  // "no matches" for every specialty including Ortho -- Ortho only looked
+  // like it worked because it's what most existing patients happen to be.
+  // Derive specialty from the data that actually exists instead: a patient
+  // with cardio/neuro wizard data is that specialty; everyone else is
+  // treated as Ortho (Pedia/Sports have no assessment tool yet, so nothing
+  // will ever match those filters -- consistent with their "SOON" badges).
+  const specialtyOf = (p) => (p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho");
   const CLINICAL_AREAS = [
     { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed" },
     { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488" },
@@ -4005,7 +4016,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const filtered = localPatients
     .filter(p => {
       if (filterFlag && !p.hasRedFlags) return false;
-      if (filterSpecialty !== "all" && p.data?.assessment_specialty !== filterSpecialty) return false;
+      if (filterSpecialty !== "all" && specialtyOf(p) !== filterSpecialty) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (p.name||"").toLowerCase().includes(q) ||
