@@ -1723,18 +1723,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             </div>
           )}
 
-          {/* Cardiopulmonary Assessment -- standalone tool, uploaded as-is
-              (CardiopulmonaryAssessment.jsx unmodified). It manages its own
-              internal step flow and local data, so it takes no props.
-              Bug fix (2026-08-19, Aditi's request): the exit button (never
-              used elsewhere -- every other assessment relies on the
-              sidebar/bottom nav to leave) is removed, and the standard
-              pm-main side padding is negated the same way CLINICAL_MODULE
-              above does, so this fills the full tab width like every other
-              assessment screen instead of floating in a narrower column. */}
+          {/* Cardiopulmonary Assessment -- was uploaded as a fully
+              standalone tool taking no props at all, so nothing it did
+              ever reached the real patient record (Aditi: "when I have
+              done with the patient assessment, it's not saving in the
+              list of the patient"). Now wired the same way every other
+              module here is (data/set), so its own autosave effects
+              (below) pick it up -- see CardiopulmonaryAssessment.jsx's own
+              header comment for the full explanation, including how it
+              shares ONE patient identity with Ortho's Demographics
+              instead of a second, disconnected form.
+              The exit button (never used elsewhere -- every other
+              assessment relies on the sidebar/bottom nav to leave) is
+              removed, and the standard pm-main side padding is negated the
+              same way CLINICAL_MODULE above does, so this fills the full
+              tab width like every other assessment screen instead of
+              floating in a narrower column. */}
           {active==="cardio_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set}/></Suspense>
             </div>
           )}
 

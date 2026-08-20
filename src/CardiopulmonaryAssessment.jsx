@@ -1519,15 +1519,101 @@ function SummarySection({ setting, system, data, assessSteps }) {
 /* ============================================================
    MAIN APP
    ============================================================ */
-export default function CardiopulmonaryAssessment() {
+// Bug fix (2026-08-19, Aditi's request): this component used to take no
+// props at all and hold everything in its own local useState -- nothing
+// it did ever reached the real patient record (AppFull.jsx's `patients`
+// state / localStorage / Supabase), so a "completed" cardio assessment
+// vanished the moment you navigated away. Every other module (Subjective,
+// Objective, etc.) is handed `data`/`set` from AppFull.jsx and writes
+// through them instead; AppFull.jsx's own autosave effects watch that
+// shared `data` object and persist it whenever it changes -- no separate
+// save path needed here, just plugging into the existing one.
+//
+// `patientData`/`onSave` mirror that pattern one level up: rather than
+// flattening every internal cardio field into the shared bag (this file
+// has its own deeply nested step/section data model, not worth
+// rewriting), the whole local `data` object is stored under one
+// `patientData.cardio` key via `onSave("cardio", data)` -- same shape
+// AppFull.jsx already uses for e.g. `set("dem_age", value)`, just with
+// an object value instead of a string.
+//
+// `activePatientId` is used only to know WHEN to re-hydrate from the
+// current patient's saved cardio data (switching patients) -- see the
+// effect below, which mirrors AppFull.jsx's own selectPatient()
+// re-hydration for every other module.
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave } = {}) {
   const [step, setStep] = useState(0);
   const [setting, setSetting] = useState(null);
   const [system, setSystem] = useState(null);
-  const [data, setData] = useState({});
+  const [data, setData] = useState(() => patientData?.cardio || {});
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(ASSESS_STEPS.map((s) => s.id));
   const [customStepsMeta, setCustomStepsMeta] = useState({});
   const [addStepOpen, setAddStepOpen] = useState(false);
+
+  // Re-hydrate when switching to a different patient -- deliberately keyed
+  // on activePatientId only (not on every patientData change), otherwise
+  // this would fight with the push-up effect below and reset mid-typing.
+  useEffect(() => {
+    setData(patientData?.cardio || {});
+    setStep(0);
+    setSetting(null);
+    setSystem(null);
+    setVisited(new Set());
+    setStepOrder(ASSESS_STEPS.map((s) => s.id));
+    setCustomStepsMeta({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePatientId]);
+
+  // The actual save: every local change gets pushed into the patient's
+  // real record via the same `set()` AppFull.jsx hands every other module.
+  useEffect(() => {
+    onSave?.("cardio", data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  // One shared patient identity, not two separate ones (Aditi's request:
+  // "use the profile of patient of ortho ... make profile of patient").
+  // Seeds this screen's Patient Information step from the SAME dem_*
+  // fields Ortho's own Demographics module reads/writes (confirmed exact
+  // key names in ClinicalModules.jsx/AppFull.jsx: dem_name, dem_age,
+  // dem_sex/dem_gender, dem_address, dem_occupation, dem_referral_dr,
+  // dem_dominant) whenever this screen's own fields are still blank, and
+  // mirrors edits made HERE back into those same keys -- so switching to
+  // Ortho for the same patient sees whatever was typed in Cardio and vice
+  // versa, instead of two disconnected demographic forms for one patient.
+  useEffect(() => {
+    const dem = patientData || {};
+    const cardioDem = data.demographics || {};
+    const seeded = {
+      name: cardioDem.name || dem.dem_name || "",
+      age: cardioDem.age || dem.dem_age || "",
+      gender: cardioDem.gender || dem.dem_sex || dem.dem_gender || "",
+      address: cardioDem.address || dem.dem_address || "",
+      occupation: cardioDem.occupation || dem.dem_occupation || "",
+      referrer: cardioDem.referrer || dem.dem_referral_dr || dem.dem_gp || "",
+      dominance: cardioDem.dominance || dem.dem_dominant || dem.dem_dominant_hand || dem.dem_hand || "",
+    };
+    const changed = Object.keys(seeded).some((k) => seeded[k] !== (cardioDem[k] || ""));
+    if (changed) setData((prev) => ({ ...prev, demographics: { ...prev.demographics, ...seeded } }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePatientId]);
+
+  // Mirror edits made in THIS screen's Patient Information step back into
+  // the shared dem_* keys, so Ortho sees them too -- same "one profile"
+  // reasoning as the seeding effect above, other direction.
+  useEffect(() => {
+    const cardioDem = data.demographics;
+    if (!cardioDem || !onSave) return;
+    if (cardioDem.name) onSave("dem_name", cardioDem.name);
+    if (cardioDem.age) onSave("dem_age", cardioDem.age);
+    if (cardioDem.gender) { onSave("dem_sex", cardioDem.gender); onSave("dem_gender", cardioDem.gender); }
+    if (cardioDem.address) onSave("dem_address", cardioDem.address);
+    if (cardioDem.occupation) onSave("dem_occupation", cardioDem.occupation);
+    if (cardioDem.referrer) onSave("dem_referral_dr", cardioDem.referrer);
+    if (cardioDem.dominance) onSave("dem_dominant", cardioDem.dominance);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.demographics]);
 
   const assessSteps = useMemo(
     () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🩺", label: customStepsMeta[id]?.label || "Assessment" }),
