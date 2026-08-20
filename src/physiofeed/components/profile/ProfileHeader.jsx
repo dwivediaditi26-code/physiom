@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BadgeCheck, MapPin, Pencil, MoreHorizontal, Link2, Share2, UserPlus, Check, MessageSquare } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
-import { GRADIENTS } from "../shared/constants.js";
+import { GRADIENTS, formatCount } from "../shared/constants.js";
 import EditProfileModal from "./EditProfileModal.jsx";
 
 // Own profile keeps the real "Edit Profile" button (EditProfileModal.jsx).
@@ -39,7 +39,14 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
               <h1 className="text-lg font-bold text-slate-900">{profile.name}</h1>
               {profile.verified && <BadgeCheck size={17} className="text-violet-600" />}
             </div>
-            <p className="text-sm text-slate-500">{profile.role.split(" · ")[0]} · Sports Rehabilitation</p>
+            {/* Bug fix (2026-08-19): this used to hardcode " · Sports
+                Rehabilitation" after everyone's role, regardless of their
+                real specialty -- profile.role is a single free-text field
+                (see EditProfileModal.jsx's "Role / title" input, e.g.
+                "Neuro Physiotherapist · Bengaluru") that already contains
+                whatever the clinician actually typed, so it just renders
+                as-is now. */}
+            {profile.role && <p className="text-sm text-slate-500">{profile.role}</p>}
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -72,10 +79,16 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
           </div>
         </div>
 
+        {/* Bug fix (2026-08-19): Followers used the old hardcoded "always
+            format as K" math (showed "0.0K" for a genuine 0), and Posts
+            added a flat +123 fake padding to every real post count --
+            both replaced with the real numbers db.js now computes (see
+            getFollowCounts() there) and formatCount()'s 0/small-number
+            handling. */}
         <div className="flex items-center gap-5 mt-4 text-sm">
-          <span><span className="font-bold text-slate-900">{(profile.followers / 1000).toFixed(1)}K</span> <span className="text-slate-400">Followers</span></span>
-          <span><span className="font-bold text-slate-900">{profile.following}</span> <span className="text-slate-400">Following</span></span>
-          <span><span className="font-bold text-slate-900">{postCount + 123}</span> <span className="text-slate-400">Posts</span></span>
+          <span><span className="font-bold text-slate-900">{formatCount(profile.followers)}</span> <span className="text-slate-400">Followers</span></span>
+          <span><span className="font-bold text-slate-900">{formatCount(profile.following)}</span> <span className="text-slate-400">Following</span></span>
+          <span><span className="font-bold text-slate-900">{formatCount(postCount)}</span> <span className="text-slate-400">Posts</span></span>
         </div>
         <p className="text-sm text-slate-600 mt-3 max-w-xl">{profile.bio}</p>
       </div>

@@ -33,6 +33,28 @@ export function AppDataProvider({ children }) {
     })();
   }, []);
 
+  // Realtime bell (2026-08-19): re-fetches the full notifications list
+  // whenever a new one is inserted for you server-side (see
+  // subscribeToNotifications() in db.js), so a like/comment/follow/message
+  // that happens while PhysioFeed is open shows up without navigating away
+  // and back. Guarded with a `cancelled` flag + always calling the
+  // returned unsubscribe in cleanup -- without both, a fast unmount right
+  // after the async subscribe() call resolves would otherwise leave a
+  // channel listening forever (see the leak this exact pattern avoids in
+  // subscribeToMessages()'s docstring).
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+    (async () => {
+      unsubscribe = await db.subscribeToNotifications(async () => {
+        if (cancelled) return;
+        setNotifications(await db.getNotifications());
+      });
+      if (cancelled) unsubscribe();
+    })();
+    return () => { cancelled = true; unsubscribe(); };
+  }, []);
+
   const likePost = useCallback(async (id) => { await db.toggleLike(id); setPosts(await db.getPosts()); }, []);
   const savePost = useCallback(async (id) => { await db.toggleSave(id); setPosts(await db.getPosts()); }, []);
   const followAuthor = useCallback(async (id) => { await db.toggleFollowAuthor(id); setPosts(await db.getPosts()); }, []);
@@ -54,6 +76,7 @@ export function AppDataProvider({ children }) {
   const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
   const deletePost = useCallback(async (id) => { setPosts(await db.deletePost(id)); }, []);
   const deleteComment = useCallback(async (postId, commentId) => { setPosts(await db.deleteComment(postId, commentId)); }, []);
+  const markNotificationRead = useCallback(async (id) => { setNotifications(await db.markNotificationRead(id)); }, []);
   const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
   const uploadProfileImage = useCallback((blob) => db.uploadProfileImage(blob), []);
 
@@ -75,7 +98,7 @@ export function AppDataProvider({ children }) {
     expertise, education, achievements, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, addStory, deleteStory, uploadStoryImage, uploadStoryVideo,
-    followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment,
+    followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
     addAchievement, updateAchievement, deleteAchievement,

@@ -16,7 +16,7 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 export default function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { notifications, profile, people } = useAppData();
+  const { notifications, profile, people, markNotificationRead } = useAppData();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -127,20 +127,45 @@ export default function Header() {
           <div className="relative">
             <button onClick={() => setNotifOpen((v) => !v)} className="relative p-2 rounded-lg hover:bg-slate-50 focus:outline-none">
               <Bell size={19} className="text-slate-500" />
-              {notifications.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />}
+              {/* Bug fix (2026-08-19): this used to be notifications.length > 0,
+                  so the red dot never went away even after you'd read every
+                  notification -- it wasn't tracking `read` at all. */}
+              {notifications.some((n) => !n.read) && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />}
             </button>
             {notifOpen && (
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-lg p-2 z-30">
                 <p className="px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Notifications</p>
-                {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 px-2 py-2 rounded-xl hover:bg-slate-50">
-                    <Icon name={n.iconName} size={16} className={`mt-0.5 shrink-0 ${n.tone}`} />
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-700 leading-snug">{n.text}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{n.time} ago</p>
-                    </div>
-                  </div>
-                ))}
+                {notifications.length === 0 ? (
+                  <p className="text-xs text-slate-400 px-2 py-4 text-center">No notifications yet.</p>
+                ) : (
+                  notifications.map((n) => {
+                    // Clicking a notification marks it read and, where we know
+                    // who triggered it (see add_notification_links.sql), takes
+                    // you to that person's profile or the message thread with
+                    // them -- there's no single-post detail page to link a
+                    // like/comment to, so the actor's profile is the honest
+                    // real destination instead of a dead link.
+                    const openNotification = () => {
+                      setNotifOpen(false);
+                      if (!n.read) markNotificationRead(n.id);
+                      if (n.link) navigate(n.link);
+                    };
+                    return (
+                      <button
+                        key={n.id}
+                        onClick={openNotification}
+                        className={`w-full flex items-start gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 text-left focus:outline-none ${!n.read ? "bg-violet-50/60" : ""}`}
+                      >
+                        <Icon name={n.iconName} size={16} className={`mt-0.5 shrink-0 ${n.tone}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs leading-snug ${n.read ? "text-slate-700" : "text-slate-900 font-medium"}`}>{n.text}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{n.time} ago</p>
+                        </div>
+                        {!n.read && <span className="shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-violet-600" aria-label="Unread" />}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             )}
           </div>
@@ -148,9 +173,14 @@ export default function Header() {
           {profile && (
             <Link to="/profile" className="hidden sm:flex items-center gap-2 focus:outline-none">
               <Avatar size={32} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
+              {/* Bug fix (2026-08-19): "Physiotherapist" was hardcoded
+                  here regardless of what a clinician actually set as
+                  their role/specialty -- shows their real profile.role
+                  now (edited via EditProfileModal.jsx), same field
+                  ProfileHeader.jsx shows. */}
               <div className="leading-tight text-left">
                 <p className="text-xs font-semibold text-slate-900">{profile.name.replace(", PT", "")}</p>
-                <p className="text-[10px] text-slate-400">Physiotherapist</p>
+                <p className="text-[10px] text-slate-400">{profile.role || "Physiotherapist"}</p>
               </div>
               <ChevronDown size={14} className="text-slate-400" />
             </Link>

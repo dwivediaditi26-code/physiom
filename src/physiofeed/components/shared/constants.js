@@ -31,3 +31,15 @@ export const PRO_NAV = [
 export function initialsOf(name) {
   return name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
 }
+
+// Shared by ProfileHeader.jsx for followers/following/posts counts. Was
+// previously hardcoded as `(n / 1000).toFixed(1)}K` in ProfileHeader.jsx
+// -- fine for the old fake demo counts (1200 followers), but showed
+// "0.0K" for every real clinician's genuine, correct 0 followers, which
+// reads as broken/fake rather than honest. Below 1000 shows the exact
+// count; 1000+ rounds to one decimal with a K suffix.
+export function formatCount(n) {
+  const num = Number(n) || 0;
+  if (num < 1000) return String(num);
+  return `${(num / 1000).toFixed(1)}K`;
+}

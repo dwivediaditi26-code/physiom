@@ -15,8 +15,16 @@ import EditProfileModal from "./EditProfileModal.jsx";
 //
 // Any row with no value set (real user hasn't filled it in yet) is simply
 // not shown, rather than rendering blank/empty text.
-export default function AboutCard() {
-  const { profile } = useAppData();
+//
+// `profile` prop (2026-08-19): OtherProfilePage.jsx passes the OTHER
+// user's profile + `readOnly` here so a viewed clinician's About section
+// looks and behaves exactly like your own -- previously other-user
+// profiles were a stripped-down page with no About/Education/Achievements
+// at all. Falls back to your own profile from context when no prop is
+// given, so ProfilePage.jsx's existing usage is unchanged.
+export default function AboutCard({ profile: profileProp, readOnly = false }) {
+  const { profile: ownProfile } = useAppData();
+  const profile = profileProp || ownProfile;
   const [editing, setEditing] = useState(false);
   if (!profile) return null;
 
@@ -32,12 +40,14 @@ export default function AboutCard() {
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-slate-900">About</p>
-        <button onClick={() => setEditing(true)} aria-label="Edit About" className="text-slate-400 hover:text-violet-600 p-1 -m-1 rounded-md hover:bg-violet-50">
-          <Pencil size={13} />
-        </button>
+        {!readOnly && (
+          <button onClick={() => setEditing(true)} aria-label="Edit About" className="text-slate-400 hover:text-violet-600 p-1 -m-1 rounded-md hover:bg-violet-50">
+            <Pencil size={13} />
+          </button>
+        )}
       </div>
       {rows.length === 0 && !profile.availableForConsults ? (
-        <p className="text-sm text-slate-400">Add your experience, languages & more.</p>
+        <p className="text-sm text-slate-400">{readOnly ? "No details added yet." : "Add your experience, languages & more."}</p>
       ) : (
         <div className="space-y-2.5">
           {rows.map((r) => {
@@ -49,7 +59,7 @@ export default function AboutCard() {
           )}
         </div>
       )}
-      {editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
+      {!readOnly && editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
     </div>
   );
 }

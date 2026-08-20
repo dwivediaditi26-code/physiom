@@ -534,6 +534,23 @@ export async function deleteStory(storyItemId) {
 // Phase 1: real per-user identity. See the file header comment above for
 // why this one function is wired to Supabase already while everything
 // else still runs on the in-memory mock store.
+
+// Real, live counts from the `follows` table -- profiles.followers_count/
+// following_count exist as columns (add_profiles_table.sql) but NOTHING
+// ever writes to them (see add_social_tables.sql's header comment: syncing
+// them via triggers vs. computing live was deliberately deferred). Left
+// as-is, every real clinician's profile would show a frozen "0" forever
+// regardless of how many people actually follow them -- exactly the kind
+// of hardcoded-looking number this pass is fixing. `head: true` makes
+// Supabase return just the count, not the matched rows.
+async function getFollowCounts(userId) {
+  const [followersRes, followingRes] = await Promise.all([
+    supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", userId),
+    supabase.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", userId),
+  ]);
+  return { followers: followersRes.count || 0, following: followingRes.count || 0 };
+}
+
 export async function getProfile() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -568,6 +585,8 @@ export async function getProfile() {
       row = inserted || defaults;
     }
 
+    const { followers, following } = await getFollowCounts(row.id);
+
     // Map DB column names to the shape every PhysioFeed screen already
     // expects (ProfileHeader.jsx etc.) -- zero UI changes needed for this step.
     // isAdmin defaults to false on rows from before the moderation
@@ -577,7 +596,7 @@ export async function getProfile() {
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
       bio: row.bio, quote: row.quote,
-      followers: row.followers_count, following: row.following_count,
+      followers, following, // live counts from the follows table, NOT row.followers_count/following_count -- see getFollowCounts()
       isAdmin: !!row.is_admin,
       // undefined (not null) on rows from before add_profile_avatar.sql runs
       // -- Avatar.jsx treats any falsy photoUrl as "show the gradient instead".
@@ -623,10 +642,11 @@ export async function getProfileById(userId) {
     const { data: row, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
     if (error) throw error;
     if (!row) return null; // real uuid, but no profiles row -- genuinely doesn't exist
+    const { followers, following } = await getFollowCounts(userId);
     return clone({
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
-      bio: row.bio, quote: row.quote, followers: row.followers_count, following: row.following_count,
+      bio: row.bio, quote: row.quote, followers, following, // live counts, not row.followers_count/following_count -- see getFollowCounts()
       avatarUrl: row.avatar_url || null,
       experience: row.experience || "", languages: row.languages || "", memberships: row.memberships || "",
       availableForConsults: !!row.available_for_consults,
@@ -706,6 +726,26 @@ export async function getEducation() {
   }
 }
 
+// Read-only variant for VIEWING SOMEONE ELSE's About tab (OtherProfilePage.jsx)
+// -- education_entries_select_all lets anyone read anyone's real rows, so
+// this is a plain query with no auth-gating, and no demo fallback: a demo
+// person (id not in the real profiles table) genuinely has no education
+// rows, which is just an empty list, not an error.
+export async function getEducationByUser(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("education_entries")
+      .select("id, title, subtitle, icon_name")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name }));
+  } catch (e) {
+    console.error("getEducationByUser(): --", e?.message || e);
+    return [];
+  }
+}
+
 // Adding/editing/deleting is NOT given the same silent-fallback treatment
 // as the read above -- same reasoning as updateProfile(): if a save here
 // silently failed and pretended to work, a clinician could walk away
@@ -757,6 +797,25 @@ export async function getAchievements() {
     return clone(ACHIEVEMENTS);
   }
 }
+
+// Read-only variant for VIEWING SOMEONE ELSE's About tab -- same reasoning
+// as getEducationByUser() above (achievements_select_all RLS policy, no
+// demo fallback, empty is a real answer not an error).
+export async function getAchievementsByUser(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("achievements")
+      .select("id, title, subtitle, icon_name, tone")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone }));
+  } catch (e) {
+    console.error("getAchievementsByUser(): --", e?.message || e);
+    return [];
+  }
+}
+
 export async function addAchievement({ title, subtitle, iconName, tone }) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your achievements.");
@@ -959,22 +1018,38 @@ export async function toggleJoinCommunity(id) {
 
 /* ---------------- notifications ---------------- */
 
-// Phase 4 (see supabase/add_notifications.sql). Notifications are written
-// server-side by SECURITY DEFINER triggers the instant a like/comment/
-// follow happens -- this function only ever reads. Falls back to the demo
-// NOTIFICATIONS list when signed out or the table doesn't exist yet.
+// Phase 4 (see supabase/add_notifications.sql + add_notification_links.sql).
+// Notifications are written server-side by SECURITY DEFINER triggers the
+// instant a like/comment/follow/message happens -- this function only ever
+// reads. Falls back to the demo NOTIFICATIONS list only when signed out or
+// the table genuinely doesn't exist yet (a real query error) --
+// deliberately NOT on an empty real result. A signed-in user with zero
+// real notifications is a real, valid state (nobody's interacted with them
+// yet) and must see an honest empty list, not canned demo notifications
+// that don't belong to them and can never be marked read.
+//
+// `link` is derived here, not stored as a URL in the database -- actor_id
+// + kind (added by add_notification_links.sql) is enough to know where a
+// click should go: the actor's profile for like/comment/follow (there's no
+// single-post detail page in PhysioFeed to link a like/comment to), or the
+// message thread with them for a DM. No known kind/actor -- e.g. rows from
+// before that migration ran -- gets no link rather than a guessed one.
 export async function getNotifications() {
+  const uid = await currentUserId();
+  if (!uid) return clone(NOTIFICATIONS); // signed out / guest mode -- keep the demo list
   try {
-    const uid = await currentUserId();
-    if (!uid) return clone(NOTIFICATIONS);
     const { data, error } = await supabase
       .from("notifications")
-      .select("id, icon_name, text, tone, read, created_at")
+      .select("id, icon_name, text, tone, read, created_at, actor_id, kind")
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    if (!data || data.length === 0) return clone(NOTIFICATIONS);
-    return data.map((n) => ({ id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read }));
+    return (data || []).map((n) => ({
+      id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
+      link: n.kind === "message" ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
+          : n.kind === "like" || n.kind === "comment" || n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
+          : null,
+    }));
   } catch (e) {
     console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
     return clone(NOTIFICATIONS);
@@ -991,6 +1066,27 @@ export async function markNotificationRead(id) {
     console.error("markNotificationRead(): no-op --", e?.message || e);
   }
   return getNotifications();
+}
+
+// Realtime (2026-08-19): the bell previously only refreshed on mount --
+// a like/comment/follow/message that happened while you had PhysioFeed
+// open never showed up until you navigated away and back. Subscribes to
+// every insert into YOUR notifications row (RLS already scopes this to
+// rows you're allowed to select) and calls `onChange` with the fresh
+// notification whenever the trigger functions in add_notifications.sql /
+// add_notification_links.sql write one -- Header.jsx just refetches the
+// full list on any event rather than trying to splice one row in by hand,
+// since getNotifications() is a single cheap indexed query.
+//
+// Same unsubscribe-on-unmount contract as subscribeToMessages() above.
+export async function subscribeToNotifications(onChange) {
+  const uid = await currentUserId();
+  if (!uid) return () => {};
+  const channel = supabase
+    .channel(`notifications:${uid}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` }, (payload) => onChange(payload.new))
+    .subscribe();
+  return () => supabase.removeChannel(channel);
 }
 
 /* ---------------- moderation ---------------- */
@@ -1142,4 +1238,30 @@ export async function markConversationRead(otherUserId) {
   } catch (e) {
     console.error("markConversationRead(): no-op --", e?.message || e);
   }
+}
+
+// Realtime (2026-08-19): chat previously only ever refetched on
+// mount/navigation -- a message sent to you didn't appear until you
+// closed and reopened the thread. Subscribes to INSERTs on
+// direct_messages involving you (RLS already restricts what a Postgres
+// changes feed will ever deliver to your own rows, same guarantee as any
+// select) and calls `onChange` for every relevant insert -- MessagesPage.jsx
+// decides whether that's "append to the open thread" or "bump the
+// conversation list". Two separate .on() filters (not one OR) because
+// postgres_changes filters are single-column equality only.
+//
+// Returns an unsubscribe function. Caller MUST call it on unmount / before
+// resubscribing (e.g. when `otherUserId`/route changes) -- an orphaned
+// channel keeps its socket listener alive and fires the stale closure's
+// `onChange` forever, which both leaks and can double-append messages
+// once a second subscription is added for a new conversation.
+export async function subscribeToMessages(onChange) {
+  const uid = await currentUserId();
+  if (!uid) return () => {};
+  const channel = supabase
+    .channel(`direct_messages:${uid}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` }, (payload) => onChange(payload.new))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` }, (payload) => onChange(payload.new))
+    .subscribe();
+  return () => supabase.removeChannel(channel);
 }

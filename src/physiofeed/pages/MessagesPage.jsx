@@ -66,6 +66,39 @@ export default function MessagesPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [thread]);
 
+  // Realtime (2026-08-19): a message arriving from the other person used
+  // to sit invisible in the database until you left this page and came
+  // back -- no live update at all. Subscribes ONCE for the page's
+  // lifetime (not once per conversation) via a ref holding the currently
+  // open thread's id, so switching conversations doesn't tear down and
+  // recreate the socket subscription on every click -- it just changes
+  // which incoming rows the same subscription appends to.
+  const withIdRef = useRef(withId);
+  useEffect(() => { withIdRef.current = withId; }, [withId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+    (async () => {
+      unsubscribe = await db.subscribeToMessages((row) => {
+        if (cancelled) return;
+        // Any message involving you should bump the conversation list
+        // (new last-message preview / unread dot), whether or not its
+        // thread happens to be the one currently open.
+        loadConversations();
+        const openWith = withIdRef.current;
+        if (!openWith || (row.sender_id !== openWith && row.recipient_id !== openWith)) return;
+        // Within the open thread: recipient_id === me means I sent it
+        // (already appended optimistically by submit()'s own setThread
+        // call) -- guard on id to avoid appending our own message twice.
+        setThread((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, { id: row.id, text: row.text, isSelf: row.recipient_id === openWith, createdAt: row.created_at }]));
+        if (row.sender_id === openWith) db.markConversationRead(openWith).then(loadConversations);
+      });
+      if (cancelled) unsubscribe();
+    })();
+    return () => { cancelled = true; unsubscribe(); };
+  }, [loadConversations]);
+
   const active = conversations.find((c) => c.userId === withId);
 
   const submit = async () => {
