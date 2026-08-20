@@ -1456,7 +1456,7 @@ function saveMyTemplatesToStorage(list) {
 // re-hydration effects below) rather than flattening every internal
 // field into the shared bag -- this file owns its own deeply nested
 // step/section data model, not worth rewriting.
-export default function NeurologicalAssessment({ patientData, activePatientId, onSave } = {}) {
+export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav } = {}) {
   useEffect(() => {
     // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
     // which is what causes the "whole page jumps/zooms" feeling on mobile.
@@ -1475,16 +1475,26 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     };
   }, []);
 
-  const [step, setStep] = useState(0);
-  const [setting, setSetting] = useState(null);
-  const [data, setData] = useState(() => patientData?.neuro || {});
+  // Editing an existing assessment (2026-08-20, Aditi: "clicking on edit
+  // assessment take us to same as new assessment...it should take us to
+  // directly demographic data of that template") -- Setting/Mode/Template
+  // pickers are a one-time setup, not something to re-ask every time a
+  // therapist reopens a patient with data already on file. "demographics"
+  // is always the first entry in any built stepOrder (see
+  // ALWAYS_STEP_IDS/buildStepOrder above), so jumping straight into
+  // phase="assess" at step 1 always lands on Patient Information.
+  const neuroSeed = patientData?.neuro || {};
+  const hasExistingNeuro = Object.keys(neuroSeed).length > 0;
+  const [step, setStep] = useState(() => (hasExistingNeuro ? 1 : 0));
+  const [setting, setSetting] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.setting || "outpatient" : null));
+  const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(ASSESS_STEPS.map((s) => s.id));
-  const [customStepsMeta, setCustomStepsMeta] = useState({});
+  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
 
   // phase: "setting" -> "mode" -> ("template" | "region" | "mytemplates") -> "assess"
-  const [phase, setPhase] = useState("setting");
+  const [phase, setPhase] = useState(() => (hasExistingNeuro ? "assess" : "setting"));
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -1494,13 +1504,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // activePatientId (not on every patientData change) so it doesn't fight
   // with the push-up effect below mid-typing.
   useEffect(() => {
-    setData(patientData?.neuro || {});
-    setStep(0);
-    setSetting(null);
+    const s = patientData?.neuro || {};
+    const existing = Object.keys(s).length > 0;
+    setData(s);
+    setStep(existing ? 1 : 0);
+    setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setVisited(new Set());
-    setStepOrder(ASSESS_STEPS.map((s) => s.id));
-    setCustomStepsMeta({});
-    setPhase("setting");
+    setStepOrder(existing ? s.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id));
+    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
+    setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
@@ -1511,6 +1523,18 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     onSave?.("neuro", data);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  // Remember the chosen setting/stepOrder/customStepsMeta on the record
+  // itself so re-opening this patient later (see hasExistingNeuro above)
+  // can skip straight back into the same template instead of asking again.
+  useEffect(() => {
+    if (phase !== "assess") return;
+    setData((prev) => {
+      const meta = { setting, stepOrder, customStepsMeta };
+      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
+      return { ...prev, meta };
+    });
+  }, [phase, setting, stepOrder, customStepsMeta]);
 
   // One shared patient identity with Ortho's Demographics, not two
   // separate ones -- same reasoning as CardiopulmonaryAssessment.jsx's
@@ -2039,9 +2063,22 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               </button>
             )}
             {phase === "assess" && step === total - 1 ? (
-              <button className="primary-btn" onClick={restart}>
-                Start new assessment
-              </button>
+              // Summary & Review is the last step -- (2026-08-20, Aditi:
+              // "after the assessment last page summary and review should
+              // show as save assessment or edit more") same reasoning as
+              // CardiopulmonaryAssessment.jsx's matching change: data
+              // already autosaves continuously, so "Save Assessment" just
+              // means "I'm done, take me back"; "Edit More" jumps back to
+              // Patient Information (step 1, always first in stepOrder) so
+              // the step-nav pills are available to revisit any section.
+              <>
+                <button className="ghost-btn" onClick={() => setStep(1)}>
+                  ✏️ Edit More
+                </button>
+                <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+                  ✅ Save Assessment
+                </button>
+              </>
             ) : (
               <button
                 className="primary-btn"

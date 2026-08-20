@@ -1087,7 +1087,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <SidebarItem navKey="rom"           icon="📐" label="Range of Motion"/>
         <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
         <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
-        <SidebarItem navKey="neuro"         icon="⚡" label="Neurological"/>
+        {/* Disambiguated (2026-08-20, Aditi: clicking "neuro new assessment"
+            was landing on this old item) -- this is an Ortho objective-exam
+            quick screen (reflexes/sensation as part of an Ortho physical
+            exam, config-driven NEURO_MODULE), not the standalone Neuro
+            specialty tool above it. Label made explicit so it can't be
+            mistaken for the real entry point. */}
+        <SidebarItem navKey="neuro"         icon="⚡" label="Neuro Screen (Ortho exam)"/>
         <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
       </SidebarGroup>
 
@@ -1794,7 +1800,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               floating in a narrower column. */}
           {active==="cardio_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
             </div>
           )}
 
@@ -1811,7 +1817,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               Special Tests/ROM/etc. */}
           {active==="neuro_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
             </div>
           )}
 

@@ -1541,11 +1541,21 @@ function SummarySection({ setting, system, data, assessSteps }) {
 // current patient's saved cardio data (switching patients) -- see the
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
-export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave } = {}) {
-  const [step, setStep] = useState(0);
-  const [setting, setSetting] = useState(null);
-  const [system, setSystem] = useState(null);
-  const [data, setData] = useState(() => patientData?.cardio || {});
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav } = {}) {
+  // Editing an existing assessment (2026-08-20, Aditi: "clicking on edit
+  // assessment take us to same as new assessment...it should take us to
+  // directly demographic data of that template") -- Setting/System (step 0/1)
+  // are a one-time template picker, not something worth re-asking every time
+  // a therapist reopens a patient with data already on file. If there's
+  // existing cardio data, skip straight to Patient Information (step 2)
+  // using the setting/system saved with it (data.meta), defaulting to
+  // Outpatient/Combined for records saved before data.meta existed.
+  const seed = patientData?.cardio || {};
+  const hasExisting = Object.keys(seed).length > 0;
+  const [step, setStep] = useState(() => (hasExisting ? 2 : 0));
+  const [setting, setSetting] = useState(() => (hasExisting ? seed.meta?.setting || "outpatient" : null));
+  const [system, setSystem] = useState(() => (hasExisting ? seed.meta?.system || "combined" : null));
+  const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(ASSESS_STEPS.map((s) => s.id));
   const [customStepsMeta, setCustomStepsMeta] = useState({});
@@ -1555,10 +1565,12 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   // on activePatientId only (not on every patientData change), otherwise
   // this would fight with the push-up effect below and reset mid-typing.
   useEffect(() => {
-    setData(patientData?.cardio || {});
-    setStep(0);
-    setSetting(null);
-    setSystem(null);
+    const s = patientData?.cardio || {};
+    const existing = Object.keys(s).length > 0;
+    setData(s);
+    setStep(existing ? 2 : 0);
+    setSetting(existing ? s.meta?.setting || "outpatient" : null);
+    setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
     setStepOrder(ASSESS_STEPS.map((s) => s.id));
     setCustomStepsMeta({});
@@ -1571,6 +1583,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     onSave?.("cardio", data);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  // Remember the chosen setting/system template on the record itself so
+  // re-opening this patient later (see hasExisting above) can skip the
+  // picker instead of asking again.
+  useEffect(() => {
+    if (!setting && !system) return;
+    setData((prev) => (prev.meta?.setting === setting && prev.meta?.system === system ? prev : { ...prev, meta: { setting, system } }));
+  }, [setting, system]);
 
   // One shared patient identity, not two separate ones (Aditi's request:
   // "use the profile of patient of ortho ... make profile of patient").
@@ -1937,9 +1957,24 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
             </button>
           )}
           {step === total - 1 ? (
-            <button className="primary-btn" onClick={restart}>
-              Start new assessment
-            </button>
+            // Summary & Review is the last step -- (2026-08-20, Aditi:
+            // "after the assessment last page summary and review should
+            // show as save assessment or edit more") data already
+            // autosaves on every change (see the onSave effect above), so
+            // "Save Assessment" is really "I'm done, take me back" rather
+            // than a separate write; "Edit More" jumps back to Patient
+            // Information (step 2) so the step-nav pills are available to
+            // revisit any section. The old "Start new assessment" button
+            // here silently wiped the whole record via restart() -- far
+            // too destructive for the primary action on this screen.
+            <>
+              <button className="ghost-btn" onClick={() => setStep(2)}>
+                ✏️ Edit More
+              </button>
+              <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+                ✅ Save Assessment
+              </button>
+            </>
           ) : (
             <button className="primary-btn" disabled={!canProceedSetting || !canProceedSystem} onClick={goNext}>
               {step === 0 ? "Continue to system" : step === total - 2 ? "Review & finish" : "Next"}
