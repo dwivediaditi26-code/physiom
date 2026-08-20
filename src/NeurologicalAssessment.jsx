@@ -1762,12 +1762,19 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           padding: 14px 16px 6px;
         }
         /* Fix (2026-08-20, Aditi: "overlaping is happeining with
-           neurological and cardio assessment name") -- same reasoning as
-           CardiopulmonaryAssessment.jsx's matching rule: offset below
-           AppFull.jsx's own sticky mobile header (.pm-mobile-hdr, 64px
-           tall) instead of both competing for the same top:0. */
+           neurological and cardio assessment name" then "upper area is
+           blank push all above little bit") -- offset below AppFull.jsx's
+           own sticky mobile header (.pm-mobile-hdr, 64px tall) instead of
+           both competing for the same top:0. -28px, not +64px: sticky
+           "top" here is measured from .pm-main's own padding box
+           (64px header + 28px pm-main padding-top = 92px), not the visible
+           viewport edge (which looks 24px higher because AppFull.jsx
+           negates that padding with a -24px margin on this screen's mount
+           wrapper) -- see CardiopulmonaryAssessment.jsx's matching rule
+           for the full measurement. +64 pinned the bar 92+64=156px down,
+           a large dead gap; -28 (92-28=64) pins it flush under the header. */
         @media (max-width: 767px) {
-          .topbar { top: 64px; }
+          .topbar { top: -28px; }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {

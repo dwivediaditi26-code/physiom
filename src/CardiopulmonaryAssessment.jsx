@@ -1782,9 +1782,20 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            mobile header (.pm-mobile-hdr, 64px tall, z-index 101) stuck to
            the SAME top:0 -- without this offset the two sticky elements
            collide and the title/icon renders overlapped/hidden behind the
-           app header once scrolled. */
+           app header once scrolled.
+           This offset is NOT viewport-relative -- sticky "top" is measured
+           from .pm-main's own padding box (64px header + 28px pm-main
+           padding-top = 92px), not from the visible viewport edge (which
+           looks 24px higher because AppFull.jsx negates that padding with
+           a -24px margin on this screen's own mount wrapper). A positive
+           64px here (viewport-relative thinking) actually pins the bar
+           92+64=156px down, way too low, leaving a large dead gap above it
+           (Aditi: "upper area is blank push all above little bit"). -28px
+           (92-28=64) pins it flush under the header once scrolled, while
+           its natural unscrolled position (68px) is already just 4px below
+           the header, so there's no dead gap either way. */
         @media (max-width: 767px) {
-          .topbar { top: 64px; }
+          .topbar { top: -28px; }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
