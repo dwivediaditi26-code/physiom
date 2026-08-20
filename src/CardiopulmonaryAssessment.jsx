@@ -1647,7 +1647,12 @@ export default function CardiopulmonaryAssessment() {
         .ct-checkbox { font-size: 16px; color: ${BRAND.purple}; flex-shrink: 0; }
         .ct-modal-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid ${BRAND.border}; }
 
-        .content { flex: 1; padding: 18px 16px 100px; }
+        /* Bug fix (2026-08-19): extra clearance for .bottombar's switch
+           from sticky to fixed below -- fixed takes the bar fully out of
+           document flow, so content needs enough bottom padding to never
+           sit underneath it (bar height + physiom's own fixed bottom nav
+           clearance, see .bottombar's comment). */
+        .content { flex: 1; padding: 18px 16px 150px; }
 
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
@@ -1731,7 +1736,18 @@ export default function CardiopulmonaryAssessment() {
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
         .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
 
-        .bottombar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        /* Bug fix (2026-08-19, Aditi's request): "position: sticky" here
+           never actually stuck -- .content/.app-inner/.app-wrap (its real
+           ancestors) don't scroll themselves, so sticky resolved against
+           physiom's OWN outer .pm-main scroll container instead, whose box
+           just grows to fit this whole assessment rather than scrolling
+           internally -- there was nothing for "stick to the bottom of" to
+           mean. Back/Next just sat at the natural end of the page content,
+           requiring a full scroll to reach on every step. "fixed" escapes
+           all of that and pins to the real viewport; bottom:60px (not 0)
+           leaves clearance above physiom's own fixed bottom nav bar
+           (.pm-bnav in src/utils.jsx, ~59px tall) so the two don't overlap. */
+        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }

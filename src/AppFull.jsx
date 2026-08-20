@@ -1725,15 +1725,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
           {/* Cardiopulmonary Assessment -- standalone tool, uploaded as-is
               (CardiopulmonaryAssessment.jsx unmodified). It manages its own
-              internal step flow and local data, so it takes no props --
-              this exit button lives outside the component, not inside it. */}
+              internal step flow and local data, so it takes no props.
+              Bug fix (2026-08-19, Aditi's request): the exit button (never
+              used elsewhere -- every other assessment relies on the
+              sidebar/bottom nav to leave) is removed, and the standard
+              pm-main side padding is negated the same way CLINICAL_MODULE
+              above does, so this fills the full tab width like every other
+              assessment screen instead of floating in a narrower column. */}
           {active==="cardio_assessment" && (
-            <div style={{marginBottom:22}}>
-              <button type="button" onClick={()=>navTo("home")}
-                style={{marginBottom:10,padding:"7px 14px",borderRadius:8,border:`1px solid ${PC.border}`,
-                  background:PC.s2||"#F8FAFC",color:PC.muted,fontSize:"0.78rem",fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
-                ← Exit Cardiopulmonary Assessment
-              </button>
+            <div style={{margin:"-24px -20px 0"}}>
               <Suspense fallback={<TabFallback/>}><LazyCardioAssessment/></Suspense>
             </div>
           )}
