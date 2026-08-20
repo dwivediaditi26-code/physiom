@@ -3062,31 +3062,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     })()}
                   </Sec>
 
-                  {/* ── Cardiopulmonary Assessment (2026-08-19) ── previously
-                      never appeared anywhere in Patient Profile -- the whole
-                      module was disconnected from the patient record (see
-                      CardiopulmonaryAssessment.jsx's own header comment), so
-                      there was nothing here TO show. Not expandable in place
-                      like ROM/Kinetic Chain -- it's a full 13-step standalone
-                      tool, not a single-screen module -- clicking navigates
-                      to it the same way Fascia/Functional Screens below do. */}
-                  {(()=>{
-                    const cardio = d.cardio || null;
-                    const cardioDem = cardio?.demographics || {};
-                    const stepsFilled = cardio ? Object.keys(cardio).filter((k) => k !== "demographics" && cardio[k] && Object.keys(cardio[k]).length > 0).length : 0;
-                    return (
-                      <Sec icon="🫀" title="Cardiopulmonary Assessment" navKey="cardio_assessment" hasData={!!cardio}
-                        emptyMsg="Not started yet — tap to begin">
-                        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                          {cardioDem.diagnosis && (
-                            <span style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:20,background:"#FEE2E2",color:"#991B1B"}}>{cardioDem.diagnosis}</span>
-                          )}
-                          <span style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:20,background:"#F3F4F6",color:C.muted}}>{stepsFilled} section{stepsFilled===1?"":"s"} recorded</span>
-                        </div>
-                      </Sec>
-                    );
-                  })()}
-
                   {/* ── Kinetic Chain ── */}
                   <Sec icon="⛓️" title="Kinetic Chain" navKey="kinetic" hasData={kcKeys.length>0||!!d.kinetic_chain}
                     expandable isExpanded={expanded==="kinetic"} onToggle={()=>setExpanded(x=>x==="kinetic"?null:"kinetic")}
@@ -3949,9 +3924,13 @@ function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile }) {
             background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
         </div>
       </div>
-      {/* Two clear actions per patient: jump into the assessment workflow,
-          or open their profile -- previously just a tiny "Continue →" text
-          link and an icon-only 👤 button, easy to miss. */}
+      {/* Two actions per patient: jump into the assessment workflow, or
+          open their profile -- back to two (2026-08-20, Aditi: "just be
+          one patient profile...not show speciality profile"). onProfile
+          itself now decides which profile that means (see the call site
+          below) -- Cardio/Neuro patients get the simple specialty hub,
+          everyone else gets the existing Ortho profile -- rather than
+          showing a confusing extra third button. */}
       <div style={{display:"flex",gap:8,marginTop:8,marginLeft:56}}>
         <button onClick={onEdit} style={{
           flex:1,padding:"7px 10px",borderRadius:8,border:"none",background:"#7c3aed",
@@ -4175,7 +4154,16 @@ const innerBody = (
                 isActive={p.id === activeId}
                 onEdit={()=>{ onSelect(p); if (onNav) onNav("demographics"); }}
                 onDelete={()=>onDelete(p.id)}
-                onProfile={()=>setProfilePatient(p)}
+                // One profile per patient, not two buttons (Aditi:
+                // "just be one patient profile...not show speciality
+                // profile"). A patient with Cardio/Neuro data opens the
+                // simple specialty hub (SpecialtyPatientProfile.jsx,
+                // reached via Clinical/active==="specialty_profile");
+                // everyone else keeps the existing Ortho PatientProfileModal.
+                onProfile={()=>{
+                  if (p?.data?.cardio || p?.data?.neuro) { onSelect(p); if (onNav) onNav("specialty_profile"); }
+                  else setProfilePatient(p);
+                }}
               />
             ))}
           </div>

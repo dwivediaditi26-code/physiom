@@ -60,6 +60,8 @@ import {
   PatientDatabasePanel, PatientProfileModal,
 } from "./PatientDatabase.jsx";
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
+import AssessmentReportView from "./AssessmentReportView.jsx";
+import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
@@ -72,6 +74,11 @@ const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySubjectiveNew = lazy(() => import("./SubjectiveAssessmentNew.jsx"));
 const LazySubjectiveCompare = lazy(() => import("./SubjectiveCompare.jsx"));
 const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"));
+// Replaces the old config-driven Neuro stream engine (STREAM_CONFIGS.neuro
+// below, now unreachable from the UI -- see the specialty-picker and
+// StreamSelector changes, both now navTo("neuro_assessment") instead of
+// setStream("neuro")) with a standalone tool, same pattern as Cardio.
+const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazySOAP          = lazy(() => import("./lazy_clinical.jsx"));
@@ -126,15 +133,27 @@ const STREAMS = [
   { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626", live:false },
 ];
 
-function StreamSelector({ stream, setStream, PC }) {
+function StreamSelector({ stream, setStream, navTo, PC }) {
   return (
     <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20,
       padding:"10px 12px",background:PC.s2||"#f8fafc",
       border:`1px solid ${PC.border}`,borderRadius:14}}>
       {STREAMS.map(st => {
         const sel = stream===st.id;
+        // Cardio/Neuro (2026-08-19): both are real, standalone tools now
+        // (CardiopulmonaryAssessment.jsx / NeurologicalAssessment.jsx), not
+        // config-driven streams -- clicking them here used to just set
+        // `stream` state, which for Cardio always dead-ended on
+        // StreamEnginePlaceholder ("coming soon", since STREAM_CONFIGS has
+        // no cardio entry) and for Neuro opened the OLD engine this pass
+        // is replacing. Route both to the real tool instead, same as the
+        // "+ New Assessment" specialty picker already does.
+        const onClick = () => {
+          if (st.id === "cardio" || st.id === "neuro") navTo?.(`${st.id}_assessment`);
+          else setStream(st.id);
+        };
         return (
-          <button key={st.id} type="button" onClick={()=>setStream(st.id)}
+          <button key={st.id} type="button" onClick={onClick}
             title={st.live?`${st.label} assessment`:`${st.label} — coming soon`}
             style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",
               borderRadius:11,cursor:"pointer",fontSize:"0.85rem",fontWeight:700,
@@ -553,6 +572,27 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       return updated;
     });
   }, [data, activePatientId]);
+
+  // Cardio/Neuro have no "Create Patient & Continue" button of their own
+  // (see the Ortho Demographics CTA below) -- a therapist who goes straight
+  // to "Cardiopulmonary/Neurological Assessment" from the sidebar with no
+  // patient selected was filling in dem_name (mirrored from the wizard's
+  // own demographics step) but never creating a patients[] row, since the
+  // auto-save effect above bails out while activePatientId is null. Aditi:
+  // "whenever i am doing assessment of cardio no cardio patient showing in
+  // clinical". Fix: as soon as a name appears with no active patient while
+  // on one of these two screens, create the patient row the same way the
+  // Ortho CTA does, then adopt it as the active patient so the auto-save
+  // effect above takes over from here.
+  useEffect(() => {
+    if (activePatientId) return;
+    if (active !== "cardio_assessment" && active !== "neuro_assessment") return;
+    const name = (data.dem_name || "").trim();
+    if (!name) return;
+    const newP = { id: genId(), name, data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
+    setPatients(prev => { const updated = [newP, ...prev]; savePatientDB(updated, currentUser?.id); return updated; });
+    setActivePatientId(newP.id);
+  }, [data.dem_name, activePatientId, active]);
 
   const createNewPatient = () => {
     setIntakeData({});
@@ -1040,6 +1080,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
         <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
+        <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
         <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
@@ -1168,6 +1209,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // live, but STREAMS.cardio.live stays false on purpose --
                 // that flag also drives StreamSelector/test filtering
                 // elsewhere, untouched. Just make this one button open it.
+                // Neuro (2026-08-19): same treatment -- the old config-driven
+                // stream engine (setStream("neuro")) is replaced by the
+                // standalone NeurologicalAssessment.jsx tool, same as Cardio.
                 const clickable = st.live || st.id === "cardio";
                 return (
                 <button key={st.id} type="button"
@@ -1175,7 +1219,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     if (!clickable) return;
                     setShowSpecialtyPicker(false);
                     if (st.id === "cardio") {
+                      // Blank slate, same reasoning as Ortho below -- "New
+                      // Assessment" must start fresh, not silently continue
+                      // editing whatever patient happened to be active.
+                      setData({});
+                      setActivePatientId(null);
                       navTo("cardio_assessment");
+                    } else if (st.id === "neuro") {
+                      setData({});
+                      setActivePatientId(null);
+                      navTo("neuro_assessment");
                     } else if (st.id === "ortho") {
                       // Ortho has its own full-page Demographics step (part
                       // of the 9-step stepper) -- land there directly
@@ -1187,9 +1240,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       setActivePatientId(null);
                       navTo("demographics");
                     } else {
-                      // Other live streams (e.g. Neuro) don't have their own
-                      // Demographics step yet -- keep using the existing
-                      // intake-form popup for them until they do.
+                      // Other live streams don't have their own Demographics
+                      // step yet -- keep using the existing intake-form
+                      // popup for them until they do.
                       setStream(st.id);
                       createNewPatient();
                     }
@@ -1550,7 +1603,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               already chosen -- showing the Ortho/Neuro/... picker row again
               here was redundant and pushed the real 9-step workflow stepper
               (below) out of view. */}
-          {active==="home" && <StreamSelector stream={stream} setStream={setStream} PC={PC}/>}
+          {active==="home" && <StreamSelector stream={stream} setStream={setStream} navTo={navTo} PC={PC}/>}
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
               4 phases, condition-aware showIf, checklists) and its widgets
@@ -1742,6 +1795,63 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="cardio_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
               <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set}/></Suspense>
+            </div>
+          )}
+
+          {/* Neurological Assessment -- replaces the old config-driven
+              Neuro stream engine (STREAM_CONFIGS.neuro / AssessmentEngine
+              below) with a standalone tool, same pattern and same reasons
+              as Cardiopulmonary Assessment just above (own header comment
+              in NeurologicalAssessment.jsx has the full explanation). Note:
+              this is NOT the same thing as the "Neurological" sidebar item
+              a few lines up (navKey="neuro") -- that's a shared quick
+              neuro screen usable within any specialty's assessment and is
+              untouched; this is the full Neuro specialty stream, same
+              relationship Cardiopulmonary Assessment already has to
+              Special Tests/ROM/etc. */}
+          {active==="neuro_assessment" && (
+            <div style={{margin:"-24px -20px 0"}}>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set}/></Suspense>
+            </div>
+          )}
+
+          {/* Full documented assessment report -- lives ONLY in Clinical
+              (reached via "📄 View Report" on a patient row in
+              PatientDatabase.jsx's patient list), per Aditi's explicit
+              request not to duplicate this into Patient Profile or the
+              sidebar. One continuous read-only document (not tabs/cards)
+              for whichever of Cardio/Neuro that patient has recorded --
+              see AssessmentReportView.jsx.
+              Merges live in-session `data` over the flushed patient record
+              the same way PatientProfileModal already does just below, so
+              edits made in THIS session show up here immediately instead
+              of only after the next autosave flush. */}
+          {active==="assessment_report" && (
+            <div style={{margin:"-24px -20px 0",background:"#f8fafc",minHeight:"100vh"}}>
+              <AssessmentReportView
+                patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
+                onNav={navTo}
+                onBack={()=>navTo("clinical")}
+              />
+            </div>
+          )}
+
+          {/* Separate, simple Cardio/Neuro patient hub -- lives ONLY in
+              Clinical (reached via "🫀🧠 Specialty Profile" on a patient
+              row), deliberately NOT merged into the Ortho PatientProfileModal
+              a few hundred lines below (Aditi: "donot mix the ortho[']s
+              patient profile ... make new patient profile for cardio
+              neuro"). See SpecialtyPatientProfile.jsx's header comment for
+              why it's Overview+Assessments only, no Progress/Treatment/
+              Documents tabs yet. Same live-data merge as the report view
+              above. */}
+          {active==="specialty_profile" && (
+            <div style={{margin:"-24px -20px 0",background:"#f8fafc",minHeight:"100vh"}}>
+              <SpecialtyPatientProfile
+                patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
+                onNav={navTo}
+                onBack={()=>navTo("clinical")}
+              />
             </div>
           )}
 

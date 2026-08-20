@@ -498,10 +498,11 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     // never appeared in this PDF at all -- CardiopulmonaryAssessment.jsx
     // was disconnected from the patient record until this same pass (see
     // that file's header comment), so there was nothing here to show
-    // before now. Appends a 3rd page ONLY when d.cardio has data, rather
-    // than reworking page1/page2's dense, precisely laid-out ortho content
-    // to make room -- page count in every footer adjusts accordingly.
-    const totalPages = d.cardio ? 3 : 2;
+    // before now. Appends a 3rd page ONLY when d.cardio has data, and a
+    // 4th when d.neuro has data (NeurologicalAssessment.jsx, same pass),
+    // rather than reworking page1/page2's dense, precisely laid-out ortho
+    // content to make room -- page count in every footer adjusts.
+    const totalPages = 2 + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0);
     const pgFooter = (n, total) => `
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:8px;color:#94a3b8;">PhysioMind Pro · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
@@ -642,32 +643,41 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
       ${pgFooter(2, totalPages)}
     </div>`;
 
-    // ── PAGE 3: CARDIOPULMONARY ASSESSMENT (only when recorded) ─────────
-    // Generic key/value dump per section rather than per-field knowledge
-    // of CardiopulmonaryAssessment.jsx's ~13 steps -- that file owns its
-    // own field labels/shape; this just needs to show whatever's there
-    // without duplicating (and risking drifting from) that internal model.
-    const cardioLabel = (k) => k.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
-    const page3 = d.cardio ? `<div class="page">
-      ${pdfHeader("Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "#dc2626")}
+    // ── PAGES 3/4: CARDIOPULMONARY / NEUROLOGICAL (only when recorded) ──
+    // Generic key/value dump per section rather than per-field knowledge of
+    // either file's own ~13-18 steps -- each owns its own field labels/
+    // shape; this just needs to show whatever's there without duplicating
+    // (and risking drifting from) that internal model. `specialtyValueText`
+    // handles object-valued fields too (e.g. NeurologicalAssessment.jsx's
+    // LRGrid tables for MMT/DTR/sensory are {"Right__Left": "3"}-shaped
+    // objects, not strings) -- Array.isArray-only handling would have
+    // rendered those as "[object Object]".
+    const specialtyLabel = (k) => k.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+    const specialtyValueText = (val) => {
+      if (val == null || val === "") return "";
+      if (Array.isArray(val)) return val.join(", ");
+      if (typeof val === "object") return Object.entries(val).filter(([,v]) => v).map(([k,v]) => `${k.replace("__", " ")}: ${v}`).join(" · ");
+      return String(val);
+    };
+    const specialtyPage = (pageNum, dataObj, title, subtitle, icon, color) => dataObj ? `<div class="page">
+      ${pdfHeader(title, subtitle, color)}
       <div class="body">
-        ${Object.entries(d.cardio).map(([sectionId, fields]) => {
+        ${Object.entries(dataObj).map(([sectionId, fields]) => {
           if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) return "";
-          const rows = Object.entries(fields).map(([k, val]) => {
-            const text = Array.isArray(val) ? val.join(", ") : String(val ?? "");
-            return fieldRow(cardioLabel(k), escHtml(text));
-          }).join("");
+          const rows = Object.entries(fields).map(([k, val]) => fieldRow(specialtyLabel(k), escHtml(specialtyValueText(val)))).join("");
           if (!rows) return "";
-          return sec("🫀", cardioLabel(sectionId), "#dc2626", rows);
-        }).join("") || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No cardiopulmonary findings recorded yet.</div>`}
+          return sec(icon, specialtyLabel(sectionId), color, rows);
+        }).join("") || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No findings recorded yet.</div>`}
       </div>
-      ${pgFooter(3, totalPages)}
+      ${pgFooter(pageNum, totalPages)}
     </div>` : "";
+    const page3 = specialtyPage(3, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
+    const page4 = specialtyPage(d.cardio ? 4 : 3, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Assessment Report — ${escHtml(patName)}</title>
       <style>${css}</style>
-    </head><body>${page1}${page2}${page3}</body></html>`;
+    </head><body>${page1}${page2}${page3}${page4}</body></html>`;
   };
 
 
