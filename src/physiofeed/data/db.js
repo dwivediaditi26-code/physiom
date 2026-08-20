@@ -24,6 +24,7 @@ import {
   ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER,
 } from "./mockData.js";
 import { supabase } from "../../supabase.js";
+import { initialsOf } from "../components/shared/constants.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
 // Cosmetic-only fallback for the Stories bar (see the real getStories()
@@ -593,6 +594,46 @@ export async function getProfile() {
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
     return clone(CURRENT_USER); // `profiles` table not created yet, or any other failure
+  }
+}
+
+// Read-only lookup for VIEWING SOMEONE ELSE'S profile (PersonCard "Message"
+// used to be the only way to reach another clinician -- there was no
+// profile page to click into at all, see ProfilePage.jsx). Unlike
+// getProfile() this never creates a row -- you only ever auto-provision
+// your OWN profile on first visit, never someone else's.
+export async function getProfileById(userId) {
+  if (!userId || userId === "u-self") return clone(CURRENT_USER);
+
+  // Demo people (PEOPLE in mockData.js) never had real `profiles` rows --
+  // same reasoning as every other fallback in this file: a demo id will
+  // always miss in Supabase, so check the local list first and skip the
+  // network round-trip we know will fail.
+  const demoPerson = _people.find((p) => p.id === userId);
+  if (demoPerson) {
+    return clone({
+      id: demoPerson.id, name: demoPerson.name, role: demoPerson.role, verified: false,
+      gradient: demoPerson.grad, initials: initialsOf(demoPerson.name), location: demoPerson.location,
+      bio: "", quote: "", followers: 0, following: 0, avatarUrl: demoPerson.avatarUrl || null,
+      experience: "", languages: "", memberships: "", availableForConsults: false,
+    });
+  }
+
+  try {
+    const { data: row, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+    if (error) throw error;
+    if (!row) return null; // real uuid, but no profiles row -- genuinely doesn't exist
+    return clone({
+      id: row.id, name: row.name, role: row.role, verified: row.verified,
+      gradient: row.gradient, initials: row.initials, location: row.location,
+      bio: row.bio, quote: row.quote, followers: row.followers_count, following: row.following_count,
+      avatarUrl: row.avatar_url || null,
+      experience: row.experience || "", languages: row.languages || "", memberships: row.memberships || "",
+      availableForConsults: !!row.available_for_consults,
+    });
+  } catch (e) {
+    console.error("getProfileById(): --", e?.message || e);
+    return null;
   }
 }
 

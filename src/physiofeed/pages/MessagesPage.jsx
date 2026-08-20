@@ -88,12 +88,23 @@ export default function MessagesPage() {
 
   return (
     <main className="flex-1 min-w-0">
-      <div className="mb-5">
+      {/* Hidden on mobile once a thread is open -- reclaims the vertical
+          space this heading takes so the composer at the bottom of the
+          chat card doesn't get pushed below the fold on short viewports
+          (see the `dvh`, not `vh`, comment below for the other half of
+          this fix). */}
+      <div className={`${withId ? "hidden sm:block" : ""} mb-5`}>
         <h1 className="text-xl font-bold text-slate-900 mb-1">Messages</h1>
         <p className="text-sm text-slate-500">Direct conversations with other physios.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex" style={{ height: "min(70vh, 640px)" }}>
+      {/* `dvh` (dynamic viewport height), not `vh` -- on mobile browsers
+          `vh` is measured against the viewport WITH the address bar
+          collapsed, so a `vh`-based height plus this page's header/banner
+          chrome above it routinely pushed the message input below the
+          visible fold with no visual hint there was more content to
+          scroll to. `dvh` tracks the actually-visible viewport instead. */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex" style={{ height: "min(70dvh, 640px)" }}>
         {/* Conversation list -- hidden on mobile once a thread is open */}
         <div className={`${withId ? "hidden sm:flex" : "flex"} flex-col w-full sm:w-72 shrink-0 border-r border-slate-100 overflow-y-auto`}>
           {loadingList ? (

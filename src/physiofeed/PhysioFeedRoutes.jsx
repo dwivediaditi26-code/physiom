@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AppShell from "./components/layout/AppShell.jsx";
 import FeedPage from "./pages/FeedPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import OtherProfilePage from "./pages/OtherProfilePage.jsx";
 import EvidencePage from "./pages/EvidencePage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
@@ -24,6 +25,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/" element={<Navigate to="/feed" replace />} />
         <Route path="/feed" element={<FeedPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:userId" element={<OtherProfilePage />} />
         <Route path="/evidence" element={<EvidencePage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/communities" element={<CommunitiesPage />} />

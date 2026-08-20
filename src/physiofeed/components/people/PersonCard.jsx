@@ -1,5 +1,5 @@
 import { MapPin, UserPlus, Check, MessageSquare } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
@@ -9,12 +9,14 @@ export default function PersonCard({ person }) {
   const navigate = useNavigate();
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
-      <Avatar size={44} grad={person.grad} initials={initialsOf(person.name)} photoUrl={person.avatarUrl} />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-800 truncate">{person.name}</p>
+      <Link to={`/profile/${person.id}`} className="shrink-0">
+        <Avatar size={44} grad={person.grad} initials={initialsOf(person.name)} photoUrl={person.avatarUrl} />
+      </Link>
+      <Link to={`/profile/${person.id}`} className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-slate-800 truncate hover:underline">{person.name}</p>
         <p className="text-xs text-slate-400 truncate">{person.role}</p>
         <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {person.location} · {person.mutual} mutual</p>
-      </div>
+      </Link>
       <button
         onClick={() => navigate(`/messages?with=${encodeURIComponent(person.id)}`)}
         aria-label={`Message ${person.name}`}

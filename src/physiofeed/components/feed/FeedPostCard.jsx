@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck, UserPlus, Check, Send, Trash2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import PostMedia from "./PostMedia.jsx";
@@ -15,6 +16,12 @@ export default function FeedPostCard({ post }) {
   const [commentText, setCommentText] = useState("");
   const [burst, setBurst] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
+  const commentInputRef = useRef(null);
+
+  const openComments = () => {
+    setShowAllComments(true);
+    commentInputRef.current?.focus();
+  };
 
   const handleDoubleTap = (dir) => {
     if (dir === "prev" || dir === "next") {
@@ -42,12 +49,14 @@ export default function FeedPostCard({ post }) {
   return (
     <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5">
       <div className="flex items-center gap-3 mb-3">
-        <Avatar size={38} grad={post.gradient} initials={initialsOf(post.author)} photoUrl={post.authorAvatarUrl} />
+        <Link to={post.isSelf ? "/profile" : `/profile/${post.authorId}`} className="shrink-0">
+          <Avatar size={38} grad={post.gradient} initials={initialsOf(post.author)} photoUrl={post.authorAvatarUrl} />
+        </Link>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-slate-900 text-sm truncate">{post.author}</span>
+          <Link to={post.isSelf ? "/profile" : `/profile/${post.authorId}`} className="flex items-center gap-1 w-fit min-w-0">
+            <span className="font-semibold text-slate-900 text-sm truncate hover:underline">{post.author}</span>
             {post.verified && <BadgeCheck size={15} className="text-violet-600 shrink-0" />}
-          </div>
+          </Link>
           <p className="text-xs text-slate-400">{post.role} · {post.time}</p>
         </div>
         {!post.isSelf && (
@@ -82,7 +91,10 @@ export default function FeedPostCard({ post }) {
             <Heart size={19} className={post.liked ? "fill-rose-500 text-rose-500" : "text-slate-400 group-hover:text-rose-500"} />
             <span className={`text-xs font-medium ${post.liked ? "text-rose-500" : "text-slate-500"}`}>{post.likes}</span>
           </button>
-          <span className="flex items-center gap-1.5"><MessageCircle size={19} className="text-slate-400" /><span className="text-xs font-medium text-slate-500">{post.commentList.length}</span></span>
+          <button onClick={openComments} className="flex items-center gap-1.5 group focus:outline-none">
+            <MessageCircle size={19} className="text-slate-400 group-hover:text-violet-600" />
+            <span className="text-xs font-medium text-slate-500">{post.commentList.length}</span>
+          </button>
           <button className="flex items-center gap-1.5 group focus:outline-none"><Share2 size={19} className="text-slate-400 group-hover:text-violet-600" /></button>
         </div>
         <div className="flex items-center gap-1">
@@ -137,7 +149,7 @@ export default function FeedPostCard({ post }) {
             initials="AS" regardless of who was actually signed in --
             now shows the real signed-in user's avatar. */}
         <Avatar size={26} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
-        <input value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
+        <input ref={commentInputRef} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
           placeholder="Add a comment…" className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent" />
         <button onClick={submitComment} disabled={!commentText.trim()} className="text-violet-600 disabled:text-slate-300"><Send size={16} /></button>
       </div>
