@@ -1577,6 +1577,26 @@ export function SummarySection({ setting, system, data, assessSteps }) {
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
 export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav } = {}) {
+  // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
+  // which is what causes the "whole page jumps/zooms while filling" feeling
+  // on mobile (2026-08-20, Aditi). Mirrors NeurologicalAssessment.jsx's own
+  // effect -- this file was missing it entirely.
+  useEffect(() => {
+    let tag = document.querySelector('meta[name="viewport"]');
+    const created = !tag;
+    if (!tag) {
+      tag = document.createElement("meta");
+      tag.name = "viewport";
+      document.head.appendChild(tag);
+    }
+    const prevContent = tag.getAttribute("content");
+    tag.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
+    return () => {
+      if (created) tag.remove();
+      else if (prevContent) tag.setAttribute("content", prevContent);
+    };
+  }, []);
+
   // Editing an existing assessment (2026-08-20, Aditi: "clicking on edit
   // assessment take us to same as new assessment...it should take us to
   // directly demographic data of that template") -- Setting/System (step 0/1)
@@ -1756,6 +1776,15 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
+        }
+        /* Fix (2026-08-20, Aditi): this screen is embedded inside
+           AppFull.jsx's own scroll container, which has its own sticky
+           mobile header (.pm-mobile-hdr, 64px tall, z-index 101) stuck to
+           the SAME top:0 -- without this offset the two sticky elements
+           collide and the title/icon renders overlapped/hidden behind the
+           app header once scrolled. */
+        @media (max-width: 767px) {
+          .topbar { top: 64px; }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {

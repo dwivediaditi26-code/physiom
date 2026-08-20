@@ -1761,6 +1761,14 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
         }
+        /* Fix (2026-08-20, Aditi: "overlaping is happeining with
+           neurological and cardio assessment name") -- same reasoning as
+           CardiopulmonaryAssessment.jsx's matching rule: offset below
+           AppFull.jsx's own sticky mobile header (.pm-mobile-hdr, 64px
+           tall) instead of both competing for the same top:0. */
+        @media (max-width: 767px) {
+          .topbar { top: 64px; }
+        }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
           border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purple};
