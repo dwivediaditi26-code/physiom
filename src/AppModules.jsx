@@ -494,6 +494,14 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     `;
 
     // ── PAGE FOOTER ───────────────────────────────────────────────────────
+    // Bug fix (2026-08-19, Aditi's request): a completed cardio assessment
+    // never appeared in this PDF at all -- CardiopulmonaryAssessment.jsx
+    // was disconnected from the patient record until this same pass (see
+    // that file's header comment), so there was nothing here to show
+    // before now. Appends a 3rd page ONLY when d.cardio has data, rather
+    // than reworking page1/page2's dense, precisely laid-out ortho content
+    // to make room -- page count in every footer adjusts accordingly.
+    const totalPages = d.cardio ? 3 : 2;
     const pgFooter = (n, total) => `
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:8px;color:#94a3b8;">PhysioMind Pro · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
@@ -591,7 +599,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
         ${ccNotes && ccNotes !== "--" ? sec("📝","Clinician notes — subjective","#334155", `<div style="font-size:10px;color:#334155;line-height:1.6;">${ccNotes}</div>`) : ""}
 
       </div>
-      ${pgFooter(1, 2)}
+      ${pgFooter(1, totalPages)}
     </div>`;
 
     // ── PAGE 2: OBJECTIVE FINDINGS ────────────────────────────────────────
@@ -631,13 +639,35 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
         </div>
 
       </div>
-      ${pgFooter(2, 2)}
+      ${pgFooter(2, totalPages)}
     </div>`;
+
+    // ── PAGE 3: CARDIOPULMONARY ASSESSMENT (only when recorded) ─────────
+    // Generic key/value dump per section rather than per-field knowledge
+    // of CardiopulmonaryAssessment.jsx's ~13 steps -- that file owns its
+    // own field labels/shape; this just needs to show whatever's there
+    // without duplicating (and risking drifting from) that internal model.
+    const cardioLabel = (k) => k.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+    const page3 = d.cardio ? `<div class="page">
+      ${pdfHeader("Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "#dc2626")}
+      <div class="body">
+        ${Object.entries(d.cardio).map(([sectionId, fields]) => {
+          if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) return "";
+          const rows = Object.entries(fields).map(([k, val]) => {
+            const text = Array.isArray(val) ? val.join(", ") : String(val ?? "");
+            return fieldRow(cardioLabel(k), escHtml(text));
+          }).join("");
+          if (!rows) return "";
+          return sec("🫀", cardioLabel(sectionId), "#dc2626", rows);
+        }).join("") || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No cardiopulmonary findings recorded yet.</div>`}
+      </div>
+      ${pgFooter(3, totalPages)}
+    </div>` : "";
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Assessment Report — ${escHtml(patName)}</title>
       <style>${css}</style>
-    </head><body>${page1}${page2}</body></html>`;
+    </head><body>${page1}${page2}${page3}</body></html>`;
   };
 
 

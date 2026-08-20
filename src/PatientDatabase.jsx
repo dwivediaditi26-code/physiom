@@ -3062,6 +3062,31 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     })()}
                   </Sec>
 
+                  {/* ── Cardiopulmonary Assessment (2026-08-19) ── previously
+                      never appeared anywhere in Patient Profile -- the whole
+                      module was disconnected from the patient record (see
+                      CardiopulmonaryAssessment.jsx's own header comment), so
+                      there was nothing here TO show. Not expandable in place
+                      like ROM/Kinetic Chain -- it's a full 13-step standalone
+                      tool, not a single-screen module -- clicking navigates
+                      to it the same way Fascia/Functional Screens below do. */}
+                  {(()=>{
+                    const cardio = d.cardio || null;
+                    const cardioDem = cardio?.demographics || {};
+                    const stepsFilled = cardio ? Object.keys(cardio).filter((k) => k !== "demographics" && cardio[k] && Object.keys(cardio[k]).length > 0).length : 0;
+                    return (
+                      <Sec icon="🫀" title="Cardiopulmonary Assessment" navKey="cardio_assessment" hasData={!!cardio}
+                        emptyMsg="Not started yet — tap to begin">
+                        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                          {cardioDem.diagnosis && (
+                            <span style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:20,background:"#FEE2E2",color:"#991B1B"}}>{cardioDem.diagnosis}</span>
+                          )}
+                          <span style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:20,background:"#F3F4F6",color:C.muted}}>{stepsFilled} section{stepsFilled===1?"":"s"} recorded</span>
+                        </div>
+                      </Sec>
+                    );
+                  })()}
+
                   {/* ── Kinetic Chain ── */}
                   <Sec icon="⛓️" title="Kinetic Chain" navKey="kinetic" hasData={kcKeys.length>0||!!d.kinetic_chain}
                     expandable isExpanded={expanded==="kinetic"} onToggle={()=>setExpanded(x=>x==="kinetic"?null:"kinetic")}
