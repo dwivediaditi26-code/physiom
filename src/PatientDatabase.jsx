@@ -4152,7 +4152,17 @@ const innerBody = (
                 key={p.id}
                 patient={p}
                 isActive={p.id === activeId}
-                onEdit={()=>{ onSelect(p); if (onNav) onNav("demographics"); }}
+                // Route by specialty, same as onProfile below -- a Cardio/
+                // Neuro patient's own assessment lives in its own wizard,
+                // not Ortho's Demographics step (Aditi: "click on rahul
+                // edit assessment..it taking us to ortho").
+                onEdit={()=>{
+                  onSelect(p);
+                  if (!onNav) return;
+                  if (p?.data?.cardio) onNav("cardio_assessment");
+                  else if (p?.data?.neuro) onNav("neuro_assessment");
+                  else onNav("demographics");
+                }}
                 onDelete={()=>onDelete(p.id)}
                 // One profile per patient, not two buttons (Aditi:
                 // "just be one patient profile...not show speciality
