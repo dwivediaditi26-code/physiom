@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import {
-  Search, Bell, User, ClipboardList, PersonStanding, Eye, Hand, Move,
+  Search, Bell, PersonStanding, Eye, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
   Waves, Pill, HandMetal, GraduationCap,
 } from "lucide-react";
@@ -25,8 +25,6 @@ const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinet
 // desktop sidebar and old bottom nav already used. Nothing fabricated:
 // every card here opens the exact same real screen those did.
 const ASSESSMENT_LIBRARY = [
-  { key: "demographics", label: "Demographics", desc: "Patient information", icon: User, tint: "violet" },
-  { key: "subjective", label: "Subjective", desc: "History & complaint", icon: ClipboardList, tint: "blue" },
   { key: "posture", label: "Posture Analysis", desc: "AI posture screening", icon: PersonStanding, tint: "teal" },
   { key: "observation", label: "Observation", desc: "Visual inspection", icon: Eye, tint: "amber" },
   { key: "palpation", label: "Palpation", desc: "Tissue assessment", icon: Hand, tint: "rose" },
