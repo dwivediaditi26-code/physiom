@@ -81,7 +81,6 @@ const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"
 const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
-const LazySOAP          = lazy(() => import("./lazy_clinical.jsx"));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
 const LazyOutcomes      = lazy(() => import("./lazy_outcomes.jsx"));
 const LazyNeuro         = lazy(() => import("./lazy_neuro.jsx"));
@@ -97,7 +96,6 @@ const LazyKinetic       = lazy(() => import("./lazy_kinetic.jsx"));
 const LazyCyriaxRegion  = lazy(() => import("./lazy_cyriax_region.jsx"));
 const LazyObservation   = lazy(() => import("./lazy_observation.jsx"));
 const LazySOAPNote      = lazy(() => import("./lazy_soapnote.jsx"));
-const LazyLiveSOAP      = lazy(() => import("./lazy_livesoap.jsx"));
 const LazyMMT           = lazy(() => import("./lazy_mmt.jsx"));
 const LazyROM           = lazy(() => import("./lazy_rom.jsx"));
 
@@ -387,13 +385,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     } catch {}
     return {};
   });
-  const [draftRestored, setDraftRestored] = useState(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      const draft = raw && raw.pid ? raw.data : (raw && !raw.pid ? raw : null);
-      return !!(draft && Object.keys(draft).length > 5);
-    } catch { return false; }
-  });
   const [infoModal, setInfoModal] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   // bnavHidden removed — bottom nav is now always visible
@@ -526,8 +517,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     } catch { return null; }
   });
   const [showPatientDb, setShowPatientDb] = useState(false);
-  const [showUnsaved, setShowUnsaved] = useState(false);
-  const [pendingPatient, setPendingPatient] = useState(null);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
   const [profileTab, setProfileTab] = useState(null);
@@ -620,8 +609,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   const selectPatient = (p) => {
-    const hasChanges = Object.keys(data).length > 0 && activePatientId !== p.id;
-    if (hasChanges) { setPendingPatient(p); setShowUnsaved(true); return; }
+    // Flush any edits on the outgoing patient before switching -- the 2s
+    // debounced autosave effects already do this in the background, but
+    // switching mid-edit shouldn't have to wait out that debounce window.
+    if (Object.keys(data).length > 0 && activePatientId && activePatientId !== p.id) {
+      setPatients(prev => {
+        const updated = prev.map(pt => pt.id === activePatientId ? { ...pt, data, name: data["dem_name"] || pt.name, updatedAt: new Date().toISOString() } : pt);
+        savePatientDB(updated, currentUser?.id);
+        return updated;
+      });
+    }
     // Load patient data; ignore any draft that belongs to a different patient
     try {
       const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
@@ -640,23 +637,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setShowPatientDb(false);
     setJsonMsg({ type:"success", text:`✅ Loaded: ${p.name || "Patient"}` });
     setTimeout(() => setJsonMsg(null), 2500);
-  };
-
-  const confirmSwitchPatient = (save) => {
-    if (save && activePatientId) {
-      setPatients(prev => {
-        const updated = prev.map(p => p.id === activePatientId ? { ...p, data, name: data["dem_name"] || p.name, updatedAt: new Date().toISOString() } : p);
-        savePatientDB(updated, currentUser?.id);
-        return updated;
-      });
-    }
-    if (pendingPatient) {
-      setData(pendingPatient.data || {});
-      setActivePatientId(pendingPatient.id);
-      setShowPatientDb(false);
-    }
-    setPendingPatient(null);
-    setShowUnsaved(false);
   };
 
   const deletePatient = (id) => {
@@ -1291,30 +1271,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         />
       )}
 
-      {/* ── UNSAVED CHANGES DIALOG ── */}
-      {showUnsaved && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#0e1118",border:"1px solid rgba(255,179,0,0.3)",borderRadius:14,padding:24,maxWidth:380,width:"100%"}}>
-            <div style={{fontSize:"1.2rem",marginBottom:8}}>⚠️</div>
-            <div style={{fontWeight:800,color:"#0D0D0D",fontSize:"0.92rem",marginBottom:6}}>Unsaved Changes</div>
-            <div style={{fontSize:"0.78rem",color:"#5a7090",marginBottom:20,lineHeight:1.6}}>
-              You have unsaved changes for <strong style={{color:"#0D0D0D"}}>{activePatient?.name || "this patient"}</strong>. What would you like to do?
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <button onClick={()=>confirmSwitchPatient(true)} style={{padding:"11px",background:"linear-gradient(135deg,#00e5ff,#7f5af0)",border:"none",borderRadius:9,color:"#000",fontWeight:800,fontSize:"0.8rem",cursor:"pointer"}}>
-                💾 Save & Switch Patient
-              </button>
-              <button onClick={()=>confirmSwitchPatient(false)} style={{padding:"11px",background:"rgba(255,179,0,0.1)",border:"1px solid rgba(255,179,0,0.3)",borderRadius:9,color:"#ffb300",fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>
-                ↩ Discard Changes & Switch
-              </button>
-              <button onClick={()=>{setShowUnsaved(false);setPendingPatient(null);}} style={{padding:"10px",background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:9,color:"#5a7090",fontSize:"0.78rem",cursor:"pointer"}}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── PERSISTENT RED FLAG ALERT BANNER ── */}
       {hasRedFlags && (
         <div style={{position:"sticky",top:54,zIndex:98,background:urgentFlags.length>0?"rgba(255,77,109,0.97)":"rgba(255,179,0,0.95)",borderBottom:`2px solid ${urgentFlags.length>0?"#ff4d6d":"#ffb300"}`,padding:"8px 20px",display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap"}}>
@@ -1350,14 +1306,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           }} style={{background:"rgba(0,0,0,0.25)",border:"1px solid rgba(0,0,0,0.4)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>
             📋 Document Referral
           </button>
-        </div>
-      )}
-
-      {/* ── DRAFT RESTORED BANNER ── */}
-      {draftRestored && (
-        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",zIndex:1000,background:"rgba(124,58,237,0.95)",color:"#fff",fontWeight:700,fontSize:"0.75rem",padding:"10px 18px",borderRadius:12,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",display:"flex",gap:12,alignItems:"center",whiteSpace:"nowrap",maxWidth:"calc(100vw - 32px)"}}>
-          💾 Unsaved draft restored
-          <button onClick={()=>{ setDraftRestored(false); try { localStorage.removeItem(DRAFT_KEY); } catch {} }} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:6,color:"#fff",fontWeight:800,fontSize:"0.8rem",cursor:"pointer",padding:"3px 8px"}}>Dismiss</button>
         </div>
       )}
 
@@ -2318,8 +2266,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
         </div>
       </nav>
-      {/* ── Live SOAP Panel — always visible floating panel ── */}
-      <Suspense fallback={null}><LazyLiveSOAP data={data} onNavigate={navTo}/></Suspense>
     </div>
   );
 }

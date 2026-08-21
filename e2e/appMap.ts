@@ -282,15 +282,7 @@ export async function fillFascia(page: Page): Promise<boolean> {
 // SOAP note
 // ─────────────────────────────────────────────────────────────────────────────
 export async function openSoap(page: Page) {
-  // Preferred: the in-context "Live SOAP" panel button (always present during an
-  // assessment). This renders the S/O/A/P note without leaving the workflow.
-  const live = page.getByRole("button", { name: /Live SOAP/i }).first();
-  if (await live.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await live.click().catch(() => {});
-    await page.waitForTimeout(800);
-    return;
-  }
-  // Fallback: Documentation → SOAP Notes. Same dual-render issue as the mobile
+  // Documentation → SOAP Notes. Same dual-render issue as the mobile
   // hamburger in openModule() -- "Documentation"/"SOAP Notes" exist in BOTH
   // the desktop .pm-sidebar and the mobile .pm-nav-drawer at once (CSS just
   // hides one per viewport), so an unscoped .first() could click a hidden

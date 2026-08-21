@@ -121,11 +121,11 @@ for (const [label, group, regionName] of REGIONS) {
   });
 }
 
-// ── Data-integrity: the full subjective must carry through to the analysis,
-// Live SOAP, and SOAP Notes — not get half-lost. We type a unique marker into
+// ── Data-integrity: the full subjective must carry through to the analysis
+// and SOAP Notes — not get half-lost. We type a unique marker into
 // the chief complaint, fill the rest, then assert the marker + analysis appear
 // downstream. (Does NOT save a patient -> no writes to your real database.)
-test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes", async ({ page }) => {
+test("Hip: full subjective carries through to analysis and SOAP Notes", async ({ page }) => {
   const MARKER = "E2ECHECK buttock pain seven days right side";
   await login(page);
   await page.getByRole("button", { name: /Start Assessment/i }).first().click();
@@ -140,12 +140,6 @@ test("Hip: full subjective carries through to analysis, Live SOAP and SOAP Notes
   await selectRegion(page, "Lower limb", "Hip / Groin");
   await fillSome(page);
   await expect(page.getByText(/E2ECHECK/).first()).toBeVisible();   // present on subjective
-  await noCrash(page);
-
-  // Live SOAP panel should reflect the subjective data
-  const liveBtn = page.getByRole("button", { name: /Live SOAP/i }).first();
-  if (await liveBtn.isVisible({ timeout: 6000 }).catch(() => false)) await liveBtn.click().catch(() => {});
-  await expect(page.getByText(/E2ECHECK/).first()).toBeVisible({ timeout: 8000 });
   await noCrash(page);
 
   // Run analysis

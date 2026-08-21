@@ -7,7 +7,7 @@ import { login, creds, openSoap } from './appMap';
 //
 // Concurrency/load check: simulates N students logged into their own
 // accounts, each creating a patient, recording a finding, and opening the
-// Live SOAP note AT THE SAME TIME. This is the scenario the regular E2E
+// SOAP note AT THE SAME TIME. This is the scenario the regular E2E
 // suite never exercises -- every other spec runs one browser context at a
 // time. What this is trying to catch: Supabase connection/throughput
 // limits, RLS contention, or UI race conditions that only show up under
@@ -101,7 +101,7 @@ async function oneStudentFlow(browser: Browser, index: number): Promise<RunResul
     await expect(page.getByText('Sternocleidomastoid').first()).toBeVisible({ timeout: 15_000 });
     await page.locator('select.pm-compact-select').first().selectOption('5');
 
-    // Open the Live SOAP panel -- confirms the finding actually reads back
+    // Open the SOAP note -- confirms the finding actually reads back
     // (not just that the write request was fired) under concurrent load.
     await openSoap(page);
     const soapBody = await page.locator('body').innerText();
@@ -134,7 +134,7 @@ test.describe('Load / concurrency @load', () => {
   // time for one data point.)
   test.describe.configure({ retries: 0 });
 
-  test(`${N} students creating a patient + recording a finding + opening Live SOAP at the same time`, async ({ browser }) => {
+  test(`${N} students creating a patient + recording a finding + opening the SOAP note at the same time`, async ({ browser }) => {
     test.setTimeout(Math.max(120_000, N * 4000));
     const { email } = creds();
     expect(email, 'Put E2E_EMAIL/E2E_PASSWORD (or e2e/login.local.json) in place -- load test reuses the existing E2E test account').not.toBe('');

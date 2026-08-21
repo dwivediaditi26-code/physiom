@@ -99,11 +99,10 @@ test("@soap-fascia fascia findings appear in the SOAP note", async ({ page }) =>
   // deterministically opens the first test card in the default "screening"
   // region, which is always fa_skin_roll -- mapped to "Skin Rolling" by both
   // independent SOAP renderers (buildRealtimeSOAP's "Fascial Assessment:"
-  // block in Live SOAP, AND the separate SOAP Notes visual card, which uses
-  // its own "FASCIA INTEGRATION" heading + the same per-field "Skin Rolling:
-  // <value>" line -- these two renderers are independently maintained, see
-  // allConditionsVisibility.test.jsx, so accept either screen's real output
-  // rather than assuming openSoap() always reaches the Live SOAP panel.
+  // block, AND the separate SOAP Notes visual card, which uses its own
+  // "FASCIA INTEGRATION" heading + the same per-field "Skin Rolling: <value>"
+  // line -- these two renderers are independently maintained, see
+  // allConditionsVisibility.test.jsx, so accept either screen's real output.
   await assertInSoap(page, /Fascial Assessment|Skin Rolling/i);
 });
 
