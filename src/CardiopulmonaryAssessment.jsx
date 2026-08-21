@@ -1,4 +1,13 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
+import InfoCard from "./InfoCard.jsx";
+import { cardiovascularData } from "./cardiovascularData.js";
+import { respiratoryData } from "./respiratoryData.js";
+
+// Opens the rich InfoCard overlay from anywhere in the field tree below
+// CardiopulmonaryAssessment without prop-drilling a setter through every
+// wrapper (TextField/SelectField/NumberField/etc all sit between a section
+// and FieldShell). Provided once, near the bottom of the default export.
+const InfoCardContext = createContext(null);
 
 /* ============================================================
    BRAND / TOKENS — matches existing PhysioMind purple system
@@ -99,13 +108,26 @@ function InfoButton({ text }) {
   );
 }
 
-function FieldShell({ label, hint, howTo, children }) {
+// Small ⓘ trigger for the rich InfoCard overlay (Perform/Scale/Interpret
+// tabs) -- replaces the plain-text InfoButton wherever a field has a
+// matching cardiovascularData/respiratoryData entry. Sits inline with the
+// label, same row, no extra vertical space.
+function InfoCardButton({ data }) {
+  const openCard = useContext(InfoCardContext);
+  return (
+    <button type="button" className="info-card-btn" onClick={() => openCard?.(data)} title={`Learn: ${data.title}`} aria-label={`Learn: ${data.title}`}>
+      ⓘ
+    </button>
+  );
+}
+
+function FieldShell({ label, hint, howTo, info, children }) {
   return (
     <div className="field-block">
       {label && (
         <div className="field-label-row">
           <span className="field-label">{label}</span>
-          {howTo && <InfoButton text={howTo} />}
+          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
         </div>
       )}
       {children}
@@ -114,9 +136,9 @@ function FieldShell({ label, hint, howTo, children }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
@@ -165,7 +187,7 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, placeholder, hint }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -176,7 +198,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
@@ -195,9 +217,9 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   );
 }
 
-function Segmented({ label, options, value, onChange, hint, howTo }) {
+function Segmented({ label, options, value, onChange, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="segmented">
         {options.map((o) => (
           <button
@@ -214,12 +236,12 @@ function Segmented({ label, options, value, onChange, hint, howTo }) {
   );
 }
 
-function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, width }) {
+function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
   return (
     <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
       <div className="vital-label-row">
         <span className="vital-label">{label}</span>
-        {howTo && <InfoButton text={howTo} />}
+        {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
       </div>
       <div className="vital-input-wrap">
         <input
@@ -237,9 +259,9 @@ function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, w
   );
 }
 
-function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
+function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <textarea
         className="textarea"
         rows={2}
@@ -251,10 +273,10 @@ function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
   );
 }
 
-function ScaleField({ label, value, onChange, hint, howTo, max = 10 }) {
+function ScaleField({ label, value, onChange, hint, howTo, info, max = 10 }) {
   const v = value === undefined || value === "" ? 0 : Number(value);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="scale-wrap">
         <input
           type="range"
@@ -275,9 +297,9 @@ function ScaleField({ label, value, onChange, hint, howTo, max = 10 }) {
   );
 }
 
-function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo }) {
+function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="lr-grid">
         <div className="lr-row lr-head">
           <div className="lr-cell lr-zone" />
@@ -410,17 +432,17 @@ const CT_RENDERERS = {
       options={["Present", "Reduced", "Absent", "Irregular"]}
       value={d.pulses || {}}
       onChange={(v) => set("pulses", v)}
-      howTo="Palpate and compare both sides — asymmetry or absence needs medical correlation."
+      info={cardiovascularData.pulses}
     />
   ),
   [ctId("Cardiovascular", "Peripheral circulation")]: (d, set) => (
     <>
-      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} />
-      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} />
+      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
+      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
     </>
   ),
   [ctId("Cardiovascular", "Capillary refill")]: (d, set) => (
-    <NumberField label="Capillary refill" value={d.capRefill} onChange={(v) => set("capRefill", v)} unit="sec" howTo="Press a nail bed until it blanches, then time the return of colour. Normal is under 2 seconds." />
+    <NumberField label="Capillary refill" value={d.capRefill} onChange={(v) => set("capRefill", v)} unit="sec" info={cardiovascularData.capRefill} />
   ),
   [ctId("Cardiovascular", "Peripheral edema")]: (d, set) => (
     <>
@@ -430,7 +452,7 @@ const CT_RENDERERS = {
         options={["None", "Mild", "Moderate", "Severe"]}
         value={d.edema}
         onChange={(v) => set("edema", v)}
-        howTo="Press firmly over the shin/ankle for a few seconds — pitting leaves a visible indentation. In bed-bound patients, always check the sacrum too, since fluid pools there instead of the ankles."
+        info={cardiovascularData.edema}
       />
       <SelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
     </>
@@ -449,7 +471,7 @@ const CT_RENDERERS = {
         options={["None", "Dizziness", "Light-headedness", "Blurred vision", "Palpitations", "Near-syncope"]}
         value={d.symptoms}
         onChange={(v) => set("symptoms", v)}
-        howTo="Positive if systolic BP drops ≥20 mmHg or diastolic ≥10 mmHg within 3 minutes of standing, with or without symptoms."
+        info={cardiovascularData.orthostatic}
       />
     </>
   ),
@@ -458,9 +480,9 @@ const CT_RENDERERS = {
       <div className="vitals-grid">
         <NumberField label="Resting HR" value={d.restHR} onChange={(v) => set("restHR", v)} unit="bpm" width="30%" />
         <NumberField label="Peak HR" value={d.peakHR} onChange={(v) => set("peakHR", v)} unit="bpm" width="30%" />
-        <NumberField label="Recovery HR (1-2 min)" value={d.recoveryHR} onChange={(v) => set("recoveryHR", v)} unit="bpm" width="30%" />
+        <NumberField label="Recovery HR (1-2 min)" value={d.recoveryHR} onChange={(v) => set("recoveryHR", v)} unit="bpm" width="30%" info={cardiovascularData.hrRecovery} />
       </div>
-      <SelectField label="Response pattern" type="single" options={["Appropriate rise", "Blunted response", "Excessive rise", "Chronotropic incompetence suspected"]} value={d.pattern} onChange={(v) => set("pattern", v)} />
+      <SelectField label="Response pattern" type="single" options={["Appropriate rise", "Blunted response", "Excessive rise", "Chronotropic incompetence suspected"]} value={d.pattern} onChange={(v) => set("pattern", v)} info={cardiovascularData.exerciseHRResponse} />
     </>
   ),
   [ctId("Cardiovascular", "Blood pressure response")]: (d, set) => (
@@ -468,7 +490,7 @@ const CT_RENDERERS = {
       <div className="vitals-grid">
         <NumberField label="Resting BP sys" value={d.restBPs} onChange={(v) => set("restBPs", v)} unit="mmHg" width="30%" />
         <NumberField label="Peak BP sys" value={d.peakBPs} onChange={(v) => set("peakBPs", v)} unit="mmHg" width="30%" />
-        <NumberField label="Recovery BP sys" value={d.recoveryBPs} onChange={(v) => set("recoveryBPs", v)} unit="mmHg" width="30%" />
+        <NumberField label="Recovery BP sys" value={d.recoveryBPs} onChange={(v) => set("recoveryBPs", v)} unit="mmHg" width="30%" info={cardiovascularData.bpRecovery} />
       </div>
       <SelectField
         label="Response pattern"
@@ -476,12 +498,12 @@ const CT_RENDERERS = {
         options={["Normal rise", "Hypotensive response", "Exaggerated hypertensive response", "Failure to rise"]}
         value={d.pattern}
         onChange={(v) => set("pattern", v)}
-        howTo="A fall in systolic BP during exertion can indicate serious cardiac limitation — stop criterion."
+        info={cardiovascularData.exerciseBPResponse}
       />
     </>
   ),
   [ctId("Cardiovascular", "Rhythm assessment")]: (d, set) => (
-    <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} />
+    <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} info={cardiovascularData.pulseRhythm} />
   ),
   [ctId("Cardiovascular", "Cardiac auscultation")]: (d, set) => (
     <>
@@ -491,20 +513,20 @@ const CT_RENDERERS = {
         options={["S1 normal", "S2 normal", "S3 present", "S4 present", "Murmur present"]}
         value={d.heartSounds}
         onChange={(v) => set("heartSounds", v)}
-        howTo="S1 = mitral/tricuspid closure. S2 = aortic/pulmonary closure. S3 suggests cardiac failure in adults (can be normal in children). S4 is heard in heart failure, hypertension, or aortic valve disease. A murmur is turbulent flow — an incompetent valve causes backflow, a stenotic valve causes forward-flow turbulence."
+        info={cardiovascularData.cardiacAuscultation}
       />
       {String(d.heartSounds || "").includes("Murmur present") && (
-        <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." />
+        <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
       )}
     </>
   ),
   [ctId("Respiratory", "Respiratory rate")]: (d, set) => (
-    <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" howTo="Normal is 12–16 breaths/min; inspiration is active, expiration passive." />
+    <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
   ),
   [ctId("Respiratory", "Breathing pattern")]: (d, set) => (
     <>
-      <SelectField label="Breathing pattern" type="single" options={["Normal", "Tachypnea", "Bradypnea", "Laboured", "Shallow", "Irregular"]} value={d.pattern} onChange={(v) => set("pattern", v)} />
-      <SelectField label="Breathing pattern type" type="single" options={["Diaphragmatic", "Upper chest", "Thoracoabdominal", "Paradoxical"]} value={d.patternType} onChange={(v) => set("patternType", v)} />
+      <SelectField label="Breathing pattern" type="single" options={["Normal", "Tachypnea", "Bradypnea", "Laboured", "Shallow", "Irregular"]} value={d.pattern} onChange={(v) => set("pattern", v)} info={respiratoryData.respRate} />
+      <SelectField label="Breathing pattern type" type="single" options={["Diaphragmatic", "Upper chest", "Thoracoabdominal", "Paradoxical"]} value={d.patternType} onChange={(v) => set("patternType", v)} info={respiratoryData.breathingPattern} />
     </>
   ),
   [ctId("Respiratory", "Chest expansion")]: (d, set) => (
@@ -514,7 +536,7 @@ const CT_RENDERERS = {
       options={["Symmetrical", "Reduced right", "Reduced left", "Globally reduced"]}
       value={d.expansion}
       onChange={(v) => set("expansion", v)}
-      howTo="Hands on the chest wall, thumbs meeting at the midline — ask the patient to breathe in fully and watch the thumbs move apart symmetrically. Asymmetry points to the affected side."
+      info={respiratoryData.chestExpansion}
     />
   ),
   [ctId("Respiratory", "Chest percussion")]: (d, set) => (
@@ -534,7 +556,7 @@ const CT_RENDERERS = {
       options={["Normal", "Reduced", "Crackles", "Wheeze", "Rhonchi", "Bronchial"]}
       value={d.auscultation || {}}
       onChange={(v) => set("auscultation", v)}
-      howTo="Listen systematically, comparing sides at each level. Crackles = fluid/secretions. Wheeze = airway narrowing. Rhonchi = large-airway secretions. Bronchial breathing = over consolidation. Reduced/absent = effusion, pneumothorax, or collapse."
+      info={respiratoryData.breathSounds}
     />
   ),
   [ctId("Respiratory", "Cough assessment")]: (d, set) => (
@@ -544,7 +566,7 @@ const CT_RENDERERS = {
       options={["None", "Dry", "Productive", "Weak / ineffective", "Painful"]}
       value={d.cough}
       onChange={(v) => set("cough", v)}
-      howTo="Cough/sputum questions can feel embarrassing — phrase gently: 'does coughing make you leak urine?', 'does this interfere with your physiotherapy?'"
+      info={respiratoryData.cough}
     />
   ),
   [ctId("Respiratory", "Sputum assessment")]: (d, set) => (
@@ -557,7 +579,7 @@ const CT_RENDERERS = {
         value={d.sputumColour}
         onChange={(v) => set("sputumColour", v)}
         hint={d.sputumColour === "Green" ? "Suggests infection." : d.sputumColour === "Blood-stained" ? "Haemoptysis — ranges from streaks to frank blood; correlate urgently." : undefined}
-        howTo="Saliva = clear watery. Mucoid = white/opalescent. Mucopurulent = slightly discoloured. Purulent = thick, yellow/dark green/rusty. Frothy pink/white suggests pulmonary oedema. Black specks suggest smoke/dust exposure."
+        info={respiratoryData.sputum}
       />
       <SelectField label="Sputum consistency" type="single" options={["Thin", "Thick", "Tenacious"]} value={d.sputumConsistency} onChange={(v) => set("sputumConsistency", v)} />
     </>
@@ -570,8 +592,8 @@ const CT_RENDERERS = {
   ),
   [ctId("Respiratory", "Dyspnea assessment")]: (d, set) => (
     <>
-      <ScaleField label="Dyspnea at rest" value={d.dyspneaRest} onChange={(v) => set("dyspneaRest", v)} />
-      <ScaleField label="Dyspnea on activity" value={d.dyspneaActivity} onChange={(v) => set("dyspneaActivity", v)} howTo="Modified Borg 0–10 scale." />
+      <ScaleField label="Dyspnea at rest" value={d.dyspneaRest} onChange={(v) => set("dyspneaRest", v)} info={respiratoryData.borg} />
+      <ScaleField label="Dyspnea on activity" value={d.dyspneaActivity} onChange={(v) => set("dyspneaActivity", v)} info={respiratoryData.borg} />
     </>
   ),
   [ctId("Functional / Exercise", "6-Minute Walk Test")]: (d, set) => (
@@ -591,7 +613,7 @@ const CT_RENDERERS = {
         options={["Completed", "Dyspnea", "Fatigue", "Chest discomfort", "Dizziness", "Desaturation", "Other"]}
         value={d.stopReason}
         onChange={(v) => set("stopReason", v)}
-        howTo="Flat corridor, patient's own pace, 6 minutes. Stop for chest pain, SpO₂ <88%, marked dizziness, or severe dyspnea."
+        info={cardiovascularData.sixMWT}
       />
     </>
   ),
@@ -649,13 +671,13 @@ const CT_RENDERERS = {
       options={MMRC}
       value={d.mmrc}
       onChange={(v) => set("mmrc", v)}
-      howTo="0: breathless only on strenuous exercise. 1: breathless hurrying on level ground. 2: walks slower than peers or stops for breath. 3: stops after ~100m. 4: too breathless to leave the house."
+      info={respiratoryData.mmrc}
     />
   ),
   [ctId("Outcome Measures", "Borg Dyspnea")]: (d, set) => (
-    <ScaleField label="Borg dyspnea" value={d.borg} onChange={(v) => set("borg", v)} howTo="Modified Borg 0–10: 0 = nothing at all, 3 = moderate, 5 = severe, 7 = very severe, 10 = maximal." />
+    <ScaleField label="Borg dyspnea" value={d.borg} onChange={(v) => set("borg", v)} info={respiratoryData.borg} />
   ),
-  [ctId("Outcome Measures", "Borg RPE")]: (d, set) => <ScaleField label="Borg RPE" value={d.rpe} onChange={(v) => set("rpe", v)} howTo="Modified Borg 0–10 rating of perceived exertion." />,
+  [ctId("Outcome Measures", "Borg RPE")]: (d, set) => <ScaleField label="Borg RPE" value={d.rpe} onChange={(v) => set("rpe", v)} info={cardiovascularData.borgRPE} />,
   [ctId("Outcome Measures", "CAT")]: (d, set) => <NumberField label="CAT score" value={d.cat} onChange={(v) => set("cat", v)} unit="/40" />,
   [ctId("Outcome Measures", "Other cardiothoracic outcome")]: (d, set) => (
     <TextArea label="Outcome measure" value={d.measure} onChange={(v) => set("measure", v)} placeholder="Name the measure and record the score" />
@@ -1013,16 +1035,16 @@ function VitalsSection({ data, setData, system }) {
     <>
       <SectionIntro icon="❤️" title="Baseline Physiological Parameters" />
       <div className="vitals-grid">
-        <NumberField label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" />
-        <NumberField label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" />
-        <NumberField label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" />
-        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" howTo="Normal is 12–16 breaths/min; inspiration is active, expiration passive." />
-        <NumberField label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" howTo="≥95% on room air is generally reassuring — correlate with the patient's known baseline." />
+        <NumberField label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} />
+        <NumberField label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
+        <NumberField label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
+        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
+        <NumberField label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} />
         <NumberField label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
         {respDetail && <NumberField label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" />}
         {respDetail && <NumberField label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" />}
       </div>
-      <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} />
+      <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} info={cardiovascularData.pulseRhythm} />
       <Segmented label="Position during measurement" options={["Supine", "Sitting", "Standing"]} value={d.position} onChange={(v) => set("position", v)} />
     </>
   );
@@ -1060,7 +1082,7 @@ function CardioSection({ data, setData, system }) {
             options={["Absent", "Early — loss of nail-bed angle", "Established — enlarged finger pad", "Spongy nail bed"]}
             value={d.clubbing}
             onChange={(v) => set("clubbing", v)}
-            howTo="Check the Schamroth window: place the nail beds of opposing index fingers together — normally a small diamond-shaped gap is visible; in clubbing this window is obliterated. First sign is loss of the nail-bed angle."
+            info={cardiovascularData.clubbing}
           />
           <SelectField
             label="Cyanosis"
@@ -1068,27 +1090,27 @@ function CardioSection({ data, setData, system }) {
             options={["None", "Peripheral", "Central"]}
             value={d.cyanosis}
             onChange={(v) => set("cyanosis", v)}
-            howTo="Central cyanosis (tongue/lips) reflects low arterial oxygen and is more significant. Peripheral cyanosis (fingers/toes/earlobes) is often just poor circulation, especially in the cold."
+            info={respiratoryData.cyanosis}
           />
           <NumberField
             label="Jugular venous pressure (JVP)"
             value={d.jvp}
             onChange={(v) => set("jvp", v)}
             unit="cm above sternal angle"
-            howTo="Recline the patient at 45°, look for the flickering impulse in the internal jugular vein, and measure its vertical height above the sternal angle. Normal ≈3–4cm. Raised suggests right heart failure/fluid overload; only visible when lying flat suggests dehydration."
+            info={cardiovascularData.jvp}
           />
         </>
       )}
 
       <div className="subheading">Peripheral perfusion</div>
-      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} />
-      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} />
+      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
+      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
       <NumberField
         label="Capillary refill"
         value={d.capRefill}
         onChange={(v) => set("capRefill", v)}
         unit="sec"
-        howTo="Press a nail bed until it blanches, then time the return of colour. Normal is under 2 seconds."
+        info={cardiovascularData.capRefill}
       />
 
       <LRGrid
@@ -1097,11 +1119,11 @@ function CardioSection({ data, setData, system }) {
         options={["Present", "Reduced", "Absent", "Irregular"]}
         value={d.pulses || {}}
         onChange={(v) => set("pulses", v)}
-        howTo="Palpate and compare both sides — asymmetry or absence needs medical correlation."
+        info={cardiovascularData.pulses}
       />
 
       <SelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
-        howTo="Press firmly over the shin/ankle for a few seconds — pitting leaves a visible indentation. In bed-bound patients, always check the sacrum too, since fluid pools there instead of the ankles."
+        info={cardiovascularData.edema}
       />
       <SelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
 
@@ -1114,10 +1136,10 @@ function CardioSection({ data, setData, system }) {
             options={["S1 normal", "S2 normal", "S3 present", "S4 present", "Murmur present"]}
             value={d.heartSounds}
             onChange={(v) => set("heartSounds", v)}
-            howTo="S1 = mitral/tricuspid closure. S2 = aortic/pulmonary closure. S3 suggests cardiac failure in adults (can be normal in children). S4 is heard in heart failure, hypertension, or aortic valve disease. A murmur is turbulent flow — an incompetent valve causes backflow, a stenotic valve causes forward-flow turbulence."
+            info={cardiovascularData.cardiacAuscultation}
           />
           {String(d.heartSounds || "").includes("Murmur present") && (
-            <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." />
+            <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
           )}
         </>
       )}
@@ -1133,27 +1155,27 @@ function RespSection({ data, setData, system }) {
     <>
       <SectionIntro icon="🫁" title="Respiratory Examination" sub={detailed ? undefined : "Cardiovascular pathway — screening level only."} />
 
-      <SelectField label="Breathing pattern" type="single" options={["Normal", "Tachypnea", "Bradypnea", "Laboured", "Shallow", "Irregular"]} value={d.pattern} onChange={(v) => set("pattern", v)} />
+      <SelectField label="Breathing pattern" type="single" options={["Normal", "Tachypnea", "Bradypnea", "Laboured", "Shallow", "Irregular"]} value={d.pattern} onChange={(v) => set("pattern", v)} info={respiratoryData.respRate} />
 
       {detailed && (
         <>
-          <SelectField label="Breathing pattern type" type="single" options={["Diaphragmatic", "Upper chest", "Thoracoabdominal", "Paradoxical"]} value={d.patternType} onChange={(v) => set("patternType", v)} />
+          <SelectField label="Breathing pattern type" type="single" options={["Diaphragmatic", "Upper chest", "Thoracoabdominal", "Paradoxical"]} value={d.patternType} onChange={(v) => set("patternType", v)} info={respiratoryData.breathingPattern} />
           <SelectField
             label="Chest shape"
             type="single"
             options={["Normal", "Barrel chest", "Pectus excavatum", "Pectus carinatum", "Kyphoscoliosis", "Other"]}
             value={d.chestShape}
             onChange={(v) => set("chestShape", v)}
-            howTo="Ribs normally descend ~45° from the spine. Kyphoscoliosis causes a restrictive defect. Barrel chest/hyperinflation: AP diameter approaches transverse diameter, ribs flatten toward horizontal — seen in severe emphysema."
+            info={respiratoryData.chestShape}
           />
-          <SelectField label="Accessory muscle use" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.accessory} onChange={(v) => set("accessory", v)} />
+          <SelectField label="Accessory muscle use" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.accessory} onChange={(v) => set("accessory", v)} info={respiratoryData.workOfBreathing} />
           <SelectField
             label="Chest expansion"
             type="single"
             options={["Symmetrical", "Reduced right", "Reduced left", "Globally reduced"]}
             value={d.expansion}
             onChange={(v) => set("expansion", v)}
-            howTo="Hands on the chest wall, thumbs meeting at the midline — ask the patient to breathe in fully and watch the thumbs move apart symmetrically. Asymmetry points to the affected side."
+            info={respiratoryData.chestExpansion}
           />
           <div className="subheading">Palpation</div>
           <SelectField
@@ -1162,7 +1184,7 @@ function RespSection({ data, setData, system }) {
             options={["Central", "Deviated"]}
             value={d.trachea}
             onChange={(v) => set("trachea", v)}
-            howTo="Place a finger in the suprasternal notch either side of the trachea to feel whether it's central or pulled/pushed to one side."
+            info={respiratoryData.trachea}
           />
           <SelectField
             label="Vocal fremitus"
@@ -1170,7 +1192,7 @@ function RespSection({ data, setData, system }) {
             options={["Normal", "Increased", "Decreased"]}
             value={d.fremitus}
             onChange={(v) => set("fremitus", v)}
-            howTo="Ask the patient to repeat a phrase (e.g. 'ninety-nine') while feeling the chest wall. Consolidation increases fremitus; an air or fluid interface (pneumothorax/effusion) decreases it."
+            info={respiratoryData.fremitus}
           />
 
           <LRGrid
@@ -1190,12 +1212,12 @@ function RespSection({ data, setData, system }) {
         options={["Normal", "Reduced", "Crackles", "Wheeze", "Rhonchi", "Bronchial"]}
         value={d.auscultation || {}}
         onChange={(v) => set("auscultation", v)}
-        howTo="Listen systematically, comparing sides at each level. Crackles = fluid/secretions. Wheeze = airway narrowing. Rhonchi = large-airway secretions. Bronchial breathing = over consolidation. Reduced/absent = effusion, pneumothorax, or collapse."
+        info={respiratoryData.breathSounds}
       />
 
       <div className="subheading">Dyspnea (Borg scale)</div>
-      <ScaleField label="At rest" value={d.dyspneaRest} onChange={(v) => set("dyspneaRest", v)} />
-      <ScaleField label="On activity" value={d.dyspneaActivity} onChange={(v) => set("dyspneaActivity", v)} />
+      <ScaleField label="At rest" value={d.dyspneaRest} onChange={(v) => set("dyspneaRest", v)} info={respiratoryData.borg} />
+      <ScaleField label="On activity" value={d.dyspneaActivity} onChange={(v) => set("dyspneaActivity", v)} info={respiratoryData.borg} />
     </>
   );
 }
@@ -1265,26 +1287,26 @@ function ExerciseSection({ data, setData, setting }) {
 
       <div className="subheading">Pre-exercise</div>
       <div className="vitals-grid">
-        <NumberField label="HR" value={d.preHR} onChange={(v) => set("preHR", v)} unit="bpm" width="30%" />
-        <NumberField label="BP sys" value={d.preBPs} onChange={(v) => set("preBPs", v)} unit="mmHg" width="30%" />
-        <NumberField label="SpO₂" value={d.preSpO2} onChange={(v) => set("preSpO2", v)} unit="%" width="30%" />
+        <NumberField label="HR" value={d.preHR} onChange={(v) => set("preHR", v)} unit="bpm" width="30%" info={cardiovascularData.heartRate} />
+        <NumberField label="BP sys" value={d.preBPs} onChange={(v) => set("preBPs", v)} unit="mmHg" width="30%" info={cardiovascularData.bloodPressure} />
+        <NumberField label="SpO₂" value={d.preSpO2} onChange={(v) => set("preSpO2", v)} unit="%" width="30%" info={respiratoryData.spo2} />
       </div>
       <ScaleField
         label="Borg RPE (pre)"
         value={d.preRPE}
         onChange={(v) => set("preRPE", v)}
-        howTo="Modified Borg 0–10: 0 = nothing at all, 0.5 = very very slight, 2 = slight, 3 = moderate, 5 = severe, 7 = very severe, 10 = maximal."
+        info={cardiovascularData.borgRPE}
       />
-      <ScaleField label="Borg dyspnea (pre)" value={d.preDyspnea} onChange={(v) => set("preDyspnea", v)} />
+      <ScaleField label="Borg dyspnea (pre)" value={d.preDyspnea} onChange={(v) => set("preDyspnea", v)} info={respiratoryData.borg} />
 
       <div className="subheading">During / peak</div>
       <div className="vitals-grid">
-        <NumberField label="HR" value={d.duringHR} onChange={(v) => set("duringHR", v)} unit="bpm" width="30%" />
-        <NumberField label="BP sys" value={d.duringBPs} onChange={(v) => set("duringBPs", v)} unit="mmHg" width="30%" />
-        <NumberField label="SpO₂" value={d.duringSpO2} onChange={(v) => set("duringSpO2", v)} unit="%" width="30%" />
+        <NumberField label="HR" value={d.duringHR} onChange={(v) => set("duringHR", v)} unit="bpm" width="30%" info={cardiovascularData.heartRate} />
+        <NumberField label="BP sys" value={d.duringBPs} onChange={(v) => set("duringBPs", v)} unit="mmHg" width="30%" info={cardiovascularData.bloodPressure} />
+        <NumberField label="SpO₂" value={d.duringSpO2} onChange={(v) => set("duringSpO2", v)} unit="%" width="30%" info={respiratoryData.spo2} />
       </div>
-      <ScaleField label="Borg RPE (during)" value={d.duringRPE} onChange={(v) => set("duringRPE", v)} />
-      <ScaleField label="Borg dyspnea (during)" value={d.duringDyspnea} onChange={(v) => set("duringDyspnea", v)} />
+      <ScaleField label="Borg RPE (during)" value={d.duringRPE} onChange={(v) => set("duringRPE", v)} info={cardiovascularData.borgRPE} />
+      <ScaleField label="Borg dyspnea (during)" value={d.duringDyspnea} onChange={(v) => set("duringDyspnea", v)} info={respiratoryData.borg} />
       <SelectField
         label="Symptoms during activity"
         type="multi"
@@ -1295,20 +1317,20 @@ function ExerciseSection({ data, setData, setting }) {
 
       <div className="subheading">Recovery</div>
       <div className="vitals-grid">
-        <NumberField label="HR" value={d.postHR} onChange={(v) => set("postHR", v)} unit="bpm" width="30%" />
-        <NumberField label="SpO₂" value={d.postSpO2} onChange={(v) => set("postSpO2", v)} unit="%" width="30%" />
+        <NumberField label="HR" value={d.postHR} onChange={(v) => set("postHR", v)} unit="bpm" width="30%" info={cardiovascularData.hrRecovery} />
+        <NumberField label="SpO₂" value={d.postSpO2} onChange={(v) => set("postSpO2", v)} unit="%" width="30%" info={respiratoryData.spo2} />
       </div>
-      <SelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} />
+      <SelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} info={cardiovascularData.hrRecovery} />
 
       <div className="subheading">6MWT / exercise test</div>
-      <NumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" />
+      <NumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" info={cardiovascularData.sixMWT} />
       <SelectField
         label="Reason for stopping"
         type="single"
         options={["Completed", "Dyspnea", "Fatigue", "Chest discomfort", "Dizziness", "Desaturation", "Other"]}
         value={d.stopReason}
         onChange={(v) => set("stopReason", v)}
-        howTo="Stop criteria: chest pain, SpO₂ dropping below the patient's safe threshold (commonly <88%), marked dizziness, or severe dyspnea."
+        info={cardiovascularData.sixMWT}
       />
     </>
   );
@@ -1351,7 +1373,7 @@ function OutcomesSection({ data, setData, setting, system }) {
           value={d.nyha}
           onChange={(v) => set("nyha", v)}
           hint={d.nyha ? NYHA.find((n) => n.g === d.nyha)?.d : "Tap a class to see its definition."}
-          howTo="Class I: no limitation, ordinary activity causes no symptoms. Class II: comfortable at rest, ordinary activity causes symptoms. Class III: comfortable at rest, less-than-ordinary activity causes symptoms. Class IV: symptomatic at rest."
+          info={cardiovascularData.nyha}
         />
       )}
       {respDetail && (
@@ -1362,13 +1384,13 @@ function OutcomesSection({ data, setData, setting, system }) {
             options={MMRC}
             value={d.mmrc}
             onChange={(v) => set("mmrc", v)}
-            howTo="0: breathless only on strenuous exercise. 1: breathless hurrying on level ground. 2: walks slower than peers or stops for breath. 3: stops after ~100m. 4: too breathless to leave the house."
+            info={respiratoryData.mmrc}
           />
           <NumberField label="CAT score" value={d.cat} onChange={(v) => set("cat", v)} unit="/40" />
         </>
       )}
-      <NumberField label="6MWT distance" value={d.sixMWT} onChange={(v) => set("sixMWT", v)} unit="m" />
-      <ScaleField label="Overall Borg dyspnea" value={d.borg} onChange={(v) => set("borg", v)} />
+      <NumberField label="6MWT distance" value={d.sixMWT} onChange={(v) => set("sixMWT", v)} unit="m" info={cardiovascularData.sixMWT} />
+      <ScaleField label="Overall Borg dyspnea" value={d.borg} onChange={(v) => set("borg", v)} info={respiratoryData.borg} />
       {setting === "rehab" && (
         <TextField label="Exercise tolerance / symptom measure" value={d.exerciseToleranceMeasure} onChange={(v) => set("exerciseToleranceMeasure", v)} />
       )}
@@ -1615,6 +1637,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [stepOrder, setStepOrder] = useState(() => (hasExisting ? seed.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
+  const [activeCard, setActiveCard] = useState(null);
 
   // Re-hydrate when switching to a different patient -- deliberately keyed
   // on activePatientId only (not on every patientData change), otherwise
@@ -1760,6 +1783,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const canProceedSystem = step !== 1 || !!system;
 
   return (
+    <InfoCardContext.Provider value={setActiveCard}>
     <div className="app-shell">
       <style>{`
         * { box-sizing: border-box; }
@@ -1858,6 +1882,8 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .info-popover { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 260px; max-width: 72vw; background: ${BRAND.ink}; color: #EDEBFB; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 10px 30px rgba(20,10,60,.3); }
         .info-popover p { margin: 0; padding-right: 14px; }
         .info-popover-close { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: #B8AEEF; font-size: 11px; cursor: pointer; }
+
+        .info-card-btn { width: 20px; height: 20px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; border-radius: 50%; font-size: 12px; line-height: 1; cursor: pointer; padding: 0; }
 
         .text-input-wrap, .select-wrap { position: relative; display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; }
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
@@ -2064,7 +2090,9 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        <InfoCard data={activeCard} onClose={() => setActiveCard(null)} />
       </div>
     </div>
+    </InfoCardContext.Provider>
   );
 }
