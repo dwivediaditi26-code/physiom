@@ -3398,16 +3398,16 @@ function getMediaPipePose(){
 
 // ─── View config ──────────────────────────────────────────────────────────────
 const VIEWS={
-  anterior:{label:"Frontal",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"⬆",
+  anterior:{label:"Front",short:"Frontal",badge:"+ Frontal plumb",colour:PC.accent,icon:"⬆",
     helper:"Patient faces camera, feet hip-width, arms relaxed.",
     checks:["Full body in frame","Camera at pelvis height","Feet hip-width apart","Arms relaxed","Minimal clothing"]},
   posterior:{label:"Back",short:"Back",badge:"+ Frontal plumb",colour:PC.a2,icon:"⬇",
     helper:"Patient faces away. Scapulae and heels visible.",
     checks:["Hair off shoulders","Scapulae visible","Equal weight both feet","Arms relaxed","Heel tendon visible"]},
-  left:{label:"Sagittal L",short:"Sag L",badge:"+ Sagittal plumb",colour:PC.yellow,icon:"◀",
+  left:{label:"Left Side",short:"Sag L",badge:"+ Sagittal plumb",colour:PC.yellow,icon:"◀",
     helper:"Left side toward camera. Ear–shoulder–hip–ankle in frame.",
     checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
-  right:{label:"Sagittal R",short:"Sag R",badge:"+ Sagittal plumb",colour:PC.green,icon:"▶",
+  right:{label:"Right Side",short:"Sag R",badge:"+ Sagittal plumb",colour:PC.green,icon:"▶",
     helper:"Right side toward camera. Ear–shoulder–hip–ankle in frame.",
     checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
 };
@@ -4351,7 +4351,7 @@ function useBreakpoint() {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={} }){
+function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={}, onSwitchPatient }){
   // Deep-link: map the region suggested by the Subjective smart-action grid to
   // the most informative posture view (kyphosis/FHP read best from the side).
   const _regionView = (reg="") => /cervic|thoracic|lumbar|hip/i.test(reg) ? "lateral"
@@ -4393,10 +4393,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const isClinicianVerified = verifiedCount > 0;
 
   // ── Multi-view state ─────────────────────────────────────────────────────────
-  const [assessMode,setAssessMode] = useState("single");  // "single" | "multi"
+  // Redesigned entry screen (2026-08-21) always presents all 4 views up front,
+  // so "single" mode -- previously chosen via a toggle that's now removed --
+  // is no longer reachable from the UI. Multi is a superset: each view still
+  // analyses instantly on upload exactly as single mode did, only the
+  // composite report needs >=2 views, so nothing is lost by defaulting here.
+  const [assessMode,setAssessMode] = useState("multi");  // "single" | "multi"
   const [mvResults,setMvResults]   = useState({});         // { [viewKey]: {view,measurements,findings,scoreData,reliability,img} }
   const [mvComposite,setMvComposite] = useState(null);
   const [mvTab,setMvTab]           = useState("capture");  // "capture" | "report"
+  const [showHowItWorks,setShowHowItWorks] = useState(false);
 
   // ── Report generation state ──────────────────────────────────────────────────
   const [showReportModal,setShowReportModal]=useState(false);
@@ -6036,7 +6042,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // ── Multi-view helpers ───────────────────────────────────────────────────────
   const mvViewOrder = ["anterior","posterior","left","right"];
   const mvCapturedCount = Object.keys(mvResults).length;
-  const mvCanGenerate = mvCapturedCount >= 2;
 
   function handleGenerateComposite() {
     const composite = mergeViewResults(Object.values(mvResults));
@@ -6063,108 +6068,57 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   }
   function handleClearMv() { setMvResults({}); setMvComposite(null); setMvTab("capture"); }
 
-  // Assessment mode toggle strip
-  const assessModeToggle = (
-    <div style={{padding:isWide?"8px 20px":"8px 16px",background:PC.bg,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
-      {[
-        ["single","▣ Single View","Quick screen — one view"],
-        ["multi", "☰ Multi-View", "Full assessment — 2–4 views"],
-      ].map(([m,label,sub])=>(
-        <button key={m} onClick={()=>{ setAssessMode(m); if(m==="single"){setMvResults({});setMvComposite(null);} }}
-          style={{flex:1,padding:isWide?"9px 8px":"8px 6px",borderRadius:10,
-            border:`1px solid ${assessMode===m?PC.accent:PC.border}`,
-            background:assessMode===m?`${PC.accent}14`:"transparent",
-            color:assessMode===m?PC.accent:PC.muted,
-            fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer",textAlign:"center"}}>
-          <div>{label}</div>
-          <div style={{fontSize:"0.75rem",fontWeight:400,marginTop:2,opacity:0.75}}>{sub}</div>
-        </button>
-      ))}
-    </div>
-  );
+  // Selects a view for capture -- if that view already has a saved result,
+  // just switch to reviewing it; otherwise clear any stale single-photo state
+  // left over from whichever view was active before, so the upload area
+  // doesn't briefly show a different view's photo while a new one loads.
+  // Deliberately NOT handleViewSwitch() -- that re-analyses whatever photo is
+  // currently loaded under the new view, which is correct when relabelling an
+  // existing photo but wrong here: an empty view slot needs a fresh upload,
+  // not last view's photo reinterpreted.
+  function selectViewForCapture(key) {
+    setView(key);
+    const existing = mvResults[key];
+    if (existing) {
+      setUploadedImg(existing.img); setRawUploadedImg(existing.img);
+      setLandmarks(null); setMeasurements(existing.measurements||null);
+      setFindings(existing.findings||[]); setScoreData(existing.scoreData||null);
+      setReliability(existing.reliability||null);
+    } else {
+      setUploadedImg(null); setRawUploadedImg(null);
+      setLandmarks(null); setMeasurements(null); setFindings([]); setScoreData(null); setReliability(null);
+      resetManual();
+    }
+    setError(null);
+  }
 
-  // Multi-view progress strip (shown below view selector in multi mode)
-  const mvCaptureStrip = assessMode==="multi" && (
-    <div style={{padding:isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
-      <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span>☰ Multi-View Progress ({mvCapturedCount}/4)</span>
-        {mvCapturedCount>0&&<button onClick={handleClearMv} style={{fontSize:"0.78rem",color:PC.red,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>Reset all</button>}
-      </div>
-      {/* Per-view dots */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
-        {mvViewOrder.map(vk=>{
-          const meta=VIEWS[vk]; const done=!!mvResults[vk]; const isAct=view===vk;
-          return(
-            <button key={vk} onClick={()=>setView(vk)} style={{padding:"6px 4px",borderRadius:9,
-              border:`1px solid ${done?PC.green:isAct?meta.colour:PC.border}`,
-              background:done?`${PC.green}12`:isAct?`${meta.colour}12`:"transparent",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:"0.9rem"}}>{done?"✅":meta.icon}</div>
-              <div style={{fontSize:"0.75rem",fontWeight:700,color:done?PC.green:isAct?meta.colour:PC.muted,marginTop:2}}>{meta.short}</div>
-            </button>
-          );
-        })}
-      </div>
-      {/* Plane coverage */}
-      <div style={{display:"flex",gap:6,marginBottom:10}}>
-        {[["Frontal",!!(mvResults.anterior||mvResults.posterior),"Anterior or Posterior"],
-          ["Sagittal",!!(mvResults.left||mvResults.right),"Left or Right lateral"]
-        ].map(([label,has,tip])=>(
-          <div key={label} style={{flex:1,padding:"5px 8px",borderRadius:7,
-            background:has?`${PC.green}10`:`${PC.border}40`,border:`1px solid ${has?PC.green:PC.border}`,
-            display:"flex",alignItems:"center",gap:5}}>
-            <span style={{fontSize:"0.75rem"}}>{has?"✓":"○"}</span>
-            <div>
-              <div style={{fontSize:"0.8rem",fontWeight:700,color:has?PC.green:PC.muted}}>{label}</div>
-              <div style={{fontSize:"0.82rem",color:PC.muted}}>{tip}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-      {/* Generate button */}
-      <button onClick={handleGenerateComposite} disabled={!mvCanGenerate} style={{
-        width:"100%",padding:"11px",borderRadius:11,border:"none",
-        background:mvCanGenerate?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
-        color:mvCanGenerate?"#fff":PC.muted,fontWeight:800,
-        fontSize:isWide?"0.85rem":"0.78rem",cursor:mvCanGenerate?"pointer":"not-allowed"}}>
-        {mvCanGenerate?`▶ Generate Composite Report (${mvCapturedCount} views)`:`Upload ≥2 views to generate report`}
-      </button>
-    </div>
-  );
+  function handleAddPhotoForView(key) {
+    selectViewForCapture(key);
+    // Let the view-switch state above commit before the native file dialog
+    // opens -- by the time the user actually picks a file (real user time),
+    // handleFile's closure will read the updated `view`.
+    fileInputRef.current?.click();
+  }
 
-  // Multi-view thumbnail strip — shows captured images side by side
-  const mvThumbnailStrip = assessMode==="multi" && mvCapturedCount > 0 && (
-    <div style={{padding:"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`}}>
-      <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>
-        Captured Views — {mvCapturedCount} of 4
-      </div>
-      <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-        {mvViewOrder.map(vk=>{
-          const res=mvResults[vk];
-          const meta=VIEWS[vk];
-          const isActive=view===vk;
-          if(!res && !isActive) return null; // only show captured + current active
-          return(
-            <div key={vk} onClick={()=>setView(vk)}
-              style={{flexShrink:0,width:72,cursor:"pointer",
-                border:`2px solid ${isActive?meta.colour:res?PC.green:PC.border}`,
-                borderRadius:9,overflow:"hidden",position:"relative"}}>
-              {res?.img ? (
-                <img src={res.img} alt={meta.label}
-                  style={{width:"100%",height:56,objectFit:"cover",display:"block"}}/>
-              ) : (
-                <div style={{width:"100%",height:56,background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>{meta.icon}</div>
-              )}
-              <div style={{padding:"2px 4px",background:res?"rgba(5,150,105,0.85)":isActive?`rgba(124,58,237,0.85)`:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:"0.82rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
-                {res?.scoreData&&<span style={{fontSize:"0.82rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
-                {!res&&isActive&&<span style={{fontSize:"0.5rem",color:"#fff"}}>active</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  // "Start New Analysis" -- resets every in-progress capture across all views,
+  // same clearing handleClearMv already does for the composite plus the
+  // single-photo state selectViewForCapture clears per-view.
+  function handleStartNewAnalysis() {
+    handleClearMv();
+    setUploadedImg(null); setRawUploadedImg(null);
+    setLandmarks(null); setMeasurements(null); setFindings([]); setScoreData(null); setReliability(null);
+    resetManual();
+    setView("anterior");
+    setError(null);
+  }
+
+  function handleContinueToAnalysis() {
+    if (mvCapturedCount >= 2) { handleGenerateComposite(); return; }
+    if (mvCapturedCount === 1) {
+      setTab("findings");
+      if (isMobile) setMobilePanel("results");
+    }
+  }
 
   // Multi-view composite report (replaces right panel when ready)
   const mvReportPanel = assessMode==="multi" && mvComposite && mvTab==="report" && (
@@ -6287,70 +6241,99 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const leftPanel = (
     <div style={{display:"flex",flexDirection:"column",flex: isWide?"0 0 480px":"1",minWidth:0,borderRight: isWide?`1px solid ${PC.border}`:"none",overflowY: isWide?"hidden":"auto"}}>
 
-      {/* Assessment mode toggle: Single View vs Multi-View */}
-      {assessModeToggle}
+      {/* ── Redesigned entry screen (2026-08-21) ─────────────────────────── */}
+      <div style={{padding: isWide?"16px 20px":"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
 
-      {/* Mode toggle — "live" entry hidden from students for now (2026-07-30).
-          Underlying live-capture pipeline (startCamera/capturePhoto/stopCamera/
-          flipCamera + the isLive-branch JSX below) is untouched — re-add
-          ["live","▣ Live"] to the array below to bring the button back. */}
-      <div style={{padding: isWide?"10px 20px":"10px 16px",background:PC.surface,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:8}}>
-        {[["upload","↑ Upload"]].map(([m,label])=>(
-          <button key={m} onClick={()=>{setMode(m);if(m==="live")setTab("capture");else{stopCamera();setTab("capture");}}}
-            style={{flex:1,padding: isWide?"10px":"9px",borderRadius:10,border:`1px solid ${mode===m?viewMeta.colour:PC.border}`,background:mode===m?`${viewMeta.colour}15`:"transparent",color:mode===m?viewMeta.colour:PC.muted,fontWeight:700,fontSize: isWide?"0.85rem":"0.78rem",cursor:"pointer"}}>
-            {label}
+        {/* Hero card */}
+        <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
+            <div>
+              <div style={{fontWeight:800,fontSize:isWide?"1rem":"0.9rem",color:PC.text}}>AI-assisted posture analysis</div>
+              <div style={{fontSize:isWide?"0.8rem":"0.74rem",color:PC.muted,marginTop:2,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
+            </div>
+          </div>
+          <button onClick={handleStartNewAnalysis}
+            style={{width:"100%",padding:isWide?"13px":"11px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:isWide?"0.88rem":"0.8rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+            📷 Start New Analysis
           </button>
-        ))}
-      </div>
+        </div>
 
-
-
-      {/* Mode toggle — frontal/posterior only; lateral uses HybridKendall */}
-      {!isLive&&(view==="anterior"||view==="posterior"||view==="back")&&(
-        <div style={{padding: isWide?"8px 20px":"8px 16px",background:PC.s3,borderBottom:`1px solid ${PC.border}`,display:"flex",gap:6}}>
-          {[["ai","⚙ AI Auto (~70-80%)"],["manual","✋ Manual Points (~90-95%)"]].map(([m,label])=>(
+        {/* AI Auto / Manual Points toggle — global preference; only takes
+            effect on frontal/posterior captures (lateral always uses the
+            separate HybridKendall flow), same as before the redesign. */}
+        <div style={{display:"flex",gap:8}}>
+          {[["ai","☀","AI Auto (~70–80%)","Fast analysis with AI"],["manual","✋","Manual Points (~90–95%)","More accurate, takes time"]].map(([m,icon,label,sub])=>(
             <button key={m} onClick={()=>handleModeSwitch(m)}
-              style={{flex:1,padding:"7px 6px",borderRadius:9,border:`1px solid ${inputMode===m?PC.accent:PC.border}`,background:inputMode===m?`${PC.accent}18`:"transparent",color:inputMode===m?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.75rem":"0.68rem",cursor:"pointer",textAlign:"center"}}>
-              {label}
+              style={{flex:1,minWidth:0,padding:isWide?"13px 10px":"11px 8px",borderRadius:12,border:`1.5px solid ${inputMode===m?PC.accent:PC.border}`,background:inputMode===m?`${PC.accent}12`:PC.surface,cursor:"pointer",textAlign:"left"}}>
+              <div style={{fontSize:"1.1rem",marginBottom:4}}>{icon}</div>
+              <div style={{fontWeight:800,fontSize:isWide?"0.8rem":"0.72rem",color:inputMode===m?PC.accent:PC.text}}>{label}</div>
+              <div style={{fontSize:isWide?"0.72rem":"0.65rem",color:PC.muted,marginTop:2}}>{sub}</div>
             </button>
           ))}
         </div>
-      )}
 
-
-      {/* View selector */}
-      <div style={{padding: isWide?"12px 20px":"10px 16px",background:PC.s2,borderBottom:`1px solid ${PC.border}`}}>
-        <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Select View</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap: isWide?10:7}}>
-          {Object.entries(VIEWS).map(([key,meta])=>{
-            const active=view===key;
-            return(
-              <button key={key} onClick={()=>handleViewSwitch(key)}
-                style={{padding: isWide?"10px 4px":"8px 4px",borderRadius:11,border:`1px solid ${active?meta.colour:PC.border}`,background:active?`${meta.colour}18`:"transparent",cursor:"pointer",textAlign:"center",transition:"all 0.15s"}}>
-                <div style={{fontSize: isWide?"1.2rem":"1rem",marginBottom:2}}>{meta.icon}</div>
-                <div style={{fontSize: isWide?"0.7rem":"0.62rem",fontWeight:800,color:active?meta.colour:PC.muted,lineHeight:1.2}}>{meta.short}</div>
-                <div style={{fontSize:"0.5rem",color:active?meta.colour:PC.muted,opacity:0.75,marginTop:2}}>{meta.badge}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{marginTop:8,padding:"7px 11px",background:`${viewMeta.colour}08`,border:`1px solid ${viewMeta.colour}20`,borderRadius:9,fontSize: isWide?"0.72rem":"0.65rem",color:PC.muted}}>
-          <div>{viewMeta.helper}</div>
-          {viewMeta.checks&&(
-            <div style={{display:"flex",flexWrap:"wrap",gap:"3px 10px",marginTop:5}}>
-              {viewMeta.checks.map((c,i)=><span key={i} style={{color:PC.a3,fontSize:"0.82rem"}}>✓ {c}</span>)}
+        {/* Select patient */}
+        <button onClick={onSwitchPatient} disabled={!onSwitchPatient}
+          style={{display:"flex",alignItems:"center",gap:12,padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,cursor:onSwitchPatient?"pointer":"default",textAlign:"left"}}>
+          <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Select Patient</div>
+            <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:PC.muted,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {activePatient?.name || "Search name or ID"}
             </div>
-          )}
+          </div>
+          {onSwitchPatient && <div style={{color:PC.muted,fontSize:"1rem"}}>›</div>}
+        </button>
+
+        {/* Select views */}
+        <div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.text,textTransform:"uppercase",letterSpacing:"1px"}}>Select Views</div>
+            <div style={{fontSize:"0.7rem",color:PC.muted}}>ⓘ You can add any view</div>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+            {["anterior","posterior","right","left"].map(key=>{
+              const meta=VIEWS[key];
+              const active=view===key;
+              const done=!!mvResults[key];
+              return(
+                <div key={key} onClick={()=>selectViewForCapture(key)}
+                  style={{flex:"1 1 calc(50% - 5px)",minWidth:120,borderRadius:14,border:`1.5px solid ${active?PC.accent:done?PC.green:PC.border}`,background:active?`${PC.accent}0a`:PC.surface,cursor:"pointer",overflow:"hidden"}}>
+                  <div style={{padding:isWide?"14px 10px 10px":"12px 8px 8px",textAlign:"center"}}>
+                    {done ? (
+                      <img src={mvResults[key].img} alt={meta.label} style={{width:"100%",height:56,objectFit:"cover",borderRadius:8,display:"block",marginBottom:6}}/>
+                    ) : (
+                      <div style={{fontSize:"1.6rem",marginBottom:4}}>{meta.icon}</div>
+                    )}
+                    <div style={{fontWeight:800,fontSize:isWide?"0.82rem":"0.75rem",color:PC.text}}>{meta.label}</div>
+                    <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:1}}>{meta.badge}</div>
+                  </div>
+                  <button onClick={(e)=>{e.stopPropagation(); handleAddPhotoForView(key);}}
+                    style={{width:"100%",padding:"8px",border:"none",borderTop:`1px solid ${active?PC.accent+"30":PC.border}`,background:"transparent",color:done?PC.green:PC.accent,fontWeight:700,fontSize:isWide?"0.75rem":"0.68rem",cursor:"pointer"}}>
+                    {done?"✓ Captured":"+ Add Photo"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tips card */}
+        <div style={{padding:isWide?"16px":"14px",borderRadius:14,background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.green}25`}}>
+          <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.green,marginBottom:8}}>✓ For best results</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:"6px 10px"}}>
+            {["Full body in frame","Camera at pelvis height","Feet hip-width apart","Arms relaxed","Minimal clothing","Good lighting"].map((t,i)=>(
+              <div key={i} style={{flex:"1 1 calc(50% - 5px)",minWidth:110,display:"flex",alignItems:"center",gap:6,fontSize:isWide?"0.76rem":"0.7rem",color:PC.text}}>
+                <span style={{color:PC.green}}>✓</span>{t}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Multi-view progress strip */}
-      {mvCaptureStrip}
-
-      {/* Multi-view thumbnail strip */}
-      {mvThumbnailStrip}
-
-      {/* Camera / Upload area */}
+      {/* Camera / Upload area — targets whichever view is currently selected
+          above; this IS the mockup's "Tap to upload photos" dropzone. */}
       <div ref={captureAreaRef} style={{flex:1,overflowY:"auto"}}>
         {isLive?(
           <div>
@@ -6435,12 +6418,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       </div>}
             <button onClick={()=>fileInputRef.current?.click()}
               disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
-              style={{width:"100%",padding: isWide?"20px":"16px",borderRadius:14,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14}}>
-              {analysing?"⏳ Analysing…":"▤ Tap to upload photo"}
-              <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,marginTop:5,color:PC.muted}}>
+              style={{width:"100%",padding: isWide?"22px":"18px",borderRadius:16,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+              <div style={{fontSize:isWide?"1.8rem":"1.5rem"}}>☁︎↑</div>
+              <div>{analysing?"⏳ Analysing…":`Tap to upload photo — ${viewMeta.label}`}</div>
+              <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,color:PC.muted}}>
                 {(view==="left"||view==="right")
                 ? "Upload lateral photo — Hybrid Kendall analysis"
-                : inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG — full body, clear background"}
+                : inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG · Full body · Clear background"}
               </div>
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
@@ -6715,6 +6699,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
           </div>
         )}
+      </div>
+
+      {/* Continue to Analysis — 0 captured: disabled. 1 captured: jumps to
+          that view's own findings (same auto-analysis-on-upload result the
+          old flow already showed instantly). >=2 captured: generates the
+          multi-view composite report (handleGenerateComposite, unchanged). */}
+      <div style={{padding: isWide?"14px 20px":"12px 16px",borderTop:`1px solid ${PC.border}`,background:PC.surface}}>
+        <button onClick={handleContinueToAnalysis} disabled={mvCapturedCount===0}
+          style={{width:"100%",padding:isWide?"14px":"12px",borderRadius:12,border:"none",
+            background:mvCapturedCount>0?`linear-gradient(135deg,${PC.accent},${PC.a2})`:PC.s3,
+            color:mvCapturedCount>0?"#fff":PC.muted,fontWeight:800,
+            fontSize:isWide?"0.9rem":"0.82rem",cursor:mvCapturedCount>0?"pointer":"not-allowed",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          {mvCapturedCount===0?"Add a photo to continue":
+            mvCapturedCount===1?"Continue to Analysis →":
+            `Continue to Analysis — ${mvCapturedCount} views →`}
+        </button>
       </div>
     </div>
   );
@@ -7425,27 +7426,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <div style={{fontSize:isWide?"0.68rem":"0.6rem",color:PC.muted,marginTop:1}}>Posture screening &amp; education · not a medical diagnosis</div>
           </div>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div onClick={mpStatus==="error"?loadMediaPipe:undefined}
-            title={mpStatus==="error"?"Tap to retry loading the AI model":undefined}
-            style={{padding:isWide?"5px 12px":"3px 9px",borderRadius:20,fontSize:isWide?"0.65rem":"0.58rem",fontWeight:700,
-            cursor:mpStatus==="error"?"pointer":"default",userSelect:"none",
-            background:mpStatus==="ready"?"rgba(5,150,105,0.12)":mpStatus==="loading"?"rgba(180,83,9,0.12)":"rgba(220,38,38,0.12)",
-            color:mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red,
-            border:`1px solid ${mpStatus==="ready"?PC.green:mpStatus==="loading"?PC.yellow:PC.red}40`}}>
-            {mpStatus==="ready"?"⚙ AI Ready":mpStatus==="loading"?"⏳ AI Loading…":"❌ AI Error — tap to retry"}
-          </div>
-          <button onClick={()=>setShowReportModal(true)}
-            style={{padding:isWide?"6px 14px":"4px 9px",
-              background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,
-              border:"none",borderRadius:9,color:"#fff",
-              fontSize:isWide?"0.72rem":"0.62rem",fontWeight:700,cursor:"pointer",
-              opacity:(assessMode==="multi"?!!mvComposite:!!(findings.length&&scoreData))?1:0.5}}>
-            📄 PDF Report
-          </button>
-          <button onClick={()=>setShowHistory(h=>!h)}
-            style={{padding:isWide?"6px 14px":"4px 9px",background:`${PC.a2}15`,border:`1px solid ${PC.a2}30`,borderRadius:9,color:PC.a2,fontSize:isWide?"0.72rem":"0.65rem",fontWeight:700,cursor:"pointer"}}>
-            ▤ {sessions.length}
+        <div style={{display:"flex",gap:isWide?14:10,alignItems:"center"}}>
+          {mpStatus==="error"&&(
+            <div onClick={loadMediaPipe} title="Tap to retry loading the AI model"
+              style={{padding:isWide?"5px 12px":"3px 9px",borderRadius:20,fontSize:isWide?"0.65rem":"0.58rem",fontWeight:700,
+              cursor:"pointer",userSelect:"none",background:"rgba(220,38,38,0.12)",color:PC.red,border:`1px solid ${PC.red}40`}}>
+              ❌ AI Error — tap to retry
+            </div>
+          )}
+          <button onClick={()=>setShowHowItWorks(true)}
+            style={{background:"none",border:"none",color:PC.accent,fontWeight:700,fontSize:isWide?"0.8rem":"0.72rem",cursor:"pointer",display:"flex",alignItems:"center",gap:5,padding:0}}>
+            ⓘ How it works?
           </button>
         </div>
       </div>
@@ -7565,6 +7556,42 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           </div>
         </div>
       )}
+
+      {/* ── How it works modal ── */}
+      {showHowItWorks&&(
+        <div onClick={()=>setShowHowItWorks(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?520:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"24px 20px",maxHeight:"75vh",overflowY:"auto"}}>
+            <div style={{fontWeight:800,fontSize:"1rem",color:PC.text,marginBottom:14}}>ⓘ How Posture Analysis works</div>
+            {[
+              ["1. Choose AI Auto or Manual Points","AI Auto detects landmarks automatically on frontal/posterior photos (~70–80% accuracy, fastest). Manual Points has you tap each anatomical landmark yourself (~90–95% accuracy, more reliable for borderline findings). Lateral (left/right) views always use a guided landmark-placement flow regardless of this choice."],
+              ["2. Add photos for each view","Tap any of the 4 view cards to add a photo for that view — front, back, or either side. You only need 1 photo for a quick single-view screen, or capture 2–4 for a fuller assessment."],
+              ["3. Each photo analyses instantly","As soon as a photo is added, it's analysed right away — you don't need to wait until every view is captured to see that view's findings."],
+              ["4. Continue to Analysis","With 1 view captured, this takes you straight to that view's findings. With 2 or more, it generates a combined composite report merging findings across all captured views."],
+              ["5. Save & export","From the results screen, save the session to the patient's record, or generate a PDF report."],
+            ].map(([title,body],i)=>(
+              <div key={i} style={{marginBottom:14}}>
+                <div style={{fontWeight:700,fontSize:"0.85rem",color:PC.accent,marginBottom:3}}>{title}</div>
+                <div style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>{body}</div>
+              </div>
+            ))}
+            <div style={{fontSize:"0.75rem",color:PC.muted,fontStyle:"italic",marginTop:4,marginBottom:14}}>
+              Posture screening &amp; education tool — not a medical diagnosis.
+            </div>
+            <button onClick={()=>setShowHowItWorks(false)} style={{width:"100%",padding:"13px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}30`,borderRadius:10,color:PC.accent,fontWeight:700,cursor:"pointer"}}>Got it</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating History button ── */}
+      <button onClick={()=>setShowHistory(h=>!h)}
+        style={{position:"fixed",right:isWide?28:16,bottom:isWide?28:88,zIndex:30,
+          width:56,height:56,borderRadius:"50%",border:"none",
+          background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,
+          boxShadow:"0 6px 18px rgba(124,58,237,0.4)",cursor:"pointer"}}>
+        <span style={{fontSize:"1.1rem",lineHeight:1}}>▤</span>
+        <span style={{fontSize:"0.5rem",fontWeight:700,lineHeight:1}}>History</span>
+      </button>
     </div>
   );
 }

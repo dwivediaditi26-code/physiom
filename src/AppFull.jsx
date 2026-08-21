@@ -1688,7 +1688,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}}/>
+              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} onSwitchPatient={()=>setShowPatientDb(true)}/>
             </div>
           )}
           {active==="posture" && !mountedTabs.has("posture") && (
