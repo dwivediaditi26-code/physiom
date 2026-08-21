@@ -4714,6 +4714,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const saveMvResult = useCallback((viewKey,m,f,s,r,img) => {
     setMvResults(prev => ({ ...prev, [viewKey]:{ view:viewKey, measurements:m, findings:f, scoreData:s, reliability:r, img } }));
     setMvComposite(null);
+    // Keep the shared single-view display states (measurements/findings/
+    // scoreData/reliability) in sync with whatever view was just captured --
+    // the findings/muscles/plan tabs and "Continue to Analysis" (1 view)
+    // read these directly, and without this they stay null/stale from
+    // before this capture even though mvResults[viewKey] now has a real
+    // result, showing "Analyse a photo to generate findings" instead of it.
+    setMeasurements(m && Object.keys(m).length>0 ? m : null);
+    setFindings(f||[]);
+    setScoreData(s||null);
+    setReliability(r||null);
   },[]);
 
   // ── Analyse uploaded image ──────────────────────────────────────────────────
