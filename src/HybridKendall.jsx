@@ -655,7 +655,7 @@ export default function HybridKendall({
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
       {/* ── Header bar ── */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,flexWrap:isWide?"nowrap":"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"8px 12px",background:C.s2,borderRadius:10,border:`1px solid ${C.border}`,flexWrap:isWide?"nowrap":"wrap",minHeight:36}}>
         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>
           <span style={{fontSize:"0.72rem",fontWeight:800,color:C.accent,whiteSpace:"nowrap"}}>⚕ Hybrid Kendall Mode</span>
           {confirmed && <span style={{fontSize:"0.62rem",fontWeight:700,color:C.green,background:`${C.green}15`,padding:"2px 8px",borderRadius:10,whiteSpace:"nowrap"}}>✓ MANUALLY VERIFIED</span>}
@@ -693,7 +693,7 @@ export default function HybridKendall({
                 borderRadius:9,border:`1.5px solid ${isActive?def.color:placed?def.color+"70":isNext?C.accent:C.border}`,background:isActive?`${def.color}22`:placed?`${def.color}14`:isNext?`${C.accent}0d`:"transparent",color:isActive?def.color:placed?def.color:isNext?C.accent:C.muted,fontSize: isWide?"0.6rem":"0.65rem",fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
               <div style={{fontSize: isWide?"0.85rem":"0.95rem",marginBottom:2}}>{placed?"✅":isNext?"👆":"📍"}</div>
               <div style={{fontWeight:800,fontSize: isWide?"0.6rem":"0.65rem",whiteSpace:"nowrap"}}>{def.label}</div>
-              <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,lineHeight:1.25,whiteSpace:isActive||placed||isNext?"nowrap":"normal"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.hint}</div>
+              <div style={{fontSize: isWide?"0.5rem":"0.55rem",marginTop:1,opacity:0.75,lineHeight:1.25,minHeight:"1.25em",maxHeight:"2.5em",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",whiteSpace:isActive||placed||isNext?"nowrap":"normal"}}>{isActive?"tap photo ↓":placed?"✓ placed":isNext?"← next":def.hint}</div>
             </button>);
           })}
         </div>

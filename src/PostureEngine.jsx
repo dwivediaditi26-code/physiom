@@ -7,7 +7,7 @@ import { runViTPoseLateral, warmupViTPose } from "./vitposeEngine";
 import { analyzeSagittalContour, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
 import HybridKendall from "./HybridKendall";
-import { injectViewerControls } from "./sharedClinicalData.js";
+import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
   [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
@@ -6873,6 +6873,29 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       if (allViewImgs.length === 0 && annotatedImg) {
         allViewImgs = [{ img: annotatedImg, label: _viewLabelsRpt[view] || "Analysis view", score: scoreData?.score ?? null }];
       }
+      // Per-view breakdown — each view's own findings/score, kept separate
+      // from mergedFindings (which folds all views into one cross-plane
+      // list) so the report can show "Front results", "Sagittal results",
+      // "Back results" as their own sections (2026-08-22, user feedback:
+      // the composite-only report didn't make clear what came from which
+      // photo).
+      const perView = isMultiRpt ? _viewOrderRpt
+        .filter(vk => mvResults[vk])
+        .map(vk => {
+          const r = mvResults[vk];
+          return {
+            key: vk,
+            label: _viewLabelsRpt[vk],
+            img: r.img || null,
+            score: r.scoreData?.score ?? null,
+            band: r.scoreData?.band || "",
+            findings: (r.findings||[]).map(f => ({
+              region: f.region || f.label || "Finding",
+              text: (f.findingName||f.text||f.label||"").replace(/^OBSERVATION[^:]*:\s*/i,"").replace(/^OBSERVATION ONLY[^:]*:\s*/i,""),
+              severity: (f.severity||"moderate").toLowerCase(),
+            })),
+          };
+        }) : [];
       const views = isMultiRpt ? Object.keys(mvResults) : [view];
       const m = measurements||{};
 
@@ -6932,6 +6955,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       views,
       annotatedImg,
       allViewImgs,
+      perView,
       findings: rptFindings,
       muscles: (()=>{
         const mi = buildMuscleImbalance(findings);
@@ -6970,22 +6994,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   @page{size:A4;margin:0}
   *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{margin:0;padding:16px;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#e5e7eb}
-  .page{width:794px;min-height:1123px;background:#fff;margin:0 auto 24px;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,.18);position:relative;overflow:hidden}
+  .page{width:794px;max-width:100%;min-height:1123px;background:#fff;margin:0 auto 24px;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,.18);position:relative;overflow:hidden}
   table{border-collapse:collapse;width:100%}
+  @media screen and (max-width:820px){body{padding:0}.page{margin:0 0 12px;border-radius:0}}
   @media print{body{background:#fff;padding:0}.page{margin:0;box-shadow:none;border-radius:0;page-break-after:always}.page:last-of-type{page-break-after:auto}}
 </style></head><body>${bodyHtml}</body></html>`;
-    // Open in new tab and print — same method as the working PdfReportsModal
-    // (Considered adding noopener/noreferrer here as defense-in-depth, but
-    // window.open() with the noopener feature returns null for the handle
-    // in most browsers -- this code needs a live handle to write the report
-    // into, so that would break the feature outright. The escHtml() fix
-    // above, at the one place these fields enter the report data, is the
-    // real fix; this window still trusts its own document.write content by
-    // necessity, same as PdfReportsModal's existing pattern elsewhere.)
-    const win = window.open("","_blank");
-    if(!win){ alert("Please allow popups to generate the PDF report."); return; }
-    win.document.open(); win.document.write(injectViewerControls(fullHtml)); win.document.close();
-    setTimeout(()=>{ try{ win.print(); }catch(e){} }, 800);
+    // Download directly instead of leaving a huge live preview page open for
+    // the user to manually operate (2026-08-22, user feedback: on mobile the
+    // report rendered far too large to work with and they couldn't figure out
+    // how to actually get a file out of it). downloadPDFFromHTML uses the
+    // same injectViewerControls close/print bar, but drives print()
+    // automatically and closes the tab afterwards — same one-tap download
+    // flow already used by PdfReportsModal elsewhere in the app.
+    downloadPDFFromHTML(fullHtml, `PostureAI-Report-${d.patient.name.replace(/[^a-z0-9]+/gi,"_")}.pdf`);
     setShowReportModal(false);
     } catch(err) {
       console.error("generateReport error:", err);
@@ -7033,6 +7054,35 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       </div>`;
     };
     const img = d.annotatedImg ? `<img src="${d.annotatedImg}" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:${C.muted}"><div style="font-size:2rem">📷</div><div style="font-size:0.65rem;margin-top:6px">Analysed image</div></div>`;
+
+    // Per-view breakdown — Front / Sagittal / Back shown as their own blocks
+    // (each with its own photo, score and findings) rather than only the
+    // merged cross-view summary.
+    const perViewSection = (views, max=3) => {
+      if (!views || views.length < 2) return '';
+      return `<div style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">Results by View</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(${Math.min(views.length,3)},1fr);gap:10px">
+          ${views.map(v=>`
+            <div style="border:1px solid ${C.border};border-radius:10px;overflow:hidden">
+              ${v.img?`<div style="height:120px;background:#0f172a"><img src="${v.img}" style="width:100%;height:100%;object-fit:contain"/></div>`:''}
+              <div style="padding:8px 10px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:0.63rem;font-weight:800;color:${C.primary}">${v.label}</span>
+                  ${v.score!=null?`<span style="font-size:0.6rem;font-weight:800;color:${v.score>=74?C.green:v.score>=58?C.yellow:C.red}">${v.score}/100</span>`:''}
+                </div>
+                ${v.findings.slice(0,max).map(f=>`
+                  <div style="font-size:0.6rem;color:${C.primary};padding:3px 0;border-top:1px solid ${C.border}">
+                    <span style="font-weight:700;color:${sevCol(f.severity)}">${f.region}</span> — ${f.text}
+                  </div>`).join('') || `<div style="font-size:0.6rem;color:${C.muted}">No findings flagged</div>`}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    };
 
     if(type==="basic") {
       const regions = [
@@ -7170,7 +7220,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         </div>`;
     }
 
-    // Detailed report — 5 pages
+    // Detailed report — 5 pages, +1 "Results by View" page for multi-view sessions
+    const totalPages = (d.perView && d.perView.length >= 2) ? 6 : 5;
     return `
       <div class="page">
         <div style="height:7px;background:linear-gradient(90deg,${C.primary},${C.accent})"></div>
@@ -7241,7 +7292,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           </div>
           ${photoGrid(d.allViewImgs, 190)}
         </div>
-        ${footer(1,5,"Detailed Clinical Report")}
+        ${footer(1,totalPages,"Detailed Clinical Report")}
       </div>
 
       <div class="page">
@@ -7305,7 +7356,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>`).join("")}
           </div>
         </div>
-        ${footer(2,5,"Detailed Clinical Report")}
+        ${footer(2,totalPages,"Detailed Clinical Report")}
       </div>
 
       <div class="page">
@@ -7359,7 +7410,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </div>
           </div>
         </div>
-        ${footer(3,5,"Detailed Clinical Report")}
+        ${footer(3,totalPages,"Detailed Clinical Report")}
       </div>
 
       <div class="page">
@@ -7391,7 +7442,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <strong>Contraindication note:</strong> Foam roller extension contraindicated in osteoporosis, acute spinal fracture, or recent spinal surgery. Thomas stretch contraindicated post hip replacement. Screen before prescribing.
           </div>
         </div>
-        ${footer(4,5,"Detailed Clinical Report")}
+        ${footer(4,totalPages,"Detailed Clinical Report")}
       </div>
 
       <div class="page">
@@ -7438,8 +7489,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PhysioMind Pro</strong> · Detailed Report · ID: ${Date.now().toString(36).toUpperCase()}</div>
           </div>
         </div>
-        ${footer(5,5,"Detailed Clinical Report")}
-      </div>`;
+        ${footer(5,totalPages,"Detailed Clinical Report")}
+      </div>${totalPages===6 ? `
+      <div class="page">
+        ${hdr("Results by View","Per-Photo Breakdown")}
+        <div style="padding:20px 32px 80px">
+          ${perViewSection(d.perView, 8)}
+        </div>
+        ${footer(6,totalPages,"Detailed Clinical Report")}
+      </div>` : ''}`;
   }
 
   // ── Report modal ─────────────────────────────────────────────────────────────
