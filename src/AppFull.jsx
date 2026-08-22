@@ -1613,7 +1613,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             // this workflow at all). Scope it to the exact screens wfSteps
             // below can land on.
             const wfScreens = ["demographics","subj_region","subjective","subj_ai","chart_palpation","objective","treatment","exercise","soap",...oKeys];
-            if (!wfScreens.includes(active)) return null;
+            // Posture Analysis has its own dedicated entry screen (hero card,
+            // AI/Manual toggle, view grid) that doesn't fit the S->O->A->P
+            // step flow -- hide the stepper there specifically, not the rest
+            // of oKeys (2026-08-21).
+            if (!wfScreens.includes(active) || active==="posture") return null;
             // Expanded from 5 to 9 steps (2026-08-17) -- Subjective's region
             // picker / AI panel / body-chart+palpation were previously all
             // bundled into one long "Subjective" scroll. They're broken out
@@ -1671,7 +1675,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && (
+          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -1688,7 +1692,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} onSwitchPatient={()=>setShowPatientDb(true)} onAddNewPatient={createNewPatient}/>
+              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={patients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/>
             </div>
           )}
           {active==="posture" && !mountedTabs.has("posture") && (

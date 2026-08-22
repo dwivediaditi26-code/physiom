@@ -4351,7 +4351,7 @@ function useBreakpoint() {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={}, onSwitchPatient, onAddNewPatient }){
+function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={}, patients=[], onSelectPatient, onAddNewPatient }){
   // Deep-link: map the region suggested by the Subjective smart-action grid to
   // the most informative posture view (kyphosis/FHP read best from the side).
   const _regionView = (reg="") => /cervic|thoracic|lumbar|hip/i.test(reg) ? "lateral"
@@ -4403,6 +4403,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [mvComposite,setMvComposite] = useState(null);
   const [mvTab,setMvTab]           = useState("capture");  // "capture" | "report"
   const [showHowItWorks,setShowHowItWorks] = useState(false);
+  const [showPatientPicker,setShowPatientPicker] = useState(false);
 
   // ── Report generation state ──────────────────────────────────────────────────
   const [showReportModal,setShowReportModal]=useState(false);
@@ -6302,10 +6303,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",flexDirection:"column",gap:12}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
-            <div>
-              <div style={{fontWeight:800,fontSize:isWide?"1rem":"0.9rem",color:PC.text}}>AI-assisted posture analysis</div>
-              <div style={{fontSize:isWide?"0.8rem":"0.74rem",color:PC.muted,marginTop:2,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
-            </div>
+            <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
           </div>
           <button onClick={handleStartNewAnalysis}
             style={{width:"100%",padding:isWide?"13px":"11px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:isWide?"0.88rem":"0.8rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
@@ -6332,7 +6330,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             clear that "add a new one" and "pick an existing one" are two
             different things). */}
         <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSwitchPatient||onAddNewPatient)?10:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSelectPatient||onAddNewPatient)?10:0}}>
             <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
@@ -6341,7 +6339,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             </div>
           </div>
-          {(onAddNewPatient||onSwitchPatient) && (
+          {(onAddNewPatient||onSelectPatient) && (
             <div style={{display:"flex",gap:8}}>
               {onAddNewPatient && (
                 <button onClick={onAddNewPatient}
@@ -6349,8 +6347,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   + Add New Patient
                 </button>
               )}
-              {onSwitchPatient && (
-                <button onClick={onSwitchPatient}
+              {onSelectPatient && (
+                <button onClick={()=>setShowPatientPicker(true)}
                   style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
                   📋 Select from Patient List
                 </button>
@@ -7670,6 +7668,36 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             ))}
             <button onClick={()=>setShowHistory(false)} style={{marginTop:14,width:"100%",padding:"13px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}30`,borderRadius:10,color:PC.accent,fontWeight:700,cursor:"pointer"}}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Patient picker modal (2026-08-21) — dedicated name/age/condition
+          list, replacing the old "open the whole Clinical drawer" behaviour
+          so switching patients from Posture Analysis doesn't navigate away. */}
+      {showPatientPicker&&(
+        <div onClick={()=>setShowPatientPicker(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?480:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"20px",maxHeight:"75vh",display:"flex",flexDirection:"column"}}>
+            <div style={{fontWeight:800,fontSize:"1rem",color:PC.text,marginBottom:14}}>📋 Select Patient</div>
+            <div style={{overflowY:"auto",flex:1}}>
+              {patients.length===0 && (
+                <div style={{fontSize:"0.82rem",color:PC.muted,textAlign:"center",padding:"20px 0"}}>No patients yet.</div>
+              )}
+              {patients.map(p=>{
+                const age = p.data?.dem_age ? `${p.data.dem_age}y` : null;
+                const condition = p.lastDx || p.data?.cc_main || "No condition recorded";
+                return (
+                  <div key={p.id} onClick={()=>{ onSelectPatient(p); setShowPatientPicker(false); }}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 10px",borderRadius:10,cursor:"pointer",border:`1px solid ${activePatient?.id===p.id?PC.accent:"transparent"}`,background:activePatient?.id===p.id?`${PC.accent}0d`:PC.s2,marginBottom:8}}>
+                    <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1rem",flexShrink:0}}>👤</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:800,fontSize:"0.85rem",color:PC.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name || "Unnamed Patient"}{age?` · ${age}`:""}</div>
+                      <div style={{fontSize:"0.74rem",color:PC.muted,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{condition}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
