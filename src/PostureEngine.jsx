@@ -4402,6 +4402,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [mvResults,setMvResults]   = useState({});         // { [viewKey]: {view,measurements,findings,scoreData,reliability,img} }
   const [mvComposite,setMvComposite] = useState(null);
   const [mvTab,setMvTab]           = useState("capture");  // "capture" | "report"
+  const [mvResultView,setMvResultView] = useState("overview"); // "overview" | viewKey — which tab is showing inside the report
   const [showHowItWorks,setShowHowItWorks] = useState(false);
   const [showPatientPicker,setShowPatientPicker] = useState(false);
 
@@ -6102,6 +6103,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     const composite = mergeViewResults(Object.values(mvResults));
     setMvComposite(composite);
     setMvTab("report");
+    setMvResultView("overview");
     // Persist the composite (not just individual per-view sessions) to the
     // patient record so it's visible from the Patient Profile's Posture tab,
     // not only inside this live screen.
@@ -6175,7 +6177,59 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     }
   }
 
+  // Per-view result screen — its own hero photo, AI landmarks and findings,
+  // kept separate from the Overview's cross-view merged list (2026-08-22,
+  // user feedback: two photos squeezed side-by-side with one merged
+  // findings list didn't make clear what came from which photo; therapist
+  // wants Front/Back/Sagittal each shown as their own full result).
+  function renderViewResult(vk) {
+    const r = mvResults[vk];
+    if (!r) return null;
+    const meta = VIEWS[vk];
+    const m = r.measurements || {};
+    const landmarkChecks = [
+      { label:"Head",      present: m.headTiltAngle!=null || m.cvaAngle!=null },
+      { label:"Shoulders", present: m.shoulderAngle!=null },
+      { label:"Pelvis",    present: m.pelvisAngle!=null || m.lumbarProxy!=null },
+      { label:"Knees",     present: m.tibialVarumL!=null || m.tibialVarumR!=null || m.kneeAngle!=null },
+      { label:"Ankles",    present: m.tibialVarumL!=null || m.tibialVarumR!=null },
+    ].filter(c=>c.present);
+    return (
+      <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
+        <div style={{fontSize:"0.78rem",fontWeight:800,color:meta.colour,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
+          {meta.label} View · AI Analysis
+        </div>
+        {r.img && (
+          <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,marginBottom:14,background:"#0f172a"}}>
+            <img src={r.img} alt={meta.label} style={{width:"100%",maxHeight:420,objectFit:"contain",display:"block"}}/>
+          </div>
+        )}
+        {r.scoreData && (
+          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14,padding:isWide?"14px":"12px",background:PC.surface,borderRadius:12,border:`1px solid ${(r.scoreData.colour||PC.border)}30`}}>
+            <ScoreRingBand score={r.scoreData.score} band={r.scoreData.band} colour={r.scoreData.colour} size={isWide?72:60}/>
+            <div>
+              <div style={{fontWeight:900,fontSize:"0.88rem",color:r.scoreData.colour}}>{r.scoreData.band}</div>
+              <div style={{fontSize:"0.78rem",color:PC.muted}}>{meta.label} score: {r.scoreData.score}/100</div>
+            </div>
+          </div>
+        )}
+        {landmarkChecks.length>0 && (
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>AI Landmarks</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {landmarkChecks.map(c=>(
+                <span key={c.label} style={{fontSize:"0.78rem",fontWeight:700,color:PC.green,padding:"3px 10px",borderRadius:20,background:`${PC.green}12`,border:`1px solid ${PC.green}30`}}>✓ {c.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        <FindingsDisplay findings={r.findings} PC={PC}/>
+      </div>
+    );
+  }
+
   // Multi-view composite report (replaces right panel when ready)
+  const mvCapturedViews = mvViewOrder.filter(vk=>mvResults[vk]);
   const mvReportPanel = assessMode==="multi" && mvComposite && mvTab==="report" && (
     <div style={{flex:1,overflowY:"auto",paddingBottom:isMobile?80:24}}>
       {/* Header */}
@@ -6192,25 +6246,33 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         </div>
       </div>
 
-      {/* Captured view thumbnails inside report */}
-      <div style={{padding:"10px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.s2}}>
-        <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Views Analysed</div>
-        <div style={{display:"flex",gap:8,overflowX:"auto"}}>
-          {mvViewOrder.map(vk=>{
-            const res=mvResults[vk]; if(!res) return null;
-            const meta=VIEWS[vk];
-            return(
-              <div key={vk} style={{flexShrink:0,width:isWide?88:72,borderRadius:9,overflow:"hidden",border:`2px solid ${PC.green}`}}>
-                {res.img&&<img src={res.img} alt={meta.label} style={{width:"100%",height:isWide?64:54,objectFit:"cover",display:"block"}}/>}
-                <div style={{padding:"2px 5px",background:"rgba(5,150,105,0.85)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <span style={{fontSize:"0.82rem",fontWeight:700,color:"#fff"}}>{meta.short}</span>
-                  {res.scoreData&&<span style={{fontSize:"0.75rem",color:"#fff",fontWeight:800}}>{res.scoreData.score}</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* View switcher — Overview + one tab per captured view. Each view
+          tab shows only that photo's own result (renderViewResult above);
+          Overview keeps the cross-view composite summary below. */}
+      <div style={{display:"flex",gap:6,overflowX:"auto",padding:"10px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.s2,WebkitOverflowScrolling:"touch"}}>
+        <button onClick={()=>setMvResultView("overview")}
+          style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
+            border:`1.5px solid ${mvResultView==="overview"?PC.accent:PC.border}`,
+            background:mvResultView==="overview"?`${PC.accent}14`:PC.surface,
+            color:mvResultView==="overview"?PC.accent:PC.muted,fontSize:"0.78rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
+          ◎ Overview
+        </button>
+        {mvCapturedViews.map(vk=>{
+          const meta=VIEWS[vk], res=mvResults[vk], active=mvResultView===vk;
+          return (
+            <button key={vk} onClick={()=>setMvResultView(vk)}
+              style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
+                border:`1.5px solid ${active?meta.colour:PC.border}`,
+                background:active?`${meta.colour}14`:PC.surface,
+                color:active?meta.colour:PC.muted,fontSize:"0.78rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
+              {meta.icon} {meta.label}
+              {res.scoreData&&<span style={{fontSize:"0.7rem",opacity:0.8}}>{res.scoreData.score}</span>}
+            </button>
+          );
+        })}
       </div>
+
+      {mvResultView!=="overview" && mvResults[mvResultView] ? renderViewResult(mvResultView) : (
       <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
         {/* Score + summary */}
         <div style={{marginBottom:16,padding:isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${mvComposite.compositeColour}30`}}>
@@ -6290,6 +6352,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         {/* ── FINDINGS — Priority top 5 with expand ── */}
         <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
       </div>
+      )}
     </div>
   );
 
