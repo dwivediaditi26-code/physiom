@@ -508,6 +508,12 @@ export default function HybridKendall({
   const [activePlace, setActivePlace] = useState(null); // id of landmark being placed by tap
   const [dragging, setDragging] = useState(null);
   const [imgSize, setImgSize] = useState({ w:1, h:1 });
+  // Magnifier loupe (2026-08-21, user feedback: same request as the frontal/
+  // posterior manual flow -- precise landmark placement on a phone screen is
+  // hard when a fingertip covers the target). {px,py,rectW,rectH} in pixels
+  // relative to the SVG overlay while a drag (new placement OR repositioning
+  // an existing point) is in progress; null otherwise.
+  const [magnifierPos, setMagnifierPos] = useState(null);
   const svgRef = useRef(null);
   const imgRef = useRef(null);
 
@@ -577,6 +583,11 @@ export default function HybridKendall({
   }, [measurements, confirmed, patientSex]);
 
   // ── Drag handlers ───────────────────────────────────────────────────────────
+  // Also drives the magnifier loupe while dragging -- covers both use cases
+  // that flow through here: repositioning an already-placed dot (started by
+  // that dot's own onMouseDown/onTouchStart below) and placing a brand-new
+  // point (started by handleSVGPointerDown just below, which sets `dragging`
+  // to the same id as `activePlace`).
   const handleSVGMove = useCallback((e) => {
     if (!dragging || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -586,21 +597,45 @@ export default function HybridKendall({
     const y = Math.max(0, Math.min(1, (cy - rect.top)  / rect.height));
     setLm(prev => ({ ...prev, [dragging]: { x, y } }));
     setConfirmed(false);
+    setMagnifierPos({ px: cx-rect.left, py: cy-rect.top, rectW: rect.width, rectH: rect.height });
   }, [dragging]);
 
-  const stopDrag = useCallback(() => setDragging(null), []);
+  const stopDrag = useCallback(() => {
+    setMagnifierPos(null);
+    setDragging(prevDragging => {
+      // If `dragging` still equals the id we were trying to place (as opposed
+      // to an already-placed dot the user grabbed instead), this was a fresh
+      // placement -- advance to the next undone landmark, same as the old
+      // single-tap handleSVGClick used to.
+      if (prevDragging && prevDragging === activePlace) {
+        setLm(current => {
+          const allDefs=[...PRIMARY_LANDMARKS,...(advancedMode?ADVANCED_LANDMARKS:[])];
+          const nxt=allDefs.find(d=>d.id!==prevDragging&&!current[d.id]);
+          setActivePlace(nxt?nxt.id:null);
+          return current;
+        });
+      }
+      return null;
+    });
+  }, [activePlace, advancedMode]);
 
-  // ── Tap-to-place ─────────────────────────────────────────────────────────────
-  const handleSVGClick = useCallback((e) => {
+  // ── Press-and-drag to place a NEW point ─────────────────────────────────────
+  // Was a single onClick (blind tap, no live preview) -- now starts a drag
+  // just like repositioning an existing dot, so the magnifier can track the
+  // finger before the point commits on release. An existing dot's own
+  // onMouseDown/onTouchStart (below) calls stopPropagation, so this only
+  // fires when the touch/click starts on empty photo area.
+  const handleSVGPointerDown = useCallback((e) => {
     if (dragging || !activePlace || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - rect.top)  / rect.height));
-    const updated={...lm,[activePlace]:{x,y}};
-    setLm(updated);setConfirmed(false);
-    const allDefs=[...PRIMARY_LANDMARKS,...(advancedMode?ADVANCED_LANDMARKS:[])];
-    const nxt=allDefs.find(d=>d.id!==activePlace&&!updated[d.id]);
-    setActivePlace(nxt?nxt.id:null);
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = Math.max(0, Math.min(1, (cx - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (cy - rect.top)  / rect.height));
+    setLm(prev => ({ ...prev, [activePlace]: { x, y } }));
+    setConfirmed(false);
+    setMagnifierPos({ px: cx-rect.left, py: cy-rect.top, rectW: rect.width, rectH: rect.height });
+    setDragging(activePlace);
   }, [dragging, activePlace]);
 
   // ── Render helpers ──────────────────────────────────────────────────────────
@@ -728,11 +763,11 @@ export default function HybridKendall({
             style={{width:"100%",display:"block",userSelect:"none"}}/>
 
           <svg ref={svgRef}
-            style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",cursor:activePlace?"crosshair":dragging?"grabbing":"default",overflow:"visible"}}
+            style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",cursor:activePlace?"crosshair":dragging?"grabbing":"default",overflow:"visible",touchAction:"none"}}
             viewBox="0 0 1 1" preserveAspectRatio="none"
             onMouseMove={handleSVGMove} onTouchMove={handleSVGMove}
             onMouseUp={stopDrag}   onTouchEnd={stopDrag}
-            onClick={handleSVGClick}>
+            onMouseDown={handleSVGPointerDown} onTouchStart={handleSVGPointerDown}>
 
             {/* ── 1cm grid ── */}
             {showGrid && m.bodyHeightNorm && lm.ear && lm.ankle && (() => {
@@ -892,6 +927,30 @@ export default function HybridKendall({
               </text>
             ))}
           </svg>
+
+          {/* Magnifier loupe — mirrors the one in the frontal/posterior manual
+              flow (PostureEngine.jsx). Rendered as a sibling HTML div (not
+              inside the SVG, which is normalized 0-1 coords) so it can use
+              plain pixel-based CSS background positioning. */}
+          {magnifierPos && (()=>{
+            const loupeSize=110, zoom=2.8, offsetAbove=30;
+            let top = magnifierPos.py - loupeSize - offsetAbove;
+            if (top < 0) top = magnifierPos.py + offsetAbove;
+            let left = magnifierPos.px - loupeSize/2;
+            left = Math.max(0, Math.min(left, magnifierPos.rectW - loupeSize));
+            return (
+              <div style={{position:"absolute",left,top,width:loupeSize,height:loupeSize,borderRadius:"50%",
+                border:`3px solid ${C.accent}`,overflow:"hidden",pointerEvents:"none",zIndex:40,
+                boxShadow:"0 6px 18px rgba(0,0,0,0.35)",
+                backgroundImage:`url(${imgSrc})`,
+                backgroundSize:`${magnifierPos.rectW*zoom}px ${magnifierPos.rectH*zoom}px`,
+                backgroundPosition:`${-(magnifierPos.px*zoom-loupeSize/2)}px ${-(magnifierPos.py*zoom-loupeSize/2)}px`,
+                backgroundColor:"#111"}}>
+                <div style={{position:"absolute",top:"50%",left:"50%",width:18,height:2,background:C.accent,transform:"translate(-50%,-50%)"}}/>
+                <div style={{position:"absolute",top:"50%",left:"50%",width:2,height:18,background:C.accent,transform:"translate(-50%,-50%)"}}/>
+              </div>
+            );
+          })()}
 
           {/* AI auto-placement failed/declined banner */}
           {!vitposeLoading && vitposeError && Object.keys(lm).length===0 && (
