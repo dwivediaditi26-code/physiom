@@ -4351,7 +4351,7 @@ function useBreakpoint() {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={}, onSwitchPatient }){
+function PostureAnalysisModule({ activePatient, set: setPatientField, navContext={}, onSwitchPatient, onAddNewPatient }){
   // Deep-link: map the region suggested by the Subjective smart-action grid to
   // the most informative posture view (kyphosis/FHP read best from the side).
   const _regionView = (reg="") => /cervic|thoracic|lumbar|hip/i.test(reg) ? "lateral"
@@ -4463,6 +4463,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [manualPlaced,setManualPlaced]=useState({});    // {[pointId]: {x,y}}
   const [manualImgDims,setManualImgDims]=useState(null); // {w,h} of displayed image
   const [manualAnalysed,setManualAnalysed]=useState(false);
+  // Magnifier loupe (2026-08-21, user feedback: precise landmark placement
+  // on a phone screen is hard when a fingertip covers the target). {x,y} in
+  // pixels relative to manualContainerRef while a point placement drag is
+  // in progress; null when not actively placing.
+  const [magnifierPos,setMagnifierPos]=useState(null);
+  const [showAllManualPoints,setShowAllManualPoints]=useState(false);
   // 5-point sagittal refine (AI mode, lateral views)
   const [aiSagPlaced,setAiSagPlaced]=useState({});  // {ear,shoulder,hip,knee,ankle} → {x,y} normalised
   const [aiSagActive,setAiSagActive]=useState(false); // tap-to-place mode on/off
@@ -5099,11 +5105,49 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manualPlacedCount, manualTotal, inputMode, manualAnalysed]);
 
-  function handleManualImageClick(e) {
+  // Pointer down/move/up (not a plain click) so the magnifier loupe can
+  // track the finger/cursor live before the point commits on release —
+  // lets a student drag to the exact spot while seeing a zoomed preview,
+  // rather than blind-tapping once and hoping. Works for touch and mouse
+  // alike via the Pointer Events API.
+  const manualDraggingRef = useRef(false);
+
+  function manualPointerXY(e) {
+    const rect = manualContainerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    return { px, py, x: px / rect.width, y: py / rect.height, rectW: rect.width, rectH: rect.height };
+  }
+
+  function handleManualPointerDown(e) {
     if (inputMode !== "manual" || !uploadedImg) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
+    if (nextManualIdx < 0 && !spinalLevelMode) return;
+    const pos = manualPointerXY(e);
+    if (!pos) return;
+    manualDraggingRef.current = true;
+    // setPointerCapture throws if the browser doesn't consider this pointerId
+    // "active" (e.g. it was already released) -- an unguarded call here would
+    // silently abort the whole handler *after* the drag flag is set but
+    // *before* the magnifier ever shows, so the loupe just never appeared
+    // with no visible error. Never let it block showing the magnifier.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+    setMagnifierPos(pos);
+  }
+
+  function handleManualPointerMove(e) {
+    if (!manualDraggingRef.current) return;
+    const pos = manualPointerXY(e);
+    if (pos) setMagnifierPos(pos);
+  }
+
+  function handleManualPointerUp(e) {
+    if (!manualDraggingRef.current) return;
+    manualDraggingRef.current = false;
+    const pos = manualPointerXY(e) || magnifierPos;
+    setMagnifierPos(null);
+    if (!pos) return;
+    const { x, y } = pos;
 
     // Spinal level placement takes priority
     if (spinalLevelMode) {
@@ -6283,18 +6327,37 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           ))}
         </div>
 
-        {/* Select patient */}
-        <button onClick={onSwitchPatient} disabled={!onSwitchPatient}
-          style={{display:"flex",alignItems:"center",gap:12,padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,cursor:onSwitchPatient?"pointer":"default",textAlign:"left"}}>
-          <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Select Patient</div>
-            <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:PC.muted,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-              {activePatient?.name || "Search name or ID"}
+        {/* Patient — two explicit actions (2026-08-21, user feedback: a
+            single row that silently opened the whole Clinical drawer wasn't
+            clear that "add a new one" and "pick an existing one" are two
+            different things). */}
+        <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSwitchPatient||onAddNewPatient)?10:0}}>
+            <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
+              <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:activePatient?PC.muted:PC.red,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {activePatient?.name || "No patient selected"}
+              </div>
             </div>
           </div>
-          {onSwitchPatient && <div style={{color:PC.muted,fontSize:"1rem"}}>›</div>}
-        </button>
+          {(onAddNewPatient||onSwitchPatient) && (
+            <div style={{display:"flex",gap:8}}>
+              {onAddNewPatient && (
+                <button onClick={onAddNewPatient}
+                  style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.accent}30`,background:`${PC.accent}0d`,color:PC.accent,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                  + Add New Patient
+                </button>
+              )}
+              {onSwitchPatient && (
+                <button onClick={onSwitchPatient}
+                  style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                  📋 Select from Patient List
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Select views */}
         <div>
@@ -6426,17 +6489,22 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <span>{error}</span>
         {error.includes("camera")||error.includes("Camera")?<button onClick={()=>{setError(null);setCamStatus("idle");}} style={{marginLeft:8,padding:"3px 10px",borderRadius:6,border:`1px solid ${PC.red}`,background:"transparent",color:PC.red,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>Retry</button>:null}
       </div>}
-            <button onClick={()=>fileInputRef.current?.click()}
-              disabled={inputMode==="ai"?(mpStatus!=="ready"||analysing):false}
-              style={{width:"100%",padding: isWide?"22px":"18px",borderRadius:16,border:`2px dashed ${viewMeta.colour}`,background:`${viewMeta.colour}08`,color:viewMeta.colour,fontWeight:700,fontSize: isWide?"0.9rem":"0.82rem",cursor:"pointer",textAlign:"center",marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-              <div style={{fontSize:isWide?"1.8rem":"1.5rem"}}>☁︎↑</div>
-              <div>{analysing?"⏳ Analysing…":`Tap to upload photo — ${viewMeta.label}`}</div>
-              <div style={{fontSize: isWide?"0.72rem":"0.65rem",fontWeight:400,color:PC.muted}}>
-                {(view==="left"||view==="right")
-                ? "Upload lateral photo — Hybrid Kendall analysis"
-                : inputMode==="manual"?"Upload photo — then tap each anatomical point":"JPG, PNG · Full body · Clear background"}
+            {/* Standalone dropzone removed (2026-08-21, user feedback) -- each
+                of the 4 view cards above already has its own "+ Add Photo"
+                trigger, so a second big upload button here was pure
+                duplication. The hidden input stays: both the per-card
+                buttons (handleAddPhotoForView) and this input's onChange
+                (handleFile) are still required. */}
+            {!uploadedImg && !analysing && (
+              <div style={{textAlign:"center",padding:"10px 4px",color:PC.muted,fontSize:isWide?"0.78rem":"0.72rem",marginBottom:10}}>
+                ↑ Tap "+ Add Photo" on a view above to get started
               </div>
-            </button>
+            )}
+            {analysing && (
+              <div style={{textAlign:"center",padding:"10px 4px",color:viewMeta.colour,fontWeight:700,fontSize:isWide?"0.78rem":"0.72rem",marginBottom:10}}>
+                ⏳ Analysing…
+              </div>
+            )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
 
             {/* Manual mode */}
@@ -6460,17 +6528,26 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     <div style={{height:"100%",width:`${manualPct*100}%`,background:manualCanAnalyse?PC.green:PC.accent,borderRadius:6,transition:"width 0.3s"}}/>
                   </div>
                 </div>
+                {/* Fixed min-height (2026-08-21 fix) — description length varies
+                    a lot per point (15 to ~80 chars), and this box used to size
+                    to content, so the image below it visibly jumped up/down on
+                    every single tap as this text reflowed. minHeight + line-clamp
+                    keeps the box a constant size regardless of which point is next. */}
                 {nextManualIdx >= 0 ? (
-                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.accent}10`,border:`1px solid ${PC.accent}30`,fontSize:"0.8rem",color:PC.accent,marginBottom:9,fontWeight:700}}>
-                    Next: {nextManualIdx+1}. {manualPointDefs[nextManualIdx]?.label} — {manualPointDefs[nextManualIdx]?.desc}
+                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.accent}10`,border:`1px solid ${PC.accent}30`,fontSize:"0.8rem",color:PC.accent,marginBottom:9,fontWeight:700,minHeight:"2.6em",display:"flex",alignItems:"center"}}>
+                    <span style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>
+                      Next: {nextManualIdx+1}. {manualPointDefs[nextManualIdx]?.label} — {manualPointDefs[nextManualIdx]?.desc}
+                    </span>
                   </div>
                 ) : (
-                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.green}10`,border:`1px solid ${PC.green}30`,fontSize:"0.8rem",color:PC.green,marginBottom:9,fontWeight:700}}>
+                  <div style={{padding:"7px 11px",borderRadius:8,background:`${PC.green}10`,border:`1px solid ${PC.green}30`,fontSize:"0.8rem",color:PC.green,marginBottom:9,fontWeight:700,minHeight:"2.6em",display:"flex",alignItems:"center"}}>
                     All points placed!
                   </div>
                 )}
-                <div ref={manualContainerRef} onClick={handleManualImageClick}
-                  style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${spinalLevelMode?PC.yellow:PC.accent}`,cursor:(nextManualIdx>=0||spinalLevelMode)?"crosshair":"default",marginBottom:10}}>
+                <div ref={manualContainerRef}
+                  onPointerDown={handleManualPointerDown} onPointerMove={handleManualPointerMove}
+                  onPointerUp={handleManualPointerUp} onPointerCancel={()=>{manualDraggingRef.current=false;setMagnifierPos(null);}}
+                  style={{position:"relative",borderRadius:12,overflow:"hidden",border:`2px solid ${spinalLevelMode?PC.yellow:PC.accent}`,cursor:(nextManualIdx>=0||spinalLevelMode)?"crosshair":"default",marginBottom:10,touchAction:"none"}}>
                   <img id="manual-posture-img" src={objectUrlRef.current||uploadedImg} alt="Tap to place points"
                     onLoad={e=>{ manualImgSize.current={w:e.target.naturalWidth,h:e.target.naturalHeight}; }}
                     style={{width:"100%",display:"block",userSelect:"none",pointerEvents:"none"}}/>
@@ -6503,19 +6580,49 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       imgId="manual-posture-img"
                     />
                   )}
-                </div>
-                <div style={{display:"grid",gridTemplateColumns: isWide?"repeat(3,1fr)":"repeat(2,1fr)",gap:4,marginBottom:10}}>
-                  {manualPointDefs.map(def=>{
-                    const done=!!manualPlaced[def.id];
-                    const isNext=def.id===manualPointDefs[nextManualIdx]?.id;
-                    return(
-                      <div key={def.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:done?`${PC.green}10`:isNext?`${PC.accent}10`:"transparent",border:`1px solid ${done?PC.green:isNext?PC.accent:PC.border}`}}>
-                        <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.75rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"✓":def.id+1}</div>
-                        <div style={{fontSize:"0.8rem",color:done?PC.green:isNext?PC.accent:PC.muted,fontWeight:done||isNext?700:400,lineHeight:1.2}}>{def.label}</div>
+                  {/* Magnifier loupe — follows the finger/cursor while placing a
+                      point so the target (e.g. "ear") isn't hidden under the
+                      fingertip on a phone screen. Only the loupe itself is
+                      zoomed; nothing else on the page scales. */}
+                  {magnifierPos && (()=>{
+                    const loupeSize=110, zoom=2.8, offsetAbove=30;
+                    const src = objectUrlRef.current||uploadedImg;
+                    let top = magnifierPos.py - loupeSize - offsetAbove;
+                    if (top < 0) top = magnifierPos.py + offsetAbove; // flip below finger near top edge
+                    let left = magnifierPos.px - loupeSize/2;
+                    left = Math.max(0, Math.min(left, magnifierPos.rectW - loupeSize));
+                    return (
+                      <div style={{position:"absolute",left,top,width:loupeSize,height:loupeSize,borderRadius:"50%",
+                        border:`3px solid ${PC.accent}`,overflow:"hidden",pointerEvents:"none",zIndex:40,
+                        boxShadow:"0 6px 18px rgba(0,0,0,0.35)",
+                        backgroundImage:`url(${src})`,
+                        backgroundSize:`${magnifierPos.rectW*zoom}px ${magnifierPos.rectH*zoom}px`,
+                        backgroundPosition:`${-(magnifierPos.px*zoom-loupeSize/2)}px ${-(magnifierPos.py*zoom-loupeSize/2)}px`,
+                        backgroundColor:"#111"}}>
+                        <div style={{position:"absolute",top:"50%",left:"50%",width:18,height:2,background:PC.accent,transform:"translate(-50%,-50%)"}}/>
+                        <div style={{position:"absolute",top:"50%",left:"50%",width:2,height:18,background:PC.accent,transform:"translate(-50%,-50%)"}}/>
                       </div>
                     );
-                  })}
+                  })()}
                 </div>
+                <button type="button" onClick={()=>setShowAllManualPoints(v=>!v)}
+                  style={{background:"none",border:"none",color:PC.muted,fontSize:"0.75rem",fontWeight:700,cursor:"pointer",padding:"2px 0",marginBottom: showAllManualPoints?6:10}}>
+                  {showAllManualPoints ? "▾ Hide full point list" : `▸ Show all ${manualTotal} points`}
+                </button>
+                {showAllManualPoints && (
+                  <div style={{display:"grid",gridTemplateColumns: isWide?"repeat(3,1fr)":"repeat(2,1fr)",gap:4,marginBottom:10}}>
+                    {manualPointDefs.map(def=>{
+                      const done=!!manualPlaced[def.id];
+                      const isNext=def.id===manualPointDefs[nextManualIdx]?.id;
+                      return(
+                        <div key={def.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:done?`${PC.green}10`:isNext?`${PC.accent}10`:"transparent",border:`1px solid ${done?PC.green:isNext?PC.accent:PC.border}`}}>
+                          <div style={{width:14,height:14,borderRadius:"50%",background:done?PC.green:isNext?PC.accent:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.75rem",fontWeight:900,color:"#fff",flexShrink:0}}>{done?"✓":def.id+1}</div>
+                          <div style={{fontSize:"0.8rem",color:done?PC.green:isNext?PC.accent:PC.muted,fontWeight:done||isNext?700:400,lineHeight:1.2}}>{def.label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <button onClick={analyseManualPoints} disabled={!manualCanAnalyse}
                   style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
                     background: manualCanAnalyse ? `linear-gradient(135deg,${PC.accent},${PC.a2})` : PC.s3,
