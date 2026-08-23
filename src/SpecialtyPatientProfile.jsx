@@ -1,138 +1,408 @@
 import React, { useState } from "react";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
 import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
+import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 
-// Simple, separate profile for Cardio/Neuro patients (2026-08-20, Aditi's
-// request) -- deliberately NOT the existing Ortho PatientProfileModal
-// (PatientDatabase.jsx), which is full of Ortho-specific sections (ROM/MMT/
-// Special Tests/Kinetic Chain/Fascia/...) that don't apply here. Lives only
-// in Clinical, opened by the same "👤 Profile" button every patient already
-// has -- PatientDatabase.jsx's onProfile routes here for Cardio/Neuro
-// patients and to the Ortho modal for everyone else, rather than a second,
-// confusing "Specialty Profile" button (which this replaces).
+// Simple, separate profile for Cardio/Neuro (+ new Ortho Assessment)
+// patients (2026-08-20, Aditi's request) -- deliberately NOT the existing
+// Ortho PatientProfileModal (PatientDatabase.jsx), which is full of
+// Ortho-specific sections (ROM/MMT/Special Tests/Kinetic Chain/Fascia/...)
+// that don't apply here. Lives only in Clinical, opened by the same
+// "👤 Profile" button every patient already has -- PatientDatabase.jsx's
+// onProfile routes here for Cardio/Neuro patients and to the Ortho modal
+// for everyone else.
 //
-// Overview = identity + clinical snapshot only, no action buttons -- the
-// earlier version had "Start/Continue Cardio/Neuro" buttons here, which
-// Aditi asked to remove; starting/continuing an assessment already has a
-// real entry point (Clinical's own "New Assessment" / "Edit Assessment").
-//
-// Assessments tab embeds the actual documented sheet (SpecialtyDocument,
-// shared with AssessmentReportView.jsx) directly -- not a summary card
-// linking out to it -- so this tab already looks like the printed
-// assessment sheet.
-//
-// Still deliberately simple ("cardio neuro simple"): no Progress/
-// Treatment/Documents tabs. Those need a real dated-session history model
-// (multiple saved assessments per patient over time) that doesn't exist
-// yet -- today there's exactly one current Cardio object and one current
-// Neuro object per patient, not a timeline.
+// 2026-08-22: redesigned to a 5-tab Overview/Assessment/Progress/Treatment/
+// Home structure (Aditi, "make it basic, clean, fast ... understand within
+// 5-10 seconds"). Progress/Treatment/Home read the same generic,
+// specialty-agnostic patient fields the Ortho profile already reads
+// (tx_sessions, hep_programme, om_*) -- these aren't Ortho-namespaced, so a
+// Cardio/Neuro patient with real sessions/exercises logged shows real data
+// here too, honest empty states otherwise. Assessment tab also surfaces the
+// new standalone Ortho Assessment tool (OrthoAssessmentNew.jsx) as a third
+// card -- it doesn't persist to the patient record yet, so it's always
+// offered as "start/continue", never claims saved data that doesn't exist.
+
+const C = {
+  bg: "#F8FAFC", white: "#FFFFFF", primary: "#6D28D9", primaryBg: "#EDE9FE",
+  text: "#1e293b", muted: "#64748b", faint: "#94a3b8", border: "#e2e8f0",
+  green: "#16a34a", greenBg: "#dcfce7", red: "#dc2626",
+};
+
+function Card({ children, style }) {
+  return (
+    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 18px", marginBottom: 12, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function CardTitle({ children, action }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, letterSpacing: 0.5, textTransform: "uppercase" }}>{children}</div>
+      {action}
+    </div>
+  );
+}
+
+function LinkBtn({ onClick, children }) {
+  return (
+    <button onClick={onClick} style={{ marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 10, border: "none", background: "none", color: C.primary, fontWeight: 700, fontSize: 13, cursor: "pointer", textAlign: "center" }}>
+      {children}
+    </button>
+  );
+}
+
+function PrimaryBtn({ onClick, children, style }) {
+  return (
+    <button onClick={onClick} style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: C.primary, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", ...style }}>
+      {children}
+    </button>
+  );
+}
+
+function GhostBtn({ onClick, children, style }) {
+  return (
+    <button onClick={onClick} style={{ padding: "10px 14px", borderRadius: 10, border: `1px solid ${C.border}`, background: "#fff", color: C.text, fontWeight: 700, fontSize: 13, cursor: "pointer", ...style }}>
+      {children}
+    </button>
+  );
+}
+
+function EmptyRow({ children }) {
+  return <div style={{ textAlign: "center", padding: "18px 4px", color: C.faint, fontSize: 12.5 }}>{children}</div>;
+}
+
+// Compact inline pain-trend line chart -- mirrors the shape of the mockup
+// (dots + value labels above each point), built directly from real
+// tx_sessions rather than a shared chart component (none exists that takes
+// this simple a shape).
+function PainTrend({ sessions }) {
+  const pts = sessions.slice(-6).map((s) => {
+    const v = parseFloat(s.vasEnd ?? s.vasStart);
+    return { v: isNaN(v) ? null : v, date: s.date || "" };
+  }).filter((p) => p.v !== null);
+  if (pts.length < 2) return null;
+  const w = 320, h = 110, pad = 18;
+  const max = 10;
+  const stepX = (w - pad * 2) / (pts.length - 1);
+  const coords = pts.map((p, i) => [pad + i * stepX, h - pad - (p.v / max) * (h - pad * 2)]);
+  const path = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: 110 }}>
+      <path d={path} fill="none" stroke={C.primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {coords.map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="4" fill="#fff" stroke={C.primary} strokeWidth="2.5" />
+          <text x={x} y={y - 10} fontSize="11" fontWeight="800" fill={C.text} textAnchor="middle">{pts[i].v}</text>
+          <text x={x} y={h - 2} fontSize="8.5" fill={C.faint} textAnchor="middle">{pts[i].date}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+const hepDose = (e) => {
+  const st = e.customSets || e.sets, rp = e.customReps || e.reps, hd = e.customHold || e.hold, fq = e.customFreq || e.freq;
+  return `${st}×${rp}${hd ? ` · hold ${hd}s` : ""}${fq ? ` · ${fq}` : ""}`;
+};
 
 export default function SpecialtyPatientProfile({ patient, onNav, onBack }) {
   const [tab, setTab] = useState("overview");
+  const [showFullProfile, setShowFullProfile] = useState(false);
+  const [expandedSession, setExpandedSession] = useState(0);
   const d = patient?.data || {};
   const hasCardio = d.cardio && Object.keys(d.cardio).length > 0;
   const hasNeuro = d.neuro && Object.keys(d.neuro).length > 0;
   const cardioDem = d.cardio?.demographics || {};
   const neuroDem = d.neuro?.demographics || {};
-  // Whichever specialty has a diagnosis wins for the header snapshot --
-  // both write to the shared dem_* fields (see CardiopulmonaryAssessment.jsx/
-  // NeurologicalAssessment.jsx), but "diagnosis" itself stays specialty-local.
-  // Deliberately NOT falling back to d.cc_main (Ortho's own "chief
-  // complaint" field) when neither specialty has a diagnosis yet -- that
-  // was the exact Ortho/Cardio-Neuro mixing this whole separate profile
-  // exists to avoid. An honest empty state instead.
   const activeDem = cardioDem.diagnosis ? cardioDem : neuroDem;
   const primaryDiagnosis = cardioDem.diagnosis || neuroDem.diagnosis || "No diagnosis recorded yet";
-  const pid = patient?.id ? "PT-" + patient.id.slice(0, 6).toUpperCase() : "";
-  const initials = (patient?.name || "?").split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  const pid = patient?.id ? "PM-" + patient.id.slice(0, 6).toUpperCase() : "";
+  const name = d.dem_name || patient?.name || "";
+  const initials = (name || "?").split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+
+  // Same generic, specialty-agnostic fields the Ortho PatientProfileModal
+  // reads -- not Ortho-namespaced, so real when present regardless of specialty.
+  const sessions = Array.isArray(d.tx_sessions) ? d.tx_sessions : [];
+  const sessionsDesc = sessions.slice().reverse(); // newest first, matches tx_sessions convention used elsewhere
+  const plannedSessions = parseInt(d.tx_plan_sessions || d.plan_sessions || "0") || 0;
+  const sessPct = plannedSessions > 0 ? Math.min(100, Math.round((sessions.length / plannedSessions) * 100)) : 0;
+  const lastSession = sessionsDesc[0];
+  const hep = Array.isArray(d.hep_programme) ? d.hep_programme : [];
+  const nrsNow = parseFloat(d.cc_vas_now || "0");
+  const nrsWorst = parseFloat(d.cc_vas_worst || "0");
+  const goalsText = d.goal_main || d.sub_goals || d.soap_goals || "";
+  const goalsList = Array.isArray(goalsText) ? goalsText : String(goalsText).split(/\n|;/).map((g) => g.trim()).filter(Boolean);
+
+  const TABS = [
+    { k: "overview", label: "Overview" },
+    { k: "assessment", label: "Assessment" },
+    { k: "progress", label: "Progress" },
+    { k: "treatment", label: "Treatment" },
+    { k: "home", label: "Home" },
+  ];
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 14px 40px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <button onClick={onBack} style={{ border: "1px solid #e2e8f0", background: "#fff", borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: "pointer" }}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>Patients</div>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 14px 40px", background: C.bg, minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <button onClick={onBack} style={{ border: `1px solid ${C.border}`, background: "#fff", borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>←</button>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.primaryBg, color: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
+          {initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name || "Patient"}</div>
+          <div style={{ fontSize: 12, color: C.faint }}>
+            {pid}{(d.dem_age || cardioDem.age) && ` · ${d.dem_age || cardioDem.age} yrs`}{(d.dem_sex || d.dem_gender) && ` · ${d.dem_sex || d.dem_gender}`}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 12, padding: 4, marginBottom: 16 }}>
-        {["overview", "assessments"].map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            flex: 1, padding: "8px", borderRadius: 9, border: "none", cursor: "pointer",
-            background: tab === t ? "#fff" : "transparent", color: tab === t ? "#1e293b" : "#64748b",
-            fontWeight: 700, fontSize: 13, boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 12, padding: 4, marginBottom: 16, overflowX: "auto" }}>
+        {TABS.map((t) => (
+          <button key={t.k} onClick={() => setTab(t.k)} style={{
+            flex: "1 0 auto", padding: "8px 10px", borderRadius: 9, border: "none", cursor: "pointer",
+            background: tab === t.k ? "#fff" : "transparent", color: tab === t.k ? C.text : C.muted,
+            fontWeight: 700, fontSize: 12.5, boxShadow: tab === t.k ? "0 1px 4px rgba(0,0,0,0.08)" : "none", whiteSpace: "nowrap",
           }}>
-            {t === "overview" ? "Overview" : "Assessments"}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {tab === "overview" ? (
+      {/* ═══ OVERVIEW ═══ */}
+      {tab === "overview" && (
         <>
-          {/* Patient identity */}
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "24px 20px", marginBottom: 14, textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#ede9fe", color: "#7c3aed", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, margin: "0 auto 12px" }}>
-              {initials}
-            </div>
-            <div style={{ fontSize: 19, fontWeight: 900, color: "#1e293b", letterSpacing: 0.2 }}>{(patient?.name || "PATIENT").toUpperCase()}</div>
-            <div style={{ fontSize: 13.5, color: "#64748b", marginTop: 4 }}>
-              {[d.dem_age && `${d.dem_age} years`, d.dem_sex || d.dem_gender].filter(Boolean).join(" • ")}
-            </div>
-            <div style={{ fontSize: 12.5, color: "#94a3b8", marginTop: 2 }}>Patient ID: {pid}</div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "4px 12px", borderRadius: 20, background: "#dcfce7", color: "#166534", fontSize: 12, fontWeight: 700 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e" }} /> Active
-            </div>
-          </div>
-
-          {/* Clinical snapshot */}
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "16px 18px" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", letterSpacing: 0.5, marginBottom: 4 }}>PRIMARY CONDITION</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", marginBottom: 12 }}>{primaryDiagnosis}</div>
+          <Card>
+            <CardTitle>Patient Information</CardTitle>
             {[
-              ["Onset", activeDem.onsetDate],
-              ["Referral", activeDem.referrer],
-              ["Dominance", activeDem.dominance],
-            ].filter(([, v]) => v).map(([label, val]) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: "1px solid #f1f5f9", fontSize: 13.5 }}>
-                <span style={{ color: "#64748b" }}>{label}</span>
-                <span style={{ color: "#1e293b", fontWeight: 600 }}>{val}</span>
+              ["Age", d.dem_age || cardioDem.age || neuroDem.age],
+              ["Gender", d.dem_sex || d.dem_gender],
+              ["Phone", d.dem_phone],
+              ["Date of birth", d.dem_dob],
+              ["Patient ID", pid],
+            ].filter(([, v]) => v).slice(0, showFullProfile ? 5 : 3).map(([label, val]) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
+                <span style={{ color: C.muted }}>{label}</span>
+                <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
               </div>
             ))}
-          </div>
+            <LinkBtn onClick={() => setShowFullProfile((v) => !v)}>{showFullProfile ? "▲ Show less" : "View full profile →"}</LinkBtn>
+          </Card>
+
+          <Card>
+            <CardTitle>Current Clinical Status</CardTitle>
+            {[
+              ["Condition", primaryDiagnosis],
+              ["Status", sessions.length > 0 ? "Ongoing treatment" : (hasCardio || hasNeuro) ? "Assessment recorded" : "New patient"],
+              ["First visit", activeDem.onsetDate || sessionsDesc[sessionsDesc.length - 1]?.date],
+              ["Current session", plannedSessions > 0 ? `${sessions.length} / ${plannedSessions}` : sessions.length > 0 ? `${sessions.length}` : null],
+            ].filter(([, v]) => v).map(([label, val]) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
+                <span style={{ color: C.muted }}>{label}</span>
+                <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
+              </div>
+            ))}
+          </Card>
+
+          <Card>
+            <CardTitle>Latest Assessment</CardTitle>
+            {!hasCardio && !hasNeuro ? (
+              <EmptyRow>No assessment recorded yet.</EmptyRow>
+            ) : (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {hasCardio && <span style={{ padding: "4px 12px", borderRadius: 20, background: "#fee2e2", color: "#dc2626", fontSize: 12, fontWeight: 700 }}>🫀 Cardiopulmonary</span>}
+                {hasNeuro && <span style={{ padding: "4px 12px", borderRadius: 20, background: "#ede9fe", color: "#7c3aed", fontSize: 12, fontWeight: 700 }}>🧠 Neurological</span>}
+              </div>
+            )}
+            {(hasCardio || hasNeuro) && <LinkBtn onClick={() => setTab("assessment")}>View assessment →</LinkBtn>}
+          </Card>
+
+          <Card>
+            <CardTitle>Current Treatment</CardTitle>
+            {sessions.length === 0 ? (
+              <EmptyRow>No sessions logged yet.</EmptyRow>
+            ) : (
+              <>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>Session {sessions.length}{plannedSessions > 0 ? ` / ${plannedSessions}` : ""}</div>
+                {lastSession?.treatmentGiven && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4 }}>{lastSession.treatmentGiven}</div>}
+              </>
+            )}
+            <LinkBtn onClick={() => setTab("treatment")}>Continue treatment →</LinkBtn>
+          </Card>
+
+          <Card>
+            <CardTitle>Home Program</CardTitle>
+            {hep.length === 0 ? <EmptyRow>No exercises assigned yet.</EmptyRow> : (
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{hep.length} exercise{hep.length !== 1 ? "s" : ""} assigned</div>
+            )}
+            <LinkBtn onClick={() => setTab("home")}>View home program →</LinkBtn>
+          </Card>
         </>
-      ) : (
+      )}
+
+      {/* ═══ ASSESSMENT ═══ */}
+      {tab === "assessment" && (
         <>
-          {!hasCardio && !hasNeuro ? (
-            <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>
-              No assessments recorded yet.
+          {!hasCardio && !hasNeuro && (
+            <Card><EmptyRow>No assessments recorded yet.</EmptyRow></Card>
+          )}
+          {hasCardio && <CardioSummaryStyles />}
+          {hasCardio && (
+            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 24 }}>🫀</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
+                <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
+              </div>
+              <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
+            </Card>
+          )}
+          {hasNeuro && <NeuroSummaryStyles />}
+          {hasNeuro && (
+            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 24 }}>🧠</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
+                <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
+              </div>
+              <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} />
+            </Card>
+          )}
+
+          {/* New Ortho Assessment -- standalone tool, same pattern as
+              Cardio/Neuro above. Doesn't persist to the patient record yet
+              (see OrthoAssessmentNew.jsx), so this is always offered as a
+              start/continue entry point rather than a saved-data summary. */}
+          <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 24 }}>🦴</span>
+              <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>Ortho Assessment</span>
             </div>
-          ) : (
-            <>
-              {/* Renders the EXACT same Summary & Review the wizard's own
-                  last step shows (2026-08-20, Aditi: "put summary and
-                  review same to same not change at all in assessment
-                  section") -- not a separately-built generic renderer. */}
-              {hasCardio && <CardioSummaryStyles />}
-              {hasCardio && (
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "22px 20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <span style={{ fontSize: 24 }}>🫀</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
-                    <button onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✏️ Edit</button>
-                  </div>
-                  <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Standalone orthopaedic assessment tool.</div>
+            <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ width: "100%" }}>+ Open Ortho Assessment</GhostBtn>
+          </Card>
+        </>
+      )}
+
+      {/* ═══ PROGRESS ═══ */}
+      {tab === "progress" && (
+        <>
+          <Card>
+            <CardTitle>Pain Progress (NPRS)</CardTitle>
+            {sessions.length < 2 ? (
+              <EmptyRow>Not enough sessions yet to show a trend.</EmptyRow>
+            ) : <PainTrend sessions={sessions} />}
+          </Card>
+
+          {(nrsWorst > 0 || d.om_odi_score || d.om_dash_score || d.om_psfs1_now) && (
+            <Card>
+              <CardTitle>Other Progress</CardTitle>
+              {[
+                nrsWorst > 0 && ["Pain (NRS)", `${nrsWorst}/10 → ${nrsNow}/10`],
+                (d.om_odi_score || d.om_odi_initial) && ["ODI Score", `${d.om_odi_initial || "—"} → ${d.om_odi_score || "—"}`],
+                (d.om_dash_score || d.om_dash_initial) && ["DASH Score", `${d.om_dash_initial || "—"} → ${d.om_dash_score || "—"}`],
+                (d.om_psfs1_now && d.om_psfs1_initial) && ["PSFS", `${d.om_psfs1_initial}/10 → ${d.om_psfs1_now}/10`],
+              ].filter(Boolean).map(([label, val]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
+                  <span style={{ color: C.muted }}>{label}</span>
+                  <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
                 </div>
-              )}
-              {hasNeuro && <NeuroSummaryStyles />}
-              {hasNeuro && (
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "22px 20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <span style={{ fontSize: 24 }}>🧠</span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
-                    <button onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✏️ Edit</button>
-                  </div>
-                  <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} />
+              ))}
+            </Card>
+          )}
+
+          {goalsList.length > 0 && (
+            <Card>
+              <CardTitle>Goals</CardTitle>
+              {goalsList.map((g, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 13, color: C.text }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.primary, flexShrink: 0 }} />
+                  {g}
                 </div>
-              )}
-            </>
+              ))}
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* ═══ TREATMENT ═══ */}
+      {tab === "treatment" && (
+        <>
+          <Card>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Session Progress</div>
+              {plannedSessions > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: C.primary }}>{sessions.length} / {plannedSessions} completed</div>}
+            </div>
+            {plannedSessions > 0 && (
+              <div style={{ height: 8, borderRadius: 99, background: "#f1f5f9", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${sessPct}%`, background: C.primary, borderRadius: 99 }} />
+              </div>
+            )}
+          </Card>
+
+          {sessions.length === 0 && <Card><EmptyRow>No sessions logged yet.</EmptyRow></Card>}
+
+          {sessionsDesc.map((s, i) => {
+            const isOpen = expandedSession === i;
+            const techniques = String(s.treatmentGiven || "").split(/,|·/).map((t) => t.trim()).filter(Boolean);
+            return (
+              <Card key={s.id || i}>
+                <div onClick={() => setExpandedSession(isOpen ? -1 : i)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text }}>Session {s.sessionNo || sessions.length - i} · {s.date || ""}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {s.vasStart && <span style={{ fontSize: 12, fontWeight: 700, color: C.muted }}>{s.vasStart} → {s.vasEnd || s.vasStart} /10</span>}
+                    <span style={{ color: C.faint, fontSize: 12 }}>{isOpen ? "▲" : "▼"}</span>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div style={{ marginTop: 12 }}>
+                    {techniques.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, marginBottom: 4 }}>TECHNIQUES</div>
+                        <div style={{ fontSize: 13, color: C.text, marginBottom: 10 }}>{techniques.join(", ")}</div>
+                      </>
+                    )}
+                    {s.response && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, marginBottom: 4 }}>RESPONSE</div>
+                        <div style={{ fontSize: 13, color: C.text }}>{s.response}</div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+
+          <GhostBtn onClick={() => onNav?.("tx_sessions")} style={{ width: "100%", marginTop: 4 }}>+ Add New Session</GhostBtn>
+        </>
+      )}
+
+      {/* ═══ HOME ═══ */}
+      {tab === "home" && (
+        <>
+          <Card>
+            <CardTitle>Current Home Program</CardTitle>
+            {hep.length === 0 ? <EmptyRow>No exercises assigned yet.</EmptyRow> : hep.map((e, i) => (
+              <div key={e.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderTop: i > 0 ? `1px solid #f1f5f9` : "none" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{i + 1}. {e.name}</div>
+                <div style={{ fontSize: 12, color: C.muted, flexShrink: 0, marginLeft: 8 }}>{hepDose(e)}</div>
+              </div>
+            ))}
+          </Card>
+
+          {hep.length > 0 && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <GhostBtn onClick={() => onNav?.("treatment")} style={{ flex: 1 }}>Edit Program</GhostBtn>
+              <PrimaryBtn onClick={() => sendHepWhatsApp(d)} style={{ flex: 1 }}>Send to Patient</PrimaryBtn>
+            </div>
+          )}
+          {hep.length > 0 && (
+            <LinkBtn onClick={() => downloadHepPdf(d)}>📄 Download as PDF</LinkBtn>
           )}
         </>
       )}

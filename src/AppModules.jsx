@@ -1173,14 +1173,14 @@ function buildHepWhatsAppText(d){
   const lines=prog.map((e,i)=>`${i+1}. ${e.name} — ${hepDose(e)}`);
   return `🏥 ${d.clinic_name||"PhysioMind"} — Home Exercise Programme (v${v})\nPatient: ${d.dem_name||""}\nDate: ${new Date().toLocaleDateString("en-GB")}\n\n${lines.join("\n")}\n\nStop if severe pain. Mild discomfort is normal. Contact your physiotherapist if unsure.`;
 }
-function sendHepWhatsApp(d){
+export function sendHepWhatsApp(d){
   const text=buildHepWhatsAppText(d);
   if(!text){alert("No exercises in the home protocol yet.");return;}
   const phone=String(d.dem_phone||d.dem_contact||"").replace(/[^0-9]/g,"");
   const url=phone.length>=10?`https://wa.me/${phone}?text=${encodeURIComponent(text)}`:`https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url,"_blank");
 }
-function downloadHepPdf(d){
+export function downloadHepPdf(d){
   const prog=Array.isArray(d.hep_programme)?d.hep_programme:[];
   if(!prog.length){alert("No exercises in the home protocol yet.");return;}
   const v=parseInt(d.hep_version)||1;
