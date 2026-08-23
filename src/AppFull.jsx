@@ -82,7 +82,13 @@ const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 // New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
 // above. The old config-driven "ortho" stream stays reachable, relabeled
 // "Old Ortho" in STREAMS below.
-const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
+// HOTFIX (2026-08-22): this module and its supporting ortho*.jsx/js files
+// were never committed, so the import below broke the production build
+// ("Could not resolve ./OrthoAssessmentNew.jsx"). Commented out -- along
+// with the one place it's rendered, below -- until those files are actually
+// in the repo. Re-enable both together once OrthoAssessmentNew.jsx is
+// committed.
+// const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
@@ -128,11 +134,12 @@ const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} 
 const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, SensoryRegion: SensoryRegionWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
-  { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
-  { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:true  },
-  { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c", live:false },
-  { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777", live:false },
-  { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626", live:false },
+  { id:"ortho",     label:"Old Ortho",        icon:"🦴", color:"#7c3aed", live:true  },
+  { id:"ortho_new", label:"Ortho Assessment", icon:"🦴", color:"#7c3aed", live:true  },
+  { id:"neuro",     label:"Neuro",            icon:"🧠", color:"#0d9488", live:true  },
+  { id:"sports",    label:"Sports",           icon:"🏃", color:"#ea580c", live:false },
+  { id:"pedia",     label:"Pedia",            icon:"🧸", color:"#db2777", live:false },
+  { id:"cardio",    label:"Cardio",           icon:"❤️", color:"#dc2626", live:false },
 ];
 
 function StreamSelector({ stream, setStream, navTo, PC }) {
@@ -151,7 +158,7 @@ function StreamSelector({ stream, setStream, navTo, PC }) {
         // is replacing. Route both to the real tool instead, same as the
         // "+ New Assessment" specialty picker already does.
         const onClick = () => {
-          if (st.id === "cardio" || st.id === "neuro") navTo?.(`${st.id}_assessment`);
+          if (st.id === "cardio" || st.id === "neuro" || st.id === "ortho_new") navTo?.(`${st.id}_assessment`);
           else setStream(st.id);
         };
         return (
@@ -585,7 +592,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // effect above takes over from here.
   useEffect(() => {
     if (activePatientId) return;
-    if (active !== "cardio_assessment" && active !== "neuro_assessment") return;
+    if (active !== "cardio_assessment" && active !== "neuro_assessment" && active !== "ortho_new_assessment") return;
     const name = (data.dem_name || "").trim();
     if (!name) return;
     const newP = { id: genId(), name, data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
@@ -1071,6 +1078,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
         <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
+        <SidebarItem navKey="ortho_new_assessment" icon="🦴" label="Ortho Assessment"/>
         <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
         <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
         <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
@@ -1208,7 +1216,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // Neuro (2026-08-19): same treatment -- the old config-driven
                 // stream engine (setStream("neuro")) is replaced by the
                 // standalone NeurologicalAssessment.jsx tool, same as Cardio.
-                const clickable = st.live || st.id === "cardio";
+                const clickable = st.live || st.id === "cardio" || st.id === "ortho_new";
                 return (
                 <button key={st.id} type="button"
                   onClick={()=>{
@@ -1235,6 +1243,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       setData({});
                       setActivePatientId(null);
                       navTo("demographics");
+                    } else if (st.id === "ortho_new") {
+                      // New standalone Ortho Assessment tool -- same
+                      // blank-slate treatment as Cardio/Neuro above.
+                      setData({});
+                      setActivePatientId(null);
+                      navTo("ortho_new_assessment");
                     } else {
                       // Other live streams don't have their own Demographics
                       // step yet -- keep using the existing intake-form
@@ -1780,6 +1794,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {active==="neuro_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
               <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
+            </div>
+          )}
+
+          {/* New Ortho Assessment -- standalone tool, same pattern as
+              Cardiopulmonary/Neurological Assessment above. The old
+              config-driven "ortho" stream (demographics -> subjective ->
+              objective stepper) stays reachable, relabeled "Old Ortho" in
+              STREAMS, untouched below. */}
+          {/* HOTFIX (2026-08-22): disabled along with LazyOrthoAssessmentNew
+              above -- see that comment. */}
+          {false && active==="ortho_new_assessment" && (
+            <div style={{margin:"-24px -20px 0"}}>
+              {/* <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense> */}
             </div>
           )}
 
