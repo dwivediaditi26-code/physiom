@@ -1,4 +1,20 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
+import InfoCard from "./InfoCard.jsx";
+import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
+import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
+
+// Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
+// component Cardiopulmonary Assessment already uses) from anywhere in the
+// field tree below, without prop-drilling a setter through every wrapper.
+const InfoCardContext = createContext(null);
+
+// neuroConditionLibraryData is keyed "Category|||Label" -- the exact
+// [cat, label] pairs already used as NEURO_LIBRARY/NEURO_RENDERERS keys
+// below, so a renderer can pull its InfoCard data with the same two
+// strings it already keys off via neuroId().
+function condInfo(cat, label) {
+  return neuroConditionLibraryData[`${cat}|||${label}`];
+}
 
 /* ============================================================
    BRAND / TOKENS — matches existing PhysioMind purple system
@@ -92,13 +108,25 @@ function InfoButton({ text }) {
   );
 }
 
-function FieldShell({ label, hint, howTo, children }) {
+// Small ⓘ trigger for the rich InfoCard overlay -- replaces the plain-text
+// InfoButton wherever a field has a matching neuroConditionLibraryData
+// entry. Same pattern as CardiopulmonaryAssessment.jsx's InfoCardButton.
+function InfoCardButton({ data }) {
+  const openCard = useContext(InfoCardContext);
+  return (
+    <button type="button" className="info-card-btn" onClick={() => openCard?.(data)} title={`Learn: ${data.title}`} aria-label={`Learn: ${data.title}`}>
+      ⓘ
+    </button>
+  );
+}
+
+function FieldShell({ label, hint, howTo, info, children }) {
   return (
     <div className="field-block">
       {label && (
         <div className="field-label-row">
           <span className="field-label">{label}</span>
-          {howTo && <InfoButton text={howTo} />}
+          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
         </div>
       )}
       {children}
@@ -107,9 +135,9 @@ function FieldShell({ label, hint, howTo, children }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
@@ -164,7 +192,7 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, placeholder, hint }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -175,7 +203,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
@@ -194,9 +222,9 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   );
 }
 
-function Segmented({ label, options, value, onChange, hint, howTo }) {
+function Segmented({ label, options, value, onChange, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="segmented">
         {options.map((o) => (
           <button
@@ -213,12 +241,12 @@ function Segmented({ label, options, value, onChange, hint, howTo }) {
   );
 }
 
-function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, width }) {
+function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
   return (
     <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
       <div className="vital-label-row">
         <span className="vital-label">{label}</span>
-        {howTo && <InfoButton text={howTo} />}
+        {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
       </div>
       <div className="vital-input-wrap">
         <input
@@ -236,9 +264,9 @@ function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, w
   );
 }
 
-function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
+function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <textarea
         className="textarea"
         rows={2}
@@ -250,10 +278,10 @@ function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
   );
 }
 
-function ScaleField({ label, value, onChange, hint, howTo, max = 10 }) {
+function ScaleField({ label, value, onChange, hint, howTo, info, max = 10 }) {
   const v = value === undefined || value === "" ? 0 : Number(value);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="scale-wrap">
         <input
           type="range"
@@ -276,9 +304,12 @@ function ScaleField({ label, value, onChange, hint, howTo, max = 10 }) {
 
 /* Left/Right (or multi-column) grading grid — used throughout for
    dermatomes, myotomes, DTRs, MMT, tone, etc. */
-function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo }) {
+// rowInfo (optional): { [rowLabel]: InfoCard data } -- adds a small ⓘ next
+// to that specific row's label, for grids where each row is really its own
+// distinct test/reflex (e.g. DTRs) rather than one shared technique.
+function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, info, rowInfo }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="lr-grid">
         <div className="lr-row lr-head">
           <div className="lr-cell lr-zone" />
@@ -290,7 +321,10 @@ function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {},
         </div>
         {rows.map((r) => (
           <div className="lr-row" key={r}>
-            <div className="lr-cell lr-zone">{r}</div>
+            <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { display: "flex", alignItems: "center", gap: 4 } : undefined}>
+              {r}
+              {rowInfo?.[r] && <InfoCardButton data={rowInfo[r]} />}
+            </div>
             {columns.map((c) => {
               const key = `${r}__${c}`;
               return (
@@ -504,11 +538,12 @@ const NEURO_RENDERERS = {
       options={["Intact", "Impaired judgement", "Impaired problem-solving", "Impaired initiation", "Impulsivity", "Impaired safety awareness"]}
       value={d.hmf}
       onChange={(v) => set("hmf", v)}
+      info={condInfo("Stroke", "Higher mental function screen")}
     />
   ),
   [neuroId("Stroke", "Neglect / inattention")]: (d, set) => (
     <>
-      <SelectField label="Neglect type" type="multi" options={["None", "Left visual neglect", "Right visual neglect", "Personal neglect", "Extrapersonal neglect", "Anosognosia"]} value={d.neglectType} onChange={(v) => set("neglectType", v)} />
+      <SelectField label="Neglect type" type="multi" options={["None", "Left visual neglect", "Right visual neglect", "Personal neglect", "Extrapersonal neglect", "Anosognosia"]} value={d.neglectType} onChange={(v) => set("neglectType", v)} info={condInfo("Stroke", "Neglect / inattention")} />
       <SelectField
         label="Screening test used"
         type="single"
@@ -526,12 +561,12 @@ const NEURO_RENDERERS = {
       options={["Full fields", "Left homonymous hemianopia", "Right homonymous hemianopia", "Quadrantanopia", "Not tested"]}
       value={d.visualField}
       onChange={(v) => set("visualField", v)}
-      howTo="Sit facing the patient at arm's length, cover one of their eyes, and bring a target in from the periphery in each quadrant while they fixate on your face — compare to your own (normal) fields."
+      info={condInfo("Stroke", "Visual field screen")}
     />
   ),
   [neuroId("Stroke", "Synergy pattern (UE/LE)")]: (d, set) => (
     <>
-      <SelectField label="UE synergy present" type="single" options={["None", "Flexor synergy", "Extensor synergy", "Mixed/out-of-synergy movement emerging"]} value={d.ueSynergy} onChange={(v) => set("ueSynergy", v)} howTo="Flexor UE synergy: scapular retraction/elevation, shoulder abduction/ER, elbow flexion, forearm supination. Extensor UE synergy: scapular protraction, shoulder adduction/IR, elbow extension, forearm pronation." />
+      <SelectField label="UE synergy present" type="single" options={["None", "Flexor synergy", "Extensor synergy", "Mixed/out-of-synergy movement emerging"]} value={d.ueSynergy} onChange={(v) => set("ueSynergy", v)} info={condInfo("Stroke", "Synergy pattern (UE/LE)")} />
       <SelectField label="LE synergy present" type="single" options={["None", "Flexor synergy", "Extensor synergy", "Mixed/out-of-synergy movement emerging"]} value={d.leSynergy} onChange={(v) => set("leSynergy", v)} howTo="Flexor LE synergy: hip flexion/abduction/ER, knee flexion, ankle dorsiflexion/inversion. Extensor LE synergy: hip extension/adduction/IR, knee extension, ankle plantarflexion/inversion." />
     </>
   ),
@@ -542,11 +577,12 @@ const NEURO_RENDERERS = {
       options={["Normal isolated movement", "Movement only within synergy", "Minimal isolated movement emerging", "No volitional movement"]}
       value={d.selectiveControl}
       onChange={(v) => set("selectiveControl", v)}
+      info={condInfo("Stroke", "Selective motor control")}
     />
   ),
   [neuroId("Stroke", "Brunnstrom recovery stage")]: (d, set) => (
     <>
-      <SelectField label="Arm" type="single" options={["I - Flaccid", "II - Synergy emerging, spasticity begins", "III - Synergy voluntary, spasticity marked", "IV - Movement out of synergy begins", "V - Relative independence from synergy", "VI - Near-normal isolated movement"]} value={d.brunnstromArm} onChange={(v) => set("brunnstromArm", v)} />
+      <SelectField label="Arm" type="single" options={["I - Flaccid", "II - Synergy emerging, spasticity begins", "III - Synergy voluntary, spasticity marked", "IV - Movement out of synergy begins", "V - Relative independence from synergy", "VI - Near-normal isolated movement"]} value={d.brunnstromArm} onChange={(v) => set("brunnstromArm", v)} info={condInfo("Stroke", "Brunnstrom recovery stage")} />
       <SelectField label="Hand" type="single" options={["I - Flaccid", "II - Minimal finger flexion", "III - Mass grasp, no release", "IV - Lateral prehension, some release", "V - Palmar prehension, cylindrical/spherical grasp", "VI - Near-normal finger movement"]} value={d.brunnstromHand} onChange={(v) => set("brunnstromHand", v)} />
       <SelectField label="Leg" type="single" options={["I - Flaccid", "II - Synergy emerging, spasticity begins", "III - Synergy voluntary, spasticity marked", "IV - Movement out of synergy begins", "V - Relative independence from synergy", "VI - Near-normal isolated movement"]} value={d.brunnstromLeg} onChange={(v) => set("brunnstromLeg", v)} howTo="6-stage model of post-stroke motor recovery (Brunnstrom): flaccidity → synergy emerges → synergy peaks with spasticity → movement begins to break from synergy → spasticity declines → near-normal coordination." />
     </>
@@ -554,7 +590,7 @@ const NEURO_RENDERERS = {
   [neuroId("Stroke", "Fugl-Meyer Assessment")]: (d, set) => (
     <>
       <div className="vitals-grid">
-        <NumberField label="UE motor" value={d.fmUE} onChange={(v) => set("fmUE", v)} unit="/66" width="45%" />
+        <NumberField label="UE motor" value={d.fmUE} onChange={(v) => set("fmUE", v)} unit="/66" width="45%" info={condInfo("Stroke", "Fugl-Meyer Assessment")} />
         <NumberField label="LE motor" value={d.fmLE} onChange={(v) => set("fmLE", v)} unit="/34" width="45%" />
         <NumberField label="Balance" value={d.fmBalance} onChange={(v) => set("fmBalance", v)} unit="/14" width="45%" />
         <NumberField label="Sensation" value={d.fmSensation} onChange={(v) => set("fmSensation", v)} unit="/24" width="45%" />
@@ -569,23 +605,23 @@ const NEURO_RENDERERS = {
       options={["0 - No symptoms", "1 - No significant disability", "2 - Slight disability", "3 - Moderate disability", "4 - Moderately severe disability", "5 - Severe disability", "6 - Death"]}
       value={d.mrs}
       onChange={(v) => set("mrs", v)}
-      howTo="Global disability scale rating overall functional independence after stroke, 0 (no symptoms) to 6 (death)."
+      info={condInfo("Stroke", "Modified Rankin Scale")}
     />
   ),
   [neuroId("Stroke", "Functional mobility (stroke)")]: (d, set) => (
-    <SelectField label="Functional mobility level" type="single" options={["Independent", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist", "Dependent"]} value={d.funcMobility} onChange={(v) => set("funcMobility", v)} />
+    <SelectField label="Functional mobility level" type="single" options={["Independent", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist", "Dependent"]} value={d.funcMobility} onChange={(v) => set("funcMobility", v)} info={condInfo("Stroke", "Functional mobility (stroke)")} />
   ),
 
   /* ---------------- Parkinson's Disease ---------------- */
   [neuroId("Parkinson's Disease", "Bradykinesia")]: (d, set) => (
-    <SelectField label="Bradykinesia" type="multi" options={["None", "Slowed finger tapping", "Slowed hand movements", "Slowed leg agility", "Decreased arm swing", "Hypomimia (masked face)", "Micrographia"]} value={d.bradykinesia} onChange={(v) => set("bradykinesia", v)} />
+    <SelectField label="Bradykinesia" type="multi" options={["None", "Slowed finger tapping", "Slowed hand movements", "Slowed leg agility", "Decreased arm swing", "Hypomimia (masked face)", "Micrographia"]} value={d.bradykinesia} onChange={(v) => set("bradykinesia", v)} info={condInfo("Parkinson's Disease", "Bradykinesia")} />
   ),
   [neuroId("Parkinson's Disease", "Rigidity type")]: (d, set) => (
-    <SelectField label="Rigidity" type="single" options={["None", "Cogwheel rigidity", "Lead-pipe rigidity", "Present, distribution unclear"]} value={d.rigidityType} onChange={(v) => set("rigidityType", v)} howTo="Cogwheel = ratchety resistance through passive ROM, often with tremor superimposed. Lead-pipe = smooth, uniform resistance throughout range." />
+    <SelectField label="Rigidity" type="single" options={["None", "Cogwheel rigidity", "Lead-pipe rigidity", "Present, distribution unclear"]} value={d.rigidityType} onChange={(v) => set("rigidityType", v)} info={condInfo("Parkinson's Disease", "Rigidity type")} />
   ),
   [neuroId("Parkinson's Disease", "Resting tremor")]: (d, set) => (
     <>
-      <SelectField label="Distribution" type="multi" options={["None", "Right hand", "Left hand", "Right leg", "Left leg", "Jaw/chin", "Head"]} value={d.tremorDist} onChange={(v) => set("tremorDist", v)} />
+      <SelectField label="Distribution" type="multi" options={["None", "Right hand", "Left hand", "Right leg", "Left leg", "Jaw/chin", "Head"]} value={d.tremorDist} onChange={(v) => set("tremorDist", v)} info={condInfo("Parkinson's Disease", "Resting tremor")} />
       <ScaleField label="Severity (0-4)" value={d.tremorSeverity} onChange={(v) => set("tremorSeverity", v)} max={4} howTo="Classic PD tremor is a 4-6 Hz resting 'pill-rolling' tremor that reduces with voluntary movement — distinguish from the higher-frequency, action-provoked tremor of essential tremor." />
     </>
   ),
@@ -596,17 +632,17 @@ const NEURO_RENDERERS = {
       options={["Recovers independently (normal)", "Retropulsion, recovers without help", "Retropulsion, would fall without catching", "Unable to stand for test"]}
       value={d.pullTest}
       onChange={(v) => set("pullTest", v)}
-      howTo="Stand behind the patient, warn them, and give a firm pull backward on the shoulders. Normal is 1-2 steps back or none. More than 2 steps or absent postural response is abnormal — perform close enough to catch the patient."
+      info={condInfo("Parkinson's Disease", "Postural instability (pull test)")}
     />
   ),
   [neuroId("Parkinson's Disease", "Freezing of gait")]: (d, set) => (
-    <SelectField label="Freezing episodes" type="multi" options={["None observed", "On initiation", "On turning", "At doorways / narrow spaces", "On approaching destination", "With dual-tasking"]} value={d.freezing} onChange={(v) => set("freezing", v)} />
+    <SelectField label="Freezing episodes" type="multi" options={["None observed", "On initiation", "On turning", "At doorways / narrow spaces", "On approaching destination", "With dual-tasking"]} value={d.freezing} onChange={(v) => set("freezing", v)} info={condInfo("Parkinson's Disease", "Freezing of gait")} />
   ),
   [neuroId("Parkinson's Disease", "Turning / axial rotation")]: (d, set) => (
-    <SelectField label="Turning strategy" type="single" options={["En-bloc (multiple small steps)", "Normal pivot turn", "Requires multiple attempts", "Freezing on turn"]} value={d.turning} onChange={(v) => set("turning", v)} />
+    <SelectField label="Turning strategy" type="single" options={["En-bloc (multiple small steps)", "Normal pivot turn", "Requires multiple attempts", "Freezing on turn"]} value={d.turning} onChange={(v) => set("turning", v)} info={condInfo("Parkinson's Disease", "Turning / axial rotation")} />
   ),
   [neuroId("Parkinson's Disease", "Dual-task gait")]: (d, set) => (
-    <TextArea label="Dual-task gait findings" value={d.dualTask} onChange={(v) => set("dualTask", v)} placeholder="e.g. gait speed/step length change while counting backward or carrying a tray..." howTo="Compare gait while performing a simultaneous cognitive or motor task — a marked slowing or increased freezing indicates reduced automaticity of gait, common in PD." />
+    <TextArea label="Dual-task gait findings" value={d.dualTask} onChange={(v) => set("dualTask", v)} placeholder="e.g. gait speed/step length change while counting backward or carrying a tray..." info={condInfo("Parkinson's Disease", "Dual-task gait")} />
   ),
   [neuroId("Parkinson's Disease", "Hoehn & Yahr staging")]: (d, set) => (
     <SelectField
@@ -615,12 +651,13 @@ const NEURO_RENDERERS = {
       options={["I - Unilateral involvement only", "II - Bilateral involvement, no balance impairment", "III - Mild-moderate bilateral disease, postural instability, physically independent", "IV - Severe disability, still able to walk/stand unassisted", "V - Wheelchair bound or bedridden unless aided"]}
       value={d.hoehnYahr}
       onChange={(v) => set("hoehnYahr", v)}
+      info={condInfo("Parkinson's Disease", "Hoehn & Yahr staging")}
     />
   ),
 
   /* ---------------- Spinal Cord Injury ---------------- */
   [neuroId("Spinal Cord Injury", "Neurological level of injury")]: (d, set) => (
-    <TextField label="Neurological level of injury" value={d.nli} onChange={(v) => set("nli", v)} placeholder="e.g. C6 (ASIA)" howTo="The most caudal level with normal sensory AND motor function on both sides — determined from the myotome/dermatome grading, per ASIA/ISNCSCI convention." />
+    <TextField label="Neurological level of injury" value={d.nli} onChange={(v) => set("nli", v)} placeholder="e.g. C6 (ASIA)" info={condInfo("Spinal Cord Injury", "Neurological level of injury")} />
   ),
   [neuroId("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")]: (d, set) => (
     <LRGrid
@@ -629,7 +666,7 @@ const NEURO_RENDERERS = {
       options={["5", "4", "3", "2", "1", "0"]}
       value={d.myotomes || {}}
       onChange={(v) => set("myotomes", v)}
-      howTo="ASIA/ISNCSCI key muscle grading, 0-5 per muscle each side, used to determine motor level and completeness."
+      info={condInfo("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")}
     />
   ),
   [neuroId("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")]: (d, set) => (
@@ -639,7 +676,7 @@ const NEURO_RENDERERS = {
       options={["2 - Normal", "1 - Altered", "0 - Absent"]}
       value={d.dermatomes || {}}
       onChange={(v) => set("dermatomes", v)}
-      howTo="Test light touch and pinprick at each ASIA key sensory point and grade 0 (absent), 1 (impaired), or 2 (normal)."
+      info={condInfo("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")}
     />
   ),
   [neuroId("Spinal Cord Injury", "ASIA Impairment Scale (AIS)")]: (d, set) => (
@@ -655,48 +692,49 @@ const NEURO_RENDERERS = {
       ]}
       value={d.ais}
       onChange={(v) => set("ais", v)}
+      info={condInfo("Spinal Cord Injury", "ASIA Impairment Scale (AIS)")}
     />
   ),
   [neuroId("Spinal Cord Injury", "Sitting balance (SCI)")]: (d, set) => (
     <>
-      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} />
+      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} info={condInfo("Spinal Cord Injury", "Sitting balance (SCI)")} />
       <SelectField label="Dynamic sitting balance" type="single" options={BALANCE_GRADES} value={d.sitDynamic} onChange={(v) => set("sitDynamic", v)} />
     </>
   ),
   [neuroId("Spinal Cord Injury", "Transfer ability")]: (d, set) => (
-    <SelectField label="Transfer level" type="single" options={["Independent", "Modified independent (equipment)", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist / dependent", "Requires hoist/lift"]} value={d.transfer} onChange={(v) => set("transfer", v)} />
+    <SelectField label="Transfer level" type="single" options={["Independent", "Modified independent (equipment)", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist / dependent", "Requires hoist/lift"]} value={d.transfer} onChange={(v) => set("transfer", v)} info={condInfo("Spinal Cord Injury", "Transfer ability")} />
   ),
   [neuroId("Spinal Cord Injury", "Wheelchair mobility")]: (d, set) => (
     <>
-      <SelectField label="Wheelchair type" type="single" options={["Manual", "Power", "Not yet indicated"]} value={d.wcType} onChange={(v) => set("wcType", v)} />
+      <SelectField label="Wheelchair type" type="single" options={["Manual", "Power", "Not yet indicated"]} value={d.wcType} onChange={(v) => set("wcType", v)} info={condInfo("Spinal Cord Injury", "Wheelchair mobility")} />
       <SelectField label="Propulsion / mobility level" type="single" options={["Independent indoors and outdoors", "Independent indoors only", "Requires assistance", "Dependent"]} value={d.wcMobility} onChange={(v) => set("wcMobility", v)} />
     </>
   ),
   [neuroId("Spinal Cord Injury", "Autonomic dysreflexia screen")]: (d, set) => (
     <>
-      <SelectField label="Signs present" type="multi" options={["None", "Sudden hypertension", "Pounding headache", "Flushing above level of injury", "Sweating above level", "Bradycardia", "Blurred vision", "Nasal congestion"]} value={d.adSigns} onChange={(v) => set("adSigns", v)} howTo="Risk applies mainly at T6 and above. Suspect AD with a sudden rise in BP plus headache/flushing/sweating — check for a triggering stimulus (full bladder, bowel impaction, tight clothing) and treat as a medical emergency." />
+      <SelectField label="Signs present" type="multi" options={["None", "Sudden hypertension", "Pounding headache", "Flushing above level of injury", "Sweating above level", "Bradycardia", "Blurred vision", "Nasal congestion"]} value={d.adSigns} onChange={(v) => set("adSigns", v)} info={condInfo("Spinal Cord Injury", "Autonomic dysreflexia screen")} />
       <TextField label="Suspected trigger" value={d.adTrigger} onChange={(v) => set("adTrigger", v)} placeholder="e.g. distended bladder, bowel impaction" />
     </>
   ),
 
   /* ---------------- Multiple Sclerosis ---------------- */
   [neuroId("Multiple Sclerosis", "Fatigue screen")]: (d, set) => (
-    <ScaleField label="Fatigue severity (0-10)" value={d.fatigue} onChange={(v) => set("fatigue", v)} howTo="MS fatigue is often disproportionate to activity and worsens later in the day or with heat — ask about pattern and impact on function separately from mood." />
+    <ScaleField label="Fatigue severity (0-10)" value={d.fatigue} onChange={(v) => set("fatigue", v)} info={condInfo("Multiple Sclerosis", "Fatigue screen")} />
   ),
   [neuroId("Multiple Sclerosis", "Nystagmus / INO screen")]: (d, set) => (
-    <SelectField label="Eye movement findings" type="multi" options={["Normal", "Nystagmus present", "Internuclear ophthalmoplegia (INO)", "Diplopia reported"]} value={d.eyeFindings} onChange={(v) => set("eyeFindings", v)} howTo="INO presents as impaired adduction of one eye on lateral gaze with nystagmus in the abducting eye — suggests a medial longitudinal fasciculus lesion, common in MS." />
+    <SelectField label="Eye movement findings" type="multi" options={["Normal", "Nystagmus present", "Internuclear ophthalmoplegia (INO)", "Diplopia reported"]} value={d.eyeFindings} onChange={(v) => set("eyeFindings", v)} info={condInfo("Multiple Sclerosis", "Nystagmus / INO screen")} />
   ),
   [neuroId("Multiple Sclerosis", "Lhermitte's sign")]: (d, set) => (
-    <SelectField label="Lhermitte's sign" type="single" options={["Negative", "Positive - electric shock sensation down spine/limbs on neck flexion", "Not tested"]} value={d.lhermitte} onChange={(v) => set("lhermitte", v)} />
+    <SelectField label="Lhermitte's sign" type="single" options={["Negative", "Positive - electric shock sensation down spine/limbs on neck flexion", "Not tested"]} value={d.lhermitte} onChange={(v) => set("lhermitte", v)} info={condInfo("Multiple Sclerosis", "Lhermitte's sign")} />
   ),
   [neuroId("Multiple Sclerosis", "Uhthoff's phenomenon")]: (d, set) => (
-    <SelectField label="Uhthoff's phenomenon" type="single" options={["Not reported", "Reported - symptoms worsen with heat/exertion, resolve on cooling", "Not tested"]} value={d.uhthoff} onChange={(v) => set("uhthoff", v)} howTo="Ask specifically about symptom worsening with hot showers, exercise, or fever — relevant to pacing and cooling strategies in the treatment plan." />
+    <SelectField label="Uhthoff's phenomenon" type="single" options={["Not reported", "Reported - symptoms worsen with heat/exertion, resolve on cooling", "Not tested"]} value={d.uhthoff} onChange={(v) => set("uhthoff", v)} info={condInfo("Multiple Sclerosis", "Uhthoff's phenomenon")} />
   ),
   [neuroId("Multiple Sclerosis", "EDSS staging")]: (d, set) => (
-    <TextField label="EDSS score" value={d.edss} onChange={(v) => set("edss", v)} placeholder="0.0 - 10.0" howTo="Expanded Disability Status Scale, scored in 0.5 increments from 0 (normal) to 10 (death due to MS), based on functional system scores and ambulation." />
+    <TextField label="EDSS score" value={d.edss} onChange={(v) => set("edss", v)} placeholder="0.0 - 10.0" info={condInfo("Multiple Sclerosis", "EDSS staging")} />
   ),
   [neuroId("Multiple Sclerosis", "Bladder / bowel function")]: (d, set) => (
-    <SelectField label="Bladder/bowel" type="multi" options={["Normal", "Urgency", "Frequency", "Incontinence", "Retention", "Constipation", "Bowel incontinence", "Catheter in situ"]} value={d.bladderBowel} onChange={(v) => set("bladderBowel", v)} />
+    <SelectField label="Bladder/bowel" type="multi" options={["Normal", "Urgency", "Frequency", "Incontinence", "Retention", "Constipation", "Bowel incontinence", "Catheter in situ"]} value={d.bladderBowel} onChange={(v) => set("bladderBowel", v)} info={condInfo("Multiple Sclerosis", "Bladder / bowel function")} />
   ),
 
   /* ---------------- Traumatic Brain Injury ---------------- */
@@ -707,23 +745,23 @@ const NEURO_RENDERERS = {
       options={["I - No response", "II - Generalised response", "III - Localised response", "IV - Confused/agitated", "V - Confused, inappropriate", "VI - Confused, appropriate", "VII - Automatic, appropriate", "VIII - Purposeful, appropriate"]}
       value={d.rancho}
       onChange={(v) => set("rancho", v)}
-      howTo="8-level scale describing the typical trajectory of cognitive-behavioural recovery after TBI, from no response through to purposeful, appropriate function — guides how structured vs. open-ended cueing should be."
+      info={condInfo("Traumatic Brain Injury", "Rancho Los Amigos level")}
     />
   ),
   [neuroId("Traumatic Brain Injury", "Post-traumatic amnesia screen")]: (d, set) => (
     <>
-      <SelectField label="Currently in PTA" type="single" options={["Yes", "No", "Unclear"]} value={d.pta} onChange={(v) => set("pta", v)} howTo="PTA = the period after injury where the patient cannot form continuous new memories, even once alert. Best judged with a validated tool (e.g. GOAT/WPTAS) rather than bedside impression alone." />
+      <SelectField label="Currently in PTA" type="single" options={["Yes", "No", "Unclear"]} value={d.pta} onChange={(v) => set("pta", v)} info={condInfo("Traumatic Brain Injury", "Post-traumatic amnesia screen")} />
       <TextField label="Orientation/memory notes" value={d.ptaNotes} onChange={(v) => set("ptaNotes", v)} placeholder="e.g. repeats questions, disoriented to day" />
     </>
   ),
   [neuroId("Traumatic Brain Injury", "Agitation / behaviour screen")]: (d, set) => (
-    <SelectField label="Behaviour observed" type="multi" options={["Calm/cooperative", "Restless", "Agitated", "Aggressive", "Disinhibited", "Perseverative", "Impulsive"]} value={d.behaviour} onChange={(v) => set("behaviour", v)} />
+    <SelectField label="Behaviour observed" type="multi" options={["Calm/cooperative", "Restless", "Agitated", "Aggressive", "Disinhibited", "Perseverative", "Impulsive"]} value={d.behaviour} onChange={(v) => set("behaviour", v)} info={condInfo("Traumatic Brain Injury", "Agitation / behaviour screen")} />
   ),
 
   /* ---------------- Vestibular ---------------- */
   [neuroId("Vestibular Disorders", "Dix-Hallpike test")]: (d, set) => (
     <>
-      <SelectField label="Result" type="single" options={["Negative bilaterally", "Positive right (posterior canal)", "Positive left (posterior canal)", "Not performed - contraindicated"]} value={d.dixHallpike} onChange={(v) => set("dixHallpike", v)} howTo="Turn the head 45° to the tested side, then rapidly move from sitting to supine with the head extended 20° over the table edge. A positive test reproduces vertigo with torsional/upbeating nystagmus after a short latency. Avoid with cervical instability, severe carotid disease, or recent fracture." />
+      <SelectField label="Result" type="single" options={["Negative bilaterally", "Positive right (posterior canal)", "Positive left (posterior canal)", "Not performed - contraindicated"]} value={d.dixHallpike} onChange={(v) => set("dixHallpike", v)} info={condInfo("Vestibular Disorders", "Dix-Hallpike test")} />
       <TextField label="Nystagmus description" value={d.dhNystagmus} onChange={(v) => set("dhNystagmus", v)} placeholder="Direction, latency, duration, fatigability" />
     </>
   ),
@@ -734,76 +772,76 @@ const NEURO_RENDERERS = {
       options={["Normal - no catch-up saccade", "Abnormal right - catch-up saccade", "Abnormal left - catch-up saccade", "Not performed"]}
       value={d.hit}
       onChange={(v) => set("hit", v)}
-      howTo="Rapid, small-amplitude passive head turns while the patient fixates your nose. A visible catch-up saccade indicates a peripheral vestibular deficit on that side (VOR failure)."
+      info={condInfo("Vestibular Disorders", "Head impulse test")}
     />
   ),
   [neuroId("Vestibular Disorders", "Nystagmus assessment")]: (d, set) => (
-    <SelectField label="Spontaneous nystagmus" type="multi" options={["None", "Horizontal", "Vertical", "Torsional", "Direction-changing", "Gaze-evoked"]} value={d.nystagmus} onChange={(v) => set("nystagmus", v)} />
+    <SelectField label="Spontaneous nystagmus" type="multi" options={["None", "Horizontal", "Vertical", "Torsional", "Direction-changing", "Gaze-evoked"]} value={d.nystagmus} onChange={(v) => set("nystagmus", v)} info={condInfo("Vestibular Disorders", "Nystagmus assessment")} />
   ),
   [neuroId("Vestibular Disorders", "Dynamic Gait Index")]: (d, set) => (
     <>
-      <NumberField label="DGI score" value={d.dgi} onChange={(v) => set("dgi", v)} unit="/24" howTo="8-item test of gait with head turns, pivots, obstacles, and stairs. Score ≤19/24 is associated with increased fall risk." />
+      <NumberField label="DGI score" value={d.dgi} onChange={(v) => set("dgi", v)} unit="/24" info={condInfo("Vestibular Disorders", "Dynamic Gait Index")} />
     </>
   ),
   [neuroId("Vestibular Disorders", "Dizziness Handicap Inventory screen")]: (d, set) => (
-    <TextField label="DHI score / summary" value={d.dhi} onChange={(v) => set("dhi", v)} placeholder="0-100 (higher = greater self-perceived handicap)" />
+    <TextField label="DHI score / summary" value={d.dhi} onChange={(v) => set("dhi", v)} placeholder="0-100 (higher = greater self-perceived handicap)" info={condInfo("Vestibular Disorders", "Dizziness Handicap Inventory screen")} />
   ),
 
   /* ---------------- Neuro-Respiratory ---------------- */
   [neuroId("Neuro-Respiratory", "Respiratory status")]: (d, set) => (
     <>
       <div className="vitals-grid">
-        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" width="45%" />
+        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" width="45%" info={condInfo("Neuro-Respiratory", "Respiratory status")} />
         <NumberField label="SpO2" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" width="45%" />
         <NumberField label="Chest expansion" value={d.chestExpansion} onChange={(v) => set("chestExpansion", v)} unit="cm" width="45%" />
       </div>
-      <SelectField label="Respiratory muscle strength" type="single" options={["Not assessed", "Normal", "Reduced - accessory muscle use noted", "Severely reduced - ventilator dependent"]} value={d.respMuscle} onChange={(v) => set("respMuscle", v)} howTo="Relevant in SCI (level-dependent diaphragm/intercostal involvement), neuromuscular disease, and prolonged ICU stay — screen before mobilising if in doubt." />
+      <SelectField label="Respiratory muscle strength" type="single" options={["Not assessed", "Normal", "Reduced - accessory muscle use noted", "Severely reduced - ventilator dependent"]} value={d.respMuscle} onChange={(v) => set("respMuscle", v)} />
     </>
   ),
   [neuroId("Neuro-Respiratory", "Cough effectiveness")]: (d, set) => (
-    <SelectField label="Cough effectiveness" type="single" options={["Strong/effective", "Weak but functional", "Ineffective - unable to clear secretions", "Absent"]} value={d.cough} onChange={(v) => set("cough", v)} howTo="A weak or absent cough in cervical/high-thoracic SCI or neuromuscular disease is a red flag for secretion retention and needs assisted cough/airway clearance strategies." />
+    <SelectField label="Cough effectiveness" type="single" options={["Strong/effective", "Weak but functional", "Ineffective - unable to clear secretions", "Absent"]} value={d.cough} onChange={(v) => set("cough", v)} info={condInfo("Neuro-Respiratory", "Cough effectiveness")} />
   ),
   [neuroId("Neuro-Respiratory", "Breathing pattern")]: (d, set) => (
-    <SelectField label="Breathing pattern" type="multi" options={["Normal/diaphragmatic", "Paradoxical (abdominal)", "Accessory muscle dominant", "Shallow", "Irregular/ataxic breathing"]} value={d.breathingPattern} onChange={(v) => set("breathingPattern", v)} />
+    <SelectField label="Breathing pattern" type="multi" options={["Normal/diaphragmatic", "Paradoxical (abdominal)", "Accessory muscle dominant", "Shallow", "Irregular/ataxic breathing"]} value={d.breathingPattern} onChange={(v) => set("breathingPattern", v)} info={condInfo("Neuro-Respiratory", "Breathing pattern")} />
   ),
   [neuroId("Neuro-Respiratory", "Secretion assessment")]: (d, set) => (
-    <SelectField label="Secretions" type="single" options={["None/minimal", "Present - patient clearing independently", "Present - requires assistance to clear", "Copious - suction required"]} value={d.secretions} onChange={(v) => set("secretions", v)} />
+    <SelectField label="Secretions" type="single" options={["None/minimal", "Present - patient clearing independently", "Present - requires assistance to clear", "Copious - suction required"]} value={d.secretions} onChange={(v) => set("secretions", v)} info={condInfo("Neuro-Respiratory", "Secretion assessment")} />
   ),
 
   /* ---------------- Communication / Bulbar ---------------- */
   [neuroId("Communication / Bulbar", "Dysarthria screen")]: (d, set) => (
-    <SelectField label="Speech quality" type="multi" options={["Clear/normal", "Slurred", "Slow/effortful", "Hypophonic (quiet)", "Nasal quality", "Not assessable"]} value={d.dysarthria} onChange={(v) => set("dysarthria", v)} howTo="Bedside screen only — a suspected speech/swallowing impairment should be referred to speech-language pathology for formal diagnostic assessment rather than managed as a PT diagnosis." />
+    <SelectField label="Speech quality" type="multi" options={["Clear/normal", "Slurred", "Slow/effortful", "Hypophonic (quiet)", "Nasal quality", "Not assessable"]} value={d.dysarthria} onChange={(v) => set("dysarthria", v)} info={condInfo("Communication / Bulbar", "Dysarthria screen")} />
   ),
   [neuroId("Communication / Bulbar", "Voice / speech intelligibility")]: (d, set) => (
-    <SelectField label="Intelligibility" type="single" options={["Fully intelligible", "Intelligible with effort/context", "Intelligible only to familiar listeners", "Unintelligible"]} value={d.intelligibility} onChange={(v) => set("intelligibility", v)} />
+    <SelectField label="Intelligibility" type="single" options={["Fully intelligible", "Intelligible with effort/context", "Intelligible only to familiar listeners", "Unintelligible"]} value={d.intelligibility} onChange={(v) => set("intelligibility", v)} info={condInfo("Communication / Bulbar", "Voice / speech intelligibility")} />
   ),
   [neuroId("Communication / Bulbar", "Swallowing screen")]: (d, set) => (
     <>
-      <SelectField label="Bedside swallow observation" type="multi" options={["No overt signs", "Coughing with intake", "Wet/gurgly voice after swallow", "Delayed swallow initiation", "Drooling", "Not yet screened"]} value={d.swallowSigns} onChange={(v) => set("swallowSigns", v)} howTo="This is a bedside screen, not a diagnostic swallow evaluation. Any positive sign warrants formal speech-language pathology / dysphagia referral before advancing oral intake." />
+      <SelectField label="Bedside swallow observation" type="multi" options={["No overt signs", "Coughing with intake", "Wet/gurgly voice after swallow", "Delayed swallow initiation", "Drooling", "Not yet screened"]} value={d.swallowSigns} onChange={(v) => set("swallowSigns", v)} info={condInfo("Communication / Bulbar", "Swallowing screen")} />
       <TextField label="Referral status" value={d.swallowReferral} onChange={(v) => set("swallowReferral", v)} placeholder="e.g. Referred to SLP, pending review" />
     </>
   ),
 
   /* ---------------- Peripheral Nerve ---------------- */
   [neuroId("Peripheral Nerve", "Neurodynamic / neural mobility testing")]: (d, set) => (
-    <SelectField label="Neurodynamic test result" type="multi" options={["Not tested", "SLR - negative", "SLR - positive/reproduces symptoms", "Upper limb tension test - negative", "Upper limb tension test - positive", "Slump test - positive"]} value={d.neurodynamic} onChange={(v) => set("neurodynamic", v)} howTo="A positive test reproduces the patient's familiar symptoms and is sensitised by a distal/remote movement (e.g. ankle dorsiflexion during SLR, cervical lateral flexion during ULTT)." />
+    <SelectField label="Neurodynamic test result" type="multi" options={["Not tested", "SLR - negative", "SLR - positive/reproduces symptoms", "Upper limb tension test - negative", "Upper limb tension test - positive", "Slump test - positive"]} value={d.neurodynamic} onChange={(v) => set("neurodynamic", v)} info={condInfo("Peripheral Nerve", "Neurodynamic / neural mobility testing")} />
   ),
   [neuroId("Peripheral Nerve", "Tinel's sign")]: (d, set) => (
-    <TextField label="Tinel's sign" value={d.tinels} onChange={(v) => set("tinels", v)} placeholder="e.g. Positive over carpal tunnel, reproduces median distribution tingling" howTo="Tap lightly over the suspected nerve entrapment site — a positive test reproduces tingling/paraesthesia in that nerve's distribution." />
+    <TextField label="Tinel's sign" value={d.tinels} onChange={(v) => set("tinels", v)} placeholder="e.g. Positive over carpal tunnel, reproduces median distribution tingling" info={condInfo("Peripheral Nerve", "Tinel's sign")} />
   ),
   [neuroId("Peripheral Nerve", "Muscle wasting")]: (d, set) => (
-    <TextArea label="Muscle wasting / atrophy" value={d.wasting} onChange={(v) => set("wasting", v)} placeholder="Location and distribution, e.g. thenar wasting suggesting median nerve involvement" />
+    <TextArea label="Muscle wasting / atrophy" value={d.wasting} onChange={(v) => set("wasting", v)} placeholder="Location and distribution, e.g. thenar wasting suggesting median nerve involvement" info={condInfo("Peripheral Nerve", "Muscle wasting")} />
   ),
   [neuroId("Peripheral Nerve", "Peripheral sensory/motor distribution")]: (d, set) => (
-    <TextArea label="Distribution pattern" value={d.peripheralDistribution} onChange={(v) => set("peripheralDistribution", v)} placeholder="Dermatomal vs. peripheral nerve territory vs. glove-and-stocking (polyneuropathy)..." howTo="A dermatomal pattern suggests nerve root involvement; a single peripheral nerve territory suggests focal entrapment/injury; a symmetrical glove-and-stocking pattern suggests polyneuropathy." />
+    <TextArea label="Distribution pattern" value={d.peripheralDistribution} onChange={(v) => set("peripheralDistribution", v)} placeholder="Dermatomal vs. peripheral nerve territory vs. glove-and-stocking (polyneuropathy)..." info={condInfo("Peripheral Nerve", "Peripheral sensory/motor distribution")} />
   ),
 
   /* ---------------- Ataxia ---------------- */
   [neuroId("Ataxia", "SARA (Scale for Assessment and Rating of Ataxia)")]: (d, set) => (
-    <NumberField label="SARA total" value={d.sara} onChange={(v) => set("sara", v)} unit="/40" howTo="8-item clinical scale (gait, stance, sitting, speech, finger-chase, nose-finger, fast alternating movements, heel-shin) — higher score reflects greater ataxia severity." />
+    <NumberField label="SARA total" value={d.sara} onChange={(v) => set("sara", v)} unit="/40" info={condInfo("Ataxia", "SARA (Scale for Assessment and Rating of Ataxia)")} />
   ),
   [neuroId("Ataxia", "Truncal ataxia screen")]: (d, set) => (
-    <SelectField label="Truncal control" type="single" options={["Normal", "Mild sway/instability", "Marked truncal ataxia - unable to sit unsupported"]} value={d.truncalAtaxia} onChange={(v) => set("truncalAtaxia", v)} />
+    <SelectField label="Truncal control" type="single" options={["Normal", "Mild sway/instability", "Marked truncal ataxia - unable to sit unsupported"]} value={d.truncalAtaxia} onChange={(v) => set("truncalAtaxia", v)} info={condInfo("Ataxia", "Truncal ataxia screen")} />
   ),
 };
 
@@ -1061,15 +1099,15 @@ function CranialNervesSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="👁️" title="Cranial Nerve Screen" sub="Quick bedside screen — refer for full assessment where a deficit is suspected." />
-      <SelectField label="CN I - Olfactory (smell)" type="single" options={CN_OPTS} value={d.cn1} onChange={(v) => set("cn1", v)} />
-      <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} />
-      <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} howTo="Test smooth pursuit in an 'H' pattern, check pupil size/reactivity, and look for ptosis. A fixed dilated pupil is a neurological emergency." />
-      <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} />
-      <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} howTo="Central lesions (e.g. stroke) spare the forehead — the patient can still wrinkle it — because the forehead has bilateral cortical innervation. Peripheral lesions (e.g. Bell's palsy) affect the whole side, including the forehead." />
-      <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} />
-      <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} />
-      <SelectField label="CN XI - Accessory (shoulder shrug / head turn)" type="single" options={CN_OPTS} value={d.cn11} onChange={(v) => set("cn11", v)} />
-      <SelectField label="CN XII - Hypoglossal (tongue)" type="single" options={[...CN_OPTS, "Deviates on protrusion"]} value={d.cn12} onChange={(v) => set("cn12", v)} />
+      <SelectField label="CN I - Olfactory (smell)" type="single" options={CN_OPTS} value={d.cn1} onChange={(v) => set("cn1", v)} info={neuroExamLibraryData.cn1} />
+      <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} info={neuroExamLibraryData.cn2} />
+      <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
+      <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} info={neuroExamLibraryData.cn5} />
+      <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} info={neuroExamLibraryData.cn7} />
+      <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} info={neuroExamLibraryData.cn8} />
+      <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} info={neuroExamLibraryData.cn910} />
+      <SelectField label="CN XI - Accessory (shoulder shrug / head turn)" type="single" options={CN_OPTS} value={d.cn11} onChange={(v) => set("cn11", v)} info={neuroExamLibraryData.cn11} />
+      <SelectField label="CN XII - Hypoglossal (tongue)" type="single" options={[...CN_OPTS, "Deviates on protrusion"]} value={d.cn12} onChange={(v) => set("cn12", v)} info={neuroExamLibraryData.cn12} />
     </>
   );
 }
@@ -1139,7 +1177,13 @@ function ToneReflexSection({ data, setData }) {
         options={DTR_GRADES.map((g) => g.split(" - ")[0])}
         value={d.dtr || {}}
         onChange={(v) => set("dtr", v)}
-        howTo="Standard 0-4+ grading: 0 absent, 1+ diminished, 2+ normal, 3+ brisk, 4+ hyperactive/clonus. Diminished/absent reflexes suggest a lower motor neuron lesion; brisk/hyperreflexic suggests an upper motor neuron lesion."
+        rowInfo={{
+          "Biceps (C5-6)": neuroExamLibraryData.reflexBiceps,
+          "Brachioradialis (C5-6)": neuroExamLibraryData.reflexBrachioradialis,
+          "Triceps (C7-8)": neuroExamLibraryData.reflexTriceps,
+          "Patellar (L3-4)": neuroExamLibraryData.reflexPatellar,
+          "Achilles (S1-2)": neuroExamLibraryData.reflexAchilles,
+        }}
       />
       <div className="subheading">Pathological reflexes</div>
       <SelectField
@@ -1148,10 +1192,10 @@ function ToneReflexSection({ data, setData }) {
         options={["Flexor (normal/downgoing)", "Extensor (Babinski positive/upgoing)", "Equivocal", "Absent/mute"]}
         value={d.babinski}
         onChange={(v) => set("babinski", v)}
-        howTo="Stroke firmly along the lateral sole from heel toward the ball of the foot, curving medially. An extensor response (great toe extends, other toes fan) indicates an upper motor neuron lesion."
+        info={neuroExamLibraryData.babinski}
       />
-      <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} />
-      <SelectField label="Hoffmann's sign" type="single" options={["Negative", "Positive", "Not tested"]} value={d.hoffmann} onChange={(v) => set("hoffmann", v)} />
+      <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} info={neuroExamLibraryData.clonus} />
+      <SelectField label="Hoffmann's sign" type="single" options={["Negative", "Positive", "Not tested"]} value={d.hoffmann} onChange={(v) => set("hoffmann", v)} info={neuroExamLibraryData.hoffmann} />
     </>
   );
 }
@@ -1162,9 +1206,9 @@ function CoordinationSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="🎯" title="Coordination" />
-      <LRGrid label="Finger-to-nose" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysmetria (past-pointing)", "Intention tremor", "Unable to perform"]} value={d.fingerNose || {}} onChange={(v) => set("fingerNose", v)} howTo="Patient alternates touching your finger and their own nose, varying your finger's position — watch for past-pointing or worsening tremor as the finger approaches the target." />
-      <LRGrid label="Heel-to-shin" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Ataxic/uncoordinated", "Unable to perform"]} value={d.heelShin || {}} onChange={(v) => set("heelShin", v)} howTo="Supine, patient slides the heel smoothly down the shin from knee to ankle — watch for wavering or overshoot." />
-      <LRGrid label="Rapid alternating movements" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysdiadochokinesia (slow/irregular)", "Unable to perform"]} value={d.ram || {}} onChange={(v) => set("ram", v)} howTo="Ask the patient to alternately pronate/supinate the forearm rapidly, tapping the palm/back of hand on the thigh. Slowed, irregular, or clumsy movement (dysdiadochokinesia) suggests cerebellar involvement." />
+      <LRGrid label="Finger-to-nose" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysmetria (past-pointing)", "Intention tremor", "Unable to perform"]} value={d.fingerNose || {}} onChange={(v) => set("fingerNose", v)} info={neuroExamLibraryData.fingerNose} />
+      <LRGrid label="Heel-to-shin" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Ataxic/uncoordinated", "Unable to perform"]} value={d.heelShin || {}} onChange={(v) => set("heelShin", v)} info={neuroExamLibraryData.heelShin} />
+      <LRGrid label="Rapid alternating movements" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysdiadochokinesia (slow/irregular)", "Unable to perform"]} value={d.ram || {}} onChange={(v) => set("ram", v)} info={neuroExamLibraryData.ram} />
       <SelectField label="Dysmetria" type="single" options={["None", "Present - overshoots target", "Present - undershoots target"]} value={d.dysmetria} onChange={(v) => set("dysmetria", v)} />
       <SelectField label="Tremor with movement" type="single" options={["None", "Intention tremor (worsens near target)", "Postural tremor", "Action tremor"]} value={d.movementTremor} onChange={(v) => set("movementTremor", v)} />
       <TextArea label="Additional coordination notes" value={d.notes} onChange={(v) => set("notes", v)} />
@@ -1519,6 +1563,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
+  const [activeCard, setActiveCard] = useState(null);
 
   // phase: "setting" -> "mode" -> ("template" | "region" | "mytemplates") -> "assess"
   const [phase, setPhase] = useState(() => (hasExistingNeuro ? "assess" : "setting"));
@@ -1741,6 +1786,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const canProceedSetting = step !== 0 || !!setting;
 
   return (
+    <InfoCardContext.Provider value={setActiveCard}>
     <div className="app-shell">
       <style>{`
         * { box-sizing: border-box; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -2134,6 +2180,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        <InfoCard data={activeCard} onClose={() => setActiveCard(null)} />
 
         {saveModalOpen && (
           <div className="ct-modal">
@@ -2155,5 +2202,6 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
       </div>
     </div>
+    </InfoCardContext.Provider>
   );
 }
