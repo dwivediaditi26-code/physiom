@@ -667,6 +667,18 @@ const NEURO_RENDERERS = {
       value={d.myotomes || {}}
       onChange={(v) => set("myotomes", v)}
       info={condInfo("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")}
+      rowInfo={{
+        "C5 Elbow flexors": neuroExamLibraryData["myoC5 Elbow flexors"],
+        "C6 Wrist extensors": neuroExamLibraryData["myoC6 Wrist extensors"],
+        "C7 Elbow extensors": neuroExamLibraryData["myoC7 Elbow extensors"],
+        "C8 Finger flexors": neuroExamLibraryData["myoC8 Finger flexors"],
+        "T1 Finger abductors": neuroExamLibraryData["myoT1 Finger abductors"],
+        "L2 Hip flexors": neuroExamLibraryData["myoL2 Hip flexors"],
+        "L3 Knee extensors": neuroExamLibraryData["myoL3 Knee extensors"],
+        "L4 Ankle dorsiflexors": neuroExamLibraryData["myoL4 Ankle dorsiflexors"],
+        "L5 Great toe extensors": neuroExamLibraryData["myoL5 Great toe extensors"],
+        "S1 Ankle plantarflexors": neuroExamLibraryData["myoS1 Ankle plantarflexors"],
+      }}
     />
   ),
   [neuroId("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")]: (d, set) => (
@@ -677,6 +689,20 @@ const NEURO_RENDERERS = {
       value={d.dermatomes || {}}
       onChange={(v) => set("dermatomes", v)}
       info={condInfo("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")}
+      rowInfo={{
+        "C5": neuroExamLibraryData.dermC5,
+        "C6": neuroExamLibraryData.dermC6,
+        "C7": neuroExamLibraryData.dermC7,
+        "C8": neuroExamLibraryData.dermC8,
+        "T1": neuroExamLibraryData.dermT1,
+        "T4 (nipple)": neuroExamLibraryData["dermT4 (nipple)"],
+        "T10 (umbilicus)": neuroExamLibraryData["dermT10 (umbilicus)"],
+        "L3": neuroExamLibraryData.dermL3,
+        "L4": neuroExamLibraryData.dermL4,
+        "L5": neuroExamLibraryData.dermL5,
+        "S1": neuroExamLibraryData.dermS1,
+        "S4-5 (perianal)": neuroExamLibraryData["dermS4-5 (perianal)"],
+      }}
     />
   ),
   [neuroId("Spinal Cord Injury", "ASIA Impairment Scale (AIS)")]: (d, set) => (

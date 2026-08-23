@@ -15,6 +15,14 @@
 // Keyed by the exact field id used in NeurologicalAssessment.jsx
 // (d.cn1, d.cn2, ... d.dtr's row labels, d.fingerNose, etc.).
 
+// Real Cloudinary photos, same asset ids used by physiofeed/learn/
+// NeuroStudy.jsx's reflexCard()/dermatomeCard()/myotomeCard() -- confirmed
+// present on Cloudinary for every reflex id, and for a subset of dermatome/
+// myotome ids (the rest fall back to InfoCard.jsx's own placeholder when
+// image is left undefined, same as everywhere else in this system).
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+const img = (id) => `${CLOUDINARY_BASE}${id}`;
+
 export const neuroExamLibraryData = {
 
   /* ===================== CRANIAL NERVES ===================== */
@@ -344,7 +352,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_bicep"),
       caption: "Thumb on biceps tendon, tap thumb with reflex hammer",
       boxes: [
         { tone: "", label: "👤 Position", text: "Elbow flexed to ~90°, arm relaxed and supported." },
@@ -372,7 +380,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_brad"),
       caption: "Tap the tendon 2–3cm proximal to the radial styloid",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm in neutral (semi-pronated), resting on the thigh." },
@@ -401,7 +409,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_tricep"),
       caption: "Tap directly above the olecranon",
       boxes: [
         { tone: "", label: "👤 Position", text: "Support the arm at 90° abduction, or drape it over the forearm." },
@@ -429,7 +437,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_patella"),
       caption: "Tap the patellar tendon, seated or supine with knee supported",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated with legs hanging freely, or supine with the knee supported at 20–30° flexion." },
@@ -457,7 +465,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_achilles"),
       caption: "Dorsiflex the foot to tension the tendon, then tap",
       boxes: [
         { tone: "", label: "👤 Position", text: "Knee flexed, hip externally rotated (patient kneeling or prone works well)." },
@@ -485,7 +493,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_babinski"),
       caption: "Stroke firmly along the lateral sole, heel to ball, curving medially",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine and relaxed." },
@@ -513,7 +521,7 @@ export const neuroExamLibraryData = {
     icon: "✋",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_hoffmann"),
       caption: "Flick the middle finger's distal phalanx downward, watch the thumb",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hold the patient's middle finger loosely, forearm slightly pronated." },
@@ -539,7 +547,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: null,
+      image: img("n_ref_clonus_ankle"),
       caption: "Sudden sustained stretch, count rhythmic beats",
       boxes: [
         { tone: "", label: "👤 Position", text: "Ankle: knee in slight flexion, foot supported. Patellar: supine, leg extended. Wrist: forearm supported." },
@@ -558,6 +566,503 @@ export const neuroExamLibraryData = {
       abnormal: ["Sustained clonus (≥3 beats) → UMN lesion — cord compression, myelopathy, stroke, MS, cerebral palsy"],
       redFlags: ["Sustained clonus (>10 beats) → severe UMN involvement, urgent MRI + neurosurgical referral"],
       note: "Interpret alongside DTRs and tone — clonus rarely appears as an isolated finding in significant UMN pathology.",
+    },
+  },
+
+  /* ===================== DERMATOMES (per ASIA key sensory point) =====================
+     Content and images from DERMATOMES in sharedClinicalData.js -- the same
+     source physiofeed/learn/NeuroStudy.jsx's dermatomeCard() uses. Keyed by
+     the exact row label used in the Spinal Cord Injury condition library's
+     "Dermatome grading (ASIA sensory)" LRGrid. */
+
+  dermC5: {
+    title: "Dermatome C5",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_c5"),
+      caption: "Lateral arm / deltoid badge region",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch (cotton) + pinprick at the key point over the lateral arm/deltoid badge region. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level C4/5. Associated reflex: Biceps (C5–C6). Associated myotome: Shoulder abduction / elbow flexion." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with C5 myotome (shoulder abduction/elbow flexion) and biceps reflex for a full C5 picture"],
+      note: "Hyperaesthesia can be an early sign of nerve root irritation; reduced/absent suggests axonal compromise.",
+    },
+  },
+
+  dermC6: {
+    title: "Dermatome C6",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_c6"),
+      caption: "Lateral forearm / thumb + index finger",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the lateral forearm and thumb/index finger. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level C5/6. Associated reflex: Brachioradialis. Associated myotome: Wrist extension (ECRL/ECRB)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with C6 myotome (wrist extension) and the brachioradialis reflex, including the inverted-reflex red flag"],
+      note: "The most commonly affected root in cervical radiculopathy alongside C7 — always test both.",
+    },
+  },
+
+  dermC7: {
+    title: "Dermatome C7",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_c7"),
+      caption: "Middle finger",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the middle finger. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level C6/7. Associated reflex: Triceps. Associated myotome: Elbow extension / wrist flexion." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with C7 myotome (elbow extension) and the triceps reflex"],
+      note: "The single most commonly affected cervical nerve root in disc herniation.",
+    },
+  },
+
+  dermC8: {
+    title: "Dermatome C8",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_c8"),
+      caption: "Little + ring finger / medial forearm",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the little and ring fingers and medial forearm. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level C7/T1. No standard associated reflex. Associated myotome: Finger flexion / intrinsics." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with C8 myotome (finger flexion/grip strength)"],
+      note: "No standard tendon reflex tests C8 directly — rely on the sensory and motor findings together.",
+    },
+  },
+
+  dermT1: {
+    title: "Dermatome T1",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_t1"),
+      caption: "Medial forearm / elbow",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the medial forearm/elbow. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level T1/2. Associated myotome: Finger abduction (1st dorsal interosseous)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with T1 myotome (finger abduction)"],
+      note: "T1 involvement with a droopy eyelid/miosis raises suspicion for Horner's syndrome (sympathetic chain involvement) — screen for it.",
+    },
+  },
+
+  "dermT4 (nipple)": {
+    title: "Dermatome T4 (Nipple Line)",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: null,
+      caption: "Nipple line — key ASIA sensory landmark",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, chest exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick at the nipple line. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "One of the standard ASIA key sensory landmarks used to define the sensory level in thoracic SCI, alongside T10 (umbilicus)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Loss at/below this level → supports a thoracic sensory level at or above T4"],
+      note: "Thoracic dermatomes have no corresponding key muscle in the ISNCSCI myotome chart — sensory testing alone defines the level here.",
+    },
+  },
+
+  "dermT10 (umbilicus)": {
+    title: "Dermatome T10 (Umbilicus)",
+    icon: "🖐️",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: null,
+      caption: "Umbilicus — key ASIA sensory landmark",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, abdomen exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick at the umbilicus. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "One of the standard ASIA key sensory landmarks used to define the sensory level in thoracic SCI, alongside T4 (nipple line)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Loss at/below this level → supports a thoracic sensory level at or above T10"],
+      note: "Beevor's sign (umbilicus moves upward on a trunk curl) can help confirm a T10 motor level when lower abdominals are weak relative to upper.",
+    },
+  },
+
+  dermL3: {
+    title: "Dermatome L3",
+    icon: "🦵",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_l3"),
+      caption: "Medial knee / lower anterior thigh",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the medial knee/lower anterior thigh. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L3/4. Shares the patellar reflex (L3–L4) with L4. Associated myotome: Knee extension (quadriceps)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with L3 myotome (knee extension) and the patellar reflex"],
+      note: "L3 and L4 share the patellar reflex — use the sensory distribution and myotome pattern to distinguish between the two levels.",
+    },
+  },
+
+  dermL4: {
+    title: "Dermatome L4",
+    icon: "🦵",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_l4"),
+      caption: "Medial leg / medial foot",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the medial leg/medial foot. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L4/5. Shares the patellar reflex (L3–L4) with L3. Associated myotome: Ankle dorsiflexion (tibialis anterior)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with L4 myotome (ankle dorsiflexion)"],
+      note: "L4 radiculopathy classically presents with medial leg pain and a weak tibialis anterior (foot drop pattern with intact eversion).",
+    },
+  },
+
+  dermL5: {
+    title: "Dermatome L5",
+    icon: "🦵",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_l5"),
+      caption: "Dorsum of foot / 1st–2nd web space",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the dorsum of the foot / 1st–2nd web space. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L4/5. No reliable standard reflex. Associated myotome: Great toe extension (EHL)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with L5 myotome (great toe/EHL extension) — the most common single-root cause of foot drop"],
+      note: "No reliable tendon reflex tests L5 directly — rely on sensory and motor findings together.",
+    },
+  },
+
+  dermS1: {
+    title: "Dermatome S1",
+    icon: "🦶",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_s1"),
+      caption: "Lateral foot / heel / sole",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the lateral foot/heel/sole. Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L5/S1. Associated reflex: Achilles. Associated myotome: Ankle plantarflexion (gastrocnemius)." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → correlate with S1 myotome (ankle plantarflexion) and the Achilles reflex"],
+      note: "The most commonly affected lumbosacral root alongside L5 — always test both together.",
+    },
+  },
+
+  "dermS4-5 (perianal)": {
+    title: "Dermatome S4-5 (Perianal)",
+    icon: "🚨",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      image: img("n_s4s5"),
+      caption: "Perianal / saddle region — the single most important sensory point in SCI",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient positioned for a dignified, private perianal exam." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick at the perianal/saddle region. Also assess the anal wink reflex and voluntary anal contraction as part of the same sacral-sparing check." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function preserved at S4-5) is THE deciding factor between AIS A (complete) and AIS B (sensory incomplete) — never skip this test." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact sensation, grade 2, present anal wink and voluntary contraction"],
+      abnormal: ["Any preserved sensation here → sacral sparing present → the injury is sensory incomplete at minimum (AIS B or better), a major prognostic distinction"],
+      redFlags: ["New loss of perianal sensation with saddle anaesthesia and bowel/bladder change → possible cauda equina syndrome, emergency referral"],
+      note: "This single sensory point changes the entire AIS classification — always document it explicitly, never infer it from limb findings.",
+    },
+  },
+
+  /* ===================== MYOTOMES (per ASIA key muscle) =====================
+     Content from MYOTOMES in sharedClinicalData.js -- same source
+     physiofeed/learn/NeuroStudy.jsx's myotomeCard() uses. Keyed by the
+     exact row label used in the Spinal Cord Injury condition library's
+     "Myotome grading (ASIA key muscles)" LRGrid. */
+
+  "myoC5 Elbow flexors": {
+    title: "Myotome C5 — Elbow Flexors",
+    icon: "💪",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_c5"),
+      caption: "Shoulder abduction / elbow flexion — arm abduction 0–90° against resistance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, arm at side to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist arm abduction through 0–90°, or resist elbow flexion (biceps)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for compensation via trunk lean or shoulder hike substituting for true deltoid/biceps activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness with trunk lean/shoulder hike compensation → suggests C5 involvement, correlate with the C5 dermatome and biceps reflex"],
+      note: "C5 is typically the highest level with meaningful function preserved in a mid-cervical SCI — small gains here have large functional impact (self-feeding, transfers).",
+    },
+  },
+
+  "myoC6 Wrist extensors": {
+    title: "Myotome C6 — Wrist Extensors",
+    icon: "💪",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_c6"),
+      caption: "Wrist extension — make a fist, extend wrist against resistance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Forearm supported, wrist in neutral to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to make a fist and extend the wrist against your resistance." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for supinator/brachioradialis substitution rather than true wrist extensor (ECRL/ECRB) activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with C6 dermatome and brachioradialis reflex"],
+      note: "C6 wrist extension is functionally critical — it enables tenodesis grasp, one of the most important functional targets in a C6 tetraplegia rehab plan.",
+    },
+  },
+
+  "myoC7 Elbow extensors": {
+    title: "Myotome C7 — Elbow Extensors",
+    icon: "💪",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_c7"),
+      caption: "Elbow extension / wrist flexion — triceps push, wrist curl against resistance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Arm supported at 90° abduction or elbow flexed to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist elbow extension (triceps push) and/or wrist flexion (wrist curl)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for shoulder external rotation or extra elbow flexion substituting for true triceps activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with C7 dermatome and triceps reflex"],
+      note: "The most commonly affected myotome in cervical radiculopathy alongside C6.",
+    },
+  },
+
+  "myoC8 Finger flexors": {
+    title: "Myotome C8 — Finger Flexors",
+    icon: "💪",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_c8"),
+      caption: "Finger flexion (grip) — grip dynamometer or resist 3rd–5th DIP flexion",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Forearm supported, fingers relaxed to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Use a grip dynamometer, or resist DIP flexion of the 3rd–5th fingers." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for wrist flexor dominance substituting for true intrinsic/extrinsic finger flexor activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with C8 dermatome (no standard reflex tests C8 directly)"],
+      note: "Grip strength here is a key functional target for hand function in lower cervical tetraplegia.",
+    },
+  },
+
+  "myoT1 Finger abductors": {
+    title: "Myotome T1 — Finger Abductors",
+    icon: "💪",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_t1"),
+      caption: "Finger abduction — spread fingers, resist adduction",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Hand relaxed, fingers together to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to spread their fingers and resist you pushing them back together (1st dorsal interosseous)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for flexor override — using finger flexion instead of true intrinsic abduction." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with T1 dermatome; screen for Horner's syndrome if T1 root/sympathetic chain involvement is suspected"],
+      note: "The most caudal key muscle in the ISNCSCI upper-limb chain — intrinsic hand function.",
+    },
+  },
+
+  "myoL2 Hip flexors": {
+    title: "Myotome L1-L2 — Hip Flexors",
+    icon: "🦵",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_l1_l2"),
+      caption: "Hip flexion — seated, resist hip flexion 0–90°",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, hip and knee flexed to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist hip flexion through 0–90° of range." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for quadratus lumborum substitution or trunk lean backward compensating for true hip flexor (iliopsoas) weakness." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness with trunk-lean compensation → suggests L1/L2 involvement"],
+      note: "L2 is graded as part of the combined L1–L2 hip flexor test in this dataset since no single reliable muscle isolates L1 alone at the bedside.",
+    },
+  },
+
+  "myoL3 Knee extensors": {
+    title: "Myotome L3 — Knee Extensors",
+    icon: "🦵",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_l3"),
+      caption: "Knee extension — extend knee from 90° against resistance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, knee flexed to 90° to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist knee extension from 90° through to full extension (quadriceps)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for hip flexor assistance substituting for true quadriceps activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with L3 dermatome and the patellar reflex"],
+      note: "Quadriceps strength here is one of the most important single predictors of ambulation potential after incomplete SCI.",
+    },
+  },
+
+  "myoL4 Ankle dorsiflexors": {
+    title: "Myotome L4 — Ankle Dorsiflexors",
+    icon: "🦶",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_l4"),
+      caption: "Ankle dorsiflexion — walk on heels, or resist dorsiflexion",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated or standing to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist ankle dorsiflexion (tibialis anterior), or observe heel-walking." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for EHL (great toe extensor) dominance substituting for true tibialis anterior activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with L4 dermatome; a classic foot-drop pattern"],
+      note: "Foot drop from L4/L5 weakness needs an AFO assessment for safe gait — flag early rather than waiting for full recovery.",
+    },
+  },
+
+  "myoL5 Great toe extensors": {
+    title: "Myotome L5 — Great Toe Extensors",
+    icon: "🦶",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_l5"),
+      caption: "Great toe extension — lift big toe against resistance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated or supine, foot relaxed to start." },
+        { tone: "blue", label: "🖐️ Technique", text: "Resist great toe (hallux) extension (extensor hallucis longus)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for extensor digitorum brevis firing or ankle inversion substituting for true EHL activation." },
+      ],
+    },
+    scaleLabel: "0–5 MMT grading",
+    scale: { type: "table", rows: [{ k: "5", v: "Normal — full resistance" }, { k: "3", v: "Full ROM against gravity only" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["Grade 5, no compensation"],
+      abnormal: ["Weakness → correlate with L5 dermatome — the most common single-root cause of foot drop"],
+      note: "L5 is the most frequently affected lumbar nerve root in disc herniation.",
+    },
+  },
+
+  "myoS1 Ankle plantarflexors": {
+    title: "Myotome S1 — Ankle Plantarflexors",
+    icon: "🦶",
+    category: "Learn · Neuro · Myotomes",
+    perform: {
+      image: img("myo_s1"),
+      caption: "Ankle plantarflexion — 25 single-leg calf raises",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Standing, holding support for balance." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to perform single-leg calf raises (up to 25 reps) — a far more sensitive test of S1 strength than manual resistance alone, since the gastrocnemius/soleus can overpower most examiners." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Watch for peroneal or flexor hallucis longus substitution masking true gastrocnemius/soleus weakness." },
+      ],
+    },
+    scaleLabel: "0–5 MMT / rep-count grading",
+    scale: { type: "table", rows: [{ k: "Normal", v: "≥25 single-leg heel raises" }, { k: "Weak", v: "<25 reps, or unable to complete" }, { k: "0", v: "No contraction" }] },
+    interpret: {
+      normal: ["≥25 single-leg heel raises, symmetrical"],
+      abnormal: ["Reduced rep count or asymmetry → correlate with S1 dermatome and the Achilles reflex"],
+      note: "Manual resistance alone is a poor test of this myotome given normal gastroc/soleus strength — always use the single-leg heel raise as the primary test.",
     },
   },
 };

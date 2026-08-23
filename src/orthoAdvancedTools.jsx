@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SectionIntro, TextArea, InfoButton, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextArea, InfoButton, InfoCard, InfoCardGrid, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
   KC_REGIONS,
@@ -111,6 +111,22 @@ function kcCount(entry, tests) {
   return tests.filter((t) => entry[t.id]).length;
 }
 
+// Same real KC_REGIONS data (id/how/chainEffect/treatment), split across
+// Perform/Reference/Interpret tabs -- same pattern as Ortho's ROM/MMT/
+// Special Tests. image uses the test's own real id -- present on
+// Cloudinary for the foot/ankle and hip regions today; falls back to
+// InfoButton's own placeholder for regions not yet photographed.
+function kcRichItem(t) {
+  return {
+    image: t.id,
+    title: t.label,
+    subtitle: t.joint,
+    perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
+    reference: <InfoCard icon="⛓️" label="Kinetic chain effect" tint="blue">{t.chainEffect}</InfoCard>,
+    interpret: <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+  };
+}
+
 export function KineticChainSection({ data, setData, sectionKey = "kineticChain" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, KC_REGION_KEYS);
   const region = KC_REGIONS[activeKey];
@@ -133,7 +149,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
           <div className="movement-card" key={t.id}>
             <div className="movement-name-row">
               <span className="movement-name">{t.label}</span>
-              <InfoButton title={t.label} text={[`How to perform:\n${t.how}`, `⛓️ Kinetic chain effect:\n${t.chainEffect}`, `→ Treatment:\n${t.treatment}`].join("\n\n")} />
+              <InfoButton title={t.label} richItem={kcRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.joint}</div>
             <OptionChips options={t.options} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
@@ -148,6 +164,21 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
    CPA — Compensation Pattern Analysis (Neurokinetic Therapy),
    straight from NKT_REGIONS.
    ============================================================ */
+// Same real NKT_REGIONS data (id/how/compensator/treatment), split across
+// Perform/Reference/Interpret tabs. No NKT photos on Cloudinary yet --
+// image stays unset, falling back to InfoButton's own placeholder, same
+// honest-empty-state pattern used everywhere else in this system.
+function cpaRichItem(t) {
+  return {
+    image: t.id,
+    title: t.label,
+    subtitle: t.muscle,
+    perform: <InfoCard icon="👐" label="How to test" tint="violet">{t.how}</InfoCard>,
+    reference: <InfoCard icon="🔀" label="Common compensators" tint="amber">{t.compensator}</InfoCard>,
+    interpret: <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+  };
+}
+
 export function CpaSection({ data, setData, sectionKey = "cpa" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, NKT_REGION_KEYS);
   const region = NKT_REGIONS[activeKey];
@@ -165,7 +196,7 @@ export function CpaSection({ data, setData, sectionKey = "cpa" }) {
           <div className="movement-card" key={t.id}>
             <div className="movement-name-row">
               <span className="movement-name">{t.label}</span>
-              <InfoButton title={t.label} text={[`How to test:\n${t.how}`, `Common compensators: ${t.compensator}`, `→ Treatment:\n${t.treatment}`].join("\n\n")} />
+              <InfoButton title={t.label} richItem={cpaRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.muscle}</div>
             <OptionChips options={t.options} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
@@ -187,6 +218,33 @@ const CYRIAX_TABS = [
   { id: "resistedTests", label: "Resisted", icon: "💪" },
   { id: "jointPlay", label: "Joint Play", icon: "🔧" },
 ];
+
+// Region-level reference card, from the real CYRIAX_REGIONS_DATA anatomy/
+// capsularPattern/redFlags/differentials fields -- Perform=anatomy,
+// Reference=capsular pattern, Interpret=red flags + differentials.
+function cyriaxRegionRichItem(region) {
+  return {
+    title: `${region.label} — reference`,
+    perform: <InfoCard icon="🩻" label="Anatomy" tint="violet">{region.anatomy}</InfoCard>,
+    reference: <InfoCard icon="🔵" label="Capsular pattern" tint="blue">{region.capsularPattern}</InfoCard>,
+    interpret: (region.redFlags?.length || region.differentials?.length) && (
+      <>
+        {region.redFlags?.length > 0 && <InfoCard icon="🚩" label="Red flags" tint="red">{region.redFlags.join(", ")}</InfoCard>}
+        {region.differentials?.length > 0 && <InfoCard label="Differentials to consider" tint="gray">{region.differentials.join(", ")}</InfoCard>}
+      </>
+    ),
+  };
+}
+
+// Individual Cyriax test (t.how only, no id-based photos) -- always
+// Perform-only; the InfoButton sheet hides tabs with no content, so this
+// renders as a single-pane sheet without a tab strip.
+function cyriaxTestRichItem(t) {
+  return {
+    title: t.label,
+    perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
+  };
+}
 
 function cyriaxCount(entry) {
   if (!entry) return 0;
@@ -215,7 +273,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
       <div className="rom-card">
         <div className="rom-card-title">
           {region.icon} {region.label}
-          <InfoButton title={`${region.label} — reference`} text={[`Anatomy: ${region.anatomy}`, `Capsular pattern: ${region.capsularPattern}`, region.redFlags?.length ? `🚩 Red flags: ${region.redFlags.join(", ")}` : "", region.differentials?.length ? `Differentials to consider: ${region.differentials.join(", ")}` : ""].filter(Boolean).join("\n\n")} />
+          <InfoButton title={`${region.label} — reference`} richItem={cyriaxRegionRichItem(region)} />
         </div>
 
         <div className="category-chip-row">
@@ -239,7 +297,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
                   <div>
                     <div className="movement-name-row">
                       <span className="movement-name">{t.label}</span>
-                      <InfoButton title={t.label} text={t.how} />
+                      <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
                     </div>
                     <div className="muscle-subtitle">Normal: {t.normal}</div>
                   </div>
@@ -276,7 +334,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
             <div className="movement-card" key={t.id}>
               <div className="movement-name-row">
                 <span className="movement-name">{t.label}</span>
-                <InfoButton title={t.label} text={t.how} />
+                <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="row-2" style={{ marginTop: 6 }}>
                 <select className="grade-select" value={entry[t.id + "_ef"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_ef"]: e.target.value })}>
@@ -300,7 +358,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
             <div className="movement-card" key={t.id}>
               <div className="movement-name-row">
                 <span className="movement-name">{t.label}</span>
-                <InfoButton title={t.label} text={t.how} />
+                <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="muscle-subtitle">{t.muscle}</div>
               <select className="grade-select" style={{ marginTop: 6, width: "100%" }} value={entry[t.id + "_result"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_result"]: e.target.value })}>
@@ -317,7 +375,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
             <div className="movement-card" key={t.id}>
               <div className="movement-name-row">
                 <span className="movement-name">{t.label}</span>
-                <InfoButton title={t.label} text={t.how} />
+                <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="row-2" style={{ marginTop: 6 }}>
                 <select className="grade-select" value={entry[t.id + "_grade"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_grade"]: e.target.value })}>
@@ -351,6 +409,28 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
    ============================================================ */
 const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 
+// FMA tests already carry a real hand-drawn SVG stick-figure illustration
+// (t.svgNormal, from RegionalFunctionalScreens.jsx) -- no Cloudinary photo
+// id to hook into the usual SheetHero image slot, so the real illustration
+// renders inline in the Perform tab instead of being dropped.
+function fmaRichItem(t) {
+  return {
+    title: t.label,
+    subtitle: t.phase,
+    perform: (
+      <>
+        {t.svgNormal && (
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 10, marginBottom: 10, display: "flex", justifyContent: "center" }}>
+            {t.svgNormal}
+          </div>
+        )}
+        <InfoCard icon="👐" label="Setup & procedure" tint="violet">{t.setup}</InfoCard>
+      </>
+    ),
+    interpret: <InfoCard icon="✅" label="Normal pattern" tint="green">{t.normalDesc}</InfoCard>,
+  };
+}
+
 function fmaCount(entry, tests) {
   if (!entry) return 0;
   return tests.filter((t) => entry[t.id + "_grade"]).length;
@@ -379,7 +459,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
                 <span className="movement-name">
                   {t.icon} {t.label}
                 </span>
-                <InfoButton title={t.label} text={[`Setup & procedure:\n${t.setup}`, `Normal pattern:\n${t.normalDesc}`].join("\n\n")} />
+                <InfoButton title={t.label} richItem={fmaRichItem(t)} />
               </div>
               <div className="muscle-subtitle">{t.subtitle}</div>
 
