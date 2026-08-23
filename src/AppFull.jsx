@@ -57,7 +57,7 @@ import {
   loadPatientDB, savePatientDB,
   loadTaskDB, saveTaskDB,
   genId,
-  PatientDatabasePanel, PatientProfileModal,
+  PatientDatabasePanel, PatientProfileModal, TreatmentCaseloadPanel,
 } from "./PatientDatabase.jsx";
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import AssessmentReportView from "./AssessmentReportView.jsx";
@@ -79,6 +79,10 @@ const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"
 // StreamSelector changes, both now navTo("neuro_assessment") instead of
 // setStream("neuro")) with a standalone tool, same pattern as Cardio.
 const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
+// New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
+// above. The old config-driven "ortho" stream stays reachable, relabeled
+// "Old Ortho" in STREAMS below.
+const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
@@ -520,6 +524,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profilePatient, setProfilePatient] = useState(null);
   const [profileTab, setProfileTab] = useState(null);
+  // Clinical tab's own sub-navigation (2026-08-22): "Patients" is the
+  // existing default (must stay first/default so clinicalTabRedesign.test.jsx
+  // -- which clicks "Clinical" and expects the patient search box immediately
+  // -- keeps passing); "Today" and "Treatment" are new lenses onto the same
+  // patients array, not separate data.
+  const [clinicalSubTab, setClinicalSubTab] = useState("patients"); // "today" | "patients" | "treatment"
   const [showIntake, setShowIntake] = useState(false);
   const [intakeData, setIntakeData] = useState({});
   // Clinical tab landing: "+ New Assessment" asks which specialty stream
@@ -1871,17 +1881,40 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // above -- Clinical's own header/search/CTA want the full
                 // tab width, not the standard pm-main content padding.
                 <div style={{margin:"-24px -20px 0"}}>
-                  <PatientDatabasePanel
-                    embedded
-                    patients={patients}
-                    activeId={activePatientId}
-                    onSelect={selectPatient}
-                    onNew={()=>setShowSpecialtyPicker(true)}
-                    onDelete={deletePatient}
-                    onImport={importPatientFromJSON}
-                    onNav={navTo}
-                    liveData={data}
-                  />
+                  {/* Clinical sub-nav (2026-08-22): Today / Patients / Treatment
+                      -- three lenses on the same `patients` array rather than
+                      three separate screens. "Patients" stays the default so
+                      tapping the bottom-nav "Clinical" tab still lands exactly
+                      where it always has. */}
+                  <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
+                    {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"]].map(([k,label])=>(
+                      <button key={k} onClick={()=>setClinicalSubTab(k)}
+                        style={{padding:"8px 14px",borderRadius:"10px 10px 0 0",border:"none",borderBottom:clinicalSubTab===k?"2px solid #6D28D9":"2px solid transparent",
+                          background:clinicalSubTab===k?"#F5F3FF":"transparent",color:clinicalSubTab===k?"#6D28D9":"#6B7280",
+                          fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {clinicalSubTab==="today" ? (
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                  ) : clinicalSubTab==="treatment" ? (
+                    <TreatmentCaseloadPanel patients={patients}
+                      onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
+                      onProfile={(p)=>{ setProfilePatient(p); setProfileTab("treatment"); }}/>
+                  ) : (
+                    <PatientDatabasePanel
+                      embedded
+                      patients={patients}
+                      activeId={activePatientId}
+                      onSelect={selectPatient}
+                      onNew={()=>setShowSpecialtyPicker(true)}
+                      onDelete={deletePatient}
+                      onImport={importPatientFromJSON}
+                      onNav={navTo}
+                      liveData={data}
+                    />
+                  )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>

@@ -4306,6 +4306,87 @@ const innerBody = (
   );
 }
 
+// ─── TREATMENT CASELOAD (Clinical tab's "Treatment" sub-tab, 2026-08-22) ──────
+// Only patients with at least one logged tx_sessions entry -- "currently
+// undergoing treatment" is derived from that real data, not a separate
+// status field the app doesn't have. Session count and pain trend are read
+// straight off tx_sessions (vasStart/vasEnd) rather than inventing a planned
+// session target, since no such field exists anywhere in the data model.
+function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile }) {
+  const C = { primary:"#6D28D9", text:"#111827", muted:"#6B7280", border:"#F1F5F9",
+    green:"#10B981", red:"#EF4444", orange:"#F59E0B" };
+
+  const caseload = patients
+    .map(p => {
+      const sessions = Array.isArray(p.data?.tx_sessions) ? p.data.tx_sessions : [];
+      if (sessions.length === 0) return null;
+      // tx_sessions is saved newest-first (see saveNew() above)
+      const newest = sessions[0], oldest = sessions[sessions.length-1];
+      const painStart = oldest?.vasStart ?? null;
+      const painNow = newest?.vasEnd ?? newest?.vasStart ?? null;
+      return {
+        patient: p,
+        sessionCount: sessions.length,
+        lastDate: newest?.date || null,
+        painStart, painNow,
+        condition: p.data?.cc_main || p.lastDx || "",
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b) => b.sessionCount - a.sessionCount);
+
+  if (caseload.length === 0) {
+    return (
+      <div style={{padding:"40px 20px",textAlign:"center",color:C.muted}}>
+        <div style={{fontSize:"2rem",marginBottom:8}}>💊</div>
+        <div style={{fontWeight:700,color:C.text,marginBottom:4}}>No one's in active treatment yet</div>
+        <div style={{fontSize:"0.82rem"}}>Patients show up here once their first treatment session is logged (Sessions screen).</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{padding:"14px 16px 24px"}}>
+      <div style={{fontSize:"0.7rem",fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>
+        Ongoing Treatment · {caseload.length}
+      </div>
+      {caseload.map(({patient,sessionCount,lastDate,painStart,painNow,condition}) => {
+        const improving = painStart!=null && painNow!=null && Number(painNow) < Number(painStart);
+        return (
+          <div key={patient.id} style={{padding:"14px",borderRadius:12,border:`1px solid ${C.border}`,marginBottom:10,background:"#fff"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div>
+                <div style={{fontWeight:800,fontSize:"0.92rem",color:C.text}}>{patient.name||"Unnamed Patient"}</div>
+                {condition && <div style={{fontSize:"0.78rem",color:C.muted,marginTop:1}}>{condition}</div>}
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:"0.78rem",fontWeight:700,color:C.primary}}>Session {sessionCount}</div>
+                {lastDate && <div style={{fontSize:"0.68rem",color:C.muted}}>Last: {lastDate}</div>}
+              </div>
+            </div>
+            {(painStart!=null || painNow!=null) && (
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10,fontSize:"0.78rem",color:C.muted}}>
+                Pain: <strong style={{color:C.text}}>{painStart ?? "—"}</strong> → <strong style={{color:improving?C.green:C.text}}>{painNow ?? "—"}</strong>/10
+                {improving && <span style={{color:C.green,fontWeight:700}}>↓ improving</span>}
+              </div>
+            )}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>onContinue&&onContinue(patient)}
+                style={{flex:2,padding:"9px",borderRadius:9,border:"none",background:C.primary,color:"#fff",fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
+                Continue Treatment →
+              </button>
+              <button onClick={()=>onProfile&&onProfile(patient)}
+                style={{flex:1,padding:"9px",borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.muted,fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
+                Profile
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 
 
 // ─── POSTURE DEFECTS DATA ─────────────────────────────────────────────────────
@@ -4481,5 +4562,5 @@ export {
   loadPatientDB, savePatientDB,
   loadTaskDB, saveTaskDB,
   genId,
-  PatientDatabasePanel, PatientProfileModal,
+  PatientDatabasePanel, PatientProfileModal, TreatmentCaseloadPanel,
 };
