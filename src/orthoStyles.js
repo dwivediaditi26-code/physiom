@@ -89,23 +89,27 @@ export function orthoStyles() {
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
-        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 70; animation: sheetFade .15s ease; }
-        .sheet-panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; background: #fff; border-radius: 24px 24px 0 0; padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); max-height: 82vh; overflow-y: auto; box-shadow: 0 -20px 50px rgba(20,10,60,.25); max-width: 480px; margin: 0 auto; animation: sheetUp .22s cubic-bezier(.2,.9,.3,1); }
+        /* Same compact, centered dialog size as Cardio/Neuro's InfoCard.jsx
+           (60vw x 60vh, capped 480x640) -- was previously a full-width
+           bottom sheet growing to 82vh, which felt oversized next to the
+           Cardio/Neuro card for the same "How to Perform" content. */
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; animation: sheetFade .15s ease; }
+        .sheet-panel { position: relative; z-index: 71; background: #fff; border-radius: 22px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); width: 60vw; height: 60vh; max-width: 480px; max-height: 640px; min-width: 300px; min-height: 380px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(40,10,90,.35); animation: sheetPop .18s cubic-bezier(.2,.9,.3,1); }
+        .sheet-scroll { flex: 1; overflow-y: auto; min-height: 0; }
         @keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .sheet-grabber { width: 40px; height: 4px; border-radius: 999px; background: ${BRAND.border}; margin: 8px auto 14px; }
-        .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        @keyframes sheetPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+        .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
         .sheet-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: ${BRAND.purple}; }
         .sheet-close { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; cursor: pointer; }
-        .sheet-title { font-weight: 800; font-size: 18px; margin: 4px 0 10px; }
+        .sheet-title { font-weight: 800; font-size: 18px; margin: 4px 0 10px; flex-shrink: 0; }
         .sheet-body { font-size: 14.5px; line-height: 1.7; color: ${BRAND.ink}; white-space: pre-line; padding-bottom: 4px; }
 
         /* Rich "How to perform" content -- real reference photo + the same
            labeled, tinted cards Study Mode shows for this exact item, so a
            therapist gets the full teaching card without leaving the
            assessment. Sheet itself grows via its existing max-height:82vh. */
-        .sheet-subtitle { font-size: 13px; font-weight: 700; color: ${BRAND.purple}; margin: -6px 0 10px; }
-        .sheet-hero { position: relative; background: ${BRAND.purpleFaint}; border-radius: 14px; overflow: hidden; margin-bottom: 12px; min-height: 140px; max-height: 200px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
+        .sheet-subtitle { font-size: 13px; font-weight: 700; color: ${BRAND.purple}; margin: -6px 0 10px; flex-shrink: 0; }
+        .sheet-hero { position: relative; background: ${BRAND.purpleFaint}; border-radius: 14px; overflow: hidden; margin-bottom: 10px; min-height: 90px; max-height: 150px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; flex-shrink: 0; }
         .sheet-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .sheet-hero-fallback { color: ${BRAND.grayLight}; font-size: 12px; padding: 40px 0; }
         .sheet-hero-zoom { position: absolute; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(20,10,45,.55); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
@@ -118,7 +122,8 @@ export function orthoStyles() {
 
         /* Perform / Reference / Interpret tab strip -- splits a rich item's
            content across screens instead of one long scroll. */
-        .sheet-tabs { display: flex; gap: 4px; background: #F8FAFC; border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+        .sheet-tabs { display: flex; gap: 4px; background: #F8FAFC; border-radius: 10px; padding: 3px; margin-bottom: 12px; flex-shrink: 0; }
+        .sheet-done-btn { flex-shrink: 0; }
         .sheet-tab { flex: 1; border: none; background: transparent; color: ${BRAND.gray}; font-weight: 700; font-size: 11.5px; padding: 8px 4px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .sheet-tab-num { width: 15px; height: 15px; border-radius: 50%; background: #E2E0F0; color: ${BRAND.gray}; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .sheet-tab-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.1); }

@@ -1637,6 +1637,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [stepOrder, setStepOrder] = useState(() => (hasExisting ? seed.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
   // Re-hydrate when switching to a different patient -- deliberately keyed
@@ -1984,6 +1985,11 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
                 </div>
               )}
             </div>
+            {step >= 2 && current.id !== "summary" && (
+              <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">
+                ✅
+              </button>
+            )}
           </div>
           {step >= 2 && (
             <>
@@ -2090,6 +2096,19 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {reviewOpen && (
+          <div className="ct-modal">
+            <div className="ct-modal-header">
+              <div className="ct-modal-title">✅ Review So Far</div>
+              <button type="button" className="ct-modal-close" onClick={() => setReviewOpen(false)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="ct-modal-body">
+              <SummarySection setting={setting} system={system} data={data} assessSteps={assessSteps} />
+            </div>
+          </div>
+        )}
         <InfoCard data={activeCard} onClose={() => setActiveCard(null)} />
       </div>
     </div>

@@ -160,8 +160,7 @@ export function InfoButton(props) {
       {open && (
         <>
           <div className="sheet-backdrop" onClick={() => setOpen(false)} />
-          <div className="sheet-panel" role="dialog" aria-modal="true">
-            <div className="sheet-grabber" />
+          <div className="sheet-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-head">
               <span className="sheet-eyebrow">{eyebrow}</span>
               <button type="button" className="sheet-close" onClick={() => setOpen(false)} aria-label="Close">
@@ -170,16 +169,18 @@ export function InfoButton(props) {
             </div>
             {heading && <div className="sheet-title">{heading}</div>}
             {richItem?.subtitle && <div className="sheet-subtitle">{richItem.subtitle}</div>}
-            {richItem ? (
-              <>
-                <SheetHero name={richItem.image} />
-                <SheetTabs tabs={availableTabs} active={activeTab} onSelect={setTab} />
-                {richItem[activeTab]}
-              </>
-            ) : (
-              <div className="sheet-body">{text}</div>
-            )}
-            <button type="button" className="primary-btn" style={{ marginTop: 14 }} onClick={() => setOpen(false)}>
+            {richItem && <SheetTabs tabs={availableTabs} active={activeTab} onSelect={setTab} />}
+            <div className="sheet-scroll">
+              {richItem ? (
+                <>
+                  <SheetHero name={richItem.image} />
+                  {richItem[activeTab]}
+                </>
+              ) : (
+                <div className="sheet-body">{text}</div>
+              )}
+            </div>
+            <button type="button" className="primary-btn sheet-done-btn" style={{ marginTop: 10 }} onClick={() => setOpen(false)}>
               Done
             </button>
           </div>

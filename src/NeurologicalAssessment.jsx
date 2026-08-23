@@ -1589,6 +1589,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
   // phase: "setting" -> "mode" -> ("template" | "region" | "mytemplates") -> "assess"
@@ -2012,6 +2013,11 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                 <div className="topbar-breadcrumb">{SETTINGS.find((s) => s.id === setting)?.label}</div>
               )}
             </div>
+            {phase === "assess" && current.id !== "summary" && (
+              <button className="back-btn" onClick={() => setReviewOpen(true)} aria-label="Review filled so far" title="Review filled so far">
+                ✅
+              </button>
+            )}
           </div>
           {phase === "assess" && (
             <>
@@ -2206,6 +2212,19 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {reviewOpen && (
+          <div className="ct-modal">
+            <div className="ct-modal-header">
+              <div className="ct-modal-title">✅ Review So Far</div>
+              <button type="button" className="ct-modal-close" onClick={() => setReviewOpen(false)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="ct-modal-body">
+              <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
+            </div>
+          </div>
+        )}
         <InfoCard data={activeCard} onClose={() => setActiveCard(null)} />
 
         {saveModalOpen && (
