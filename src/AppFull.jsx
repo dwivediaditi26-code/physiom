@@ -82,13 +82,12 @@ const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 // New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
 // above. The old config-driven "ortho" stream stays reachable, relabeled
 // "Old Ortho" in STREAMS below.
-// HOTFIX (2026-08-22): this module and its supporting ortho*.jsx/js files
-// were never committed, so the import below broke the production build
-// ("Could not resolve ./OrthoAssessmentNew.jsx"). Commented out -- along
-// with the one place it's rendered, below -- until those files are actually
-// in the repo. Re-enable both together once OrthoAssessmentNew.jsx is
-// committed.
-// const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
+// New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
+// above. The old config-driven "ortho" stream stays reachable, relabeled
+// "Old Ortho" in STREAMS below. (All ortho*.jsx/js support files are now
+// present in the repo -- must be committed together with this file so the
+// production build can resolve the import.)
+const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
 const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
 const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
@@ -1802,11 +1801,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               config-driven "ortho" stream (demographics -> subjective ->
               objective stepper) stays reachable, relabeled "Old Ortho" in
               STREAMS, untouched below. */}
-          {/* HOTFIX (2026-08-22): disabled along with LazyOrthoAssessmentNew
-              above -- see that comment. */}
-          {false && active==="ortho_new_assessment" && (
+          {active==="ortho_new_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              {/* <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense> */}
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
             </div>
           )}
 

@@ -722,7 +722,11 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
           <button onClick={()=>onNav("subjective")} style={{
             padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
             color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
-          }}>🦴 Ortho</button>
+          }}>🦴 Old Ortho</button>
+          <button onClick={()=>onNav("ortho_new_assessment")} style={{
+            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
+            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
+          }}>🦴 Ortho Assessment</button>
           <button onClick={()=>onNav("neuro")} style={{
             padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
             color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
