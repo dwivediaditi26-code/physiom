@@ -30,16 +30,131 @@ export function Hint({ children }) {
   return <div className="hint">💡 {children}</div>;
 }
 
+// Same real Cloudinary asset pattern used by PhysioNeuro.jsx's
+// ClinicalImage/ClinicalImageCard and the PhysioFeed Study Mode
+// StudyImage.jsx (f_auto,q_auto, no crop) -- duplicated here rather than
+// cross-imported since neither of those live in a shared, exported
+// location; same convention StudyImage.jsx itself already uses.
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+
+function SheetHero({ name }) {
+  const [failed, setFailed] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+  if (!name || failed) return <div className="sheet-hero"><span className="sheet-hero-fallback">No reference photo</span></div>;
+  const src = `${CLOUDINARY_BASE}/f_auto,q_auto/${name}`;
+  return (
+    <>
+      <div className="sheet-hero" onClick={() => setZoomed(true)} role="button" aria-label="Enlarge photo">
+        <img src={src} alt="" onError={() => setFailed(true)} />
+        <span className="sheet-hero-zoom">⤢</span>
+      </div>
+      {zoomed && (
+        <div className="lightbox-backdrop" onClick={() => setZoomed(false)}>
+          <img src={src} alt="" className="lightbox-img" />
+          <button type="button" className="lightbox-close" onClick={() => setZoomed(false)} aria-label="Close">✕</button>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* Perform / Reference / Interpret -- same 3-tab split Cardio/Neuro's own
+   "Learn" panel uses, so a ROM/MMT/Special Test item's rich content fits
+   one screen per tab instead of one long scroll. Tabs with no content for
+   this item are skipped entirely (e.g. a test with no Reference stats). */
+function SheetTabs({ tabs, active, onSelect }) {
+  if (tabs.length <= 1) return null;
+  return (
+    <div className="sheet-tabs">
+      {tabs.map((t, i) => (
+        <button key={t.key} type="button" className={"sheet-tab" + (active === t.key ? " sheet-tab-active" : "")} onClick={() => onSelect(t.key)}>
+          <span className="sheet-tab-num">{i + 1}</span> {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* Rich-content building blocks for "How to perform" sheets -- same labeled,
+   tinted-card visual language as PhysioFeed's Study Mode (InfoBox.jsx),
+   reimplemented with Ortho's own plain-CSS system (orthoStyles.js) instead
+   of importing across the Tailwind boundary (Tailwind is scoped to
+   src/physiofeed/** only -- see tailwind.config.js). Exported so
+   orthoRegionAssessments.jsx can build ROM/MMT/Special Test sections that
+   mirror RomStudy/MmtStudy/SpecialStudy's toCard() output field-for-field. */
+export function InfoCard({ icon, label, tint = "gray", children }) {
+  return (
+    <div className={`info-card info-card-${tint}`}>
+      <div className="info-card-label">{icon && <span aria-hidden="true">{icon}</span>}{label}</div>
+      <div className="info-card-body">{children}</div>
+    </div>
+  );
+}
+
+export function InfoCardGrid({ children }) {
+  return <div className="info-card-grid">{children}</div>;
+}
+
+export function AnatomyGrid({ items }) {
+  const rows = items.filter(([, v]) => v);
+  if (!rows.length) return null;
+  return (
+    <div className="info-anatomy-grid">
+      {rows.map(([label, val]) => (
+        <div key={label} className="info-anatomy-cell">
+          <div className="info-anatomy-cell-label">{label}</div>
+          <div className="info-anatomy-cell-value">{val}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ProtocolList({ label = "Testing protocol", items }) {
+  const rows = items.filter(([, v]) => v);
+  if (!rows.length) return null;
+  return (
+    <div>
+      <div className="info-protocol-label">{label}</div>
+      {rows.map(([lbl, val, icon]) => (
+        <div key={lbl} className="info-protocol-row">
+          {icon && <span aria-hidden="true">{icon}</span>}
+          <span><b>{lbl}:</b> {val}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const SHEET_TABS = [
+  { key: "perform", label: "Perform" },
+  { key: "reference", label: "Reference" },
+  { key: "interpret", label: "Interpret" },
+];
+
 /* "How to perform" is always a separate educational layer from the filling
    UI — tapping ⓘ opens a bottom sheet over a dim backdrop, never inline
    text mixed into the assessment card. Works the same for the small icon
-   variant and the full-width "How to perform" button variant. */
+   variant and the full-width "How to perform" button variant.
+   richItem (optional) = { image, title, subtitle, perform, reference,
+   interpret } -- when given, the sheet renders the real reference photo
+   (tap to enlarge) + the item's content split across the same Perform/
+   Reference/Interpret tabs Cardio/Neuro's own Learn panel uses, so each
+   tab fits on screen instead of one long scroll. Content built via
+   InfoCard/AnatomyGrid/ProtocolList above. `text` stays supported for the
+   many other field hints in this file that aren't ROM/MMT/Special Test
+   items. */
 export function InfoButton(props) {
-  const { text, title, eyebrow = "HOW TO PERFORM" } = props;
+  const { text, title, eyebrow = "HOW TO PERFORM", richItem } = props;
   const [open, setOpen] = useState(false);
+  const availableTabs = richItem ? SHEET_TABS.filter((t) => richItem[t.key]) : [];
+  const [tab, setTab] = useState(availableTabs[0]?.key);
+  const activeTab = availableTabs.find((t) => t.key === tab) ? tab : availableTabs[0]?.key;
+  const heading = richItem?.title || title;
+  const openSheet = () => { setTab(availableTabs[0]?.key); setOpen(true); };
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
-      <button type="button" className={props.label ? "info-btn-full" : "info-btn"} onClick={() => setOpen(true)}>
+      <button type="button" className={props.label ? "info-btn-full" : "info-btn"} onClick={openSheet}>
         ⓘ {props.label || ""}
       </button>
       {open && (
@@ -53,8 +168,17 @@ export function InfoButton(props) {
                 ✕
               </button>
             </div>
-            {title && <div className="sheet-title">{title}</div>}
-            <div className="sheet-body">{text}</div>
+            {heading && <div className="sheet-title">{heading}</div>}
+            {richItem?.subtitle && <div className="sheet-subtitle">{richItem.subtitle}</div>}
+            {richItem ? (
+              <>
+                <SheetHero name={richItem.image} />
+                <SheetTabs tabs={availableTabs} active={activeTab} onSelect={setTab} />
+                {richItem[activeTab]}
+              </>
+            ) : (
+              <div className="sheet-body">{text}</div>
+            )}
             <button type="button" className="primary-btn" style={{ marginTop: 14 }} onClick={() => setOpen(false)}>
               Done
             </button>

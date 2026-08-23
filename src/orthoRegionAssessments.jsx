@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
 
@@ -65,6 +65,58 @@ function romInfoText(m) {
   return lines.join("\n\n") || "No additional reference notes for this movement.";
 }
 
+// Same field set as physiofeed/learn/RomStudy.jsx's toCard(), split across
+// Perform/Reference/Interpret tabs (same pattern Cardio/Neuro's Learn panel
+// uses) so each tab fits on screen instead of one long scroll.
+function romRichItem(m) {
+  return {
+    image: m.id,
+    title: m.mv,
+    perform: (
+      <>
+        <InfoCard icon="📐" label="Goniometer placement" tint="violet">
+          {m.gonio}
+          {m.start && <div style={{ fontSize: 11.5, color: "#9C9CAE", marginTop: 4 }}>Starting position: {m.start}</div>}
+        </InfoCard>
+        {m.muscles && <InfoCard icon="💪" label="Muscles" tint="green">{m.muscles}</InfoCard>}
+        {m.endfeel && (
+          <InfoCard icon="🖐" label="End feel" tint="violet">
+            <div><b>Normal:</b> {m.endfeel.normal}</div>
+            {m.endfeel.abnormal && <div style={{ marginTop: 4 }}><b>Abnormal:</b> {m.endfeel.abnormal}</div>}
+          </InfoCard>
+        )}
+      </>
+    ),
+    reference: (m.compensation || m.capsular || m.pediatric || m.geriatric) && (
+      <>
+        {(m.compensation || m.capsular) && (
+          <InfoCardGrid>
+            {m.compensation && <InfoCard icon="⚠️" label="Compensation" tint="amber">{m.compensation}</InfoCard>}
+            {m.capsular && <InfoCard icon="🔵" label="Capsular pattern" tint="blue">{m.capsular}</InfoCard>}
+          </InfoCardGrid>
+        )}
+        {(m.pediatric || m.geriatric) && (
+          <InfoCardGrid>
+            {m.pediatric && <InfoCard icon="👶" label="Pediatric" tint="violet">{m.pediatric}</InfoCard>}
+            {m.geriatric && <InfoCard icon="👴" label="Geriatric" tint="blue">{m.geriatric}</InfoCard>}
+          </InfoCardGrid>
+        )}
+      </>
+    ),
+    interpret: (m.pathology || m.redflag) && (
+      <>
+        {m.pathology && (
+          <InfoCard label="Pathology correlation" tint="gray">
+            {m.pathology}
+            {m.adl && <div style={{ marginTop: 6 }}><b>ADL relevance:</b> {m.adl}</div>}
+          </InfoCard>
+        )}
+        {m.redflag && <InfoCard icon="🚨" label="Red flags" tint="red">{m.redflag}</InfoCard>}
+      </>
+    ),
+  };
+}
+
 function romCountFor(entry, movements) {
   if (!entry) return 0;
   let n = 0;
@@ -116,7 +168,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
                 <div>
                   <div className="movement-name-row">
                     <span className="movement-name">{m.mv}</span>
-                    <InfoButton title={m.mv} text={romInfoText(m)} />
+                    <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
                   </div>
                   {norm && <div className="rom-norm">{norm}</div>}
                 </div>
@@ -187,6 +239,40 @@ function mmtInfoText(m) {
   return lines.join("\n\n") || "No additional reference notes for this muscle.";
 }
 
+// Same field set/order as physiofeed/learn/MmtStudy.jsx's toCard() -- the
+// rich "How to perform" sheet content for an MMT muscle.
+function mmtRichItem(m) {
+  return {
+    image: m.id,
+    title: m.muscle,
+    subtitle: m.action,
+    perform: (
+      <ProtocolList items={[
+        ["Patient position", m.patient, "👤"], ["Therapist", m.therapist, "🙌"],
+        ["Resistance", m.resistance, "↕️"], ["Gravity eliminated", m.gravElim, "⬇️"],
+        ["Palpation", m.palpation, "👆"],
+      ]} />
+    ),
+    reference: <AnatomyGrid items={[["Action", m.action], ["Nerve", m.nerve], ["Root", m.root], ["Origin", m.origin], ["Insertion", m.insertion]]} />,
+    interpret: (m.compensation || m.substitution || m.functional || m.chain) && (
+      <>
+        {(m.compensation || m.substitution) && (
+          <InfoCard icon="⚠️" label="Compensation / substitution" tint="amber">
+            {m.compensation && <div><b>Compensation:</b> {m.compensation}</div>}
+            {m.substitution && <div style={{ marginTop: 4 }}><b>Substitution:</b> {m.substitution}</div>}
+          </InfoCard>
+        )}
+        {(m.functional || m.chain) && (
+          <InfoCard icon="⛓️" label="Clinical interpretation" tint="violet">
+            {m.functional && <div>{m.functional}</div>}
+            {m.chain && <div style={{ fontStyle: "italic", color: "#9C9CAE", marginTop: 4 }}>{m.chain}</div>}
+          </InfoCard>
+        )}
+      </>
+    ),
+  };
+}
+
 function mmtCountFor(entry, muscles) {
   if (!entry) return 0;
   let n = 0;
@@ -249,7 +335,7 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
                 <div>
                   <div className="movement-name-row">
                     <span className="movement-name">{m.muscle}</span>
-                    <InfoButton title={m.muscle} text={mmtInfoText(m)} />
+                    <InfoButton title={m.muscle} text={mmtInfoText(m)} richItem={mmtRichItem(m)} />
                   </div>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}
                 </div>
@@ -433,6 +519,26 @@ function categoryFor(test) {
   return "Other";
 }
 
+// Same field set/order as physiofeed/learn/SpecialStudy.jsx's toCard() --
+// the rich "How to perform" sheet content for a special test.
+function specialRichItem(t) {
+  return {
+    image: t.id,
+    title: t.label,
+    subtitle: t.structure,
+    perform: t.how && <InfoCard icon="👐" label="How to perform" tint="amber">{t.how}</InfoCard>,
+    reference: (t.sensitivity || t.specificity) && (
+      <div style={{ fontSize: 13, color: "#1A1A2E" }}>Sensitivity: <b>{t.sensitivity || "—"}</b> · Specificity: <b>{t.specificity || "—"}</b></div>
+    ),
+    interpret: (t.negative || t.positive) && (
+      <InfoCardGrid>
+        {t.negative && <InfoCard icon="✓" label="Negative means" tint="green">{t.negative}</InfoCard>}
+        {t.positive && <InfoCard icon="⚠" label="Positive means" tint="red">{t.positive}</InfoCard>}
+      </InfoCardGrid>
+    ),
+  };
+}
+
 function defaultSideFor(activeKey, selectedRegions) {
   const match = selectedRegions.find((r) => r.id === activeKey);
   const s = (match?.side || "").toLowerCase();
@@ -517,7 +623,7 @@ export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey
           <div className="test-card" key={t.id}>
             <div className="test-card-title-row">
               <div className="test-card-title">{t.label}</div>
-              {t.how && <InfoButton title={t.label} text={[t.how, t.positive && `✅ Positive means: ${t.positive}`, t.negative && `⬜ Negative means: ${t.negative}`].filter(Boolean).join("\n\n")} />}
+              {t.how && <InfoButton title={t.label} text={[t.how, t.positive && `✅ Positive means: ${t.positive}`, t.negative && `⬜ Negative means: ${t.negative}`].filter(Boolean).join("\n\n")} richItem={specialRichItem(t)} />}
             </div>
             {(t.structure || t.sensitivity) && (
               <div className="muscle-subtitle">

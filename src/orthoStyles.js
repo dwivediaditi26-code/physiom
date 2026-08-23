@@ -100,6 +100,53 @@ export function orthoStyles() {
         .sheet-title { font-weight: 800; font-size: 18px; margin: 4px 0 10px; }
         .sheet-body { font-size: 14.5px; line-height: 1.7; color: ${BRAND.ink}; white-space: pre-line; padding-bottom: 4px; }
 
+        /* Rich "How to perform" content -- real reference photo + the same
+           labeled, tinted cards Study Mode shows for this exact item, so a
+           therapist gets the full teaching card without leaving the
+           assessment. Sheet itself grows via its existing max-height:82vh. */
+        .sheet-subtitle { font-size: 13px; font-weight: 700; color: ${BRAND.purple}; margin: -6px 0 10px; }
+        .sheet-hero { position: relative; background: ${BRAND.purpleFaint}; border-radius: 14px; overflow: hidden; margin-bottom: 12px; min-height: 140px; max-height: 200px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
+        .sheet-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sheet-hero-fallback { color: ${BRAND.grayLight}; font-size: 12px; padding: 40px 0; }
+        .sheet-hero-zoom { position: absolute; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(20,10,45,.55); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+
+        /* Full-screen lightbox for the reference photo -- tap the hero to
+           enlarge, tap anywhere to dismiss. */
+        .lightbox-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(10,5,25,.9); display: flex; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }
+        .lightbox-img { max-width: 100%; max-height: 100%; border-radius: 10px; object-fit: contain; }
+        .lightbox-close { position: absolute; top: 18px; right: 18px; width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 15px; cursor: pointer; }
+
+        /* Perform / Reference / Interpret tab strip -- splits a rich item's
+           content across screens instead of one long scroll. */
+        .sheet-tabs { display: flex; gap: 4px; background: #F8FAFC; border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+        .sheet-tab { flex: 1; border: none; background: transparent; color: ${BRAND.gray}; font-weight: 700; font-size: 11.5px; padding: 8px 4px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .sheet-tab-num { width: 15px; height: 15px; border-radius: 50%; background: #E2E0F0; color: ${BRAND.gray}; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sheet-tab-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.1); }
+        .sheet-tab-active .sheet-tab-num { background: ${BRAND.purple}; color: #fff; }
+        .info-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .info-card { border-radius: 12px; padding: 11px 12px; margin-bottom: 10px; border: 1px solid transparent; }
+        .info-card-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+        .info-card-body { font-size: 13px; line-height: 1.55; color: ${BRAND.ink}; }
+        .info-card-violet { background: ${BRAND.purpleFaint}; border-color: ${BRAND.border}; }
+        .info-card-violet .info-card-label { color: ${BRAND.purple}; }
+        .info-card-green { background: ${BRAND.greenBg}; }
+        .info-card-green .info-card-label { color: ${BRAND.green}; }
+        .info-card-amber { background: ${BRAND.amberBg}; }
+        .info-card-amber .info-card-label { color: ${BRAND.amber}; }
+        .info-card-blue { background: #EFF6FF; }
+        .info-card-blue .info-card-label { color: #2563EB; }
+        .info-card-red { background: ${BRAND.redBg}; }
+        .info-card-red .info-card-label { color: ${BRAND.red}; }
+        .info-card-gray { background: #F8FAFC; border-color: #F1F5F9; }
+        .info-card-gray .info-card-label { color: ${BRAND.grayLight}; }
+        .info-anatomy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .info-anatomy-cell { background: #F8FAFC; border: 1px solid #F1F5F9; border-radius: 10px; padding: 8px 10px; }
+        .info-anatomy-cell-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.grayLight}; margin-bottom: 2px; }
+        .info-anatomy-cell-value { font-size: 12.5px; color: ${BRAND.ink}; }
+        .info-protocol-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.purple}; margin: 4px 0 8px; }
+        .info-protocol-row { display: flex; gap: 8px; align-items: flex-start; background: #F8FAFC; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; font-size: 12.5px; }
+        .info-protocol-row b { color: ${BRAND.gray}; font-weight: 700; }
+
         /* Stepper — compact L/R numeric input with up/down mini-buttons.
            Colour communicates clinical meaning: green = normal, amber =
            mild finding, red = significant finding. Everything else stays
