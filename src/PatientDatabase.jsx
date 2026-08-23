@@ -4097,7 +4097,13 @@ const innerBody = (
             </div>
           </div>
 
-          {/* New Assessment CTA */}
+          {/* New Assessment CTA + Clinical Areas -- moved to their own
+              "Assessment" sub-tab in Clinical (2026-08-23, Aditi: "the
+              patient list should only show patient list") -- only shown
+              here in the non-embedded (Switch/Load Patient popup) context,
+              where there's no separate Assessment tab to send people to. */}
+          {!embedded && (
+            <>
           <div style={{padding:"14px 18px 0"}}>
             <button onClick={onNew}
               style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
@@ -4107,7 +4113,6 @@ const innerBody = (
             </button>
           </div>
 
-          {/* Clinical Areas */}
           <div style={{padding:"22px 18px 0"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
               <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>Clinical Areas</div>
@@ -4135,6 +4140,8 @@ const innerBody = (
               })}
             </div>
           </div>
+            </>
+          )}
 
           {/* Recent Patients */}
           <div style={{padding:"24px 18px 0"}}>
@@ -4189,7 +4196,9 @@ const innerBody = (
             ))}
           </div>
 
-          {/* Stats cards */}
+          {/* Stats cards -- same "patient list only" scoping as the CTA/
+              Clinical Areas block above; kept in the non-embedded popup. */}
+          {!embedded && (
           <div style={{padding:"22px 18px 18px",display:"flex",gap:10}}>
             {[
               {val:assessmentsInProgress, label:"Assessments in progress", color:"#7c3aed"},
@@ -4202,6 +4211,7 @@ const innerBody = (
               </div>
             ))}
           </div>
+          )}
 
           {/* Secondary tools -- sort/flags/import/export. Real, kept
               functional, just tucked below the fold so the primary

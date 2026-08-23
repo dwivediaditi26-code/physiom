@@ -541,6 +541,34 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Clinical tab landing: "+ New Assessment" asks which specialty stream
   // before creating the patient, instead of always assuming Ortho.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  // Shared "start a new assessment for this specialty" logic -- used by
+  // both the "+ New Assessment" specialty-picker modal below and the
+  // Clinical tab's own "Assessment" sub-tab pills (2026-08-23), so picking
+  // a specialty does the exact same real thing (blank-slate + navigate to
+  // that specialty's real tool) no matter which entry point was used.
+  function startSpecialty(st) {
+    if (st.id === "cardio") {
+      setData({});
+      setActivePatientId(null);
+      navTo("cardio_assessment");
+    } else if (st.id === "neuro") {
+      setData({});
+      setActivePatientId(null);
+      navTo("neuro_assessment");
+    } else if (st.id === "ortho") {
+      setStream("ortho");
+      setData({});
+      setActivePatientId(null);
+      navTo("demographics");
+    } else if (st.id === "ortho_new") {
+      setData({});
+      setActivePatientId(null);
+      navTo("ortho_new_assessment");
+    } else {
+      setStream(st.id);
+      createNewPatient();
+    }
+  }
   // Demographics step redesign: the 6 core fields (name/dob/age/gender/
   // phone/email/occupation) show up front; everything else the clinic
   // still needs on file (sex detail, work info, address, emergency
@@ -1221,40 +1249,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   onClick={()=>{
                     if (!clickable) return;
                     setShowSpecialtyPicker(false);
-                    if (st.id === "cardio") {
-                      // Blank slate, same reasoning as Ortho below -- "New
-                      // Assessment" must start fresh, not silently continue
-                      // editing whatever patient happened to be active.
-                      setData({});
-                      setActivePatientId(null);
-                      navTo("cardio_assessment");
-                    } else if (st.id === "neuro") {
-                      setData({});
-                      setActivePatientId(null);
-                      navTo("neuro_assessment");
-                    } else if (st.id === "ortho") {
-                      // Ortho has its own full-page Demographics step (part
-                      // of the 9-step stepper) -- land there directly
-                      // instead of the old floating intake-form popup.
-                      // Blank slate: a fresh assessment must never show the
-                      // previous patient's leftover data.
-                      setStream("ortho");
-                      setData({});
-                      setActivePatientId(null);
-                      navTo("demographics");
-                    } else if (st.id === "ortho_new") {
-                      // New standalone Ortho Assessment tool -- same
-                      // blank-slate treatment as Cardio/Neuro above.
-                      setData({});
-                      setActivePatientId(null);
-                      navTo("ortho_new_assessment");
-                    } else {
-                      // Other live streams don't have their own Demographics
-                      // step yet -- keep using the existing intake-form
-                      // popup for them until they do.
-                      setStream(st.id);
-                      createNewPatient();
-                    }
+                    startSpecialty(st);
                   }}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,
                     cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
@@ -1905,13 +1900,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // above -- Clinical's own header/search/CTA want the full
                 // tab width, not the standard pm-main content padding.
                 <div style={{margin:"-24px -20px 0"}}>
-                  {/* Clinical sub-nav (2026-08-22): Today / Patients / Treatment
-                      -- three lenses on the same `patients` array rather than
-                      three separate screens. "Patients" stays the default so
-                      tapping the bottom-nav "Clinical" tab still lands exactly
-                      where it always has. */}
+                  {/* Clinical sub-nav (2026-08-22, extended 2026-08-23 with
+                      "Assessment"): Today / Patients / Treatment / Assessment
+                      -- lenses on the same `patients` array plus a dedicated,
+                      minimal "start a new assessment" screen (Aditi: "the
+                      patient list should only show patient list"). "Patients"
+                      stays the default so tapping the bottom-nav "Clinical"
+                      tab still lands exactly where it always has. */}
                   <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
-                    {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"]].map(([k,label])=>(
+                    {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"],["assessment","📋 Assessment"]].map(([k,label])=>(
                       <button key={k} onClick={()=>setClinicalSubTab(k)}
                         style={{padding:"8px 14px",borderRadius:"10px 10px 0 0",border:"none",borderBottom:clinicalSubTab===k?"2px solid #6D28D9":"2px solid transparent",
                           background:clinicalSubTab===k?"#F5F3FF":"transparent",color:clinicalSubTab===k?"#6D28D9":"#6B7280",
@@ -1926,6 +1923,34 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
                       onProfile={(p)=>{ setProfilePatient(p); setProfileTab("treatment"); }}/>
+                  ) : clinicalSubTab==="assessment" ? (
+                    <div style={{padding:"22px 18px 24px"}}>
+                      <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
+                      <div style={{fontSize:"0.82rem",color:"#6B7280",marginBottom:20}}>Pick a specialty to start a new assessment.</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18}}>
+                        {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
+                          const clickable = st.live || st.id === "cardio";
+                          return (
+                            <button key={st.id} type="button"
+                              onClick={()=>{ if(!clickable) return; startSpecialty(st); }}
+                              style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",borderRadius:12,
+                                cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
+                                border:`1.5px solid ${clickable?st.color+"50":"#E5E7EB"}`,
+                                background:clickable?st.color+"10":"#F9FAFB",opacity:clickable?1:0.6,textAlign:"left"}}>
+                              <span style={{fontSize:"1.3rem"}}>{st.icon}</span>
+                              <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:"#9CA3AF"}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
+                              {!clickable && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button onClick={()=>setShowSpecialtyPicker(true)}
+                        style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                          border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
+                          boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
+                        ＋ New Assessment
+                      </button>
+                    </div>
                   ) : (
                     <PatientDatabasePanel
                       embedded

@@ -43,6 +43,9 @@ describe("Clinical tab — patient list + specialty picker", () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
     await screen.findByPlaceholderText("Search patients…");
+    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
+    // so the default "Patients" sub-tab shows only the patient list.
+    fireEvent.click(screen.getByText("📋 Assessment"));
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     expect(picker.getByText("New assessment")).toBeInTheDocument();
@@ -56,6 +59,9 @@ describe("Clinical tab — patient list + specialty picker", () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
     await screen.findByPlaceholderText("Search patients…");
+    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
+    // so the default "Patients" sub-tab shows only the patient list.
+    fireEvent.click(screen.getByText("📋 Assessment"));
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Ortho"));
@@ -70,6 +76,9 @@ describe("Clinical tab — patient list + specialty picker", () => {
     await renderLoggedIn();
     fireEvent.click(screen.getByText("Clinical"));
     await screen.findByPlaceholderText("Search patients…");
+    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
+    // so the default "Patients" sub-tab shows only the patient list.
+    fireEvent.click(screen.getByText("📋 Assessment"));
     fireEvent.click(screen.getByText("＋ New Assessment"));
     const picker = within(await screen.findByTestId("specialty-picker-modal"));
     fireEvent.click(picker.getByText("Sports"));
