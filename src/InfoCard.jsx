@@ -16,8 +16,6 @@ export default function InfoCard({ data, onClose }) {
 
   if (!data) return null;
 
-  const next = () => (tab < 2 ? setTab(tab + 1) : onClose());
-
   return (
     <div style={s.dim} onClick={onClose}>
       <div style={s.sheet} onClick={(e) => e.stopPropagation()}>
@@ -61,9 +59,6 @@ export default function InfoCard({ data, onClose }) {
               <span key={i} style={{ ...s.dot, ...(tab === i ? s.dotOn : {}) }} />
             ))}
           </div>
-          <button style={s.nextBtn} onClick={next}>
-            {tab === 2 ? "Done ✓" : "Next →"}
-          </button>
         </div>
       </div>
     </div>

@@ -180,9 +180,6 @@ export function InfoButton(props) {
                 <div className="sheet-body">{text}</div>
               )}
             </div>
-            <button type="button" className="primary-btn sheet-done-btn" style={{ marginTop: 10 }} onClick={() => setOpen(false)}>
-              Done
-            </button>
           </div>
         </>
       )}
