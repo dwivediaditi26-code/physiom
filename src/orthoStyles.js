@@ -123,7 +123,7 @@ export function orthoStyles() {
         /* Perform / Reference / Interpret tab strip -- splits a rich item's
            content across screens instead of one long scroll. */
         .sheet-tabs { display: flex; gap: 4px; background: #F8FAFC; border-radius: 10px; padding: 3px; margin-bottom: 12px; flex-shrink: 0; }
-        .sheet-done-btn { flex-shrink: 0; }
+        .sheet-done-btn { flex: 0 0 auto; }
         .sheet-tab { flex: 1; border: none; background: transparent; color: ${BRAND.gray}; font-weight: 700; font-size: 11.5px; padding: 8px 4px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .sheet-tab-num { width: 15px; height: 15px; border-radius: 50%; background: #E2E0F0; color: ${BRAND.gray}; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .sheet-tab-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.1); }
