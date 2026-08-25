@@ -141,47 +141,6 @@ const STREAMS = [
   { id:"cardio",    label:"Cardio",           icon:"❤️", color:"#dc2626", live:false },
 ];
 
-function StreamSelector({ stream, setStream, navTo, PC }) {
-  return (
-    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20,
-      padding:"10px 12px",background:PC.s2||"#f8fafc",
-      border:`1px solid ${PC.border}`,borderRadius:14}}>
-      {STREAMS.map(st => {
-        const sel = stream===st.id;
-        // Cardio/Neuro (2026-08-19): both are real, standalone tools now
-        // (CardiopulmonaryAssessment.jsx / NeurologicalAssessment.jsx), not
-        // config-driven streams -- clicking them here used to just set
-        // `stream` state, which for Cardio always dead-ended on
-        // StreamEnginePlaceholder ("coming soon", since STREAM_CONFIGS has
-        // no cardio entry) and for Neuro opened the OLD engine this pass
-        // is replacing. Route both to the real tool instead, same as the
-        // "+ New Assessment" specialty picker already does.
-        const onClick = () => {
-          if (st.id === "cardio" || st.id === "neuro" || st.id === "ortho_new") navTo?.(`${st.id}_assessment`);
-          else setStream(st.id);
-        };
-        return (
-          <button key={st.id} type="button" onClick={onClick}
-            title={st.live?`${st.label} assessment`:`${st.label} — coming soon`}
-            style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",
-              borderRadius:11,cursor:"pointer",fontSize:"0.85rem",fontWeight:700,
-              letterSpacing:"0.2px",transition:"all 0.15s",
-              border:`2px solid ${sel?st.color:PC.border}`,
-              background:sel?st.color+"14":(PC.surface||"#fff"),
-              color:sel?st.color:(PC.text||"#334155"),
-              opacity:st.live?1:0.85}}>
-            <span style={{fontSize:"1rem"}}>{st.icon}</span>
-            {st.label}
-            {!st.live && <span style={{fontSize:"0.62rem",fontWeight:800,
-              padding:"1px 6px",borderRadius:6,background:PC.border,
-              color:PC.muted,letterSpacing:"0.4px"}}>SOON</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function StreamEnginePlaceholder({ stream, setStream, PC }) {
   const st = STREAMS.find(s=>s.id===stream) || {};
   return (
@@ -1486,6 +1445,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
           }
         </div>
+        {/* Notifications */}
+        <button onClick={()=>navTo("physiofeed")} aria-label="Notifications" title="Notifications"
+          style={{position:"relative",minHeight:34,minWidth:34,padding:0,background:"transparent",
+            border:"none",borderRadius:8,color:PC.text,cursor:"pointer",flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span style={{position:"absolute",top:6,right:7,width:7,height:7,borderRadius:"50%",background:"#7C3AED",border:"1.5px solid #fff"}}/>
+        </button>
+        {/* Messages */}
+        <button onClick={()=>navTo("physiofeed")} aria-label="Messages" title="Messages"
+          style={{minHeight:34,minWidth:34,padding:0,background:"transparent",
+            border:"none",borderRadius:8,color:PC.text,cursor:"pointer",flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </button>
         {/* + New — solid accent */}
         <button onClick={createNewPatient}
           style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
@@ -1565,17 +1543,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         {/* Main */}
         <div className="pm-main" style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
-          {/* ── STREAM SELECTOR + ROUTING SHELL (Step 1) ──
-              Scoped to Home + Demographics only (2026-07-30) — was rendering on
-              every screen before. New Patient is a separate full-screen modal
-              (showIntake, below) that already covers whatever's behind it, so
-              it needs no explicit case here. */}
-          {/* Demographics dropped from this gate: by the time someone reaches
-              it (via New Assessment's specialty picker) the specialty is
-              already chosen -- showing the Ortho/Neuro/... picker row again
-              here was redundant and pushed the real 9-step workflow stepper
-              (below) out of view. */}
-          {active==="home" && <StreamSelector stream={stream} setStream={setStream} navTo={navTo} PC={PC}/>}
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
               4 phases, condition-aware showIf, checklists) and its widgets
@@ -1693,7 +1660,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           })()}
 
 
-          {currentSection && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
+          {currentSection && active !== "home" && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>

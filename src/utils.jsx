@@ -476,6 +476,13 @@ const MOBILE_CSS = `
     .pm-nowrap-2col[style*="1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
   }
 
+  /* Opt-out for the Home page's 4-up tile rows (quick-action tiles, Quick
+     Access) -- these are deliberately narrow cards designed to stay 4-across
+     at every width, unlike the denser data grids the collapse rules above
+     are tuned for. Class + attribute outranks the bare attribute selectors
+     regardless of source order, so this wins at every breakpoint above. */
+  .pm-grid-4[style*="repeat(4,"] { grid-template-columns: repeat(4,1fr) !important; }
+
   /* Action bars (space-between) → wrap on tiny screens */
   @media (max-width: 380px) {
     [style*="space-between"] { flex-wrap: wrap !important; gap: 8px !important; }

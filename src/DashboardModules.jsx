@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { getC } from "./utils.jsx";
 import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
+import { INITIAL_POSTS } from "./physiofeed/data/mockData.js";
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
@@ -439,329 +440,204 @@ function PostureDefectModule() {
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
 // ═══════════════════════════════════════════════════════════════════════════
+function initialsOf(fullName) {
+  const clean = (fullName || "").replace(/^Dr\.?\s*/, "").split(",")[0].trim();
+  const parts = clean.split(" ").filter(Boolean);
+  return parts.slice(0, 2).map(w => w[0]).join("").toUpperCase();
+}
+
+const HeartIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
+  </svg>
+);
+const CommentIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+);
+const ShareIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>
+  </svg>
+);
+const BookmarkIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+const FeedIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/>
+  </svg>
+);
+const GridIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+    <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+  </svg>
+);
+
+// Small flat illustration for the greeting card -- a clinician holding a
+// clipboard, with a mini "patient card" behind and a sparkle badge, echoing
+// the reference design without depending on any external image asset.
+const GreetingIllustration = () => (
+  <svg width="108" height="108" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="rotate(-8 35 47)">
+      <rect x="4" y="22" width="62" height="50" rx="10" fill="#fff" opacity="0.9"/>
+      <circle cx="20" cy="38" r="7" fill="#C4B5FD"/>
+      <rect x="31" y="34" width="26" height="4" rx="2" fill="#DDD6FE"/>
+      <rect x="31" y="42" width="20" height="4" rx="2" fill="#EDE9FE"/>
+      <rect x="14" y="53" width="44" height="4" rx="2" fill="#EDE9FE"/>
+    </g>
+    <rect x="46" y="52" width="46" height="60" rx="20" fill="#7C3AED"/>
+    <circle cx="69" cy="40" r="16" fill="#F4C2A1"/>
+    <path d="M55 35c1-11 27-11 28 0-4-5-24-5-28 0z" fill="#2B2233"/>
+    <rect x="58" y="66" width="26" height="32" rx="4" fill="#fff"/>
+    <rect x="63" y="74" width="16" height="3" rx="1.5" fill="#C4B5FD"/>
+    <rect x="63" y="81" width="16" height="3" rx="1.5" fill="#EDE9FE"/>
+    <path d="M64 90.5l4 4 8-8.5" stroke="#059669" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="96" cy="26" r="14" fill="#7C3AED"/>
+    <path d="M96 18.5l1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8z" fill="#fff"/>
+  </svg>
+);
+
+const FEED_TABS = [
+  { key: "foryou", label: "For You" },
+  { key: "following", label: "Following" },
+  { key: "research", label: "Research" },
+  { key: "casestudies", label: "Case Studies" },
+  { key: "journalclub", label: "Journal Club" },
+];
+
 function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser }) {
-  const { useMemo } = React;
+  const [feedTab, setFeedTab] = useState("foryou");
 
-  // ── Lightweight derived "today" stats -- deliberately read-only, never
-  // calls onAddTask here. TherapistDashboardModule owns auto-generating
-  // tasks (its own useEffect); duplicating that here would double-create
-  // tasks the moment both Home and Dashboard have ever been mounted, since
-  // each generated task gets a fresh Date.now()-based id. Home only reads
-  // taskDB/patients, same source of truth, no side effects. ──
-  const stats = useMemo(() => {
-    const today = new Date().toDateString();
-    const pending = taskDB.filter(t => t.status !== "completed");
-    const completedToday = taskDB.filter(t =>
-      t.status === "completed" && t.completedAt && new Date(t.completedAt).toDateString() === today
-    ).length;
-    const alerts = patients.filter(p => p.hasRedFlags).length;
-    const addedToday = patients.filter(p => p.createdAt && new Date(p.createdAt).toDateString() === today).length;
-    return { patients: patients.length, pending: pending.length, completedToday, alerts, addedToday };
-  }, [patients, taskDB]);
+  const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
+  const firstName = currentUser?.user_metadata?.full_name?.split(" ")[0] || "Aditi";
 
-  // Real, sorted by last-touched -- no invented appointment times (that
-  // data doesn't exist in the patient record). Shows what actually
-  // happened, not a fabricated schedule.
-  const recentPatients = useMemo(() => {
-    return [...patients]
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
-      .slice(0, 4);
-  }, [patients]);
+  const feedPost = useMemo(() => {
+    if (feedTab==="foryou") return INITIAL_POSTS[0] || null;
+    if (feedTab==="following") return INITIAL_POSTS.find(p=>p.following) || null;
+    if (feedTab==="research") return INITIAL_POSTS.find(p=>p.category==="Research") || null;
+    if (feedTab==="casestudies") return INITIAL_POSTS.find(p=>p.category==="Case Studies") || null;
+    return null; // Journal Club -- no seeded posts in that category yet
+  }, [feedTab]);
 
-  function relTime(iso){
-    if (!iso) return "";
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const mins = Math.round(diffMs / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.round(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.round(hrs / 24)}d ago`;
-  }
-
-  // ── "Continue where you left off" -- the currently active patient (same
-  // `data` state TherapistDashboardModule's Active Patient card already
-  // uses), not just the most-recently-touched row in the list. ──
-  const active = useMemo(() => {
-    const d = data || {};
-    const name = d.dem_name || "";
-    if (!name) return null;
-    const cc = (d.cc_main || "").slice(0, 48);
-    // Rough overall-completion proxy across the core assessment stages --
-    // not meant to be exact, just enough to give "continue where you left
-    // off" a meaningful number instead of a fake static one.
-    const hasCC    = !!d.cc_main;
-    const hasROM   = Object.keys(d).some(k => k.startsWith("rom_") && d[k]);
-    const hasMMT   = Object.keys(d).some(k => k.startsWith("mmt_") && d[k]);
-    const hasSpecial = Object.keys(d).some(k => k.startsWith("st_") && d[k]);
-    const hasSOAP  = !!(d.tx_techniques || (Array.isArray(d.tx_sessions) && d.tx_sessions.length > 0));
-    const stagesDone = [hasCC, hasROM, hasMMT, hasSpecial, hasSOAP].filter(Boolean).length;
-    const pct = Math.round((stagesDone / 5) * 100);
-    return { name, cc: cc || "Assessment in progress", pct };
-  }, [data]);
-
-  const QUICK_START = [
-    { icon:"👤", label:"New Patient",    action:()=>onNewPatient ? onNewPatient() : onNav("subjective") },
-    { icon:"🩺", label:"Assess Patient", action:()=>onNav("subjective") },
-    { icon:"💊", label:"Treatment",      action:()=>onNav("exercise") },
-    { icon:"📄", label:"Documents",      action:()=>onNav("soap") },
+  const TILES = [
+    { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
+    { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio, Pedia, Sports",         action:()=>onNav("subjective") },
+    { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say your assessment in your words and get it filled", action:()=>onNav("subjective", { autoOpenAI: true }) },
+    { key:"posture",    icon:"🧍", bg:"#EFF6FF", title:"Posture Analysis",sub:"AI posture assessment",                       action:()=>onNav("posture") },
   ];
 
-  const AI_ASSISTANT = [
-    { icon:"🎙️", label:"Patient Intake",        action:()=>onNav("subjective", { autoOpenAI: true }) },
-    { icon:"🧠", label:"Suggest Assessment",     action:()=>onNav("subjective") },
-    { icon:"📄", label:"Generate SOAP",          action:()=>onNav("soap") },
-    { icon:"💡", label:"Clinical Assistant",     action:()=>onNav("ai_assistant") },
+  const QUICK_ACCESS = [
+    { key:"evidence", icon:"📚", bg:"#EFF6FF", title:"Evidence", sub:"Latest research and papers",   action:()=>onNav("physiofeed") },
+    { key:"explore",  icon:"🧭", bg:"#ECFEFF", title:"Explore",  sub:"Topics, tools & resources",     action:()=>onNav("physiofeed") },
+    { key:"learn",    icon:"🎓", bg:"#F5F3FF", title:"Learn",    sub:"Assessments, techniques & more",action:()=>onNav("learn") },
+    { key:"saved",    icon:"🔖", bg:"#FFF7ED", title:"Saved",    sub:"Your saved content",            action:()=>onNav("physiofeed") },
   ];
-
-  const CLINICAL_TOOLS = [
-    { icon:"🔬", label:"Special Tests", nav:"special" },
-    { icon:"💪", label:"MMT",           nav:"mmt" },
-    { icon:"📐", label:"ROM",           nav:"rom" },
-    { icon:"⚡", label:"Neurological",  nav:"neuro" },
-    { icon:"🏋️", label:"Exercises",     nav:"exercise" },
-  ];
-
-  // Starter curated set -- a real evidence feed needs an actual content
-  // pipeline (out of scope for a UI pass). Real, currently-published,
-  // independently verifiable sources (not invented citations) so a
-  // therapist can actually trust and check these -- each links straight to
-  // the primary source (journal DOI).
-  const EVIDENCE = [
-    { tag:"Umbrella Systematic Review", badge:"New",
-      title:"Exercise for knee/hip osteoarthritis: benefit likely minimal and short-lived",
-      source:"RMD Open (BMJ)", date:"Feb 2026",
-      url:"https://rmdopen.bmj.com/lookup/doi/10.1136/rmdopen-2025-006275" },
-    { tag:"Clinical Practice Guideline", badge:"New",
-      title:"Rotator cuff tendinopathy: 2025 CPG for diagnosis, non-surgical care & rehab",
-      source:"JOSPT — Desmeules et al.", date:"2025",
-      url:"https://doi.org/10.2519/jospt.2025.13182" },
-  ];
-
-  const SectionLabel = ({ children }) => (
-    <div style={{fontSize:11,fontWeight:800,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:10}}>{children}</div>
-  );
 
   return (
     <div style={{maxWidth:640, margin:"0 auto", fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
 
-      {/* ── Greeting + primary action ── */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:22,flexWrap:"wrap"}}>
-        <div>
-          <div style={{fontSize:19,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
-            {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, {currentUser?.user_metadata?.full_name?.split(" ")[0] || "Doctor"} 👋
-          </div>
-          <div style={{fontSize:12.5,color:"#6B7280",marginTop:3}}>Ready to help your patients today.</div>
+      {/* ── Greeting card ── */}
+      <div style={{
+        background:"linear-gradient(135deg,#F5F0FF 0%,#EDE4FF 55%,#E7DBFF 100%)",
+        borderRadius:22, padding:"20px 14px 20px 20px", marginBottom:18,
+        display:"flex", alignItems:"center", justifyContent:"space-between", gap:8,
+      }}>
+        <div style={{minWidth:0}}>
+          <div style={{fontSize:15,fontWeight:700,color:"#4C1D95"}}>{greeting},</div>
+          <div style={{fontSize:21,fontWeight:800,color:"#1F1147",marginTop:2}}>Dr. {firstName} 👋</div>
+          <div style={{fontSize:12,color:"#6D28D9",marginTop:7,fontWeight:600}}>What would you like to do today?</div>
         </div>
-        <button onClick={()=>onNewPatient ? onNewPatient() : onNav("subjective")} style={{
-          padding:"11px 18px",background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",border:"none",
-          borderRadius:12,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",
-          boxShadow:"0 3px 14px rgba(109,40,217,0.28)",whiteSpace:"nowrap",
-        }}>+ New Patient</button>
+        <div style={{flexShrink:0}}><GreetingIllustration/></div>
       </div>
 
-      {/* ── Quick Start ── */}
-      <div style={{marginBottom:26}}>
-        <SectionLabel>Quick Start</SectionLabel>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-          {QUICK_START.map(q=>(
-            <button key={q.label} onClick={q.action} style={{
-              background:"#fff",border:"1px solid #E5E7EB",borderRadius:14,padding:"16px 12px",
-              display:"flex",flexDirection:"column",alignItems:"flex-start",gap:8,cursor:"pointer",
-              boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-            }}>
-              <span style={{fontSize:"1.3rem"}}>{q.icon}</span>
-              <span style={{fontSize:"0.8rem",fontWeight:700,color:"#111827"}}>{q.label}</span>
+      {/* ── Clinical / Assessment / AI Assessment / Posture Analysis ── */}
+      <div className="pm-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:18}}>
+        {TILES.map(t=>(
+          <button key={t.key} onClick={t.action} style={{
+            background:"#fff", border:"1px solid #EDEDF2", borderRadius:16, padding:"12px 8px",
+            display:"flex", flexDirection:"column", alignItems:"flex-start", gap:7, textAlign:"left",
+            cursor:"pointer", boxShadow:"0 1px 4px rgba(16,24,40,0.04)", minHeight:126,
+          }}>
+            <div style={{width:34,height:34,borderRadius:10,background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>{t.icon}</div>
+            <div style={{fontSize:11.5,fontWeight:800,color:"#111827",lineHeight:1.2}}>{t.title}</div>
+            <div style={{fontSize:9,color:"#9A9AA2",lineHeight:1.3}}>{t.sub}</div>
+            <span style={{marginTop:"auto",alignSelf:"flex-end",color:"#C7C7CE",fontSize:13}}>›</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── PhysioFeed preview ── */}
+      <div style={{background:"#fff", border:"1px solid #EDEDF2", borderRadius:18, padding:"16px 16px 14px", marginBottom:18, boxShadow:"0 1px 4px rgba(16,24,40,0.04)"}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+            <FeedIcon/>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>PhysioFeed</div>
+              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Stay updated with clinical insights and community</div>
+            </div>
+          </div>
+          <button onClick={()=>onNav("physiofeed")} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
+        </div>
+
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4,marginBottom:12,scrollbarWidth:"none"}}>
+          {FEED_TABS.map(t=>(
+            <button key={t.key} onClick={()=>setFeedTab(t.key)} style={{
+              flexShrink:0, padding:"7px 14px", borderRadius:99, fontSize:11.5, fontWeight:700, cursor:"pointer",
+              border: feedTab===t.key ? "none" : "1px solid #E5E5EA",
+              background: feedTab===t.key ? "#7C3AED" : "#fff",
+              color: feedTab===t.key ? "#fff" : "#48484F",
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {feedPost ? (
+          <div style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"12px 14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:9}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:"#EDE4FF",color:"#6D28D9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>
+                {initialsOf(feedPost.author)}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12.5,fontWeight:800,color:"#111827"}}>{feedPost.author.split(",")[0]}</div>
+                <div style={{fontSize:10.5,color:"#9A9AA2"}}>{feedPost.role.split("·")[0].trim()} · {feedPost.time}</div>
+              </div>
+              <span style={{color:"#C7C7CE",fontSize:16,lineHeight:1}}>⋮</span>
+            </div>
+            <div style={{fontSize:12.5,color:"#26262B",lineHeight:1.5,marginBottom:10}}>{feedPost.caption}</div>
+            <span style={{display:"inline-block",fontSize:10,fontWeight:700,color:"#6D28D9",background:"#F5F0FF",borderRadius:99,padding:"3px 10px",marginBottom:11}}>{feedPost.category}</span>
+            <div style={{display:"flex",alignItems:"center",gap:16,marginTop:2,color:"#6B6B76"}}>
+              <span style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600}}><HeartIcon/> {feedPost.likes}</span>
+              <span style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600}}><CommentIcon/> {feedPost.commentList?.length || 0}</span>
+              <span style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:14}}>
+                <ShareIcon/>
+                <BookmarkIcon/>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div style={{textAlign:"center",padding:"20px 10px",color:"#9A9AA2",fontSize:12}}>No posts here yet — check back soon.</div>
+        )}
+      </div>
+
+      {/* ── Quick Access ── */}
+      <div style={{marginBottom:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}>
+          <GridIcon/>
+          <div style={{fontSize:14,fontWeight:800,color:"#111827"}}>Quick Access</div>
+        </div>
+        <div className="pm-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+          {QUICK_ACCESS.map(q=>(
+            <button key={q.key} onClick={q.action} style={{background:"none",border:"none",padding:0,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:7,cursor:"pointer",textAlign:"left"}}>
+              <div style={{width:32,height:32,borderRadius:10,background:q.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>{q.icon}</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#111827"}}>{q.title}</div>
+              <div style={{fontSize:9,color:"#9A9AA2",lineHeight:1.3}}>{q.sub}</div>
             </button>
           ))}
         </div>
-      </div>
-
-      {/* ── Today at a glance -- OR, for a brand-new zero-patient account,
-          a "let's get started" workflow guide instead of a wall of 0s.
-          A fresh account seeing "0 Patients / 0 Pending / 0 Completed /
-          0 Alerts" as its very first number reads as broken, not empty. ── */}
-      {stats.patients === 0 ? (
-        <div style={{marginBottom:26}}>
-          <div style={{background:"linear-gradient(135deg,#f5f3ff,#faf5ff)",border:"1px solid #ddd6fe",
-            borderRadius:16,padding:"18px 16px"}}>
-            <div style={{fontSize:"0.95rem",fontWeight:800,color:"#111827",marginBottom:4}}>Let's assess your first patient</div>
-            <div style={{fontSize:"0.78rem",color:"#6B7280",marginBottom:14,lineHeight:1.5}}>
-              Every assessment follows the same five steps — start whenever you're ready.
-            </div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-              {["Subjective","Objective","Assessment","Treatment Plan","SOAP"].map((step,i)=>(
-                <div key={step} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",
-                  background:"#fff",border:"1px solid #E5E7EB",borderRadius:99}}>
-                  <span style={{fontSize:10,fontWeight:800,color:"#7c3aed"}}>{i+1}</span>
-                  <span style={{fontSize:"0.75rem",fontWeight:700,color:"#374151"}}>{step}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{marginBottom:26}}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-            {[
-              {v:stats.patients,      l:"Patients",  icon:"👥", color:"#6D28D9", sub:stats.addedToday ? `${stats.addedToday} new today` : "total on file"},
-              {v:stats.pending,       l:"Pending",   icon:"📝", color:"#D97706", sub:"awaiting action"},
-              {v:stats.completedToday,l:"Completed", icon:"✓",  color:"#059669", sub:"done today"},
-              {v:stats.alerts,        l:"Alerts",    icon:"⚠",  color:"#EF4444", sub:"red flags to review"},
-            ].map(s=>(
-              <div key={s.l} onClick={()=>onNav("dashboard")} style={{
-                background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,padding:"14px",cursor:"pointer",
-                boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{width:34,height:34,borderRadius:10,background:`${s.color}14`,display:"flex",
-                  alignItems:"center",justifyContent:"center",fontSize:"1rem",marginBottom:10}}>{s.icon}</div>
-                <div style={{fontSize:"1.35rem",fontWeight:800,color:"#111827",lineHeight:1}}>{s.v}</div>
-                <div style={{fontSize:11,fontWeight:700,color:"#111827",marginTop:4}}>{s.l}</div>
-                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>{s.sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Recent Patients -- real, sorted by last-touched. No invented
-          appointment times: the patient record doesn't have a scheduled
-          time field, so this shows what was actually last worked on
-          instead of fabricating a schedule. ── */}
-      {recentPatients.length > 0 && (
-        <div style={{marginBottom:26}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
-            <SectionLabel>Recent Patients</SectionLabel>
-            <button onClick={()=>onNav("dashboard")} style={{background:"none",border:"none",color:"#7c3aed",
-              fontSize:11,fontWeight:700,cursor:"pointer",padding:0}}>View all</button>
-          </div>
-          <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:16,overflow:"hidden",
-            boxShadow:"0 1px 6px rgba(0,0,0,0.04)"}}>
-            {recentPatients.map((p,i)=>(
-              <div key={p.id} onClick={()=>onNav("dashboard")} style={{display:"flex",alignItems:"center",gap:10,
-                padding:"12px 14px",borderBottom:i<recentPatients.length-1?"1px solid #F3F4F6":"none",cursor:"pointer"}}>
-                <div style={{width:34,height:34,borderRadius:"50%",background:"#F5F3FF",color:"#6D28D9",
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>
-                  {(p.name||"?").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase()}
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:"#111827"}}>{p.name || "Unnamed Patient"}</div>
-                  <div style={{fontSize:11,color:"#6B7280",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.lastDx || "No diagnosis recorded yet"}</div>
-                </div>
-                <div style={{fontSize:10.5,color:"#9CA3AF",flexShrink:0}}>{relTime(p.updatedAt || p.createdAt)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Continue where you left off ── */}
-      {active && (
-        <div style={{marginBottom:26}}>
-          <SectionLabel>Continue Where You Left Off</SectionLabel>
-          <div style={{background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
-            borderRadius:18,padding:"18px",boxShadow:"0 6px 24px rgba(109,40,217,0.25)"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-              <div>
-                <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{active.name}</div>
-                <div style={{fontSize:11.5,color:"rgba(255,255,255,0.75)",marginTop:2}}>{active.cc}</div>
-              </div>
-              <div style={{fontSize:15,fontWeight:800,color:"#fff"}}>{active.pct}%</div>
-            </div>
-            <div style={{height:6,background:"rgba(255,255,255,0.25)",borderRadius:99,overflow:"hidden",marginBottom:14}}>
-              <div style={{height:"100%",width:`${active.pct}%`,background:"#fff",borderRadius:99}}/>
-            </div>
-            <button onClick={()=>onNav("subjective")} style={{
-              width:"100%",padding:"11px",background:"rgba(255,255,255,0.16)",border:"1px solid rgba(255,255,255,0.3)",
-              borderRadius:11,color:"#fff",fontWeight:800,fontSize:"0.82rem",cursor:"pointer",
-            }}>Continue Assessment →</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── AI Assistant ── */}
-      <div style={{marginBottom:26}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-          <SectionLabel>AI Assistant</SectionLabel>
-          <span style={{fontSize:9,fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",
-            borderRadius:99,padding:"1px 8px",textTransform:"uppercase",letterSpacing:"0.4px",marginBottom:8}}>New</span>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>
-          {AI_ASSISTANT.map(a=>(
-            <button key={a.label} onClick={a.action} style={{
-              background:"#faf5ff",border:"1px solid #E9D5FF",borderRadius:13,padding:"13px 12px",
-              display:"flex",alignItems:"center",gap:9,cursor:"pointer",textAlign:"left",
-            }}>
-              <span style={{fontSize:"1.1rem"}}>{a.icon}</span>
-              <span style={{fontSize:"0.78rem",fontWeight:700,color:"#111827"}}>{a.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Clinical Tools ── */}
-      <div style={{marginBottom:26}}>
-        <SectionLabel>Clinical Tools</SectionLabel>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:10}}>
-          {CLINICAL_TOOLS.map(t=>(
-            <button key={t.label} onClick={()=>onNav(t.nav)} style={{
-              background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"14px 8px",
-              display:"flex",flexDirection:"column",alignItems:"center",gap:7,cursor:"pointer",
-            }}>
-              <span style={{fontSize:"1.2rem"}}>{t.icon}</span>
-              <span style={{fontSize:"0.72rem",fontWeight:700,color:"#374151",textAlign:"center"}}>{t.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Clinical Areas (trimmed -- no dead-end "SOON" buttons) ── */}
-      <div style={{marginBottom:26}}>
-        <SectionLabel>Clinical Areas</SectionLabel>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
-          <button onClick={()=>onNav("subjective")} style={{
-            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
-            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
-          }}>🦴 Old Ortho</button>
-          <button onClick={()=>onNav("ortho_new_assessment")} style={{
-            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
-            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
-          }}>🦴 Ortho Assessment</button>
-          <button onClick={()=>onNav("neuro")} style={{
-            padding:"10px 18px",background:"#fff",border:"1px solid #E5E7EB",borderRadius:11,
-            color:"#111827",fontWeight:700,fontSize:"0.8rem",cursor:"pointer",
-          }}>🧠 Neuro</button>
-          <span style={{fontSize:"0.75rem",color:"#9CA3AF",fontWeight:600}}>More specialties coming soon</span>
-        </div>
-      </div>
-
-      {/* ── PhysioMind Evidence ── */}
-      <div style={{marginBottom:24}}>
-        <SectionLabel>PhysioMind Evidence</SectionLabel>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {EVIDENCE.map(e=>(
-            <a key={e.title} href={e.url} target="_blank" rel="noopener noreferrer"
-              style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:13,padding:"13px 14px",
-              display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,
-              textDecoration:"none",cursor:"pointer"}}>
-              <div>
-                <div style={{fontSize:"0.85rem",fontWeight:700,color:"#111827",lineHeight:1.35,marginBottom:4}}>{e.title}</div>
-                <div style={{fontSize:"0.72rem",color:"#9CA3AF"}}>{e.source} · {e.date} · {e.tag}</div>
-              </div>
-              <span style={{fontSize:9,fontWeight:800,color:"#7c3aed",background:"#f5f3ff",border:"1px solid #ddd6fe",
-                borderRadius:99,padding:"1px 8px",textTransform:"uppercase",letterSpacing:"0.4px",flexShrink:0}}>{e.badge}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Ad slot -- a real reserved placement, not a fabricated ad. No
-          monetization/ad partner exists yet, so this stays a clearly-labelled
-          empty slot rather than fake product content. ── */}
-      <div style={{background:"#F9FAFB",border:"1px dashed #E5E7EB",borderRadius:14,padding:"18px",
-        textAlign:"center",marginBottom:8}}>
-        <div style={{fontSize:9.5,fontWeight:800,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:4}}>Advertisement</div>
-        <div style={{fontSize:"0.75rem",color:"#C4C4C4"}}>Reserved ad placement — no active partner yet</div>
       </div>
 
     </div>
