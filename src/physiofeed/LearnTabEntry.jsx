@@ -88,7 +88,7 @@ function Section({ title, items, onNav, onStudy }) {
   return (
     <div className="mb-6">
       <div className="font-semibold text-slate-900 mb-3">{title}</div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((item) => <Card key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
       </div>
     </div>
@@ -115,14 +115,14 @@ export default function LearnTabEntry({ onNav }) {
 
   if (studyType) {
     return (
-      <div className="physiofeed-root max-w-2xl mx-auto">
+      <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
         <StudyMode type={studyType} onBack={() => setStudyType(null)}/>
       </div>
     );
   }
 
   return (
-    <div className="physiofeed-root max-w-2xl mx-auto">
+    <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-1">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Learn</h1>
