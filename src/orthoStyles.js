@@ -15,7 +15,7 @@ export function orthoStyles() {
           justify-content: center;
         }
         .app-inner {
-          width: 100%; max-width: 480px; height: 100dvh; display: flex; flex-direction: column;
+          width: 100%; max-width: 480px; height: calc(100dvh - 60px); display: flex; flex-direction: column;
           background: #fff; position: fixed; top: 0; left: 50%; transform: translateX(-50%);
           overflow: hidden; z-index: 1000;
         }
@@ -93,8 +93,8 @@ export function orthoStyles() {
            (60vw x 60vh, capped 480x640) -- was previously a full-width
            bottom sheet growing to 82vh, which felt oversized next to the
            Cardio/Neuro card for the same "How to Perform" content. */
-        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; animation: sheetFade .15s ease; }
-        .sheet-panel { position: relative; z-index: 71; background: #fff; border-radius: 22px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); width: 60vw; height: 60vh; max-width: 480px; max-height: 640px; min-width: 300px; min-height: 380px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(40,10,90,.35); animation: sheetPop .18s cubic-bezier(.2,.9,.3,1); }
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 1070; display: flex; align-items: center; justify-content: center; padding: 16px; animation: sheetFade .15s ease; }
+        .sheet-panel { position: relative; z-index: 1071; background: #fff; border-radius: 22px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); width: 60vw; height: 60vh; max-width: 480px; max-height: 640px; min-width: 300px; min-height: 380px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(40,10,90,.35); animation: sheetPop .18s cubic-bezier(.2,.9,.3,1); }
         .sheet-scroll { flex: 1; overflow-y: auto; min-height: 0; }
         @keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes sheetPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
@@ -255,6 +255,7 @@ export function orthoStyles() {
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
 
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
+        .row-2 > * { flex: 1; min-width: 0; }
 
         .textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
 

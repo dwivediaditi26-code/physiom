@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * InfoCard — one reusable ⓘ learning-card shell.
@@ -16,7 +17,7 @@ export default function InfoCard({ data, onClose }) {
 
   if (!data) return null;
 
-  return (
+  return createPortal(
     <div style={s.dim} onClick={onClose}>
       <div style={s.sheet} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
@@ -61,7 +62,8 @@ export default function InfoCard({ data, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

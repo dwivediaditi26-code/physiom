@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -157,9 +158,8 @@ export function InfoButton(props) {
       <button type="button" className={props.label ? "info-btn-full" : "info-btn"} onClick={openSheet}>
         ⓘ {props.label || ""}
       </button>
-      {open && (
-        <>
-          <div className="sheet-backdrop" onClick={() => setOpen(false)} />
+      {open && createPortal(
+        <div className="sheet-backdrop" onClick={() => setOpen(false)}>
           <div className="sheet-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-head">
               <span className="sheet-eyebrow">{eyebrow}</span>
@@ -181,7 +181,8 @@ export function InfoButton(props) {
               )}
             </div>
           </div>
-        </>
+        </div>,
+        document.body
       )}
     </span>
   );
