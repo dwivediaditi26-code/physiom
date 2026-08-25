@@ -512,6 +512,17 @@ const FEED_TABS = [
 
 function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser }) {
   const [feedTab, setFeedTab] = useState("foryou");
+  // Home was a fixed 640px mobile column even on laptop/desktop widths,
+  // leaving large empty gutters either side of the sidebar-plus-content
+  // shell (2026-08-25, laptop redesign). Widen the content column itself
+  // on real desktop widths -- the tile/quick-access grids are already
+  // repeat(4,1fr) so they fill the extra width without restructuring.
+  const [isDesktop, setIsDesktop] = useState(typeof window!=="undefined" && window.innerWidth>=1100);
+  useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth>=1100);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
 
   const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
   const firstName = currentUser?.user_metadata?.full_name?.split(" ")[0] || "Aditi";
@@ -539,7 +550,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   ];
 
   return (
-    <div style={{maxWidth:640, margin:"0 auto", fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
+    <div style={{maxWidth: isDesktop?1100:640, margin:"0 auto", fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif"}}>
 
       {/* ── Greeting card ── */}
       <div style={{
@@ -559,13 +570,13 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
       <div className="pm-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:18}}>
         {TILES.map(t=>(
           <button key={t.key} onClick={t.action} style={{
-            background:"#fff", border:"1px solid #EDEDF2", borderRadius:16, padding:"12px 8px",
+            background:"#fff", border:"1px solid #EDEDF2", borderRadius:16, padding: isDesktop?"18px 16px":"12px 8px",
             display:"flex", flexDirection:"column", alignItems:"flex-start", gap:7, textAlign:"left",
-            cursor:"pointer", boxShadow:"0 1px 4px rgba(16,24,40,0.04)", minHeight:126,
+            cursor:"pointer", boxShadow:"0 1px 4px rgba(16,24,40,0.04)", minHeight: isDesktop?150:126,
           }}>
-            <div style={{width:34,height:34,borderRadius:10,background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>{t.icon}</div>
-            <div style={{fontSize:11.5,fontWeight:800,color:"#111827",lineHeight:1.2}}>{t.title}</div>
-            <div style={{fontSize:9,color:"#9A9AA2",lineHeight:1.3}}>{t.sub}</div>
+            <div style={{width: isDesktop?40:34,height: isDesktop?40:34,borderRadius:10,background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize: isDesktop?18:15}}>{t.icon}</div>
+            <div style={{fontSize: isDesktop?13:11.5,fontWeight:800,color:"#111827",lineHeight:1.2}}>{t.title}</div>
+            <div style={{fontSize: isDesktop?10.5:9,color:"#9A9AA2",lineHeight:1.3}}>{t.sub}</div>
             <span style={{marginTop:"auto",alignSelf:"flex-end",color:"#C7C7CE",fontSize:13}}>›</span>
           </button>
         ))}

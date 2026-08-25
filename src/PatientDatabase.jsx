@@ -3892,10 +3892,32 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 //    only: id/dx/updatedAt are the same fields PatientCard already reads,
 //    just displayed differently. Delete is a small X (secondary, matches
 //    the mockup's clean row) instead of a full button. --
-function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile }) {
+function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile, isDesktop }) {
   const pid = patient?.id ? "PT-" + patient.id.slice(0,6).toUpperCase() : "";
   const dx = patient.lastDx || "No diagnosis yet";
   const day = relativeDay(patient.updatedAt);
+  // Desktop: actions sit inline on the same row as the avatar/name, sized
+  // to their content -- the mobile layout's flex:1 buttons stretched into
+  // enormous touch-target-width bars once the row itself got wide on a
+  // laptop screen (2026-08-25, laptop redesign).
+  const actions = (
+    <>
+      <button onClick={onEdit} style={{
+        padding: isDesktop?"7px 14px":"7px 10px",borderRadius:8,border:"none",background:"#7c3aed",
+        color:"#fff",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
+        flex: isDesktop?"0 0 auto":1,
+        display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+        ✏️ Edit Assessment
+      </button>
+      <button onClick={onProfile} style={{
+        padding: isDesktop?"7px 14px":"7px 10px",borderRadius:8,border:"1px solid #E5E7EB",background:"#fff",
+        color:"#374151",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
+        flex: isDesktop?"0 0 auto":1,
+        display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+        👤 Profile
+      </button>
+    </>
+  );
   return (
     <div style={{
       padding:"10px 4px", borderBottom:"1px solid #F1F0FA",
@@ -3918,6 +3940,7 @@ function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile }) {
             {pid} · {dx}
           </div>
         </div>
+        {isDesktop && <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>{actions}</div>}
         <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
           <button onClick={onDelete} title="Delete" style={{
@@ -3930,21 +3953,13 @@ function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile }) {
           itself now decides which profile that means (see the call site
           below) -- Cardio/Neuro patients get the simple specialty hub,
           everyone else gets the existing Ortho profile -- rather than
-          showing a confusing extra third button. */}
-      <div style={{display:"flex",gap:8,marginTop:8,marginLeft:56}}>
-        <button onClick={onEdit} style={{
-          flex:1,padding:"7px 10px",borderRadius:8,border:"none",background:"#7c3aed",
-          color:"#fff",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-          ✏️ Edit Assessment
-        </button>
-        <button onClick={onProfile} style={{
-          flex:1,padding:"7px 10px",borderRadius:8,border:"1px solid #E5E7EB",background:"#fff",
-          color:"#374151",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",
-          display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-          👤 Profile
-        </button>
-      </div>
+          showing a confusing extra third button. Desktop renders these
+          inline above instead (see `actions`/isDesktop). */}
+      {!isDesktop && (
+        <div style={{display:"flex",gap:8,marginTop:8,marginLeft:56}}>
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
@@ -3960,6 +3975,15 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // Patient"/"Load Patient" buttons (embedded left false there), so
   // this stays backward compatible rather than a hard cutover.
   const closePanel = embedded ? (()=>{}) : onCloseProp;
+  // Recent Patients rows switch to a compact single-row desktop layout at
+  // this width instead of the mobile card's full-width stacked action
+  // buttons (2026-08-25, laptop redesign) -- see PatientRowCompact.
+  const [isDesktop, setIsDesktop] = useState(typeof window!=="undefined" && window.innerWidth>=1100);
+  useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth>=1100);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
@@ -4170,6 +4194,7 @@ const innerBody = (
                 key={p.id}
                 patient={p}
                 isActive={p.id === activeId}
+                isDesktop={isDesktop}
                 // Route by specialty, same as onProfile below -- a Cardio/
                 // Neuro patient's own assessment lives in its own wizard,
                 // not Ortho's Demographics step (Aditi: "click on rahul
