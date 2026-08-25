@@ -5398,13 +5398,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       {/* Tab bar */}
       {(measurements||capturedImg)&&(
-        <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",position: isWide?"sticky":"static",top:0,zIndex:5}}>
-          {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","⚕ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
-            <button key={t} onClick={()=>setTab(t)}
-              style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
-              {label}
+        <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",alignItems:"stretch",position: isWide?"sticky":"static",top:0,zIndex:5}}>
+          <div style={{display:"flex",flex:1,overflowX:"auto"}}>
+            {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","⚕ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
+              <button key={t} onClick={()=>setTab(t)}
+                style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* PDF export — single-photo mode had no way to reach the report
+              modal at all (2026-08-25, user feedback); multi-view already
+              has its own "📄 PDF" button in the composite report header. */}
+          {findings.length>0 && scoreData && (
+            <button onClick={()=>setShowReportModal(true)}
+              style={{flexShrink:0,padding:"0 14px",border:"none",borderLeft:`1px solid ${PC.border}`,background:"transparent",color:PC.accent,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+              📄 PDF
             </button>
-          ))}
+          )}
         </div>
       )}
 
@@ -6157,16 +6168,28 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     fileInputRef.current?.click();
   }
 
-  // "Start New Analysis" -- resets every in-progress capture across all views,
-  // same clearing handleClearMv already does for the composite plus the
-  // single-photo state selectViewForCapture clears per-view.
-  function handleStartNewAnalysis() {
-    handleClearMv();
-    setUploadedImg(null); setRawUploadedImg(null);
-    setLandmarks(null); setMeasurements(null); setFindings([]); setScoreData(null); setReliability(null);
-    resetManual();
-    setView("anterior");
-    setError(null);
+  // Deselects the currently loaded photo for the active view (wrong photo
+  // picked by mistake) -- clears it back to the empty "no image" state
+  // instead of forcing either a replacement pick or a full Start New
+  // Analysis reset of every other captured view.
+  function handleRemovePhoto(key) {
+    const targetKey = key || view;
+    setMvResults(prev => {
+      if (!prev[targetKey]) return prev;
+      const next = {...prev};
+      delete next[targetKey];
+      return next;
+    });
+    // Only clear the live capture-screen state (the photo currently on
+    // screen) when removing the view that's actually loaded there --
+    // clearing a *different* view's saved thumbnail shouldn't blank out
+    // whatever the user is currently looking at.
+    if (targetKey === view) {
+      setUploadedImg(null); setRawUploadedImg(null);
+      setLandmarks(null); setMeasurements(null); setFindings([]); setScoreData(null); setReliability(null);
+      resetManual();
+      setError(null);
+    }
   }
 
   function handleContinueToAnalysis() {
@@ -6362,16 +6385,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       {/* ── Redesigned entry screen (2026-08-21) ─────────────────────────── */}
       <div style={{padding: isWide?"16px 20px":"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
 
-        {/* Hero card */}
-        <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",flexDirection:"column",gap:12}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
-            <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
-          </div>
-          <button onClick={handleStartNewAnalysis}
-            style={{width:"100%",padding:isWide?"13px":"11px",borderRadius:12,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",fontWeight:800,fontSize:isWide?"0.88rem":"0.8rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            📷 Start New Analysis
-          </button>
+        {/* Hero card — "Start New Analysis" button removed (2026-08-25, user
+            feedback): redundant with the per-view "+ Add Photo" cards below,
+            and its full-reset (wiping every already-captured view) sitting
+            right above the patient picker was confusing, not a way to fix a
+            single wrong photo. */}
+        <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
+          <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
         </div>
 
         {/* AI Auto / Manual Points toggle — global preference; only takes
@@ -6434,9 +6455,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               return(
                 <div key={key} onClick={()=>selectViewForCapture(key)}
                   style={{flex:"1 1 calc(50% - 5px)",minWidth:120,borderRadius:14,border:`1.5px solid ${active?PC.accent:done?PC.green:PC.border}`,background:active?`${PC.accent}0a`:PC.surface,cursor:"pointer",overflow:"hidden"}}>
-                  <div style={{padding:isWide?"14px 10px 10px":"12px 8px 8px",textAlign:"center"}}>
+                  <div style={{padding:isWide?"14px 10px 10px":"12px 8px 8px",textAlign:"center",position:"relative"}}>
                     {done ? (
-                      <img src={mvResults[key].img} alt={meta.label} style={{width:"100%",height:56,objectFit:"cover",borderRadius:8,display:"block",marginBottom:6}}/>
+                      <>
+                        <img src={mvResults[key].img} alt={meta.label} style={{width:"100%",height:56,objectFit:"cover",borderRadius:8,display:"block",marginBottom:6}}/>
+                        {/* Deselect this view's photo without opening the file
+                            picker to replace it or resetting every other view. */}
+                        <button type="button" onClick={(e)=>{e.stopPropagation(); handleRemovePhoto(key);}}
+                          title="Remove photo" aria-label={`Remove ${meta.label} photo`}
+                          style={{position:"absolute",top:6,right:6,width:22,height:22,borderRadius:"50%",border:"none",background:"rgba(0,0,0,0.6)",color:"#fff",fontSize:"0.7rem",fontWeight:800,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+                          ✕
+                        </button>
+                      </>
                     ) : (
                       <div style={{fontSize:"1.6rem",marginBottom:4}}>{meta.icon}</div>
                     )}
@@ -6567,6 +6597,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
+
+            {/* Wrong photo picked -- one-tap deselect back to the empty
+                state for this view, instead of only being able to replace
+                it or wipe every other captured view via Start New Analysis
+                (2026-08-25, user feedback). */}
+            {uploadedImg && !analysing && (
+              <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+                <button type="button" onClick={handleRemovePhoto}
+                  style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${PC.red}30`,background:"rgba(220,38,38,0.06)",color:PC.red,fontWeight:700,fontSize:"0.75rem",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                  ✕ Remove Photo
+                </button>
+              </div>
+            )}
 
             {/* Manual mode */}
             {inputMode==="manual"&&uploadedImg&&(view==="anterior"||view==="posterior"||view==="back")&&(
