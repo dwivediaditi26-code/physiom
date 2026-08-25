@@ -1935,7 +1935,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
-                <div style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
+                <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
                     // "More details" styling -- plain white, matches the
                     // core-fields look above instead of the old lavender
@@ -2062,7 +2062,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   })()}
                 </div>
               ):tests==="SUBJECTIVE_MODULE"?(
-                <div>
+                <div className="pm-form-panel">
                   {/* 2026-08-19: swapped in the simplified redesign at Aditi's
                       request (real patient data now, via data/set -- same
                       props the old SubjectiveModule used, so autosave/
@@ -2083,19 +2083,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <Suspense fallback={<TabFallback/>}><LazySubjectiveNew data={data} set={set}/></Suspense>
                 </div>
               ):tests==="PALPATION_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="palpation"?navContext:{}}/></Suspense>
+                <div className="pm-form-panel"><Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="palpation"?navContext:{}}/></Suspense></div>
               ):tests==="POSTURE_DEFECT_MODULE"?(
                 <PostureDefectModule/>
               ):tests==="OBSERVATION_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyObservation data={data} set={set} navContext={active==="observation"?navContext:{}}/></Suspense>
-                </>
+                </div>
               ):tests==="CYRIAX_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazySTT data={data} set={set} navContext={active==="cyriax"?navContext:{}}/></Suspense>
-                </>
+                </div>
               ):tests==="SPECIAL_TESTS_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazySpecial data={data} set={set} navContext={active==="special"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -2104,7 +2104,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     Continue SOAP →
                   </button>
                 </div>
-              </>
+              </div>
               ):tests==="NKT_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyCPA data={data} set={set} navContext={active==="nkt"?navContext:{}}/></Suspense>
@@ -2126,7 +2126,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <Suspense fallback={<TabFallback/>}><LazyCyriaxRegion data={data} set={set}/></Suspense>
                 </>
               ):tests==="NEURO_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyNeuro data={data} set={set} navTo={navTo} navContext={active==="neuro"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -2135,7 +2135,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     Continue SOAP →
                   </button>
                 </div>
-              </>
+              </div>
               ):tests==="NEURO_TEMPLATES_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyNeuroTemplates data={data} navTo={navTo} navContext={active==="neurotemplates"?navContext:{}}/></Suspense>
               ):tests==="GAIT_MODULE"?(
@@ -2143,7 +2143,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 <Suspense fallback={<TabFallback/>}><LazyGait data={data} set={set}/></Suspense>
                 </>
               ):tests==="MMT_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyMMT data={data} set={set} navContext={active==="mmt"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -2152,9 +2152,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     Continue SOAP →
                   </button>
                 </div>
-              </>
+              </div>
               ):tests==="ROM_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
+                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyROM data={data} set={set} navContext={active==="rom"?navContext:{}}/></Suspense>
                 {/* ── Done → Continue SOAP bar ── */}
                 <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -2163,7 +2163,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     Continue SOAP →
                   </button>
                 </div>
-              </>
+              </div>
               ):tests==="OUTCOME_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set} navTo={navTo} navContext={active==="outcome"?navContext:{}}/></Suspense>

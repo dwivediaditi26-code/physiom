@@ -181,6 +181,16 @@ const MOBILE_CSS = `
   @media (min-width: 480px) { .pm-main { padding: 20px 20px 0 20px; } }
   @media (min-width: 640px) { .pm-main { padding: 28px 32px; } }
 
+  /* ── Form-style single-column panels (Demographics and similar plain
+     stacked-field screens) -- .pm-main itself has no max-width (it's the
+     shared wrapper for screens that DO want full width, like Clinical's
+     patient list or Posture's own two-panel layout), so on a laptop this
+     was a single text input stretched edge-to-edge across the whole
+     content pane. Opt individual form screens into a comfortable capped
+     width instead of changing .pm-main itself (2026-08-25, laptop
+     redesign). Mobile/tablet unaffected below 1100px. */
+  @media (min-width: 1100px) { .pm-form-panel { max-width: 820px; } }
+
   /* ── Body wrapper ── */
   .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: hidden; }
 

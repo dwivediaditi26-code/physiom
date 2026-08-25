@@ -324,7 +324,7 @@ function FieldRow({
   onSelectOption,
 }) {
   const taRef = useRef(null);
-  const hasValue = value && value.trim().length > 0;
+  const hasValue = typeof value === "string" && value.trim().length > 0;
   const leftAlign = isEditing || hasValue;
 
   useEffect(() => {
@@ -451,7 +451,7 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
   // field -- the Body Regions step does -- so it's excluded here.
   const totalFields = SECTIONS.reduce((n, s) => n + s.fields.length, 0) + (connected ? 0 : 1);
   const completed =
-    Object.values(values).filter((v) => v && v.trim()).length + (connected ? 0 : selectedRegion ? 1 : 0);
+    Object.values(values).filter((v) => typeof v === "string" && v.trim()).length + (connected ? 0 : selectedRegion ? 1 : 0);
 
   function showToast(msg) {
     setToast(msg);
