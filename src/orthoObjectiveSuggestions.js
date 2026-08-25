@@ -26,8 +26,10 @@ function isSpineRegion(selectedRegions) {
 
 /* Returns [{ id, reason }] — id is one of the Outpatient pathway's
    OPTIONAL_IDS. Order is suggestion priority, duplicates removed
-   (first reason wins). */
-export function suggestObjectiveTests({ subjective = {}, condition, selectedRegions = [] } = {}) {
+   (first reason wins). `pain` is optional -- also read so suggestions
+   reflect what AI intake (or the therapist) recorded on the Pain step,
+   not just free text typed into Subjective. */
+export function suggestObjectiveTests({ subjective = {}, pain = {}, condition, selectedRegions = [] } = {}) {
   const out = [];
   const seen = new Set();
   function add(id, reason) {
@@ -44,12 +46,17 @@ export function suggestObjectiveTests({ subjective = {}, condition, selectedRegi
 
   const complaint = subjective.chiefComplaint;
   const aggravating = subjective.aggravating;
+  const painCharacter = pain.character;
 
   if (includesAny(complaint, ["swelling"])) add("edema", "Chief complaint mentions swelling");
   if (includesAny(complaint, ["instability", "reduced mobility", "stiffness"])) add("jointMobility", "Chief complaint suggests a joint mobility restriction or instability");
-  if (includesAny(complaint, ["numbness", "tingling"])) {
+  if (includesAny(complaint, ["numbness", "tingling"]) || includesAny(painCharacter, ["burning", "shooting", "stabbing"])) {
     add("specialTests", "Neuro-type symptoms reported — dermatomal/dural signs worth screening");
-    add("sttt", "Numbness/tingling warrants a soft-tissue/neural tension screen (Cyriax/STTT)");
+    add("sttt", "Neuro-type symptoms warrant a soft-tissue/neural tension screen (Cyriax/STTT)");
+    add("neuroScreen", "Neuro-type pain quality reported — quick myotome/dermatome/reflex screen worth running");
+  }
+  if (pain.pattern === "Night pain") {
+    add("outcomeMeasure", "Night pain reported — worth tracking severity/progress with a baseline outcome score");
   }
 
   if (isSpineRegion(selectedRegions)) {

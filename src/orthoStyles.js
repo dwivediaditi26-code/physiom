@@ -95,6 +95,18 @@ export function orthoStyles() {
         .collapsible-chevron { transition: transform 0.15s; }
         .collapsible-chevron.open { transform: rotate(180deg); }
 
+        .ai-intake-toggle { width: 100%; padding: 12px; margin-bottom: 14px; border: 1.5px dashed ${BRAND.purple}; border-radius: 12px; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .ai-intake-panel { border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px; margin-bottom: 16px; background: linear-gradient(180deg, ${BRAND.purpleFaint}, #fff 60%); }
+        .ai-intake-head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: 13.5px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+        .ai-intake-textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 10px; padding: 10px; font-size: 13px; font-family: inherit; outline: none; resize: vertical; margin: 8px 0; }
+        .ai-intake-actions { display: flex; gap: 8px; margin-top: 8px; }
+        .ai-intake-actions .primary-btn, .ai-intake-actions .ghost-btn { flex: 1; }
+        .ai-intake-error { margin-top: 8px; padding: 8px 10px; background: #FDECEC; border: 1px solid #F7D3D3; border-radius: 8px; color: #B91C1C; font-size: 12px; }
+        .ai-intake-review { margin-top: 4px; }
+        .ai-intake-row { font-size: 12.5px; color: ${BRAND.ink}; padding: 5px 0; border-top: 1px solid #EDE4FB; line-height: 1.5; }
+        .ai-intake-row:first-of-type { border-top: none; }
+        .ai-intake-flag { color: #B91C1C; }
+
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }

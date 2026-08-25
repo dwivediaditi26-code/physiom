@@ -17,8 +17,8 @@ export default function OrthoSuggestObjectiveStep({ data, selectedRegions, condi
   const [q, setQ] = useState("");
 
   const suggestions = useMemo(
-    () => suggestObjectiveTests({ subjective: data.subjective || {}, condition, selectedRegions }),
-    [data.subjective, condition, selectedRegions]
+    () => suggestObjectiveTests({ subjective: data.subjective || {}, pain: data.pain || {}, condition, selectedRegions }),
+    [data.subjective, data.pain, condition, selectedRegions]
   );
   const suggestedIds = new Set(suggestions.map((s) => s.id));
   const libraryById = Object.fromEntries(library.map((it) => [it.id, it]));

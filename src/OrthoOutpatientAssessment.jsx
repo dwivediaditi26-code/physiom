@@ -176,7 +176,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth }) {
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -323,7 +323,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
 
         <div className="content">
           {current.id === "demographics" && <DemographicsSection data={data} setData={setData} />}
-          {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
+          {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} requireAuth={requireAuth} />}
           {current.id === "redFlags" && <RedFlagScreenSection data={data} setData={setData} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}

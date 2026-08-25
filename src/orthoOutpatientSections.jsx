@@ -8,6 +8,10 @@ import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
 // as Pain's body chart: large, self-contained, only needed once opened.
 const LazyPalpationModule = lazy(() => import("./lazy_palpation.jsx"));
 
+// AI text/voice intake for Subjective -- lazy-loaded since most sessions
+// won't open it, and it pulls in its own fetch/speech-recognition logic.
+const LazyOrthoAIIntakePanel = lazy(() => import("./OrthoAIIntakePanel.jsx"));
+
 /* ============================================================
    Outpatient / Musculoskeletal — sections specific to the full
    first-visit OPD assessment. These are NOT shared with IPD or
@@ -90,11 +94,26 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth }) {
   const [d, set] = useSectionData(data, setData, "subjective");
+
+  // AI intake writes into both Subjective and Pain in one go -- it needs
+  // the wizard's top-level setData, not this section's own scoped `set`
+  // (which can only ever touch data.subjective).
+  function applyAiUpdates(updates) {
+    setData((prev) => ({
+      ...prev,
+      subjective: { ...prev.subjective, ...updates.subjective },
+      pain: { ...prev.pain, ...updates.pain },
+    }));
+  }
+
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
+      <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
+        <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} />
+      </Suspense>
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       <div className="row-2">
         <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
