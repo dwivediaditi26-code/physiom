@@ -5087,13 +5087,69 @@ function injectViewerControls(html) {
   return html + bar;
 }
 
+// Renders the report HTML off-screen (never shown to the user — no preview
+// tab, no patient data visible on any intermediate page) and saves a real
+// .pdf file straight to the device. Reports built as discrete `.page` boxes
+// (e.g. PostureAI's clinical report) render one canvas per page for a
+// pixel-accurate fit; everything else (makePDFPage/PDF_BASE_STYLES reports,
+// which rely on browser print pagination) renders as one tall canvas that
+// gets sliced into A4-height chunks.
 async function downloadPDFFromHTML(html, filename) {
-  // Mobile-safe strategy: Blob URL → new tab → auto print
-  // Works on iOS Safari, Android Chrome, and desktop browsers.
-  // iframe approach is blocked by Safari CSP; window.open with Blob is not.
-  return new Promise((resolve) => {
+  let container = null;
+  try {
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas'),
+    ]);
+
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+    container = document.createElement('div');
+    container.style.cssText = 'position:fixed;top:0;left:-99999px;z-index:-1;background:#fff;';
+    parsed.head.querySelectorAll('style').forEach((s) => container.appendChild(s.cloneNode(true)));
+    const bodyWrap = document.createElement('div');
+    bodyWrap.innerHTML = parsed.body.innerHTML;
+    container.appendChild(bodyWrap);
+    document.body.appendChild(container);
+
+    // Let fonts/images/layout settle before snapshotting.
+    await new Promise((res) => setTimeout(res, 60));
+
+    const A4W_MM = 210, A4H_MM = 297;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageNodes = Array.from(bodyWrap.querySelectorAll(':scope > .page'));
+    const renderPerPage = pageNodes.length > 0;
+    const nodesToRender = renderPerPage ? pageNodes : [bodyWrap];
+
+    for (let i = 0; i < nodesToRender.length; i++) {
+      const canvas = await html2canvas(nodesToRender[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+
+      if (renderPerPage) {
+        if (i > 0) pdf.addPage();
+        const heightMm = Math.min(A4H_MM, (canvas.height / canvas.width) * A4W_MM);
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, A4W_MM, heightMm, undefined, 'FAST');
+      } else {
+        const pxPerMm = canvas.width / A4W_MM;
+        const pageHeightPx = Math.round(A4H_MM * pxPerMm);
+        const totalPages = Math.max(1, Math.ceil(canvas.height / pageHeightPx));
+        for (let p = 0; p < totalPages; p++) {
+          const sliceHeightPx = Math.min(pageHeightPx, canvas.height - p * pageHeightPx);
+          const slice = document.createElement('canvas');
+          slice.width = canvas.width;
+          slice.height = sliceHeightPx;
+          slice.getContext('2d').drawImage(canvas, 0, -p * pageHeightPx);
+          if (p > 0 || i > 0) pdf.addPage();
+          pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, A4W_MM, sliceHeightPx / pxPerMm, undefined, 'FAST');
+        }
+      }
+    }
+
+    pdf.save(filename);
+  } catch (e) {
+    console.error('PDF export error:', e);
+    // Last-resort fallback for browsers where canvas rendering fails:
+    // previous print-tab flow.
     try {
-      // Inject auto-print script into the HTML before creating blob
       const htmlWithCtrls = injectViewerControls(html);
       const printReady = htmlWithCtrls.replace(
         '</body>',
@@ -5101,7 +5157,6 @@ async function downloadPDFFromHTML(html, filename) {
           window.addEventListener('load', function() {
             setTimeout(function() {
               window.print();
-              // On mobile, print dialog close can't be detected — resolve after delay
               setTimeout(function() { try { window.close(); } catch(e){} }, 2000);
             }, 600);
           });
@@ -5111,27 +5166,21 @@ async function downloadPDFFromHTML(html, filename) {
       const blobUrl = URL.createObjectURL(blob);
       const tab = window.open(blobUrl, '_blank');
       if (tab) {
-        // Revoke blob URL after tab has loaded
-        tab.addEventListener('load', () => {
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-        });
-        // Fallback revoke
         setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
-        resolve();
       } else {
-        // Popup blocked — offer direct download of HTML as fallback
         const a = document.createElement('a');
         a.href = blobUrl;
         a.download = filename.replace('.pdf', '.html');
         document.body.appendChild(a);
         a.click();
-        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); resolve(); }, 1000);
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 1000);
       }
-    } catch(e) {
-      console.error('PDF export error:', e);
-      resolve();
+    } catch (e2) {
+      console.error('PDF export fallback error:', e2);
     }
-  });
+  } finally {
+    if (container && container.parentNode) container.parentNode.removeChild(container);
+  }
 }
 
 // ── Shared page styles ─────────────────────────────────────────────────────
