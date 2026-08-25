@@ -5419,6 +5419,20 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         </div>
       )}
 
+      {/* Desktop empty state — on wide screens this right-hand panel was
+          just blank white space until a photo had been captured and a tab
+          explicitly selected (2026-08-25, laptop redesign: the empty gap
+          next to the capture panel looked broken rather than "nothing here
+          yet"). Mobile doesn't need this -- there the toggle bar already
+          makes clear Results is a separate, currently-empty panel. */}
+      {isWide && !measurements && !capturedImg && (
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",minHeight:420,padding:"40px 24px",textAlign:"center",color:PC.muted}}>
+          <div style={{fontSize:"3rem",marginBottom:14,opacity:0.45}}>📊</div>
+          <div style={{fontWeight:800,fontSize:"1rem",color:PC.text,marginBottom:6}}>Findings will appear here</div>
+          <div style={{fontSize:"0.82rem",maxWidth:340,lineHeight:1.6}}>Capture or upload a photo on the left — AI landmarks, posture findings, and a clinical report will show up in this panel.</div>
+        </div>
+      )}
+
       {/* Findings tab — no measurements yet */}
       {tab==="findings"&&!measurements&&(
         <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
@@ -6380,19 +6394,57 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   );
 
   const leftPanel = (
-    <div style={{display:"flex",flexDirection:"column",flex: isWide?"0 0 480px":"1",minWidth:0,borderRight: isWide?`1px solid ${PC.border}`:"none",overflowY: isWide?"hidden":"auto"}}>
+    <div style={{display:"flex",flexDirection:"column",flex: isDesktop?"0 0 560px":isWide?"0 0 480px":"1",minWidth:0,borderRight: isWide?`1px solid ${PC.border}`:"none",overflowY: isWide?"hidden":"auto"}}>
 
       {/* ── Redesigned entry screen (2026-08-21) ─────────────────────────── */}
       <div style={{padding: isWide?"16px 20px":"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
 
-        {/* Hero card — "Start New Analysis" button removed (2026-08-25, user
-            feedback): redundant with the per-view "+ Add Photo" cards below,
-            and its full-reset (wiping every already-captured view) sitting
-            right above the patient picker was confusing, not a way to fix a
-            single wrong photo. */}
-        <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
-          <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
+        {/* Hero + Patient — side by side on real desktop widths (2026-08-25,
+            laptop redesign) instead of stacked, since 560px+ has the room and
+            stacking them wasted vertical space above the fold before the
+            Select Views grid was even visible. Stay stacked below that. */}
+        <div style={{display: isDesktop?"grid":"flex",gridTemplateColumns: isDesktop?"1fr 1fr":undefined,flexDirection: isDesktop?undefined:"column",gap:14}}>
+          {/* Hero card — "Start New Analysis" button removed (2026-08-25, user
+              feedback): redundant with the per-view "+ Add Photo" cards below,
+              and its full-reset (wiping every already-captured view) sitting
+              right above the patient picker was confusing, not a way to fix a
+              single wrong photo. */}
+          <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
+            <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
+          </div>
+
+          {/* Patient — two explicit actions (2026-08-21, user feedback: a
+              single row that silently opened the whole Clinical drawer wasn't
+              clear that "add a new one" and "pick an existing one" are two
+              different things). */}
+          <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSelectPatient||onAddNewPatient)?10:0}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
+                <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:activePatient?PC.muted:PC.red,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {activePatient?.name || "No patient selected"}
+                </div>
+              </div>
+            </div>
+            {(onAddNewPatient||onSelectPatient) && (
+              <div style={{display:"flex",gap:8}}>
+                {onAddNewPatient && (
+                  <button onClick={onAddNewPatient}
+                    style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.accent}30`,background:`${PC.accent}0d`,color:PC.accent,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                    + Add New Patient
+                  </button>
+                )}
+                {onSelectPatient && (
+                  <button onClick={()=>setShowPatientPicker(true)}
+                    style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                    📋 Select from Patient List
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* AI Auto / Manual Points toggle — global preference; only takes
@@ -6409,39 +6461,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           ))}
         </div>
 
-        {/* Patient — two explicit actions (2026-08-21, user feedback: a
-            single row that silently opened the whole Clinical drawer wasn't
-            clear that "add a new one" and "pick an existing one" are two
-            different things). */}
-        <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSelectPatient||onAddNewPatient)?10:0}}>
-            <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
-              <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:activePatient?PC.muted:PC.red,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {activePatient?.name || "No patient selected"}
-              </div>
-            </div>
-          </div>
-          {(onAddNewPatient||onSelectPatient) && (
-            <div style={{display:"flex",gap:8}}>
-              {onAddNewPatient && (
-                <button onClick={onAddNewPatient}
-                  style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.accent}30`,background:`${PC.accent}0d`,color:PC.accent,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
-                  + Add New Patient
-                </button>
-              )}
-              {onSelectPatient && (
-                <button onClick={()=>setShowPatientPicker(true)}
-                  style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
-                  📋 Select from Patient List
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Select views */}
+        {/* Select views — 4-across on real desktop widths instead of the
+            2x2 wrap, since 560px+ has room for all four in one row
+            (2026-08-25, laptop redesign). */}
         <div>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.text,textTransform:"uppercase",letterSpacing:"1px"}}>Select Views</div>
@@ -6454,7 +6476,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               const done=!!mvResults[key];
               return(
                 <div key={key} onClick={()=>selectViewForCapture(key)}
-                  style={{flex:"1 1 calc(50% - 5px)",minWidth:120,borderRadius:14,border:`1.5px solid ${active?PC.accent:done?PC.green:PC.border}`,background:active?`${PC.accent}0a`:PC.surface,cursor:"pointer",overflow:"hidden"}}>
+                  style={{flex: isDesktop?"1 1 calc(25% - 7.5px)":"1 1 calc(50% - 5px)",minWidth:120,borderRadius:14,border:`1.5px solid ${active?PC.accent:done?PC.green:PC.border}`,background:active?`${PC.accent}0a`:PC.surface,cursor:"pointer",overflow:"hidden"}}>
                   <div style={{padding:isWide?"14px 10px 10px":"12px 8px 8px",textAlign:"center",position:"relative"}}>
                     {done ? (
                       <>
