@@ -94,7 +94,7 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
@@ -112,7 +112,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
-        <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} />
+        <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       <div className="row-2">

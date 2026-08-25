@@ -528,6 +528,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       createNewPatient();
     }
   }
+  // "New Assessment" picker's two honest entry points -- both go into the
+  // same real Outpatient wizard (the only pathway that picker offers),
+  // differing only in whether the AI intake box auto-opens on Subjective.
+  // See OrthoAssessment.jsx's entryMode handling for the skip-ahead logic.
+  function startOrthoEntry(mode) {
+    setData({});
+    setActivePatientId(null);
+    navTo("ortho_new_assessment", { entryMode: mode });
+  }
   // Demographics step redesign: the 6 core fields (name/dob/age/gender/
   // phone/email/occupation) show up front; everything else the clinic
   // still needs on file (sex detail, work info, address, emergency
@@ -1190,39 +1199,46 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           Cardio show the same SOON badge and just don't proceed yet. */}
       {showSpecialtyPicker && (
         <div data-testid="specialty-picker-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{width:"100%",maxWidth:420,background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
-            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Choose a specialty to start</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {STREAMS.map(st => {
-                // Cardio: standalone Cardiopulmonary Assessment tool is
-                // live, but STREAMS.cardio.live stays false on purpose --
-                // that flag also drives StreamSelector/test filtering
-                // elsewhere, untouched. Just make this one button open it.
-                // Neuro (2026-08-19): same treatment -- the old config-driven
-                // stream engine (setStream("neuro")) is replaced by the
-                // standalone NeurologicalAssessment.jsx tool, same as Cardio.
-                const clickable = st.live || st.id === "cardio" || st.id === "ortho_new";
-                return (
-                <button key={st.id} type="button"
-                  onClick={()=>{
-                    if (!clickable) return;
-                    setShowSpecialtyPicker(false);
-                    startSpecialty(st);
-                  }}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:12,
-                    cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
-                    border:`1.5px solid ${clickable?st.color+"50":PC.border}`,
-                    background:clickable?st.color+"10":PC.s2,opacity:clickable?1:0.6,textAlign:"left"}}>
-                  <span style={{fontSize:"1.3rem"}}>{st.icon}</span>
-                  <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:PC.muted}}>{st.label}</span>
-                  {!clickable && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:PC.border,color:PC.muted}}>SOON</span>}
-                </button>
-                );
-              })}
+          <div style={{width:"100%",maxWidth:440,maxHeight:"88vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New Assessment</div>
+            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>How would you like to assess?</div>
+
+            {/* Only two real entry points today -- both lead into the same
+                Orthopaedic Outpatient wizard (the only pathway that's
+                actually built), differing only in whether AI drives
+                Subjective or the therapist fills it manually. Everything
+                else (IPD, Cardio, Neuro as Ortho "streams", Pedia, Sports)
+                is listed honestly as not-yet-built below instead of sitting
+                here pretending to be an equal, working option. */}
+            <button type="button"
+              onClick={()=>{ setShowSpecialtyPicker(false); startOrthoEntry("ai"); }}
+              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:14,
+                cursor:"pointer",fontFamily:"inherit",textAlign:"left",marginBottom:10,
+                border:`1.5px solid ${PC.accent}50`,background:`linear-gradient(135deg,${PC.accent}14,${PC.a2}0c)`}}>
+              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.accent}}>✨ AI Assessment</span>
+              <span style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>Say your assessment in your own words. AI structures your subjective assessment and suggests relevant objective tests.</span>
+              <span style={{fontSize:"0.8rem",fontWeight:700,color:PC.accent,marginTop:4}}>Start with AI →</span>
+            </button>
+
+            <button type="button"
+              onClick={()=>{ setShowSpecialtyPicker(false); startOrthoEntry("template"); }}
+              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:14,
+                cursor:"pointer",fontFamily:"inherit",textAlign:"left",marginBottom:18,
+                border:`1.5px solid ${PC.border}`,background:PC.s2}}>
+              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.text}}>📋 Assessment Template</span>
+              <span style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>Orthopaedic Outpatient — your current assessment workflow.</span>
+              <span style={{fontSize:"0.8rem",fontWeight:700,color:PC.text,marginTop:4}}>Start Assessment →</span>
+            </button>
+
+            <div style={{fontSize:"0.68rem",fontWeight:800,letterSpacing:"0.4px",textTransform:"uppercase",color:PC.muted,marginBottom:8}}>More coming soon</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:18}}>
+              {["IPD","Post-operative","Neurological","Cardiopulmonary","Paediatric","Sports"].map(label=>(
+                <span key={label} style={{fontSize:"0.74rem",fontWeight:600,padding:"4px 10px",borderRadius:20,background:PC.s2,border:`1px solid ${PC.border}`,color:PC.muted}}>{label}</span>
+              ))}
             </div>
+
             <button type="button" onClick={()=>setShowSpecialtyPicker(false)}
-              style={{marginTop:16,width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
               Cancel
             </button>
           </div>
@@ -1765,7 +1781,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               STREAMS, untouched below. */}
           {active==="ortho_new_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined}/></Suspense>
             </div>
           )}
 

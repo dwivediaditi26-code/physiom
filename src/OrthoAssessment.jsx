@@ -44,22 +44,29 @@ const OPD_MODES = [
   { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth } = {}) {
-  const [step, setStep] = useState(0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(null);
+export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode } = {}) {
+  // entryMode ("ai" | "template") comes from the honest "New Assessment"
+  // picker (AppFull.jsx) -- Outpatient is the only pathway that picker
+  // offers today, so both shortcuts force pathway=outpatient and skip
+  // straight past the pathway-type and condition/mode screens (nothing to
+  // choose there yet), landing the therapist on region selection -- the one
+  // question that genuinely can't be skipped -- then straight into the
+  // wizard. Reached the normal way (no entryMode), nothing changes.
+  const [step, setStep] = useState(entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
+  const [pathway, setPathway] = useState(entryMode ? "outpatient" : null);
   const [selectedRegions, setSelectedRegions] = useState([]);
-  const [condition, setCondition] = useState(null);
+  const [condition, setCondition] = useState(entryMode ? "general" : null);
   const [customConditionLabel, setCustomConditionLabel] = useState("");
-  const [opdMode, setOpdMode] = useState(null);
+  const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   function restart() {
-    setStep(0);
-    setPathway(null);
+    setStep(entryMode ? 1 : 0);
+    setPathway(entryMode ? "outpatient" : null);
     setSelectedRegions([]);
-    setCondition(null);
+    setCondition(entryMode ? "general" : null);
     setCustomConditionLabel("");
-    setOpdMode(null);
+    setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
   }
 
@@ -78,6 +85,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         onSave={onSave}
         activePatientId={activePatientId}
         requireAuth={requireAuth}
+        autoOpenAI={entryMode === "ai"}
       />
     );
   }
@@ -94,6 +102,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
   function goNext() {
+    if (entryMode && step === 1) { setStep(3); return; } // region chosen -- condition/mode already forced above, skip straight in
     if (step < 2) setStep(step + 1);
     else setStep(3);
   }
@@ -124,7 +133,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
               <div className="topbar-title">🦴 Ortho Assessment</div>
               {pathway && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
             </div>
-            {step === 0 && onExit && (
+            {((step === 0 && !entryMode) || (step === 1 && entryMode)) && onExit && (
               <button className="back-btn" onClick={onExit} aria-label="Close">
                 ✕
               </button>

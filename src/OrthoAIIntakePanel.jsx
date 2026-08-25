@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Hint } from "./orthoFieldKit.jsx";
 import { authHeader } from "./supabase.js";
 import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
@@ -16,7 +16,7 @@ import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
    (SubjectiveSection merges into both data.subjective and data.pain
    via the wizard's top-level setData).
    ============================================================ */
-export default function OrthoAIIntakePanel({ onApply, requireAuth }) {
+export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [status, setStatus] = useState("idle"); // idle | recording | processing | done | error
@@ -28,6 +28,14 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth }) {
     if (requireAuth && !requireAuth("AI Assessment Intake")) return;
     setOpen(true);
   }
+
+  // "Start with AI" from the New Assessment picker opens straight into this
+  // box instead of landing on the collapsed toggle -- still goes through the
+  // same requireAuth gate a manual tap would.
+  useEffect(() => {
+    if (defaultOpen) openPanel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpen]);
 
   function startRecording() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
