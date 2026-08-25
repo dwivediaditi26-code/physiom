@@ -6,11 +6,12 @@ import OrthoAssessment from "./OrthoAssessment.jsx";
    Assessment module (OrthoAssessment.jsx + its pathway modules)
    can mount as a standard AppFull.jsx tool, same prop contract
    as CardiopulmonaryAssessment.jsx / NeurologicalAssessment.jsx
-   (patientData/activePatientId/onSave/onNav). Patient-record
-   persistence (onSave/activePatientId) is intentionally not wired
-   yet — the module still manages its own local, in-memory data
-   per assessment, same as it always has.
+   (patientData/activePatientId/onSave/onNav). onSave is now
+   threaded through to the pathway module's Final Review step, which
+   calls onSave("ortho_outpatient_assessment", <json>) to persist a
+   snapshot on the active patient record -- same set(key,value)
+   pattern Cardio/Neuro already use.
    ============================================================ */
-export default function OrthoAssessmentNew({ onNav } = {}) {
-  return <OrthoAssessment onExit={() => onNav?.("clinical")} />;
+export default function OrthoAssessmentNew({ onNav, onSave, activePatientId } = {}) {
+  return <OrthoAssessment onExit={() => onNav?.("clinical")} onSave={onSave} activePatientId={activePatientId} />;
 }

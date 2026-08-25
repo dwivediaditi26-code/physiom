@@ -91,6 +91,10 @@ export function orthoStyles() {
         .lr-colhead { font-weight: 700; color: ${BRAND.purpleDark}; justify-content: center; }
         .lr-select { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 8px; padding: 5px 4px; font-size: 11.5px; background: #fff; }
 
+        .collapsible-head { width: 100%; display: flex; align-items: center; justify-content: space-between; background: ${BRAND.purpleFaint}; border: 1px solid ${BRAND.border}; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; cursor: pointer; font-family: inherit; }
+        .collapsible-chevron { transition: transform 0.15s; }
+        .collapsible-chevron.open { transform: rotate(180deg); }
+
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
@@ -408,7 +412,7 @@ export function orthoStyles() {
         .writein-card.selected { border-style: solid; }
 
         .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
-        .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }

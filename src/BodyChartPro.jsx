@@ -576,6 +576,27 @@ function RadiationArrows({ arrows }) {
   );
 }
 
+// Readable {label, value} rows for a review/summary screen -- e.g. Ortho's
+// AssessmentSummary, which otherwise has no idea this field is a JSON blob
+// and would just dump the raw string. One row per marked region: "Shoulder
+// Lt (Anterior)" -> "Pain 6/10, Stiffness". Safe against unparsable/empty
+// input (returns []).
+export function formatBodyChartSummary(json) {
+  let entries = [];
+  try { entries = JSON.parse(json || "{}").entries || []; } catch { return []; }
+  if (!entries.length) return [];
+  return entries.map((e) => {
+    const region = REGIONS.find((r) => r.id === e.regionId);
+    const label = region ? `${region.label} (${region.view?.replace("_", " ")})` : e.regionId;
+    const symptomLabels = (e.symptoms || []).map((sId) => SYMPTOM_TYPES.find((s) => s.id === sId)?.label || sId);
+    let value = symptomLabels.join(", ");
+    if (e.intensity != null && e.intensity !== "") value += ` — ${e.intensity}/10`;
+    if (e.radiation) value += ", radiating";
+    if (e.notes) value += ` (${e.notes})`;
+    return { label, value: value || "marked, no detail" };
+  });
+}
+
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export { REGIONS, computeHitRadii, centroidOf, HIT_RADIUS_MAX, HIT_RADIUS_MIN };
 export default function BodyChartPro({ data = {}, set = () => {} }) {

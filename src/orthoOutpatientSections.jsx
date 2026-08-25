@@ -134,19 +134,20 @@ export function formatSubjectiveSection(section) {
 
 export function PalpationSection({ data, setData, selectedRegions = [], regionLabelOf }) {
   const [d, set] = useSectionData(data, setData, "palpation");
-  const locationOptions = selectedRegions.length ? selectedRegions.map((r) => regionLabelOf(r)) : ["Not specified"];
+  const [mapOpen, setMapOpen] = useState(true);
   return (
     <>
       <SectionIntro icon="🖐️" title="Palpation" />
-      <div className="subheading">Body Map</div>
-      <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
-        <LazyPalpationModule data={d} set={set} />
-      </Suspense>
+      <button type="button" className="collapsible-head" onClick={() => setMapOpen((o) => !o)}>
+        <span>Body Map</span>
+        <span className={"collapsible-chevron" + (mapOpen ? " open" : "")}>⌄</span>
+      </button>
+      {mapOpen && (
+        <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
+          <LazyPalpationModule data={d} set={set} />
+        </Suspense>
+      )}
       <div className="subheading">Findings</div>
-      <SelectField label="Region(s) palpated" type="multi" options={locationOptions} value={d.regionsPalpated} onChange={(v) => set("regionsPalpated", v)} />
-      <SelectField label="Tenderness" type="multi" options={["None", "Mild", "Moderate", "Severe", "Localized", "Diffuse"]} value={d.tenderness} onChange={(v) => set("tenderness", v)} />
-      <TextField label="Tenderness location" value={d.tendernessLocation} onChange={(v) => set("tendernessLocation", v)} />
-      <Segmented label="Temperature" options={["Normal", "Warm", "Hot", "Cool"]} value={d.temperature} onChange={(v) => set("temperature", v)} />
       <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => set("swelling", v)} />
       <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => set("muscleTone", v)} />
       <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => set("triggerPoints", v)} placeholder="Location and referral pattern..." />

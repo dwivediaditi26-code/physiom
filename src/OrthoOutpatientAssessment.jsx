@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, useSectionData } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
@@ -15,6 +16,38 @@ import { orthoStyles } from "./orthoStyles.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
+}
+
+// Pain and Palpation both carry a JSON-blob field (the body chart / the
+// palpation pin map) alongside their normal fields -- without these, the
+// generic Object.entries fallback in orthoSummary.jsx would just dump the
+// raw JSON string as one unreadable row. Chart/pin rows render first, then
+// every other field in the section falls back to the normal formatting.
+function restRows(rest) {
+  return Object.entries(rest)
+    .filter(([k]) => !k.startsWith("__"))
+    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .filter((r) => r.value);
+}
+function formatPainSection(section) {
+  const { body_chart_pro, ...rest } = section;
+  return [...formatBodyChartSummary(body_chart_pro), ...restRows(rest)];
+}
+function formatPalpationSection(section) {
+  const { palp_pins, ...rest } = section;
+  let pins = [];
+  try { pins = JSON.parse(palp_pins || "[]"); } catch {}
+  const pinRows = pins.map((p) => ({
+    label: `${p.label}${p.side ? ` (${p.side === "front" ? "Anterior" : "Posterior"})` : ""}`,
+    value: [
+      (p.structure || []).length ? p.structure.join(", ") : null,
+      p.tenderness ? `Grade ${p.tenderness} tenderness` : null,
+      p.temp,
+      (p.texture || []).length ? p.texture.join(", ") : null,
+      p.notes,
+    ].filter(Boolean).join(", ") || "marked, no detail",
+  }));
+  return [...pinRows, ...restRows(rest)];
 }
 
 /* ============================================================
@@ -143,7 +176,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId }) {
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -158,6 +191,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -226,6 +260,8 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
   const summaryFormatters = {
     subjective: formatSubjectiveSection,
     redFlags: formatRedFlagsSection,
+    pain: formatPainSection,
+    palpation: formatPalpationSection,
     observation: formatGeneralObservationSection,
     rom: formatRomSection,
     mmt: formatMmtSection,
@@ -236,6 +272,22 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
     fma: formatFmaSection,
     outcomeMeasure: formatOutcomeMeasureSection,
   };
+
+  // Persist a snapshot on the active patient record -- same set(key,value)
+  // pattern Cardio/Neuro's own Final Review "Save" already uses. Keyed by
+  // patient so switching patients doesn't show a stale assessment.
+  function saveAssessment() {
+    if (!onSave) return;
+    onSave("ortho_outpatient_assessment", JSON.stringify({
+      savedAt: new Date().toISOString(),
+      patientId: activePatientId || null,
+      regions: regionsLabel,
+      condition: conditionLabel,
+      data,
+    }));
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1800);
+  }
 
   return (
     <div className="app-shell">
@@ -330,6 +382,11 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
                 formatters={summaryFormatters}
               />
+              {onSave && (
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                  {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+                </button>
+              )}
               <button type="button" className="info-btn-full" style={{ marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>

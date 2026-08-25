@@ -44,7 +44,7 @@ const OPD_MODES = [
   { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit } = {}) {
+export default function OrthoAssessment({ onExit, onSave, activePatientId } = {}) {
   const [step, setStep] = useState(0); // 0 pathway, 1 region, 2 condition, 3 assessment
   const [pathway, setPathway] = useState(null);
   const [selectedRegions, setSelectedRegions] = useState([]);
@@ -75,6 +75,8 @@ export default function OrthoAssessment({ onExit } = {}) {
         initialStepOrder={opdMode === "templates" ? selectedTemplate?.stepOrder : undefined}
         templateName={opdMode === "templates" ? selectedTemplate?.name : undefined}
         onExit={restart}
+        onSave={onSave}
+        activePatientId={activePatientId}
       />
     );
   }

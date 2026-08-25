@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData } from "./orthoFieldKit.jsx";
+import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
@@ -21,6 +22,17 @@ import { orthoStyles } from "./orthoStyles.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
+}
+
+// Same as Outpatient's formatPainSection -- Pain carries a JSON-blob body
+// chart field that the generic formatter would otherwise dump raw.
+function formatPainSection(section) {
+  const { body_chart_pro, ...rest } = section;
+  const restRows = Object.entries(rest)
+    .filter(([k]) => !k.startsWith("__"))
+    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .filter((r) => r.value);
+  return [...formatBodyChartSummary(body_chart_pro), ...restRows];
 }
 
 /* ============================================================
@@ -318,7 +330,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
               data={data}
               onEdit={jumpTo}
               exportHeaderLines={[`IPD ORTHOPEDIC ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-              formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection }}
+              formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection }}
             />
           )}
         </div>
