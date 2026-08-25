@@ -408,6 +408,27 @@ export function orthoStyles() {
         .suggest-title { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; }
         .suggest-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
 
+        .obj-card { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+        .obj-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .obj-card-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: ${BRAND.gray}; }
+        .obj-card-badge-ai { color: ${BRAND.purple}; }
+        .obj-card-check { font-size: 10.5px; font-weight: 800; color: ${BRAND.purple}; }
+        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; }
+        .obj-card-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
+        .obj-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .obj-card-link { border: none; background: none; padding: 0; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
+        .obj-card-add { border: 1.5px solid ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .obj-card-jump { border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .obj-card-remove { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 11px; }
+
+        .obj-why-text { font-size: 13px; color: ${BRAND.ink}; line-height: 1.6; margin: 0 0 6px; }
+        .obj-what-list { margin: 0 0 4px; padding-left: 18px; font-size: 12.5px; color: ${BRAND.ink}; line-height: 1.7; }
+        .obj-how-row { margin-bottom: 12px; }
+        .obj-how-label { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: ${BRAND.purple}; margin-bottom: 3px; }
+        .obj-how-val { font-size: 13px; color: ${BRAND.ink}; line-height: 1.5; }
+        .obj-steps-list { margin: 0; padding-left: 18px; font-size: 12.5px; color: ${BRAND.ink}; line-height: 1.8; }
+
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
         .review-row-label { flex: 1; }

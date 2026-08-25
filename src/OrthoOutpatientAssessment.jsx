@@ -345,6 +345,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
               activeIds={new Set(stepOrder)}
               onToggle={toggleAssessment}
               library={ADD_LIBRARY}
+              onJump={jumpTo}
             />
           )}
           {current.id === "edema" && (
