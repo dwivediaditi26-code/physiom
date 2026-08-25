@@ -82,6 +82,15 @@ export function orthoStyles() {
         .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
         .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
 
+        .lr-grid { border: 1.5px solid ${BRAND.border}; border-radius: 14px; overflow: hidden; }
+        .lr-row { display: flex; border-bottom: 1px solid ${BRAND.border}; }
+        .lr-row:last-child { border-bottom: none; }
+        .lr-head { background: ${BRAND.purpleFaint}; }
+        .lr-cell { flex: 1; padding: 8px 6px; font-size: 12px; display: flex; align-items: center; }
+        .lr-zone { flex: 1.4; font-weight: 600; color: ${BRAND.ink}; }
+        .lr-colhead { font-weight: 700; color: ${BRAND.purpleDark}; justify-content: center; }
+        .lr-select { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 8px; padding: 5px 4px; font-size: 11.5px; background: #fff; }
+
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }

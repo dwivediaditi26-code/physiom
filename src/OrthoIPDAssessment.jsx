@@ -13,6 +13,7 @@ import {
   ActivityToleranceSection,
   OutcomeMeasureSection,
   ImpressionSection,
+  NeuroScreenSection,
 } from "./orthoCommonSections.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
@@ -36,7 +37,7 @@ export const IPD_CONDITIONS = [
   { id: "arthritis", icon: "🦴", label: "Arthritis / Degenerative", desc: "Chronic joint pain and functional decline", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "infection", icon: "🦠", label: "Infection", desc: "Medically-documented infection under treatment", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "activityTolerance"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, contusion", optional: ["edema", "rom", "mmt", "jointMobility", "activityTolerance", "outcomeMeasure"] },
-  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "neuroScreen", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["edema", "wound", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "deconditioning", icon: "🧍", label: "Deconditioning / Mobility Limitation", desc: "Generalised weakness / reduced mobility", optional: ["rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
@@ -46,7 +47,7 @@ export const IPD_CONDITIONS = [
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
 const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "review"];
-const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
+const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
   "caseInfo",
@@ -59,6 +60,7 @@ const ORDERED_ALL = [
   "edema",
   "wound",
   "neurovascular",
+  "neuroScreen",
   "rom",
   "mmt",
   "jointMobility",
@@ -83,6 +85,7 @@ const STEP_META = {
   edema: { icon: "💧", label: "Edema" },
   wound: { icon: "🩹", label: "Wound / Surgical Site" },
   neurovascular: { icon: "🧠", label: "Neurovascular" },
+  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
   rom: { icon: "📐", label: "ROM" },
   mmt: { icon: "💪", label: "MMT" },
   jointMobility: { icon: "🦴", label: "Joint Mobility" },
@@ -295,6 +298,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "edema" && <EdemaSection data={data} setData={setData} />}
           {current.id === "wound" && <WoundSection data={data} setData={setData} />}
           {current.id === "neurovascular" && <NeurovascularSection data={data} setData={setData} />}
+          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "jointMobility" && <JointMobilitySection data={data} setData={setData} selectedRegions={selectedRegions} />}

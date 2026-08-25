@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import React, { useState, lazy, Suspense } from "react";
+import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, useSectionData } from "./orthoFieldKit.jsx";
+
+// Same interactive pain/symptom body chart used by the old Subjective flow
+// (SubjectiveObjective.jsx) -- lazy-loaded since it's a large, self-contained
+// SVG diagram component, only needed once a therapist actually opens Pain.
+const LazyBodyChartPro = lazy(() => import("./BodyChartPro.jsx"));
 
 /* ============================================================
    Sections that are identical (or near-identical) across every
@@ -55,6 +60,11 @@ export function PainSection({ data, setData, selectedRegions, regionLabelOf }) {
   return (
     <>
       <SectionIntro icon="😖" title="Pain" info="Ask current, best and worst over the last 24 hours. Character helps distinguish nociceptive, neuropathic, and inflammatory pain." />
+      <div className="subheading">Body Chart</div>
+      <Suspense fallback={<Hint>Loading body chart…</Hint>}>
+        <LazyBodyChartPro data={d} set={set} />
+      </Suspense>
+      <div className="subheading">Pain Details</div>
       <div className="row-2">
         <ScaleField label="Current" value={d.current} onChange={(v) => set("current", v)} />
       </div>
@@ -123,6 +133,49 @@ export function BalanceSection({ data, setData }) {
       <Segmented label="Standing balance" options={["Normal", "Impaired"]} value={d.standing} onChange={(v) => set("standing", v)} />
       <Segmented label="Assistance" options={["Independent", "Supervision", "Assist"]} value={d.assistance} onChange={(v) => set("assistance", v)} />
       <TextArea label="Additional balance test" value={d.extraTest} onChange={(v) => set("extraTest", v)} placeholder="e.g. Berg Balance Score, Tinetti..." />
+    </>
+  );
+}
+
+// Quick radiculopathy/neuro screen -- same myotome/dermatome/DTR grading
+// used by the standalone Neuro assessment's Spinal Cord Injury workup
+// (NeurologicalAssessment.jsx), trimmed to the key upper + lower limb levels
+// an ortho exam actually screens (cervical and lumbar nerve roots), so a
+// spine-condition MSK case doesn't need to leave Ortho to rule out nerve
+// involvement.
+export function NeuroScreenSection({ data, setData }) {
+  const [d, set] = useSectionData(data, setData, "neuroScreen");
+  return (
+    <>
+      <SectionIntro icon="⚡" title="Neuro Screen" info="Quick myotome/dermatome/reflex screen for suspected nerve root involvement -- not a full neurological exam. Refer to Neuro assessment for a complete workup." />
+      <div className="subheading">Myotomes (MMT 0-5)</div>
+      <LRGrid
+        label="Key myotomes"
+        rows={["C5 Shoulder abduction", "C6 Elbow flexion / wrist ext.", "C7 Elbow extension", "C8 Finger flexion", "T1 Finger abduction", "L2 Hip flexion", "L3 Knee extension", "L4 Ankle dorsiflexion", "L5 Great toe extension", "S1 Ankle plantarflexion"]}
+        options={["5", "4", "3", "2", "1", "0"]}
+        value={d.myotomes || {}}
+        onChange={(v) => set("myotomes", v)}
+      />
+      <div className="subheading">Dermatomes (sensation)</div>
+      <LRGrid
+        label="Key dermatomes"
+        rows={["C5", "C6", "C7", "C8", "T1", "L2", "L3", "L4", "L5", "S1"]}
+        options={["Normal", "Reduced", "Absent", "Hyperaesthesia"]}
+        value={d.dermatomes || {}}
+        onChange={(v) => set("dermatomes", v)}
+      />
+      <div className="subheading">Deep tendon reflexes</div>
+      <LRGrid
+        label="DTRs"
+        rows={["Biceps (C5-6)", "Brachioradialis (C5-6)", "Triceps (C7-8)", "Patellar (L3-4)", "Achilles (S1-2)"]}
+        options={["0 - Absent", "1+ - Diminished", "2+ - Normal", "3+ - Brisk", "4+ - Clonus"]}
+        value={d.dtr || {}}
+        onChange={(v) => set("dtr", v)}
+      />
+      <div className="subheading">Pathological reflexes</div>
+      <SelectField label="Plantar response (Babinski)" type="single" options={["Flexor (normal/downgoing)", "Extensor (Babinski positive/upgoing)", "Equivocal", "Not tested"]} value={d.babinski} onChange={(v) => set("babinski", v)} />
+      <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} />
+      <TextArea label="Additional neuro notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
 }

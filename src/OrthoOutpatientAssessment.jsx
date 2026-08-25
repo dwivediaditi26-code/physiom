@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { StepNav, SelectField, SectionIntro, useSectionData } from "./orthoFieldKit.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
-import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection } from "./orthoCommonSections.jsx";
+import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
@@ -27,7 +27,7 @@ function regionLabelOf(r) {
 export const OUTPATIENT_CONDITIONS = [
   { id: "arthritis", icon: "🦴", label: "Arthritis / Degenerative", desc: "Chronic joint pain and functional decline", promote: ["balance", "activityTolerance", "outcomeMeasure"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, tendinopathy", promote: ["edema", "activityTolerance", "outcomeMeasure", "cpa"] },
-  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pain, radiculopathy screen", promote: ["specialTests", "sttt", "activityTolerance", "outcomeMeasure"] },
+  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pain, radiculopathy screen", promote: ["specialTests", "neuroScreen", "sttt", "activityTolerance", "outcomeMeasure"] },
   { id: "sportsOveruse", icon: "🏃", label: "Sports Injury / Overuse", desc: "Repetitive strain, sport-specific injury", promote: ["specialTests", "kineticChain", "fma", "activityTolerance", "outcomeMeasure"] },
   { id: "postSurgicalFollowUp", icon: "🩺", label: "Post-surgical Follow-up", desc: "OPD-stage recovery after discharge", promote: ["edema", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", promote: ["cpa", "activityTolerance", "outcomeMeasure"] },
@@ -36,9 +36,9 @@ export const OUTPATIENT_CONDITIONS = [
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "review"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "progress", "review"];
 
 const STEP_META = {
   demographics: { icon: "📋", label: "Demographics" },
@@ -53,6 +53,7 @@ const STEP_META = {
   rom: { icon: "📐", label: "ROM" },
   mmt: { icon: "💪", label: "MMT" },
   specialTests: { icon: "🔬", label: "Special Tests" },
+  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
   kineticChain: { icon: "⛓️", label: "Kinetic Chain" },
   cpa: { icon: "🧠", label: "CPA (NKT)" },
   sttt: { icon: "🦴", label: "STTT (Cyriax)" },
@@ -303,6 +304,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "specialTests" && <SpecialTestsSection data={data} setData={setData} selectedRegions={selectedRegions} />}
+          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
           {current.id === "kineticChain" && <KineticChainSection data={data} setData={setData} />}
           {current.id === "cpa" && <CpaSection data={data} setData={setData} />}
           {current.id === "sttt" && <SttSection data={data} setData={setData} />}

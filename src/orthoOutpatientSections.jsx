@@ -1,7 +1,12 @@
-import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import React, { useState, lazy, Suspense } from "react";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
+
+// Same SVG anatomical hotspot map used by the old Palpation flow
+// (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
+// as Pain's body chart: large, self-contained, only needed once opened.
+const LazyPalpationModule = lazy(() => import("./lazy_palpation.jsx"));
 
 /* ============================================================
    Outpatient / Musculoskeletal — sections specific to the full
@@ -133,6 +138,11 @@ export function PalpationSection({ data, setData, selectedRegions = [], regionLa
   return (
     <>
       <SectionIntro icon="🖐️" title="Palpation" />
+      <div className="subheading">Body Map</div>
+      <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
+        <LazyPalpationModule data={d} set={set} />
+      </Suspense>
+      <div className="subheading">Findings</div>
       <SelectField label="Region(s) palpated" type="multi" options={locationOptions} value={d.regionsPalpated} onChange={(v) => set("regionsPalpated", v)} />
       <SelectField label="Tenderness" type="multi" options={["None", "Mild", "Moderate", "Severe", "Localized", "Diffuse"]} value={d.tenderness} onChange={(v) => set("tenderness", v)} />
       <TextField label="Tenderness location" value={d.tendernessLocation} onChange={(v) => set("tendernessLocation", v)} />
