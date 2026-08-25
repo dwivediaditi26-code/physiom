@@ -5398,13 +5398,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       {/* Tab bar */}
       {(measurements||capturedImg)&&(
-        <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",position: isWide?"sticky":"static",top:0,zIndex:5}}>
-          {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","⚕ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
-            <button key={t} onClick={()=>setTab(t)}
-              style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
-              {label}
+        <div style={{borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",alignItems:"stretch",position: isWide?"sticky":"static",top:0,zIndex:5}}>
+          <div style={{display:"flex",flex:1,overflowX:"auto"}}>
+            {[["findings",`⌕ Findings${findings.length?" ("+findings.length+")":""}`],["muscles","⚡ Muscles"],["plan","▶ Plan"],["tests","⚕ Tests"],["metrics","≡ Metrics"],["history","▤ History"]].map(([t,label])=>(
+              <button key={t} onClick={()=>setTab(t)}
+                style={{flex:1,padding: isWide?"12px 8px":"10px 8px",border:"none",borderBottom:`3px solid ${tab===t?PC.accent:"transparent"}`,background:"transparent",color:tab===t?PC.accent:PC.muted,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* PDF export — single-photo mode had no way to reach the report
+              modal at all (2026-08-25, user feedback); multi-view already
+              has its own "📄 PDF" button in the composite report header. */}
+          {findings.length>0 && scoreData && (
+            <button onClick={()=>setShowReportModal(true)}
+              style={{flexShrink:0,padding:"0 14px",border:"none",borderLeft:`1px solid ${PC.border}`,background:"transparent",color:PC.accent,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+              📄 PDF
             </button>
-          ))}
+          )}
         </div>
       )}
 
