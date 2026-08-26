@@ -3,7 +3,7 @@ import { StepNav, SelectField, SectionIntro, useSectionData } from "./orthoField
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection } from "./orthoCommonSections.jsx";
-import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
+import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
@@ -36,9 +36,9 @@ export const OUTPATIENT_CONDITIONS = [
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "review"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "techniques", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "progress", "review"];
 
 const STEP_META = {
   demographics: { icon: "📋", label: "Demographics" },
@@ -65,6 +65,7 @@ const STEP_META = {
   clinicalAssessment: { icon: "🧠", label: "Clinical Assessment" },
   goals: { icon: "🎯", label: "Goals" },
   treatmentPlan: { icon: "📋", label: "Treatment Plan" },
+  techniques: { icon: "🤲", label: "Treatment Techniques" },
   progress: { icon: "📈", label: "Progress / Follow-up" },
   review: { icon: "✅", label: "Final Review" },
 };
@@ -234,6 +235,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
     sttt: formatSttSection,
     fma: formatFmaSection,
     outcomeMeasure: formatOutcomeMeasureSection,
+    techniques: formatTreatmentTechniquesSection,
   };
 
   return (
@@ -315,6 +317,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
           {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
+          {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>

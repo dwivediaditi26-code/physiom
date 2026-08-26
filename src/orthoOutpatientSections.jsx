@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
 
@@ -220,6 +220,238 @@ export function TreatmentPlanSection({ data, setData }) {
       <TextField label="Follow-up" value={d.followUp} onChange={(v) => set("followUp", v)} placeholder="Next review date / interval" />
     </>
   );
+}
+
+/* ============================================================
+   TREATMENT TECHNIQUES — the same per-technique log Treatment's
+   own Techniques tab (ClinicalModules.jsx's TreatmentTechniquesModule,
+   data.tx_techniques) has always recorded: Joint Mob (Maitland grade),
+   Dry Needling, Soft Tissue, Taping, Ultrasound, Electrotherapy, Other,
+   each with its own dosage/response fields, saved as a running list you
+   can edit or delete. Same feature, rebuilt on this file's own field-kit
+   (SectionIntro/Segmented/SelectField/TextArea/NumberField) instead of
+   ClinicalModules.jsx's older inline-styled form, so it looks and
+   behaves like every other Ortho Outpatient step. Storage is local to
+   this pathway's own `techniques.entries` (useSectionData), matching
+   how every other section here stores its own namespaced data.
+   ============================================================ */
+const TECHNIQUE_TYPES = [
+  { key: "manual", label: "Joint Mob" },
+  { key: "dn", label: "Dry Needling" },
+  { key: "st", label: "Soft Tissue" },
+  { key: "taping", label: "Taping" },
+  { key: "us", label: "Ultrasound" },
+  { key: "electro", label: "Electrotherapy" },
+  { key: "other", label: "Other" },
+];
+const MAITLAND_GRADES = [
+  { grade: "I", desc: "Small amplitude, beginning of range — pain control, acute" },
+  { grade: "II", desc: "Large amplitude, within range (no resistance) — pain control" },
+  { grade: "III", desc: "Large amplitude into resistance — stiffness/pain" },
+  { grade: "IV", desc: "Small amplitude into resistance — stiffness predominant" },
+  { grade: "IV+", desc: "End range, high velocity — HVLAT manipulation" },
+];
+const BODY_REGIONS_TX = ["Cervical", "Thoracic", "Lumbar", "Sacroiliac", "Shoulder", "Elbow", "Wrist/Hand", "Hip", "Knee", "Ankle/Foot", "Rib", "TMJ"];
+const MANUAL_TECHNIQUES = ["PA Central", "PA Unilateral", "AP", "Transverse", "Rotation", "Traction", "SNAG", "NAG", "Mulligan MWM", "Quadrant", "Combined technique"];
+const DN_MUSCLES = ["Upper trapezius", "Levator scapulae", "SCM", "Infraspinatus", "Supraspinatus", "Subscapularis", "Rhomboids", "Erector spinae", "Multifidus", "QL", "Gluteus maximus", "Gluteus medius", "Piriformis", "TFL", "Rectus femoris", "Hamstrings", "Gastrocnemius", "Soleus", "Tibialis anterior", "Pectoralis minor", "Pectoralis major", "Scalenes", "Suboccipitals"];
+const ST_TECHNIQUES = ["Deep tissue massage", "Myofascial release", "Trigger point release", "Friction massage", "IASTM", "Cupping", "Foam roller prescription", "PNF stretching", "Contract-relax stretching", "Passive stretching"];
+const TAPING_TYPES = ["McConnell — Patellar medial glide", "McConnell — Patellar tilt correction", "Kinesio — Pain inhibition", "Kinesio — Muscle facilitation", "Kinesio — Fascia correction", "Rigid sports tape", "Leukotape — posture correction", "Dynamic tape — load transfer"];
+const US_FREQ = ["1 MHz (deep — 3–5cm)", "3 MHz (superficial — 1–2cm)"];
+const US_MODE = ["Pulsed 20%", "Pulsed 50%", "Continuous"];
+const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)", "TENS — acupuncture-like (2–4Hz)", "IFT — 80–150Hz (pain)", "IFT — 1–10Hz (muscle stim)", "SWD", "NMES", "Russian stim", "LASER — class 3B/4", "Shockwave"];
+
+const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", grade: "", laterality: "", dosage: "", duration: "", response: "", notes: "", dnMuscle: "", dnNeedles: "", dnDepth: "", dnTwitch: "", usFreq: "", usIntensity: "", usMode: "", usArea: "", tapeType: "", tapeGoal: "", stTechnique: "", stRegion: "", electroType: "", electroParams: "" };
+
+function TechniqueGradeField({ value, onChange }) {
+  return (
+    <div className="grade-row">
+      <div className="grade-row-label">Maitland Grade</div>
+      <div className="grade-chips">
+        {MAITLAND_GRADES.map((g) => (
+          <button type="button" key={g.grade} className={"grade-chip" + (value === g.grade ? " grade-chip-active" : "")} onClick={() => onChange(value === g.grade ? "" : g.grade)}>
+            {g.grade}
+          </button>
+        ))}
+      </div>
+      {value && <div className="hint">💡 {MAITLAND_GRADES.find((g) => g.grade === value)?.desc}</div>}
+    </div>
+  );
+}
+
+function techniqueEntryForm(type, form, set) {
+  switch (type) {
+    case "manual":
+      return (
+        <>
+          <div className="row-2">
+            <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
+            <Segmented label="Laterality" options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+          </div>
+          <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
+          <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />
+          <div className="row-2">
+            <TextField label="Sets / reps or duration" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="e.g. 3×30s, 60 oscillations" />
+            <TextField label="Duration in session" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
+          </div>
+        </>
+      );
+    case "dn":
+      return (
+        <>
+          <SelectField label="Target muscle" type="single" options={DN_MUSCLES} value={form.dnMuscle} onChange={(v) => set("dnMuscle", v)} />
+          <Segmented label="Laterality" options={["Left", "Right", "Bilateral"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+          <div className="row-2">
+            <NumberField label="No. of needles" value={form.dnNeedles} onChange={(v) => set("dnNeedles", v)} placeholder="e.g. 4" />
+            <TextField label="Needle depth" value={form.dnDepth} onChange={(v) => set("dnDepth", v)} placeholder="e.g. 30mm" />
+          </div>
+          <Segmented label="Local twitch response" wrap options={["Elicited", "Partial", "Not elicited", "N/A"]} value={form.dnTwitch} onChange={(v) => set("dnTwitch", v)} />
+        </>
+      );
+    case "st":
+      return (
+        <>
+          <SelectField label="Soft tissue technique" type="single" options={ST_TECHNIQUES} value={form.stTechnique} onChange={(v) => set("stTechnique", v)} />
+          <TextField label="Region / structure" value={form.stRegion} onChange={(v) => set("stRegion", v)} placeholder="e.g. upper trap, thoracic paraspinals" />
+          <div className="row-2">
+            <Segmented label="Laterality" options={["Left", "Right", "Bilateral"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
+          </div>
+          <TextField label="Dosage / parameters" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="e.g. moderate pressure, 30s holds" />
+        </>
+      );
+    case "taping":
+      return (
+        <>
+          <SelectField label="Taping type / pattern" type="single" options={TAPING_TYPES} value={form.tapeType} onChange={(v) => set("tapeType", v)} />
+          <Segmented label="Laterality" options={["Left", "Right", "Bilateral"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+          <TextField label="Goal / rationale" value={form.tapeGoal} onChange={(v) => set("tapeGoal", v)} placeholder="e.g. medial patellar glide — PFPS pain reduction" />
+        </>
+      );
+    case "us":
+      return (
+        <>
+          <div className="row-2">
+            <SelectField label="Frequency" type="single" options={US_FREQ} value={form.usFreq} onChange={(v) => set("usFreq", v)} />
+            <Segmented label="Mode" options={US_MODE} value={form.usMode} onChange={(v) => set("usMode", v)} />
+          </div>
+          <div className="row-2">
+            <TextField label="Intensity (W/cm²)" value={form.usIntensity} onChange={(v) => set("usIntensity", v)} placeholder="e.g. 1.0" />
+            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
+          </div>
+          <TextField label="Treatment area / structure" value={form.usArea} onChange={(v) => set("usArea", v)} placeholder="e.g. supraspinatus insertion" />
+        </>
+      );
+    case "electro":
+      return (
+        <>
+          <SelectField label="Modality" type="single" options={ELECTRO_TYPES} value={form.electroType} onChange={(v) => set("electroType", v)} />
+          <TextField label="Parameters" value={form.electroParams} onChange={(v) => set("electroParams", v)} placeholder="e.g. 100Hz, 20 min, pad placement" />
+        </>
+      );
+    default:
+      return (
+        <>
+          <TextField label="Technique / intervention" value={form.technique} onChange={(v) => set("technique", v)} placeholder="Describe technique" />
+          <TextField label="Region / structure" value={form.region} onChange={(v) => set("region", v)} />
+          <div className="row-2">
+            <TextField label="Dosage" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="Sets, reps, duration" />
+            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="Time in session" />
+          </div>
+        </>
+      );
+  }
+}
+
+function techniqueLabel(t) {
+  if (t.type === "manual") return `${t.technique || "Joint mob"}${t.grade ? ` — Grade ${t.grade}` : ""}${t.region ? ` (${t.region})` : ""}`;
+  if (t.type === "dn") return `Dry Needling — ${t.dnMuscle || "unknown muscle"}${t.laterality ? ` (${t.laterality})` : ""}`;
+  if (t.type === "st") return `${t.stTechnique || "Soft tissue"}${t.stRegion ? ` — ${t.stRegion}` : ""}`;
+  if (t.type === "taping") return `${t.tapeType || "Taping"}${t.laterality ? ` (${t.laterality})` : ""}`;
+  if (t.type === "us") return `Ultrasound${t.usFreq ? ` — ${t.usFreq}` : ""}${t.usArea ? ` / ${t.usArea}` : ""}`;
+  if (t.type === "electro") return t.electroType || "Electrotherapy";
+  return t.technique || "Other";
+}
+
+export function TreatmentTechniquesSection({ data, setData }) {
+  const [d, set] = useSectionData(data, setData, "techniques");
+  const entries = Array.isArray(d.entries) ? d.entries : [];
+  const [form, setForm] = useState(BLANK_TECHNIQUE);
+  const [editingId, setEditingId] = useState(null);
+  const fset = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  function saveEntries(next) {
+    set("entries", next);
+  }
+  function commit() {
+    const entry = { ...form, id: form.id || Math.random().toString(36).slice(2, 9) };
+    const next = editingId ? entries.map((t) => (t.id === editingId ? entry : t)) : [...entries, entry];
+    saveEntries(next);
+    setForm(BLANK_TECHNIQUE);
+    setEditingId(null);
+  }
+  function editEntry(t) {
+    setForm({ ...BLANK_TECHNIQUE, ...t });
+    setEditingId(t.id);
+  }
+  function deleteEntry(id) {
+    saveEntries(entries.filter((t) => t.id !== id));
+    if (editingId === id) { setForm(BLANK_TECHNIQUE); setEditingId(null); }
+  }
+
+  return (
+    <>
+      <SectionIntro icon="🤲" title="Treatment Techniques" info="Log each manual therapy, dry needling, soft tissue, taping, ultrasound, or electrotherapy intervention given this session." />
+
+      <div className="subheading">{editingId ? "Edit technique" : "Add a technique"}</div>
+      <Segmented wrap options={TECHNIQUE_TYPES.map((t) => t.label)} value={TECHNIQUE_TYPES.find((t) => t.key === form.type)?.label} onChange={(label) => fset("type", TECHNIQUE_TYPES.find((t) => t.label === label)?.key || "manual")} />
+      {techniqueEntryForm(form.type, form, fset)}
+      <TextArea label="Patient response during technique" value={form.response} onChange={(v) => fset("response", v)} placeholder="e.g. pain reproduction +, ROM improved, comfortable" />
+      {form.type !== "dn" && form.type !== "taping" && <TextArea label="Additional notes" value={form.notes} onChange={(v) => fset("notes", v)} />}
+
+      <div className="row-2" style={{ marginTop: 4 }}>
+        <button type="button" className="primary-btn" onClick={commit}>
+          {editingId ? "💾 Update technique" : "+ Add technique"}
+        </button>
+        {editingId && (
+          <button type="button" className="ghost-btn" onClick={() => { setForm(BLANK_TECHNIQUE); setEditingId(null); }}>
+            Cancel
+          </button>
+        )}
+      </div>
+
+      <div className="subheading">Techniques this session ({entries.length})</div>
+      {entries.length === 0 && <div className="summary-empty">No techniques recorded yet — add your first above.</div>}
+      {entries.map((t) => (
+        <div className="tech-card" key={t.id}>
+          <div className="tech-card-head">
+            <div className="tech-card-title">{techniqueLabel(t)}</div>
+            <div className="tech-card-actions">
+              <button type="button" className="tech-card-edit" onClick={() => editEntry(t)} aria-label="Edit">✏️</button>
+              <button type="button" className="tech-card-del" onClick={() => deleteEntry(t.id)} aria-label="Delete">✕</button>
+            </div>
+          </div>
+          {(t.dosage || t.duration) && <div className="tech-card-meta">{[t.dosage, t.duration].filter(Boolean).join(" · ")}</div>}
+          {t.response && <div className="tech-card-meta">↳ {t.response}</div>}
+          {t.notes && <div className="tech-card-note">{t.notes}</div>}
+        </div>
+      ))}
+
+      <div className="subheading">Maitland grade reference</div>
+      {MAITLAND_GRADES.map((g) => (
+        <div className="summary-row" key={g.grade}>
+          <span className="summary-key">Grade {g.grade}</span>
+          <span className="summary-val">{g.desc}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* formatters[stepId] contract for orthoSummary.jsx */
+export function formatTreatmentTechniquesSection(section) {
+  const entries = Array.isArray(section.entries) ? section.entries : [];
+  if (!entries.length) return [];
+  return entries.map((t, i) => ({ label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${t.dosage ? ` — ${t.dosage}` : ""}` }));
 }
 
 function ProgressRow({ label, prev, curr, onPrev, onCurr, change, onChange }) {
