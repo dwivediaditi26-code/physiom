@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
 
@@ -260,7 +260,33 @@ const US_FREQ = ["1 MHz (deep — 3–5cm)", "3 MHz (superficial — 1–2cm)"];
 const US_MODE = ["Pulsed 20%", "Pulsed 50%", "Continuous"];
 const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)", "TENS — acupuncture-like (2–4Hz)", "IFT — 80–150Hz (pain)", "IFT — 1–10Hz (muscle stim)", "SWD", "NMES", "Russian stim", "LASER — class 3B/4", "Shockwave"];
 
-const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", grade: "", laterality: "", dosage: "", duration: "", response: "", notes: "", dnMuscle: "", dnNeedles: "", dnDepth: "", dnTwitch: "", usFreq: "", usIntensity: "", usMode: "", usArea: "", tapeType: "", tapeGoal: "", stTechnique: "", stRegion: "", electroType: "", electroParams: "" };
+const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", grade: "", laterality: "", sets: "", durationMin: "", frequency: "", dosage: "", duration: "", response: "", notes: "", dnMuscle: "", dnNeedles: "", dnDepth: "", dnTwitch: "", usFreq: "", usIntensity: "", usMode: "", usArea: "", tapeType: "", tapeGoal: "", stTechnique: "", stRegion: "", electroType: "", electroParams: "" };
+
+/* +/- stepper dosage field -- Sets / Duration (min) / Frequency (x per
+   week) as tap-to-adjust counters instead of free-typed text (2026-08-26,
+   user feedback: wanted these "in a plus/minus format", not typed
+   manually). Duration is always in minutes. */
+function StepperField({ label, value, onChange, unit, max = 60 }) {
+  return (
+    <div className="vital-field">
+      <div className="vital-label-row">
+        <span className="vital-label">{label}</span>
+      </div>
+      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} />
+      {unit && <div className="hint" style={{ marginTop: 2 }}>{unit}</div>}
+    </div>
+  );
+}
+
+function DosageSteppers({ form, set }) {
+  return (
+    <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
+      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} />
+      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} />
+      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} />
+    </div>
+  );
+}
 
 function TechniqueGradeField({ value, onChange }) {
   return (
@@ -289,10 +315,7 @@ function techniqueEntryForm(type, form, set) {
           </div>
           <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
           <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />
-          <div className="row-2">
-            <TextField label="Sets / reps or duration" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="e.g. 3×30s, 60 oscillations" />
-            <TextField label="Duration in session" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
-          </div>
+          <DosageSteppers form={form} set={set} />
         </>
       );
     case "dn":
@@ -312,11 +335,9 @@ function techniqueEntryForm(type, form, set) {
         <>
           <SelectField label="Soft tissue technique" type="single" options={ST_TECHNIQUES} value={form.stTechnique} onChange={(v) => set("stTechnique", v)} />
           <TextField label="Region / structure" value={form.stRegion} onChange={(v) => set("stRegion", v)} placeholder="e.g. upper trap, thoracic paraspinals" />
-          <div className="row-2">
-            <Segmented label="Laterality" options={["Left", "Right", "Bilateral"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
-            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
-          </div>
-          <TextField label="Dosage / parameters" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="e.g. moderate pressure, 30s holds" />
+          <Segmented label="Laterality" options={["Left", "Right", "Bilateral"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+          <DosageSteppers form={form} set={set} />
+          <TextField label="Pressure / parameters" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="e.g. moderate pressure, 30s holds" />
         </>
       );
     case "taping":
@@ -334,10 +355,8 @@ function techniqueEntryForm(type, form, set) {
             <SelectField label="Frequency" type="single" options={US_FREQ} value={form.usFreq} onChange={(v) => set("usFreq", v)} />
             <Segmented label="Mode" options={US_MODE} value={form.usMode} onChange={(v) => set("usMode", v)} />
           </div>
-          <div className="row-2">
-            <TextField label="Intensity (W/cm²)" value={form.usIntensity} onChange={(v) => set("usIntensity", v)} placeholder="e.g. 1.0" />
-            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 5 min" />
-          </div>
+          <TextField label="Intensity (W/cm²)" value={form.usIntensity} onChange={(v) => set("usIntensity", v)} placeholder="e.g. 1.0" />
+          <DosageSteppers form={form} set={set} />
           <TextField label="Treatment area / structure" value={form.usArea} onChange={(v) => set("usArea", v)} placeholder="e.g. supraspinatus insertion" />
         </>
       );
@@ -353,13 +372,20 @@ function techniqueEntryForm(type, form, set) {
         <>
           <TextField label="Technique / intervention" value={form.technique} onChange={(v) => set("technique", v)} placeholder="Describe technique" />
           <TextField label="Region / structure" value={form.region} onChange={(v) => set("region", v)} />
-          <div className="row-2">
-            <TextField label="Dosage" value={form.dosage} onChange={(v) => set("dosage", v)} placeholder="Sets, reps, duration" />
-            <TextField label="Duration" value={form.duration} onChange={(v) => set("duration", v)} placeholder="Time in session" />
-          </div>
+          <DosageSteppers form={form} set={set} />
         </>
       );
   }
+}
+
+function dosageMeta(t) {
+  const parts = [];
+  if (t.sets) parts.push(`${t.sets} sets`);
+  if (t.durationMin) parts.push(`${t.durationMin} min`);
+  if (t.frequency) parts.push(`${t.frequency}x/wk`);
+  if (t.dosage) parts.push(t.dosage);
+  if (t.duration) parts.push(t.duration);
+  return parts.join(" · ");
 }
 
 function techniqueLabel(t) {
@@ -430,7 +456,7 @@ export function TreatmentTechniquesSection({ data, setData }) {
               <button type="button" className="tech-card-del" onClick={() => deleteEntry(t.id)} aria-label="Delete">✕</button>
             </div>
           </div>
-          {(t.dosage || t.duration) && <div className="tech-card-meta">{[t.dosage, t.duration].filter(Boolean).join(" · ")}</div>}
+          {dosageMeta(t) && <div className="tech-card-meta">{dosageMeta(t)}</div>}
           {t.response && <div className="tech-card-meta">↳ {t.response}</div>}
           {t.notes && <div className="tech-card-note">{t.notes}</div>}
         </div>
