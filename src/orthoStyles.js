@@ -444,6 +444,7 @@ export function orthoStyles() {
         .picker-card { display: flex; align-items: center; gap: 14px; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 14px; background: #fff; cursor: pointer; text-align: left; transition: all .15s; width: 100%; }
         .picker-card:active { transform: scale(0.98); }
         .picker-card.selected { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .picker-card-ai { border: 1.5px solid ${BRAND.purple}; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); }
         .picker-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
         .picker-label { font-weight: 700; font-size: 15px; }
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }

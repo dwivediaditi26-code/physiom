@@ -59,6 +59,11 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   const [customConditionLabel, setCustomConditionLabel] = useState("");
   const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
+  // IPD/Post-op/Outpatient -- same shortcut the "New Assessment" picker's
+  // "Start with AI" gives, just reachable without leaving this screen too.
+  const [pickedAi, setPickedAi] = useState(false);
+  const effectiveEntryMode = entryMode || (pickedAi ? "ai" : null);
 
   function restart() {
     setStep(entryMode ? 1 : 0);
@@ -68,6 +73,15 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setCustomConditionLabel("");
     setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
+    setPickedAi(false);
+  }
+
+  function selectAiAssisted() {
+    setPathway("outpatient");
+    setCondition("general");
+    setOpdMode("general");
+    setPickedAi(true);
+    setStep(1);
   }
 
   const isOutpatient = pathway === "outpatient";
@@ -85,7 +99,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         onSave={onSave}
         activePatientId={activePatientId}
         requireAuth={requireAuth}
-        autoOpenAI={entryMode === "ai"}
+        autoOpenAI={effectiveEntryMode === "ai"}
       />
     );
   }
@@ -102,7 +116,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
   function goNext() {
-    if (entryMode && step === 1) { setStep(3); return; } // region chosen -- condition/mode already forced above, skip straight in
+    if (effectiveEntryMode && step === 1) { setStep(3); return; } // region chosen -- condition/mode already forced above, skip straight in
     if (step < 2) setStep(step + 1);
     else setStep(3);
   }
@@ -133,7 +147,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
               <div className="topbar-title">🦴 Ortho Assessment</div>
               {pathway && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
             </div>
-            {((step === 0 && !entryMode) || (step === 1 && entryMode)) && onExit && (
+            {((step === 0 && !effectiveEntryMode) || (step === 1 && effectiveEntryMode)) && onExit && (
               <button className="back-btn" onClick={onExit} aria-label="Close">
                 ✕
               </button>
@@ -146,6 +160,13 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
             <>
               <SectionIntro icon="🦴" title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
               <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
+              <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
+                <div className="picker-icon">✨</div>
+                <div>
+                  <div className="picker-label">AI Assisted Assessment</div>
+                  <div className="picker-desc">Say the assessment in your own words — AI fills Subjective and suggests Objective tests. Uses the Outpatient workflow.</div>
+                </div>
+              </button>
             </>
           )}
 
