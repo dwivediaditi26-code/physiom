@@ -1,7 +1,16 @@
-import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import React, { useState, lazy, Suspense } from "react";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
+
+// Same SVG anatomical hotspot map used by the old Palpation flow
+// (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
+// as Pain's body chart: large, self-contained, only needed once opened.
+const LazyPalpationModule = lazy(() => import("./lazy_palpation.jsx"));
+
+// AI text/voice intake for Subjective -- lazy-loaded since most sessions
+// won't open it, and it pulls in its own fetch/speech-recognition logic.
+const LazyOrthoAIIntakePanel = lazy(() => import("./OrthoAIIntakePanel.jsx"));
 
 /* ============================================================
    Outpatient / Musculoskeletal — sections specific to the full
@@ -85,11 +94,26 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI }) {
   const [d, set] = useSectionData(data, setData, "subjective");
+
+  // AI intake writes into both Subjective and Pain in one go -- it needs
+  // the wizard's top-level setData, not this section's own scoped `set`
+  // (which can only ever touch data.subjective).
+  function applyAiUpdates(updates) {
+    setData((prev) => ({
+      ...prev,
+      subjective: { ...prev.subjective, ...updates.subjective },
+      pain: { ...prev.pain, ...updates.pain },
+    }));
+  }
+
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
+      <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
+        <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
+      </Suspense>
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       <div className="row-2">
         <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
@@ -129,14 +153,20 @@ export function formatSubjectiveSection(section) {
 
 export function PalpationSection({ data, setData, selectedRegions = [], regionLabelOf }) {
   const [d, set] = useSectionData(data, setData, "palpation");
-  const locationOptions = selectedRegions.length ? selectedRegions.map((r) => regionLabelOf(r)) : ["Not specified"];
+  const [mapOpen, setMapOpen] = useState(true);
   return (
     <>
       <SectionIntro icon="🖐️" title="Palpation" />
-      <SelectField label="Region(s) palpated" type="multi" options={locationOptions} value={d.regionsPalpated} onChange={(v) => set("regionsPalpated", v)} />
-      <SelectField label="Tenderness" type="multi" options={["None", "Mild", "Moderate", "Severe", "Localized", "Diffuse"]} value={d.tenderness} onChange={(v) => set("tenderness", v)} />
-      <TextField label="Tenderness location" value={d.tendernessLocation} onChange={(v) => set("tendernessLocation", v)} />
-      <Segmented label="Temperature" options={["Normal", "Warm", "Hot", "Cool"]} value={d.temperature} onChange={(v) => set("temperature", v)} />
+      <button type="button" className="collapsible-head" onClick={() => setMapOpen((o) => !o)}>
+        <span>Body Map</span>
+        <span className={"collapsible-chevron" + (mapOpen ? " open" : "")}>⌄</span>
+      </button>
+      {mapOpen && (
+        <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
+          <LazyPalpationModule data={d} set={set} />
+        </Suspense>
+      )}
+      <div className="subheading">Findings</div>
       <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => set("swelling", v)} />
       <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => set("muscleTone", v)} />
       <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => set("triggerPoints", v)} placeholder="Location and referral pattern..." />

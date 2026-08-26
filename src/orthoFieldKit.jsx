@@ -203,6 +203,42 @@ export function FieldShell({ label, hint, howTo, children }) {
   );
 }
 
+// Left/Right (or single-column) grading grid -- same shape as Neuro's own
+// LRGrid (myotomes, dermatomes, DTRs, sensory, coordination), ported here so
+// Ortho's neuro screen doesn't have to cross-import a component styled for
+// a different module's CSS. rows="Bicep (C5-6)" etc, one <select> per row x
+// column, value keyed "row__column".
+export function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo }) {
+  return (
+    <FieldShell label={label} hint={hint} howTo={howTo}>
+      <div className="lr-grid">
+        <div className="lr-row lr-head">
+          <div className="lr-cell lr-zone" />
+          {columns.map((c) => (
+            <div className="lr-cell lr-colhead" key={c}>{c}</div>
+          ))}
+        </div>
+        {rows.map((r) => (
+          <div className="lr-row" key={r}>
+            <div className="lr-cell lr-zone">{r}</div>
+            {columns.map((c) => {
+              const key = `${r}__${c}`;
+              return (
+                <div className="lr-cell" key={c}>
+                  <select className="lr-select" value={value[key] || ""} onChange={(e) => onChange({ ...value, [key]: e.target.value })}>
+                    <option value="">–</option>
+                    {options.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </FieldShell>
+  );
+}
+
 export function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>

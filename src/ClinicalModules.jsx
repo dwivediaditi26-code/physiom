@@ -2640,7 +2640,8 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
         // Region label, with the clinician-confirmed specific structure
         // (if one was picked from "Structures at this point") appended --
         // e.g. "Abdomen — External oblique" instead of just "Abdomen".
-        const pl = p => p.label + (p.structure ? ` — ${p.structure}` : "");
+        const structLabel = p => Array.isArray(p.structure) ? p.structure.join(", ") : (p.structure || "");
+        const pl = p => p.label + (structLabel(p) ? ` — ${structLabel(p)}` : "");
         const graded = pins.filter(p => p.tenderness);
         const GRADE_LABELS = { 0:"Grade 0 (no tenderness)", 1:"Grade 1+ (mild)", 2:"Grade 2+ (moderate — grimace)", 3:"Grade 3+ (severe — withdrawal)", 4:"Grade 4+ (excruciating — jump sign)" };
         // Group by grade
@@ -4682,7 +4683,7 @@ function SOAPNoteModule({ data, set, onNav, initialTab }) {
           {/* Palpation */}
           {(palpPins.filter(p=>p.tenderness).length>0||palpText.length>0)&&<div style={subCard("#065F46")}>
             {subH("Palpation — Tender","#065F46")}
-            {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=><span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{p.structure?` (${p.structure})`:""}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>)}
+            {palpPins.filter(p=>p.tenderness).slice(0,8).map((p,i)=>{ const sLabel = Array.isArray(p.structure) ? p.structure.join(", ") : (p.structure || ""); return <span key={i} style={chip_("#FEF3C7","#92400E")}>{p.label}{sLabel?` (${sLabel})`:""}{p.side&&p.side!=="bilateral"?" ("+p.side+")":""} — grade {p.tenderness}+</span>; })}
             {palpText.map(([r,t],i)=><div key={i} style={row}><span style={{color:"#6B7280",fontSize:14.5,fontWeight:500,minWidth:50}}>{r}</span><span style={{color:"#111827",fontSize:14.5,flex:1,textAlign:"right"}}>{t}</span></div>)}
           </div>}
 
@@ -6988,89 +6989,6 @@ function BodyFigureSVG({ pins, hoveredHotspot, onHover, onClick, view, hotspots,
   );
 }
 
-// ─── Admin Mode — hotspot point editor ────────────────────────────────────────
-// Mirrors BodyChartPro.jsx's AdminOverlay pattern, adapted for single draggable
-// points instead of polygons. Renders as a sibling layer inside the same
-// <svg viewBox="0 0 210 216"> that already holds both BodyFigureSVG halves
-// (front at x:0-100, back at x:110-210, both offset down BODY_LABEL_SPACE
-// units for the header text) -- see the viewBox/offset comment above
-// BODY_SVG_VIEWBOX. Drag position is tracked locally for live feedback and
-// only committed to the parent (and localStorage) on release, same as
-// BodyChartPro's AdminOverlay, so dragging doesn't spam a save on every pixel.
-function AdminHotspotOverlay({ hotspots, svgRef, onMove }) {
-  const [localPos, setLocalPos] = useState({}); // hotspotId -> {x,y} while dragging
-  const draggingRef = useRef(null);
-  const localRef = useRef({});
-
-  const getViewBoxXY = useCallback((e) => {
-    const svg = svgRef.current;
-    if (!svg) return null;
-    const rect = svg.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
-      vx: ((clientX - rect.left) / rect.width) * 210,
-      vy: ((clientY - rect.top) / rect.height) * 216,
-    };
-  }, [svgRef]);
-
-  const handleMove = useCallback((e) => {
-    const d = draggingRef.current;
-    if (!d) return;
-    const p = getViewBoxXY(e);
-    if (!p) return;
-    const offsetX = d.side === "back" ? 110 : 0;
-    const x = Math.max(0, Math.min(100, p.vx - offsetX));
-    const y = Math.max(0, Math.min(100, (p.vy - BODY_LABEL_SPACE) / 2));
-    const next = { ...localRef.current, [d.id]: { x, y } };
-    localRef.current = next;
-    setLocalPos(next);
-  }, [getViewBoxXY]);
-
-  const handleUp = useCallback(() => {
-    const d = draggingRef.current;
-    if (d && localRef.current[d.id]) {
-      onMove(d.id, localRef.current[d.id].x, localRef.current[d.id].y);
-    }
-    draggingRef.current = null;
-  }, [onMove]);
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
-    window.addEventListener("touchmove", handleMove, { passive:false });
-    window.addEventListener("touchend", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-      window.removeEventListener("touchmove", handleMove);
-      window.removeEventListener("touchend", handleUp);
-    };
-  }, [handleMove, handleUp]);
-
-  return (
-    <g>
-      {hotspots.flatMap(h => {
-        const pos = localPos[h.id] || { x:h.x, y:h.y };
-        const sides = h.side === "both" ? ["front","back"] : [h.side];
-        return sides.map(side => {
-          const offsetX = side === "back" ? 110 : 0;
-          const sx = offsetX + pos.x;
-          const sy = BODY_LABEL_SPACE + (pos.y / 100) * 200;
-          return (
-            <circle key={h.id + side} cx={sx} cy={sy} r="2.2"
-              fill="rgba(124,58,237,0.85)" stroke="#fff" strokeWidth="0.5"
-              style={{ cursor:"grab" }}
-              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); draggingRef.current = { id:h.id, side }; }}
-              onTouchStart={e => { e.preventDefault(); e.stopPropagation(); draggingRef.current = { id:h.id, side }; }}
-            />
-          );
-        });
-      })}
-    </g>
-  );
-}
-
 // ─── Tenderness Grade Selector ────────────────────────────────────────────────
 function GradeChip({ value, selected, onClick }) {
   const color = GRADE_COLOR[value] || C.muted;
@@ -7101,25 +7019,18 @@ function PalpationModule({ data, set, navContext={} }) {
   }); // { id, hotspotId, label, structures, tenderness, temp, texture, notes, side }
   const [selected, setSelected]   = useState(null); // id of selected pin
   const [hovered, setHovered]     = useState(null);  // hotspot id
-  const [view, setView]           = useState("front"); // "front" | "back"
   const genId = () => Math.random().toString(36).slice(2, 9);
 
-  // ── Admin Mode: drag-to-reposition hotspot editor (see AdminHotspotOverlay
-  // above). Position overrides persist to this browser's localStorage until
-  // exported as paste-ready source -- same pattern as BodyChartPro.jsx's
-  // Admin Mode for the (separate) Body Chart regions.
-  const [adminMode, setAdminMode] = useState(false);
-  const [editedHotspots, setEditedHotspots] = useState(() => {
+  // Hotspot position overrides tuned in the past (kept read-only -- the
+  // Admin Mode editor that produced these was removed as clinician-facing
+  // clutter, but any positions already corrected should stay corrected).
+  const [editedHotspots] = useState(() => {
     try { return JSON.parse(localStorage.getItem("palp_hotspot_overrides") || "{}"); }
     catch { return {}; }
   });
-  useEffect(() => {
-    try { localStorage.setItem("palp_hotspot_overrides", JSON.stringify(editedHotspots)); } catch {}
-  }, [editedHotspots]);
   const effectiveHotspots = useMemo(() =>
     ANATOMICAL_HOTSPOTS.map(h => editedHotspots[h.id] ? { ...h, x:editedHotspots[h.id].x, y:editedHotspots[h.id].y } : h),
   [editedHotspots]);
-  const [exportText, setExportText] = useState(null);
   const svgRef = useRef(null);
 
   // ── Deep-link targeting from genericTestNav.js's kind:"palpation" ctx
@@ -7136,14 +7047,14 @@ function PalpationModule({ data, set, navContext={} }) {
   useEffect(() => {
     setTargetDismissed(false);
     if (!targetHotspotIds || !targetHotspotIds.length) return;
-    const first = ANATOMICAL_HOTSPOTS.find(h => targetHotspotIds.includes(h.id));
-    if (first && first.side !== "both") setView(first.side);
     setTimeout(() => { svgRef.current?.scrollIntoView({ behavior:"smooth", block:"center" }); }, 80);
   }, [targetHotspotIds]);
 
   // Click on hotspot → add or select pin
-  const handleHotspotClick = useCallback((hotspot) => {
-    if (adminMode) return; // dragging, not recording findings
+  // side = whichever figure (front/back) was actually clicked -- both are
+  // always interactive now, so this comes from the clicked instance, not a
+  // shared "current view" toggle (see BodyFigureSVG onClick wiring below).
+  const handleHotspotClick = useCallback((hotspot, side) => {
     const existing = pins.find(p => p.hotspotId === hotspot.id);
     if (existing) {
       setSelected(existing.id);
@@ -7153,8 +7064,8 @@ function PalpationModule({ data, set, navContext={} }) {
         hotspotId: hotspot.id,
         label: hotspot.label,
         structures: hotspot.structures,
-        structure: "", // which one of `structures` the clinician confirms is the actual finding
-        side: view,
+        structure: [], // which of `structures` the clinician confirms as actual findings (multi-select)
+        side: hotspot.side === "both" ? side : hotspot.side,
         tenderness: "",
         temp: "",
         texture: [],
@@ -7163,7 +7074,15 @@ function PalpationModule({ data, set, navContext={} }) {
       setPins(p => [...p, newPin]);
       setSelected(newPin.id);
     }
-  }, [pins, view, adminMode]);
+  }, [pins]);
+
+  const toggleStructure = (id, s) => {
+    setPins(p => p.map(pin => {
+      if (pin.id !== id) return pin;
+      const arr = pin.structure || [];
+      return { ...pin, structure: arr.includes(s) ? arr.filter(x => x !== s) : [...arr, s] };
+    }));
+  };
 
   const updatePin = (id, field, val) => {
     setPins(p => p.map(pin => pin.id === id ? { ...pin, [field]: val } : pin));
@@ -7180,30 +7099,6 @@ function PalpationModule({ data, set, navContext={} }) {
   const removePin = (id) => {
     setPins(p => p.filter(pin => pin.id !== id));
     if (selected === id) setSelected(null);
-  };
-
-  // Export the (possibly Admin-corrected) hotspot positions as ready-to-paste
-  // source so points fixed in Admin Mode can be made permanent in the code --
-  // same purpose as BodyChartPro.jsx's exportRegions. Coordinates rounded to
-  // 2 decimals; everything else (id/r/side/label/structures) passes through
-  // unchanged so this is safe to paste directly over ANATOMICAL_HOTSPOTS.
-  const exportHotspots = () => {
-    const r2v = v => Math.round(v * 100) / 100;
-    const merged = ANATOMICAL_HOTSPOTS.map(h => {
-      const o = editedHotspots[h.id];
-      return o ? { ...h, x:r2v(o.x), y:r2v(o.y) } : h;
-    });
-    const src = "const ANATOMICAL_HOTSPOTS = [\n" + merged.map(h =>
-      `  { id:${JSON.stringify(h.id)}, x:${h.x}, y:${h.y}, r:${h.r}, side:${JSON.stringify(h.side)}, label:${JSON.stringify(h.label)},\n    structures:${JSON.stringify(h.structures)} },`
-    ).join("\n") + "\n];";
-    try { navigator.clipboard?.writeText(src); } catch {}
-    setExportText(src);
-    return src;
-  };
-  const resetHotspots = () => {
-    if (window.confirm("Reset all palpation point positions back to the built-in defaults? Your Admin corrections will be cleared.")) {
-      setEditedHotspots({});
-    }
   };
 
   const selPin = pins.find(p => p.id === selected);
@@ -7237,26 +7132,6 @@ function PalpationModule({ data, set, navContext={} }) {
         @keyframes slideIn  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
 
-      {exportText && (
-        <div onClick={()=>setExportText(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ background:"#fff", borderRadius:14, width:"100%", maxWidth:520, maxHeight:"85vh", display:"flex", flexDirection:"column", boxShadow:"0 20px 50px rgba(0,0,0,0.35)" }}>
-            <div style={{ padding:"14px 16px", borderBottom:"1px solid #eee" }}>
-              <div style={{ fontWeight:800, fontSize:"0.95rem", color:"#1a1025" }}>📋 Corrected palpation points</div>
-              <div style={{ fontSize:"0.72rem", color:"#6b7280", marginTop:3 }}>Copy this and paste it over the ANATOMICAL_HOTSPOTS array in ClinicalModules.jsx — or send it to me to apply.</div>
-            </div>
-            <textarea readOnly value={exportText}
-              onFocus={e=>e.target.select()} onClick={e=>e.target.select()}
-              style={{ flex:1, minHeight:180, margin:"12px 16px", padding:"10px", fontFamily:"monospace", fontSize:"0.7rem", border:"1px solid #ddd", borderRadius:8, resize:"none", color:"#111", background:"#f9fafb" }}/>
-            <div style={{ display:"flex", gap:8, padding:"0 16px 16px", flexWrap:"wrap" }}>
-              <button onClick={()=>{ try{navigator.clipboard?.writeText(exportText);}catch{} }}
-                style={{ flex:1, minWidth:120, padding:"10px", borderRadius:9, border:"none", background:"#7c3aed", color:"#fff", fontWeight:800, fontSize:"0.78rem", cursor:"pointer" }}>Copy</button>
-              <button onClick={()=>setExportText(null)}
-                style={{ padding:"10px 16px", borderRadius:9, border:"1px solid #e5e7eb", background:"#fff", color:"#6b7280", fontWeight:700, fontSize:"0.78rem", cursor:"pointer" }}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Header ── */}
       <div style={{ background:`linear-gradient(135deg,rgba(0,229,255,0.06),rgba(127,90,240,0.06))`,
         border:`1px solid ${C.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
@@ -7269,29 +7144,6 @@ function PalpationModule({ data, set, navContext={} }) {
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
             <span style={{ fontSize:"0.75rem", color:C.muted }}>{pins.length} point{pins.length !== 1 ? "s" : ""} recorded</span>
-            <button onClick={() => setAdminMode(p => !p)}
-              style={{ padding:"4px 10px", borderRadius:7, border:`1.5px solid ${adminMode ? "#7c3aed" : C.border}`,
-                background: adminMode ? "rgba(124,58,237,0.12)" : "transparent",
-                color: adminMode ? "#7c3aed" : C.muted, fontSize:"0.75rem",
-                fontWeight:700, cursor:"pointer" }}>
-              {adminMode ? "🔧 Admin ON" : "🔧 Admin"}
-            </button>
-            {adminMode && (
-              <>
-                <button onClick={exportHotspots}
-                  style={{ padding:"4px 10px", borderRadius:7, border:"1.5px solid #7c3aed",
-                    background:"rgba(124,58,237,0.12)", color:"#7c3aed", fontSize:"0.75rem",
-                    fontWeight:700, cursor:"pointer" }}>
-                  📋 Export corrected points
-                </button>
-                <button onClick={resetHotspots}
-                  style={{ padding:"4px 10px", borderRadius:7, border:"1px solid #fca5a5",
-                    background:"#fef2f2", color:"#ef4444", fontSize:"0.75rem",
-                    fontWeight:700, cursor:"pointer" }}>
-                  ↺ Reset to default
-                </button>
-              </>
-            )}
             {pins.length > 0 && (
               <button onClick={() => { setPins([]); setSelected(null); }}
                 style={{ padding:"4px 10px", borderRadius:7, border:`1px solid ${C.red}40`,
@@ -7339,19 +7191,6 @@ function PalpationModule({ data, set, navContext={} }) {
         );
       })()}
 
-      {/* ── View toggle ── */}
-      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-        {[["front","Anterior View 🫀"],["back","Posterior View 🦴"]].map(([v,l]) => (
-          <button key={v} onClick={() => setView(v)}
-            style={{ flex:1, padding:"9px", borderRadius:10, fontWeight:700, fontSize:"0.76rem",
-              cursor:"pointer", border:`1.5px solid ${view === v ? C.accent : C.border}`,
-              background: view === v ? "rgba(0,229,255,0.1)" : C.surface,
-              color: view === v ? C.accent : C.muted, transition:"all 0.15s" }}>
-            {l}
-          </button>
-        ))}
-      </div>
-
       {/* ── Body Map + Panel ── */}
       <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
 
@@ -7363,7 +7202,7 @@ function PalpationModule({ data, set, navContext={} }) {
             width="100%"
             style={{ maxWidth:460, minWidth:260, background:C.surface,
               border:`1px solid ${C.border}`, borderRadius:14,
-              cursor: adminMode ? "default" : "crosshair", userSelect:"none" }}
+              cursor:"crosshair", userSelect:"none" }}
           >
             <defs>
               <filter id="glow">
@@ -7372,14 +7211,15 @@ function PalpationModule({ data, set, navContext={} }) {
               </filter>
             </defs>
 
-            {/* Front body (left) */}
+            {/* Front and back bodies are both always interactive -- tap
+                either one, no view toggle required. */}
             <BodyFigureSVG
               view="front"
               hotspots={effectiveHotspots}
               pins={pins.filter(p => p.side === "front")}
-              hoveredHotspot={view === "front" ? hovered : null}
-              onHover={view === "front" ? setHovered : () => {}}
-              onClick={view === "front" ? handleHotspotClick : () => {}}
+              hoveredHotspot={hovered}
+              onHover={setHovered}
+              onClick={(h) => handleHotspotClick(h, "front")}
               targetHotspotIds={targetDismissed ? null : targetHotspotIds}
             />
 
@@ -7388,31 +7228,15 @@ function PalpationModule({ data, set, navContext={} }) {
               view="back"
               hotspots={effectiveHotspots}
               pins={pins.filter(p => p.side === "back")}
-              hoveredHotspot={view === "back" ? hovered : null}
-              onHover={view === "back" ? setHovered : () => {}}
-              onClick={view === "back" ? handleHotspotClick : () => {}}
+              hoveredHotspot={hovered}
+              onHover={setHovered}
+              onClick={(h) => handleHotspotClick(h, "back")}
               targetHotspotIds={targetDismissed ? null : targetHotspotIds}
             />
 
             {/* Divider */}
             <line x1="105" y1="2" x2="105" y2="216" stroke={C.border} strokeWidth="0.5" strokeDasharray="2,3"/>
-
-            {/* Admin overlay — draggable dots for every hotspot, both halves */}
-            {adminMode && (
-              <AdminHotspotOverlay
-                hotspots={effectiveHotspots}
-                svgRef={svgRef}
-                onMove={(id, x, y) => setEditedHotspots(p => ({ ...p, [id]: { x, y } }))}
-              />
-            )}
           </svg>
-          {adminMode && (
-            <div style={{ marginTop:6, padding:"6px 12px", background:"rgba(124,58,237,0.08)",
-              border:"1px solid rgba(124,58,237,0.25)", borderRadius:8, maxWidth:460,
-              fontSize:"0.72rem", color:"#7c3aed", textAlign:"center" }}>
-              🔧 Admin Mode — drag a dot to reposition that point · tapping to record findings is paused
-            </div>
-          )}
 
           {/* Hover tooltip outside SVG */}
           {hovered && (
@@ -7492,7 +7316,7 @@ function PalpationModule({ data, set, navContext={} }) {
                         </div>
                         <div style={{ fontSize:"0.82rem", color:C.muted, marginTop:2 }}>
                           {pin.side === "front" ? "Anterior" : "Posterior"}
-                          {pin.structure ? ` · ${pin.structure}` : ""}
+                          {(pin.structure || []).length > 0 ? ` · ${pin.structure.join(", ")}` : ""}
                           {pin.temp ? ` · ${pin.temp}` : ""}
                           {(pin.texture || []).length > 0 ? ` · ${pin.texture.join(", ")}` : ""}
                         </div>
@@ -7540,9 +7364,9 @@ function PalpationModule({ data, set, navContext={} }) {
                 </div>
               </div>
 
-              {/* Structures at this point — tap one to confirm it as the
-                  specific structure for this finding (single-select, same
-                  toggle pattern as Tenderness Grade below). */}
+              {/* Structures at this point — tap any/all that match this
+                  finding (multi-select, same toggle pattern as Tissue
+                  Quality below). */}
               <div style={{ background:C.s2, border:`1px solid ${C.border}`,
                 borderRadius:9, padding:"9px 12px", marginBottom:12 }}>
                 <div style={{ fontSize:"0.78rem", fontWeight:700, color:C.accent,
@@ -7550,14 +7374,14 @@ function PalpationModule({ data, set, navContext={} }) {
                   🏗 Structures at this point
                 </div>
                 <div style={{ fontSize:"0.7rem", color:C.muted, marginBottom:7 }}>
-                  Tap the one that specifically matches this finding
+                  Tap all that specifically match this finding
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
                   {selPin.structures.map((s, i) => {
-                    const isSel = selPin.structure === s;
+                    const isSel = (selPin.structure || []).includes(s);
                     return (
                       <button key={i}
-                        onClick={() => updatePin(selPin.id, "structure", isSel ? "" : s)}
+                        onClick={() => toggleStructure(selPin.id, s)}
                         style={{ fontSize:"0.75rem", padding:"3px 9px", borderRadius:20,
                           border:`1.5px solid ${isSel ? C.accent : C.border}`,
                           background: isSel ? `${C.accent}20` : C.s3,
@@ -7680,13 +7504,13 @@ function PalpationModule({ data, set, navContext={} }) {
               </div>
 
               {/* Mini summary */}
-              {(selPin.tenderness || selPin.temp || selPin.structure || (selPin.texture||[]).length > 0) && (
+              {(selPin.tenderness || selPin.temp || (selPin.structure||[]).length > 0 || (selPin.texture||[]).length > 0) && (
                 <div style={{ padding:"9px 12px", background:C.s2, borderRadius:9,
                   border:`1px solid ${C.border}`, fontSize:"0.78rem", color:C.muted,
                   lineHeight:1.65 }}>
                   <span style={{ color:C.text, fontWeight:700 }}>Summary: </span>
                   {selPin.label}
-                  {selPin.structure ? ` (${selPin.structure})` : ""}
+                  {(selPin.structure||[]).length > 0 ? ` (${selPin.structure.join(", ")})` : ""}
                   {selPin.tenderness ? ` — Grade ${selPin.tenderness} tenderness` : ""}
                   {selPin.temp && selPin.temp !== "Normal" ? `, ${selPin.temp.toLowerCase()} to touch` : ""}
                   {(selPin.texture||[]).length > 0 ? `, ${selPin.texture.join(" / ").toLowerCase()}` : ""}
@@ -7759,7 +7583,7 @@ function PalpationModule({ data, set, navContext={} }) {
                       style={{ cursor:"pointer", background:selected === pin.id ? C.s2 : "transparent",
                         borderBottom:`1px solid ${C.border}` }}>
                       <td style={{ padding:"7px 10px", color:C.text, fontWeight:600 }}>{pin.label}</td>
-                      <td style={{ padding:"7px 10px", color:C.muted }}>{pin.structure || "—"}</td>
+                      <td style={{ padding:"7px 10px", color:C.muted }}>{(pin.structure||[]).join(", ") || "—"}</td>
                       <td style={{ padding:"7px 10px", color:C.muted }}>
                         {pin.side === "front" ? "Ant." : "Post."}
                       </td>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData } from "./orthoFieldKit.jsx";
+import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
@@ -13,6 +14,7 @@ import {
   ActivityToleranceSection,
   OutcomeMeasureSection,
   ImpressionSection,
+  NeuroScreenSection,
 } from "./orthoCommonSections.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
@@ -20,6 +22,17 @@ import { orthoStyles } from "./orthoStyles.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
+}
+
+// Same as Outpatient's formatPainSection -- Pain carries a JSON-blob body
+// chart field that the generic formatter would otherwise dump raw.
+function formatPainSection(section) {
+  const { body_chart_pro, ...rest } = section;
+  const restRows = Object.entries(rest)
+    .filter(([k]) => !k.startsWith("__"))
+    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .filter((r) => r.value);
+  return [...formatBodyChartSummary(body_chart_pro), ...restRows];
 }
 
 /* ============================================================
@@ -36,7 +49,7 @@ export const IPD_CONDITIONS = [
   { id: "arthritis", icon: "🦴", label: "Arthritis / Degenerative", desc: "Chronic joint pain and functional decline", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "infection", icon: "🦠", label: "Infection", desc: "Medically-documented infection under treatment", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "activityTolerance"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, contusion", optional: ["edema", "rom", "mmt", "jointMobility", "activityTolerance", "outcomeMeasure"] },
-  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "neuroScreen", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["edema", "wound", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "deconditioning", icon: "🧍", label: "Deconditioning / Mobility Limitation", desc: "Generalised weakness / reduced mobility", optional: ["rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
@@ -46,7 +59,7 @@ export const IPD_CONDITIONS = [
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
 const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "review"];
-const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
+const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
   "caseInfo",
@@ -59,6 +72,7 @@ const ORDERED_ALL = [
   "edema",
   "wound",
   "neurovascular",
+  "neuroScreen",
   "rom",
   "mmt",
   "jointMobility",
@@ -83,6 +97,7 @@ const STEP_META = {
   edema: { icon: "💧", label: "Edema" },
   wound: { icon: "🩹", label: "Wound / Surgical Site" },
   neurovascular: { icon: "🧠", label: "Neurovascular" },
+  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
   rom: { icon: "📐", label: "ROM" },
   mmt: { icon: "💪", label: "MMT" },
   jointMobility: { icon: "🦴", label: "Joint Mobility" },
@@ -295,6 +310,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "edema" && <EdemaSection data={data} setData={setData} />}
           {current.id === "wound" && <WoundSection data={data} setData={setData} />}
           {current.id === "neurovascular" && <NeurovascularSection data={data} setData={setData} />}
+          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "jointMobility" && <JointMobilitySection data={data} setData={setData} selectedRegions={selectedRegions} />}
@@ -314,7 +330,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
               data={data}
               onEdit={jumpTo}
               exportHeaderLines={[`IPD ORTHOPEDIC ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-              formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection }}
+              formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection }}
             />
           )}
         </div>

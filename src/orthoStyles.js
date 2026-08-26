@@ -82,6 +82,31 @@ export function orthoStyles() {
         .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
         .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
 
+        .lr-grid { border: 1.5px solid ${BRAND.border}; border-radius: 14px; overflow: hidden; }
+        .lr-row { display: flex; border-bottom: 1px solid ${BRAND.border}; }
+        .lr-row:last-child { border-bottom: none; }
+        .lr-head { background: ${BRAND.purpleFaint}; }
+        .lr-cell { flex: 1; padding: 8px 6px; font-size: 12px; display: flex; align-items: center; }
+        .lr-zone { flex: 1.4; font-weight: 600; color: ${BRAND.ink}; }
+        .lr-colhead { font-weight: 700; color: ${BRAND.purpleDark}; justify-content: center; }
+        .lr-select { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 8px; padding: 5px 4px; font-size: 11.5px; background: #fff; }
+
+        .collapsible-head { width: 100%; display: flex; align-items: center; justify-content: space-between; background: ${BRAND.purpleFaint}; border: 1px solid ${BRAND.border}; border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; cursor: pointer; font-family: inherit; }
+        .collapsible-chevron { transition: transform 0.15s; }
+        .collapsible-chevron.open { transform: rotate(180deg); }
+
+        .ai-intake-toggle { width: 100%; padding: 12px; margin-bottom: 14px; border: 1.5px dashed ${BRAND.purple}; border-radius: 12px; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .ai-intake-panel { border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px; margin-bottom: 16px; background: linear-gradient(180deg, ${BRAND.purpleFaint}, #fff 60%); }
+        .ai-intake-head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: 13.5px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+        .ai-intake-textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 10px; padding: 10px; font-size: 13px; font-family: inherit; outline: none; resize: vertical; margin: 8px 0; }
+        .ai-intake-actions { display: flex; gap: 8px; margin-top: 8px; }
+        .ai-intake-actions .primary-btn, .ai-intake-actions .ghost-btn { flex: 1; }
+        .ai-intake-error { margin-top: 8px; padding: 8px 10px; background: #FDECEC; border: 1px solid #F7D3D3; border-radius: 8px; color: #B91C1C; font-size: 12px; }
+        .ai-intake-review { margin-top: 4px; }
+        .ai-intake-row { font-size: 12.5px; color: ${BRAND.ink}; padding: 5px 0; border-top: 1px solid #EDE4FB; line-height: 1.5; }
+        .ai-intake-row:first-of-type { border-top: none; }
+        .ai-intake-flag { color: #B91C1C; }
+
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
@@ -383,6 +408,33 @@ export function orthoStyles() {
         .suggest-title { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; }
         .suggest-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
 
+        .obj-card { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+        .obj-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+        .obj-card-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: ${BRAND.gray}; }
+        .obj-card-badge-ai { color: ${BRAND.purple}; }
+        .obj-card-check { font-size: 10.5px; font-weight: 800; color: ${BRAND.purple}; }
+        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; }
+        .obj-card-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
+        .obj-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .obj-card-link { border: none; background: none; padding: 0; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
+        .obj-card-add { border: 1.5px solid ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .obj-card-jump { border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; }
+        .obj-card-remove { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 11px; }
+
+        .obj-why-text { font-size: 13px; color: ${BRAND.ink}; line-height: 1.6; margin: 0 0 6px; }
+        .obj-what-list { margin: 0 0 4px; padding-left: 18px; font-size: 12.5px; color: ${BRAND.ink}; line-height: 1.7; }
+        .obj-how-row { margin-bottom: 12px; }
+        .obj-how-label { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: ${BRAND.purple}; margin-bottom: 3px; }
+        .obj-how-val { font-size: 13px; color: ${BRAND.ink}; line-height: 1.5; }
+        .obj-steps-list { margin: 0; padding-left: 18px; font-size: 12.5px; color: ${BRAND.ink}; line-height: 1.8; }
+
+        .obj-item-lr { display: flex; align-items: center; gap: 10px; }
+        .obj-item-lr-field { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${BRAND.gray}; }
+        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; text-align: center; }
+        .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
+        .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
+
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
         .review-row-label { flex: 1; }
@@ -392,6 +444,7 @@ export function orthoStyles() {
         .picker-card { display: flex; align-items: center; gap: 14px; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 14px; background: #fff; cursor: pointer; text-align: left; transition: all .15s; width: 100%; }
         .picker-card:active { transform: scale(0.98); }
         .picker-card.selected { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .picker-card-ai { border: 1.5px solid ${BRAND.purple}; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); }
         .picker-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
         .picker-label { font-weight: 700; font-size: 15px; }
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
@@ -399,7 +452,7 @@ export function orthoStyles() {
         .writein-card.selected { border-style: solid; }
 
         .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
-        .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }

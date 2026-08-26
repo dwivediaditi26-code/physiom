@@ -44,23 +44,44 @@ const OPD_MODES = [
   { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit } = {}) {
-  const [step, setStep] = useState(0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(null);
+export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode } = {}) {
+  // entryMode ("ai" | "template") comes from the honest "New Assessment"
+  // picker (AppFull.jsx) -- Outpatient is the only pathway that picker
+  // offers today, so both shortcuts force pathway=outpatient and skip
+  // straight past the pathway-type and condition/mode screens (nothing to
+  // choose there yet), landing the therapist on region selection -- the one
+  // question that genuinely can't be skipped -- then straight into the
+  // wizard. Reached the normal way (no entryMode), nothing changes.
+  const [step, setStep] = useState(entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
+  const [pathway, setPathway] = useState(entryMode ? "outpatient" : null);
   const [selectedRegions, setSelectedRegions] = useState([]);
-  const [condition, setCondition] = useState(null);
+  const [condition, setCondition] = useState(entryMode ? "general" : null);
   const [customConditionLabel, setCustomConditionLabel] = useState("");
-  const [opdMode, setOpdMode] = useState(null);
+  const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
+  // IPD/Post-op/Outpatient -- same shortcut the "New Assessment" picker's
+  // "Start with AI" gives, just reachable without leaving this screen too.
+  const [pickedAi, setPickedAi] = useState(false);
+  const effectiveEntryMode = entryMode || (pickedAi ? "ai" : null);
 
   function restart() {
-    setStep(0);
-    setPathway(null);
+    setStep(entryMode ? 1 : 0);
+    setPathway(entryMode ? "outpatient" : null);
     setSelectedRegions([]);
-    setCondition(null);
+    setCondition(entryMode ? "general" : null);
     setCustomConditionLabel("");
-    setOpdMode(null);
+    setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
+    setPickedAi(false);
+  }
+
+  function selectAiAssisted() {
+    setPathway("outpatient");
+    setCondition("general");
+    setOpdMode("general");
+    setPickedAi(true);
+    setStep(1);
   }
 
   const isOutpatient = pathway === "outpatient";
@@ -75,6 +96,10 @@ export default function OrthoAssessment({ onExit } = {}) {
         initialStepOrder={opdMode === "templates" ? selectedTemplate?.stepOrder : undefined}
         templateName={opdMode === "templates" ? selectedTemplate?.name : undefined}
         onExit={restart}
+        onSave={onSave}
+        activePatientId={activePatientId}
+        requireAuth={requireAuth}
+        autoOpenAI={effectiveEntryMode === "ai"}
       />
     );
   }
@@ -91,6 +116,7 @@ export default function OrthoAssessment({ onExit } = {}) {
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
   function goNext() {
+    if (effectiveEntryMode && step === 1) { setStep(3); return; } // region chosen -- condition/mode already forced above, skip straight in
     if (step < 2) setStep(step + 1);
     else setStep(3);
   }
@@ -121,7 +147,7 @@ export default function OrthoAssessment({ onExit } = {}) {
               <div className="topbar-title">🦴 Ortho Assessment</div>
               {pathway && <div className="topbar-breadcrumb">{meta.label}{selectedRegions.length ? ` · ${regionLabelList(selectedRegions)}` : ""}</div>}
             </div>
-            {step === 0 && onExit && (
+            {((step === 0 && !effectiveEntryMode) || (step === 1 && effectiveEntryMode)) && onExit && (
               <button className="back-btn" onClick={onExit} aria-label="Close">
                 ✕
               </button>
@@ -134,6 +160,13 @@ export default function OrthoAssessment({ onExit } = {}) {
             <>
               <SectionIntro icon="🦴" title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
               <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
+              <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
+                <div className="picker-icon">✨</div>
+                <div>
+                  <div className="picker-label">AI Assisted Assessment</div>
+                  <div className="picker-desc">Say the assessment in your own words — AI fills Subjective and suggests Objective tests. Uses the Outpatient workflow.</div>
+                </div>
+              </button>
             </>
           )}
 

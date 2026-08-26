@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, useSectionData } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
-import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection } from "./orthoCommonSections.jsx";
+import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
@@ -18,6 +19,38 @@ function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
 }
 
+// Pain and Palpation both carry a JSON-blob field (the body chart / the
+// palpation pin map) alongside their normal fields -- without these, the
+// generic Object.entries fallback in orthoSummary.jsx would just dump the
+// raw JSON string as one unreadable row. Chart/pin rows render first, then
+// every other field in the section falls back to the normal formatting.
+function restRows(rest) {
+  return Object.entries(rest)
+    .filter(([k]) => !k.startsWith("__"))
+    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .filter((r) => r.value);
+}
+function formatPainSection(section) {
+  const { body_chart_pro, ...rest } = section;
+  return [...formatBodyChartSummary(body_chart_pro), ...restRows(rest)];
+}
+function formatPalpationSection(section) {
+  const { palp_pins, ...rest } = section;
+  let pins = [];
+  try { pins = JSON.parse(palp_pins || "[]"); } catch {}
+  const pinRows = pins.map((p) => ({
+    label: `${p.label}${p.side ? ` (${p.side === "front" ? "Anterior" : "Posterior"})` : ""}`,
+    value: [
+      (p.structure || []).length ? p.structure.join(", ") : null,
+      p.tenderness ? `Grade ${p.tenderness} tenderness` : null,
+      p.temp,
+      (p.texture || []).length ? p.texture.join(", ") : null,
+      p.notes,
+    ].filter(Boolean).join(", ") || "marked, no detail",
+  }));
+  return [...pinRows, ...restRows(rest)];
+}
+
 /* ============================================================
    CONDITION TEMPLATE ENGINE — Outpatient / Musculoskeletal
    pathway. Region + condition are chosen one screen earlier
@@ -28,7 +61,7 @@ function regionLabelOf(r) {
 export const OUTPATIENT_CONDITIONS = [
   { id: "arthritis", icon: "🦴", label: "Arthritis / Degenerative", desc: "Chronic joint pain and functional decline", promote: ["balance", "activityTolerance", "outcomeMeasure"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, tendinopathy", promote: ["edema", "activityTolerance", "outcomeMeasure", "cpa"] },
-  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pain, radiculopathy screen", promote: ["specialTests", "sttt", "activityTolerance", "outcomeMeasure"] },
+  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pain, radiculopathy screen", promote: ["specialTests", "neuroScreen", "sttt", "activityTolerance", "outcomeMeasure"] },
   { id: "sportsOveruse", icon: "🏃", label: "Sports Injury / Overuse", desc: "Repetitive strain, sport-specific injury", promote: ["specialTests", "kineticChain", "fma", "activityTolerance", "outcomeMeasure"] },
   { id: "postSurgicalFollowUp", icon: "🩺", label: "Post-surgical Follow-up", desc: "OPD-stage recovery after discharge", promote: ["edema", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", promote: ["cpa", "activityTolerance", "outcomeMeasure"] },
@@ -37,9 +70,9 @@ export const OUTPATIENT_CONDITIONS = [
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "review"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "techniques", "exercisePrescription", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "techniques", "exercisePrescription", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
 
 const STEP_META = {
   demographics: { icon: "📋", label: "Demographics" },
@@ -54,6 +87,7 @@ const STEP_META = {
   rom: { icon: "📐", label: "ROM" },
   mmt: { icon: "💪", label: "MMT" },
   specialTests: { icon: "🔬", label: "Special Tests" },
+  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
   kineticChain: { icon: "⛓️", label: "Kinetic Chain" },
   cpa: { icon: "🧠", label: "CPA (NKT)" },
   sttt: { icon: "🦴", label: "STTT (Cyriax)" },
@@ -145,7 +179,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI }) {
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -160,6 +194,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -228,6 +263,8 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
   const summaryFormatters = {
     subjective: formatSubjectiveSection,
     redFlags: formatRedFlagsSection,
+    pain: formatPainSection,
+    palpation: formatPalpationSection,
     observation: formatGeneralObservationSection,
     rom: formatRomSection,
     mmt: formatMmtSection,
@@ -240,6 +277,22 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
     techniques: formatTreatmentTechniquesSection,
     exercisePrescription: formatExercisePrescriptionSection,
   };
+
+  // Persist a snapshot on the active patient record -- same set(key,value)
+  // pattern Cardio/Neuro's own Final Review "Save" already uses. Keyed by
+  // patient so switching patients doesn't show a stale assessment.
+  function saveAssessment() {
+    if (!onSave) return;
+    onSave("ortho_outpatient_assessment", JSON.stringify({
+      savedAt: new Date().toISOString(),
+      patientId: activePatientId || null,
+      regions: regionsLabel,
+      condition: conditionLabel,
+      data,
+    }));
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1800);
+  }
 
   return (
     <div className="app-shell">
@@ -275,7 +328,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
 
         <div className="content">
           {current.id === "demographics" && <DemographicsSection data={data} setData={setData} />}
-          {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
+          {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} requireAuth={requireAuth} autoOpenAI={autoOpenAI} />}
           {current.id === "redFlags" && <RedFlagScreenSection data={data} setData={setData} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
@@ -292,11 +345,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
           {current.id === "suggest" && (
             <OrthoSuggestObjectiveStep
               data={data}
+              setData={setData}
               selectedRegions={selectedRegions}
               condition={condition}
               activeIds={new Set(stepOrder)}
               onToggle={toggleAssessment}
               library={ADD_LIBRARY}
+              onJump={jumpTo}
             />
           )}
           {current.id === "edema" && (
@@ -308,6 +363,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "specialTests" && <SpecialTestsSection data={data} setData={setData} selectedRegions={selectedRegions} />}
+          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
           {current.id === "kineticChain" && <KineticChainSection data={data} setData={setData} />}
           {current.id === "cpa" && <CpaSection data={data} setData={setData} />}
           {current.id === "sttt" && <SttSection data={data} setData={setData} />}
@@ -335,6 +391,11 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
                 formatters={summaryFormatters}
               />
+              {onSave && (
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                  {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+                </button>
+              )}
               <button type="button" className="info-btn-full" style={{ marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>
