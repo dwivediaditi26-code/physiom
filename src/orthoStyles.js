@@ -464,5 +464,15 @@ export function orthoStyles() {
         .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); min-height: 46px; }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
         .saved-indicator { font-size: 11px; color: ${BRAND.green}; font-weight: 600; display: flex; align-items: center; gap: 4px; padding: 0 2px 8px; }
+
+        /* Treatment Techniques log — recorded-entry cards */
+        .tech-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 11px 13px; margin-bottom: 10px; }
+        .tech-card-head { display: flex; align-items: flex-start; gap: 8px; }
+        .tech-card-title { flex: 1; font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; line-height: 1.35; }
+        .tech-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .tech-card-edit, .tech-card-del { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 26px; height: 26px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .tech-card-del { background: ${BRAND.redBg}; color: ${BRAND.red}; }
+        .tech-card-meta { font-size: 12px; color: ${BRAND.gray}; margin-top: 4px; }
+        .tech-card-note { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; padding-top: 6px; border-top: 1px solid #F5F3FB; font-style: italic; }
   `;
 }

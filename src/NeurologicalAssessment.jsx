@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useContext, createContext 
 import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
+import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHAB_PHASES, LIMITED_EVIDENCE_NOTICE } from "./neuroTreatmentCatalog.js";
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -67,6 +68,7 @@ const STEP_META = [
   { id: "outcomes", icon: "📊", label: "Outcome Measures" },
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
+  { id: "aiTreatment", icon: "✨", label: "AI Treatment Suggestions" },
   { id: "summary", icon: "✅", label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(1); // 16 core steps shown in the step nav
@@ -1376,6 +1378,201 @@ function PrecautionsSection({ data, setData, setting }) {
   );
 }
 
+/* ============================================================
+   AI TREATMENT SUGGESTIONS — evidence-linked clinical decision
+   support, NOT a free-form LLM call. deriveNeuroProblems() and
+   matchNeuroTreatments() below are a deterministic rule engine: they
+   only read the therapist's own documented findings (Clinical
+   Interpretation's "Key impairments" tags, plus a couple of derived
+   flags from Functional/Gait) and select from the fixed, hand-vetted
+   NEURO_TREATMENT_CATALOG (neuroTreatmentCatalog.js). Nothing here
+   generates a treatment name, dosage, or citation per-request -- that
+   is the only way to genuinely satisfy "never invent findings/
+   citations/dosage" for a clinical-safety feature like this.
+   ============================================================ */
+function deriveNeuroProblems(data) {
+  const problems = new Set(data.interpretation?.impairments || []);
+  const f = data.functional || {};
+  const transferAssist = ["Minimal assist", "Moderate assist", "Maximal assist", "Dependent", "Requires hoist"];
+  if (transferAssist.includes(f.sitStand) || transferAssist.includes(f.bedChair) || transferAssist.includes(f.bedMobility)) {
+    problems.add("Transfer difficulty");
+  }
+  const adlAssist = ["Minimal assist", "Moderate assist", "Maximal assist", "Dependent"];
+  if (adlAssist.includes(f.toileting) || adlAssist.includes(f.dressing) || adlAssist.includes(f.feeding)) {
+    problems.add("Reduced independence");
+  }
+  const g = data.gait || {};
+  if (g.assistanceLevel && !["Independent", "Supervision"].includes(g.assistanceLevel)) {
+    problems.add("Impaired gait");
+  }
+  return problems;
+}
+
+// Pulls 1-3 short "label: value" strings straight from the documented
+// data for a given problem tag, so "why suggested" only ever quotes
+// what the therapist actually entered.
+function neuroWhyFindings(data, problem) {
+  const out = [];
+  const f = data.functional || {}, g = data.gait || {}, b = data.balance || {}, m = data.motor || {}, c = data.coordination || {}, t = data.tone || {}, s = data.sensory || {};
+  const push = (label, val) => { if (val) out.push(`${label}: ${val}`); };
+  if (problem === "Transfer difficulty") {
+    push("Sit-to-stand transfer", f.sitStand);
+    push("Bed-to-chair transfer", f.bedChair);
+    push("Bed mobility", f.bedMobility);
+  } else if (problem === "Reduced independence") {
+    push("Toileting/bathing", f.toileting);
+    push("Dressing/grooming", f.dressing);
+    if (f.barthel) push("Barthel Index", `${f.barthel}/100`);
+  } else if (problem === "Impaired gait") {
+    push("Gait pattern", g.pattern);
+    push("Level of assistance", g.assistanceLevel);
+    if (g.gaitSpeed) push("Gait speed", `${g.gaitSpeed} m/s`);
+  } else if (problem === "Impaired balance") {
+    push("Standing dynamic balance", b.standDynamic);
+    push("Standing static balance", b.standStatic);
+    if (b.berg) push("Berg Balance Scale", `${b.berg}/56`);
+  } else if (problem === "Muscle weakness") {
+    // LRGrid stores flat "row__column" keys (e.g. "Knee extension__Right").
+    Object.entries(m.mmt || {}).forEach(([key, grade]) => {
+      if (grade && Number(grade) <= 3) out.push(`${key.replace("__", " ")} MMT: ${grade}/5`);
+    });
+  } else if (problem === "Impaired coordination") {
+    Object.entries(c.fingerNose || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Finger-to-nose (${key.replace("__", " ")}): ${val}`); });
+    Object.entries(c.heelShin || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Heel-to-shin (${key.replace("__", " ")}): ${val}`); });
+    push("Dysmetria", c.dysmetria);
+  } else if (problem === "Abnormal tone") {
+    Object.entries(t.toneType || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Tone (${key.replace("__", " ")}): ${val}`); });
+  } else if (problem === "Sensory loss") {
+    ["lightTouch", "pinprick", "proprioception"].forEach((k) => {
+      const label = k === "lightTouch" ? "Light touch" : k === "pinprick" ? "Pain/pinprick" : "Proprioception";
+      Object.entries(s[k] || {}).forEach(([key, grade]) => { if (grade && grade !== "Intact") out.push(`${label} (${key.replace("__", " ")}): ${grade}`); });
+    });
+  }
+  return out.slice(0, 3);
+}
+
+function neuroPhaseForPatient(data) {
+  const g = data.gait || {}, f = data.functional || {}, b = data.balance || {};
+  const notIndep = (v) => v && v !== "Independent";
+  if (notIndep(f.bedMobility) && notIndep(f.sitStand) && (b.sitStatic === "Poor" || b.sitStatic === "Absent")) return REHAB_PHASES.acute;
+  if (g.assistanceLevel === "Independent" || g.assistanceLevel === "Supervision") return REHAB_PHASES.advanced;
+  if (notIndep(f.sitStand) || notIndep(f.bedChair)) return REHAB_PHASES.early;
+  return REHAB_PHASES.functional;
+}
+
+function matchNeuroTreatments(data) {
+  const problems = deriveNeuroProblems(data);
+  if (!problems.size) return { problems, treatments: [] };
+  const phase = neuroPhaseForPatient(data);
+  const matched = NEURO_TREATMENT_CATALOG.filter((t) => t.triggers.some((trig) => problems.has(trig)));
+  const treatments = matched.map((t) => {
+    const matchedProblem = t.triggers.find((trig) => problems.has(trig));
+    const why = neuroWhyFindings(data, matchedProblem);
+    return {
+      ...t,
+      matchedProblem,
+      why,
+      phase,
+      evidenceRefs: t.evidence.map((id) => EVIDENCE_SOURCES[id]).filter(Boolean),
+    };
+  });
+  // Rank by the fixed priority order of the problem each treatment was matched for.
+  treatments.sort((a, b) => PROBLEM_PRIORITY_ORDER.indexOf(a.matchedProblem) - PROBLEM_PRIORITY_ORDER.indexOf(b.matchedProblem));
+  return { problems, treatments };
+}
+
+function AiTreatmentCard({ t, index, selected, onToggleSelect }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="summary-card">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }} onClick={() => setOpen((o) => !o)}>
+        <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: "50%", background: BRAND.purpleFaint, color: BRAND.purpleDark, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{String(index + 1).padStart(2, "0")}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="summary-title" style={{ marginBottom: 2 }}>{t.name}</div>
+          <div style={{ fontSize: 12, color: BRAND.gray }}>{t.goal}</div>
+        </div>
+        <div style={{ fontSize: 12, color: BRAND.purple, flexShrink: 0 }}>{open ? "▾" : "▸"}</div>
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BRAND.border}` }}>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}>
+            <b>Why suggested:</b>{" "}
+            {t.why.length ? `Suggested because ${t.why.join("; ")}.` : "Not documented — therapist assessment required."}
+          </div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Phase:</b> {t.phase}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>How:</b> {t.how}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Dosage:</b> {t.dosage}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Progression:</b> {t.progression.join(" → ")}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Monitor:</b> {t.monitor.join(" · ")}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Precautions:</b> {t.precautionsTemplate}</div>
+          <div style={{ fontSize: 12.5, marginBottom: 8 }}>
+            <b>Evidence ({t.evidenceRefs.length || 0}):</b>
+            {t.evidenceRefs.length ? (
+              <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+                {t.evidenceRefs.map((e) => (
+                  <li key={e.id} style={{ marginBottom: 4 }}>
+                    {e.citation} <span style={{ color: BRAND.purple, fontWeight: 700 }}>[{e.strength}]</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span> {LIMITED_EVIDENCE_NOTICE}</span>
+            )}
+          </div>
+          <button type="button" className={selected ? "ghost-btn" : "primary-btn"} style={{ width: "100%" }} onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}>
+            {selected ? "✓ Added to Treatment Plan" : "+ Add to Treatment Plan"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AiTreatmentSuggestionsSection({ data, setData }) {
+  const [d, set] = useSectionData(data, setData, "aiTreatment");
+  const selected = Array.isArray(d.selected) ? d.selected : [];
+  const { problems, treatments } = useMemo(() => matchNeuroTreatments(data), [data]);
+  const toggleSelect = (id) => set("selected", selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+
+  if (!problems.size) {
+    return (
+      <>
+        <SectionIntro icon="✨" title="AI Treatment Suggestions" sub="Evidence-linked treatment options for your consideration — you make the final clinical decision." />
+        <div className="alert alert-amber">
+          Not documented — therapist assessment required. Tag this patient's <b>Key impairments</b> in Clinical Interpretation (or document Transfers/Gait assistance level) to generate suggestions.
+        </div>
+      </>
+    );
+  }
+
+  const priorityList = PROBLEM_PRIORITY_ORDER.filter((p) => problems.has(p));
+
+  return (
+    <>
+      <SectionIntro icon="✨" title="AI Treatment Suggestions" sub="Evidence-linked treatment options for your consideration — you make the final clinical decision." />
+      <div className="subheading">Today's priorities</div>
+      <div className="summary-card">
+        {priorityList.map((p, i) => (
+          <div className="summary-row" key={p}>
+            <span className="summary-key">{String(i + 1).padStart(2, "0")}</span>
+            <span className="summary-val">{p}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="subheading">{treatments.length} treatment option{treatments.length !== 1 ? "s" : ""} identified</div>
+      {treatments.map((t, i) => (
+        <AiTreatmentCard key={t.id} t={t} index={i} selected={selected.includes(t.id)} onToggleSelect={() => toggleSelect(t.id)} />
+      ))}
+
+      <div className="alert alert-amber" style={{ marginTop: 14 }}>
+        These are suggestions for consideration, not a prescription — confirm against the patient's precautions and current presentation before proceeding.
+      </div>
+    </>
+  );
+}
+
 /* ---------- Summary ---------- */
 function fmtVal(v) {
   if (v && typeof v === "object") {
@@ -1486,7 +1683,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "aiTreatment", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2162,6 +2359,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
+              {current.id === "aiTreatment" && <AiTreatmentSuggestionsSection data={data} setData={setData} />}
               {current.id === "summary" && (
                 <>
                   <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
