@@ -429,6 +429,12 @@ export function orthoStyles() {
         .obj-how-val { font-size: 13px; color: ${BRAND.ink}; line-height: 1.5; }
         .obj-steps-list { margin: 0; padding-left: 18px; font-size: 12.5px; color: ${BRAND.ink}; line-height: 1.8; }
 
+        .obj-item-lr { display: flex; align-items: center; gap: 10px; }
+        .obj-item-lr-field { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${BRAND.gray}; }
+        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; text-align: center; }
+        .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
+        .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
+
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
         .review-row-label { flex: 1; }

@@ -1,19 +1,24 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
+import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
+import { ALL_REGIONS } from "./orthoRegionLibrary.js";
+import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 
 /* ============================================================
-   OrthoSuggestObjectiveStep — Objective Assessment as a clean card
-   list: each category shows what it is, why it matters (tap "Why?"),
-   how to perform it (tap "How?"), and an Add/Added toggle -- instead
-   of one long page mixing rationale paragraphs with the picker.
-
-   Reuses the same sheet-backdrop/sheet-panel portal + CSS already
-   used everywhere else in Ortho (InfoButton, "How to Perform" sheets)
-   so this looks and behaves identically, just with two independent
-   triggers (Why/How) instead of one combined ⓘ button.
+   OrthoSuggestObjectiveStep — Objective Assessment as a list of
+   fillable items, not a picker for whole categories. For the four
+   categories with a real named-item library (Observation/ROM/MMT/
+   Special Tests), each individual item (e.g. "Lachman's Test",
+   "Quadriceps", "Knee flexion", "Scapula") gets its own card with
+   Why?/How? and its real inline answer control -- writing straight
+   into the exact field the full ROM/MMT/Special Tests/Observation
+   page reads, via the same useSectionData sections those pages use.
+   Everything else (edema, neuro screen, kinetic chain, ...) doesn't
+   have that same per-item library, so it stays a whole-category
+   suggestion card, same as before.
    ============================================================ */
 
 function Sheet({ open, onClose, eyebrow, title, children }) {
@@ -34,6 +39,27 @@ function Sheet({ open, onClose, eyebrow, title, children }) {
     document.body
   );
 }
+
+function LineSheet({ open, onClose, eyebrow, label, lines }) {
+  const isEmpty = Array.isArray(lines) ? lines.length === 0 : !lines;
+  return (
+    <Sheet open={open} onClose={onClose} eyebrow={eyebrow} title={label}>
+      {isEmpty ? (
+        <Hint>No additional reference notes for this one yet.</Hint>
+      ) : Array.isArray(lines) ? (
+        <ul className="obj-what-list">
+          {lines.map((l, i) => (
+            <li key={i}>{l}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="obj-why-text">{lines}</p>
+      )}
+    </Sheet>
+  );
+}
+
+/* ---------- Whole-category cards (edema, neuroScreen, kineticChain, ...) ---------- */
 
 function WhySheet({ open, onClose, label, content }) {
   return (
@@ -137,31 +163,241 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
   );
 }
 
-export default function OrthoSuggestObjectiveStep({ data, selectedRegions, condition, activeIds, onToggle, library, onJump }) {
+/* ---------- Individual-item cards (ROM / MMT / Special Tests / Observation) ---------- */
+
+function ItemCardShell({ label, sublabel, answered, whyLines, howLines, howEyebrow = "HOW TO PERFORM", children }) {
+  const [sheet, setSheet] = useState(null);
+  return (
+    <div className={"obj-card" + (answered ? " obj-card-active" : "")}>
+      <div className="obj-card-top">
+        <span className="obj-card-badge obj-card-badge-ai">✨ Suggested</span>
+        {answered && <span className="obj-card-check">✓ Recorded</span>}
+      </div>
+      <div className="obj-card-title">{label}</div>
+      {sublabel && <div className="obj-card-reason">{sublabel}</div>}
+      <div style={{ marginTop: 8 }}>{children}</div>
+      <div className="obj-card-actions">
+        <button type="button" className="obj-card-link" onClick={() => setSheet("why")}>
+          Why?
+        </button>
+        <button type="button" className="obj-card-link" onClick={() => setSheet("how")}>
+          How?
+        </button>
+      </div>
+      <LineSheet open={sheet === "why"} onClose={() => setSheet(null)} eyebrow="WHY THIS ASSESSMENT?" label={label} lines={whyLines} />
+      <LineSheet open={sheet === "how"} onClose={() => setSheet(null)} eyebrow={howEyebrow} label={label} lines={howLines} />
+    </div>
+  );
+}
+
+function RomItemCard({ item, romData, setRom }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = romData[regionKey] || {};
+  const val = entry[itemId] || {};
+  function setSide(side, v) {
+    setRom(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
+  }
+  const answered = val.left || val.right;
+  const norm = meta.normal != null ? `N=${meta.normal}${meta.unit || "°"}` : null;
+  return (
+    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} whyLines={romWhy(meta)} howLines={romHow(meta)}>
+      <div className="obj-item-lr">
+        <label className="obj-item-lr-field">
+          <span>L</span>
+          <input type="number" placeholder="--" value={val.left ?? ""} onChange={(e) => setSide("left", e.target.value)} />
+        </label>
+        {meta.bilateral !== false && (
+          <label className="obj-item-lr-field">
+            <span>R</span>
+            <input type="number" placeholder="--" value={val.right ?? ""} onChange={(e) => setSide("right", e.target.value)} />
+          </label>
+        )}
+        <span className="obj-item-unit">{meta.unit || "°"}</span>
+      </div>
+    </ItemCardShell>
+  );
+}
+
+function MmtItemCard({ item, mmtData, setMmt }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = mmtData[regionKey] || {};
+  const val = entry[itemId] || {};
+  function setSide(side, v) {
+    setMmt(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
+  }
+  const answered = val.left || val.right;
+  return (
+    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)}>
+      <div className="obj-item-lr">
+        <label className="obj-item-lr-field">
+          <span>L</span>
+          <select value={val.left || ""} onChange={(e) => setSide("left", e.target.value)}>
+            <option value="">--</option>
+            {MMT_GRADE_OPTIONS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="obj-item-lr-field">
+          <span>R</span>
+          <select value={val.right || ""} onChange={(e) => setSide("right", e.target.value)}>
+            <option value="">--</option>
+            {MMT_GRADE_OPTIONS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </ItemCardShell>
+  );
+}
+
+function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, isSideless }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = specialData[regionKey] || {};
+  const raw = entry[itemId];
+  const currentSide = isSideless ? null : entry[itemId + "__side"] || defaultSideFor(regionKey, selectedRegions);
+  const currentValue = isSideless ? raw : raw && typeof raw === "object" ? raw[currentSide] : undefined;
+  function setResult(optionValue) {
+    if (isSideless) {
+      setSpecial(regionKey, { ...entry, [itemId]: optionValue });
+      return;
+    }
+    const obj = raw && typeof raw === "object" ? raw : {};
+    setSpecial(regionKey, { ...entry, [itemId]: { ...obj, [currentSide]: optionValue } });
+  }
+  function setSideChip(s) {
+    setSpecial(regionKey, { ...entry, [itemId + "__side"]: s });
+  }
+  const options = meta.options || ["Negative", "Positive"];
+  const answered = isSideless ? !!raw : !!(raw && typeof raw === "object" && raw[currentSide]);
+  return (
+    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} whyLines={specialWhy(meta)} howLines={specialHow(meta)}>
+      {!isSideless && (
+        <div className="obj-item-side-row">
+          {["Right", "Left", "Bilateral"].map((s) => (
+            <button type="button" key={s} className={"side-chip" + (currentSide === s.toLowerCase() ? " side-chip-active" : "")} onClick={() => setSideChip(s.toLowerCase())}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="test-radio-row">
+        {options.map((o) => {
+          const isActive = currentValue === o;
+          return (
+            <button type="button" key={o} className={"test-radio" + (isActive ? " test-radio-selected" : "")} onClick={() => setResult(isActive ? "" : o)}>
+              {o}
+            </button>
+          );
+        })}
+      </div>
+    </ItemCardShell>
+  );
+}
+
+function ObservationItemCard({ item, obsData, setPostureRegion }) {
+  const { regionKey, itemId, label, meta } = item;
+  const regions = obsData.posture?.regions || {};
+  const regionData = regions[regionKey] || {};
+  const value = regionData[itemId];
+  function pick(o) {
+    setPostureRegion(regionKey, itemId, value === o ? "" : o);
+  }
+  return (
+    <ItemCardShell label={label} answered={!!value} whyLines={obsWhy(meta)} howLines={obsHow()}>
+      <div className="test-radio-row">
+        {(meta.options || []).map((o) => (
+          <button type="button" key={o} className={"test-radio" + (value === o ? " test-radio-selected" : "")} onClick={() => pick(o)}>
+            {o}
+          </button>
+        ))}
+      </div>
+    </ItemCardShell>
+  );
+}
+
+export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegions, condition, activeIds, onToggle, library, onJump }) {
   const [q, setQ] = useState("");
 
+  const [romData, setRomD] = useSectionData(data, setData, "rom");
+  const [mmtData, setMmtD] = useSectionData(data, setData, "mmt");
+  const [specialData, setSpecialD] = useSectionData(data, setData, "specialTests");
+  const [obsData, setObsD] = useSectionData(data, setData, "observation");
+  const setRom = (k, v) => setRomD(k, v);
+  const setMmt = (k, v) => setMmtD(k, v);
+  const setSpecial = (k, v) => {
+    setSpecialD(k, v);
+    if (!activeIds.has("specialTests")) onToggle("specialTests");
+  };
+  const setPostureRegion = (regionKey, fieldId, value) => {
+    const posture = obsData.posture || {};
+    const regions = posture.regions || {};
+    setObsD("posture", { ...posture, regions: { ...regions, [regionKey]: { ...(regions[regionKey] || {}), [fieldId]: value } } });
+  };
+
+  const { rom, mmt, specialTests, observation } = useMemo(() => suggestIndividualItems(selectedRegions), [selectedRegions]);
+
   const suggestions = useMemo(
-    () => suggestObjectiveTests({ subjective: data.subjective || {}, pain: data.pain || {}, condition, selectedRegions }),
+    () => suggestObjectiveTests({ subjective: data.subjective || {}, pain: data.pain || {}, condition, selectedRegions }).filter((s) => !["rom", "mmt", "specialTests"].includes(s.id)),
     [data.subjective, data.pain, condition, selectedRegions]
   );
   const suggestedIds = new Set(suggestions.map((s) => s.id));
   const libraryById = Object.fromEntries(library.map((it) => [it.id, it]));
-
-  // Anything active but not suggested (added via search, or a suggestion
-  // that's since been superseded) shows in its own "Added by you" group so
-  // it's never confused with an AI-generated suggestion.
   const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && libraryById[id]);
 
   const query = q.trim().toLowerCase();
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
 
+  const isSideless = (regionKey) => !!ALL_REGIONS.find((r) => r.id === regionKey)?.sideless;
+
   return (
     <>
-      <SectionIntro icon="🧠" title="Objective Assessment" info="Suggestions come from what you documented in Subjective and Pain — region, chief complaint, condition context — using a fixed set of clinical rules, not a live AI/diagnosis call." />
+      <SectionIntro icon="🧠" title="Objective Assessment" info="Individual items below come from the region(s) you picked; the categories at the bottom come from what you documented in Subjective and Pain — none of this is a live AI/diagnosis call." />
 
-      {suggestions.length === 0 && manuallyAdded.length === 0 && <Hint>No rule-based suggestions yet — fill in Subjective first, or search below to add any assessment.</Hint>}
+      {observation.length > 0 && (
+        <>
+          <div className="subheading" style={{ marginTop: 0 }}>
+            👁️ Observation
+          </div>
+          {observation.map((item) => (
+            <ObservationItemCard key={`obs-${item.regionKey}-${item.itemId}`} item={item} obsData={obsData} setPostureRegion={setPostureRegion} />
+          ))}
+        </>
+      )}
 
-      {suggestions.length > 0 && <div className="subheading" style={{ marginTop: 0 }}>Suggested from your subjective</div>}
+      {rom.length > 0 && (
+        <>
+          <div className="subheading">📐 Range of Motion</div>
+          {rom.map((item) => (
+            <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} />
+          ))}
+        </>
+      )}
+
+      {mmt.length > 0 && (
+        <>
+          <div className="subheading">💪 Muscle Strength (MMT)</div>
+          {mmt.map((item) => (
+            <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} />
+          ))}
+        </>
+      )}
+
+      {specialTests.length > 0 && (
+        <>
+          <div className="subheading">🔬 Special Tests</div>
+          {specialTests.map((item) => (
+            <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} />
+          ))}
+        </>
+      )}
+
+      {(suggestions.length > 0 || manuallyAdded.length > 0) && <div className="subheading">Other suggested assessments</div>}
       {suggestions.map((s) => {
         const meta = libraryById[s.id];
         if (!meta) return null;
@@ -178,8 +414,6 @@ export default function OrthoSuggestObjectiveStep({ data, selectedRegions, condi
           />
         );
       })}
-
-      {manuallyAdded.length > 0 && <div className="subheading">Added by you</div>}
       {manuallyAdded.map((id) => {
         const meta = libraryById[id];
         return (

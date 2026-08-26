@@ -340,6 +340,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
           {current.id === "suggest" && (
             <OrthoSuggestObjectiveStep
               data={data}
+              setData={setData}
               selectedRegions={selectedRegions}
               condition={condition}
               activeIds={new Set(stepOrder)}
