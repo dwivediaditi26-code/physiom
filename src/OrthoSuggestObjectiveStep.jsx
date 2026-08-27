@@ -6,6 +6,8 @@ import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
 import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
+import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
+import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
 
 /* ============================================================
    OrthoSuggestObjectiveStep — Objective Assessment as a list of
@@ -123,6 +125,66 @@ function HowSheet({ open, onClose, label, content }) {
   );
 }
 
+const MATCH_TIER_TONE = {
+  "Strong match": "#16a34a",
+  "Possible match": "#d97706",
+  "Weak match": "#6b7280",
+  "Insufficient data": "#9ca3af",
+  "Unlikely": "#9ca3af",
+};
+
+/* Lumbar/SI differential card -- one real L01-L11 condition hypothesis from
+   lumbarReasoningEngine.js (via orthoLumbarReasoning.js), not the shallow
+   keyword-based suggestObjectiveTests() below. Collapsed by default (same
+   ItemCardShell-style compact-row pattern as the ROM/MMT/Special Test cards
+   above) since a full 11-condition differential with per-condition
+   supporting/refuting lists is exactly the kind of long content that made
+   this screen 6000+px before the Part 1 redesign. */
+function LumbarDifferentialCard({ condition }) {
+  const [open, setOpen] = useState(false);
+  const tone = MATCH_TIER_TONE[condition.matchTier] || "#6b7280";
+  return (
+    <div className="obj-item">
+      <div className="obj-item-row" onClick={() => setOpen((o) => !o)} role="button">
+        <div className="obj-item-row-label">
+          <span className="obj-item-row-name">{condition.name}</span>
+        </div>
+        <div className="obj-item-row-right">
+          <span className="obj-item-row-summary" style={{ color: tone, background: tone + "1a" }}>{condition.matchTier}</span>
+          <span className={"obj-item-chevron" + (open ? " open" : "")}>⌄</span>
+        </div>
+      </div>
+      {open && (
+        <div className="obj-item-body" onClick={(e) => e.stopPropagation()}>
+          {condition.note && <div className="obj-card-reason" style={{ marginBottom: 8 }}>{condition.note}</div>}
+          {condition.supportingMatched.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Supporting findings</div>
+              {condition.supportingMatched.map((f, i) => <div key={i} style={{ fontSize: 12.5, color: "#166534", marginBottom: 2 }}>✓ {f}</div>)}
+            </div>
+          )}
+          {condition.refutingMatched.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Against</div>
+              {condition.refutingMatched.map((f, i) => <div key={i} style={{ fontSize: 12.5, color: "#991b1b", marginBottom: 2 }}>✗ {f}</div>)}
+            </div>
+          )}
+          {condition.unknownCount > 0 && (
+            <Hint>{condition.unknownCount} item(s) not yet answered in the Lumbar/SI checklist — filling those in will sharpen this match.</Hint>
+          )}
+          {condition.objectiveTests?.required?.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Recommended objective tests</div>
+              {condition.objectiveTests.required.map((t, i) => <div key={i} style={{ fontSize: 12.5, color: "#1e293b", marginBottom: 2 }}>• {t}</div>)}
+              {condition.objectiveTests.recommended?.map((t, i) => <div key={"r" + i} style={{ fontSize: 12.5, color: "#64748b", marginBottom: 2 }}>• {t}</div>)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump }) {
   const [sheet, setSheet] = useState(null); // null | "why" | "how"
   const content = OBJECTIVE_CONTENT[id];
@@ -165,25 +227,40 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
 
 /* ---------- Individual-item cards (ROM / MMT / Special Tests / Observation) ---------- */
 
-function ItemCardShell({ label, sublabel, answered, whyLines, howLines, howEyebrow = "HOW TO PERFORM", children }) {
+// Collapsed by default -- a single compact row (name + optional value
+// summary + Why?/How?) -- expanding only the actual input widget
+// (`children`) on tap. Previously every named item (every ROM movement,
+// every MMT muscle, every special test) rendered its FULL input widget
+// inline and always expanded, which is what made a single Suggested
+// Objective step run 6000+px of scroll for one region. Why?/How? stay
+// visible in the collapsed row so a clinician can still learn about a
+// test without opening it to fill it in.
+function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "HOW TO PERFORM", children }) {
+  const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(null);
   return (
-    <div className={"obj-card" + (answered ? " obj-card-active" : "")}>
-      <div className="obj-card-top">
-        <span className="obj-card-badge obj-card-badge-ai">✨ Suggested</span>
-        {answered && <span className="obj-card-check">✓ Recorded</span>}
+    <div className={"obj-item" + (answered ? " obj-item-answered" : "")}>
+      <div className="obj-item-row" onClick={() => setOpen((o) => !o)} role="button">
+        <div className="obj-item-row-label">
+          <span className="obj-item-row-name">{label}</span>
+          {sublabel && <span className="obj-item-row-sub">{sublabel}</span>}
+        </div>
+        <div className="obj-item-row-right">
+          {answered && summary && <span className="obj-item-row-summary">{summary}</span>}
+          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("why"); }}>
+            Why?
+          </button>
+          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("how"); }}>
+            How?
+          </button>
+          <span className={"obj-item-chevron" + (open ? " open" : "")}>⌄</span>
+        </div>
       </div>
-      <div className="obj-card-title">{label}</div>
-      {sublabel && <div className="obj-card-reason">{sublabel}</div>}
-      <div style={{ marginTop: 8 }}>{children}</div>
-      <div className="obj-card-actions">
-        <button type="button" className="obj-card-link" onClick={() => setSheet("why")}>
-          Why?
-        </button>
-        <button type="button" className="obj-card-link" onClick={() => setSheet("how")}>
-          How?
-        </button>
-      </div>
+      {open && (
+        <div className="obj-item-body" onClick={(e) => e.stopPropagation()}>
+          {children}
+        </div>
+      )}
       <LineSheet open={sheet === "why"} onClose={() => setSheet(null)} eyebrow="WHY THIS ASSESSMENT?" label={label} lines={whyLines} />
       <LineSheet open={sheet === "how"} onClose={() => setSheet(null)} eyebrow={howEyebrow} label={label} lines={howLines} />
     </div>
@@ -199,8 +276,10 @@ function RomItemCard({ item, romData, setRom }) {
   }
   const answered = val.left || val.right;
   const norm = meta.normal != null ? `N=${meta.normal}${meta.unit || "°"}` : null;
+  const unit = meta.unit || "°";
+  const summary = [val.left && `L ${val.left}${unit}`, val.right && `R ${val.right}${unit}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} whyLines={romWhy(meta)} howLines={romHow(meta)}>
+    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={romWhy(meta)} howLines={romHow(meta)}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -226,8 +305,9 @@ function MmtItemCard({ item, mmtData, setMmt }) {
     setMmt(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
   }
   const answered = val.left || val.right;
+  const summary = [val.left && `L ${val.left}`, val.right && `R ${val.right}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)}>
+    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -275,8 +355,9 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
   }
   const options = meta.options || ["Negative", "Positive"];
   const answered = isSideless ? !!raw : !!(raw && typeof raw === "object" && raw[currentSide]);
+  const summary = answered ? [currentSide && !isSideless ? currentSide[0].toUpperCase() + currentSide.slice(1) : null, currentValue].filter(Boolean).join(" — ") : "";
   return (
-    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} whyLines={specialWhy(meta)} howLines={specialHow(meta)}>
+    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} summary={summary} whyLines={specialWhy(meta)} howLines={specialHow(meta)}>
       {!isSideless && (
         <div className="obj-item-side-row">
           {["Right", "Left", "Bilateral"].map((s) => (
@@ -310,7 +391,7 @@ function ObservationItemCard({ item, obsData, setPostureRegion }) {
     setPostureRegion(regionKey, view, itemId, value === o ? "" : o);
   }
   return (
-    <ItemCardShell label={label} answered={!!value} whyLines={obsWhy(meta)} howLines={obsHow()}>
+    <ItemCardShell label={label} answered={!!value} summary={value || ""} whyLines={obsWhy(meta)} howLines={obsHow()}>
       <div className="test-radio-row">
         {(meta.options || []).map((o) => (
           <button type="button" key={o} className={"test-radio" + (value === o ? " test-radio-selected" : "")} onClick={() => pick(o)}>
@@ -349,6 +430,13 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     () => suggestObjectiveTests({ subjective: data.subjective || {}, pain: data.pain || {}, condition, selectedRegions }).filter((s) => !["rom", "mmt", "specialTests"].includes(s.id)),
     [data.subjective, data.pain, condition, selectedRegions]
   );
+  const lumbarRegion = selectedRegions.find((r) => contentKeyForRegion(r) === "lumbarSI");
+  const lumbarRegionData = lumbarRegion && data.subjective?.regions?.[lumbarRegion.id];
+  const lumbarResult = useMemo(() => {
+    if (!lumbarRegion || !hasLumbarChecklistData(lumbarRegionData)) return null;
+    try { return runLumbarDifferential(lumbarRegionData, data.subjective || {}); } catch { return null; }
+  }, [lumbarRegion, lumbarRegionData, data.subjective]);
+
   const suggestedIds = new Set(suggestions.map((s) => s.id));
   const libraryById = Object.fromEntries(library.map((it) => [it.id, it]));
   const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && libraryById[id]);
@@ -361,6 +449,22 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   return (
     <>
       <SectionIntro icon="🧠" title="Objective Assessment" info="Individual items below come from the region(s) you picked; the categories at the bottom come from what you documented in Subjective and Pain — none of this is a live AI/diagnosis call." />
+
+      {lumbarResult && (
+        <>
+          <div className="subheading" style={{ marginTop: 0 }}>🧠 Suggested differential — Lumbar/SI</div>
+          {lumbarResult.redFlagOverride?.triggered && (
+            <div style={{ background: "#fee2e2", border: "1.5px solid #dc2626", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
+              <div style={{ fontWeight: 800, fontSize: 12.5, color: "#991b1b" }}>⚠ {lumbarResult.redFlagOverride.urgency.replace(/_/g, " ")}</div>
+              <div style={{ fontSize: 12.5, color: "#991b1b", marginTop: 2 }}>{lumbarResult.redFlagOverride.reason}</div>
+              <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 4 }}>{lumbarResult.redFlagOverride.action}</div>
+            </div>
+          )}
+          {lumbarResult.conditions.filter((c) => c.matchTier !== "Unlikely").slice(0, 8).map((c) => (
+            <LumbarDifferentialCard key={c.id} condition={c} />
+          ))}
+        </>
+      )}
 
       {observation.length > 0 && (
         <>
