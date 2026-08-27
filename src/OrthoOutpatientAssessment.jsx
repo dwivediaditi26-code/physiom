@@ -69,8 +69,8 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "review"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "techniques", "exercisePrescription", "progress"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "review"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
 
