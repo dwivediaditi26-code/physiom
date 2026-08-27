@@ -3636,7 +3636,7 @@ function CaptureAlignmentGuide({ view, visible }) {
 // distances, so the frame's scale cancels out and this report is unaffected by
 // the height-calibration accuracy that every cm-based figure depends on.
 // Do not add cm rows here without revisiting that.
-function SegmentAlignmentReport({ measurements: m, view, PC }) {
+function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks }) {
   if (!m) return null;
   // Frontal-plane only: these measures compare left against right, which a
   // sagittal photo cannot see (the far side is legitimately occluded).
@@ -3650,17 +3650,34 @@ function SegmentAlignmentReport({ measurements: m, view, PC }) {
     ? (view === "anterior" ? "Left" : "Right")
     : (view === "anterior" ? "Right" : "Left");
 
+  // Normalised anchor point for each row's thumbnail crop, from the landmarks
+  // the row is actually derived from. Null when those landmarks aren't visible,
+  // in which case the row simply renders without a thumbnail.
+  const pt = (i) => {
+    const p = landmarks?.[i];
+    return (p && (p.visibility ?? 1) >= 0.4) ? p : null;
+  };
+  const midPt = (a, b) => {
+    const pa = pt(a), pb = pt(b);
+    return (pa && pb) ? { x:(pa.x+pb.x)/2, y:(pa.y+pb.y)/2 } : null;
+  };
+
   const rows = [
     { label:"Head",      value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
+      anchor:midPt(7,8) || pt(0),
       neutral:"ALIGNED", word:(v)=>`TILT TO THE ${sideFor(v).toUpperCase()}` },
     { label:"Shoulders", value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
+      anchor:midPt(11,12),
       neutral:"ALIGNED", word:(v)=>`ELEVATION TO THE ${sideFor(v).toUpperCase()}` },
     { label:"Pelvis",    value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
+      anchor:midPt(23,24),
       neutral:"ALIGNED", word:(v)=>`OBLIQUITY TO THE ${sideFor(v).toUpperCase()}` },
     // Sign convention taken from buildFindings: negative = valgus (medial).
     { label:"Right Knee",value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(26),
       neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
     { label:"Left Knee", value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(25),
       neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
   ].filter(r => r.value !== null && r.value !== undefined && !Number.isNaN(r.value));
 
@@ -3673,47 +3690,82 @@ function SegmentAlignmentReport({ measurements: m, view, PC }) {
   :                    { label:"Normal",   colour:PC.green };
 
   return (
-    <div style={{padding:"12px 0"}}>
+    <div style={{padding:"4px 0 14px"}}>
       <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.text,textTransform:"uppercase",
-        letterSpacing:"1px",marginBottom:10}}>Segment Alignment</div>
+        letterSpacing:"1px",marginBottom:12}}>Results</div>
 
-      {rows.map(({label,value,th,neutral,word}) => {
+      {rows.map(({label,value,th,neutral,word,anchor}) => {
         const abs = Math.abs(value);
         const sev = classifySeverity(abs, th);
         const meta = sevMeta(sev);
-        // Marker position across the bar, saturating at the severe threshold.
-        const pct = Math.min(abs / th.severe, 1) * 100;
+
+        // Bar is centred on zero: deviation to either side moves outward from a
+        // green middle band. An absolute-value ramp would collapse left and
+        // right deviation onto the same position and lose the direction, which
+        // is exactly what these frontal measures exist to show.
+        const clamped = Math.max(-th.severe, Math.min(th.severe, value));
+        const pos     = 50 + (clamped / th.severe) * 50;
+        const gMinus  = 50 - 50 * th.mild     / th.severe;
+        const gPlus   = 50 + 50 * th.mild     / th.severe;
+        const aMinus  = 50 - 50 * th.moderate / th.severe;
+        const aPlus   = 50 + 50 * th.moderate / th.severe;
+        const grad = `linear-gradient(90deg,`
+          + ` ${PC.red} 0%, ${PC.red} ${aMinus}%,`
+          + ` ${PC.yellow} ${aMinus}%, ${PC.yellow} ${gMinus}%,`
+          + ` ${PC.green} ${gMinus}%, ${PC.green} ${gPlus}%,`
+          + ` ${PC.yellow} ${gPlus}%, ${PC.yellow} ${aPlus}%,`
+          + ` ${PC.red} ${aPlus}%, ${PC.red} 100%)`;
+
         return (
-          <div key={label} style={{padding:"10px 0",borderBottom:`1px solid ${PC.border}`}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-              <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{label}</span>
-              <span style={{fontSize:"0.95rem",fontWeight:800,color:meta.colour}}>
-                {value.toFixed(1)}°
-              </span>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginTop:3}}>
-              <span style={{fontSize:"0.7rem",fontWeight:700,color:PC.muted,letterSpacing:"0.3px"}}>
+          <div key={label} style={{display:"flex",gap:12,alignItems:"center",
+            padding:"12px 0",borderBottom:`1px solid ${PC.border}`}}>
+
+            {/* Region thumbnail — a circular crop of the analysed photo centred
+                on this row's own landmarks. Percentage background-position
+                aligns the same relative point of image and container, so the
+                normalised landmark coordinate centres the crop directly; no
+                canvas work needed. */}
+            {photoUrl && anchor && (
+              <div style={{flex:"0 0 58px",width:58,height:58,borderRadius:"50%",
+                overflow:"hidden",border:`1px solid ${PC.border}`,background:PC.s2,
+                backgroundImage:`url("${photoUrl}")`,backgroundSize:"260% auto",
+                backgroundPosition:`${anchor.x*100}% ${anchor.y*100}%`,
+                backgroundRepeat:"no-repeat"}}/>
+            )}
+
+            <div style={{flex:1,minWidth:0,textAlign:"right"}}>
+              <div style={{fontSize:"0.7rem",color:PC.muted,fontWeight:600}}>{label}</div>
+              <div style={{fontSize:"0.95rem",fontWeight:800,color:PC.text,
+                textTransform:"uppercase",lineHeight:1.25,letterSpacing:"0.2px"}}>
                 {sev ? word(value) : neutral}
-              </span>
-              <span style={{padding:"2px 8px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,
-                color:meta.colour,background:`${meta.colour}18`,border:`1px solid ${meta.colour}40`}}>
-                {meta.label}
-              </span>
-            </div>
-            <div style={{position:"relative",height:6,borderRadius:6,marginTop:8,
-              background:`linear-gradient(90deg, ${PC.green} 0%, ${PC.green} ${100*th.mild/th.severe}%, ${PC.yellow} ${100*th.mild/th.severe}%, ${PC.yellow} ${100*th.moderate/th.severe}%, ${PC.red} ${100*th.moderate/th.severe}%, ${PC.red} 100%)`,
-              opacity:0.85}}>
-              <div style={{position:"absolute",left:`${pct}%`,top:-3,width:2,height:12,
-                background:PC.text,transform:"translateX(-1px)",borderRadius:1}}/>
-            </div>
-            <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:5}}>
-              Margin of alignment: {th.mild}°
+              </div>
+              <div style={{fontSize:"1.15rem",fontWeight:900,color:meta.colour,lineHeight:1.3}}>
+                {value.toFixed(1)}°
+              </div>
+
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",
+                  fontWeight:800,color:"#fff",background:meta.colour,whiteSpace:"nowrap"}}>
+                  {meta.label}
+                </span>
+                <div style={{position:"relative",flex:1,height:5,borderRadius:5,
+                  background:grad,opacity:0.9}}>
+                  <div style={{position:"absolute",left:`${pos}%`,top:-7,
+                    transform:"translateX(-50%)",width:0,height:0,
+                    borderLeft:"4px solid transparent",borderRight:"4px solid transparent",
+                    borderTop:`6px solid ${PC.text}`}}/>
+                </div>
+              </div>
+
+              <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:5}}>
+                Margin of alignment: {th.mild}°
+              </div>
             </div>
           </div>
         );
       })}
 
-      <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:8,fontStyle:"italic",lineHeight:1.5}}>
+      <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:10,fontStyle:"italic",lineHeight:1.5}}>
         Angle-based screen — independent of height calibration. Educational
         screening only, not a diagnosis.
       </div>
@@ -5780,7 +5832,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
           {/* Per-segment alignment summary — frontal/posterior only; renders
               nothing for sagittal views or when no angle measure resolved. */}
-          <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}/>
+          <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}
+            photoUrl={objectUrlRef.current||uploadedImg||capturedImg} landmarks={landmarks}/>
           {/* Analysed photo preview — manual mode only, shown at top of findings */}
           {inputMode==="manual"&&manualAnalysed&&(objectUrlRef.current||uploadedImg)&&(
             <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
