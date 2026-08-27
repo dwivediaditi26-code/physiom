@@ -1018,36 +1018,41 @@ export async function toggleJoinCommunity(id) {
 
 /* ---------------- notifications ---------------- */
 
-// Phase 4 (see supabase/add_notifications.sql + add_notification_links.sql).
-// Notifications are written server-side by SECURITY DEFINER triggers the
-// instant a like/comment/follow/message happens -- this function only ever
-// reads. Falls back to the demo NOTIFICATIONS list only when signed out or
-// the table genuinely doesn't exist yet (a real query error) --
-// deliberately NOT on an empty real result. A signed-in user with zero
-// real notifications is a real, valid state (nobody's interacted with them
-// yet) and must see an honest empty list, not canned demo notifications
-// that don't belong to them and can never be marked read.
+// Phase 4 (see supabase/add_notifications.sql + add_notification_links.sql
+// + add_notification_post_id.sql). Notifications are written server-side by
+// SECURITY DEFINER triggers the instant a like/comment/follow/message
+// happens -- this function only ever reads. Falls back to the demo
+// NOTIFICATIONS list only when signed out or the table genuinely doesn't
+// exist yet (a real query error) -- deliberately NOT on an empty real
+// result. A signed-in user with zero real notifications is a real, valid
+// state (nobody's interacted with them yet) and must see an honest empty
+// list, not canned demo notifications that don't belong to them and can
+// never be marked read.
 //
-// `link` is derived here, not stored as a URL in the database -- actor_id
-// + kind (added by add_notification_links.sql) is enough to know where a
-// click should go: the actor's profile for like/comment/follow (there's no
-// single-post detail page in PhysioFeed to link a like/comment to), or the
-// message thread with them for a DM. No known kind/actor -- e.g. rows from
-// before that migration ran -- gets no link rather than a guessed one.
+// `link` is derived here, not stored as a URL in the database. Like/comment
+// (2026-08-27, "like how it happens in Insta") now jump straight to the
+// post itself via /feed?post=<id> -- FeedPage.jsx reads that query param
+// and opens PostDetailModal.jsx for it, same modal GridPostCard.jsx already
+// uses on the Profile/Saved/Explore grids. Falls back to the actor's
+// profile when post_id is null (older rows written before this migration,
+// or the post's since been deleted). Follow still goes to the actor's
+// profile and message still goes to the thread -- neither of those is
+// about a specific post.
 export async function getNotifications() {
   const uid = await currentUserId();
   if (!uid) return clone(NOTIFICATIONS); // signed out / guest mode -- keep the demo list
   try {
     const { data, error } = await supabase
       .from("notifications")
-      .select("id, icon_name, text, tone, read, created_at, actor_id, kind")
+      .select("id, icon_name, text, tone, read, created_at, actor_id, kind, post_id")
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return (data || []).map((n) => ({
       id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
       link: n.kind === "message" ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
-          : n.kind === "like" || n.kind === "comment" || n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
+          : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/feed?post=${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
+          : n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
           : null,
     }));
   } catch (e) {
