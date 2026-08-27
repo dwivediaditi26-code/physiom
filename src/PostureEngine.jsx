@@ -2710,6 +2710,29 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   const PX=i=>lm[i]?[lm[i].x*W,lm[i].y*H]:null;
   const m=measurements||{};
 
+  const isLat=view==="left"||view==="right";
+
+  // Single source of truth for the vertical reference line's x position.
+  // The grid's lateral zero and the plumb line MUST share this: every lateral
+  // measurement the engine reports (trunkLateralShift, sagShoulderShift, the
+  // EAM/acromion/GT/knee deviations) is measured from the plumb, NOT from the
+  // middle of the frame. Anchoring the grid's zero at W/2 instead would mean
+  // the numerals disagreed with the findings by however far off-centre the
+  // patient happened to be standing.
+  //   Frontal/posterior — Kendall: plumb falls midway between the heels.
+  //   Sagittal          — Kendall: plumb passes through the lateral malleolus.
+  const plumbAnchorX = (()=>{
+    if(isLat){
+      const s=view==="right", iAnk=s?28:27, iHeel=s?30:29;
+      if(V(iAnk))  return lm[iAnk].x*W;
+      if(V(iHeel)) return lm[iHeel].x*W;
+      return W/2;
+    }
+    const ankMidX = V(27)&&V(28) ? (g(27).x+g(28).x)/2 : null;
+    const hipMidX = V(23)&&V(24) ? (g(23).x+g(24).x)/2 : null;
+    return ankMidX!==null ? ankMidX*W : hipMidX!==null ? hipMidX*W : W/2;
+  })();
+
   if(showGrid){
     // Real-world measurement grid, not an arbitrary fraction of the frame.
     // This used to be a fixed 12x16 split, so a "square" had no dimension and
@@ -2726,7 +2749,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     const rawPPC = m.pixPerCm;
     const ppc = (rawPPC && isFinite(rawPPC) && rawPPC >= H/400 && rawPPC <= H/50)
       ? rawPPC : (H/170);
-    const minorPx = ppc*5, majorPx = ppc*10, cx = W/2;
+    const minorPx = ppc*5, majorPx = ppc*10, cx = plumbAnchorX;
     ctx.save();
     ctx.lineWidth = Math.max(0.6, H*0.0012);
 
@@ -2761,15 +2784,12 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     ctx.restore();
   }
 
-  const isLat=view==="left"||view==="right";
-
   // ── Plumb line ────────────────────────────────────────────────────────────
   if(!isLat){
-    // Kendall: anterior/posterior plumb line falls midway between the heels (ankle midpoint)
-    // Fallback to hip midpoint if ankles not visible
-    const ankMid=V(27)&&V(28)?{x:(g(27).x+g(28).x)/2}:null;
-    const hipMidX=V(23)&&V(24)?(g(23).x+g(24).x)/2:null;
-    const gx=ankMid?ankMid.x*W:hipMidX?hipMidX*W:W/2;
+    // Kendall: anterior/posterior plumb line falls midway between the heels
+    // (ankle midpoint), falling back to hip midpoint — see plumbAnchorX above,
+    // which the measurement grid shares so the two can't drift apart.
+    const gx=plumbAnchorX;
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.6)"; ctx.shadowBlur=8;
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
@@ -2806,11 +2826,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ? (noseXo < sagShXo ? -1 : 1)
       : (view==="right" ? -1 : 1);
     const side = view==="right";
-    const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
-    // Kendall (5th ed.): plumb line passes through the lateral malleolus
-    let plumbX=W/2;
-    if(V(iAnk)){ plumbX=lm[iAnk].x*W; }       // lateral malleolus — Kendall primary
-    else if(V(iHeel)){ plumbX=lm[iHeel].x*W; }
+    const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27;
+    // Kendall (5th ed.): plumb line passes through the lateral malleolus.
+    // Resolved once as plumbAnchorX above (malleolus → heel → frame centre)
+    // so the measurement grid's lateral zero sits on this same line.
+    const plumbX=plumbAnchorX;
     const pixPerCm=m.pixPerCm||(H/170);
     // Plumb line
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.8)"; ctx.shadowBlur=14;
