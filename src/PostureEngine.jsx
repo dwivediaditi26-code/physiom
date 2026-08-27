@@ -3457,6 +3457,77 @@ function ScoreRingBand({score,band,colour,size=80}){
   );
 }
 
+// ─── Capture Alignment Guide ───────────────────────────────────────────────────
+// Static positioning overlay shown the instant the camera opens, BEFORE
+// pose-detection has locked onto a body (drawOverlay's grid/plumb-line only
+// renders once `lm` exists — until then the preview was blank). Matches the
+// guided-capture pattern used by ePose/APECS: a body-silhouette + framing
+// grid the subject lines up with, so positioning is right from frame one
+// instead of being discovered after the fact via post-hoc warnings.
+// Fades out (not unmounted, so the transition is smooth) once tracking
+// locks on and the dynamic Kendall grid/plumb-line takes over.
+function CaptureAlignmentGuide({ view, visible }) {
+  const isLat = view === "left" || view === "right";
+  const side = view === "right"; // which way the subject should face, lateral only
+  const stroke = "rgba(0,229,255,0.85)";
+  const strokeDim = "rgba(255,255,255,0.35)";
+
+  return (
+    <div style={{
+      position: "absolute", inset: 0, pointerEvents: "none",
+      opacity: visible ? 1 : 0, transition: "opacity 0.35s ease",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+    }}>
+      <svg viewBox="0 0 100 140" preserveAspectRatio="xMidYMid meet"
+        style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
+        {/* Framing guide lines — head / shoulder / hip / foot bands, labelled like a photo-booth alignment guide */}
+        {[
+          { y: 9,   label: "head" },
+          { y: 33,  label: isLat ? "shoulder" : "shoulders" },
+          { y: 78,  label: isLat ? "hip" : "hips" },
+          { y: 130, label: "feet" },
+        ].map(({ y, label }) => (
+          <g key={label}>
+            <line x1="4" y1={y} x2="96" y2={y} stroke={strokeDim} strokeWidth="0.4" strokeDasharray="2,2" />
+            <text x="6" y={y - 1.5} fontSize="3.2" fill={strokeDim} fontFamily="system-ui">{label}</text>
+          </g>
+        ))}
+
+        {!isLat ? (
+          <>
+            {/* Front/back silhouette — symmetric, centred vertical plumb reference */}
+            <line x1="50" y1="4" x2="50" y2="136" stroke={stroke} strokeWidth="0.4" strokeDasharray="3,3" opacity="0.5" />
+            <circle cx="50" cy="18" r="9" fill="none" stroke={stroke} strokeWidth="0.8" />
+            <path d="M 41 27 L 33 33 M 59 27 L 67 33" fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M 33 33 L 36 70 L 40 78 L 42 128 M 67 33 L 64 70 L 60 78 L 58 128"
+              fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="36" y1="33" x2="64" y2="33" stroke={stroke} strokeWidth="0.6" />
+            <line x1="40" y1="78" x2="60" y2="78" stroke={stroke} strokeWidth="0.6" />
+          </>
+        ) : (
+          <>
+            {/* Side silhouette — Kendall ear/shoulder/hip/ankle plumb reference */}
+            <line x1="55" y1="8" x2="55" y2="134" stroke={stroke} strokeWidth="0.4" strokeDasharray="3,3" opacity="0.5" />
+            <circle cx={side ? 58 : 52} cy="18" r="9" fill="none" stroke={stroke} strokeWidth="0.8" />
+            <path
+              d={side
+                ? "M 56 27 L 54 33 L 52 70 L 55 78 L 54 128"
+                : "M 54 27 L 56 33 L 58 70 L 55 78 L 56 128"}
+              fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        )}
+      </svg>
+      <div style={{
+        marginBottom: 10, padding: "4px 12px", borderRadius: 8,
+        background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.85)",
+        fontSize: "0.72rem", fontWeight: 600, textAlign: "center",
+      }}>
+        Line up with the guide{isLat ? " · stand side-on" : ""}
+      </div>
+    </div>
+  );
+}
+
 // ─── Finding Card ─────────────────────────────────────────────────────────────
 
 // ─── FindingsDisplay — Priority top 5 + show all toggle ──────────────────────
@@ -6556,6 +6627,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       pointerEvents:"none"}}/>
+                  {/* Static positioning guide — visible before pose-detection locks on;
+                      fades once `hasData` (see CaptureAlignmentGuide above for why). */}
+                  <CaptureAlignmentGuide view={view} visible={!hasData} />
                   <div style={{position:"absolute",top:8,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
                       {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
