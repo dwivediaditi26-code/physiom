@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -69,23 +69,58 @@ export default function InfoCard({ data, onClose }) {
 
 /* ---------- Pane renderers ---------- */
 
+// Normalizes both supported image shapes into one array of up to 3 slots:
+//   - legacy `perform.image` (single string/null) -- every card authored
+//     before the 3-photo gallery, still works unchanged.
+//   - `perform.images` (array of up to 3 entries) -- each entry is either
+//     a plain URL/null, or { src, label } for a per-slot caption (e.g.
+//     "Starting position" / "Technique" / "Finding"). Missing/null slots
+//     still render the placeholder so partial upload progress is visible.
+function normalizeImages(perform) {
+  if (Array.isArray(perform.images) && perform.images.length) {
+    return perform.images.slice(0, 3).map((it) =>
+      it && typeof it === "object" ? { src: it.src || null, label: it.label || null } : { src: it || null, label: null }
+    );
+  }
+  return [{ src: perform.image || null, label: null }];
+}
+
 function PerformPane({ perform }) {
+  const slots = normalizeImages(perform);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => { setIdx(0); }, [perform]);
+  const active = slots[Math.min(idx, slots.length - 1)];
+
   return (
     <>
-      {/* Image slot — pass perform.image as a URL/import once you have real
-          photos or illustrations; until then it shows a placeholder so the
-          layout never has to change when you add one. */}
-      {perform.image ? (
+      {/* Image slot(s) — pass perform.image (single) or perform.images (up
+          to 3, each a URL or {src,label}) once real photos exist; until
+          then this shows a placeholder per slot so the layout never has
+          to change when photos are added one at a time. */}
+      {active.src ? (
         <div style={s.illusImg}>
-          <img src={perform.image} alt={perform.caption || ""} style={s.illusImgTag} />
-          {perform.caption && <div style={s.illusImgCap}>{perform.caption}</div>}
+          <img src={active.src} alt={active.label || perform.caption || ""} style={s.illusImgTag} />
+          {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
         </div>
       ) : (
         <div style={s.illus}>
           <div style={s.illusPlaceholder}>
             <div style={s.illusPlaceholderIcon}>🖼️</div>
-            <div style={s.illusCap}>{perform.caption || "Add position/technique image"}</div>
+            <div style={s.illusCap}>{active.label || perform.caption || "Add position/technique image"}</div>
           </div>
+        </div>
+      )}
+      {slots.length > 1 && (
+        <div style={s.imgDots}>
+          {slots.map((_, i) => (
+            <span
+              key={i}
+              onClick={() => setIdx(i)}
+              style={{ ...s.imgDot, ...(i === idx ? s.imgDotOn : {}) }}
+              role="button"
+              aria-label={`Photo ${i + 1} of ${slots.length}`}
+            />
+          ))}
         </div>
       )}
       {perform.boxes.map((b, i) => (
@@ -197,6 +232,9 @@ const s = {
   illusImg: { borderRadius: 12, marginBottom: 9, border: `1px solid ${LINE}`, overflow: "hidden", background: "#FAF9FD" },
   illusImgTag: { width: "100%", maxHeight: 160, objectFit: "cover", display: "block" },
   illusImgCap: { fontSize: 9.5, color: MUTED, textAlign: "center", padding: "5px 8px" },
+  imgDots: { display: "flex", justifyContent: "center", gap: 6, marginTop: -3, marginBottom: 10 },
+  imgDot: { width: 6, height: 6, borderRadius: "50%", background: "#E3DEF0", cursor: "pointer" },
+  imgDotOn: { width: 16, borderRadius: 4, background: PURPLE },
   box: { background: "#FAF9FD", border: `1px solid ${LINE}`, borderRadius: 12, padding: "9px 10px", marginBottom: 8 },
   boxLabel: { fontSize: 8.5, fontWeight: 800, letterSpacing: ".05em", color: PURPLE, textTransform: "uppercase", marginBottom: 3 },
   boxBody: { fontSize: 11, color: INK, lineHeight: 1.45 },
