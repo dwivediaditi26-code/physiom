@@ -2711,9 +2711,54 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   const m=measurements||{};
 
   if(showGrid){
-    ctx.strokeStyle="rgba(255,255,255,0.18)"; ctx.lineWidth=0.8;
-    for(let c=0;c<=12;c++){const x=W/12*c;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let r=0;r<=16;r++){const y=H/16*r;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // Real-world measurement grid, not an arbitrary fraction of the frame.
+    // This used to be a fixed 12x16 split, so a "square" had no dimension and
+    // the operator couldn't read a distance off it. Spacing now comes from the
+    // same pixPerCm calibration the measurements use: minor lines every 5cm,
+    // major every 10cm, with height-above-floor labels down the left edge and
+    // a centre-zero lateral scale across the top (deviation left/right of
+    // frame centre). Matches the ruled-grid convention clinical posture tools
+    // use so the grid doubles as a ruler.
+    //
+    // pixPerCm is sanity-checked rather than trusted: a bad calibration would
+    // otherwise produce either one line or thousands. Anything implying a
+    // frame height outside 50-400cm falls back to assuming ~170cm.
+    const rawPPC = m.pixPerCm;
+    const ppc = (rawPPC && isFinite(rawPPC) && rawPPC >= H/400 && rawPPC <= H/50)
+      ? rawPPC : (H/170);
+    const minorPx = ppc*5, majorPx = ppc*10, cx = W/2;
+    ctx.save();
+    ctx.lineWidth = Math.max(0.6, H*0.0012);
+
+    // Minor lines are dropped when they'd be too dense to resolve.
+    if(minorPx >= 6){
+      ctx.strokeStyle="rgba(255,255,255,0.10)";
+      ctx.beginPath();
+      for(let y=H-minorPx; y>0; y-=minorPx){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+      for(let x=cx+minorPx; x<W; x+=minorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+      for(let x=cx-minorPx; x>0; x-=minorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle="rgba(255,255,255,0.26)";
+    ctx.beginPath();
+    for(let y=H-majorPx; y>0; y-=majorPx){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+    for(let x=cx+majorPx; x<W; x+=majorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    for(let x=cx-majorPx; x>0; x-=majorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    ctx.stroke();
+
+    // Ruler numerals — only when major lines are far enough apart to label.
+    if(majorPx >= 18){
+      const fs = Math.max(9, Math.round(H*0.016));
+      ctx.font=`600 ${fs}px system-ui`;
+      ctx.fillStyle="rgba(255,255,255,0.55)";
+      ctx.textAlign="left"; ctx.textBaseline="bottom";
+      for(let y=H-majorPx, cm=10; y>0; y-=majorPx, cm+=10){ ctx.fillText(String(cm), 3, y-1); }
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      for(let x=cx+majorPx, cm=10; x<W; x+=majorPx, cm+=10){ ctx.fillText(String(cm), x, 2); }
+      for(let x=cx-majorPx, cm=10; x>0; x-=majorPx, cm+=10){ ctx.fillText(String(-cm), x, 2); }
+    }
+    ctx.restore();
   }
 
   const isLat=view==="left"||view==="right";
