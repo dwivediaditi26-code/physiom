@@ -869,7 +869,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
 
 // ─── Reliability Engine ───────────────────────────────────────────────────────
 function calcReliability(lm, view) {
-  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
+  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],confidence:{}};
   const isLateral = view==="left"||view==="right";
   const KEY=[0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
   const NAMES={0:"Head",2:"L.Eye",5:"R.Eye",7:"L.Ear",8:"R.Ear",11:"L.Shoulder",12:"R.Shoulder",
@@ -923,8 +923,18 @@ function calcReliability(lm, view) {
     warnings.push({icon:"⬡",text:"Feet not visible — move camera back for full-body capture",color:PC.yellow,priority:2});
   warnings.sort((a,b)=>(b.priority||0)-(a.priority||0));
   const status=blocked?"Insufficient":avg>0.80?"Excellent":avg>0.65?"Good":avg>0.50?"Fair":"Poor";
-  const icc=r1(Math.min(0.95, 0.35+avg*0.60));
-  return {score,status,blocked,warnings,icc,confidence};
+  // NOTE: do not reintroduce an "ICC" here. This previously returned
+  //   icc = min(0.95, 0.35 + avg*0.60)
+  // and the UI presented it as "ICC estimate (test-retest reliability)",
+  // colour-coded against the usual interpretation bands. It was not an ICC:
+  // `avg` is mean landmark VISIBILITY from a single frame, whereas a
+  // test-retest ICC requires the same subject measured on separate occasions
+  // and correlated. There is no repeated measure anywhere in this app. The
+  // rescaling also floored the value at 0.35 and ceilinged it at 0.95, so it
+  // could never read as poor -- ordinary visibility of 0.75 surfaced as 0.80,
+  // i.e. "good reliability" to a clinician. `score` (= avg*100) is already
+  // exposed and is an honest description of what is actually being measured.
+  return {score,status,blocked,warnings,confidence};
 }
 
 // ─── Manual Reliability ───────────────────────────────────────────────────────
@@ -4672,6 +4682,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const manualImgSize=useRef({w:800,h:1000});
 
   useEffect(()=>{viewRef.current=view;},[view]);
+
+  // The live camera renders as a position:fixed full-screen overlay, so the
+  // page behind it must not scroll -- on iOS the body would otherwise
+  // rubber-band underneath the camera while the operator is framing a shot.
+  // Restores whatever overflow was there before rather than assuming "".
+  useEffect(()=>{
+    const camFull = mode==="live" && (camStatus==="active" || !!capturedImg);
+    if(!camFull) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return ()=>{ document.body.style.overflow = prev; };
+  },[mode,camStatus,capturedImg]);
   useEffect(()=>{ if(navContext && navContext.region){ setView(_regionView(navContext.region)); setTab("capture"); } },[navContext.region]);
 
   // A full-body portrait photo rendered at 100% width is usually taller than the
@@ -4721,7 +4743,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     let m={};
     try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
-    let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
+    let r={score:0,status:"Error",blocked:false,warnings:[],confidence:{}};
     try { r=calcReliability(lm,v); }
     catch(e){ console.warn("calcReliability error:",e); }
 
@@ -5531,6 +5553,29 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const isLive=mode==="live";
   const camReady=camStatus==="active";
   const hasData=!!landmarks;
+
+  // ── Full-screen camera ──────────────────────────────────────────────────────
+  // The camera takes over the whole viewport once it's actually showing
+  // something (live feed or a captured frame under review). The facing picker
+  // stays inline so a permission failure can't strand the operator behind an
+  // opaque overlay with no obvious way back.
+  // Derived once and shared by all three camera states so their geometry can't
+  // drift apart -- the video and its overlay canvas in particular MUST keep
+  // identical box + object-fit or the landmarks detach from the body.
+  const camFullscreen = isLive && (camReady || !!capturedImg);
+  const camInsetTop = camFullscreen ? "calc(8px + env(safe-area-inset-top))" : 8;
+  const camStageStyle = camFullscreen
+    ? {position:"relative",background:"#000",flex:1,minHeight:0,overflow:"hidden"}
+    : {position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0};
+  // height:100% (not maxHeight) in full-screen so the stage's flex height wins;
+  // objectFit stays "contain" in both modes so nothing is cropped.
+  const camMediaStyle = camFullscreen
+    ? {width:"100%",height:"100%",display:"block",objectFit:"contain",background:"#000"}
+    : {width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"contain",background:"#111"};
+  const camBarStyle = camFullscreen
+    ? {padding:"10px 14px calc(10px + env(safe-area-inset-bottom))",background:"rgba(0,0,0,0.88)",
+       borderTop:"1px solid rgba(255,255,255,0.14)",display:"flex",gap:8,flexShrink:0}
+    : {padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8};
   const viewMeta=VIEWS[view]||VIEWS.anterior;
   const highFindings=findings.filter(f=>f.severity==="high");
   const otherFindings=findings.filter(f=>f.severity!=="high");
@@ -5697,7 +5742,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 </div>
                 <div style={{fontSize: isWide?"0.65rem":"0.6rem",color:PC.muted,marginTop:2}}>
                   Reliability: {reliability?.score}% ({reliability?.isManual?"Manual ✓ ":""}{reliability?.status})
-                  {reliability?.icc!=null&&` · ICC ${reliability.icc}`}
                 </div>
                 {measurements?.cervicalLoadKg!=null&&(
                   <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:6,
@@ -6233,12 +6277,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             )}
           </div>
-          {reliability?.icc!=null&&(
-            <div style={{padding:"8px 0",borderBottom:`1px solid ${PC.border}`,display:"flex",justifyContent:"space-between"}}>
-              <span style={{fontSize:"0.8rem",color:PC.muted}}>ICC estimate (test-retest reliability)</span>
-              <span style={{fontSize:"0.75rem",fontWeight:800,color:reliability.icc>0.75?PC.green:reliability.icc>0.5?PC.yellow:PC.red}}>{reliability.icc}</span>
-            </div>
-          )}
         </div>
       )}
 
@@ -6701,7 +6739,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           above; this IS the mockup's "Tap to upload photos" dropzone. */}
       <div ref={captureAreaRef} style={{flex:1,overflowY:"auto"}}>
         {isLive?(
-          <div>
+          <div style={camFullscreen?{position:"fixed",inset:0,zIndex:9998,background:"#000",
+            display:"flex",flexDirection:"column"}:undefined}>
             {!camReady?(
               <div style={{padding: isWide?"20px":"16px",display:"flex",flexDirection:"column",gap:10}}>
                 {error&&<div style={{padding:"10px 13px",background:"rgba(220,38,38,0.08)",border:`1px solid ${PC.red}30`,borderRadius:9,fontSize:"0.76rem",color:PC.red}}>{error}</div>}
@@ -6722,22 +6761,21 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               // Reviewing a just-captured frame -- live tracking is frozen
               // (captureFrozenRef) so these results won't keep changing
               // underneath the operator. Explicit Retake resumes the feed.
-              <div>
-                <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+              <div style={camFullscreen?{display:"flex",flexDirection:"column",height:"100%"}:undefined}>
+                <div style={camStageStyle}>
                   {/* "contain", not "cover": this image already has the grid,
                       plumb-line and landmark badges baked into it by drawOverlay,
                       so cropping it to fill the box would cut those annotations
                       off at the edges. */}
-                  <img src={capturedImg} alt="Captured posture photo"
-                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"contain",background:"#111"}}/>
+                  <img src={capturedImg} alt="Captured posture photo" style={camMediaStyle}/>
                   {analysing&&(
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",color:"#fff",fontWeight:700,fontSize:"0.85rem"}}>
                       ⏳ Analysing…
                     </div>
                   )}
-                  {scoreData&&!analysing&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
+                  {scoreData&&!analysing&&<div style={{position:"absolute",top:camInsetTop,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                 </div>
-                <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
+                <div style={camBarStyle}>
                   <button onClick={retakePhoto} disabled={analysing}
                     style={{flex:2,padding: isWide?"13px":"11px",background:analysing?"#e5e7eb":`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:10,color:analysing?PC.muted:"#fff",fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:analysing?"not-allowed":"pointer"}}>
                     ↺ Retake
@@ -6746,8 +6784,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 </div>
               </div>
             ):(
-              <div>
-                <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+              <div style={camFullscreen?{display:"flex",flexDirection:"column",height:"100%"}:undefined}>
+                <div style={camStageStyle}>
                   {/* Video — NO scaleX flip; front camera CSS-flipped only when user-facing.
                       A full-body standing posture photo needs a TALL portrait frame, but this
                       was previously capped at 55vw (~55% of screen WIDTH, only ~200px tall on
@@ -6767,11 +6805,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       onto the #111 background) rather than being cropped, which is
                       what full-body framing needs. */}
                   <video ref={videoRef} playsInline webkit-playsinline="true" muted autoPlay
-                    style={{width:"100%",display:"block",
-                      transform:camFacing==="user"?"scaleX(-1)":"none",
-                      maxHeight: isMobile?"72vh":"65vh",
-                      objectFit:"contain",background:"#111"}}/>
-                  {/* Canvas overlay — matches video flip AND video object-fit */}
+                    style={{...camMediaStyle,
+                      transform:camFacing==="user"?"scaleX(-1)":"none"}}/>
+                  {/* Canvas overlay — matches video flip AND video object-fit.
+                      It is absolutely positioned over the same stage box, so with
+                      the same intrinsic size and the same "contain" it paints to
+                      exactly the same rectangle as the video. */}
                   <canvas ref={overlayRef}
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
@@ -6780,14 +6819,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   {/* Static positioning guide — visible before pose-detection locks on;
                       fades once `hasData` (see CaptureAlignmentGuide above for why). */}
                   <CaptureAlignmentGuide view={view} visible={!hasData} />
-                  <div style={{position:"absolute",top:8,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
+                  <div style={{position:"absolute",top:camInsetTop,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
-                      {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
+                      {hasData?`● Tracking · ${reliability?.score}%`:"● Searching…"}
                     </div>
                     {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
                   </div>
-                  {scoreData&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
+                  {scoreData&&<div style={{position:"absolute",top:camInsetTop,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                   {/* Top-priority framing guidance (e.g. "Feet not visible — move camera back")
                       was already computed by calcReliability but never actually shown during
                       live tracking — only a bare confidence percentage was visible, giving the
@@ -6805,7 +6844,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     </div>
                   )}
                 </div>
-                <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
+                <div style={camBarStyle}>
                   <button onClick={()=>capturePhoto(0)} disabled={!hasData}
                     style={{flex:2,padding: isWide?"13px":"11px",background:hasData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#e5e7eb",border:"none",borderRadius:10,color:hasData?"#fff":PC.muted,fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:hasData?"pointer":"not-allowed"}}>
                     ☉ Capture
