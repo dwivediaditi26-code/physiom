@@ -179,7 +179,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI, initialAiUpdates }) {
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
@@ -219,7 +219,20 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   }
 
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({});
+  // Seeds Subjective/Pain once, up front, from whatever the AI-intake
+  // landing screen produced (OrthoAssessment.jsx) -- either an AI parse of
+  // the clinician's own words, or an import of this same patient's existing
+  // Subjective Assessment from the older flow. A plain mount-only merge
+  // (not a controlled/live prop) because after this the wizard's own
+  // SubjectiveSection AI panel and manual edits are the only things
+  // touching data.subjective/data.pain from here on.
+  const [data, setData] = useState(() => {
+    if (!initialAiUpdates) return {};
+    return {
+      subjective: { ...initialAiUpdates.subjective },
+      pain: { ...initialAiUpdates.pain },
+    };
+  });
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
