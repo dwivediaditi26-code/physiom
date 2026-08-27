@@ -2199,9 +2199,17 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .popover-check { font-size: 12px; }
         .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 9px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
 
-        .segmented { display: flex; background: ${BRAND.purpleFaint}; border-radius: 12px; padding: 4px; gap: 4px; }
-        .seg-btn { flex: 1; border: none; background: transparent; color: ${BRAND.gray}; padding: 9px 6px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .seg-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.12); }
+        /* Refined-chip look (2026-08-27, user request) -- individually
+           bordered pills instead of the old shared lavender tray, applied
+           via these same class names so no call site needed to change. */
+        .segmented { display: flex; flex-wrap: wrap; gap: 8px; }
+        .seg-btn {
+          flex: 0 1 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink};
+          padding: 9px 13px; border-radius: 11px; font-size: 13px; font-weight: 600; cursor: pointer;
+          transition: transform .1s ease-out, box-shadow .1s ease-out, background .1s ease-out;
+        }
+        .seg-btn:active { transform: scale(.95); }
+        .seg-active { background: ${BRAND.purple}; color: #fff; border-color: ${BRAND.purple}; box-shadow: 0 4px 10px rgba(108,77,255,.24); }
 
         .vitals-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 6px; }
         .vital-field { flex: 1 1 45%; min-width: 120px; }
