@@ -2,7 +2,7 @@
    orthoIndividualSuggestions.js — resolves the case's selected
    region(s) onto the SAME per-region libraries RomSection/
    MmtSection/SpecialTestsSection/GeneralObservationSection read
-   (ROM_DATA/MMT_DATA/SPECIAL_TESTS_DATA/postureFieldsForRegion),
+   (ROM_DATA/MMT_DATA/SPECIAL_TESTS_DATA/allPostureFieldsForRegion),
    producing one suggestion per NAMED item (e.g. "Lachman's Test",
    "Quadriceps", "Knee flexion", "Scapula") instead of one lump
    suggestion per whole category. Every itemId/regionKey emitted
@@ -11,7 +11,7 @@
    the full section page are the same field, not a duplicate.
    ============================================================ */
 import { ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA, matchRegionKey } from "./orthoClinicalData.js";
-import { postureFieldsForRegion } from "./orthoObservationData.js";
+import { allPostureFieldsForRegion } from "./orthoObservationData.js";
 
 export function suggestIndividualItems(selectedRegions = []) {
   const rom = [], mmt = [], specialTests = [], observation = [];
@@ -35,7 +35,7 @@ export function suggestIndividualItems(selectedRegions = []) {
     }
     if (!seenObs.has(region.id)) {
       seenObs.add(region.id);
-      postureFieldsForRegion(region).forEach((f) => observation.push({ regionKey: region.id, itemId: f.id, label: f.label, meta: f, regionLabel: region }));
+      allPostureFieldsForRegion(region).forEach((f) => observation.push({ regionKey: region.id, itemId: f.id, label: f.label, meta: f, regionLabel: region }));
     }
   });
 

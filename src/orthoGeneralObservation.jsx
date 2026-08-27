@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { SectionIntro, Segmented, SelectField, TextField, TextArea, NumberField, InfoButton, AddMovementRow, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
-import { postureFieldsForRegion, OBSERVATION_INFO } from "./orthoObservationData.js";
+import { SectionIntro, Segmented, SelectField, TextField, TextArea, NumberField, InfoButton, AddMovementRow, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { postureFieldsForRegion, POSTURE_VIEWS, OBSERVATION_INFO } from "./orthoObservationData.js";
 
 /* ============================================================
    GeneralObservationSection — Outpatient pathway only. Replaces
@@ -24,7 +24,23 @@ function Card({ icon, title, infoKey, children }) {
   );
 }
 
-function PostureTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
+// One region's fields for the currently-active view. Each view stores its
+// own answers (regions[region.id][view][fieldId]) so "elevated right"
+// noted from behind and "neutral" noted from the side aren't forced to
+// share one value.
+function PostureViewFields({ region, view, regionData, setRegionData }) {
+  const fields = postureFieldsForRegion(region, view);
+  const viewData = regionData[view] || {};
+  function setField(fieldId, value) {
+    setRegionData({ ...regionData, [view]: { ...viewData, [fieldId]: value } });
+  }
+  if (!fields.length) return <Hint>Nothing specific to check for this region from this view.</Hint>;
+  return fields.map((f) => (
+    <Segmented key={f.id} label={f.label} options={f.options} value={viewData[f.id]} onChange={(v) => setField(f.id, v)} wrap />
+  ));
+}
+
+function PostureTabs({ selectedRegions, regionLabelOf, view, regions, setRegions }) {
   const [activeIdx, setActiveIdx] = useState(0);
   if (!selectedRegions.length) {
     return (
@@ -32,11 +48,7 @@ function PostureTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
     );
   }
   const region = selectedRegions[Math.min(activeIdx, selectedRegions.length - 1)];
-  const fields = postureFieldsForRegion(region);
   const regionData = regions[region.id] || {};
-  function setField(fieldId, value) {
-    setRegions({ ...regions, [region.id]: { ...regionData, [fieldId]: value } });
-  }
   return (
     <>
       {selectedRegions.length > 1 && (
@@ -50,9 +62,7 @@ function PostureTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
           </div>
         </div>
       )}
-      {fields.map((f) => (
-        <Segmented key={f.id} label={f.label} options={f.options} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} wrap />
-      ))}
+      <PostureViewFields region={region} view={view} regionData={regionData} setRegionData={(next) => setRegions({ ...regions, [region.id]: next })} />
     </>
   );
 }
@@ -102,10 +112,16 @@ export function GeneralObservationSection({ data, setData, selectedRegions = [],
       </Card>
 
       <Card icon="🧍" title="Posture & Alignment" infoKey="posture">
-        <Segmented label="View" options={["Anterior", "Posterior", "Lateral"]} value={posture.view} onChange={(v) => setSub("posture", "view", v)} />
+        <Segmented
+          label="View"
+          options={POSTURE_VIEWS.map((v) => v.label)}
+          value={POSTURE_VIEWS.find((v) => v.id === (posture.view || "anterior"))?.label}
+          onChange={(label) => set("posture", { ...posture, view: POSTURE_VIEWS.find((v) => v.label === label)?.id })}
+        />
         <PostureTabs
           selectedRegions={selectedRegions}
           regionLabelOf={regionLabelOf}
+          view={posture.view || "anterior"}
           regions={posture.regions || {}}
           setRegions={(next) => set("posture", { ...posture, regions: next })}
         />
@@ -191,11 +207,13 @@ export function formatGeneralObservationSection(section) {
     }
   });
   const postureRegions = section.posture?.regions || {};
-  if (section.posture?.view) rows.push({ label: "posture — view", value: section.posture.view });
+  const viewLabel = (id) => POSTURE_VIEWS.find((v) => v.id === id)?.label || id;
   Object.entries(postureRegions).forEach(([regionId, regionData]) => {
-    Object.entries(regionData).forEach(([fieldId, v]) => {
-      const val = fmtVal(v);
-      if (val) rows.push({ label: `${regionId} — ${fieldId}`, value: val });
+    Object.entries(regionData).forEach(([view, viewData]) => {
+      Object.entries(viewData || {}).forEach(([fieldId, v]) => {
+        const val = fmtVal(v);
+        if (val) rows.push({ label: `${regionId} — ${viewLabel(view)} — ${fieldId}`, value: val });
+      });
     });
   });
   return rows;
