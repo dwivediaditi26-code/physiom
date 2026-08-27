@@ -3,6 +3,7 @@ import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHAB_PHASES, LIMITED_EVIDENCE_NOTICE } from "./neuroTreatmentCatalog.js";
+import { authHeader } from "./supabase.js";
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -1529,6 +1530,67 @@ function AiTreatmentCard({ t, index, selected, onToggleSelect }) {
   );
 }
 
+// Optional hybrid layer: asks the LLM (api/neuroTreatmentReasoning.js) to
+// write a short narrative connecting THIS patient's findings to the
+// rule-engine's priority order. Opt-in via a button (not auto-fetched) so
+// it never spends a Groq call just from opening the step, and its output
+// is rendered in its own clearly-labelled block -- never merged into the
+// verified evidence/dosage text above, which always comes straight from
+// the static catalog regardless of whether this ever runs.
+function AiClinicalReasoningPanel({ problems, treatments, phase }) {
+  const [state, setState] = useState("idle"); // idle | loading | done | error
+  const [reasoning, setReasoning] = useState("");
+  const [error, setError] = useState("");
+
+  async function run() {
+    setState("loading");
+    setError("");
+    try {
+      const res = await fetch("/api/neuroTreatmentReasoning", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
+        body: JSON.stringify({
+          problems,
+          phase,
+          treatments: treatments.map((t) => ({
+            name: t.name, matchedProblem: t.matchedProblem, why: t.why, how: t.how,
+            dosage: t.dosage, evidenceRefs: t.evidenceRefs,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Request failed");
+      setReasoning(json.reasoning);
+      setState("done");
+    } catch (e) {
+      setError(e.message || "Something went wrong");
+      setState("error");
+    }
+  }
+
+  return (
+    <div className="summary-card" style={{ marginBottom: 14, background: BRAND.purpleFaint }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: state === "idle" ? 0 : 8 }}>
+        <span style={{ fontSize: 16 }}>✨</span>
+        <span style={{ fontWeight: 800, fontSize: 13, color: BRAND.purpleDark, flex: 1 }}>AI Clinical Reasoning</span>
+        {state !== "loading" && (
+          <button type="button" className="ghost-btn" onClick={run}>
+            {state === "done" ? "Regenerate" : "Generate"}
+          </button>
+        )}
+      </div>
+      {state === "idle" && (
+        <div style={{ fontSize: 12, color: BRAND.gray }}>
+          Optional — ask the AI to explain, in this patient's own findings, why the priority order above makes sense. It can only reference the treatments, dosage and evidence already shown; it cannot add new ones.
+        </div>
+      )}
+      {state === "loading" && <div style={{ fontSize: 12.5, color: BRAND.gray }}>Thinking…</div>}
+      {state === "error" && <div style={{ fontSize: 12.5, color: "#B4232A" }}>{error} — <button type="button" className="ghost-btn" onClick={run}>Retry</button></div>}
+      {state === "done" && <div style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{reasoning}</div>}
+    </div>
+  );
+}
+
 function AiTreatmentSuggestionsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "aiTreatment");
   const selected = Array.isArray(d.selected) ? d.selected : [];
@@ -1560,6 +1622,8 @@ function AiTreatmentSuggestionsSection({ data, setData }) {
           </div>
         ))}
       </div>
+
+      <AiClinicalReasoningPanel problems={priorityList} treatments={treatments} phase={treatments[0]?.phase} />
 
       <div className="subheading">{treatments.length} treatment option{treatments.length !== 1 ? "s" : ""} identified</div>
       {treatments.map((t, i) => (
