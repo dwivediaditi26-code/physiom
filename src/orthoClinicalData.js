@@ -15,6 +15,18 @@ export const ROM_REGION_KEYS = Object.keys(ROM_DATA);
 export const MMT_REGION_KEYS = Object.keys(MMT_DATA);
 export const SPECIAL_TEST_REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 
+/* Bug fix: "keys[0]" as a bare fallback silently mismatched any region
+   whose first word never appears in a dataset's keys -- e.g. MMT_DATA has
+   no "Cervical"... no "Lumbar"/"Thoracic"/"Sacrum" key at all (spine/core
+   muscles are grouped under a single "Spine & Core" entry there, unlike
+   ROM_DATA and SPECIAL_TESTS_DATA which do key those regions individually),
+   so lumbar and thoracic cases were silently falling through to keys[0]
+   ("Cervical") and showing Sternocleidomastoid/Scalenes/etc as the
+   Suggested Objective MMT list for a Lumbar assessment. This synonym map
+   is only a second-chance lookup BEFORE the keys[0] fallback -- it never
+   overrides a direct match (pelvis already matches "Hip & Pelvis" as-is). */
+const REGION_KEY_SYNONYMS = { lumbar: ["spine"], thoracic: ["spine"], sacrum: ["spine"] };
+
 /* The Ortho case-level region (chosen at Setup, e.g. "knee", "cervical")
    uses its own canonical id scheme. Each real clinical dataset keys its
    regions slightly differently (ROM: "Shoulder", MMT: "Shoulder & Scapula",
@@ -25,7 +37,12 @@ export function matchRegionKey(regionId, keys) {
   const label = (REGION_LABEL[regionId] || regionId || "").toLowerCase();
   const firstWord = label.split(/[\s/]+/)[0];
   const hit = keys.find((k) => k.toLowerCase().includes(firstWord));
-  return hit || keys[0];
+  if (hit) return hit;
+  for (const syn of REGION_KEY_SYNONYMS[regionId] || []) {
+    const synHit = keys.find((k) => k.toLowerCase().includes(syn));
+    if (synHit) return synHit;
+  }
+  return keys[0];
 }
 
 export function gradeColor(g) {
