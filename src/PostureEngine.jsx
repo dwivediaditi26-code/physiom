@@ -3457,6 +3457,77 @@ function ScoreRingBand({score,band,colour,size=80}){
   );
 }
 
+// ─── Capture Alignment Guide ───────────────────────────────────────────────────
+// Static positioning overlay shown the instant the camera opens, BEFORE
+// pose-detection has locked onto a body (drawOverlay's grid/plumb-line only
+// renders once `lm` exists — until then the preview was blank). Matches the
+// guided-capture pattern used by ePose/APECS: a body-silhouette + framing
+// grid the subject lines up with, so positioning is right from frame one
+// instead of being discovered after the fact via post-hoc warnings.
+// Fades out (not unmounted, so the transition is smooth) once tracking
+// locks on and the dynamic Kendall grid/plumb-line takes over.
+function CaptureAlignmentGuide({ view, visible }) {
+  const isLat = view === "left" || view === "right";
+  const side = view === "right"; // which way the subject should face, lateral only
+  const stroke = "rgba(0,229,255,0.85)";
+  const strokeDim = "rgba(255,255,255,0.35)";
+
+  return (
+    <div style={{
+      position: "absolute", inset: 0, pointerEvents: "none",
+      opacity: visible ? 1 : 0, transition: "opacity 0.35s ease",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
+    }}>
+      <svg viewBox="0 0 100 140" preserveAspectRatio="xMidYMid meet"
+        style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
+        {/* Framing guide lines — head / shoulder / hip / foot bands, labelled like a photo-booth alignment guide */}
+        {[
+          { y: 9,   label: "head" },
+          { y: 33,  label: isLat ? "shoulder" : "shoulders" },
+          { y: 78,  label: isLat ? "hip" : "hips" },
+          { y: 130, label: "feet" },
+        ].map(({ y, label }) => (
+          <g key={label}>
+            <line x1="4" y1={y} x2="96" y2={y} stroke={strokeDim} strokeWidth="0.4" strokeDasharray="2,2" />
+            <text x="6" y={y - 1.5} fontSize="3.2" fill={strokeDim} fontFamily="system-ui">{label}</text>
+          </g>
+        ))}
+
+        {!isLat ? (
+          <>
+            {/* Front/back silhouette — symmetric, centred vertical plumb reference */}
+            <line x1="50" y1="4" x2="50" y2="136" stroke={stroke} strokeWidth="0.4" strokeDasharray="3,3" opacity="0.5" />
+            <circle cx="50" cy="18" r="9" fill="none" stroke={stroke} strokeWidth="0.8" />
+            <path d="M 41 27 L 33 33 M 59 27 L 67 33" fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M 33 33 L 36 70 L 40 78 L 42 128 M 67 33 L 64 70 L 60 78 L 58 128"
+              fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="36" y1="33" x2="64" y2="33" stroke={stroke} strokeWidth="0.6" />
+            <line x1="40" y1="78" x2="60" y2="78" stroke={stroke} strokeWidth="0.6" />
+          </>
+        ) : (
+          <>
+            {/* Side silhouette — Kendall ear/shoulder/hip/ankle plumb reference */}
+            <line x1="55" y1="8" x2="55" y2="134" stroke={stroke} strokeWidth="0.4" strokeDasharray="3,3" opacity="0.5" />
+            <circle cx={side ? 58 : 52} cy="18" r="9" fill="none" stroke={stroke} strokeWidth="0.8" />
+            <path
+              d={side
+                ? "M 56 27 L 54 33 L 52 70 L 55 78 L 54 128"
+                : "M 54 27 L 56 33 L 58 70 L 55 78 L 56 128"}
+              fill="none" stroke={stroke} strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        )}
+      </svg>
+      <div style={{
+        marginBottom: 10, padding: "4px 12px", borderRadius: 8,
+        background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.85)",
+        fontSize: "0.72rem", fontWeight: 600, textAlign: "center",
+      }}>
+        Line up with the guide{isLat ? " · stand side-on" : ""}
+      </div>
+    </div>
+  );
+}
+
 // ─── Finding Card ─────────────────────────────────────────────────────────────
 
 // ─── FindingsDisplay — Priority top 5 + show all toggle ──────────────────────
@@ -4380,6 +4451,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [showHistory,setShowHistory]=useState(false);
   const [motionWarning,setMotionWarning]=useState(false);
   const prevLmRef=useRef(null);
+  // Freezes the live mediapipe handler once a photo is captured -- without
+  // this, the ~8fps live-tracking loop kept calling processLandmarks after
+  // capturePhoto() ran, so the just-captured measurements/findings were
+  // silently overwritten a fraction of a second later by whatever the
+  // camera saw next ("the result changes with time"). Cleared on retake.
+  const captureFrozenRef=useRef(false);
   // Calibration: patient height (cm) → pixPerCm conversion for real-world measurements
   const [patientHeightCm,setPatientHeightCm]=useState(170);
   const [showCalib,setShowCalib]=useState(false);
@@ -4944,6 +5021,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       });
 
       const handler=results=>{
+        if(captureFrozenRef.current) return;
         if(results.poseLandmarks?.length>0){
           const lm=results.poseLandmarks;
           if(prevLmRef.current){
@@ -4977,7 +5055,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       const loop=async()=>{
         if(!streamRef.current) return;
         const now=performance.now();
-        if(videoRef.current?.readyState>=2 && now-lastSend>=INTERVAL){
+        // Skip sending live video frames into the shared pose instance while
+        // a capture is being analysed (captureFrozenRef) -- otherwise this
+        // loop's send() races analysePhoto's own send() for the same
+        // onResults callback slot, and the captured-photo analysis can get
+        // resolved with a live-frame result instead of the still frame's.
+        if(!captureFrozenRef.current && videoRef.current?.readyState>=2 && now-lastSend>=INTERVAL){
           lastSend=now;
           try{ if(poseRef.current) await poseRef.current.send({image:videoRef.current}); }catch(_){}
         }
@@ -5015,6 +5098,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     }
     setCountdown(null);
     const video=videoRef.current; if(!video||video.readyState<2) return;
+    // Stop the live loop from overwriting this capture's results a moment
+    // later (see captureFrozenRef above) -- must happen before we grab the
+    // frame, not after, or a live update could sneak in during analysis.
+    captureFrozenRef.current=true;
     const currentView=viewRef.current;
     const W=video.videoWidth, H=video.videoHeight;
     const fc=document.createElement("canvas"); fc.width=W; fc.height=H;
@@ -5064,17 +5151,26 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
         }
       } else {
+        // No usable pose in this frame -- resume live tracking instead of
+        // leaving the operator stuck on a frozen dud frame; they can just
+        // try Capture again once framing improves.
+        captureFrozenRef.current=false; setCapturedImg(null);
         setError(`Could not detect a full body pose in this ${VIEWS[currentView]?.label||"view"} photo — step back so your full body (head to feet) is in frame, improve lighting, and try again.`);
-        if(landmarks){ const oc2=document.createElement("canvas"); oc2.width=W; oc2.height=H; const octx2=oc2.getContext("2d"); octx2.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx2,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc2.toDataURL("image/jpeg",0.92)); }
         if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
       }
     } else {
+      captureFrozenRef.current=false; setCapturedImg(null);
       URL.revokeObjectURL(blobUrl||""); setAnalysing(false);
       setError(mpStatus!=="ready" ? "AI model is still loading — wait a moment and try again." : "Camera capture failed — please try again.");
-      if(landmarks){ const oc3=document.createElement("canvas"); oc3.width=W; oc3.height=H; const octx3=oc3.getContext("2d"); octx3.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx3,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc3.toDataURL("image/jpeg",0.92)); }
       if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
     }
     if(assessMode !== "multi") { setTab("findings"); if(isMobile) setMobilePanel("results"); }
+  }
+
+  // Discards the reviewed capture and resumes live tracking for another try.
+  function retakePhoto(){
+    captureFrozenRef.current=false;
+    setCapturedImg(null); setError(null);
   }
 
   // ── Manual mode derived values ───────────────────────────────────────────────
@@ -6182,6 +6278,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     fileInputRef.current?.click();
   }
 
+  // Live-camera entry point for a view card -- the isLive/startCamera/
+  // CaptureAlignmentGuide pipeline already existed but had no UI trigger
+  // (mode never left "upload"). Mirrors handleAddPhotoForView but opens
+  // the camera instead of the file picker.
+  function handleUseCameraForView(key) {
+    selectViewForCapture(key);
+    captureFrozenRef.current=false; setCapturedImg(null);
+    setMode("live");
+    startCamera(camFacing||"environment");
+  }
+
   // Deselects the currently loaded photo for the active view (wrong photo
   // picked by mistake) -- clears it back to the empty "no image" state
   // instead of forcing either a replacement pick or a full Start New
@@ -6495,10 +6602,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     <div style={{fontWeight:800,fontSize:isWide?"0.82rem":"0.75rem",color:PC.text}}>{meta.label}</div>
                     <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:1}}>{meta.badge}</div>
                   </div>
-                  <button onClick={(e)=>{e.stopPropagation(); handleAddPhotoForView(key);}}
-                    style={{width:"100%",padding:"8px",border:"none",borderTop:`1px solid ${active?PC.accent+"30":PC.border}`,background:"transparent",color:done?PC.green:PC.accent,fontWeight:700,fontSize:isWide?"0.75rem":"0.68rem",cursor:"pointer"}}>
-                    {done?"✓ Captured":"+ Add Photo"}
-                  </button>
+                  <div style={{display:"flex",borderTop:`1px solid ${active?PC.accent+"30":PC.border}`}}>
+                    <button onClick={(e)=>{e.stopPropagation(); handleAddPhotoForView(key);}}
+                      style={{flex:1,padding:"8px",border:"none",borderRight:`1px solid ${active?PC.accent+"30":PC.border}`,background:"transparent",color:done?PC.green:PC.accent,fontWeight:700,fontSize:isWide?"0.75rem":"0.68rem",cursor:"pointer"}}>
+                      {done?"✓ Captured":"+ Add Photo"}
+                    </button>
+                    <button onClick={(e)=>{e.stopPropagation(); handleUseCameraForView(key);}}
+                      title="Use live camera" aria-label={`Use live camera for ${meta.label}`}
+                      style={{flex:"0 0 40px",padding:"8px",border:"none",background:"transparent",color:PC.accent,fontWeight:700,fontSize:"0.85rem",cursor:"pointer"}}>
+                      📷
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -6535,6 +6649,32 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   ))}
                 </div>
                 {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>⏳ Starting camera…</div>}
+                <button onClick={()=>{stopCamera();setMode("upload");}} style={{padding:"6px",background:"transparent",border:"none",color:PC.muted,fontWeight:700,fontSize:"0.75rem",cursor:"pointer",textDecoration:"underline"}}>
+                  Cancel, use upload instead
+                </button>
+              </div>
+            ):capturedImg?(
+              // Reviewing a just-captured frame -- live tracking is frozen
+              // (captureFrozenRef) so these results won't keep changing
+              // underneath the operator. Explicit Retake resumes the feed.
+              <div>
+                <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+                  <img src={capturedImg} alt="Captured posture photo"
+                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"cover",background:"#111"}}/>
+                  {analysing&&(
+                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",color:"#fff",fontWeight:700,fontSize:"0.85rem"}}>
+                      ⏳ Analysing…
+                    </div>
+                  )}
+                  {scoreData&&!analysing&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
+                </div>
+                <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
+                  <button onClick={retakePhoto} disabled={analysing}
+                    style={{flex:2,padding: isWide?"13px":"11px",background:analysing?"#e5e7eb":`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:10,color:analysing?PC.muted:"#fff",fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:analysing?"not-allowed":"pointer"}}>
+                    ↺ Retake
+                  </button>
+                  <button onClick={()=>{stopCamera();setMode("upload");}} title="Close camera" style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
+                </div>
               </div>
             ):(
               <div>
@@ -6556,6 +6696,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       pointerEvents:"none"}}/>
+                  {/* Static positioning guide — visible before pose-detection locks on;
+                      fades once `hasData` (see CaptureAlignmentGuide above for why). */}
+                  <CaptureAlignmentGuide view={view} visible={!hasData} />
                   <div style={{position:"absolute",top:8,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
                       {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
@@ -6591,7 +6734,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     ⏳ 3s
                   </button>
                   <button onClick={flipCamera} style={{flex:"0 0 44px",padding:"11px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,cursor:"pointer"}}>↻</button>
-                  <button onClick={stopCamera} style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
+                  <button onClick={()=>{stopCamera();setMode("upload");}} title="Close camera" style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
                 </div>
               </div>
             )}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import InfoCard from "./InfoCard.jsx";
+import CardioTreatmentAssistant from "./CardioTreatmentAssistant.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 
@@ -1509,15 +1510,27 @@ export function SummaryStyles() {
       .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
       .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
       .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
+      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
+      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
     `}</style>
   );
 }
-export function SummarySection({ setting, system, data, assessSteps }) {
+export function SummarySection({ setting, system, data, setData, assessSteps }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
+  // Treatment Assistant only makes sense once setData is actually wired in
+  // (the real final Summary step) -- the mid-assessment "Review So Far"
+  // modal reuses this same component read-only and doesn't pass setData,
+  // so it never shows the button.
+  const [showTreatment, setShowTreatment] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
 
+  // exportText must be computed unconditionally -- every hook in this
+  // component has to run on every render regardless of showTreatment, or
+  // React throws "rendered fewer hooks than expected" the moment the early
+  // return below starts skipping it.
   const exportText = useMemo(() => {
     let lines = [`CARDIOPULMONARY ASSESSMENT`, `Setting: ${settingLabel}   Pathway: ${systemLabel}`, ""];
     steps.filter((s) => s.id !== "summary").forEach((step) => {
@@ -1533,6 +1546,10 @@ export function SummarySection({ setting, system, data, assessSteps }) {
     });
     return lines.join("\n");
   }, [data, settingLabel, systemLabel, steps]);
+
+  if (showTreatment) {
+    return <CardioTreatmentAssistant data={data} setData={setData} setting={setting} onClose={() => setShowTreatment(false)} />;
+  }
 
   return (
     <>
@@ -1557,6 +1574,16 @@ export function SummarySection({ setting, system, data, assessSteps }) {
           </div>
         );
       })}
+      {setData && (
+        <button
+          type="button"
+          className="ai-treatment-cta"
+          onClick={() => setShowTreatment(true)}
+        >
+          <span className="ai-treatment-cta-title">✨ AI Treatment Assistant</span>
+          <span className="ai-treatment-cta-sub">Based on your documented findings</span>
+        </button>
+      )}
       <button
         type="button"
         className="primary-btn"
@@ -1964,6 +1991,9 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
+      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
+      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
       `}</style>
 
@@ -2059,7 +2089,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
-          {current.id === "summary" && <SummarySection setting={setting} system={system} data={data} assessSteps={assessSteps} />}
+          {current.id === "summary" && <SummarySection setting={setting} system={system} data={data} setData={setData} assessSteps={assessSteps} />}
           {current.id.startsWith("ct-") && <CustomSection id={current.id} meta={current} data={data} setData={setData} />}
         </div>
 
