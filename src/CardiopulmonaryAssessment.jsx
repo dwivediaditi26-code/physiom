@@ -1509,7 +1509,14 @@ export function SummaryStyles() {
       .summary-row:first-child { border-top: none; }
       .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
       .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
-      .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+      .primary-btn {
+        flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
+        padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+        box-shadow: 0 6px 16px rgba(108,77,255,.28); position: relative; overflow: hidden;
+        transition: transform .1s ease-out, box-shadow .1s ease-out, filter .1s ease-out;
+      }
+      /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
+      .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
       .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
       .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
       .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
@@ -1990,7 +1997,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            (.pm-bnav in src/utils.jsx, ~59px tall) so the two don't overlap. */
         .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
-        .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); }
+        .primary-btn {
+        flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
+        padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+        box-shadow: 0 6px 16px rgba(108,77,255,.28); position: relative; overflow: hidden;
+        transition: transform .1s ease-out, box-shadow .1s ease-out, filter .1s ease-out;
+      }
+      /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
+      .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
       .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
       .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
       .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
