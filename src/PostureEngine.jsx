@@ -268,6 +268,25 @@ function measureLandmarks(lm, calibration, view="anterior") {
     return r1(Math.abs(normDist) * imgH / pixPerCm);
   };
 
+  // ── Length proxies in REAL units ──────────────────────────────────────────
+  // Landmark y values are fractions of image height, so turning one into a
+  // physical length requires the height the whole frame spans:
+  //   frameCm = imgH / pixPerCm  ( = patientHeight / fraction-of-frame occupied )
+  // The LLD proxies previously used hard-coded multipliers instead -- ×1000
+  // for "mm" and ×180 for "mm" -- which are not lengths at all. The ×180 one
+  // happened to approximate CENTIMETRES for a ~180cm frame while being compared
+  // against Magee's 5mm functional threshold, so it under-fired by ~10x.
+  // Unlike toCm these fall back to assuming a ~170cm frame when calibration is
+  // missing, matching the estPxPerCm convention used by the sagittal chain, so
+  // the proxies still produce a usable figure on an uncalibrated photo.
+  const frameCm = (pixPerCm && imgH) ? (imgH / pixPerCm) : 170;
+  const normToCm = (normDist) =>
+    (normDist===null||normDist===undefined) ? null : r1(Math.abs(normDist) * frameCm);
+  const normToMm = (normDist) => {
+    const cm = normToCm(normDist);
+    return cm===null ? null : r1(cm * 10);
+  };
+
   const shMid    = Vb(11,12)?mid(g(11),g(12)):null;
   const hipMid   = Vb(23,24)?mid(g(23),g(24)):null;
   const kneeMid  = Vb(25,26)?mid(g(25),g(26)):null;
@@ -493,7 +512,9 @@ function measureLandmarks(lm, calibration, view="anterior") {
   const rightKneeFrontal = Vb(24,26,28)?_kfd2(g(24),g(26),g(28),false):null;
 
   const kneeSymmetry = Vb(25,26)?{left:g(25).y,right:g(26).y,diff:r1((g(25).y-g(26).y)*100)}:null;
-  const lldProxy = kneeSymmetry?r1(Math.abs(kneeSymmetry.diff)*1.8):null;
+  // Knee-height difference in true mm (was Δy×180, i.e. roughly centimetres,
+  // while being compared against Magee's 5mm threshold).
+  const lldProxy = kneeSymmetry ? normToMm(g(25).y - g(26).y) : null;
   const lldSide  = kneeSymmetry?(kneeSymmetry.diff>0?"Left":"Right"):null;
 
   // Syndrome indices
@@ -588,7 +609,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
 
   // Ankle LLD proxy in mm: medial malleolus height difference — normal <5mm
   // Uses y-coordinate difference of ankles (lower y = higher in frame = shorter limb)
-  const ankleLLDmm = Vb(27,28) ? r1(Math.abs(g(27).y - g(28).y) * 1000) : null;
+  const ankleLLDmm = Vb(27,28) ? normToMm(g(27).y - g(28).y) : null;
   const ankleLLDSide = (ankleLLDmm!==null&&Vb(27,28))
     ? (g(27).y > g(28).y ? "Right" : "Left") : null; // higher ankle = shorter side
 
@@ -631,9 +652,11 @@ function measureLandmarks(lm, calibration, view="anterior") {
   const pelvisDiffCm = (hipSymmetry && pixPerCm && imgH)
     ? toCm(Math.abs(hipSymmetry.diff)/100) : null;
 
-  // Ankle LLD in cm
-  const ankleLLDcm = (ankleLLDmm!==null && pixPerCm && imgH)
-    ? r1(ankleLLDmm/10) : null;
+  // Ankle LLD in cm. The pixPerCm/imgH gate here was dead -- it required
+  // calibration to be present and then never used it, dividing the (already
+  // wrong) mm proxy by 10. ankleLLDmm is now genuine mm, so this is a plain
+  // unit conversion and works uncalibrated via the frameCm fallback.
+  const ankleLLDcm = ankleLLDmm!==null ? r1(ankleLLDmm/10) : null;
 
   // Trunk lateral shift in cm
   const trunkShiftCm = (trunkLateralShift!==null && pixPerCm && imgH)
