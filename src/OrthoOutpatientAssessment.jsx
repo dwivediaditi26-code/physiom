@@ -179,15 +179,45 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI }) {
+  // `condition` used to be a plain prop, fixed for the whole assessment --
+  // AI Assisted Assessment always enters with condition="general", which
+  // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
+  // give condition-specific suggestions for an AI-assisted session, only
+  // ever the generic baseline. Now it's live state: once the AI intake
+  // panel (inside SubjectiveSection) classifies a specific condition from
+  // the patient's own narrative, handleConditionDetected below promotes it
+  // exactly as if the clinician had picked it manually on the
+  // Condition-wise screen.
+  const [condition, setCondition] = useState(initialCondition);
+  const [detectedConditionLabel, setDetectedConditionLabel] = useState(null);
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
-    const promoted = condition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
+    const promoted = initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
     return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || promoted.includes(id));
   });
+  // Only fires from SubjectiveSection's AI intake (orthoOutpatientSections.jsx),
+  // and only if condition is still "general" -- never overrides a condition
+  // the clinician picked explicitly on the Condition-wise screen. Unions the
+  // detected condition's promoted steps into the existing stepOrder (by
+  // canonical ORDERED_ALL position) rather than replacing it outright, so
+  // any assessment already added manually is never lost.
+  function handleConditionDetected(newCondition) {
+    if (condition !== "general") return;
+    const meta = OUTPATIENT_CONDITIONS.find((c) => c.id === newCondition);
+    if (!meta) return;
+    setCondition(newCondition);
+    setDetectedConditionLabel(meta.label);
+    setStepOrder((prev) => {
+      const activeSet = new Set(prev);
+      meta.promote.forEach((id) => activeSet.add(id));
+      return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || activeSet.has(id));
+    });
+  }
+
   const [step, setStep] = useState(0);
   const [data, setData] = useState({});
   const [visited, setVisited] = useState(new Set());
@@ -328,7 +358,18 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition, 
 
         <div className="content">
           {current.id === "demographics" && <DemographicsSection data={data} setData={setData} />}
-          {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} requireAuth={requireAuth} autoOpenAI={autoOpenAI} />}
+          {current.id === "subjective" && (
+            <SubjectiveSection
+              data={data}
+              setData={setData}
+              selectedRegions={selectedRegions}
+              regionLabelOf={regionLabelOf}
+              requireAuth={requireAuth}
+              autoOpenAI={autoOpenAI}
+              onConditionDetected={handleConditionDetected}
+              detectedConditionLabel={detectedConditionLabel}
+            />
+          )}
           {current.id === "redFlags" && <RedFlagScreenSection data={data} setData={setData} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
