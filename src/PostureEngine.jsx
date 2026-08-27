@@ -4451,6 +4451,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [showHistory,setShowHistory]=useState(false);
   const [motionWarning,setMotionWarning]=useState(false);
   const prevLmRef=useRef(null);
+  // Freezes the live mediapipe handler once a photo is captured -- without
+  // this, the ~8fps live-tracking loop kept calling processLandmarks after
+  // capturePhoto() ran, so the just-captured measurements/findings were
+  // silently overwritten a fraction of a second later by whatever the
+  // camera saw next ("the result changes with time"). Cleared on retake.
+  const captureFrozenRef=useRef(false);
   // Calibration: patient height (cm) → pixPerCm conversion for real-world measurements
   const [patientHeightCm,setPatientHeightCm]=useState(170);
   const [showCalib,setShowCalib]=useState(false);
@@ -5015,6 +5021,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       });
 
       const handler=results=>{
+        if(captureFrozenRef.current) return;
         if(results.poseLandmarks?.length>0){
           const lm=results.poseLandmarks;
           if(prevLmRef.current){
@@ -5086,6 +5093,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     }
     setCountdown(null);
     const video=videoRef.current; if(!video||video.readyState<2) return;
+    // Stop the live loop from overwriting this capture's results a moment
+    // later (see captureFrozenRef above) -- must happen before we grab the
+    // frame, not after, or a live update could sneak in during analysis.
+    captureFrozenRef.current=true;
     const currentView=viewRef.current;
     const W=video.videoWidth, H=video.videoHeight;
     const fc=document.createElement("canvas"); fc.width=W; fc.height=H;
@@ -5135,17 +5146,26 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
         }
       } else {
+        // No usable pose in this frame -- resume live tracking instead of
+        // leaving the operator stuck on a frozen dud frame; they can just
+        // try Capture again once framing improves.
+        captureFrozenRef.current=false; setCapturedImg(null);
         setError(`Could not detect a full body pose in this ${VIEWS[currentView]?.label||"view"} photo — step back so your full body (head to feet) is in frame, improve lighting, and try again.`);
-        if(landmarks){ const oc2=document.createElement("canvas"); oc2.width=W; oc2.height=H; const octx2=oc2.getContext("2d"); octx2.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx2,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc2.toDataURL("image/jpeg",0.92)); }
         if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
       }
     } else {
+      captureFrozenRef.current=false; setCapturedImg(null);
       URL.revokeObjectURL(blobUrl||""); setAnalysing(false);
       setError(mpStatus!=="ready" ? "AI model is still loading — wait a moment and try again." : "Camera capture failed — please try again.");
-      if(landmarks){ const oc3=document.createElement("canvas"); oc3.width=W; oc3.height=H; const octx3=oc3.getContext("2d"); octx3.drawImage(fc,0,0,W,H); drawOverlay({ctx:octx3,W,H,lm:landmarks,view:currentView,showGrid:true,measurements,clearFirst:false}); setCapturedImg(oc3.toDataURL("image/jpeg",0.92)); }
       if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
     }
     if(assessMode !== "multi") { setTab("findings"); if(isMobile) setMobilePanel("results"); }
+  }
+
+  // Discards the reviewed capture and resumes live tracking for another try.
+  function retakePhoto(){
+    captureFrozenRef.current=false;
+    setCapturedImg(null); setError(null);
   }
 
   // ── Manual mode derived values ───────────────────────────────────────────────
@@ -6259,6 +6279,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // the camera instead of the file picker.
   function handleUseCameraForView(key) {
     selectViewForCapture(key);
+    captureFrozenRef.current=false; setCapturedImg(null);
     setMode("live");
     startCamera(camFacing||"environment");
   }
@@ -6626,6 +6647,29 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 <button onClick={()=>{stopCamera();setMode("upload");}} style={{padding:"6px",background:"transparent",border:"none",color:PC.muted,fontWeight:700,fontSize:"0.75rem",cursor:"pointer",textDecoration:"underline"}}>
                   Cancel, use upload instead
                 </button>
+              </div>
+            ):capturedImg?(
+              // Reviewing a just-captured frame -- live tracking is frozen
+              // (captureFrozenRef) so these results won't keep changing
+              // underneath the operator. Explicit Retake resumes the feed.
+              <div>
+                <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+                  <img src={capturedImg} alt="Captured posture photo"
+                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"cover",background:"#111"}}/>
+                  {analysing&&(
+                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",color:"#fff",fontWeight:700,fontSize:"0.85rem"}}>
+                      ⏳ Analysing…
+                    </div>
+                  )}
+                  {scoreData&&!analysing&&<div style={{position:"absolute",top:8,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
+                </div>
+                <div style={{padding:"10px 14px",background:PC.surface,borderTop:`1px solid ${PC.border}`,display:"flex",gap:8}}>
+                  <button onClick={retakePhoto} disabled={analysing}
+                    style={{flex:2,padding: isWide?"13px":"11px",background:analysing?"#e5e7eb":`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:10,color:analysing?PC.muted:"#fff",fontWeight:800,fontSize: isWide?"0.85rem":"0.78rem",cursor:analysing?"not-allowed":"pointer"}}>
+                    ↺ Retake
+                  </button>
+                  <button onClick={()=>{stopCamera();setMode("upload");}} title="Close camera" style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
+                </div>
               </div>
             ):(
               <div>
