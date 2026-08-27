@@ -6,6 +6,8 @@ import { orthoStyles } from "./orthoStyles.js";
 import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
 import OrthoPostOpAssessment, { POSTOP_CONDITIONS } from "./OrthoPostOpAssessment.jsx";
 import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS } from "./OrthoOutpatientAssessment.jsx";
+import OrthoAIIntakePanel from "./OrthoAIIntakePanel.jsx";
+import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.js";
 
 /* ============================================================
    ORTHO ASSESSMENT — standalone entry point.
@@ -44,7 +46,7 @@ const OPD_MODES = [
   { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode } = {}) {
+export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode, patientData } = {}) {
   // entryMode ("ai" | "template") comes from the honest "New Assessment"
   // picker (AppFull.jsx) -- Outpatient is the only pathway that picker
   // offers today, so both shortcuts force pathway=outpatient and skip
@@ -64,6 +66,16 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   // "Start with AI" gives, just reachable without leaving this screen too.
   const [pickedAi, setPickedAi] = useState(false);
   const effectiveEntryMode = entryMode || (pickedAi ? "ai" : null);
+  // The AI-assisted path's actual front page: write/speak the assessment
+  // (or pull it forward from this patient's existing old-flow Subjective
+  // Assessment, or skip straight to manual) BEFORE ever asking "which
+  // region" -- region only comes after, since neither the AI narrative
+  // parser nor the old-flow import attempts to guess it (see
+  // orthoAiIntake.js's comment on why region import is deliberately out
+  // of scope). Reusing step===1 (previously always the region screen) for
+  // both sub-screens keeps the rest of the step machine unchanged.
+  const [aiIntakeDone, setAiIntakeDone] = useState(false);
+  const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
 
   function restart() {
     setStep(entryMode ? 1 : 0);
@@ -74,6 +86,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
     setPickedAi(false);
+    setAiIntakeDone(false);
+    setPendingAiUpdates(null);
   }
 
   function selectAiAssisted() {
@@ -81,6 +95,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setCondition("general");
     setOpdMode("general");
     setPickedAi(true);
+    setAiIntakeDone(false);
+    setPendingAiUpdates(null);
     setStep(1);
   }
 
@@ -99,7 +115,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         onSave={onSave}
         activePatientId={activePatientId}
         requireAuth={requireAuth}
-        autoOpenAI={effectiveEntryMode === "ai"}
+        initialAiUpdates={pendingAiUpdates}
       />
     );
   }
@@ -170,7 +186,32 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
             </>
           )}
 
-          {step === 1 && (
+          {step === 1 && effectiveEntryMode === "ai" && !aiIntakeDone && (
+            <>
+              <SectionIntro icon="✨" title="Tell us about the patient" sub="Write or speak the assessment in your own words — AI structures it into Subjective for you to review and edit. Or pull it forward from this patient's existing record, or skip straight to filling it in yourself." />
+              <OrthoAIIntakePanel
+                defaultOpen
+                requireAuth={requireAuth}
+                onApply={(updates) => { setPendingAiUpdates(updates); setAiIntakeDone(true); }}
+              />
+              {hasOldSubjectiveData(patientData) && (
+                <button type="button" className="picker-card" style={{ width: "100%", marginTop: 10 }}
+                  onClick={() => { setPendingAiUpdates(importOldSubjectiveData(patientData)); setAiIntakeDone(true); }}>
+                  <div className="picker-icon">📋</div>
+                  <div>
+                    <div className="picker-label">Load this patient's existing Subjective Assessment</div>
+                    <div className="picker-desc">Pull forward the chief complaint, history and goals already on file for this patient.</div>
+                  </div>
+                </button>
+              )}
+              <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }}
+                onClick={() => setAiIntakeDone(true)}>
+                Skip — I'll fill it out manually
+              </button>
+            </>
+          )}
+
+          {step === 1 && !(effectiveEntryMode === "ai" && !aiIntakeDone) && (
             <>
               <SectionIntro icon="🧭" title="Which region(s) are involved?" sub="Select every region you plan to examine — you can always pull in another region later from within ROM, MMT, or Special Tests." />
               <RegionPicker selectedRegions={selectedRegions} setSelectedRegions={setSelectedRegions} />
@@ -216,16 +257,18 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
           )}
         </div>
 
-        <div className="bottombar">
-          {step > 0 && (
-            <button className="ghost-btn" onClick={goBack}>
-              Back
+        {!(step === 1 && effectiveEntryMode === "ai" && !aiIntakeDone) && (
+          <div className="bottombar">
+            {step > 0 && (
+              <button className="ghost-btn" onClick={goBack}>
+                Back
+              </button>
+            )}
+            <button className="primary-btn" disabled={!canProceed} onClick={goNext}>
+              {step === 2 ? "Start assessment" : "Continue"}
             </button>
-          )}
-          <button className="primary-btn" disabled={!canProceed} onClick={goNext}>
-            {step === 2 ? "Start assessment" : "Continue"}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

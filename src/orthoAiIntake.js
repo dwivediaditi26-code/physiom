@@ -74,3 +74,50 @@ export function mapParseResultToOrthoUpdates(result = {}) {
     conditionCategory,
   };
 }
+
+// ── Import from the OLD flow's Subjective Assessment for this same patient ──
+//
+// patientData is the app's single shared per-patient `data` object -- the
+// same one SubjectiveAssessmentNew.jsx (the old flow's live Subjective
+// screen) reads/writes using flat field ids (cc_main, cc_onset, ..., see
+// sharedClinicalData.js). If this patient already has an old-flow
+// Subjective Assessment on file, the new tool's AI-intake landing screen
+// offers to pull it forward instead of re-typing or re-dictating it.
+//
+// Deliberately limited to the handful of shared, unambiguous free-text/
+// single-value fields (chief complaint, onset, duration, medical history,
+// medications, goals) -- NOT the ~100+ region-prefixed structured fields
+// (lx_*/cx_*/shl_*/etc). Those use a completely different id scheme per
+// region-and-side (e.g. "Shoulder (L)" vs this tool's {id:"shoulder",
+// side:"Left"}) with no reliable 1:1 mapping, so guessing at that
+// translation risks silently importing the wrong region's data. The
+// region-specific checklist (see orthoSubjectiveRegionData.js) still gets
+// filled fresh in this tool either way.
+const OLD_FLOW_FIELD_MAP = {
+  chiefComplaint: "cc_main",
+  onset: "cc_onset",
+  duration: "cc_duration",
+  medicalHistory: "pmh_notes",
+  medication: "med_current",
+  patientGoals: "goal_main",
+};
+
+export function hasOldSubjectiveData(patientData) {
+  if (!patientData) return false;
+  return Object.values(OLD_FLOW_FIELD_MAP).some((k) => String(patientData[k] || "").trim());
+}
+
+export function importOldSubjectiveData(patientData) {
+  const subjective = {};
+  if (patientData) {
+    Object.entries(OLD_FLOW_FIELD_MAP).forEach(([newKey, oldKey]) => {
+      // med_current is the old flow's multicheck field ("|||"-joined,
+      // see sharedClinicalData.js) -- every other mapped field here is
+      // already a plain single string in the old flow too.
+      const raw = String(patientData[oldKey] || "").trim();
+      const v = oldKey === "med_current" ? raw.split("|||").filter(Boolean).join(", ") : raw;
+      if (v) subjective[newKey] = v;
+    });
+  }
+  return { subjective, pain: {} };
+}
