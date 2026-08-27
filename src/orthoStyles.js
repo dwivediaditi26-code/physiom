@@ -309,6 +309,20 @@ export function orthoStyles() {
         .chip-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.24); }
         .chip-icon { font-size: 14px; }
 
+        /* Vertical list of tap-to-apply rows -- e.g. Exercise Prescription's
+           collapsed "Quick-apply protocol" list, instead of a wrapped chip row. */
+        .template-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .template-row {
+          width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+          border: 1.5px solid ${BRAND.border}; border-radius: 12px; padding: 12px 14px;
+          background: #fff; cursor: pointer; font-family: inherit; text-align: left;
+          transition: transform .1s ease-out, background .1s ease-out;
+        }
+        .template-row:active { transform: scale(.98); background: ${BRAND.purpleFaint}; }
+        .template-row-label { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; }
+        .template-row-note { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 3px; line-height: 1.4; }
+        .template-row-arrow { color: ${BRAND.purple}; font-weight: 800; font-size: 16px; flex-shrink: 0; }
+
         .vitals-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 6px; }
         .vital-field { flex: 1 1 45%; min-width: 130px; }
         .vital-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
