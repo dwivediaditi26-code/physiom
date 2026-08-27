@@ -6253,6 +6253,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     fileInputRef.current?.click();
   }
 
+  // Live-camera entry point for a view card -- the isLive/startCamera/
+  // CaptureAlignmentGuide pipeline already existed but had no UI trigger
+  // (mode never left "upload"). Mirrors handleAddPhotoForView but opens
+  // the camera instead of the file picker.
+  function handleUseCameraForView(key) {
+    selectViewForCapture(key);
+    setMode("live");
+    startCamera(camFacing||"environment");
+  }
+
   // Deselects the currently loaded photo for the active view (wrong photo
   // picked by mistake) -- clears it back to the empty "no image" state
   // instead of forcing either a replacement pick or a full Start New
@@ -6566,10 +6576,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     <div style={{fontWeight:800,fontSize:isWide?"0.82rem":"0.75rem",color:PC.text}}>{meta.label}</div>
                     <div style={{fontSize:"0.65rem",color:PC.muted,marginTop:1}}>{meta.badge}</div>
                   </div>
-                  <button onClick={(e)=>{e.stopPropagation(); handleAddPhotoForView(key);}}
-                    style={{width:"100%",padding:"8px",border:"none",borderTop:`1px solid ${active?PC.accent+"30":PC.border}`,background:"transparent",color:done?PC.green:PC.accent,fontWeight:700,fontSize:isWide?"0.75rem":"0.68rem",cursor:"pointer"}}>
-                    {done?"✓ Captured":"+ Add Photo"}
-                  </button>
+                  <div style={{display:"flex",borderTop:`1px solid ${active?PC.accent+"30":PC.border}`}}>
+                    <button onClick={(e)=>{e.stopPropagation(); handleAddPhotoForView(key);}}
+                      style={{flex:1,padding:"8px",border:"none",borderRight:`1px solid ${active?PC.accent+"30":PC.border}`,background:"transparent",color:done?PC.green:PC.accent,fontWeight:700,fontSize:isWide?"0.75rem":"0.68rem",cursor:"pointer"}}>
+                      {done?"✓ Captured":"+ Add Photo"}
+                    </button>
+                    <button onClick={(e)=>{e.stopPropagation(); handleUseCameraForView(key);}}
+                      title="Use live camera" aria-label={`Use live camera for ${meta.label}`}
+                      style={{flex:"0 0 40px",padding:"8px",border:"none",background:"transparent",color:PC.accent,fontWeight:700,fontSize:"0.85rem",cursor:"pointer"}}>
+                      📷
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -6606,6 +6623,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   ))}
                 </div>
                 {camStatus==="starting"&&<div style={{textAlign:"center",color:PC.yellow,fontSize:"0.78rem"}}>⏳ Starting camera…</div>}
+                <button onClick={()=>{stopCamera();setMode("upload");}} style={{padding:"6px",background:"transparent",border:"none",color:PC.muted,fontWeight:700,fontSize:"0.75rem",cursor:"pointer",textDecoration:"underline"}}>
+                  Cancel, use upload instead
+                </button>
               </div>
             ):(
               <div>
@@ -6665,7 +6685,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     ⏳ 3s
                   </button>
                   <button onClick={flipCamera} style={{flex:"0 0 44px",padding:"11px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,cursor:"pointer"}}>↻</button>
-                  <button onClick={stopCamera} style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
+                  <button onClick={()=>{stopCamera();setMode("upload");}} title="Close camera" style={{flex:"0 0 44px",padding:"11px",background:"rgba(220,38,38,0.1)",border:`1px solid ${PC.red}30`,borderRadius:10,color:PC.red,cursor:"pointer"}}>⏹</button>
                 </div>
               </div>
             )}
