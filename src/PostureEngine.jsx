@@ -268,6 +268,25 @@ function measureLandmarks(lm, calibration, view="anterior") {
     return r1(Math.abs(normDist) * imgH / pixPerCm);
   };
 
+  // ── Length proxies in REAL units ──────────────────────────────────────────
+  // Landmark y values are fractions of image height, so turning one into a
+  // physical length requires the height the whole frame spans:
+  //   frameCm = imgH / pixPerCm  ( = patientHeight / fraction-of-frame occupied )
+  // The LLD proxies previously used hard-coded multipliers instead -- ×1000
+  // for "mm" and ×180 for "mm" -- which are not lengths at all. The ×180 one
+  // happened to approximate CENTIMETRES for a ~180cm frame while being compared
+  // against Magee's 5mm functional threshold, so it under-fired by ~10x.
+  // Unlike toCm these fall back to assuming a ~170cm frame when calibration is
+  // missing, matching the estPxPerCm convention used by the sagittal chain, so
+  // the proxies still produce a usable figure on an uncalibrated photo.
+  const frameCm = (pixPerCm && imgH) ? (imgH / pixPerCm) : 170;
+  const normToCm = (normDist) =>
+    (normDist===null||normDist===undefined) ? null : r1(Math.abs(normDist) * frameCm);
+  const normToMm = (normDist) => {
+    const cm = normToCm(normDist);
+    return cm===null ? null : r1(cm * 10);
+  };
+
   const shMid    = Vb(11,12)?mid(g(11),g(12)):null;
   const hipMid   = Vb(23,24)?mid(g(23),g(24)):null;
   const kneeMid  = Vb(25,26)?mid(g(25),g(26)):null;
@@ -387,7 +406,8 @@ function measureLandmarks(lm, calibration, view="anterior") {
 
   // ── 1. CVA — Craniovertebral Angle ─────────────────────────────────────────
   // Clinical: angle between horizontal and line from C7 (acromion proxy) to ear.
-  // Normal: >55° (Yip et al. 2008). Mild FHP: 48–52°. Moderate: 44–48°. Severe: <44°.
+  // Bands come from POSTURE_THRESHOLDS.cvaAngle (see CVA constants) -- do not
+  // restate them as literals here, they drifted out of sync once already.
   // (Neiva et al. 2009; Ruivo et al. 2017)
   // CVA is ONLY valid in lateral (sagittal) view.
   // In frontal/posterior view the ear-shoulder horizontal distance is ambiguous
@@ -421,7 +441,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
   // Cervical load estimate (proxy model — NOT estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) formula; estimated cervical load proxy uses neck flexion angle)
   // Formula: baseline 4.5kg + 1.08kg per cm FHP. Each 2.5cm FHP ≈ +2.7kg.
   let cervicalLoadKg = null;
-  if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < 55) {
+  if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild) {
     cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
   }
 
@@ -493,7 +513,9 @@ function measureLandmarks(lm, calibration, view="anterior") {
   const rightKneeFrontal = Vb(24,26,28)?_kfd2(g(24),g(26),g(28),false):null;
 
   const kneeSymmetry = Vb(25,26)?{left:g(25).y,right:g(26).y,diff:r1((g(25).y-g(26).y)*100)}:null;
-  const lldProxy = kneeSymmetry?r1(Math.abs(kneeSymmetry.diff)*1.8):null;
+  // Knee-height difference in true mm (was Δy×180, i.e. roughly centimetres,
+  // while being compared against Magee's 5mm threshold).
+  const lldProxy = kneeSymmetry ? normToMm(g(25).y - g(26).y) : null;
   const lldSide  = kneeSymmetry?(kneeSymmetry.diff>0?"Left":"Right"):null;
 
   // Syndrome indices
@@ -588,7 +610,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
 
   // Ankle LLD proxy in mm: medial malleolus height difference — normal <5mm
   // Uses y-coordinate difference of ankles (lower y = higher in frame = shorter limb)
-  const ankleLLDmm = Vb(27,28) ? r1(Math.abs(g(27).y - g(28).y) * 1000) : null;
+  const ankleLLDmm = Vb(27,28) ? normToMm(g(27).y - g(28).y) : null;
   const ankleLLDSide = (ankleLLDmm!==null&&Vb(27,28))
     ? (g(27).y > g(28).y ? "Right" : "Left") : null; // higher ankle = shorter side
 
@@ -631,9 +653,11 @@ function measureLandmarks(lm, calibration, view="anterior") {
   const pelvisDiffCm = (hipSymmetry && pixPerCm && imgH)
     ? toCm(Math.abs(hipSymmetry.diff)/100) : null;
 
-  // Ankle LLD in cm
-  const ankleLLDcm = (ankleLLDmm!==null && pixPerCm && imgH)
-    ? r1(ankleLLDmm/10) : null;
+  // Ankle LLD in cm. The pixPerCm/imgH gate here was dead -- it required
+  // calibration to be present and then never used it, dividing the (already
+  // wrong) mm proxy by 10. ankleLLDmm is now genuine mm, so this is a plain
+  // unit conversion and works uncalibrated via the frameCm fallback.
+  const ankleLLDcm = ankleLLDmm!==null ? r1(ankleLLDmm/10) : null;
 
   // Trunk lateral shift in cm
   const trunkShiftCm = (trunkLateralShift!==null && pixPerCm && imgH)
@@ -988,14 +1012,30 @@ const POSTURE_THRESHOLDS = {
   // Knee frontal: Magee p.760 — HKA deviation >6° screened as valgus/varus tendency
   kneeFrontal:         { mild:6,   moderate:10, severe:15  }, // degrees (Magee/Norkin & White)
   ucsIndex:            { mild:0.6, moderate:1.0,severe:1.5 }, // index
-  // LLD: Magee p.695 — >5mm functional; >20mm requires clinical intervention
-  lldProxy:            { mild:5,   moderate:10, severe:20  }, // mm (Magee)
+  // LLD, in true mm. mild was 5mm (Magee's "functional" figure), but the
+  // asymptomatic population MEAN anatomic LLD is ~5.2mm (SD 4.1), so a 5mm
+  // mild band fires on roughly half of all patients. LLD is also genuinely
+  // contested -- sources range from 5mm to 20mm+ mattering -- and most people
+  // are asymptomatic until ~20mm. Raised to the "notable"/"significant" bands
+  // (10 / 20mm) so this flags something worth acting on rather than normal
+  // population variation. severe extends beyond Magee's intervention figure.
+  // NOTE: this only started firing correctly once the mm unit bug was fixed;
+  // before that the value was ~10x too small and effectively never triggered.
+  lldProxy:            { mild:10,  moderate:20, severe:30  }, // mm
   neckLateralAngle:    { mild:5,   moderate:8,  severe:12  }, // degrees
   tibialVarum:         { mild:5,   moderate:10, severe:15  }, // degrees
   ankleLLD:            { mild:6,   moderate:12, severe:18  }, // mm
   // SAGITTAL ────────────────────────────────────────────────────────────────
-  // CVA: Yip et al. 2008 — normal >55°; FHP threshold <55°.
-  cvaAngle:            { mild:55,  moderate:49, severe:44  }, // degrees lower=worse (Yip 2008)
+  // CVA (craniovertebral angle), lower = worse. mild is the ONLY clinically
+  // anchored value here: 48–50° is standard practice for the FHP cutoff, with
+  // 48 most cited. It was 55°, but the asymptomatic population MEAN is ~49.9°,
+  // so firing at <55 flagged the majority of normal people with forward head
+  // posture. moderate/severe below are app-derived gradations for severity
+  // banding, not separately validated cutoffs -- they preserve the previous
+  // spacing beneath the anchor.
+  // This table is the single source of truth: every CVA comparison routes
+  // through it. Four different cutoffs (55/52/58) had drifted across the file.
+  cvaAngle:            { mild:50,  moderate:44, severe:39  }, // degrees lower=worse
   // Thoracic kyphosis: Magee p.611 — normal 20–45°; hyperkyphosis >50°.
   // mild fires just above normal max (46°); moderate at clinical hyperkyphosis (50°)
   thoracicAngle:       { mild:46,  moderate:50, severe:60  }, // degrees (Magee — Cobb T1-T12 equiv.)
@@ -1007,6 +1047,19 @@ const POSTURE_THRESHOLDS = {
   kneeRecurvatum:      { mild:5,   moderate:10, severe:15  }, // degrees (Magee)
   lcsIndex:            { mild:0.4, moderate:0.8,severe:1.3 }, // index
 };
+
+// ── CVA bands — single source of truth ───────────────────────────────────────
+// The FHP cutoff was previously hard-coded at six different values across this
+// file (44/46/49/52/55/58): the findings engine, the live overlay, the metric
+// badges and the PDF each carried their own copy. Changing the clinical
+// threshold in one place therefore made the app contradict itself -- a report
+// could read "CVA 52° (normal >55°)" while the findings list stayed silent.
+// Every CVA comparison and every displayed norm must go through these.
+const CVA = POSTURE_THRESHOLDS.cvaAngle;
+// Looser gate for "near miss, worth mentioning" -- an offset from the anchor
+// rather than its own number, so it tracks any future change to it.
+const CVA_SUBTHRESHOLD = CVA.mild + 3;
+const CVA_NORM_LABEL = `>${CVA.mild}°`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPINE INTERPOLATION ENGINE
@@ -1125,7 +1178,7 @@ function classifyKendallPostureType(m) {
   if (thoracic === null) return null;
   const th = thoracic;
   const pc = pelvicCm ?? 0;
-  const fhp = cva !== null ? cva < 52 : false;
+  const fhp = cva !== null ? cva < POSTURE_THRESHOLDS.cvaAngle.mild : false;
 
   // ── Sway-back ──────────────────────────────────────────────────────────────
   // Hips thrust forward (posterior to plumb), thoracic kyphosis, cervical extension
@@ -1538,7 +1591,10 @@ function buildChainNote(chainScore) {
 function buildSagittalNilMessage(sagConf, measurements) {
   const cva = measurements?.cvaAngle;
   const thor = measurements?.thoracicAngle;
-  const hasSubthreshold = (cva !== null && cva < 58) ||
+  // Deliberately looser than the firing threshold -- this catches near-misses
+  // worth a mention. Expressed as an offset from the table so it tracks the
+  // anchor instead of drifting away from it as a hard-coded number.
+  const hasSubthreshold = (cva !== null && cva < POSTURE_THRESHOLDS.cvaAngle.mild + 3) ||
     (thor !== null && thor > 40) ||
     (measurements?.lumbarProxy !== null && Math.abs(measurements?.lumbarProxy || 0) > 2);
 
@@ -1980,7 +2036,7 @@ function buildFindings(lm, view, m) {
         add({
           clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Cervical / CVA",
-          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55° (Yip et al. 2008))`,
+          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal ${CVA_NORM_LABEL} (Yip et al. 2008))`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
           interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr} (Screen note: CVA here is a 2D photo proxy using ear→acromion; the validated clinical method measures tragus→C7 spinous process — confirm with goniometry.)`,
@@ -2203,7 +2259,7 @@ function buildFindings(lm, view, m) {
     const hasSway  = hipBehindPlumb && hasReducedLord;
     const isMilitary = m.thoracicAngle !== null && m.thoracicAngle < 30
       && (m.lumbarProxy === null || Math.abs(m.lumbarProxy) < 3)
-      && (m.cvaAngle === null || m.cvaAngle > 58);
+      && (m.cvaAngle === null || m.cvaAngle > CVA_SUBTHRESHOLD);
 
     let patternName = null, patternTx = null, patternNote = null, patternSev = "moderate";
     if (hasSway) {
@@ -2874,7 +2930,7 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     // Lat malleolus anchor
     if(V(iAnk)){ const p=PX(iAnk),_lm_sc=_sc(ctx); ctx.beginPath(); ctx.arc(p[0],p[1],Math.round(6*_lm_sc),0,Math.PI*2); ctx.fillStyle="rgba(0,229,255,1)"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=Math.round(1.5*_lm_sc); ctx.stroke(); ctx.font=`bold ${Math.round(9*_lm_sc)}px system-ui`; ctx.fillStyle="rgba(0,229,255,1)"; ctx.textAlign="left"; ctx.fillText("Lat. Malleolus",p[0]+Math.round(8*_lm_sc),p[1]+Math.round(4*_lm_sc)); }
     // CVA angle
-    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva>=52?"rgba(0,201,122,0.95)":cva>=45?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva>=52?"✓":"⚠"}`; const _cv_sc2=_sc(ctx); ctx.font=`bold ${Math.round(10*_cv_sc2)}px system-ui`; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; const _cva_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,ct,cx+Math.round(4*_cva_sc),cy+Math.round(9*_cva_sc),Math.round(10*_cva_sc),cc,_cva_sc); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; const _fh_sc2=_sc(ctx); ctx.font=`bold ${Math.round(9*_fh_sc2)}px system-ui`; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; const _fhp_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,fl,fx,ep[1]-Math.round(16*_fhp_sc),Math.round(9*_fhp_sc),fc,_fhp_sc); } }
+    if(V(iEar)&&V(iSh)){ const ep=PX(iEar),sp=PX(iSh),dx=ep[0]-sp[0],dy=ep[1]-sp[1]; const cva=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI); const cc=cva >= CVA.mild?"rgba(0,201,122,0.95)":cva >= CVA.severe?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; ctx.save(); ctx.strokeStyle=cc; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.beginPath(); ctx.moveTo(sp[0],sp[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const ct=`CVA ${cva.toFixed(1)}° ${cva >= CVA.mild?"✓":"⚠"}`; const _cv_sc2=_sc(ctx); ctx.font=`bold ${Math.round(10*_cv_sc2)}px system-ui`; const ctw=ctx.measureText(ct).width; const cx=ep[0]<W*0.5?ep[0]+8:ep[0]-ctw-17,cy=ep[1]-24; const _cva_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,ct,cx+Math.round(4*_cva_sc),cy+Math.round(9*_cva_sc),Math.round(10*_cva_sc),cc,_cva_sc); const fhpCm=Math.abs(dx)/pixPerCm; if(fhpCm>1.5){ const fc=fhpCm>2.5?"rgba(255,77,109,0.85)":"rgba(255,179,0,0.85)"; ctx.save(); ctx.strokeStyle=fc; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(sp[0],ep[1]); ctx.lineTo(ep[0],ep[1]); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); const fl=`FHP ${fhpCm.toFixed(1)}cm`; const _fh_sc2=_sc(ctx); ctx.font=`bold ${Math.round(9*_fh_sc2)}px system-ui`; const ftw=ctx.measureText(fl).width,fx=(ep[0]+sp[0])/2-ftw/2; const _fhp_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,fl,fx,ep[1]-Math.round(16*_fhp_sc),Math.round(9*_fhp_sc),fc,_fhp_sc); } }
     // Trunk inclination
     if(V(iSh)&&V(iHip)){ const sp=PX(iSh),hp=PX(iHip),dx=sp[0]-hp[0],dy=sp[1]-hp[1]; const ta=Math.atan2(dx,Math.abs(dy))*180/Math.PI,taAbs=Math.abs(ta); const tc=taAbs<=3?"rgba(0,201,122,0.95)":taAbs<=7?"rgba(255,179,0,0.95)":"rgba(255,77,109,0.95)"; const tt=`Trunk ${ta>0?"Ant":"Post"} ${taAbs.toFixed(1)}°`,mx=(sp[0]+hp[0])/2,my=(sp[1]+hp[1])/2; const _trsc=_sc(ctx); ctx.font=`bold ${Math.round(9*_trsc)}px system-ui`; const tw=ctx.measureText(tt).width,tx=mx<W*0.5?mx+Math.round(8*_trsc):mx-tw-Math.round(16*_trsc); const _tr_sc=_sc(ctx); ctx.textAlign="left"; _drawOutlineText(ctx,tt,tx,my,Math.round(10*_tr_sc),tc,_tr_sc); }
     // Knee sagittal angle
@@ -3598,6 +3654,153 @@ function CaptureAlignmentGuide({ view, visible }) {
         fontSize: "0.72rem", fontWeight: 600, textAlign: "center",
       }}>
         Line up with the guide{isLat ? " · stand side-on" : ""}
+      </div>
+    </div>
+  );
+}
+
+// ─── Segment Alignment Report ─────────────────────────────────────────────────
+// Per-segment frontal summary (Head / Shoulders / Pelvis / Knees) in the row
+// format clinical posture tools use: the measured value, a classification word,
+// a severity chip, and the "margin of alignment" -- the tolerance the value is
+// judged against, which is just the mild threshold for that segment.
+//
+// Every value here is an ANGLE, deliberately. Angles are ratios of pixel
+// distances, so the frame's scale cancels out and this report is unaffected by
+// the height-calibration accuracy that every cm-based figure depends on.
+// Do not add cm rows here without revisiting that.
+function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks }) {
+  if (!m) return null;
+  // Frontal-plane only: these measures compare left against right, which a
+  // sagittal photo cannot see (the far side is legitimately occluded).
+  const isFrontal = view === "anterior" || view === "posterior" || view === "back";
+  if (!isFrontal) return null;
+
+  // Image-left is the patient's RIGHT when facing the camera, and their LEFT
+  // when viewed from behind. Mirrors the inversion already applied to
+  // trunkLateralShift so the two cannot report opposite sides for one photo.
+  const sideFor = (v) => v > 0
+    ? (view === "anterior" ? "Left" : "Right")
+    : (view === "anterior" ? "Right" : "Left");
+
+  // Normalised anchor point for each row's thumbnail crop, from the landmarks
+  // the row is actually derived from. Null when those landmarks aren't visible,
+  // in which case the row simply renders without a thumbnail.
+  const pt = (i) => {
+    const p = landmarks?.[i];
+    return (p && (p.visibility ?? 1) >= 0.4) ? p : null;
+  };
+  const midPt = (a, b) => {
+    const pa = pt(a), pb = pt(b);
+    return (pa && pb) ? { x:(pa.x+pb.x)/2, y:(pa.y+pb.y)/2 } : null;
+  };
+
+  const rows = [
+    { label:"Head",      value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
+      anchor:midPt(7,8) || pt(0),
+      neutral:"ALIGNED", word:(v)=>`TILT TO THE ${sideFor(v).toUpperCase()}` },
+    { label:"Shoulders", value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
+      anchor:midPt(11,12),
+      neutral:"ALIGNED", word:(v)=>`ELEVATION TO THE ${sideFor(v).toUpperCase()}` },
+    { label:"Pelvis",    value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
+      anchor:midPt(23,24),
+      neutral:"ALIGNED", word:(v)=>`OBLIQUITY TO THE ${sideFor(v).toUpperCase()}` },
+    // Sign convention taken from buildFindings: negative = valgus (medial).
+    { label:"Right Knee",value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(26),
+      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
+    { label:"Left Knee", value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(25),
+      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
+  ].filter(r => r.value !== null && r.value !== undefined && !Number.isNaN(r.value));
+
+  if (!rows.length) return null;
+
+  const sevMeta = (s) =>
+    s === "high"     ? { label:"Marked",   colour:PC.red }
+  : s === "moderate" ? { label:"Moderate", colour:"#c2410c" }
+  : s === "mild"     ? { label:"Mild",     colour:PC.yellow }
+  :                    { label:"Normal",   colour:PC.green };
+
+  return (
+    <div style={{padding:"4px 0 14px"}}>
+      <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.text,textTransform:"uppercase",
+        letterSpacing:"1px",marginBottom:12}}>Results</div>
+
+      {rows.map(({label,value,th,neutral,word,anchor}) => {
+        const abs = Math.abs(value);
+        const sev = classifySeverity(abs, th);
+        const meta = sevMeta(sev);
+
+        // Bar is centred on zero: deviation to either side moves outward from a
+        // green middle band. An absolute-value ramp would collapse left and
+        // right deviation onto the same position and lose the direction, which
+        // is exactly what these frontal measures exist to show.
+        const clamped = Math.max(-th.severe, Math.min(th.severe, value));
+        const pos     = 50 + (clamped / th.severe) * 50;
+        const gMinus  = 50 - 50 * th.mild     / th.severe;
+        const gPlus   = 50 + 50 * th.mild     / th.severe;
+        const aMinus  = 50 - 50 * th.moderate / th.severe;
+        const aPlus   = 50 + 50 * th.moderate / th.severe;
+        const grad = `linear-gradient(90deg,`
+          + ` ${PC.red} 0%, ${PC.red} ${aMinus}%,`
+          + ` ${PC.yellow} ${aMinus}%, ${PC.yellow} ${gMinus}%,`
+          + ` ${PC.green} ${gMinus}%, ${PC.green} ${gPlus}%,`
+          + ` ${PC.yellow} ${gPlus}%, ${PC.yellow} ${aPlus}%,`
+          + ` ${PC.red} ${aPlus}%, ${PC.red} 100%)`;
+
+        return (
+          <div key={label} style={{display:"flex",gap:12,alignItems:"center",
+            padding:"12px 0",borderBottom:`1px solid ${PC.border}`}}>
+
+            {/* Region thumbnail — a circular crop of the analysed photo centred
+                on this row's own landmarks. Percentage background-position
+                aligns the same relative point of image and container, so the
+                normalised landmark coordinate centres the crop directly; no
+                canvas work needed. */}
+            {photoUrl && anchor && (
+              <div style={{flex:"0 0 58px",width:58,height:58,borderRadius:"50%",
+                overflow:"hidden",border:`1px solid ${PC.border}`,background:PC.s2,
+                backgroundImage:`url("${photoUrl}")`,backgroundSize:"260% auto",
+                backgroundPosition:`${anchor.x*100}% ${anchor.y*100}%`,
+                backgroundRepeat:"no-repeat"}}/>
+            )}
+
+            <div style={{flex:1,minWidth:0,textAlign:"right"}}>
+              <div style={{fontSize:"0.7rem",color:PC.muted,fontWeight:600}}>{label}</div>
+              <div style={{fontSize:"0.95rem",fontWeight:800,color:PC.text,
+                textTransform:"uppercase",lineHeight:1.25,letterSpacing:"0.2px"}}>
+                {sev ? word(value) : neutral}
+              </div>
+              <div style={{fontSize:"1.15rem",fontWeight:900,color:meta.colour,lineHeight:1.3}}>
+                {value.toFixed(1)}°
+              </div>
+
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",
+                  fontWeight:800,color:"#fff",background:meta.colour,whiteSpace:"nowrap"}}>
+                  {meta.label}
+                </span>
+                <div style={{position:"relative",flex:1,height:5,borderRadius:5,
+                  background:grad,opacity:0.9}}>
+                  <div style={{position:"absolute",left:`${pos}%`,top:-7,
+                    transform:"translateX(-50%)",width:0,height:0,
+                    borderLeft:"4px solid transparent",borderRight:"4px solid transparent",
+                    borderTop:`6px solid ${PC.text}`}}/>
+                </div>
+              </div>
+
+              <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:5}}>
+                Margin of alignment: {th.mild}°
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:10,fontStyle:"italic",lineHeight:1.5}}>
+        Angle-based screen — independent of height calibration. Educational
+        screening only, not a diagnosis.
       </div>
     </div>
   );
@@ -4763,7 +4966,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       // ── SAGITTAL findings (lateral views) ──────────────────────────────────
       if (isLatFallback) {
-        if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
+        if (m.cvaAngle!=null&&m.cvaAngle < CVA.mild) { const sev=m.cvaAngle < CVA.severe?"high":m.cvaAngle < CVA.moderate?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal ${CVA_NORM_LABEL})`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:`Normal CVA ${CVA_NORM_LABEL}`}); }
         if (m.fhpDevCm!=null&&m.fhpDevCm>2&&m.cvaAngle===null) { fb.push({region:"Forward Head Posture",text:`Ear ${m.fhpDevCm.toFixed(1)}cm anterior to acromion`,plain:`FHP ${m.fhpDevCm.toFixed(1)}cm`,severity:m.fhpDevCm>4?"high":"moderate",confidenceScore:70,clinicalSignificance:"moderate",correction:"Postural correction, scapular retraction.",icd:"M43.6",norm:"<2cm"}); }
         if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency — ${m.thoracicAngle.toFixed(1)}° (normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.2",norm:"20–45°"}); }
         if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) {
@@ -4786,7 +4989,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       // This is the most commonly missed pattern — mistaken for rounded shoulder
       const shPostToPlumb = m.sagShoulderShift != null && m.sagShoulderShift < -1.0;
       const hipAntToPlumb = m.sagPelvicShift != null && m.sagPelvicShift > 1.5;
-      const earAntToPlumb = (m.cvaAngle != null && m.cvaAngle < 55) || (m.fhpDevCm != null && m.fhpDevCm > 2);
+      const earAntToPlumb = (m.cvaAngle != null && m.cvaAngle < CVA.mild) || (m.fhpDevCm != null && m.fhpDevCm > 2);
       if (isLatFallback && shPostToPlumb && (hipAntToPlumb || earAntToPlumb)) {
         fb.push({
           region: "Sway-Back Posture Pattern",
@@ -4805,13 +5008,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       // Correct clinical pattern: FHP + shoulder ANTERIOR to plumb + possible APT.
       // Distinguishes from Image 2 (FHP only, shoulder near plumb, normal thoracic).
       // Reference: Kendall et al. "Muscles: Testing and Function" 5th Ed. p.80
-      const hasFHPfb = m.cvaAngle!=null&&m.cvaAngle<52; // CVA must be clinically abnormal — fhpDevCm alone is insufficient
+      const hasFHPfb = m.cvaAngle!=null&&m.cvaAngle < CVA.mild; // CVA must be clinically abnormal — fhpDevCm alone is insufficient
       const shAnteriorToPlumb = m.sagShoulderShift!=null && m.sagShoulderShift > 1.0; // shoulder forward
       const noKyphosisFinding = !fb.some(x=>x.region==="Thoracic Kyphosis"||x.region==="Thoracic Kyphosis (Trunk Lean Est.)");
       // Also check: large FHP (CVA <46°) with any shoulder anterior position suggests kyphosis-lordosis
-      const severeFHP = m.cvaAngle!=null && m.cvaAngle < 46;
+      const severeFHP = m.cvaAngle!=null && m.cvaAngle < CVA.severe;
       if (isLatFallback && hasFHPfb && (shAnteriorToPlumb || severeFHP) && noKyphosisFinding) {
-        const kSev = (m.cvaAngle!=null&&m.cvaAngle<44) ? "high" : "moderate";
+        const kSev = (m.cvaAngle!=null&&m.cvaAngle < CVA.severe) ? "high" : "moderate";
         fb.push({
           region:"Thoracic Kyphosis",
           text:`Thoracic kyphosis tendency — forward head + anterior shoulder position consistent with kyphosis-lordosis pattern (Kendall)`,
@@ -4819,7 +5022,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           severity:kSev, confidenceScore:65, clinicalSignificance:kSev,
           interpretation:"Forward head posture with anterior shoulder position indicates upper thoracic kyphosis tendency. The rounded upper back causes pec minor shortening (scapular protraction) and suboccipital overactivation to maintain horizontal gaze. Confirm with thoracic extension mobility assessment.",
           correction:"General activities some find helpful (discuss with a professional first): gentle mid-back (thoracic) extension mobility over a foam roller, pec-minor stretching, lower-trapezius work, and gentle chin-tuck movements.",
-          icd:"M40.0", norm:"Acromion at plumb, CVA >55° (Kendall/Yip 2008)"
+          icd:"M40.0", norm:`Acromion at plumb, CVA ${CVA_NORM_LABEL} (Kendall)`
         });
       }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>3) {
@@ -5491,7 +5694,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       if (isLat && meaningful.length===0 && m && Object.keys(m).length>0) {
         const fb=[];
-        if (m.cvaAngle!=null&&m.cvaAngle<55) { const sev=m.cvaAngle<44?"high":m.cvaAngle<49?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal >55°)`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:"Normal CVA >55°"}); }
+        if (m.cvaAngle!=null&&m.cvaAngle < CVA.mild) { const sev=m.cvaAngle < CVA.severe?"high":m.cvaAngle < CVA.moderate?"moderate":"mild"; fb.push({region:"Cervical / CVA",text:`Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal ${CVA_NORM_LABEL})`,plain:`CVA ${m.cvaAngle.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Chin tucks, deep cervical flexor strengthening.",icd:"M43.6",norm:`Normal CVA ${CVA_NORM_LABEL}`}); }
         if (m.thoracicAngle!=null&&m.thoracicAngle>45) { const sev=m.thoracicAngle>58?"high":m.thoracicAngle>50?"moderate":"mild"; fb.push({region:"Thoracic Kyphosis",text:`Increased thoracic curvature tendency (${m.thoracicAngle.toFixed(1)}°, normal 20–45°)`,plain:`Thoracic ${m.thoracicAngle.toFixed(1)}°`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:"Thoracic extension, pec stretch, lower trap activation.",icd:"M40.0",norm:"Normal 20–45°"}); }
         if (m.sagPelvicShift!=null&&Math.abs(m.sagPelvicShift)>2) { const dir=m.sagPelvicShift>0?"Anterior":"Posterior"; const abs=Math.abs(m.sagPelvicShift); const sev=abs>5?"high":abs>3?"moderate":"mild"; fb.push({region:"Pelvis / Lumbar",text:`${dir} pelvic tendency — hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`,plain:`${dir} pelvic tilt ${abs.toFixed(1)}cm`,severity:sev,confidenceScore:65,clinicalSignificance:sev,correction:dir==="Anterior"?"Hip flexor stretch, glute bridges, abdominal hollowing.":"Hamstring stretch, hip flexor activation, lumbar extension.",icd:"M40.3",norm:"Hip within 2cm of plumb"}); }
         if (m.sagShoulderShift!=null&&Math.abs(m.sagShoulderShift)>2) {
@@ -5660,6 +5863,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       {/* Findings tab */}
       {tab==="findings"&&measurements&&(
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
+          {/* Per-segment alignment summary — frontal/posterior only; renders
+              nothing for sagittal views or when no angle measure resolved. */}
+          <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}
+            photoUrl={objectUrlRef.current||uploadedImg||capturedImg} landmarks={landmarks}/>
           {/* Analysed photo preview — manual mode only, shown at top of findings */}
           {inputMode==="manual"&&manualAnalysed&&(objectUrlRef.current||uploadedImg)&&(
             <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
@@ -5759,10 +5966,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     {/* CVA — most important single measure; always first if present */}
                     {measurements.cvaAngle!=null&&(
                       <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.cvaAngle<49?"rgba(220,38,38,0.1)":measurements.cvaAngle<55?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
-                        color:measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green,
-                        border:`1px solid ${measurements.cvaAngle<49?PC.red:measurements.cvaAngle<55?PC.yellow:PC.green}40`}}>
-                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle>=55?"✓":`(normal >55°)`}
+                        background:measurements.cvaAngle < CVA.moderate?"rgba(220,38,38,0.1)":measurements.cvaAngle < CVA.mild?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
+                        color:measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle < CVA.mild?PC.yellow:PC.green,
+                        border:`1px solid ${measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}40`}}>
+                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle >= CVA.mild?"✓":`(normal ${CVA_NORM_LABEL})`}
                       </span>
                     )}
                     {/* FHP-cm / Sh diff / Pelvis diff / Trunk shift are all bilateral
@@ -6080,12 +6287,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 <div style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:10}}>Sagittal Plane</div>
                 {/* CVA — most important sagittal metric, shown prominently */}
                 <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
-                  background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
-                  border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
+                  background:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
+                  border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}25`}}>
                   <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                     <span style={{fontSize:"0.67rem",color:PC.text}}>Craniovertebral Angle</span>
-                    <span style={{fontSize:"0.82rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
+                    <span style={{fontSize:"0.82rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}}>
                       {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                     </span>
                   </div>
@@ -6144,12 +6351,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Sagittal Plane</div>
               {/* CVA highlighted card on mobile too */}
               <div style={{marginBottom:8,padding:"8px 10px",borderRadius:8,
-                background:measurements.cvaAngle!=null&&measurements.cvaAngle<49?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle<55?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
-                border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}25`}}>
+                background:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?"rgba(220,38,38,0.07)":measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?"rgba(180,83,9,0.07)":"rgba(5,150,105,0.07)",
+                border:`1px solid ${measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}25`}}>
                 <div style={{fontSize:"0.56rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2}}>CVA — Primary FHP Marker</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                   <span style={{fontSize:"0.75rem",color:PC.text}}>Craniovertebral Angle</span>
-                  <span style={{fontSize:"0.8rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle<49?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle<55?PC.yellow:PC.green}}>
+                  <span style={{fontSize:"0.8rem",fontWeight:900,color:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle!=null&&measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}}>
                     {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                   </span>
                 </div>
@@ -7321,7 +7528,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
     // Goals from findings
     const goals = [];
-    if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:">55°",timeframe:"6 weeks"});
+    if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:CVA_NORM_LABEL,timeframe:"6 weeks"});
     if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
     if(rptScoreData_src?.score!=null) goals.push({metric:"Posture Score",current:rptScoreData_src.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
@@ -7477,7 +7684,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
     if(type==="basic") {
       const regions = [
-        {label:"Head & Neck", bad:m.cvaAngle!=null&&m.cvaAngle<49, warn:m.cvaAngle!=null&&m.cvaAngle<55},
+        {label:"Head & Neck", bad:m.cvaAngle!=null&&m.cvaAngle < CVA.moderate, warn:m.cvaAngle!=null&&m.cvaAngle < CVA.mild},
         {label:"Upper Back", bad:m.thoracicAngle!=null&&m.thoracicAngle>55, warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
         {label:"Lower Back & Pelvis", bad:Math.abs(m.lumbarProxy||0)>10, warn:Math.abs(m.lumbarProxy||0)>5},
         {label:"Shoulders", bad:Math.abs(m.shoulderAngle||0)>7, warn:Math.abs(m.shoulderAngle||0)>3},
@@ -7669,7 +7876,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Key Measurements</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
                 ${[
-                  {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",norm:">55°",bad:m.cvaAngle!=null&&m.cvaAngle<49,warn:m.cvaAngle!=null&&m.cvaAngle<55},
+                  {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",norm:CVA_NORM_LABEL,bad:m.cvaAngle!=null&&m.cvaAngle < CVA.moderate,warn:m.cvaAngle!=null&&m.cvaAngle < CVA.mild},
                   {label:"Thoracic Kyphosis (Trunk Lean Est.)",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—",norm:"20–45°",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
                   {label:"Cervical Load",val:m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—",norm:"4.5kg",bad:m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,warn:m.cervicalLoadKg!=null&&m.cervicalLoadKg>12},
                   {label:"LCS Index",val:m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—",norm:"<0.5",bad:m.lcsIndex!=null&&m.lcsIndex>1,warn:m.lcsIndex!=null&&m.lcsIndex>0.5},
@@ -7783,7 +7990,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <div style="font-size:0.59rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.muted};margin-bottom:7px">Sagittal Plane</div>
-              ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",">55°",m.cvaAngle!=null&&m.cvaAngle<49,m.cvaAngle!=null&&m.cvaAngle<55)}
+              ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",CVA_NORM_LABEL,m.cvaAngle!=null&&m.cvaAngle < CVA.moderate,m.cvaAngle!=null&&m.cvaAngle < CVA.mild)}
               ${metRow("Cervical Load (estimated cervical load proxy)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
               ${metRow("Thoracic Kyphosis (Trunk Lean Est.)",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—","20–45°",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
               ${metRow("Lumbar Lordosis (proxy)",m.lumbarProxy!=null?(m.lumbarProxy>0?"↑":"↓")+Math.abs(m.lumbarProxy).toFixed(1)+"%":"—","<5%",Math.abs(m.lumbarProxy||0)>10,Math.abs(m.lumbarProxy||0)>5)}
