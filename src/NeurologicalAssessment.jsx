@@ -1012,6 +1012,7 @@ function SafetySection({ data, setData, setting }) {
         onChange={(v) => set("redFlags", v)}
         howTo="A new focal deficit, sudden severe headache ('worst headache of life'), reduced GCS, or new seizure needs urgent medical review before any exertional or provocative testing."
       />
+      <SelectField label="Meningeal signs" type="single" options={["Negative", "Positive", "Not tested"]} value={d.meningealSigns} onChange={(v) => set("meningealSigns", v)} info={neuroExamLibraryData.meningealSigns} />
       <SelectField label="Autonomic dysreflexia signs (if SCI ≥T6)" type="multi" options={AD_SX} value={d.ad} onChange={(v) => set("ad", v)} howTo="Check for a triggering stimulus — full bladder or bowel impaction is the most common cause — and treat as a medical emergency if suspected." />
       <SelectField label="Seizure precautions in place" type="single" options={["Not applicable", "Yes - precautions active", "History of seizures, no current precautions"]} value={d.seizurePrecautions} onChange={(v) => set("seizurePrecautions", v)} />
       <SelectField
@@ -1115,7 +1116,7 @@ function CognitionSection({ data, setData }) {
       <SelectField label="Memory" type="multi" options={["Short-term intact", "Short-term impaired", "Long-term intact", "Long-term impaired", "Confabulation noted"]} value={d.memory} onChange={(v) => set("memory", v)} />
       <SelectField label="Language" type="multi" options={["Comprehension intact", "Comprehension impaired", "Expression intact", "Expression impaired (expressive aphasia)", "Naming difficulty", "Repetition impaired", "Dysarthria"]} value={d.language} onChange={(v) => set("language", v)} howTo="Expressive (Broca's) aphasia: non-fluent, effortful speech with relatively preserved comprehension. Receptive (Wernicke's) aphasia: fluent but meaningless speech with impaired comprehension." />
       <SelectField label="Praxis" type="single" options={["Normal", "Apraxia suspected — motor planning difficulty despite adequate strength/sensation"]} value={d.praxis} onChange={(v) => set("praxis", v)} />
-      <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" />
+      <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" info={neuroExamLibraryData.mocaMmse} />
       <TextArea label="Additional cognitive observations" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
@@ -1229,6 +1230,7 @@ function ToneReflexSection({ data, setData }) {
       <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} info={neuroExamLibraryData.clonus} />
       <SelectField label="Hoffmann's sign" type="single" options={["Negative", "Positive", "Not tested"]} value={d.hoffmann} onChange={(v) => set("hoffmann", v)} info={neuroExamLibraryData.hoffmann} />
       <SelectField label="Superficial abdominal reflexes" type="single" options={["Present", "Diminished", "Absent", "Not tested"]} value={d.abdominalReflexes} onChange={(v) => set("abdominalReflexes", v)} info={neuroExamLibraryData.abdominalReflexes} />
+      <SelectField label="Primitive / frontal release reflexes" type="multi" options={["Absent", "Present - grasp reflex", "Present - palmomental reflex", "Not tested"]} value={d.primitiveReflexes} onChange={(v) => set("primitiveReflexes", v)} info={neuroExamLibraryData.primitiveReflexes} />
     </>
   );
 }
@@ -1333,7 +1335,7 @@ function OutcomesSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="📊" title="Outcome Measures" sub="Record whichever standardised measures are relevant to this patient." />
-      <TextField label="MMSE / MoCA" value={d.cogScore} onChange={(v) => set("cogScore", v)} placeholder="e.g. MoCA 24/30" />
+      <TextField label="MMSE / MoCA" value={d.cogScore} onChange={(v) => set("cogScore", v)} placeholder="e.g. MoCA 24/30" info={neuroExamLibraryData.mocaMmse} />
       <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" />
       <NumberField label="Timed Up and Go (TUG)" value={d.tug} onChange={(v) => set("tug", v)} unit="sec" howTo="Stand from chair, walk 3m, turn, walk back, sit down. Over 13.5 sec is associated with increased fall risk." />
       <NumberField label="10-Metre Walk Test" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" />

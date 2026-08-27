@@ -1456,4 +1456,90 @@ export const neuroExamLibraryData = {
       note: "A mixed or atypical pattern is common and worth describing in plain terms rather than forcing it into a single named category.",
     },
   },
+
+  /* ===================== LOWER-PRIORITY / CONDITION-SPECIFIC ADDITIONS ===================== */
+
+  meningealSigns: {
+    title: "Meningeal Signs (Kernig's / Brudzinski's / Nuchal Rigidity)",
+    icon: "🚩",
+    category: "Learn · Neuro · Safety Screen",
+    perform: {
+      image: null,
+      caption: "Passive neck flexion and hip/knee manoeuvres, watch for involuntary guarding",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient supine, relaxed, on a firm surface." },
+        { tone: "blue", label: "🖐️ Technique", text: "Nuchal rigidity: passively flex the neck, chin toward chest — resistance/pain is positive. Brudzinski's sign: passively flex the neck and watch for involuntary flexion of the hips and knees. Kernig's sign: flex the hip and knee to 90°, then slowly extend the knee — pain/resistance in the hamstrings or spine, or involuntary flexion of the opposite leg, is positive." },
+        { tone: "purple", label: "🩺 Special consideration", text: "These are screening signs for meningeal irritation (meningitis, subarachnoid haemorrhage) — a positive finding, especially combined with fever, severe headache, or photophobia, is a medical emergency, not a routine physiotherapy finding to simply document and continue." },
+        { tone: "amber", label: "⚠️ Tip", text: "Sensitivity is limited (roughly 5-30% in confirmed meningitis in adult studies) — a negative test does NOT rule out meningeal irritation. Never let a negative Kernig's/Brudzinski's override a strong clinical suspicion from history (fever, severe headache, neck stiffness, photophobia)." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "No resistance/pain, no involuntary flexion, all three signs" },
+      { k: "Positive", v: "Resistance/pain and/or involuntary flexion on any manoeuvre" },
+      { k: "Not tested", v: "Deferred — e.g. known cervical instability/precautions" },
+    ]},
+    interpret: {
+      normal: ["Negative — full pain-free neck flexion, negative Kernig's and Brudzinski's"],
+      abnormal: ["Any positive sign, especially with fever/severe headache/photophobia → urgent medical referral for suspected meningitis or subarachnoid haemorrhage, before any further physiotherapy assessment or treatment"],
+      redFlags: ["Positive meningeal signs with fever, severe headache ('worst of life'), photophobia, or reduced GCS — treat as a medical emergency, do not proceed with exertional or provocative testing"],
+      note: "Do not rely on these tests alone to rule anything out — they have poor sensitivity. Trust the overall clinical picture and escalate on suspicion, not just on a positive test.",
+    },
+  },
+
+  primitiveReflexes: {
+    title: "Primitive / Frontal Release Reflexes",
+    icon: "👶",
+    category: "Learn · Neuro · Reflexes",
+    perform: {
+      image: null,
+      caption: "Grasp reflex: stroke the palm. Palmomental reflex: stroke the thenar eminence, watch the chin.",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, hand resting supported, face visible to the examiner." },
+        { tone: "blue", label: "🖐️ Technique", text: "Grasp reflex: stroke the patient's palm with your fingers and observe whether they involuntarily grasp, even after being asked not to. Palmomental reflex: stroke the thenar eminence (base of thumb) with a blunt object and watch for an involuntary twitch of the chin/mentalis muscle on the same side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "These are 'frontal release signs' — normally present in infancy, suppressed by an intact frontal lobe, and re-emerging when frontal lobe inhibition is lost. A present grasp reflex in an adult is abnormal and specific for frontal lobe pathology; a mild palmomental reflex can occasionally be a normal variant in older adults, so weight it less heavily in isolation." },
+        { tone: "amber", label: "⚠️ Tip", text: "Explicitly ask the patient not to grasp before testing the grasp reflex — an involuntary grasp despite instruction not to is what makes the finding pathological, rather than simple cooperation." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Absent", v: "No involuntary response, either test" },
+      { k: "Present — grasp", v: "Involuntary grasp despite instruction not to" },
+      { k: "Present — palmomental", v: "Involuntary ipsilateral chin twitch" },
+    ]},
+    interpret: {
+      normal: ["Absent in a cognitively intact adult"],
+      abnormal: ["Present grasp reflex → suggests frontal lobe dysfunction (dementia, frontal lobe lesion, diffuse cerebral pathology)", "Present palmomental reflex → supportive but less specific, can occur as a normal variant in some older adults"],
+      note: "Interpret alongside the rest of the cognitive/mental status exam — an isolated palmomental reflex in an otherwise cognitively intact patient is low-yield, but a present grasp reflex plus cognitive impairment is a more meaningful combination.",
+    },
+  },
+
+  mocaMmse: {
+    title: "Cognitive Screening (MMSE / MoCA)",
+    icon: "🧩",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      image: null,
+      caption: "Standardised, scored questionnaire — administered exactly as written, not adapted on the fly",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Quiet room, minimal distraction, patient seated comfortably with their glasses/hearing aids in place if used." },
+        { tone: "blue", label: "🖐️ Technique", text: "Administer the standardised MMSE (30 points: orientation, registration, attention/calculation, recall, language) or MoCA (30 points: adds executive function, visuospatial, and a clock-drawing task, more sensitive to mild cognitive impairment) exactly per the published instrument — don't paraphrase or skip items." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Both are screening tools, not diagnostic instruments — always adjust interpretation for the patient's education level and first language, both of which meaningfully shift the expected score." },
+        { tone: "amber", label: "⚠️ Tip", text: "Use the SAME instrument on repeat testing for a given patient wherever possible — MMSE and MoCA scores are not directly interchangeable, so switching between them mid-episode-of-care makes trend-tracking unreliable." },
+      ],
+    },
+    scaleLabel: "Score bands",
+    scale: { type: "table", rows: [
+      { k: "MMSE ≥25/30", v: "Normal" },
+      { k: "MMSE 21–24/30", v: "Mild impairment" },
+      { k: "MMSE 10–20/30", v: "Moderate impairment" },
+      { k: "MMSE <10/30", v: "Severe impairment" },
+      { k: "MoCA ≥26/30", v: "Normal (add 1 point if ≤12 years education)" },
+    ]},
+    interpret: {
+      normal: ["MMSE ≥25/30 or MoCA ≥26/30, adjusted for education"],
+      abnormal: ["Below the normal cutoff → correlate with functional observations and consider referral for formal neuropsychological assessment if not already screened medically"],
+      note: "A single low score is a prompt to look closer, not a diagnosis — document the actual score and instrument used every time, not just a global 'cognitively impaired' label.",
+    },
+  },
 };
