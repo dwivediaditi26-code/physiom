@@ -295,6 +295,20 @@ export function orthoStyles() {
         .segmented-wrap .seg-btn { flex: 0 1 auto; }
         .seg-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.12); }
 
+        /* Segmented variant="chips" -- individually bordered pills instead
+           of the shared lavender tray above, for pickers like Treatment
+           Techniques' type selector where that tray reads as visually flat. */
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip-btn {
+          display: flex; align-items: center; gap: 6px;
+          border: 1.5px solid ${BRAND.border}; border-radius: 11px; padding: 9px 13px;
+          background: #fff; color: ${BRAND.ink}; font-size: 13px; font-weight: 600; cursor: pointer;
+          font-family: inherit; transition: transform .1s ease-out, box-shadow .1s ease-out, background .1s ease-out;
+        }
+        .chip-btn:active { transform: scale(.95); }
+        .chip-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.24); }
+        .chip-icon { font-size: 14px; }
+
         .vitals-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 6px; }
         .vital-field { flex: 1 1 45%; min-width: 130px; }
         .vital-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }

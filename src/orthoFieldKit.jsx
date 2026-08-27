@@ -372,7 +372,37 @@ export function MiniSelect({ label, value, options, onChange, placeholder, tone 
   );
 }
 
-export function Segmented({ label, options, value, onChange, hint, howTo, wrap }) {
+// variant="chips" is an opt-in alternate look -- individually bordered
+// pills with a solid-purple selected state, instead of the default shared
+// lavender tray -- for pickers where that tray reads as visually flat
+// (e.g. Treatment Techniques' 7-option type picker). Default rendering
+// (every other Segmented call site) is completely unchanged. Each option
+// can be a plain string (as before) or { label, icon } to show an icon --
+// only used by the chips variant, ignored otherwise.
+export function Segmented({ label, options, value, onChange, hint, howTo, wrap, variant }) {
+  if (variant === "chips") {
+    return (
+      <FieldShell label={label} hint={hint} howTo={howTo}>
+        <div className="chip-row">
+          {options.map((o) => {
+            const opt = typeof o === "object" ? o : { label: o, icon: null };
+            const active = value === opt.label;
+            return (
+              <button
+                type="button"
+                key={opt.label}
+                className={"chip-btn" + (active ? " chip-active" : "")}
+                onClick={() => onChange(active ? "" : opt.label)}
+              >
+                {opt.icon && <span className="chip-icon">{opt.icon}</span>}
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </FieldShell>
+    );
+  }
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
       <div className={"segmented" + (wrap ? " segmented-wrap" : "")}>
