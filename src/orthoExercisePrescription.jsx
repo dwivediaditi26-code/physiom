@@ -51,6 +51,21 @@ function exerciseInfoBody(ex) {
   );
 }
 
+// richItem (not a plain `text` string) so the "How to Perform" sheet gets
+// a reference-photo slot (SheetHero, orthoFieldKit.jsx) the same way ROM/
+// MMT/Special Tests already do -- `image` is a Cloudinary asset id, left
+// undefined here since EXERCISE_DB doesn't carry one yet; SheetHero shows
+// its existing "No reference photo" placeholder until one is uploaded and
+// wired to ex.id below, same pattern as the Cardio/Neuro photo checklist.
+function exerciseRichItem(ex) {
+  return {
+    image: ex.image,
+    title: ex.name,
+    subtitle: ex.target,
+    perform: exerciseInfoBody(ex),
+  };
+}
+
 function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
   return (
     <div className="tech-card">
@@ -60,7 +75,7 @@ function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
           <div style={{ fontWeight: 400, fontSize: 11.5, color: BRAND.gray, marginTop: 2 }}>{ex.target}</div>
         </div>
         <div className="tech-card-actions">
-          <InfoButton title={ex.name} text={exerciseInfoBody(ex)} eyebrow="EXERCISE" />
+          <InfoButton title={ex.name} richItem={exerciseRichItem(ex)} eyebrow="EXERCISE" />
           <button
             type="button"
             className={inProgramme ? "tech-card-del" : "tech-card-edit"}
@@ -108,6 +123,7 @@ export function ExercisePrescriptionSection({ data, setData }) {
   const [activeRegion, setActiveRegion] = useState(Object.keys(EXERCISE_DB)[0]);
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const setProgramme = (next) => set("programme", next);
   const addEx = (ex) => {
@@ -142,14 +158,23 @@ export function ExercisePrescriptionSection({ data, setData }) {
 
       {relevantTemplates.length > 0 && (
         <>
-          <div className="subheading">Quick-apply protocol</div>
-          <div className="segmented segmented-wrap">
-            {relevantTemplates.map(([key, t]) => (
-              <button type="button" key={key} className="seg-btn" onClick={() => applyTemplate(key)}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <button type="button" className="collapsible-head" onClick={() => setTemplatesOpen((o) => !o)}>
+            <span>Quick-apply protocol ({relevantTemplates.length})</span>
+            <span className={"collapsible-chevron" + (templatesOpen ? " open" : "")}>⌄</span>
+          </button>
+          {templatesOpen && (
+            <div className="template-list">
+              {relevantTemplates.map(([key, t]) => (
+                <button type="button" key={key} className="template-row" onClick={() => applyTemplate(key)}>
+                  <div>
+                    <div className="template-row-label">{t.label}</div>
+                    {t.note && <div className="template-row-note">{t.note}</div>}
+                  </div>
+                  <span className="template-row-arrow">+</span>
+                </button>
+              ))}
+            </div>
+          )}
         </>
       )}
 
