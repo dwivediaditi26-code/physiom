@@ -869,7 +869,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
 
 // ─── Reliability Engine ───────────────────────────────────────────────────────
 function calcReliability(lm, view) {
-  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],icc:null,confidence:{}};
+  if(!lm||lm.length<33) return {score:0,status:"No Pose",blocked:true,warnings:[{icon:"❌",text:"No pose detected",color:PC.red}],confidence:{}};
   const isLateral = view==="left"||view==="right";
   const KEY=[0,2,5,7,8,11,12,23,24,25,26,27,28,29,30,31,32];
   const NAMES={0:"Head",2:"L.Eye",5:"R.Eye",7:"L.Ear",8:"R.Ear",11:"L.Shoulder",12:"R.Shoulder",
@@ -923,8 +923,18 @@ function calcReliability(lm, view) {
     warnings.push({icon:"⬡",text:"Feet not visible — move camera back for full-body capture",color:PC.yellow,priority:2});
   warnings.sort((a,b)=>(b.priority||0)-(a.priority||0));
   const status=blocked?"Insufficient":avg>0.80?"Excellent":avg>0.65?"Good":avg>0.50?"Fair":"Poor";
-  const icc=r1(Math.min(0.95, 0.35+avg*0.60));
-  return {score,status,blocked,warnings,icc,confidence};
+  // NOTE: do not reintroduce an "ICC" here. This previously returned
+  //   icc = min(0.95, 0.35 + avg*0.60)
+  // and the UI presented it as "ICC estimate (test-retest reliability)",
+  // colour-coded against the usual interpretation bands. It was not an ICC:
+  // `avg` is mean landmark VISIBILITY from a single frame, whereas a
+  // test-retest ICC requires the same subject measured on separate occasions
+  // and correlated. There is no repeated measure anywhere in this app. The
+  // rescaling also floored the value at 0.35 and ceilinged it at 0.95, so it
+  // could never read as poor -- ordinary visibility of 0.75 surfaced as 0.80,
+  // i.e. "good reliability" to a clinician. `score` (= avg*100) is already
+  // exposed and is an honest description of what is actually being measured.
+  return {score,status,blocked,warnings,confidence};
 }
 
 // ─── Manual Reliability ───────────────────────────────────────────────────────
@@ -4733,7 +4743,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     let m={};
     try { m=measureLandmarks(lm,calib,v)||{}; }
     catch(e){ console.warn("measureLandmarks error:",e); }
-    let r={score:0,status:"Error",blocked:false,warnings:[],icc:null,confidence:{}};
+    let r={score:0,status:"Error",blocked:false,warnings:[],confidence:{}};
     try { r=calcReliability(lm,v); }
     catch(e){ console.warn("calcReliability error:",e); }
 
@@ -5732,7 +5742,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 </div>
                 <div style={{fontSize: isWide?"0.65rem":"0.6rem",color:PC.muted,marginTop:2}}>
                   Reliability: {reliability?.score}% ({reliability?.isManual?"Manual ✓ ":""}{reliability?.status})
-                  {reliability?.icc!=null&&` · ICC ${reliability.icc}`}
                 </div>
                 {measurements?.cervicalLoadKg!=null&&(
                   <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:6,
@@ -6268,12 +6277,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             )}
           </div>
-          {reliability?.icc!=null&&(
-            <div style={{padding:"8px 0",borderBottom:`1px solid ${PC.border}`,display:"flex",justifyContent:"space-between"}}>
-              <span style={{fontSize:"0.8rem",color:PC.muted}}>ICC estimate (test-retest reliability)</span>
-              <span style={{fontSize:"0.75rem",fontWeight:800,color:reliability.icc>0.75?PC.green:reliability.icc>0.5?PC.yellow:PC.red}}>{reliability.icc}</span>
-            </div>
-          )}
         </div>
       )}
 
@@ -6818,7 +6821,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   <CaptureAlignmentGuide view={view} visible={!hasData} />
                   <div style={{position:"absolute",top:camInsetTop,left:8,display:"flex",gap:5,flexWrap:"wrap"}}>
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:hasData?PC.green:PC.yellow}}>
-                      {hasData?`● Tracking · ${reliability?.score}% · ICC ${reliability?.icc??"-"}`:"● Searching…"}
+                      {hasData?`● Tracking · ${reliability?.score}%`:"● Searching…"}
                     </div>
                     {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
