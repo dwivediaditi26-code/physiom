@@ -2710,21 +2710,86 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   const PX=i=>lm[i]?[lm[i].x*W,lm[i].y*H]:null;
   const m=measurements||{};
 
-  if(showGrid){
-    ctx.strokeStyle="rgba(255,255,255,0.18)"; ctx.lineWidth=0.8;
-    for(let c=0;c<=12;c++){const x=W/12*c;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let r=0;r<=16;r++){const y=H/16*r;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-  }
-
   const isLat=view==="left"||view==="right";
+
+  // Single source of truth for the vertical reference line's x position.
+  // The grid's lateral zero and the plumb line MUST share this: every lateral
+  // measurement the engine reports (trunkLateralShift, sagShoulderShift, the
+  // EAM/acromion/GT/knee deviations) is measured from the plumb, NOT from the
+  // middle of the frame. Anchoring the grid's zero at W/2 instead would mean
+  // the numerals disagreed with the findings by however far off-centre the
+  // patient happened to be standing.
+  //   Frontal/posterior — Kendall: plumb falls midway between the heels.
+  //   Sagittal          — Kendall: plumb passes through the lateral malleolus.
+  const plumbAnchorX = (()=>{
+    if(isLat){
+      const s=view==="right", iAnk=s?28:27, iHeel=s?30:29;
+      if(V(iAnk))  return lm[iAnk].x*W;
+      if(V(iHeel)) return lm[iHeel].x*W;
+      return W/2;
+    }
+    const ankMidX = V(27)&&V(28) ? (g(27).x+g(28).x)/2 : null;
+    const hipMidX = V(23)&&V(24) ? (g(23).x+g(24).x)/2 : null;
+    return ankMidX!==null ? ankMidX*W : hipMidX!==null ? hipMidX*W : W/2;
+  })();
+
+  if(showGrid){
+    // Real-world measurement grid, not an arbitrary fraction of the frame.
+    // This used to be a fixed 12x16 split, so a "square" had no dimension and
+    // the operator couldn't read a distance off it. Spacing now comes from the
+    // same pixPerCm calibration the measurements use: minor lines every 5cm,
+    // major every 10cm, with height-above-floor labels down the left edge and
+    // a centre-zero lateral scale across the top (deviation left/right of
+    // frame centre). Matches the ruled-grid convention clinical posture tools
+    // use so the grid doubles as a ruler.
+    //
+    // pixPerCm is sanity-checked rather than trusted: a bad calibration would
+    // otherwise produce either one line or thousands. Anything implying a
+    // frame height outside 50-400cm falls back to assuming ~170cm.
+    const rawPPC = m.pixPerCm;
+    const ppc = (rawPPC && isFinite(rawPPC) && rawPPC >= H/400 && rawPPC <= H/50)
+      ? rawPPC : (H/170);
+    const minorPx = ppc*5, majorPx = ppc*10, cx = plumbAnchorX;
+    ctx.save();
+    ctx.lineWidth = Math.max(0.6, H*0.0012);
+
+    // Minor lines are dropped when they'd be too dense to resolve.
+    if(minorPx >= 6){
+      ctx.strokeStyle="rgba(255,255,255,0.10)";
+      ctx.beginPath();
+      for(let y=H-minorPx; y>0; y-=minorPx){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+      for(let x=cx+minorPx; x<W; x+=minorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+      for(let x=cx-minorPx; x>0; x-=minorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle="rgba(255,255,255,0.26)";
+    ctx.beginPath();
+    for(let y=H-majorPx; y>0; y-=majorPx){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+    for(let x=cx+majorPx; x<W; x+=majorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    for(let x=cx-majorPx; x>0; x-=majorPx){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    ctx.stroke();
+
+    // Ruler numerals — only when major lines are far enough apart to label.
+    if(majorPx >= 18){
+      const fs = Math.max(9, Math.round(H*0.016));
+      ctx.font=`600 ${fs}px system-ui`;
+      ctx.fillStyle="rgba(255,255,255,0.55)";
+      ctx.textAlign="left"; ctx.textBaseline="bottom";
+      for(let y=H-majorPx, cm=10; y>0; y-=majorPx, cm+=10){ ctx.fillText(String(cm), 3, y-1); }
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      for(let x=cx+majorPx, cm=10; x<W; x+=majorPx, cm+=10){ ctx.fillText(String(cm), x, 2); }
+      for(let x=cx-majorPx, cm=10; x>0; x-=majorPx, cm+=10){ ctx.fillText(String(-cm), x, 2); }
+    }
+    ctx.restore();
+  }
 
   // ── Plumb line ────────────────────────────────────────────────────────────
   if(!isLat){
-    // Kendall: anterior/posterior plumb line falls midway between the heels (ankle midpoint)
-    // Fallback to hip midpoint if ankles not visible
-    const ankMid=V(27)&&V(28)?{x:(g(27).x+g(28).x)/2}:null;
-    const hipMidX=V(23)&&V(24)?(g(23).x+g(24).x)/2:null;
-    const gx=ankMid?ankMid.x*W:hipMidX?hipMidX*W:W/2;
+    // Kendall: anterior/posterior plumb line falls midway between the heels
+    // (ankle midpoint), falling back to hip midpoint — see plumbAnchorX above,
+    // which the measurement grid shares so the two can't drift apart.
+    const gx=plumbAnchorX;
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.6)"; ctx.shadowBlur=8;
     ctx.setLineDash([10,6]); ctx.strokeStyle="rgba(0,229,255,0.95)"; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
@@ -2761,11 +2826,11 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
       ? (noseXo < sagShXo ? -1 : 1)
       : (view==="right" ? -1 : 1);
     const side = view==="right";
-    const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27, iHeel=side?30:29;
-    // Kendall (5th ed.): plumb line passes through the lateral malleolus
-    let plumbX=W/2;
-    if(V(iAnk)){ plumbX=lm[iAnk].x*W; }       // lateral malleolus — Kendall primary
-    else if(V(iHeel)){ plumbX=lm[iHeel].x*W; }
+    const iEar=side?8:7, iSh=side?12:11, iHip=side?24:23, iKnee=side?26:25, iAnk=side?28:27;
+    // Kendall (5th ed.): plumb line passes through the lateral malleolus.
+    // Resolved once as plumbAnchorX above (malleolus → heel → frame centre)
+    // so the measurement grid's lateral zero sits on this same line.
+    const plumbX=plumbAnchorX;
     const pixPerCm=m.pixPerCm||(H/170);
     // Plumb line
     ctx.save(); ctx.shadowColor="rgba(0,229,255,0.8)"; ctx.shadowBlur=14;
@@ -6659,8 +6724,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               // underneath the operator. Explicit Retake resumes the feed.
               <div>
                 <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+                  {/* "contain", not "cover": this image already has the grid,
+                      plumb-line and landmark badges baked into it by drawOverlay,
+                      so cropping it to fill the box would cut those annotations
+                      off at the edges. */}
                   <img src={capturedImg} alt="Captured posture photo"
-                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"cover",background:"#111"}}/>
+                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"contain",background:"#111"}}/>
                   {analysing&&(
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",color:"#fff",fontWeight:700,fontSize:"0.85rem"}}>
                       ⏳ Analysing…
@@ -6686,15 +6755,27 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       to stand much further back than necessary just so the small cropped preview
                       showed enough of them, with no reliable way to confirm full-body framing
                       before capturing. Now uses most of the vertical viewport on mobile instead. */}
+                  {/* objectFit MUST stay "contain" here and match the canvas below.
+                      It was "cover", which crops the frame to fill the box, while the
+                      overlay canvas was stretched to 100%x100% -- two different
+                      native-frame→screen mappings, so the grid/plumb-line/landmarks
+                      were drawn offset from the actual body whenever the camera's
+                      aspect ratio didn't match the box. Both elements are replaced
+                      elements with the same intrinsic size (native video W×H), so
+                      identical box + identical object-fit == pixel-identical mapping.
+                      "contain" also means the whole frame stays visible (letterboxed
+                      onto the #111 background) rather than being cropped, which is
+                      what full-body framing needs. */}
                   <video ref={videoRef} playsInline webkit-playsinline="true" muted autoPlay
                     style={{width:"100%",display:"block",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       maxHeight: isMobile?"72vh":"65vh",
-                      objectFit:"cover",background:"#111"}}/>
-                  {/* Canvas overlay — matches video flip */}
+                      objectFit:"contain",background:"#111"}}/>
+                  {/* Canvas overlay — matches video flip AND video object-fit */}
                   <canvas ref={overlayRef}
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
+                      objectFit:"contain",
                       pointerEvents:"none"}}/>
                   {/* Static positioning guide — visible before pose-detection locks on;
                       fades once `hasData` (see CaptureAlignmentGuide above for why). */}
