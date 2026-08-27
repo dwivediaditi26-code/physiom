@@ -1065,4 +1065,227 @@ export const neuroExamLibraryData = {
       note: "Manual resistance alone is a poor test of this myotome given normal gastroc/soleus strength — always use the single-leg heel raise as the primary test.",
     },
   },
+
+  /* ===================== TONE / GAIT / SENSORY / MENTAL STATUS — HIGH-YIELD ADDITIONS ===================== */
+
+  mas: {
+    title: "Modified Ashworth Scale (Spasticity)",
+    icon: "🦾",
+    category: "Learn · Neuro · Tone / Reflexes",
+    perform: {
+      image: null,
+      caption: "Passively move the limb through range at a moderate, consistent speed",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed and supported, limb positioned in a neutral resting posture before starting." },
+        { tone: "blue", label: "🖐️ Technique", text: "Move the target joint passively through its full available range at a constant, moderate speed (roughly 1 second per movement) and grade the resistance felt to passive stretch." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Test the same joint at the same speed each time — a faster stretch always feels stiffer, which is exactly what makes MAS unreliable across examiners unless technique is standardised." },
+        { tone: "amber", label: "⚠️ Tip", text: "Grade immediately after the movement while the sensation is fresh — don't try to recall it later in the session." },
+      ],
+    },
+    scaleLabel: "0–4 grading (Bohannon & Smith)",
+    scale: { type: "table", rows: [
+      { k: "0", v: "No increase in tone" },
+      { k: "1", v: "Slight increase — catch and release, or minimal resistance at end of range" },
+      { k: "1+", v: "Slight increase — catch, then minimal resistance through <50% of ROM" },
+      { k: "2", v: "More marked increase through most of ROM, limb still moved easily" },
+      { k: "3", v: "Considerable increase, passive movement difficult" },
+      { k: "4", v: "Rigid in flexion or extension" },
+    ]},
+    interpret: {
+      normal: ["0 across all tested muscle groups"],
+      abnormal: ["≥1+ in an UMN-lesion pattern (e.g. elbow/wrist flexors, knee extensors, ankle plantarflexors) is consistent with spasticity from stroke, SCI, or TBI"],
+      note: "Document per muscle group, not a single global score — the distribution itself is diagnostic (e.g. UE flexors + LE extensors is the classic post-stroke pattern).",
+    },
+  },
+
+  romberg: {
+    title: "Romberg Test",
+    icon: "🧍",
+    category: "Learn · Neuro · Balance",
+    perform: {
+      image: null,
+      caption: "Feet together, eyes open then closed, stand ready to catch",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient stands with feet together, arms at sides, on a firm surface." },
+        { tone: "blue", label: "🖐️ Technique", text: "Observe sway for ~30 seconds with eyes open, then ask the patient to close their eyes and observe for the same duration. Stand close enough to catch a fall." },
+        { tone: "purple", label: "🩺 Special consideration", text: "A positive Romberg (marked increase in sway only with eyes closed) localises to a proprioceptive or vestibular deficit — cerebellar ataxia causes sway with eyes open too, so a 'positive' finding in an already-ataxic patient isn't a true Romberg sign." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stand at the patient's side, not in front, so you can catch a fall in either direction without blocking your own view." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "Stable, minimal sway, both conditions" },
+      { k: "Positive", v: "Marked increase in sway or loss of balance, eyes closed only" },
+      { k: "Unable to test", v: "Cannot stand feet together even with eyes open" },
+    ]},
+    interpret: {
+      normal: ["Negative — stable with eyes open and closed"],
+      abnormal: ["Positive → proprioceptive loss (e.g. dorsal column, peripheral neuropathy) or vestibular dysfunction"],
+      note: "Always rule out cerebellar ataxia first — sway present with eyes open makes this test non-localising.",
+    },
+  },
+
+  vibration: {
+    title: "Vibration Sense (128Hz Tuning Fork)",
+    icon: "🔔",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      image: null,
+      caption: "Strike the fork, apply to a bony prominence, patient reports when it stops",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Strike the 128Hz tuning fork and place it firmly over a distal bony prominence (e.g. wrist, ankle malleolus). Ask the patient to say 'now' the moment they stop feeling the vibration, and compare to your own perception at the same site." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Test distal to proximal — if impaired distally, move to a more proximal bony point to find the level where sensation returns to normal." },
+        { tone: "amber", label: "⚠️ Tip", text: "Dampen the fork with your fingers between tests to reset it to a consistent starting vibration." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Vibration duration matches examiner's own perception" },
+      { k: "Reduced", v: "Stops earlier than examiner's perception" },
+      { k: "Absent", v: "No vibration sensation reported" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, matching examiner"],
+      abnormal: ["Reduced/absent distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, tabes dorsalis, MS)"],
+      note: "Vibration and proprioception travel in the same dorsal column pathway — an isolated deficit in one without the other is unusual and worth double-checking technique.",
+    },
+  },
+
+  twoPoint: {
+    title: "Two-Point Discrimination",
+    icon: "📍",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      image: null,
+      caption: "Calibrated two-point discriminator, gradually narrowing distance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, testing surface (typically fingertip) relaxed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Touch the skin with one or two points simultaneously using a calibrated discriminator (or an opened paperclip), varying whether one or two points are used unpredictably, and find the minimum distance at which the patient reliably distinguishes two points from one." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Normal two-point discrimination varies hugely by body region — fingertip (~2-4mm) vs. back (~40mm+) — always compare against the expected normal for that specific site, not a single number." },
+        { tone: "amber", label: "⚠️ Tip", text: "Randomise one-point vs two-point presentations so the patient can't simply guess a pattern." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Distinguishes two points at the expected distance for that site" },
+      { k: "Impaired", v: "Requires a larger distance than expected, or cannot distinguish" },
+      { k: "Not tested", v: "—" },
+    ]},
+    interpret: {
+      normal: ["Within expected range for the tested site"],
+      abnormal: ["Impaired → cortical (parietal lobe) or dorsal column pathway involvement"],
+      note: "This is a cortical integration test, not a peripheral nerve test — it can be abnormal even when light touch and pain sensation are both normal.",
+    },
+  },
+
+  gcs: {
+    title: "Glasgow Coma Scale (GCS)",
+    icon: "🧠",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      image: null,
+      caption: "Score Eye, Verbal, and Motor response independently, then sum",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Any position — this is an observation + graded-stimulus scale, not a positional test." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score each of the three components independently against its own criteria: Eye opening (4 to 1), Verbal response (5 to 1), Motor response (6 to 1). Use the best response obtained, escalating the stimulus from voice to pain only as needed. Sum for a total out of 15." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Document each component separately (e.g. E3V4M5) as well as the total — the total alone hides which domain is actually impaired, which changes management." },
+        { tone: "amber", label: "⚠️ Tip", text: "A drop of 2 or more points from a previous GCS score is a medical emergency regardless of the absolute total — trend matters as much as the single number." },
+      ],
+    },
+    scaleLabel: "Total /15 severity bands",
+    scale: { type: "table", rows: [
+      { k: "13–15", v: "Mild" },
+      { k: "9–12", v: "Moderate" },
+      { k: "≤8", v: "Severe — airway protection typically required" },
+    ]},
+    interpret: {
+      normal: ["15/15, fully alert and oriented"],
+      abnormal: ["Any reduction from baseline — reassess the trend, not just the single value"],
+      redFlags: ["GCS ≤8, or a drop of ≥2 points from a prior score — escalate for urgent medical review before continuing therapy"],
+      note: "In TBI/neurosurgical patients, always check the most recent medical GCS before starting treatment, and stop if it has dropped.",
+    },
+  },
+
+  pronatorDrift: {
+    title: "Pronator Drift Test",
+    icon: "🙌",
+    category: "Learn · Neuro · Motor",
+    perform: {
+      image: null,
+      caption: "Arms outstretched, palms up, eyes closed, watch for drift",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient standing or seated, both arms fully extended forward at shoulder height, palms facing up." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to close their eyes and hold the position for 10-20 seconds. Watch for one arm drifting downward and/or pronating (turning palm-down)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Drift with pronation is a sensitive early sign of subtle upper motor neuron (corticospinal tract) weakness, often present before weakness is obvious on formal MMT." },
+        { tone: "amber", label: "⚠️ Tip", text: "Tapping the outstretched arms briefly, or asking the patient to keep their eyes closed a little longer, can bring out a subtle drift not visible in the first few seconds." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "Arms held steady, no drift/pronation" },
+      { k: "Positive", v: "One arm drifts down and/or pronates" },
+    ]},
+    interpret: {
+      normal: ["Negative bilaterally"],
+      abnormal: ["Positive (unilateral) → mild UMN weakness on that side, corticospinal tract involvement"],
+      note: "A cerebellar lesion can also cause upward drift without pronation — note the exact pattern, not just 'positive/negative'.",
+    },
+  },
+
+  tandemGait: {
+    title: "Tandem Gait (Heel-to-Toe Walking)",
+    icon: "🚶",
+    category: "Learn · Neuro · Gait",
+    perform: {
+      image: null,
+      caption: "Walk heel-to-toe in a straight line, arms at sides",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Clear, straight path at least a few metres long, therapist walking alongside for safety." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to walk heel-to-toe in a straight line, placing the heel of one foot directly in front of the toes of the other, for about 10 steps." },
+        { tone: "purple", label: "🩺 Special consideration", text: "A sensitive test for mild cerebellar ataxia or vestibular dysfunction that may not show up on normal gait observation alone." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stay close enough to assist but avoid touching unless needed — physical contact can mask a genuine balance deficit." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Completes without significant deviation" },
+      { k: "Impaired", v: "Steps off the line, wide-based compensations, or unable without support" },
+      { k: "Unable", v: "Cannot attempt safely" },
+    ]},
+    interpret: {
+      normal: ["Completes 10 steps with minimal deviation"],
+      abnormal: ["Consistent deviation to one side → suggests a unilateral cerebellar or vestibular lesion on that side", "Wide-based, irregular stepping → cerebellar ataxia"],
+      note: "Combine with Romberg — cerebellar ataxia impairs tandem gait with eyes open, while a pure proprioceptive/vestibular deficit may perform reasonably with eyes open but worsen with eyes closed.",
+    },
+  },
+
+  pupillaryLight: {
+    title: "Pupillary Light Reflex",
+    icon: "👁️",
+    category: "Learn · Neuro · Cranial Nerves",
+    perform: {
+      image: null,
+      caption: "Shine a light into one eye, observe direct and consensual response",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Dim room, patient looking at a distant fixed point to control accommodation." },
+        { tone: "blue", label: "🖐️ Technique", text: "Shine a penlight into one pupil from the side and observe constriction in that eye (direct response) and the other eye (consensual response). Repeat for the other eye." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The direct response tests CN II (afferent, that eye) + CN III (efferent, that eye); the consensual response tests CN II (afferent, that eye) + CN III (efferent, other eye) — a discrepancy between the two localises which nerve/side is affected." },
+        { tone: "amber", label: "⚠️ Tip", text: "A relative afferent pupillary defect (RAPD) is best picked up with the swinging-flashlight test — move the light rhythmically eye to eye and watch for paradoxical dilation." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Brisk, equal constriction, direct and consensual, both sides" },
+      { k: "Sluggish", v: "Slowed constriction" },
+      { k: "Fixed", v: "No constriction" },
+      { k: "Anisocoria", v: "Unequal pupil size at baseline" },
+    ]},
+    interpret: {
+      normal: ["PERRLA — pupils equal, round, reactive to light and accommodation"],
+      abnormal: ["Fixed/dilated unilateral pupil → CN III palsy (consider compressive lesion) until proven otherwise", "RAPD (Marcus Gunn pupil) → optic nerve (CN II) pathology on that side"],
+      redFlags: ["A new unilateral fixed and dilated pupil, especially with reduced GCS, is a neurosurgical emergency (raised ICP / herniation) — escalate immediately"],
+      note: "Always check pupil size/reactivity at baseline — roughly 20% of people have a small, physiological, non-pathological difference between pupils (physiological anisocoria).",
+    },
+  },
 };
