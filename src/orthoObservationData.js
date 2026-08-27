@@ -8,49 +8,101 @@
 
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 
-const SPINE_POSTURE_FIELDS = [
-  { id: "head", label: "Head", options: ["Neutral", "Forward"] },
-  { id: "shoulderLevel", label: "Shoulder", options: ["Symmetrical", "Elevated right", "Elevated left"] },
-  { id: "scapula", label: "Scapula", options: ["Normal", "Winging", "Protracted", "Retracted"] },
-  { id: "spine", label: "Spine", options: ["Normal", "Increased kyphosis", "Increased lordosis", "Scoliosis"] },
-  { id: "pelvis", label: "Pelvis", options: ["Level", "Anterior tilt", "Posterior tilt", "Pelvic obliquity"] },
-];
-
-export const POSTURE_FIELDS_BY_CONTENT_KEY = {
-  cervical: SPINE_POSTURE_FIELDS,
-  thoracic: SPINE_POSTURE_FIELDS,
-  lumbarSI: SPINE_POSTURE_FIELDS,
-  shoulder: [
-    { id: "shoulderLevel", label: "Shoulder", options: ["Symmetrical", "Elevated right", "Elevated left"] },
-    { id: "scapula", label: "Scapula", options: ["Normal", "Winging", "Protracted", "Retracted"] },
-  ],
-  elbowWristHand: [
-    { id: "carryingAngle", label: "Carrying angle", options: ["Neutral", "Cubitus varus", "Cubitus valgus"] },
-    { id: "wristAlignment", label: "Wrist alignment", options: ["Neutral", "Radial deviation", "Ulnar deviation"] },
-  ],
-  hip: [
-    { id: "pelvis", label: "Pelvis", options: ["Level", "Anterior tilt", "Posterior tilt", "Pelvic obliquity"] },
-    { id: "lowerLimb", label: "Lower limb", options: ["Neutral", "Varus", "Valgus"] },
-  ],
-  knee: [
-    { id: "knee", label: "Knee", options: ["Neutral", "Genu varum", "Genu valgum", "Recurvatum"] },
-    { id: "foot", label: "Foot", options: ["Neutral", "Pronation", "Supination"] },
-  ],
-  ankleFoot: [
-    { id: "foot", label: "Foot", options: ["Neutral", "Pronation", "Supination"] },
-    { id: "lowerLimb", label: "Lower limb", options: ["Neutral", "Varus", "Valgus"] },
-  ],
+/* Every field below is defined once and assigned to whichever view(s) it's
+   clinically actually observed from -- e.g. scapular winging shows from
+   posterior, forward head posture shows from lateral/sagittal, shoulder
+   level is checked from both anterior and posterior. Same field id can
+   appear under more than one view; each view's answer is stored
+   independently (regions[region.id][view][fieldId]), so "elevated right"
+   from behind and "neutral" from the side aren't forced to be one value. */
+const F = {
+  head: { id: "head", label: "Head", options: ["Neutral", "Forward"] },
+  shoulderLevel: { id: "shoulderLevel", label: "Shoulder", options: ["Symmetrical", "Elevated right", "Elevated left"] },
+  scapula: { id: "scapula", label: "Scapula", options: ["Normal", "Winging", "Protracted", "Retracted"] },
+  spine: { id: "spine", label: "Spine", options: ["Normal", "Increased kyphosis", "Increased lordosis", "Scoliosis"] },
+  pelvis: { id: "pelvis", label: "Pelvis", options: ["Level", "Anterior tilt", "Posterior tilt", "Pelvic obliquity"] },
+  lowerLimb: { id: "lowerLimb", label: "Lower limb", options: ["Neutral", "Varus", "Valgus"] },
+  carryingAngle: { id: "carryingAngle", label: "Carrying angle", options: ["Neutral", "Cubitus varus", "Cubitus valgus"] },
+  wristAlignment: { id: "wristAlignment", label: "Wrist alignment", options: ["Neutral", "Radial deviation", "Ulnar deviation"] },
+  knee: { id: "knee", label: "Knee", options: ["Neutral", "Genu varum", "Genu valgum", "Recurvatum"] },
+  foot: { id: "foot", label: "Foot", options: ["Neutral", "Pronation", "Supination"] },
 };
 
-export const GENERIC_POSTURE_FIELDS = [
-  { id: "spine", label: "Spine", options: ["Normal", "Increased kyphosis", "Increased lordosis", "Scoliosis"] },
-  { id: "pelvis", label: "Pelvis", options: ["Level", "Anterior tilt", "Posterior tilt", "Pelvic obliquity"] },
-  { id: "lowerLimb", label: "Lower limb", options: ["Neutral", "Varus", "Valgus"] },
+const SPINE_POSTURE_VIEWS = {
+  anterior: [F.head, F.shoulderLevel],
+  posterior: [F.shoulderLevel, F.scapula, F.spine, F.pelvis],
+  lateral: [F.head, F.spine, F.pelvis],
+};
+
+export const POSTURE_FIELDS_BY_CONTENT_KEY = {
+  cervical: SPINE_POSTURE_VIEWS,
+  thoracic: SPINE_POSTURE_VIEWS,
+  lumbarSI: SPINE_POSTURE_VIEWS,
+  shoulder: {
+    anterior: [F.shoulderLevel],
+    posterior: [F.shoulderLevel, F.scapula],
+    lateral: [F.scapula],
+  },
+  elbowWristHand: {
+    anterior: [F.carryingAngle, F.wristAlignment],
+    posterior: [F.carryingAngle],
+    lateral: [F.wristAlignment],
+  },
+  hip: {
+    anterior: [F.pelvis, F.lowerLimb],
+    posterior: [F.pelvis, F.lowerLimb],
+    lateral: [F.pelvis],
+  },
+  knee: {
+    anterior: [F.knee, F.foot],
+    posterior: [F.knee, F.foot],
+    lateral: [F.knee],
+  },
+  ankleFoot: {
+    anterior: [F.foot],
+    posterior: [F.foot, F.lowerLimb],
+    lateral: [F.foot],
+  },
+};
+
+export const GENERIC_POSTURE_VIEWS = {
+  anterior: [F.spine, F.pelvis, F.lowerLimb],
+  posterior: [F.spine, F.pelvis, F.lowerLimb],
+  lateral: [F.spine, F.pelvis, F.lowerLimb],
+};
+
+export const POSTURE_VIEWS = [
+  { id: "anterior", label: "Anterior" },
+  { id: "posterior", label: "Posterior" },
+  { id: "lateral", label: "Sagittal" },
 ];
 
-export function postureFieldsForRegion(region) {
+export function postureFieldsForRegion(region, view) {
   const key = contentKeyForRegion(region);
-  return (key && POSTURE_FIELDS_BY_CONTENT_KEY[key]) || GENERIC_POSTURE_FIELDS;
+  const viewSet = (key && POSTURE_FIELDS_BY_CONTENT_KEY[key]) || GENERIC_POSTURE_VIEWS;
+  return viewSet[view] || [];
+}
+
+// Deduped union across all 3 views -- for callers that want "every named
+// posture observation for this region" without caring which view it's
+// normally checked from (e.g. the Suggested Objective screen's one
+// suggestion chip per named item). Each field carries a `view` (the
+// first view it appears under, in Anterior -> Posterior -> Lateral
+// order) so a single inline suggestion answer writes to the exact same
+// regions[region][view][fieldId] slot the tabbed General Observation
+// section itself reads from -- otherwise an inline answer here would
+// land in a spot the section's own UI never looks at.
+export function allPostureFieldsForRegion(region) {
+  const key = contentKeyForRegion(region);
+  const viewSet = (key && POSTURE_FIELDS_BY_CONTENT_KEY[key]) || GENERIC_POSTURE_VIEWS;
+  const seen = new Set();
+  const out = [];
+  POSTURE_VIEWS.forEach(({ id }) => {
+    (viewSet[id] || []).forEach((f) => {
+      if (!seen.has(f.id)) { seen.add(f.id); out.push({ ...f, view: id }); }
+    });
+  });
+  return out;
 }
 
 export const OBSERVATION_INFO = {

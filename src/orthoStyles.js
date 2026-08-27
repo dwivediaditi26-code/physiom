@@ -15,19 +15,43 @@ export function orthoStyles() {
           justify-content: center;
         }
         .app-inner {
-          width: 100%; max-width: 480px; height: calc(100dvh - 60px); display: flex; flex-direction: column;
-          background: #fff; position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-          overflow: hidden; z-index: 1000;
+          width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column;
+          background: #fff; position: relative;
         }
         @media (min-width: 860px) {
           .app-shell { align-items: flex-start; padding: 24px 0; }
-          .app-inner { max-width: 640px; height: calc(100dvh - 48px); top: 24px; border-radius: 20px; box-shadow: 0 20px 60px rgba(20,10,60,.12); }
+          .app-inner { max-width: 640px; }
+          .bottombar { max-width: 640px; }
           .condition-grid { grid-template-columns: 1fr 1fr 1fr; }
         }
+        /* Fix: was position:fixed with height:calc(100dvh - Npx) -- on
+           mobile, dvh recalculates live as the browser's address bar
+           shows/hides during scroll, which visibly resized/repositioned
+           this whole fixed box while a clinician was mid-way through
+           filling a field (the "page moves while I fill it in" report).
+           Cardio's assessment (CardiopulmonaryAssessment.jsx) hit and
+           fixed this exact class of bug already: normal document flow
+           (position:relative/min-height:100vh) + a real sticky header +
+           a real viewport-fixed bottom bar, so the browser's own natural
+           reflow handles toolbar show/hide instead of this box fighting
+           it. Mirrored that same fix here. */
         .topbar {
-          flex-shrink: 0; z-index: 20; background: #fff;
+          position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
+        }
+        /* Same reasoning as Cardio's identical rule: this screen mounts
+           inside AppFull.jsx's own scroll container (.pm-main), which has
+           its own sticky mobile header (.pm-mobile-hdr, 64px, z-index 101)
+           stuck to the same top:0 -- without this offset the two collide
+           and this topbar renders overlapped/hidden behind it once
+           scrolled. Not viewport-relative: sticky "top" is measured from
+           .pm-main's own padding box (64px header + 28px pm-main
+           padding-top = 92px), and this screen's own mount wrapper negates
+           that padding with a -24px margin, so -28px (92-28=64) pins it
+           flush under the header once scrolled with no dead gap either way. */
+        @media (max-width: 767px) {
+          .topbar { top: -28px; }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
@@ -67,7 +91,7 @@ export function orthoStyles() {
         .ct-checkbox { font-size: 16px; color: ${BRAND.purple}; flex-shrink: 0; }
         .ct-modal-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid ${BRAND.border}; }
 
-        .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 16px 24px; }
+        .content { flex: 1; padding: 18px 16px 150px; }
 
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
@@ -459,7 +483,12 @@ export function orthoStyles() {
         .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
         .summary-empty { font-size: 12.5px; color: ${BRAND.grayLight}; font-style: italic; padding: 3px 0; }
 
-        .bottombar { flex-shrink: 0; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        /* fixed (not sticky) for the same reason as Cardio's identical rule:
+           .content/.app-inner don't scroll themselves anymore (see .app-inner
+           fix above), so sticky has nothing of its own to stick within --
+           fixed pins to the real viewport; bottom:60px (not 0) clears
+           physiom's own fixed bottom nav bar (.pm-bnav, ~59px). */
+        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); min-height: 46px; }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }

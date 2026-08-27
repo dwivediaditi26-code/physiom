@@ -32,7 +32,7 @@ export const neuroExamLibraryData = {
     icon: "👃",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Smell identification, each nostril separately, eyes closed",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, one nostril occluded at a time." },
@@ -57,7 +57,7 @@ export const neuroExamLibraryData = {
     icon: "👁️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Visual acuity, fields by confrontation, fundoscopy if trained",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated facing the examiner at arm's length, room adequately lit." },
@@ -81,7 +81,7 @@ export const neuroExamLibraryData = {
     icon: "👀",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Pupillary light reflex, full 'H'-pattern extraocular movements, ptosis, diplopia",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, head still, following your finger or a pen torch." },
@@ -109,7 +109,7 @@ export const neuroExamLibraryData = {
     icon: "😐",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Facial sensation (3 divisions), jaw clench, corneal reflex",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed for sensory testing." },
@@ -133,7 +133,7 @@ export const neuroExamLibraryData = {
     icon: "😊",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Symmetry at rest, raise eyebrows, screw eyes shut, smile, puff cheeks",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated facing the examiner, good lighting to see facial symmetry clearly." },
@@ -160,7 +160,7 @@ export const neuroExamLibraryData = {
     icon: "👂",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Gross hearing, Weber test, Rinne test",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, quiet room for hearing screen." },
@@ -186,7 +186,7 @@ export const neuroExamLibraryData = {
     icon: "🗣️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Palatal rise, gag reflex, voice quality, swallow screen",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, mouth open, adequate lighting to view the palate/uvula." },
@@ -213,7 +213,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Shoulder shrug and head turn against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, examiner positioned to apply resistance safely." },
@@ -238,7 +238,7 @@ export const neuroExamLibraryData = {
     icon: "👅",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Tongue protrusion, look for deviation, atrophy, or fasciculations",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, mouth open, good lighting to view the tongue clearly." },
@@ -266,7 +266,7 @@ export const neuroExamLibraryData = {
     icon: "👆",
     category: "Learn · Neuro · Coordination",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Alternately touch examiner's moving finger and own nose",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, adequate arm room, examiner's finger held at a comfortable arm's-length distance." },
@@ -294,7 +294,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Coordination",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Slide heel smoothly down the opposite shin, knee to ankle",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, legs extended and relaxed." },
@@ -322,7 +322,7 @@ export const neuroExamLibraryData = {
     icon: "🔄",
     category: "Learn · Neuro · Coordination",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Rapid pronation/supination, or thumb-to-finger tapping in sequence",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, forearm resting on the thigh or held out." },
@@ -352,7 +352,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_bicep"),
+      images: [img("n_ref_bicep"), null, null],
       caption: "Thumb on biceps tendon, tap thumb with reflex hammer",
       boxes: [
         { tone: "", label: "👤 Position", text: "Elbow flexed to ~90°, arm relaxed and supported." },
@@ -380,7 +380,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_brad"),
+      images: [img("n_ref_brad"), null, null],
       caption: "Tap the tendon 2–3cm proximal to the radial styloid",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm in neutral (semi-pronated), resting on the thigh." },
@@ -409,7 +409,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_tricep"),
+      images: [img("n_ref_tricep"), null, null],
       caption: "Tap directly above the olecranon",
       boxes: [
         { tone: "", label: "👤 Position", text: "Support the arm at 90° abduction, or drape it over the forearm." },
@@ -437,7 +437,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_patella"),
+      images: [img("n_ref_patella"), null, null],
       caption: "Tap the patellar tendon, seated or supine with knee supported",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated with legs hanging freely, or supine with the knee supported at 20–30° flexion." },
@@ -465,7 +465,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_achilles"),
+      images: [img("n_ref_achilles"), null, null],
       caption: "Dorsiflex the foot to tension the tendon, then tap",
       boxes: [
         { tone: "", label: "👤 Position", text: "Knee flexed, hip externally rotated (patient kneeling or prone works well)." },
@@ -493,7 +493,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_babinski"),
+      images: [img("n_ref_babinski"), null, null],
       caption: "Stroke firmly along the lateral sole, heel to ball, curving medially",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine and relaxed." },
@@ -521,7 +521,7 @@ export const neuroExamLibraryData = {
     icon: "✋",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_hoffmann"),
+      images: [img("n_ref_hoffmann"), null, null],
       caption: "Flick the middle finger's distal phalanx downward, watch the thumb",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hold the patient's middle finger loosely, forearm slightly pronated." },
@@ -547,7 +547,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      image: img("n_ref_clonus_ankle"),
+      images: [img("n_ref_clonus_ankle"), null, null],
       caption: "Sudden sustained stretch, count rhythmic beats",
       boxes: [
         { tone: "", label: "👤 Position", text: "Ankle: knee in slight flexion, foot supported. Patellar: supine, leg extended. Wrist: forearm supported." },
@@ -580,7 +580,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_c5"),
+      images: [img("n_c5"), null, null],
       caption: "Lateral arm / deltoid badge region",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -602,7 +602,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_c6"),
+      images: [img("n_c6"), null, null],
       caption: "Lateral forearm / thumb + index finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -624,7 +624,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_c7"),
+      images: [img("n_c7"), null, null],
       caption: "Middle finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -646,7 +646,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_c8"),
+      images: [img("n_c8"), null, null],
       caption: "Little + ring finger / medial forearm",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -668,7 +668,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_t1"),
+      images: [img("n_t1"), null, null],
       caption: "Medial forearm / elbow",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -690,7 +690,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Nipple line — key ASIA sensory landmark",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, chest exposed." },
@@ -712,7 +712,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: null,
+      images: [null, null, null],
       caption: "Umbilicus — key ASIA sensory landmark",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, abdomen exposed." },
@@ -734,7 +734,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_l3"),
+      images: [img("n_l3"), null, null],
       caption: "Medial knee / lower anterior thigh",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -756,7 +756,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_l4"),
+      images: [img("n_l4"), null, null],
       caption: "Medial leg / medial foot",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -778,7 +778,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_l5"),
+      images: [img("n_l5"), null, null],
       caption: "Dorsum of foot / 1st–2nd web space",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -800,7 +800,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_s1"),
+      images: [img("n_s1"), null, null],
       caption: "Lateral foot / heel / sole",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -822,7 +822,7 @@ export const neuroExamLibraryData = {
     icon: "🚨",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      image: img("n_s4s5"),
+      images: [img("n_s4s5"), null, null],
       caption: "Perianal / saddle region — the single most important sensory point in SCI",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient positioned for a dignified, private perianal exam." },
@@ -851,7 +851,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_c5"),
+      images: [img("myo_c5"), null, null],
       caption: "Shoulder abduction / elbow flexion — arm abduction 0–90° against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, arm at side to start." },
@@ -873,7 +873,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_c6"),
+      images: [img("myo_c6"), null, null],
       caption: "Wrist extension — make a fist, extend wrist against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm supported, wrist in neutral to start." },
@@ -895,7 +895,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_c7"),
+      images: [img("myo_c7"), null, null],
       caption: "Elbow extension / wrist flexion — triceps push, wrist curl against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Arm supported at 90° abduction or elbow flexed to start." },
@@ -917,7 +917,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_c8"),
+      images: [img("myo_c8"), null, null],
       caption: "Finger flexion (grip) — grip dynamometer or resist 3rd–5th DIP flexion",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm supported, fingers relaxed to start." },
@@ -939,7 +939,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_t1"),
+      images: [img("myo_t1"), null, null],
       caption: "Finger abduction — spread fingers, resist adduction",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hand relaxed, fingers together to start." },
@@ -961,7 +961,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_l1_l2"),
+      images: [img("myo_l1_l2"), null, null],
       caption: "Hip flexion — seated, resist hip flexion 0–90°",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, hip and knee flexed to start." },
@@ -983,7 +983,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_l3"),
+      images: [img("myo_l3"), null, null],
       caption: "Knee extension — extend knee from 90° against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, knee flexed to 90° to start." },
@@ -1005,7 +1005,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_l4"),
+      images: [img("myo_l4"), null, null],
       caption: "Ankle dorsiflexion — walk on heels, or resist dorsiflexion",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or standing to start." },
@@ -1027,7 +1027,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_l5"),
+      images: [img("myo_l5"), null, null],
       caption: "Great toe extension — lift big toe against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or supine, foot relaxed to start." },
@@ -1049,7 +1049,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      image: img("myo_s1"),
+      images: [img("myo_s1"), null, null],
       caption: "Ankle plantarflexion — 25 single-leg calf raises",
       boxes: [
         { tone: "", label: "👤 Position", text: "Standing, holding support for balance." },
@@ -1063,6 +1063,483 @@ export const neuroExamLibraryData = {
       normal: ["≥25 single-leg heel raises, symmetrical"],
       abnormal: ["Reduced rep count or asymmetry → correlate with S1 dermatome and the Achilles reflex"],
       note: "Manual resistance alone is a poor test of this myotome given normal gastroc/soleus strength — always use the single-leg heel raise as the primary test.",
+    },
+  },
+
+  /* ===================== TONE / GAIT / SENSORY / MENTAL STATUS — HIGH-YIELD ADDITIONS ===================== */
+
+  mas: {
+    title: "Modified Ashworth Scale (Spasticity)",
+    icon: "🦾",
+    category: "Learn · Neuro · Tone / Reflexes",
+    perform: {
+      images: [null, null, null],
+      caption: "Passively move the limb through range at a moderate, consistent speed",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed and supported, limb positioned in a neutral resting posture before starting." },
+        { tone: "blue", label: "🖐️ Technique", text: "Move the target joint passively through its full available range at a constant, moderate speed (roughly 1 second per movement) and grade the resistance felt to passive stretch." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Test the same joint at the same speed each time — a faster stretch always feels stiffer, which is exactly what makes MAS unreliable across examiners unless technique is standardised." },
+        { tone: "amber", label: "⚠️ Tip", text: "Grade immediately after the movement while the sensation is fresh — don't try to recall it later in the session." },
+      ],
+    },
+    scaleLabel: "0–4 grading (Bohannon & Smith)",
+    scale: { type: "table", rows: [
+      { k: "0", v: "No increase in tone" },
+      { k: "1", v: "Slight increase — catch and release, or minimal resistance at end of range" },
+      { k: "1+", v: "Slight increase — catch, then minimal resistance through <50% of ROM" },
+      { k: "2", v: "More marked increase through most of ROM, limb still moved easily" },
+      { k: "3", v: "Considerable increase, passive movement difficult" },
+      { k: "4", v: "Rigid in flexion or extension" },
+    ]},
+    interpret: {
+      normal: ["0 across all tested muscle groups"],
+      abnormal: ["≥1+ in an UMN-lesion pattern (e.g. elbow/wrist flexors, knee extensors, ankle plantarflexors) is consistent with spasticity from stroke, SCI, or TBI"],
+      note: "Document per muscle group, not a single global score — the distribution itself is diagnostic (e.g. UE flexors + LE extensors is the classic post-stroke pattern).",
+    },
+  },
+
+  romberg: {
+    title: "Romberg Test",
+    icon: "🧍",
+    category: "Learn · Neuro · Balance",
+    perform: {
+      images: [null, null, null],
+      caption: "Feet together, eyes open then closed, stand ready to catch",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient stands with feet together, arms at sides, on a firm surface." },
+        { tone: "blue", label: "🖐️ Technique", text: "Observe sway for ~30 seconds with eyes open, then ask the patient to close their eyes and observe for the same duration. Stand close enough to catch a fall." },
+        { tone: "purple", label: "🩺 Special consideration", text: "A positive Romberg (marked increase in sway only with eyes closed) localises to a proprioceptive or vestibular deficit — cerebellar ataxia causes sway with eyes open too, so a 'positive' finding in an already-ataxic patient isn't a true Romberg sign." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stand at the patient's side, not in front, so you can catch a fall in either direction without blocking your own view." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "Stable, minimal sway, both conditions" },
+      { k: "Positive", v: "Marked increase in sway or loss of balance, eyes closed only" },
+      { k: "Unable to test", v: "Cannot stand feet together even with eyes open" },
+    ]},
+    interpret: {
+      normal: ["Negative — stable with eyes open and closed"],
+      abnormal: ["Positive → proprioceptive loss (e.g. dorsal column, peripheral neuropathy) or vestibular dysfunction"],
+      note: "Always rule out cerebellar ataxia first — sway present with eyes open makes this test non-localising.",
+    },
+  },
+
+  vibration: {
+    title: "Vibration Sense (128Hz Tuning Fork)",
+    icon: "🔔",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Strike the fork, apply to a bony prominence, patient reports when it stops",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Strike the 128Hz tuning fork and place it firmly over a distal bony prominence (e.g. wrist, ankle malleolus). Ask the patient to say 'now' the moment they stop feeling the vibration, and compare to your own perception at the same site." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Test distal to proximal — if impaired distally, move to a more proximal bony point to find the level where sensation returns to normal." },
+        { tone: "amber", label: "⚠️ Tip", text: "Dampen the fork with your fingers between tests to reset it to a consistent starting vibration." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Vibration duration matches examiner's own perception" },
+      { k: "Reduced", v: "Stops earlier than examiner's perception" },
+      { k: "Absent", v: "No vibration sensation reported" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, matching examiner"],
+      abnormal: ["Reduced/absent distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, tabes dorsalis, MS)"],
+      note: "Vibration and proprioception travel in the same dorsal column pathway — an isolated deficit in one without the other is unusual and worth double-checking technique.",
+    },
+  },
+
+  twoPoint: {
+    title: "Two-Point Discrimination",
+    icon: "📍",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Calibrated two-point discriminator, gradually narrowing distance",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, testing surface (typically fingertip) relaxed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Touch the skin with one or two points simultaneously using a calibrated discriminator (or an opened paperclip), varying whether one or two points are used unpredictably, and find the minimum distance at which the patient reliably distinguishes two points from one." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Normal two-point discrimination varies hugely by body region — fingertip (~2-4mm) vs. back (~40mm+) — always compare against the expected normal for that specific site, not a single number." },
+        { tone: "amber", label: "⚠️ Tip", text: "Randomise one-point vs two-point presentations so the patient can't simply guess a pattern." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Distinguishes two points at the expected distance for that site" },
+      { k: "Impaired", v: "Requires a larger distance than expected, or cannot distinguish" },
+      { k: "Not tested", v: "—" },
+    ]},
+    interpret: {
+      normal: ["Within expected range for the tested site"],
+      abnormal: ["Impaired → cortical (parietal lobe) or dorsal column pathway involvement"],
+      note: "This is a cortical integration test, not a peripheral nerve test — it can be abnormal even when light touch and pain sensation are both normal.",
+    },
+  },
+
+  gcs: {
+    title: "Glasgow Coma Scale (GCS)",
+    icon: "🧠",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Score Eye, Verbal, and Motor response independently, then sum",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Any position — this is an observation + graded-stimulus scale, not a positional test." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score each of the three components independently against its own criteria: Eye opening (4 to 1), Verbal response (5 to 1), Motor response (6 to 1). Use the best response obtained, escalating the stimulus from voice to pain only as needed. Sum for a total out of 15." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Document each component separately (e.g. E3V4M5) as well as the total — the total alone hides which domain is actually impaired, which changes management." },
+        { tone: "amber", label: "⚠️ Tip", text: "A drop of 2 or more points from a previous GCS score is a medical emergency regardless of the absolute total — trend matters as much as the single number." },
+      ],
+    },
+    scaleLabel: "Total /15 severity bands",
+    scale: { type: "table", rows: [
+      { k: "13–15", v: "Mild" },
+      { k: "9–12", v: "Moderate" },
+      { k: "≤8", v: "Severe — airway protection typically required" },
+    ]},
+    interpret: {
+      normal: ["15/15, fully alert and oriented"],
+      abnormal: ["Any reduction from baseline — reassess the trend, not just the single value"],
+      redFlags: ["GCS ≤8, or a drop of ≥2 points from a prior score — escalate for urgent medical review before continuing therapy"],
+      note: "In TBI/neurosurgical patients, always check the most recent medical GCS before starting treatment, and stop if it has dropped.",
+    },
+  },
+
+  pronatorDrift: {
+    title: "Pronator Drift Test",
+    icon: "🙌",
+    category: "Learn · Neuro · Motor",
+    perform: {
+      images: [null, null, null],
+      caption: "Arms outstretched, palms up, eyes closed, watch for drift",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient standing or seated, both arms fully extended forward at shoulder height, palms facing up." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to close their eyes and hold the position for 10-20 seconds. Watch for one arm drifting downward and/or pronating (turning palm-down)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Drift with pronation is a sensitive early sign of subtle upper motor neuron (corticospinal tract) weakness, often present before weakness is obvious on formal MMT." },
+        { tone: "amber", label: "⚠️ Tip", text: "Tapping the outstretched arms briefly, or asking the patient to keep their eyes closed a little longer, can bring out a subtle drift not visible in the first few seconds." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "Arms held steady, no drift/pronation" },
+      { k: "Positive", v: "One arm drifts down and/or pronates" },
+    ]},
+    interpret: {
+      normal: ["Negative bilaterally"],
+      abnormal: ["Positive (unilateral) → mild UMN weakness on that side, corticospinal tract involvement"],
+      note: "A cerebellar lesion can also cause upward drift without pronation — note the exact pattern, not just 'positive/negative'.",
+    },
+  },
+
+  tandemGait: {
+    title: "Tandem Gait (Heel-to-Toe Walking)",
+    icon: "🚶",
+    category: "Learn · Neuro · Gait",
+    perform: {
+      images: [null, null, null],
+      caption: "Walk heel-to-toe in a straight line, arms at sides",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Clear, straight path at least a few metres long, therapist walking alongside for safety." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask the patient to walk heel-to-toe in a straight line, placing the heel of one foot directly in front of the toes of the other, for about 10 steps." },
+        { tone: "purple", label: "🩺 Special consideration", text: "A sensitive test for mild cerebellar ataxia or vestibular dysfunction that may not show up on normal gait observation alone." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stay close enough to assist but avoid touching unless needed — physical contact can mask a genuine balance deficit." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Completes without significant deviation" },
+      { k: "Impaired", v: "Steps off the line, wide-based compensations, or unable without support" },
+      { k: "Unable", v: "Cannot attempt safely" },
+    ]},
+    interpret: {
+      normal: ["Completes 10 steps with minimal deviation"],
+      abnormal: ["Consistent deviation to one side → suggests a unilateral cerebellar or vestibular lesion on that side", "Wide-based, irregular stepping → cerebellar ataxia"],
+      note: "Combine with Romberg — cerebellar ataxia impairs tandem gait with eyes open, while a pure proprioceptive/vestibular deficit may perform reasonably with eyes open but worsen with eyes closed.",
+    },
+  },
+
+  pupillaryLight: {
+    title: "Pupillary Light Reflex",
+    icon: "👁️",
+    category: "Learn · Neuro · Cranial Nerves",
+    perform: {
+      images: [null, null, null],
+      caption: "Shine a light into one eye, observe direct and consensual response",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Dim room, patient looking at a distant fixed point to control accommodation." },
+        { tone: "blue", label: "🖐️ Technique", text: "Shine a penlight into one pupil from the side and observe constriction in that eye (direct response) and the other eye (consensual response). Repeat for the other eye." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The direct response tests CN II (afferent, that eye) + CN III (efferent, that eye); the consensual response tests CN II (afferent, that eye) + CN III (efferent, other eye) — a discrepancy between the two localises which nerve/side is affected." },
+        { tone: "amber", label: "⚠️ Tip", text: "A relative afferent pupillary defect (RAPD) is best picked up with the swinging-flashlight test — move the light rhythmically eye to eye and watch for paradoxical dilation." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Brisk, equal constriction, direct and consensual, both sides" },
+      { k: "Sluggish", v: "Slowed constriction" },
+      { k: "Fixed", v: "No constriction" },
+      { k: "Anisocoria", v: "Unequal pupil size at baseline" },
+    ]},
+    interpret: {
+      normal: ["PERRLA — pupils equal, round, reactive to light and accommodation"],
+      abnormal: ["Fixed/dilated unilateral pupil → CN III palsy (consider compressive lesion) until proven otherwise", "RAPD (Marcus Gunn pupil) → optic nerve (CN II) pathology on that side"],
+      redFlags: ["A new unilateral fixed and dilated pupil, especially with reduced GCS, is a neurosurgical emergency (raised ICP / herniation) — escalate immediately"],
+      note: "Always check pupil size/reactivity at baseline — roughly 20% of people have a small, physiological, non-pathological difference between pupils (physiological anisocoria).",
+    },
+  },
+
+  /* ===================== MEDIUM-PRIORITY ADDITIONS — CORTICAL SENSATION / TONE / REFLEXES / GAIT ===================== */
+
+  stereognosis: {
+    title: "Stereognosis",
+    icon: "🖐️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Eyes closed, identify a familiar object placed in the hand",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, hand relaxed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Place a familiar object (coin, key, paperclip) in the patient's hand and ask them to identify it by feel alone, without looking. Test each hand separately." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Requires intact primary sensation (light touch, proprioception) to be interpretable — test those first, since impaired stereognosis with impaired primary sensation isn't a cortical finding, it's just downstream of the peripheral loss." },
+        { tone: "amber", label: "⚠️ Tip", text: "Use objects the patient would recognise regardless of cultural or visual background — a coin and a key are safer defaults than something unfamiliar." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies object" },
+      { k: "Impaired", v: "Cannot identify despite intact primary sensation" },
+      { k: "Not testable", v: "Primary sensation too impaired to interpret" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, with normal primary sensation"],
+      abnormal: ["Impaired with intact primary sensation → astereognosis, localises to the contralateral parietal lobe (primary somatosensory cortex)"],
+      note: "Always confirm light touch and proprioception are intact in that hand before attributing a failed test to a cortical rather than peripheral cause.",
+    },
+  },
+
+  graphesthesia: {
+    title: "Graphesthesia",
+    icon: "✍️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Eyes closed, trace a number on the palm, patient identifies it",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, palm facing up and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Using a blunt object (pen cap, fingertip), trace a single-digit number on the patient's palm and ask them to identify it. Repeat with different numbers on each hand." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Like stereognosis, this requires intact primary sensation to be interpretable as a cortical sign — check light touch and proprioception first." },
+        { tone: "amber", label: "⚠️ Tip", text: "Trace numbers large enough and slowly enough that a correct identification reflects genuine cortical integration, not a lucky guess." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies traced number" },
+      { k: "Impaired", v: "Cannot identify despite intact primary sensation" },
+      { k: "Not testable", v: "Primary sensation too impaired to interpret" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, with normal primary sensation"],
+      abnormal: ["Impaired with intact primary sensation → localises to the contralateral parietal lobe, same significance as astereognosis"],
+      note: "Stereognosis and graphesthesia are both cortical sensory integration tests — an isolated deficit in one hand with normal primary sensation is a useful, focal parietal lobe finding.",
+    },
+  },
+
+  toneRigidity: {
+    title: "Rigidity Assessment (Cogwheel / Lead-pipe)",
+    icon: "🦾",
+    category: "Learn · Neuro · Tone / Reflexes",
+    perform: {
+      images: [null, null, null],
+      caption: "Passively move the limb through range, feel for resistance quality",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, seated or supine, limb fully supported by the examiner." },
+        { tone: "blue", label: "🖐️ Technique", text: "Passively flex and extend the wrist or elbow at a slow, constant speed, independent of velocity (unlike spasticity, which is velocity-dependent). Ask the patient to perform a distracting task with the opposite limb (e.g. opening and closing the other fist) to bring out latent rigidity." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Cogwheel rigidity (a ratchety, catch-release quality, classic in Parkinson's) and lead-pipe rigidity (smooth, uniform resistance throughout range) are distinguishable by feel — document which pattern, not just 'rigid'." },
+        { tone: "amber", label: "⚠️ Tip", text: "Rigidity is present equally in both flexion and extension and doesn't vary with speed — this is what distinguishes it from spasticity (which is speed-dependent and direction-specific, typically a 'catch' only in one direction)." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "None", v: "Normal tone, no resistance beyond expected" },
+      { k: "Cogwheel", v: "Ratchety, catch-release resistance throughout range" },
+      { k: "Lead-pipe", v: "Smooth, uniform resistance throughout range" },
+      { k: "Mixed/unclear", v: "Pattern not clearly one or the other" },
+    ]},
+    interpret: {
+      normal: ["No rigidity, normal passive resistance"],
+      abnormal: ["Cogwheel rigidity → classic extrapyramidal (Parkinson's/parkinsonism) finding, especially with a resting tremor and bradykinesia", "Lead-pipe rigidity → also extrapyramidal, but seen without tremor overlay (e.g. some atypical parkinsonian syndromes)"],
+      note: "Distinguish carefully from spasticity (velocity-dependent, seen with corticospinal/UMN lesions) — the two have very different underlying pathology and different management.",
+    },
+  },
+
+  abdominalReflexes: {
+    title: "Superficial Abdominal Reflexes",
+    icon: "🔲",
+    category: "Learn · Neuro · Reflexes",
+    perform: {
+      images: [null, null, null],
+      caption: "Lightly stroke each abdominal quadrant, watch for muscle contraction toward the stimulus",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient supine, abdomen relaxed and exposed, room warm (a cold or tense abdomen suppresses the response)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Lightly stroke each of the four abdominal quadrants from lateral to medial with a blunt object (handle end of a reflex hammer, or a wooden applicator). Observe for contraction of the underlying muscle, pulling the umbilicus toward the stimulated quadrant." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Upper quadrants test T7-T9, lower quadrants test T10-T12 — a level-specific absence can help localise a thoracic cord lesion." },
+        { tone: "amber", label: "⚠️ Tip", text: "Can be physiologically absent or diminished in obesity, multiparity, or after abdominal surgery — don't over-interpret absence in isolation without other UMN signs." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Present", v: "Umbilicus deviates toward the stimulated quadrant, all four quadrants" },
+      { k: "Diminished", v: "Weak or inconsistent response" },
+      { k: "Absent", v: "No visible contraction" },
+    ]},
+    interpret: {
+      normal: ["Present and symmetrical, all four quadrants"],
+      abnormal: ["Unilateral absence with other UMN signs (hyperreflexia, upgoing plantar) on the same side → supports a corticospinal tract lesion above the tested spinal level", "Bilateral absence alone, with no other findings, is often a normal variant (especially with the confounders above)"],
+      note: "This reflex is most useful when it's asymmetrical and paired with other UMN signs — an isolated bilateral absence is low-yield on its own.",
+    },
+  },
+
+  cornealReflex: {
+    title: "Corneal Reflex",
+    icon: "👁️",
+    category: "Learn · Neuro · Cranial Nerves",
+    perform: {
+      images: [null, null, null],
+      caption: "Lightly touch the cornea with a wisp of cotton, watch for bilateral blink",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient looking away from the side being tested, to avoid a visual blink reflex confounding the result." },
+        { tone: "blue", label: "🖐️ Technique", text: "Approach from the side (out of the patient's direct line of sight) and lightly touch the edge of the cornea (not just the sclera) with a fine wisp of cotton wool. Observe for a blink in both the touched eye (direct) and the other eye (consensual)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The afferent limb is CN V (trigeminal, ophthalmic division) and the efferent limb is CN VII (facial) — an absent direct response with an intact consensual response on retesting the other side localises to CN V; an absent response on both sides when testing one eye but normal when testing the other localises to CN VII on the side that failed to blink." },
+        { tone: "amber", label: "⚠️ Tip", text: "Contact lens wearers can have a physiologically reduced corneal reflex from chronic corneal desensitisation — ask about lens wear before interpreting a reduced response." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Present", v: "Brisk bilateral blink, both sides tested" },
+      { k: "Reduced", v: "Sluggish or partial blink" },
+      { k: "Absent", v: "No blink response" },
+    ]},
+    interpret: {
+      normal: ["Present bilaterally, both direct and consensual"],
+      abnormal: ["Absent direct response, intact consensual on the other side → CN V (afferent) lesion on the tested side", "Absent blink in the eye being watched regardless of which side is touched → CN VII (efferent) lesion on that side"],
+      note: "A reduced or absent corneal reflex, especially with facial numbness or weakness, warrants correlating with the rest of the CN V/VII exam findings rather than being read in isolation.",
+    },
+  },
+
+  gaitPattern: {
+    title: "Gait Pattern Recognition",
+    icon: "🚶",
+    category: "Learn · Neuro · Gait",
+    perform: {
+      images: [null, null, null],
+      caption: "Observe from front, side, and behind over several strides",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Clear walkway, adequate lighting, patient in appropriate footwear (or barefoot if assessing foot clearance/positioning)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Watch the patient walk from the front, side, and behind over at least several full strides each, before naming a pattern — a single glance can miss the diagnostic phase of gait." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Hemiplegic: circumducted stiff leg with flexed UE. Ataxic: wide-based, irregular, staggering. Spastic: scissoring from hip adductor overactivity. Festinating: short, accelerating steps typical of Parkinson's. Steppage: high-stepping to clear a foot drop. Trendelenburg: contralateral pelvic drop from hip abductor weakness." },
+        { tone: "amber", label: "⚠️ Tip", text: "Name the pattern AND describe what you actually observed (e.g. 'right circumduction with flexed right UE, consistent with hemiplegic pattern') — the description survives even if the pattern label is later disputed or refined." },
+      ],
+    },
+    scaleLabel: "Common patterns",
+    scale: { type: "table", rows: [
+      { k: "Hemiplegic", v: "Circumducted stiff leg, flexed UE — post-stroke/UMN" },
+      { k: "Ataxic", v: "Wide-based, irregular, staggering — cerebellar" },
+      { k: "Spastic (scissoring)", v: "Hip adductor overactivity — bilateral UMN (e.g. cerebral palsy, myelopathy)" },
+      { k: "Festinating", v: "Short, accelerating steps — Parkinson's" },
+      { k: "Steppage", v: "High-stepping to clear foot drop — peripheral nerve (e.g. common peroneal)" },
+      { k: "Trendelenburg", v: "Contralateral pelvic drop — hip abductor weakness" },
+    ]},
+    interpret: {
+      normal: ["Normal reciprocal gait, no compensations"],
+      abnormal: ["Any consistent pattern above → correlates with a specific lesion location/type, and should be cross-checked against tone, MMT, and sensory findings"],
+      note: "A mixed or atypical pattern is common and worth describing in plain terms rather than forcing it into a single named category.",
+    },
+  },
+
+  /* ===================== LOWER-PRIORITY / CONDITION-SPECIFIC ADDITIONS ===================== */
+
+  meningealSigns: {
+    title: "Meningeal Signs (Kernig's / Brudzinski's / Nuchal Rigidity)",
+    icon: "🚩",
+    category: "Learn · Neuro · Safety Screen",
+    perform: {
+      images: [null, null, null],
+      caption: "Passive neck flexion and hip/knee manoeuvres, watch for involuntary guarding",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient supine, relaxed, on a firm surface." },
+        { tone: "blue", label: "🖐️ Technique", text: "Nuchal rigidity: passively flex the neck, chin toward chest — resistance/pain is positive. Brudzinski's sign: passively flex the neck and watch for involuntary flexion of the hips and knees. Kernig's sign: flex the hip and knee to 90°, then slowly extend the knee — pain/resistance in the hamstrings or spine, or involuntary flexion of the opposite leg, is positive." },
+        { tone: "purple", label: "🩺 Special consideration", text: "These are screening signs for meningeal irritation (meningitis, subarachnoid haemorrhage) — a positive finding, especially combined with fever, severe headache, or photophobia, is a medical emergency, not a routine physiotherapy finding to simply document and continue." },
+        { tone: "amber", label: "⚠️ Tip", text: "Sensitivity is limited (roughly 5-30% in confirmed meningitis in adult studies) — a negative test does NOT rule out meningeal irritation. Never let a negative Kernig's/Brudzinski's override a strong clinical suspicion from history (fever, severe headache, neck stiffness, photophobia)." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Negative", v: "No resistance/pain, no involuntary flexion, all three signs" },
+      { k: "Positive", v: "Resistance/pain and/or involuntary flexion on any manoeuvre" },
+      { k: "Not tested", v: "Deferred — e.g. known cervical instability/precautions" },
+    ]},
+    interpret: {
+      normal: ["Negative — full pain-free neck flexion, negative Kernig's and Brudzinski's"],
+      abnormal: ["Any positive sign, especially with fever/severe headache/photophobia → urgent medical referral for suspected meningitis or subarachnoid haemorrhage, before any further physiotherapy assessment or treatment"],
+      redFlags: ["Positive meningeal signs with fever, severe headache ('worst of life'), photophobia, or reduced GCS — treat as a medical emergency, do not proceed with exertional or provocative testing"],
+      note: "Do not rely on these tests alone to rule anything out — they have poor sensitivity. Trust the overall clinical picture and escalate on suspicion, not just on a positive test.",
+    },
+  },
+
+  primitiveReflexes: {
+    title: "Primitive / Frontal Release Reflexes",
+    icon: "👶",
+    category: "Learn · Neuro · Reflexes",
+    perform: {
+      images: [null, null, null],
+      caption: "Grasp reflex: stroke the palm. Palmomental reflex: stroke the thenar eminence, watch the chin.",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, hand resting supported, face visible to the examiner." },
+        { tone: "blue", label: "🖐️ Technique", text: "Grasp reflex: stroke the patient's palm with your fingers and observe whether they involuntarily grasp, even after being asked not to. Palmomental reflex: stroke the thenar eminence (base of thumb) with a blunt object and watch for an involuntary twitch of the chin/mentalis muscle on the same side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "These are 'frontal release signs' — normally present in infancy, suppressed by an intact frontal lobe, and re-emerging when frontal lobe inhibition is lost. A present grasp reflex in an adult is abnormal and specific for frontal lobe pathology; a mild palmomental reflex can occasionally be a normal variant in older adults, so weight it less heavily in isolation." },
+        { tone: "amber", label: "⚠️ Tip", text: "Explicitly ask the patient not to grasp before testing the grasp reflex — an involuntary grasp despite instruction not to is what makes the finding pathological, rather than simple cooperation." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Absent", v: "No involuntary response, either test" },
+      { k: "Present — grasp", v: "Involuntary grasp despite instruction not to" },
+      { k: "Present — palmomental", v: "Involuntary ipsilateral chin twitch" },
+    ]},
+    interpret: {
+      normal: ["Absent in a cognitively intact adult"],
+      abnormal: ["Present grasp reflex → suggests frontal lobe dysfunction (dementia, frontal lobe lesion, diffuse cerebral pathology)", "Present palmomental reflex → supportive but less specific, can occur as a normal variant in some older adults"],
+      note: "Interpret alongside the rest of the cognitive/mental status exam — an isolated palmomental reflex in an otherwise cognitively intact patient is low-yield, but a present grasp reflex plus cognitive impairment is a more meaningful combination.",
+    },
+  },
+
+  mocaMmse: {
+    title: "Cognitive Screening (MMSE / MoCA)",
+    icon: "🧩",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Standardised, scored questionnaire — administered exactly as written, not adapted on the fly",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Quiet room, minimal distraction, patient seated comfortably with their glasses/hearing aids in place if used." },
+        { tone: "blue", label: "🖐️ Technique", text: "Administer the standardised MMSE (30 points: orientation, registration, attention/calculation, recall, language) or MoCA (30 points: adds executive function, visuospatial, and a clock-drawing task, more sensitive to mild cognitive impairment) exactly per the published instrument — don't paraphrase or skip items." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Both are screening tools, not diagnostic instruments — always adjust interpretation for the patient's education level and first language, both of which meaningfully shift the expected score." },
+        { tone: "amber", label: "⚠️ Tip", text: "Use the SAME instrument on repeat testing for a given patient wherever possible — MMSE and MoCA scores are not directly interchangeable, so switching between them mid-episode-of-care makes trend-tracking unreliable." },
+      ],
+    },
+    scaleLabel: "Score bands",
+    scale: { type: "table", rows: [
+      { k: "MMSE ≥25/30", v: "Normal" },
+      { k: "MMSE 21–24/30", v: "Mild impairment" },
+      { k: "MMSE 10–20/30", v: "Moderate impairment" },
+      { k: "MMSE <10/30", v: "Severe impairment" },
+      { k: "MoCA ≥26/30", v: "Normal (add 1 point if ≤12 years education)" },
+    ]},
+    interpret: {
+      normal: ["MMSE ≥25/30 or MoCA ≥26/30, adjusted for education"],
+      abnormal: ["Below the normal cutoff → correlate with functional observations and consider referral for formal neuropsychological assessment if not already screened medically"],
+      note: "A single low score is a prompt to look closer, not a diagnosis — document the actual score and instrument used every time, not just a global 'cognitively impaired' label.",
     },
   },
 };

@@ -302,11 +302,12 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
 
 function ObservationItemCard({ item, obsData, setPostureRegion }) {
   const { regionKey, itemId, label, meta } = item;
+  const view = meta.view;
   const regions = obsData.posture?.regions || {};
-  const regionData = regions[regionKey] || {};
-  const value = regionData[itemId];
+  const viewData = regions[regionKey]?.[view] || {};
+  const value = viewData[itemId];
   function pick(o) {
-    setPostureRegion(regionKey, itemId, value === o ? "" : o);
+    setPostureRegion(regionKey, view, itemId, value === o ? "" : o);
   }
   return (
     <ItemCardShell label={label} answered={!!value} whyLines={obsWhy(meta)} howLines={obsHow()}>
@@ -334,10 +335,12 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     setSpecialD(k, v);
     if (!activeIds.has("specialTests")) onToggle("specialTests");
   };
-  const setPostureRegion = (regionKey, fieldId, value) => {
+  const setPostureRegion = (regionKey, view, fieldId, value) => {
     const posture = obsData.posture || {};
     const regions = posture.regions || {};
-    setObsD("posture", { ...posture, regions: { ...regions, [regionKey]: { ...(regions[regionKey] || {}), [fieldId]: value } } });
+    const regionData = regions[regionKey] || {};
+    const viewData = regionData[view] || {};
+    setObsD("posture", { ...posture, regions: { ...regions, [regionKey]: { ...regionData, [view]: { ...viewData, [fieldId]: value } } } });
   };
 
   const { rom, mmt, specialTests, observation } = useMemo(() => suggestIndividualItems(selectedRegions), [selectedRegions]);

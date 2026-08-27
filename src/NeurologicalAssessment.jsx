@@ -1012,6 +1012,7 @@ function SafetySection({ data, setData, setting }) {
         onChange={(v) => set("redFlags", v)}
         howTo="A new focal deficit, sudden severe headache ('worst headache of life'), reduced GCS, or new seizure needs urgent medical review before any exertional or provocative testing."
       />
+      <SelectField label="Meningeal signs" type="single" options={["Negative", "Positive", "Not tested"]} value={d.meningealSigns} onChange={(v) => set("meningealSigns", v)} info={neuroExamLibraryData.meningealSigns} />
       <SelectField label="Autonomic dysreflexia signs (if SCI ≥T6)" type="multi" options={AD_SX} value={d.ad} onChange={(v) => set("ad", v)} howTo="Check for a triggering stimulus — full bladder or bowel impaction is the most common cause — and treat as a medical emergency if suspected." />
       <SelectField label="Seizure precautions in place" type="single" options={["Not applicable", "Yes - precautions active", "History of seizures, no current precautions"]} value={d.seizurePrecautions} onChange={(v) => set("seizurePrecautions", v)} />
       <SelectField
@@ -1099,7 +1100,7 @@ function CognitionSection({ data, setData }) {
     <>
       <SectionIntro icon="🧠" title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
-      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} howTo="Glasgow Coma Scale — score consciousness on every patient, not just TBI. Eye + Verbal + Motor = total /15." />
+      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcs} />
       <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} />
       <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} />
       {gcsTotal > 0 && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
@@ -1115,7 +1116,7 @@ function CognitionSection({ data, setData }) {
       <SelectField label="Memory" type="multi" options={["Short-term intact", "Short-term impaired", "Long-term intact", "Long-term impaired", "Confabulation noted"]} value={d.memory} onChange={(v) => set("memory", v)} />
       <SelectField label="Language" type="multi" options={["Comprehension intact", "Comprehension impaired", "Expression intact", "Expression impaired (expressive aphasia)", "Naming difficulty", "Repetition impaired", "Dysarthria"]} value={d.language} onChange={(v) => set("language", v)} howTo="Expressive (Broca's) aphasia: non-fluent, effortful speech with relatively preserved comprehension. Receptive (Wernicke's) aphasia: fluent but meaningless speech with impaired comprehension." />
       <SelectField label="Praxis" type="single" options={["Normal", "Apraxia suspected — motor planning difficulty despite adequate strength/sensation"]} value={d.praxis} onChange={(v) => set("praxis", v)} />
-      <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" />
+      <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" info={neuroExamLibraryData.mocaMmse} />
       <TextArea label="Additional cognitive observations" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
@@ -1131,7 +1132,9 @@ function CranialNervesSection({ data, setData }) {
       <SelectField label="CN I - Olfactory (smell)" type="single" options={CN_OPTS} value={d.cn1} onChange={(v) => set("cn1", v)} info={neuroExamLibraryData.cn1} />
       <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} info={neuroExamLibraryData.cn2} />
       <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
+      <SelectField label="Pupillary light reflex" type="single" options={["Normal", "Sluggish", "Fixed", "Anisocoria", "Not tested"]} value={d.pupillaryLight} onChange={(v) => set("pupillaryLight", v)} info={neuroExamLibraryData.pupillaryLight} />
       <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} info={neuroExamLibraryData.cn5} />
+      <SelectField label="Corneal reflex" type="single" options={["Present", "Reduced", "Absent", "Not tested"]} value={d.cornealReflex} onChange={(v) => set("cornealReflex", v)} info={neuroExamLibraryData.cornealReflex} />
       <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} info={neuroExamLibraryData.cn7} />
       <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} info={neuroExamLibraryData.cn8} />
       <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} info={neuroExamLibraryData.cn910} />
@@ -1151,11 +1154,11 @@ function SensorySection({ data, setData }) {
       <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." />
       <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} />
       <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." />
-      <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} howTo="Apply a vibrating 128 Hz tuning fork over a bony prominence; ask the patient to say when the vibration stops." />
+      <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
       <div className="subheading">Cortical sensation</div>
-      <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} howTo="With eyes closed, ask the patient to identify a common object placed in their hand by feel alone." />
-      <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} howTo="With eyes closed, trace a number or letter on the patient's palm and ask them to identify it." />
-      <SelectField label="Two-point discrimination" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.twoPoint} onChange={(v) => set("twoPoint", v)} />
+      <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
+      <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} info={neuroExamLibraryData.graphesthesia} />
+      <SelectField label="Two-point discrimination" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.twoPoint} onChange={(v) => set("twoPoint", v)} info={neuroExamLibraryData.twoPoint} />
       <TextArea label="Additional sensory notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
@@ -1175,6 +1178,7 @@ function MotorSection({ data, setData }) {
         onChange={(v) => set("mmt", v)}
         howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction."
       />
+      <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
       <SelectField label="Muscle bulk" type="single" options={["Normal", "Atrophy present", "Hypertrophy present", "Asymmetrical"]} value={d.bulk} onChange={(v) => set("bulk", v)} />
       <SelectField label="Fasciculations" type="single" options={["None", "Present"]} value={d.fasciculations} onChange={(v) => set("fasciculations", v)} />
       <SelectField label="Involuntary movements" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
@@ -1190,14 +1194,14 @@ function ToneReflexSection({ data, setData }) {
     <>
       <SectionIntro icon="⚡" title="Tone / Reflexes" />
       <div className="subheading">Muscle tone</div>
-      <LRGrid label="Overall tone type" rows={["UE", "LE"]} options={TONE_TYPES} value={d.toneType || {}} onChange={(v) => set("toneType", v)} />
+      <LRGrid label="Overall tone type" rows={["UE", "LE"]} options={TONE_TYPES} value={d.toneType || {}} onChange={(v) => set("toneType", v)} info={neuroExamLibraryData.toneRigidity} />
       <LRGrid
         label="Modified Ashworth Scale (spastic muscle groups)"
         rows={["Elbow flexors", "Wrist flexors", "Hip adductors", "Knee extensors", "Ankle plantarflexors"]}
         options={MAS_GRADES.map((g) => g.split(" - ")[0])}
         value={d.mas || {}}
         onChange={(v) => set("mas", v)}
-        howTo="Passively move the limb through range at moderate speed and grade the resistance felt: 0 none, 1 slight catch, 1+ catch with resistance <50% range, 2 marked increase most of range, 3 considerable increase, 4 rigid."
+        info={neuroExamLibraryData.mas}
       />
       <div className="subheading">Deep tendon reflexes</div>
       <LRGrid
@@ -1225,6 +1229,8 @@ function ToneReflexSection({ data, setData }) {
       />
       <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} info={neuroExamLibraryData.clonus} />
       <SelectField label="Hoffmann's sign" type="single" options={["Negative", "Positive", "Not tested"]} value={d.hoffmann} onChange={(v) => set("hoffmann", v)} info={neuroExamLibraryData.hoffmann} />
+      <SelectField label="Superficial abdominal reflexes" type="single" options={["Present", "Diminished", "Absent", "Not tested"]} value={d.abdominalReflexes} onChange={(v) => set("abdominalReflexes", v)} info={neuroExamLibraryData.abdominalReflexes} />
+      <SelectField label="Primitive / frontal release reflexes" type="multi" options={["Absent", "Present - grasp reflex", "Present - palmomental reflex", "Not tested"]} value={d.primitiveReflexes} onChange={(v) => set("primitiveReflexes", v)} info={neuroExamLibraryData.primitiveReflexes} />
     </>
   );
 }
@@ -1261,7 +1267,7 @@ function BalanceSection({ data, setData }) {
         options={["Negative (stable, eyes closed)", "Positive (sways/loses balance, eyes closed)", "Unable to test - cannot stand feet together"]}
         value={d.romberg}
         onChange={(v) => set("romberg", v)}
-        howTo="Feet together, eyes open then closed, stand close enough to catch the patient. A marked increase in sway with eyes closed (positive Romberg) suggests a proprioceptive or vestibular — not cerebellar — cause, since cerebellar ataxia is present with eyes open too."
+        info={neuroExamLibraryData.romberg}
       />
       <NumberField label="Functional Reach" value={d.functionalReach} onChange={(v) => set("functionalReach", v)} unit="cm" howTo="Distance reached forward with arm at 90° shoulder flexion without stepping or losing balance, from a fixed standing position." />
       <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" howTo="14-item functional balance battery; a total score ≤45/56 is associated with increased fall risk." />
@@ -1284,9 +1290,10 @@ function GaitSection({ data, setData }) {
         options={GAIT_PATTERNS}
         value={d.pattern}
         onChange={(v) => set("pattern", v)}
-        howTo="Observe from front, side and behind. Hemiplegic: circumducted stiff leg with UE flexed. Ataxic: wide-based, irregular, staggering. Spastic: scissoring from hip adductor overactivity. Festinating: short, accelerating steps typical of Parkinson's. Steppage: high-stepping to clear a foot drop. Trendelenburg: contralateral pelvic drop from hip abductor weakness."
+        info={neuroExamLibraryData.gaitPattern}
       />
       <SelectField label="Assistive device" type="single" options={["None", "Cane", "Quad cane", "Walker/frame", "Ankle-foot orthosis (AFO)", "Parallel bars", "Wheelchair", "Other"]} value={d.device} onChange={(v) => set("device", v)} />
+      <SelectField label="Tandem gait (heel-to-toe)" type="single" options={["Normal", "Impaired", "Unable", "Not tested"]} value={d.tandemGait} onChange={(v) => set("tandemGait", v)} info={neuroExamLibraryData.tandemGait} />
       <SelectField label="Level of assistance" type="single" options={["Independent", "Supervision", "Contact guard", "Minimal assist", "Moderate assist", "Maximal assist", "Unable to ambulate"]} value={d.assistanceLevel} onChange={(v) => set("assistanceLevel", v)} />
       <div className="vitals-grid">
         <NumberField label="Gait speed" value={d.gaitSpeed} onChange={(v) => set("gaitSpeed", v)} unit="m/s" width="45%" />
@@ -1328,7 +1335,7 @@ function OutcomesSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="📊" title="Outcome Measures" sub="Record whichever standardised measures are relevant to this patient." />
-      <TextField label="MMSE / MoCA" value={d.cogScore} onChange={(v) => set("cogScore", v)} placeholder="e.g. MoCA 24/30" />
+      <TextField label="MMSE / MoCA" value={d.cogScore} onChange={(v) => set("cogScore", v)} placeholder="e.g. MoCA 24/30" info={neuroExamLibraryData.mocaMmse} />
       <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" />
       <NumberField label="Timed Up and Go (TUG)" value={d.tug} onChange={(v) => set("tug", v)} unit="sec" howTo="Stand from chair, walk 3m, turn, walk back, sit down. Over 13.5 sec is associated with increased fall risk." />
       <NumberField label="10-Metre Walk Test" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" />
