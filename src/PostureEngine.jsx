@@ -6659,8 +6659,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               // underneath the operator. Explicit Retake resumes the feed.
               <div>
                 <div style={{position:"relative",background:"#111",width:"100%",overflow:"hidden",borderRadius:0}}>
+                  {/* "contain", not "cover": this image already has the grid,
+                      plumb-line and landmark badges baked into it by drawOverlay,
+                      so cropping it to fill the box would cut those annotations
+                      off at the edges. */}
                   <img src={capturedImg} alt="Captured posture photo"
-                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"cover",background:"#111"}}/>
+                    style={{width:"100%",display:"block",maxHeight: isMobile?"72vh":"65vh",objectFit:"contain",background:"#111"}}/>
                   {analysing&&(
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)",color:"#fff",fontWeight:700,fontSize:"0.85rem"}}>
                       ⏳ Analysing…
@@ -6686,15 +6690,27 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       to stand much further back than necessary just so the small cropped preview
                       showed enough of them, with no reliable way to confirm full-body framing
                       before capturing. Now uses most of the vertical viewport on mobile instead. */}
+                  {/* objectFit MUST stay "contain" here and match the canvas below.
+                      It was "cover", which crops the frame to fill the box, while the
+                      overlay canvas was stretched to 100%x100% -- two different
+                      native-frame→screen mappings, so the grid/plumb-line/landmarks
+                      were drawn offset from the actual body whenever the camera's
+                      aspect ratio didn't match the box. Both elements are replaced
+                      elements with the same intrinsic size (native video W×H), so
+                      identical box + identical object-fit == pixel-identical mapping.
+                      "contain" also means the whole frame stays visible (letterboxed
+                      onto the #111 background) rather than being cropped, which is
+                      what full-body framing needs. */}
                   <video ref={videoRef} playsInline webkit-playsinline="true" muted autoPlay
                     style={{width:"100%",display:"block",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
                       maxHeight: isMobile?"72vh":"65vh",
-                      objectFit:"cover",background:"#111"}}/>
-                  {/* Canvas overlay — matches video flip */}
+                      objectFit:"contain",background:"#111"}}/>
+                  {/* Canvas overlay — matches video flip AND video object-fit */}
                   <canvas ref={overlayRef}
                     style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",
                       transform:camFacing==="user"?"scaleX(-1)":"none",
+                      objectFit:"contain",
                       pointerEvents:"none"}}/>
                   {/* Static positioning guide — visible before pose-detection locks on;
                       fades once `hasData` (see CaptureAlignmentGuide above for why). */}
