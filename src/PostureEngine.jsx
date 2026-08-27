@@ -3626,6 +3626,101 @@ function CaptureAlignmentGuide({ view, visible }) {
   );
 }
 
+// ─── Segment Alignment Report ─────────────────────────────────────────────────
+// Per-segment frontal summary (Head / Shoulders / Pelvis / Knees) in the row
+// format clinical posture tools use: the measured value, a classification word,
+// a severity chip, and the "margin of alignment" -- the tolerance the value is
+// judged against, which is just the mild threshold for that segment.
+//
+// Every value here is an ANGLE, deliberately. Angles are ratios of pixel
+// distances, so the frame's scale cancels out and this report is unaffected by
+// the height-calibration accuracy that every cm-based figure depends on.
+// Do not add cm rows here without revisiting that.
+function SegmentAlignmentReport({ measurements: m, view, PC }) {
+  if (!m) return null;
+  // Frontal-plane only: these measures compare left against right, which a
+  // sagittal photo cannot see (the far side is legitimately occluded).
+  const isFrontal = view === "anterior" || view === "posterior" || view === "back";
+  if (!isFrontal) return null;
+
+  // Image-left is the patient's RIGHT when facing the camera, and their LEFT
+  // when viewed from behind. Mirrors the inversion already applied to
+  // trunkLateralShift so the two cannot report opposite sides for one photo.
+  const sideFor = (v) => v > 0
+    ? (view === "anterior" ? "Left" : "Right")
+    : (view === "anterior" ? "Right" : "Left");
+
+  const rows = [
+    { label:"Head",      value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
+      neutral:"ALIGNED", word:(v)=>`TILT TO THE ${sideFor(v).toUpperCase()}` },
+    { label:"Shoulders", value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
+      neutral:"ALIGNED", word:(v)=>`ELEVATION TO THE ${sideFor(v).toUpperCase()}` },
+    { label:"Pelvis",    value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
+      neutral:"ALIGNED", word:(v)=>`OBLIQUITY TO THE ${sideFor(v).toUpperCase()}` },
+    // Sign convention taken from buildFindings: negative = valgus (medial).
+    { label:"Right Knee",value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
+      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
+    { label:"Left Knee", value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
+      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
+  ].filter(r => r.value !== null && r.value !== undefined && !Number.isNaN(r.value));
+
+  if (!rows.length) return null;
+
+  const sevMeta = (s) =>
+    s === "high"     ? { label:"Marked",   colour:PC.red }
+  : s === "moderate" ? { label:"Moderate", colour:"#c2410c" }
+  : s === "mild"     ? { label:"Mild",     colour:PC.yellow }
+  :                    { label:"Normal",   colour:PC.green };
+
+  return (
+    <div style={{padding:"12px 0"}}>
+      <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.text,textTransform:"uppercase",
+        letterSpacing:"1px",marginBottom:10}}>Segment Alignment</div>
+
+      {rows.map(({label,value,th,neutral,word}) => {
+        const abs = Math.abs(value);
+        const sev = classifySeverity(abs, th);
+        const meta = sevMeta(sev);
+        // Marker position across the bar, saturating at the severe threshold.
+        const pct = Math.min(abs / th.severe, 1) * 100;
+        return (
+          <div key={label} style={{padding:"10px 0",borderBottom:`1px solid ${PC.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+              <span style={{fontSize:"0.82rem",fontWeight:700,color:PC.text}}>{label}</span>
+              <span style={{fontSize:"0.95rem",fontWeight:800,color:meta.colour}}>
+                {value.toFixed(1)}°
+              </span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginTop:3}}>
+              <span style={{fontSize:"0.7rem",fontWeight:700,color:PC.muted,letterSpacing:"0.3px"}}>
+                {sev ? word(value) : neutral}
+              </span>
+              <span style={{padding:"2px 8px",borderRadius:20,fontSize:"0.65rem",fontWeight:800,
+                color:meta.colour,background:`${meta.colour}18`,border:`1px solid ${meta.colour}40`}}>
+                {meta.label}
+              </span>
+            </div>
+            <div style={{position:"relative",height:6,borderRadius:6,marginTop:8,
+              background:`linear-gradient(90deg, ${PC.green} 0%, ${PC.green} ${100*th.mild/th.severe}%, ${PC.yellow} ${100*th.mild/th.severe}%, ${PC.yellow} ${100*th.moderate/th.severe}%, ${PC.red} ${100*th.moderate/th.severe}%, ${PC.red} 100%)`,
+              opacity:0.85}}>
+              <div style={{position:"absolute",left:`${pct}%`,top:-3,width:2,height:12,
+                background:PC.text,transform:"translateX(-1px)",borderRadius:1}}/>
+            </div>
+            <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:5}}>
+              Margin of alignment: {th.mild}°
+            </div>
+          </div>
+        );
+      })}
+
+      <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:8,fontStyle:"italic",lineHeight:1.5}}>
+        Angle-based screen — independent of height calibration. Educational
+        screening only, not a diagnosis.
+      </div>
+    </div>
+  );
+}
+
 // ─── Finding Card ─────────────────────────────────────────────────────────────
 
 // ─── FindingsDisplay — Priority top 5 + show all toggle ──────────────────────
@@ -5683,6 +5778,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       {/* Findings tab */}
       {tab==="findings"&&measurements&&(
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
+          {/* Per-segment alignment summary — frontal/posterior only; renders
+              nothing for sagittal views or when no angle measure resolved. */}
+          <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}/>
           {/* Analysed photo preview — manual mode only, shown at top of findings */}
           {inputMode==="manual"&&manualAnalysed&&(objectUrlRef.current||uploadedImg)&&(
             <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
