@@ -1288,4 +1288,172 @@ export const neuroExamLibraryData = {
       note: "Always check pupil size/reactivity at baseline — roughly 20% of people have a small, physiological, non-pathological difference between pupils (physiological anisocoria).",
     },
   },
+
+  /* ===================== MEDIUM-PRIORITY ADDITIONS — CORTICAL SENSATION / TONE / REFLEXES / GAIT ===================== */
+
+  stereognosis: {
+    title: "Stereognosis",
+    icon: "🖐️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      image: null,
+      caption: "Eyes closed, identify a familiar object placed in the hand",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, hand relaxed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Place a familiar object (coin, key, paperclip) in the patient's hand and ask them to identify it by feel alone, without looking. Test each hand separately." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Requires intact primary sensation (light touch, proprioception) to be interpretable — test those first, since impaired stereognosis with impaired primary sensation isn't a cortical finding, it's just downstream of the peripheral loss." },
+        { tone: "amber", label: "⚠️ Tip", text: "Use objects the patient would recognise regardless of cultural or visual background — a coin and a key are safer defaults than something unfamiliar." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies object" },
+      { k: "Impaired", v: "Cannot identify despite intact primary sensation" },
+      { k: "Not testable", v: "Primary sensation too impaired to interpret" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, with normal primary sensation"],
+      abnormal: ["Impaired with intact primary sensation → astereognosis, localises to the contralateral parietal lobe (primary somatosensory cortex)"],
+      note: "Always confirm light touch and proprioception are intact in that hand before attributing a failed test to a cortical rather than peripheral cause.",
+    },
+  },
+
+  graphesthesia: {
+    title: "Graphesthesia",
+    icon: "✍️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      image: null,
+      caption: "Eyes closed, trace a number on the palm, patient identifies it",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, palm facing up and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Using a blunt object (pen cap, fingertip), trace a single-digit number on the patient's palm and ask them to identify it. Repeat with different numbers on each hand." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Like stereognosis, this requires intact primary sensation to be interpretable as a cortical sign — check light touch and proprioception first." },
+        { tone: "amber", label: "⚠️ Tip", text: "Trace numbers large enough and slowly enough that a correct identification reflects genuine cortical integration, not a lucky guess." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies traced number" },
+      { k: "Impaired", v: "Cannot identify despite intact primary sensation" },
+      { k: "Not testable", v: "Primary sensation too impaired to interpret" },
+    ]},
+    interpret: {
+      normal: ["Intact bilaterally, with normal primary sensation"],
+      abnormal: ["Impaired with intact primary sensation → localises to the contralateral parietal lobe, same significance as astereognosis"],
+      note: "Stereognosis and graphesthesia are both cortical sensory integration tests — an isolated deficit in one hand with normal primary sensation is a useful, focal parietal lobe finding.",
+    },
+  },
+
+  toneRigidity: {
+    title: "Rigidity Assessment (Cogwheel / Lead-pipe)",
+    icon: "🦾",
+    category: "Learn · Neuro · Tone / Reflexes",
+    perform: {
+      image: null,
+      caption: "Passively move the limb through range, feel for resistance quality",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, seated or supine, limb fully supported by the examiner." },
+        { tone: "blue", label: "🖐️ Technique", text: "Passively flex and extend the wrist or elbow at a slow, constant speed, independent of velocity (unlike spasticity, which is velocity-dependent). Ask the patient to perform a distracting task with the opposite limb (e.g. opening and closing the other fist) to bring out latent rigidity." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Cogwheel rigidity (a ratchety, catch-release quality, classic in Parkinson's) and lead-pipe rigidity (smooth, uniform resistance throughout range) are distinguishable by feel — document which pattern, not just 'rigid'." },
+        { tone: "amber", label: "⚠️ Tip", text: "Rigidity is present equally in both flexion and extension and doesn't vary with speed — this is what distinguishes it from spasticity (which is speed-dependent and direction-specific, typically a 'catch' only in one direction)." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "None", v: "Normal tone, no resistance beyond expected" },
+      { k: "Cogwheel", v: "Ratchety, catch-release resistance throughout range" },
+      { k: "Lead-pipe", v: "Smooth, uniform resistance throughout range" },
+      { k: "Mixed/unclear", v: "Pattern not clearly one or the other" },
+    ]},
+    interpret: {
+      normal: ["No rigidity, normal passive resistance"],
+      abnormal: ["Cogwheel rigidity → classic extrapyramidal (Parkinson's/parkinsonism) finding, especially with a resting tremor and bradykinesia", "Lead-pipe rigidity → also extrapyramidal, but seen without tremor overlay (e.g. some atypical parkinsonian syndromes)"],
+      note: "Distinguish carefully from spasticity (velocity-dependent, seen with corticospinal/UMN lesions) — the two have very different underlying pathology and different management.",
+    },
+  },
+
+  abdominalReflexes: {
+    title: "Superficial Abdominal Reflexes",
+    icon: "🔲",
+    category: "Learn · Neuro · Reflexes",
+    perform: {
+      image: null,
+      caption: "Lightly stroke each abdominal quadrant, watch for muscle contraction toward the stimulus",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient supine, abdomen relaxed and exposed, room warm (a cold or tense abdomen suppresses the response)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Lightly stroke each of the four abdominal quadrants from lateral to medial with a blunt object (handle end of a reflex hammer, or a wooden applicator). Observe for contraction of the underlying muscle, pulling the umbilicus toward the stimulated quadrant." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Upper quadrants test T7-T9, lower quadrants test T10-T12 — a level-specific absence can help localise a thoracic cord lesion." },
+        { tone: "amber", label: "⚠️ Tip", text: "Can be physiologically absent or diminished in obesity, multiparity, or after abdominal surgery — don't over-interpret absence in isolation without other UMN signs." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Present", v: "Umbilicus deviates toward the stimulated quadrant, all four quadrants" },
+      { k: "Diminished", v: "Weak or inconsistent response" },
+      { k: "Absent", v: "No visible contraction" },
+    ]},
+    interpret: {
+      normal: ["Present and symmetrical, all four quadrants"],
+      abnormal: ["Unilateral absence with other UMN signs (hyperreflexia, upgoing plantar) on the same side → supports a corticospinal tract lesion above the tested spinal level", "Bilateral absence alone, with no other findings, is often a normal variant (especially with the confounders above)"],
+      note: "This reflex is most useful when it's asymmetrical and paired with other UMN signs — an isolated bilateral absence is low-yield on its own.",
+    },
+  },
+
+  cornealReflex: {
+    title: "Corneal Reflex",
+    icon: "👁️",
+    category: "Learn · Neuro · Cranial Nerves",
+    perform: {
+      image: null,
+      caption: "Lightly touch the cornea with a wisp of cotton, watch for bilateral blink",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient looking away from the side being tested, to avoid a visual blink reflex confounding the result." },
+        { tone: "blue", label: "🖐️ Technique", text: "Approach from the side (out of the patient's direct line of sight) and lightly touch the edge of the cornea (not just the sclera) with a fine wisp of cotton wool. Observe for a blink in both the touched eye (direct) and the other eye (consensual)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The afferent limb is CN V (trigeminal, ophthalmic division) and the efferent limb is CN VII (facial) — an absent direct response with an intact consensual response on retesting the other side localises to CN V; an absent response on both sides when testing one eye but normal when testing the other localises to CN VII on the side that failed to blink." },
+        { tone: "amber", label: "⚠️ Tip", text: "Contact lens wearers can have a physiologically reduced corneal reflex from chronic corneal desensitisation — ask about lens wear before interpreting a reduced response." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Present", v: "Brisk bilateral blink, both sides tested" },
+      { k: "Reduced", v: "Sluggish or partial blink" },
+      { k: "Absent", v: "No blink response" },
+    ]},
+    interpret: {
+      normal: ["Present bilaterally, both direct and consensual"],
+      abnormal: ["Absent direct response, intact consensual on the other side → CN V (afferent) lesion on the tested side", "Absent blink in the eye being watched regardless of which side is touched → CN VII (efferent) lesion on that side"],
+      note: "A reduced or absent corneal reflex, especially with facial numbness or weakness, warrants correlating with the rest of the CN V/VII exam findings rather than being read in isolation.",
+    },
+  },
+
+  gaitPattern: {
+    title: "Gait Pattern Recognition",
+    icon: "🚶",
+    category: "Learn · Neuro · Gait",
+    perform: {
+      image: null,
+      caption: "Observe from front, side, and behind over several strides",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Clear walkway, adequate lighting, patient in appropriate footwear (or barefoot if assessing foot clearance/positioning)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Watch the patient walk from the front, side, and behind over at least several full strides each, before naming a pattern — a single glance can miss the diagnostic phase of gait." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Hemiplegic: circumducted stiff leg with flexed UE. Ataxic: wide-based, irregular, staggering. Spastic: scissoring from hip adductor overactivity. Festinating: short, accelerating steps typical of Parkinson's. Steppage: high-stepping to clear a foot drop. Trendelenburg: contralateral pelvic drop from hip abductor weakness." },
+        { tone: "amber", label: "⚠️ Tip", text: "Name the pattern AND describe what you actually observed (e.g. 'right circumduction with flexed right UE, consistent with hemiplegic pattern') — the description survives even if the pattern label is later disputed or refined." },
+      ],
+    },
+    scaleLabel: "Common patterns",
+    scale: { type: "table", rows: [
+      { k: "Hemiplegic", v: "Circumducted stiff leg, flexed UE — post-stroke/UMN" },
+      { k: "Ataxic", v: "Wide-based, irregular, staggering — cerebellar" },
+      { k: "Spastic (scissoring)", v: "Hip adductor overactivity — bilateral UMN (e.g. cerebral palsy, myelopathy)" },
+      { k: "Festinating", v: "Short, accelerating steps — Parkinson's" },
+      { k: "Steppage", v: "High-stepping to clear foot drop — peripheral nerve (e.g. common peroneal)" },
+      { k: "Trendelenburg", v: "Contralateral pelvic drop — hip abductor weakness" },
+    ]},
+    interpret: {
+      normal: ["Normal reciprocal gait, no compensations"],
+      abnormal: ["Any consistent pattern above → correlates with a specific lesion location/type, and should be cross-checked against tone, MMT, and sensory findings"],
+      note: "A mixed or atypical pattern is common and worth describing in plain terms rather than forcing it into a single named category.",
+    },
+  },
 };

@@ -1133,6 +1133,7 @@ function CranialNervesSection({ data, setData }) {
       <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
       <SelectField label="Pupillary light reflex" type="single" options={["Normal", "Sluggish", "Fixed", "Anisocoria", "Not tested"]} value={d.pupillaryLight} onChange={(v) => set("pupillaryLight", v)} info={neuroExamLibraryData.pupillaryLight} />
       <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} info={neuroExamLibraryData.cn5} />
+      <SelectField label="Corneal reflex" type="single" options={["Present", "Reduced", "Absent", "Not tested"]} value={d.cornealReflex} onChange={(v) => set("cornealReflex", v)} info={neuroExamLibraryData.cornealReflex} />
       <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} info={neuroExamLibraryData.cn7} />
       <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} info={neuroExamLibraryData.cn8} />
       <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} info={neuroExamLibraryData.cn910} />
@@ -1154,8 +1155,8 @@ function SensorySection({ data, setData }) {
       <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." />
       <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
       <div className="subheading">Cortical sensation</div>
-      <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} howTo="With eyes closed, ask the patient to identify a common object placed in their hand by feel alone." />
-      <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} howTo="With eyes closed, trace a number or letter on the patient's palm and ask them to identify it." />
+      <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
+      <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} info={neuroExamLibraryData.graphesthesia} />
       <SelectField label="Two-point discrimination" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.twoPoint} onChange={(v) => set("twoPoint", v)} info={neuroExamLibraryData.twoPoint} />
       <TextArea label="Additional sensory notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
@@ -1192,7 +1193,7 @@ function ToneReflexSection({ data, setData }) {
     <>
       <SectionIntro icon="⚡" title="Tone / Reflexes" />
       <div className="subheading">Muscle tone</div>
-      <LRGrid label="Overall tone type" rows={["UE", "LE"]} options={TONE_TYPES} value={d.toneType || {}} onChange={(v) => set("toneType", v)} />
+      <LRGrid label="Overall tone type" rows={["UE", "LE"]} options={TONE_TYPES} value={d.toneType || {}} onChange={(v) => set("toneType", v)} info={neuroExamLibraryData.toneRigidity} />
       <LRGrid
         label="Modified Ashworth Scale (spastic muscle groups)"
         rows={["Elbow flexors", "Wrist flexors", "Hip adductors", "Knee extensors", "Ankle plantarflexors"]}
@@ -1227,6 +1228,7 @@ function ToneReflexSection({ data, setData }) {
       />
       <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} info={neuroExamLibraryData.clonus} />
       <SelectField label="Hoffmann's sign" type="single" options={["Negative", "Positive", "Not tested"]} value={d.hoffmann} onChange={(v) => set("hoffmann", v)} info={neuroExamLibraryData.hoffmann} />
+      <SelectField label="Superficial abdominal reflexes" type="single" options={["Present", "Diminished", "Absent", "Not tested"]} value={d.abdominalReflexes} onChange={(v) => set("abdominalReflexes", v)} info={neuroExamLibraryData.abdominalReflexes} />
     </>
   );
 }
@@ -1286,7 +1288,7 @@ function GaitSection({ data, setData }) {
         options={GAIT_PATTERNS}
         value={d.pattern}
         onChange={(v) => set("pattern", v)}
-        howTo="Observe from front, side and behind. Hemiplegic: circumducted stiff leg with UE flexed. Ataxic: wide-based, irregular, staggering. Spastic: scissoring from hip adductor overactivity. Festinating: short, accelerating steps typical of Parkinson's. Steppage: high-stepping to clear a foot drop. Trendelenburg: contralateral pelvic drop from hip abductor weakness."
+        info={neuroExamLibraryData.gaitPattern}
       />
       <SelectField label="Assistive device" type="single" options={["None", "Cane", "Quad cane", "Walker/frame", "Ankle-foot orthosis (AFO)", "Parallel bars", "Wheelchair", "Other"]} value={d.device} onChange={(v) => set("device", v)} />
       <SelectField label="Tandem gait (heel-to-toe)" type="single" options={["Normal", "Impaired", "Unable", "Not tested"]} value={d.tandemGait} onChange={(v) => set("tandemGait", v)} info={neuroExamLibraryData.tandemGait} />
