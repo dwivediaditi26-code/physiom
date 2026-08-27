@@ -289,11 +289,20 @@ export function orthoStyles() {
         .popover-check { font-size: 12px; }
         .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 11px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
 
-        .segmented { display: flex; background: ${BRAND.purpleFaint}; border-radius: 12px; padding: 4px; gap: 4px; }
+        /* Refined-chip look (2026-08-27, user request) -- individually
+           bordered pills instead of the old shared lavender tray, applied
+           to every Segmented control via these same class names so no
+           call site needed to change. */
+        .segmented { display: flex; flex-wrap: wrap; gap: 8px; }
         .segmented-wrap { flex-wrap: wrap; }
-        .seg-btn { flex: 1; border: none; background: transparent; color: ${BRAND.gray}; padding: 11px 8px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 40px; min-width: 64px; }
+        .seg-btn {
+          flex: 0 1 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink};
+          padding: 10px 14px; border-radius: 11px; font-size: 13px; font-weight: 600; cursor: pointer;
+          min-height: 40px; transition: transform .1s ease-out, box-shadow .1s ease-out, background .1s ease-out;
+        }
         .segmented-wrap .seg-btn { flex: 0 1 auto; }
-        .seg-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.12); }
+        .seg-btn:active { transform: scale(.95); }
+        .seg-active { background: ${BRAND.purple}; color: #fff; border-color: ${BRAND.purple}; box-shadow: 0 4px 10px rgba(108,77,255,.24); }
 
         /* Segmented variant="chips" -- individually bordered pills instead
            of the shared lavender tray above, for pickers like Treatment
