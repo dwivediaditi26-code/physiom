@@ -341,7 +341,7 @@ function techniqueEntryForm(type, form, set) {
         <>
           <div className="row-2">
             <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
-            <Segmented label="Laterality" options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+            <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
           </div>
           <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
           <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />

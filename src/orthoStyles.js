@@ -16,7 +16,7 @@ export function orthoStyles() {
         }
         .app-inner {
           width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column;
-          background: #fff; position: relative;
+          background: #fff; position: relative; overflow-x: hidden; overflow-y: visible;
         }
         @media (min-width: 860px) {
           .app-shell { align-items: flex-start; padding: 24px 0; }
