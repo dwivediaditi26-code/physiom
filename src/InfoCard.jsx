@@ -88,7 +88,8 @@ function normalizeImages(perform) {
 function PerformPane({ perform }) {
   const slots = normalizeImages(perform);
   const [idx, setIdx] = useState(0);
-  useEffect(() => { setIdx(0); }, [perform]);
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => { setIdx(0); setFullscreen(false); }, [perform]);
   const active = slots[Math.min(idx, slots.length - 1)];
 
   return (
@@ -96,9 +97,12 @@ function PerformPane({ perform }) {
       {/* Image slot(s) — pass perform.image (single) or perform.images (up
           to 3, each a URL or {src,label}) once real photos exist; until
           then this shows a placeholder per slot so the layout never has
-          to change when photos are added one at a time. */}
+          to change when photos are added one at a time. Tapping a real
+          photo opens it full-screen (ImageLightbox below) -- same
+          renderer for every Cardio and Neuro card, so this applies
+          everywhere at once. */}
       {active.src ? (
-        <div style={s.illusImg}>
+        <div style={{ ...s.illusImg, cursor: "pointer" }} onClick={() => setFullscreen(true)} role="button" aria-label="View photo full screen">
           <img src={active.src} alt={active.label || perform.caption || ""} style={s.illusImgTag} />
           {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
         </div>
@@ -129,7 +133,39 @@ function PerformPane({ perform }) {
           <div style={s.boxBody}>{b.text}</div>
         </div>
       ))}
+      {fullscreen && active.src && (
+        <ImageLightbox slots={slots} idx={idx} setIdx={setIdx} caption={perform.caption} onClose={() => setFullscreen(false)} />
+      )}
     </>
+  );
+}
+
+// Full-screen photo viewer -- portalled above InfoCard's own overlay
+// (higher z-index) so it works identically wherever InfoCard is used
+// (Cardio, Neuro). Tap the backdrop or the close button to dismiss; tap
+// a dot to page between the card's other photos without leaving fullscreen.
+function ImageLightbox({ slots, idx, setIdx, caption, onClose }) {
+  const active = slots[idx];
+  return createPortal(
+    <div style={s.lightboxDim} onClick={onClose}>
+      <button type="button" style={s.lightboxClose} onClick={onClose} aria-label="Close full-screen photo">✕</button>
+      <img src={active.src} alt={active.label || caption || ""} style={s.lightboxImg} onClick={(e) => e.stopPropagation()} />
+      {(active.label || caption) && <div style={s.lightboxCap}>{active.label || caption}</div>}
+      {slots.filter((sl) => sl.src).length > 1 && (
+        <div style={s.imgDots} onClick={(e) => e.stopPropagation()}>
+          {slots.map((sl, i) => sl.src && (
+            <span
+              key={i}
+              onClick={() => setIdx(i)}
+              style={{ ...s.imgDot, ...(i === idx ? s.imgDotOn : {}), background: i === idx ? PURPLE : "rgba(255,255,255,.4)" }}
+              role="button"
+              aria-label={`Photo ${i + 1} of ${slots.length}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>,
+    document.body
   );
 }
 
@@ -235,6 +271,18 @@ const s = {
   imgDots: { display: "flex", justifyContent: "center", gap: 6, marginTop: -3, marginBottom: 10 },
   imgDot: { width: 6, height: 6, borderRadius: "50%", background: "#E3DEF0", cursor: "pointer" },
   imgDotOn: { width: 16, borderRadius: 4, background: PURPLE },
+  lightboxDim: {
+    position: "fixed", inset: 0, zIndex: 300, background: "rgba(10,5,25,.94)",
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+    padding: "24px 16px", gap: 14,
+  },
+  lightboxClose: {
+    position: "absolute", top: 16, right: 16, width: 36, height: 36, borderRadius: "50%",
+    border: "none", background: "rgba(255,255,255,.14)", color: "#fff", fontSize: 16, fontWeight: 700,
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  lightboxImg: { maxWidth: "100%", maxHeight: "78vh", objectFit: "contain", borderRadius: 12, cursor: "default" },
+  lightboxCap: { color: "#E5E1F5", fontSize: 13, textAlign: "center", maxWidth: 480, padding: "0 12px" },
   box: { background: "#FAF9FD", border: `1px solid ${LINE}`, borderRadius: 12, padding: "9px 10px", marginBottom: 8 },
   boxLabel: { fontSize: 8.5, fontWeight: 800, letterSpacing: ".05em", color: PURPLE, textTransform: "uppercase", marginBottom: 3 },
   boxBody: { fontSize: 11, color: INK, lineHeight: 1.45 },
