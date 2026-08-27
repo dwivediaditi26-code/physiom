@@ -165,25 +165,40 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
 
 /* ---------- Individual-item cards (ROM / MMT / Special Tests / Observation) ---------- */
 
-function ItemCardShell({ label, sublabel, answered, whyLines, howLines, howEyebrow = "HOW TO PERFORM", children }) {
+// Collapsed by default -- a single compact row (name + optional value
+// summary + Why?/How?) -- expanding only the actual input widget
+// (`children`) on tap. Previously every named item (every ROM movement,
+// every MMT muscle, every special test) rendered its FULL input widget
+// inline and always expanded, which is what made a single Suggested
+// Objective step run 6000+px of scroll for one region. Why?/How? stay
+// visible in the collapsed row so a clinician can still learn about a
+// test without opening it to fill it in.
+function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "HOW TO PERFORM", children }) {
+  const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(null);
   return (
-    <div className={"obj-card" + (answered ? " obj-card-active" : "")}>
-      <div className="obj-card-top">
-        <span className="obj-card-badge obj-card-badge-ai">✨ Suggested</span>
-        {answered && <span className="obj-card-check">✓ Recorded</span>}
+    <div className={"obj-item" + (answered ? " obj-item-answered" : "")}>
+      <div className="obj-item-row" onClick={() => setOpen((o) => !o)} role="button">
+        <div className="obj-item-row-label">
+          <span className="obj-item-row-name">{label}</span>
+          {sublabel && <span className="obj-item-row-sub">{sublabel}</span>}
+        </div>
+        <div className="obj-item-row-right">
+          {answered && summary && <span className="obj-item-row-summary">{summary}</span>}
+          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("why"); }}>
+            Why?
+          </button>
+          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("how"); }}>
+            How?
+          </button>
+          <span className={"obj-item-chevron" + (open ? " open" : "")}>⌄</span>
+        </div>
       </div>
-      <div className="obj-card-title">{label}</div>
-      {sublabel && <div className="obj-card-reason">{sublabel}</div>}
-      <div style={{ marginTop: 8 }}>{children}</div>
-      <div className="obj-card-actions">
-        <button type="button" className="obj-card-link" onClick={() => setSheet("why")}>
-          Why?
-        </button>
-        <button type="button" className="obj-card-link" onClick={() => setSheet("how")}>
-          How?
-        </button>
-      </div>
+      {open && (
+        <div className="obj-item-body" onClick={(e) => e.stopPropagation()}>
+          {children}
+        </div>
+      )}
       <LineSheet open={sheet === "why"} onClose={() => setSheet(null)} eyebrow="WHY THIS ASSESSMENT?" label={label} lines={whyLines} />
       <LineSheet open={sheet === "how"} onClose={() => setSheet(null)} eyebrow={howEyebrow} label={label} lines={howLines} />
     </div>
@@ -199,8 +214,10 @@ function RomItemCard({ item, romData, setRom }) {
   }
   const answered = val.left || val.right;
   const norm = meta.normal != null ? `N=${meta.normal}${meta.unit || "°"}` : null;
+  const unit = meta.unit || "°";
+  const summary = [val.left && `L ${val.left}${unit}`, val.right && `R ${val.right}${unit}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} whyLines={romWhy(meta)} howLines={romHow(meta)}>
+    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={romWhy(meta)} howLines={romHow(meta)}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -226,8 +243,9 @@ function MmtItemCard({ item, mmtData, setMmt }) {
     setMmt(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
   }
   const answered = val.left || val.right;
+  const summary = [val.left && `L ${val.left}`, val.right && `R ${val.right}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)}>
+    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -275,8 +293,9 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
   }
   const options = meta.options || ["Negative", "Positive"];
   const answered = isSideless ? !!raw : !!(raw && typeof raw === "object" && raw[currentSide]);
+  const summary = answered ? [currentSide && !isSideless ? currentSide[0].toUpperCase() + currentSide.slice(1) : null, currentValue].filter(Boolean).join(" — ") : "";
   return (
-    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} whyLines={specialWhy(meta)} howLines={specialHow(meta)}>
+    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} summary={summary} whyLines={specialWhy(meta)} howLines={specialHow(meta)}>
       {!isSideless && (
         <div className="obj-item-side-row">
           {["Right", "Left", "Bilateral"].map((s) => (
@@ -310,7 +329,7 @@ function ObservationItemCard({ item, obsData, setPostureRegion }) {
     setPostureRegion(regionKey, view, itemId, value === o ? "" : o);
   }
   return (
-    <ItemCardShell label={label} answered={!!value} whyLines={obsWhy(meta)} howLines={obsHow()}>
+    <ItemCardShell label={label} answered={!!value} summary={value || ""} whyLines={obsWhy(meta)} howLines={obsHow()}>
       <div className="test-radio-row">
         {(meta.options || []).map((o) => (
           <button type="button" key={o} className={"test-radio" + (value === o ? " test-radio-selected" : "")} onClick={() => pick(o)}>
