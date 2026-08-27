@@ -14,6 +14,12 @@
 
 const PAIN_CHARACTER_OPTIONS = ["Dull", "Sharp", "Burning", "Throbbing", "Aching", "Shooting", "Stabbing"];
 
+// The 7 ids OUTPATIENT_CONDITIONS (OrthoOutpatientAssessment.jsx) already
+// understands -- /api/parse's conditionCategory field is constrained to
+// exactly these, so no fuzzy matching needed, just a validity check
+// against a value that could technically arrive missing/malformed.
+const VALID_CONDITION_CATEGORIES = ["arthritis", "softTissue", "spine", "sportsOveruse", "postSurgicalFollowUp", "painFunctional", "other"];
+
 const SYMPTOM_PATTERN_MAP = {
   "Constant — always present, varies in intensity": "Constant",
   "Intermittent — comes and goes": "Intermittent",
@@ -52,6 +58,8 @@ export function mapParseResultToOrthoUpdates(result = {}) {
   if (mappedPattern) pain.pattern = mappedPattern;
   else if (Array.isArray(result.nightSymptoms) && result.nightSymptoms.length) pain.pattern = "Night pain";
 
+  const conditionCategory = VALID_CONDITION_CATEGORIES.includes(result.conditionCategory) ? result.conditionCategory : null;
+
   return {
     subjective,
     pain,
@@ -59,5 +67,10 @@ export function mapParseResultToOrthoUpdates(result = {}) {
     missingInfo: [],
     confidence: result._confidence || {},
     sourceQuotes: result._sourceQuotes || {},
+    // Only meaningful when it's a real, specific bucket -- "other"/null
+    // carries no information the wizard should act on (nothing to
+    // re-promote steps for), so the caller only needs to check this is
+    // truthy and not "other".
+    conditionCategory,
   };
 }

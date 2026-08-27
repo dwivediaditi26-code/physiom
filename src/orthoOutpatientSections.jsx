@@ -94,7 +94,7 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
@@ -106,6 +106,18 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       subjective: { ...prev.subjective, ...updates.subjective },
       pain: { ...prev.pain, ...updates.pain },
     }));
+    // Real fix for "AI Assisted Assessment always suggests generic Objective
+    // tests" -- the wizard was hardcoding condition="general" for the whole
+    // session regardless of what the patient's own narrative describes.
+    // onConditionDetected (only passed when this is that AI-assisted
+    // "general" entry -- see OrthoOutpatientAssessment.jsx) promotes the
+    // matching OUTPATIENT_CONDITIONS bucket the same way picking it
+    // manually on the Condition-wise screen would, so Suggested Objective
+    // (orthoObjectiveSuggestions.js reads `condition`) actually tailors its
+    // suggestions instead of only ever showing the baseline set.
+    if (onConditionDetected && updates.conditionCategory && updates.conditionCategory !== "other") {
+      onConditionDetected(updates.conditionCategory);
+    }
   }
 
   return (
@@ -114,6 +126,9 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
         <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
+      {detectedConditionLabel && (
+        <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
+      )}
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       <div className="row-2">
         <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />

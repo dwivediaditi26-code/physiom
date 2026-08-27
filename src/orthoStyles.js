@@ -496,6 +496,22 @@ export function orthoStyles() {
         .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
         .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
 
+        /* Collapsed-by-default item row (ItemCardShell) -- replaces every
+           named ROM/MMT/Special Test/Observation item always rendering its
+           full input widget expanded, which is what made a single
+           Suggested Objective step run thousands of px of scroll. */
+        .obj-item { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; margin-bottom: 6px; overflow: hidden; }
+        .obj-item-answered { border-color: ${BRAND.purple}; }
+        .obj-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
+        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .obj-item-row-name { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-item-row-sub { font-size: 11px; color: ${BRAND.gray}; }
+        .obj-item-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .obj-item-row-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+        .obj-item-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
+        .obj-item-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
+        .obj-item-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
+
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
         .review-row-label { flex: 1; }
