@@ -266,13 +266,13 @@ export function TreatmentPlanSection({ data, setData }) {
    how every other section here stores its own namespaced data.
    ============================================================ */
 const TECHNIQUE_TYPES = [
-  { key: "manual", label: "Joint Mob" },
-  { key: "dn", label: "Dry Needling" },
-  { key: "st", label: "Soft Tissue" },
-  { key: "taping", label: "Taping" },
-  { key: "us", label: "Ultrasound" },
-  { key: "electro", label: "Electrotherapy" },
-  { key: "other", label: "Other" },
+  { key: "manual", label: "Joint Mob", icon: "🦴" },
+  { key: "dn", label: "Dry Needling", icon: "🪡" },
+  { key: "st", label: "Soft Tissue", icon: "👐" },
+  { key: "taping", label: "Taping", icon: "🎗️" },
+  { key: "us", label: "Ultrasound", icon: "〰️" },
+  { key: "electro", label: "Electrotherapy", icon: "⚡" },
+  { key: "other", label: "Other", icon: "➕" },
 ];
 const MAITLAND_GRADES = [
   { grade: "I", desc: "Small amplitude, beginning of range — pain control, acute" },
@@ -341,7 +341,7 @@ function techniqueEntryForm(type, form, set) {
         <>
           <div className="row-2">
             <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
-            <Segmented label="Laterality" options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
+            <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
           </div>
           <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
           <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />
@@ -459,7 +459,12 @@ export function TreatmentTechniquesSection({ data, setData }) {
       <SectionIntro icon="🤲" title="Treatment Techniques" info="Log each manual therapy, dry needling, soft tissue, taping, ultrasound, or electrotherapy intervention given this session." />
 
       <div className="subheading">{editingId ? "Edit technique" : "Add a technique"}</div>
-      <Segmented wrap options={TECHNIQUE_TYPES.map((t) => t.label)} value={TECHNIQUE_TYPES.find((t) => t.key === form.type)?.label} onChange={(label) => fset("type", TECHNIQUE_TYPES.find((t) => t.label === label)?.key || "manual")} />
+      <Segmented
+        variant="chips"
+        options={TECHNIQUE_TYPES.map((t) => ({ label: t.label, icon: t.icon }))}
+        value={TECHNIQUE_TYPES.find((t) => t.key === form.type)?.label}
+        onChange={(label) => fset("type", TECHNIQUE_TYPES.find((t) => t.label === label)?.key || "manual")}
+      />
       {techniqueEntryForm(form.type, form, fset)}
       <TextArea label="Patient response during technique" value={form.response} onChange={(v) => fset("response", v)} placeholder="e.g. pain reproduction +, ROM improved, comfortable" />
       {form.type !== "dn" && form.type !== "taping" && <TextArea label="Additional notes" value={form.notes} onChange={(v) => fset("notes", v)} />}

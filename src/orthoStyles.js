@@ -16,7 +16,7 @@ export function orthoStyles() {
         }
         .app-inner {
           width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column;
-          background: #fff; position: relative;
+          background: #fff; position: relative; overflow-x: hidden; overflow-y: visible;
         }
         @media (min-width: 860px) {
           .app-shell { align-items: flex-start; padding: 24px 0; }
@@ -295,6 +295,20 @@ export function orthoStyles() {
         .segmented-wrap .seg-btn { flex: 0 1 auto; }
         .seg-active { background: #fff; color: ${BRAND.purple}; box-shadow: 0 1px 4px rgba(20,10,60,.12); }
 
+        /* Segmented variant="chips" -- individually bordered pills instead
+           of the shared lavender tray above, for pickers like Treatment
+           Techniques' type selector where that tray reads as visually flat. */
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip-btn {
+          display: flex; align-items: center; gap: 6px;
+          border: 1.5px solid ${BRAND.border}; border-radius: 11px; padding: 9px 13px;
+          background: #fff; color: ${BRAND.ink}; font-size: 13px; font-weight: 600; cursor: pointer;
+          font-family: inherit; transition: transform .1s ease-out, box-shadow .1s ease-out, background .1s ease-out;
+        }
+        .chip-btn:active { transform: scale(.95); }
+        .chip-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.24); }
+        .chip-icon { font-size: 14px; }
+
         .vitals-grid { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 6px; }
         .vital-field { flex: 1 1 45%; min-width: 130px; }
         .vital-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
@@ -490,7 +504,15 @@ export function orthoStyles() {
            physiom's own fixed bottom nav bar (.pm-bnav, ~59px). */
         .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
-        .primary-btn { flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff; padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(108,77,255,.28); min-height: 46px; }
+        .primary-btn {
+          flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
+          padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
+          box-shadow: 0 6px 16px rgba(108,77,255,.28); min-height: 46px;
+          position: relative; overflow: hidden;
+          transition: transform .1s ease-out, box-shadow .1s ease-out, filter .1s ease-out;
+        }
+        /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
+        .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
         .saved-indicator { font-size: 11px; color: ${BRAND.green}; font-weight: 600; display: flex; align-items: center; gap: 4px; padding: 0 2px 8px; }
 

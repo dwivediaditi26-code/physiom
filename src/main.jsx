@@ -4,6 +4,7 @@ import App from './App.jsx'
 import { inject } from '@vercel/analytics'
 import * as Sentry from '@sentry/react'
 import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
+import { installButtonRipple } from './rippleEffect.js'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
 
@@ -14,6 +15,12 @@ inject() // Enables Vercel Analytics — tracks page views and visitors automati
 // interpretation -> SOAP pipeline and see the results. See
 // aiIntakeTestHarness.js for what it does and why it's opt-in only.
 installAiIntakeTestHarness()
+
+// Adds a real tap-press feel (depress + ripple) to every purple "primary"
+// button across the app -- was previously pure CSS with zero :active
+// feedback. See rippleEffect.js for why this is one global listener
+// instead of touching every .primary-btn call site.
+installButtonRipple()
 
 // Crash reporting — silently does nothing until VITE_SENTRY_DSN is set (see
 // README/session notes: create a free project at sentry.io, then add
