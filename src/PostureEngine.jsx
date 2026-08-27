@@ -5055,7 +5055,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       const loop=async()=>{
         if(!streamRef.current) return;
         const now=performance.now();
-        if(videoRef.current?.readyState>=2 && now-lastSend>=INTERVAL){
+        // Skip sending live video frames into the shared pose instance while
+        // a capture is being analysed (captureFrozenRef) -- otherwise this
+        // loop's send() races analysePhoto's own send() for the same
+        // onResults callback slot, and the captured-photo analysis can get
+        // resolved with a live-frame result instead of the still frame's.
+        if(!captureFrozenRef.current && videoRef.current?.readyState>=2 && now-lastSend>=INTERVAL){
           lastSend=now;
           try{ if(poseRef.current) await poseRef.current.send({image:videoRef.current}); }catch(_){}
         }
