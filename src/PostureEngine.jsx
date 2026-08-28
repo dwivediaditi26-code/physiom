@@ -5955,17 +5955,22 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               nothing for sagittal views or when no angle measure resolved. */}
           <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}
             photoUrl={objectUrlRef.current||uploadedImg||capturedImg} landmarks={landmarks}/>
-          {/* Analysed photo preview — was manual mode only ("shown at top of
-              findings"), even though AI Auto's own photo already gets the
-              identical overlay baked in elsewhere (the Capture tab's Layer-2
-              <img>, see PostureEngine.jsx capture panel). AI Auto users had
-              no way to see their annotated photo without leaving Findings.
+          {/* Analysed photo preview — was manual mode only. AI Auto's photo
+              gets the identical overlay baked in elsewhere (the Capture
+              tab's Layer-2 <img>), but on MOBILE the Capture and Findings
+              panels are mutually exclusive (mobilePanel display:block/none
+              toggle) and single-view analysis auto-navigates straight to
+              Findings, so a mobile AI-Auto user landed on Results with no
+              photo and had to tap back to Camera to see it.
+              On DESKTOP (isWide), Capture and Findings already render side
+              by side, always -- the photo was already visible there, so this
+              block is restricted to !isWide to avoid showing it twice.
               CanvasOverlayOnImage already draws the main grid/plumb/landmark
               overlay unconditionally off `landmarks` alone -- manualPlaced/
               manualPointDefs are a separate, additive layer only drawn when
               provided, so this generalises to AI Auto with no core-drawing
               changes, just omitting the manual-only props for that mode. */}
-          {((inputMode==="manual"&&manualAnalysed)||(inputMode==="ai"&&landmarks))
+          {((inputMode==="manual"&&manualAnalysed)||(inputMode==="ai"&&landmarks&&!isWide))
             &&(objectUrlRef.current||uploadedImg)&&(
             <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
               <img src={objectUrlRef.current||uploadedImg} alt="Analysed posture"
