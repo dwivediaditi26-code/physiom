@@ -6821,7 +6821,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </div>
           </div>
         )}
-        <FindingsDisplay findings={r.findings} PC={PC}/>
+        {/* Bug fix (2026-08-28, Aditi: "posture analysis is not showing
+            result in frontal plane when we click..if all things are
+            normal it still not showing anything") -- FindingsDisplay
+            returns null outright when r.findings is empty, which is the
+            correct/expected outcome for a frontal-plane capture with no
+            postural deviations (unlike lateral, buildFindings' frontal
+            branch has no synthetic "all normal" filler finding). With no
+            fallback here, a genuinely normal frontal result rendered as a
+            blank card below the score ring -- indistinguishable from the
+            analysis having silently failed. Mirrors the same empty-state
+            message the single-view Findings tab already shows. */}
+        {!r.findings || r.findings.length===0 ? (
+          <div style={{textAlign:"center",padding:"32px 16px",color:PC.muted,fontSize:"0.85rem"}}>
+            ✅ No significant postural deviations detected in {meta.label} view.
+          </div>
+        ) : (
+          <FindingsDisplay findings={r.findings} PC={PC}/>
+        )}
       </div>
     );
   }
@@ -6948,7 +6965,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           </div>
         )}
         {/* ── FINDINGS — Priority top 5 with expand ── */}
-        <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
+        {/* Same class of bug as renderViewResult above (2026-08-28, Aditi:
+            "make sure back and sagittal plan also do it") -- if every
+            captured view came back normal, mergedFindings is legitimately
+            empty and FindingsDisplay rendered nothing here too, with no
+            positive confirmation that the composite assessment actually
+            ran clean across all views. */}
+        {!mvComposite.mergedFindings || mvComposite.mergedFindings.length===0 ? (
+          <div style={{textAlign:"center",padding:"32px 16px",color:PC.muted,fontSize:"0.85rem"}}>
+            ✅ No significant postural deviations detected across the captured views.
+          </div>
+        ) : (
+          <FindingsDisplay findings={mvComposite.mergedFindings} PC={PC}/>
+        )}
       </div>
       )}
     </div>
