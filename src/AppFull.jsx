@@ -1910,19 +1910,37 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <div style={{padding:"22px 18px 24px"}}>
                       <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
                       <div style={{fontSize:"0.82rem",color:"#6B7280",marginBottom:20}}>Pick a specialty to start a new assessment.</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18}}>
+                      {/* Square speciality cards (2026-08-27, Aditi: "in
+                          assessment tab it should show square cards of
+                          speciality") -- replaces the old vertical row list;
+                          the By Speciality browsing grid that used to live
+                          on the Patients tab moved here instead, now paired
+                          with its actual purpose (starting a new assessment)
+                          rather than mixed into the plain patient list.
+                          gridTemplateColumns uses minmax/auto-fit rather than
+                          a literal "1fr 1fr" -- utils.jsx has a global mobile
+                          override that force-collapses any inline grid style
+                          containing that exact substring to 1 column below
+                          400px width, which combined with aspect-ratio:1
+                          turned each card into a near full-height square
+                          instead of a compact tile. auto-fit sidesteps that
+                          match entirely while still naturally going to 1
+                          column on genuinely narrow widths where 2×150px
+                          truly doesn't fit. */}
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:18}}>
                         {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
                           const clickable = st.live || st.id === "cardio";
                           return (
                             <button key={st.id} type="button"
                               onClick={()=>{ if(!clickable) return; startSpecialty(st); }}
-                              style={{display:"flex",alignItems:"center",gap:10,padding:"13px 14px",borderRadius:12,
+                              style={{position:"relative",aspectRatio:"1",maxWidth:180,display:"flex",flexDirection:"column",
+                                alignItems:"center",justifyContent:"center",gap:8,borderRadius:16,
                                 cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
                                 border:`1.5px solid ${clickable?st.color+"50":"#E5E7EB"}`,
-                                background:clickable?st.color+"10":"#F9FAFB",opacity:clickable?1:0.6,textAlign:"left"}}>
-                              <span style={{fontSize:"1.3rem"}}>{st.icon}</span>
-                              <span style={{flex:1,fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:"#9CA3AF"}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
-                              {!clickable && <span style={{fontSize:"0.65rem",fontWeight:800,padding:"2px 8px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                                background:clickable?st.color+"10":"#F9FAFB",opacity:clickable?1:0.6}}>
+                              {!clickable && <span style={{position:"absolute",top:8,right:8,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                              <span style={{fontSize:"1.8rem"}}>{st.icon}</span>
+                              <span style={{fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:"#9CA3AF"}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
                             </button>
                           );
                         })}

@@ -3885,81 +3885,51 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
   );
 }
 
-// -- Compact patient row for the redesigned Clinical landing page's Recent
-//    Patients list (2026-08-17) -- separate from PatientCard above (kept
-//    as-is, not reused elsewhere) so this row's much lighter layout
-//    doesn't have to fight PatientCard's card/button styling. Real data
-//    only: id/dx/updatedAt are the same fields PatientCard already reads,
-//    just displayed differently. Delete is a small X (secondary, matches
-//    the mockup's clean row) instead of a full button. --
-function PatientRowCompact({ patient, isActive, onEdit, onDelete, onProfile, isDesktop }) {
-  const pid = patient?.id ? "PT-" + patient.id.slice(0,6).toUpperCase() : "";
-  const dx = patient.lastDx || "No diagnosis yet";
+// -- Compact patient row for the Patients list (2026-08-27, minimalist
+//    redesign: whole row is a single tap into Profile, matching the
+//    reference "Name / Care setting • Diagnosis / day ›" layout, instead
+//    of two competing Edit/Profile buttons -- PatientProfileModal already
+//    has its own "Continue Assessment" action, so nothing is lost by
+//    dropping the row-level Edit button. Delete stays on the row (kept
+//    small/secondary, matching the reference's clean look) since
+//    PatientProfileModal has no patient-delete action of its own to move
+//    it to -- its own 🗑 button is for deleting an uploaded document, a
+//    different thing entirely. Speciality dropped from this row (2026-08-27,
+//    Aditi: "no speciality showing") -- speciality now lives only on its
+//    own Assessment sub-tab as square cards, not mixed into the plain
+//    patient list. --
+function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile }) {
   const day = relativeDay(patient.updatedAt);
-  // Desktop: actions sit inline on the same row as the avatar/name, sized
-  // to their content -- the mobile layout's flex:1 buttons stretched into
-  // enormous touch-target-width bars once the row itself got wide on a
-  // laptop screen (2026-08-25, laptop redesign).
-  const actions = (
-    <>
-      <button onClick={onEdit} style={{
-        padding: isDesktop?"7px 14px":"7px 10px",borderRadius:8,border:"none",background:"#7c3aed",
-        color:"#fff",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
-        flex: isDesktop?"0 0 auto":1,
-        display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-        ✏️ Edit Assessment
-      </button>
-      <button onClick={onProfile} style={{
-        padding: isDesktop?"7px 14px":"7px 10px",borderRadius:8,border:"1px solid #E5E7EB",background:"#fff",
-        color:"#374151",fontSize:"0.76rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
-        flex: isDesktop?"0 0 auto":1,
-        display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-        👤 Profile
-      </button>
-    </>
-  );
+  const subtitle = [careSettingLabel, patient.lastDx || "No diagnosis yet"].filter(Boolean).join(" • ");
   return (
-    <div style={{
-      padding:"10px 4px", borderBottom:"1px solid #F1F0FA",
+    <div onClick={onProfile} role="button" tabIndex={0} style={{
+      width:"100%",textAlign:"left",cursor:"pointer",
+      padding:"12px 4px", borderBottom:"1px solid #F1F0FA",
       background: isActive ? "#F5F3FF" : "transparent", borderRadius:10,
+      display:"flex",alignItems:"center",gap:12,
     }}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:44,height:44,borderRadius:"50%",background:avatarGrad(patient.id),
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:"0.8rem",fontWeight:800,color:"#fff",flexShrink:0}}>
-          {getInitials(patient.name)}
+      <div style={{width:44,height:44,borderRadius:"50%",background:avatarGrad(patient.id),
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:"0.8rem",fontWeight:800,color:"#fff",flexShrink:0}}>
+        {getInitials(patient.name)}
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {patient.name || "Unnamed patient"}
+          {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
         </div>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {patient.name || "Unnamed patient"}
-            {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
-          </div>
-          <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {pid} · {dx}
-          </div>
-        </div>
-        {isDesktop && <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>{actions}</div>}
-        <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
-          <button onClick={onDelete} title="Delete" style={{
-            background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
+        <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {subtitle}
         </div>
       </div>
-      {/* Two actions per patient: jump into the assessment workflow, or
-          open their profile -- back to two (2026-08-20, Aditi: "just be
-          one patient profile...not show speciality profile"). onProfile
-          itself now decides which profile that means (see the call site
-          below) -- Cardio/Neuro patients get the simple specialty hub,
-          everyone else gets the existing Ortho profile -- rather than
-          showing a confusing extra third button. Desktop renders these
-          inline above instead (see `actions`/isDesktop). */}
-      {!isDesktop && (
-        <div style={{display:"flex",gap:8,marginTop:8,marginLeft:56}}>
-          {actions}
-        </div>
-      )}
+      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
+        <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
+          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
+        <span style={{color:"#C4C4CE",fontSize:"0.95rem"}}>›</span>
+      </div>
     </div>
   );
 }
@@ -3975,45 +3945,46 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // Patient"/"Load Patient" buttons (embedded left false there), so
   // this stays backward compatible rather than a hard cutover.
   const closePanel = embedded ? (()=>{}) : onCloseProp;
-  // Recent Patients rows switch to a compact single-row desktop layout at
-  // this width instead of the mobile card's full-width stacked action
-  // buttons (2026-08-25, laptop redesign) -- see PatientRowCompact.
-  const [isDesktop, setIsDesktop] = useState(typeof window!=="undefined" && window.innerWidth>=1100);
-  useEffect(() => {
-    const fn = () => setIsDesktop(window.innerWidth>=1100);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
-  const [showAllPatients, setShowAllPatients] = useState(false);
   const [showTools, setShowTools] = useState(false);
-  // Specialty filter for the Clinical landing page's patient list. Matches
-  // the New Assessment specialty picker's STREAMS registry (AppFull.jsx) --
-  // duplicated here as a small static array rather than imported, since
-  // it's just 5 display labels/icons/colors, to avoid coupling this panel
-  // to AppFull.jsx's module scope.
+  // Speciality sub-filter (2026-08-27, Aditi: "put speciality as here
+  // subtopic") -- back as a filter, but as a second pill row nested under
+  // the care-setting pills instead of the earlier full card grid, which
+  // was removed from this tab per Aditi's separate "no speciality showing"
+  // request. Both filters compose (AND), same as filterCareSetting below.
   const [filterSpecialty, setFilterSpecialty] = useState("all");
-  // Bug fix (2026-08-20, Aditi: "clicking on this ortho neuro, cardio it
-  // doesnot show specific patient list...ortho shows..but neuro cardio
-  // doesnot") -- no patient-creation path anywhere actually sets
-  // `data.assessment_specialty` (grepped: only the old, unused intake-form
-  // fallback for non-live streams did), so filtering by it just showed
-  // "no matches" for every specialty including Ortho -- Ortho only looked
-  // like it worked because it's what most existing patients happen to be.
-  // Derive specialty from the data that actually exists instead: a patient
-  // with cardio/neuro wizard data is that specialty; everyone else is
-  // treated as Ortho (Pedia/Sports have no assessment tool yet, so nothing
-  // will ever match those filters -- consistent with their "SOON" badges).
   const specialtyOf = (p) => (p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho");
-  const CLINICAL_AREAS = [
-    { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed" },
-    { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488" },
-    { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626" },
-    { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777" },
-    { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c" },
+  const SPECIALTIES = [
+    { id:"ortho",  label:"Ortho" },
+    { id:"cardio", label:"Cardio" },
+    { id:"neuro",  label:"Neuro" },
+    { id:"sports", label:"Sports" },
+    { id:"pedia",  label:"Pedia" },
   ];
+  // Care setting (2026-08-27, Aditi: "each patient specify ipd opd
+  // outpatients etc") -- nothing in the intake or Ortho pathway wizard
+  // actually persists which pathway (IPD/Post-op/Outpatient) a patient was
+  // assessed under onto the shared patient record yet, so this derives a
+  // best-effort guess from field names that are unique to each pathway
+  // component (OrthoIPDAssessment.jsx / OrthoPostOpAssessment.jsx) and
+  // honestly defaults to Outpatient -- the pathway picker's default and by
+  // far the most common case -- rather than fabricating a setting with no
+  // basis. Once pathway gets written to the record for real, this starts
+  // reading real data with no call-site changes needed.
+  const careSettingOf = (p) => {
+    const d = p.data || {};
+    if (d.postOpDay || d.surgeryDate || d.surgeonInstructions) return "postop";
+    if (d.reductionMethod || d.amputationCause || d.recordReview) return "ipd";
+    return "outpatient";
+  };
+  const CARE_SETTINGS = [
+    { id:"outpatient", label:"Outpatient" },
+    { id:"ipd",         label:"IPD" },
+    { id:"postop",      label:"Post-op" },
+  ];
+  const [filterCareSetting, setFilterCareSetting] = useState("all");
   const [profilePatient, setProfilePatient] = useState(null);
   const [localPatients, setLocalPatients] = useState(patients);
   const fileRef = useRef(null);
@@ -4040,6 +4011,7 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   const filtered = localPatients
     .filter(p => {
       if (filterFlag && !p.hasRedFlags) return false;
+      if (filterCareSetting !== "all" && careSettingOf(p) !== filterCareSetting) return false;
       if (filterSpecialty !== "all" && specialtyOf(p) !== filterSpecialty) return false;
       if (!search) return true;
       const q = search.toLowerCase();
@@ -4055,12 +4027,11 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
 
-  // "Recent Patients" shows the top 5 most-recently-touched records by
-  // default (matches the mockup's short preview list) -- any active
-  // search/specialty filter, or tapping "View all", reveals the complete
-  // filtered list instead. Real underlying data either way, just capped.
-  const isNarrowed = !!search || filterSpecialty !== "all" || filterFlag;
-  const visiblePatients = (isNarrowed || showAllPatients) ? filtered : filtered.slice(0, 5);
+  // "All Patients" now always shows the complete filtered list (2026-08-27,
+  // Aditi: "list of all patient should show standalone") -- no more 5-item
+  // cap/"View all" toggle. isNarrowed just controls the section title
+  // ("Patients" once a search/filter is active vs "All Patients" by default).
+  const isNarrowed = !!search || filterCareSetting !== "all" || filterSpecialty !== "all" || filterFlag;
 
   const handleImportFile = (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -4089,10 +4060,13 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 const innerBody = (
     <div style={{flex:1,overflowY:embedded?"visible":"auto"}}>
 
-          {/* Header */}
-          <div style={{padding:"20px 18px 4px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{fontWeight:900,fontSize:"1.4rem",color:"#111827",letterSpacing:"-0.4px"}}>Clinical</div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {/* Header (2026-08-27, Aditi: minimalist "Patients" redesign) */}
+          <div style={{padding:"20px 18px 2px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+            <div>
+              <div style={{fontWeight:900,fontSize:"1.5rem",color:"#111827",letterSpacing:"-0.4px"}}>Patients</div>
+              <div style={{fontSize:"0.82rem",color:"#9CA3AF",marginTop:2}}>Organize and manage your patients</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginTop:2}}>
               <div style={{position:"relative",fontSize:"1.15rem"}}>
                 🔔
                 {redFlagCount>0 && (
@@ -4109,116 +4083,131 @@ const innerBody = (
             </div>
           </div>
 
-          {/* Search */}
+          {/* Search -- icon given a fixed-width box + centered line-height
+              (2026-08-27, Aditi: "the search bar magnifying glass is
+              overlapping") -- a global mobile stylesheet rule
+              (utils.jsx) forces `padding: 10px 12px !important` on every
+              input, which always won over this input's own inline
+              padding-left, no matter how large -- the icon and the "S" in
+              the placeholder were fighting for the same 12px inset
+              regardless. Fixed by taking the icon out of the input's own
+              box entirely: icon and input are flex siblings now, so the
+              forced padding only insets the input from its OWN left edge,
+              which flex has already pushed clear of the icon. */}
           <div style={{padding:"14px 18px 0"}}>
-            <div style={{position:"relative"}}>
-              <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",
-                fontSize:"0.85rem",color:"#9CA3AF"}}>🔍</span>
+            <div style={{display:"flex",alignItems:"center",gap:8,border:"1px solid #EEEDF5",
+              borderRadius:14,background:"#F8F7FC",paddingLeft:12}}>
+              <span style={{flexShrink:0,fontSize:"0.8rem",color:"#9CA3AF",pointerEvents:"none"}}>🔍</span>
               <input value={search} onChange={e=>setSearch(e.target.value)}
                 placeholder="Search patients…"
-                style={{width:"100%",border:"1px solid #EEEDF5",borderRadius:14,color:"#111827",background:"#F8F7FC",
-                  outline:"none",padding:"12px 14px 12px 38px",fontSize:"0.85rem",boxSizing:"border-box"}}/>
+                style={{flex:1,minWidth:0,border:"none",color:"#111827",background:"transparent",
+                  outline:"none",padding:"12px 14px 12px 0",fontSize:"0.85rem",boxSizing:"border-box"}}/>
             </div>
           </div>
 
-          {/* New Assessment CTA + Clinical Areas -- moved to their own
-              "Assessment" sub-tab in Clinical (2026-08-23, Aditi: "the
-              patient list should only show patient list") -- only shown
-              here in the non-embedded (Switch/Load Patient popup) context,
-              where there's no separate Assessment tab to send people to. */}
-          {!embedded && (
-            <>
-          <div style={{padding:"14px 18px 0"}}>
-            <button onClick={onNew}
-              style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-                border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
-                boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
-              ＋ New Assessment
-            </button>
+          {/* Care-setting filter pills (2026-08-27) -- All / Outpatient /
+              IPD / Post-op, for which pathway a patient was assessed under.
+              See careSettingOf above for why this is a best-effort
+              derivation, not stored data, until the Ortho pathway wizard
+              persists it for real. */}
+          <div style={{padding:"14px 18px 0",display:"flex",gap:8,overflowX:"auto"}}>
+            {[{id:"all",label:"All"}, ...CARE_SETTINGS].map(cs => {
+              const active = filterCareSetting === cs.id;
+              return (
+                <button key={cs.id} onClick={()=>setFilterCareSetting(cs.id)}
+                  style={{flexShrink:0,padding:"8px 16px",borderRadius:99,border:"none",
+                    background:active?"#7c3aed":"#F3F1FB",
+                    color:active?"#fff":"#6B7280",fontSize:"0.82rem",fontWeight:700,cursor:"pointer",
+                    whiteSpace:"nowrap"}}>
+                  {cs.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div style={{padding:"22px 18px 0"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-              <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>Clinical Areas</div>
-              <button onClick={()=>setFilterSpecialty("all")}
-                style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,color:"#7c3aed"}}>
-                View all →
+          {/* Speciality sub-filter (2026-08-27, Aditi: "put speciality as
+              here subtopic") -- a second, smaller pill row nested under
+              the care-setting pills above, instead of the earlier full
+              card grid (removed per Aditi's separate "no speciality
+              showing" request). Composes with the care-setting filter --
+              e.g. IPD + Neuro narrows to just IPD neuro patients. */}
+          <div style={{padding:"8px 18px 0",display:"flex",gap:6,overflowX:"auto"}}>
+            {[{id:"all",label:"All"}, ...SPECIALTIES].map(sp => {
+              const active = filterSpecialty === sp.id;
+              return (
+                <button key={sp.id} onClick={()=>setFilterSpecialty(sp.id)}
+                  style={{flexShrink:0,padding:"5px 12px",borderRadius:99,
+                    border:`1px solid ${active?"#7c3aed":"#EEEDF5"}`,
+                    background:active?"#F5F3FF":"#fff",
+                    color:active?"#7c3aed":"#6B7280",fontSize:"0.74rem",fontWeight:700,cursor:"pointer",
+                    whiteSpace:"nowrap"}}>
+                  {sp.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* New Assessment CTA -- only shown in the non-embedded (Switch/
+              Load Patient popup) context, where there's no separate
+              Assessment tab to send people to (2026-08-23). */}
+          {!embedded && (
+            <div style={{padding:"22px 18px 0"}}>
+              <button onClick={onNew}
+                style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                  border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
+                  boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
+                ＋ New Assessment
               </button>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",gap:6}}>
-              {CLINICAL_AREAS.map(a => {
-                const active = filterSpecialty === a.id;
-                return (
-                  <button key={a.id}
-                    onClick={()=>setFilterSpecialty(active ? "all" : a.id)}
-                    style={{background:"none",border:"none",cursor:"pointer",display:"flex",
-                      flexDirection:"column",alignItems:"center",gap:6,flex:1,padding:0}}>
-                    <div style={{width:52,height:52,borderRadius:"50%",background:a.color+"18",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem",
-                      boxShadow: active ? `0 0 0 2px ${a.color}` : "none"}}>
-                      {a.icon}
-                    </div>
-                    <div style={{fontSize:"0.74rem",fontWeight:600,color:active?a.color:"#374151"}}>{a.label}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-            </>
           )}
 
-          {/* Recent Patients */}
+          {/* All Patients -- standalone card (2026-08-27, Aditi: "list of
+              all patient should show standalone") -- shows every filtered
+              patient (no 5-item cap/"View all" toggle anymore) inside its
+              own bordered white container, same visual language as the By
+              Speciality cards above, instead of bare rows sitting directly
+              on the page background. */}
           <div style={{padding:"24px 18px 0"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>
-                {isNarrowed ? "Patients" : "Recent Patients"}
-              </div>
-              {!isNarrowed && filtered.length > 5 && (
-                <button onClick={()=>setShowAllPatients(s=>!s)}
-                  style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:"0.78rem",fontWeight:700,color:"#7c3aed"}}>
-                  {showAllPatients ? "Show less ↑" : "View all →"}
-                </button>
-              )}
+            <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827",marginBottom:10}}>
+              {isNarrowed ? "Patients" : "All Patients"}
             </div>
 
-            {visiblePatients.length === 0 && (
-              <div style={{textAlign:"center",padding:"30px 10px",color:"#9CA3AF"}}>
+            {filtered.length === 0 ? (
+              <div style={{textAlign:"center",padding:"30px 10px",color:"#9CA3AF",
+                background:"#fff",border:"1.5px solid #EEEDF5",borderRadius:16}}>
                 <div style={{fontSize:"2rem",marginBottom:6}}>👤</div>
                 <div style={{fontSize:"0.82rem"}}>
-                  {search ? "No patients match your search" : "No patients yet — tap New Assessment to start"}
+                  {isNarrowed ? "No patients match this filter" : "No patients yet — tap New Assessment to start"}
                 </div>
               </div>
+            ) : (
+              <div style={{background:"#fff",border:"1.5px solid #EEEDF5",borderRadius:16,padding:"4px 10px"}}>
+                {filtered.map(p => (
+                  <PatientRowCompact
+                    key={p.id}
+                    patient={p}
+                    isActive={p.id === activeId}
+                    careSettingLabel={CARE_SETTINGS.find(cs=>cs.id===careSettingOf(p))?.label}
+                    onDelete={()=>onDelete(p.id)}
+                    // One profile per patient, not two buttons (Aditi:
+                    // "just be one patient profile...not show speciality
+                    // profile"). A patient with Cardio/Neuro data opens the
+                    // simple specialty hub (SpecialtyPatientProfile.jsx,
+                    // reached via Clinical/active==="specialty_profile");
+                    // everyone else keeps the existing Ortho PatientProfileModal.
+                    // "Edit Assessment" moved off the row itself (2026-08-27,
+                    // minimalist redesign) -- PatientProfileModal already has
+                    // its own "Continue Assessment" action (onLoadAssessment),
+                    // so nothing was actually lost by making the whole row a
+                    // single tap into Profile instead of two competing buttons.
+                    onProfile={()=>{
+                      if (p?.data?.cardio || p?.data?.neuro) { onSelect(p); if (onNav) onNav("specialty_profile"); }
+                      else setProfilePatient(p);
+                    }}
+                  />
+                ))}
+              </div>
             )}
-            {visiblePatients.map(p => (
-              <PatientRowCompact
-                key={p.id}
-                patient={p}
-                isActive={p.id === activeId}
-                isDesktop={isDesktop}
-                // Route by specialty, same as onProfile below -- a Cardio/
-                // Neuro patient's own assessment lives in its own wizard,
-                // not Ortho's Demographics step (Aditi: "click on rahul
-                // edit assessment..it taking us to ortho").
-                onEdit={()=>{
-                  onSelect(p);
-                  if (!onNav) return;
-                  if (p?.data?.cardio) onNav("cardio_assessment");
-                  else if (p?.data?.neuro) onNav("neuro_assessment");
-                  else onNav("demographics");
-                }}
-                onDelete={()=>onDelete(p.id)}
-                // One profile per patient, not two buttons (Aditi:
-                // "just be one patient profile...not show speciality
-                // profile"). A patient with Cardio/Neuro data opens the
-                // simple specialty hub (SpecialtyPatientProfile.jsx,
-                // reached via Clinical/active==="specialty_profile");
-                // everyone else keeps the existing Ortho PatientProfileModal.
-                onProfile={()=>{
-                  if (p?.data?.cardio || p?.data?.neuro) { onSelect(p); if (onNav) onNav("specialty_profile"); }
-                  else setProfilePatient(p);
-                }}
-              />
-            ))}
           </div>
 
           {/* Stats cards -- same "patient list only" scoping as the CTA/
