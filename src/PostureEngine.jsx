@@ -159,6 +159,21 @@ const MANUAL_POINTS_FRONTAL = [
   { id:16, label:"R Heel",          mpIdx:30, desc:"Right heel contact" },
   { id:17, label:"L Toe",           mpIdx:31, desc:"Left 2nd toe" },
   { id:18, label:"R Toe",           mpIdx:32, desc:"Right 2nd toe" },
+  // Q-angle (ASIS -> patella -> tibial tuberosity) needs a point MediaPipe's
+  // pose model does not detect and never will -- there is no tibial
+  // tuberosity landmark in its 33-point output, in AI Auto or anywhere else.
+  // Manual mode already has ASIS (above) and Knee-as-patella-proxy; this
+  // point completes the triangle.
+  // extraKey (not mpIdx): every one of the 33 MediaPipe slots is a REAL
+  // landmark that AI Auto can and does populate (e.g. mpIdx 19/20 are the
+  // index fingertips -- visible with real, nonzero confidence any time the
+  // patient's hands are in frame, which is the normal case in a full-body
+  // photo). Reusing a real slot as fake storage would let AI Auto silently
+  // compute a "Q-angle" from finger position. extraKey routes these into a
+  // separate object manual-only findings read from, with no path for
+  // AI-detected data to ever reach it -- see manualPointsToLandmarks.
+  { id:19, label:"L Tibial Tuberosity", extraKey:"tibialTuberosityL", desc:"Left tibial tuberosity (below patella)" },
+  { id:20, label:"R Tibial Tuberosity", extraKey:"tibialTuberosityR", desc:"Right tibial tuberosity (below patella)" },
 ];
 
 // ─── Posterior view manual landmarks ────────────────────────────────────────
@@ -217,6 +232,17 @@ const MANUAL_POINTS_SAGITTAL = [
   { id:5, label:"Ankle",          mpIdx:27, desc:"Lateral malleolus" },
   { id:6, label:"Heel",           mpIdx:29, desc:"Heel contact point" },
   { id:7, label:"Toe",            mpIdx:31, desc:"2nd toe tip" },
+  // Sagittal anterior pelvic tilt needs ASIS and PSIS -- the front and back
+  // of the pelvis -- neither of which MediaPipe detects (lm23/24 above is
+  // "Hip / GT", the greater trochanter, a third and different landmark used
+  // for the Kendall plumb line). Both are visible in a true side-profile
+  // photo as two separate points on the pelvis silhouette, so a clinician
+  // can place them even though no pose model does.
+  // extraKey, not mpIdx -- see the tibial-tuberosity comment above for why
+  // reusing a real MediaPipe slot (e.g. mouth corners) as fake storage would
+  // let AI Auto's real face detections silently produce a fabricated angle.
+  { id:8, label:"ASIS",           extraKey:"asis", desc:"Anterior superior iliac spine (near side)" },
+  { id:9, label:"PSIS",           extraKey:"psis", desc:"Posterior superior iliac spine (near side)" },
 ];
 
 // Connections to draw between placed manual points (frontal)
@@ -224,33 +250,50 @@ const MANUAL_CONNECTIONS_FRONTAL = [
   [3,4],[1,2],[5,6],[9,10],[11,12],[13,14],[15,16],[17,18],
   [5,7],[6,8],[5,9],[6,10],[9,11],[10,12],[11,13],[12,14],
   [13,15],[14,16],[15,17],[16,18],
+  [11,19],[12,20], // knee (patella proxy) to tibial tuberosity, each side
 ];
 const MANUAL_CONNECTIONS_SAGITTAL = [
   [0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],
+  [8,9], // ASIS-PSIS line (anterior pelvic tilt)
 ];
 
-// Convert manual placed points {[id]: {x,y} normalised} to MediaPipe-like landmark array
+// Convert manual placed points {[id]: {x,y} normalised} to MediaPipe-like landmark array.
+// Returns { lm, extra }: `lm` is the standard 33-slot array real AI-Auto
+// output also uses; `extra` holds points with no MediaPipe slot at all
+// (ASIS/PSIS/tibial tuberosity), keyed by name. Keeping these separate is
+// deliberate -- see the extraKey comments on the point defs above -- so
+// nothing downstream can be fed AI-detected data under a manual-only key.
 function manualPointsToLandmarks(placed, pointDefs) {
   const lm = Array.from({length:33}, (_,i) => ({ x:0, y:0, z:0, visibility:0 }));
+  const extra = {};
   pointDefs.forEach(def => {
     const p = placed[def.id];
-    if (p && def.mpIdx !== undefined) {
+    if (!p) return;
+    if (def.mpIdx !== undefined) {
       lm[def.mpIdx] = { x:p.x, y:p.y, z:0, visibility:1.0 };
+    } else if (def.extraKey) {
+      extra[def.extraKey] = { x:p.x, y:p.y };
     }
   });
   // Mirror ear/shoulder for sagittal (right side = same as left for sagittal points)
-  // If sagittal: copy left to right for mirror symmetry so measureLandmarks gets both sides
-  if (pointDefs.length === 8) {
+  // If sagittal: copy left to right for mirror symmetry so measureLandmarks gets both sides.
+  // Identity check, not a point count -- MANUAL_POINTS_SAGITTAL grew past 8
+  // points (ASIS/PSIS added for APT) and a length check would have silently
+  // stopped mirroring the moment that happened.
+  if (pointDefs === MANUAL_POINTS_SAGITTAL) {
     const pairs = [[7,8],[11,12],[23,24],[25,26],[27,28],[29,30],[31,32]];
     pairs.forEach(([l,r]) => {
       if (lm[l].visibility > 0) lm[r] = { ...lm[l] };
     });
   }
-  return lm;
+  return { lm, extra };
 }
 
 // ─── Measurement Engine ───────────────────────────────────────────────────────
-function measureLandmarks(lm, calibration, view="anterior") {
+// extra: manual-only points with no MediaPipe slot (ASIS/PSIS/tibial
+// tuberosity), or undefined for every AI-Auto/live call site. See
+// manualPointsToLandmarks for why these can't live in `lm` itself.
+function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   if(!lm||lm.length<33) return {};
   const g=i=>lm[i];
   const V=i=>(lm[i]?.visibility||0)>=MIN_VIS;
@@ -471,6 +514,29 @@ function measureLandmarks(lm, calibration, view="anterior") {
   // sagHipShift: hip in cm vs plumb (+ = anterior, - = posterior / sway-back pattern)
   const sagHipShift = plumb.hip;
 
+  // Sagittal anterior pelvic tilt: angle of the ASIS-PSIS line vs horizontal.
+  // extra-only -- ASIS/PSIS have no MediaPipe slot (lm23/24 is the greater
+  // trochanter, a different landmark used for the plumb line above), so this
+  // is null for every AI-Auto and live-camera photo, manual placement only.
+  // Unlike the plumb-line measures above, this is an ABSOLUTE angle, not a
+  // deviation from zero: even a "normal" pelvis has a nonzero ASIS-PSIS
+  // slope by anatomy (healthy-population figures range ~6-11°), so a raw
+  // magnitude is exactly what the reference norms are stated against.
+  // Direction (anterior vs posterior) follows the standard convention that
+  // ASIS sits inferior to PSIS in neutral-to-anterior alignment (the
+  // configuration ~75-85% of asymptomatic adults show); if ASIS is placed
+  // superior to PSIS instead this reports a posterior tilt tendency. This
+  // reflects which point the clinician placed lower, not a directly
+  // validated sign convention independent of how the two points relate.
+  let anteriorPelvicTiltDeg = null, pelvicTiltDirection = null;
+  if (extra?.asis && extra?.psis) {
+    const dx = extra.psis.x - extra.asis.x, dy = extra.psis.y - extra.asis.y;
+    if (dx !== 0 || dy !== 0) {
+      anteriorPelvicTiltDeg = r1(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
+      pelvicTiltDirection = extra.asis.y > extra.psis.y ? "anterior" : "posterior";
+    }
+  }
+
   // ── 7. Shoulder position vs plumb ──────────────────────────────────────────
   // Positive = shoulder anterior to ankle plumb = rounded shoulder tendency
   const sagShoulderShift = plumb.shoulder;
@@ -511,6 +577,18 @@ function measureLandmarks(lm, calibration, view="anterior") {
   };
   const leftKneeFrontal  = Vb(23,25,27)?_kfd2(g(23),g(25),g(27),true):null;
   const rightKneeFrontal = Vb(24,26,28)?_kfd2(g(24),g(26),g(28),false):null;
+
+  // Q-angle: true angle at the patella between rays to ASIS and to tibial
+  // tuberosity. Reuses vec3Angle (angle-at-vertex, already used for
+  // leftKneeAngle/rightKneeAngle above) rather than a second copy of the
+  // same dot-product formula.
+  // extra-only, deliberately: tibial tuberosity has no MediaPipe slot at
+  // all (see the manual point defs), so this is null for every AI-Auto and
+  // live-camera photo and only ever populated from manual placement.
+  const leftQAngle  = (Vb(23,25) && extra?.tibialTuberosityL)
+    ? vec3Angle(g(23), g(25), extra.tibialTuberosityL) : null;
+  const rightQAngle = (Vb(24,26) && extra?.tibialTuberosityR)
+    ? vec3Angle(g(24), g(26), extra.tibialTuberosityR) : null;
 
   const kneeSymmetry = Vb(25,26)?{left:g(25).y,right:g(26).y,diff:r1((g(25).y-g(26).y)*100)}:null;
   // Knee-height difference in true mm (was Δy×180, i.e. roughly centimetres,
@@ -862,6 +940,7 @@ function measureLandmarks(lm, calibration, view="anterior") {
     sagChain, sagConfidence, sagPelvicShift, sagShoulderShift, sagKneeShift, sagHipShift,
     trunkSagLean, plumb, fhpFromPlumb,
     leftKneeDev, rightKneeDev, leftKneeFrontal, rightKneeFrontal,
+    leftQAngle, rightQAngle, anteriorPelvicTiltDeg, pelvicTiltDirection,
     lldProxy, lldSide, ucsIndex, lcsIndex, kneeSymmetry,
     pelvicTiltSagittal: lumbarProxy,
     cobbEstimate: (spinalDeviation!==null&&waistAsymmetry!==null)
@@ -1011,6 +1090,14 @@ const POSTURE_THRESHOLDS = {
   waistAsymmetry:      { mild:4,   moderate:7,  severe:11  }, // %
   // Knee frontal: Magee p.760 — HKA deviation >6° screened as valgus/varus tendency
   kneeFrontal:         { mild:6,   moderate:10, severe:15  }, // degrees (Magee/Norkin & White)
+  // Q-angle: ASIS-patella-tibial tuberosity, manual mode only (see
+  // leftQAngle/rightQAngle -- MediaPipe has no tibial tuberosity landmark).
+  // A genuinely different metric from kneeFrontal above (which is HKA
+  // deviation from the mechanical axis, not Q-angle's anatomical landmarks).
+  // mild=20 is the only literature-anchored value here: normal range is
+  // stated as 12-20 deg, abnormal above 20. moderate/severe are app-derived
+  // spacing beyond that point, not separately validated cutoffs.
+  qAngle:              { mild:20,  moderate:25, severe:30  }, // degrees
   ucsIndex:            { mild:0.6, moderate:1.0,severe:1.5 }, // index
   // LLD, in true mm. mild was 5mm (Magee's "functional" figure), but the
   // asymptomatic population MEAN anatomic LLD is ~5.2mm (SD 4.1), so a 5mm
@@ -5568,11 +5655,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
   function analyseManualPoints() {
     let lm, m={}, r, f=[], s;
+    let extra = {};
     try {
-      lm = manualPointsToLandmarks(manualPlaced, manualPointDefs);
+      ({ lm, extra } = manualPointsToLandmarks(manualPlaced, manualPointDefs));
       const imgH = manualImgSize.current?.h || 800;
       const calib = computeCalibration(lm, patientHeightCm, imgH);
-      try { m = measureLandmarks(lm, calib, view) || {}; } catch(e){ console.warn("manual measureLandmarks:", e); }
+      try { m = measureLandmarks(lm, calib, view, extra) || {}; } catch(e){ console.warn("manual measureLandmarks:", e); }
       r = calcManualReliability(manualPlacedCount, manualTotal);
       try { f = r.blocked ? [] : buildFindings(lm, view, m); } catch(e){ console.warn("manual buildFindings:", e); }
 
@@ -6273,6 +6361,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 <MetricRow label="Waist Asymmetry" value={measurements.waistAsymmetry} unit="%" normal={3} abnormal={6}/>
                 <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="°" normal={5} abnormal={10}/>
                 <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="°" normal={5} abnormal={10}/>
+                {/* Manual mode only -- MediaPipe has no tibial tuberosity landmark */}
+                <MetricRow label="L Q-Angle (manual)" value={measurements.leftQAngle} unit="°" normal={POSTURE_THRESHOLDS.qAngle.mild} abnormal={POSTURE_THRESHOLDS.qAngle.moderate}/>
+                <MetricRow label="R Q-Angle (manual)" value={measurements.rightQAngle} unit="°" normal={POSTURE_THRESHOLDS.qAngle.mild} abnormal={POSTURE_THRESHOLDS.qAngle.moderate}/>
                 <MetricRow label="Weight-Bearing Shift" value={measurements.weightBearingShift} unit="%" normal={4} abnormal={8}/>
                 <MetricRow label="LLD Proxy" value={measurements.lldProxy} unit="mm" normal={5} abnormal={10}/>
                 <MetricRow label="Neck Lateral Angle" value={measurements.neckLateralAngle} unit="°" normal={4} abnormal={8}/>
@@ -6296,7 +6387,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                     </span>
                   </div>
-                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load · estimated cervical load proxy cervical load model</div>
+                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = High load · estimated cervical load proxy cervical load model</div>
                 </div>
                 {measurements.cervicalLoadKg!=null&&(
                   <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
@@ -6317,6 +6408,25 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"↑":"↓"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"—"}
                   </div>
                 </div>
+                {/* Manual mode only -- MediaPipe has no ASIS/PSIS landmark.
+                    No colour verdict, deliberately: normal ranges here vary
+                    meaningfully by study (6-7 / 9 / 13 deg all cited in the
+                    literature), unlike CVA above which has one standard-
+                    practice figure. Shown as a reference range, not a
+                    pass/fail judgement. */}
+                {measurements.anteriorPelvicTiltDeg!=null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"0.78rem",color:PC.muted}}>Pelvic Tilt (APT, manual)</div>
+                      <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:1}}>
+                        Reference range {patientInfo?.sex==="Male"?"9–9.5°":patientInfo?.sex==="Female"?"12–13°":"6–11°"} anterior · varies by study, not a validated cutoff
+                      </div>
+                    </div>
+                    <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.text}}>
+                      {measurements.anteriorPelvicTiltDeg.toFixed(1)}° {measurements.pelvicTiltDirection}
+                    </div>
+                  </div>
+                )}
                 <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
                 <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
                 <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
@@ -6346,6 +6456,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <MetricRow label="Waist Asymmetry" value={measurements.waistAsymmetry} unit="%" normal={3} abnormal={6}/>
               <MetricRow label="L Knee Frontal" value={measurements.leftKneeFrontal} unit="°" normal={5} abnormal={10}/>
               <MetricRow label="R Knee Frontal" value={measurements.rightKneeFrontal} unit="°" normal={5} abnormal={10}/>
+              {/* Manual mode only -- MediaPipe has no tibial tuberosity landmark */}
+              <MetricRow label="L Q-Angle (manual)" value={measurements.leftQAngle} unit="°" normal={POSTURE_THRESHOLDS.qAngle.mild} abnormal={POSTURE_THRESHOLDS.qAngle.moderate}/>
+              <MetricRow label="R Q-Angle (manual)" value={measurements.rightQAngle} unit="°" normal={POSTURE_THRESHOLDS.qAngle.mild} abnormal={POSTURE_THRESHOLDS.qAngle.moderate}/>
               <MetricRow label="Weight-Bearing Shift" value={measurements.weightBearingShift} unit="%" normal={4} abnormal={8}/>
               <MetricRow label="LLD Proxy" value={measurements.lldProxy} unit="mm" normal={5} abnormal={10}/>
               <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Sagittal Plane</div>
@@ -6360,7 +6473,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                   </span>
                 </div>
-                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;55° · &lt;49° = High load</div>
+                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = High load</div>
               </div>
               {measurements.cervicalLoadKg!=null&&(
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
@@ -6381,6 +6494,22 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   {measurements.lumbarProxy!=null?`${measurements.lumbarProxy>0?"↑":"↓"}${Math.abs(measurements.lumbarProxy).toFixed(1)}%`:"—"}
                 </div>
               </div>
+              {/* Manual mode only -- see wide-layout comment for why this
+                  has no colour verdict (contested norms, not a validated
+                  single cutoff like CVA). */}
+              {measurements.anteriorPelvicTiltDeg!=null&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"0.78rem",color:PC.muted}}>Pelvic Tilt (APT, manual)</div>
+                    <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:1}}>
+                      Reference range {patientInfo?.sex==="Male"?"9–9.5°":patientInfo?.sex==="Female"?"12–13°":"6–11°"} anterior · varies by study, not a validated cutoff
+                    </div>
+                  </div>
+                  <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.text}}>
+                    {measurements.anteriorPelvicTiltDeg.toFixed(1)}° {measurements.pelvicTiltDirection}
+                  </div>
+                </div>
+              )}
               <MetricRow label="Hip Extension Proxy" value={measurements.hipExtensionProxy} unit="%" normal={5} abnormal={10}/>
               <MetricRow label="L Knee Deviation" value={measurements.leftKneeDev} unit="°" normal={5} abnormal={12}/>
               <MetricRow label="R Knee Deviation" value={measurements.rightKneeDev} unit="°" normal={5} abnormal={12}/>
