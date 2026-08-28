@@ -1,10 +1,43 @@
 import { useState, useMemo, Fragment } from "react";
+import {
+  Brain, Activity, Zap, Eye, Wind, Move, Mic, Milestone, Scale, Vibrate,
+  Footprints, Route, RotateCw, Gauge, Puzzle,
+} from "lucide-react";
 import { DERMATOMES, MYOTOMES, REFLEXES, CRANIAL_NERVES } from "../../sharedClinicalData.js";
 import { neuroConditionLibraryData } from "../../neuroConditionLibraryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+
+// One default icon per condition category, replaced by a more specific
+// icon below for individual items where a closer match exists -- lucide
+// line icons for Learn's study mode only, same treatment CardioStudy.jsx
+// gives cardiovascularData.js/respiratoryData.js. The live
+// NeurologicalAssessment.jsx in-form ⓘ cards still show the original
+// emoji from d.icon, untouched.
+const CONDITION_CATEGORY_ICON = {
+  "Stroke": Brain,
+  "Parkinson's": Vibrate,
+  "Spinal Cord Injury": Zap,
+  "Multiple Sclerosis": Eye,
+  "Traumatic Brain Injury": Brain,
+  "Vestibular Disorders": Eye,
+  "Neuro-Respiratory": Wind,
+  "Communication / Bulbar": Mic,
+  "Peripheral Nerve": Zap,
+  "Ataxia": Move,
+};
+const CONDITION_LABEL_ICON = {
+  "Freezing of gait": Footprints, "Turning / axial rotation": RotateCw, "Dual-task gait": Puzzle,
+  "Functional mobility (stroke)": Footprints, "Transfer ability": Route, "Wheelchair mobility": Route,
+  "Sitting balance (SCI)": Scale, "Postural instability (pull test)": Scale,
+  "Dynamic Gait Index": Footprints, "Neurological level of injury": Milestone,
+  "Hoehn & Yahr staging": Milestone, "ASIA Impairment Scale (AIS)": Milestone,
+  "EDSS staging": Milestone, "Rancho Los Amigos level": Milestone,
+  "Voice / speech intelligibility": Mic, "Dysarthria screen": Mic,
+  "mmrc": Gauge,
+};
 
 const SUB_TABS = [
   { key: "reflexes", label: "Reflexes" },
@@ -28,9 +61,11 @@ function conditionRegionOf(d) {
 }
 const CONDITION_REGIONS = [...new Set(Object.values(neuroConditionLibraryData).map(conditionRegionOf))];
 function conditionCard(id, d) {
+  const [, label] = id.split("|||");
+  const region = conditionRegionOf(d);
   return {
     id,
-    emoji: d.icon,
+    Icon: CONDITION_LABEL_ICON[label] || CONDITION_CATEGORY_ICON[region] || Brain,
     title: d.title,
     subtitle: d.category.replace("Learn · Neuro · ", ""),
     sections: (

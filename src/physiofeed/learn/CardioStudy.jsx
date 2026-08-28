@@ -1,10 +1,38 @@
 import { useState, useMemo, Fragment } from "react";
+import {
+  HeartPulse, Activity, Heart, Gauge, GaugeCircle, Timer, Droplet, Droplets,
+  Stethoscope, Eye, Thermometer, Move, Zap, Wind, Footprints, Hand, Vibrate,
+  AlertTriangle,
+} from "lucide-react";
 import { cardiovascularData } from "../../cardiovascularData.js";
 import { respiratoryData } from "../../respiratoryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+
+// Per-item icon, keyed by the same object keys cardiovascularData.js/
+// respiratoryData.js use -- replaces each entry's emoji with a lucide-react
+// line icon (same icon set as the rest of the app) for Learn's study mode
+// only; the live CardiopulmonaryAssessment.jsx info-card popups still show
+// the original emoji from d.icon, untouched.
+const ICONS = {
+  heartRate: HeartPulse, pulseRhythm: Activity, pulseVolume: Activity, pulses: Heart,
+  bloodPressure: Gauge, orthostatic: Gauge, capRefill: Timer, edema: Droplet, jvp: Activity,
+  cardiacAuscultation: Stethoscope, aorticArea: Stethoscope, pulmonaryArea: Stethoscope,
+  tricuspidArea: Stethoscope, mitralArea: Stethoscope, s1s2: Stethoscope,
+  additionalHeartSounds: Stethoscope, murmurs: Stethoscope,
+  skinColour: Eye, skinTemperature: Thermometer, peripheralPerfusion: Droplets,
+  limbSymmetry: Move, peripheralVascularInspection: Eye,
+  restingCVResponse: Activity, exerciseHRResponse: HeartPulse, exerciseBPResponse: Gauge,
+  hrRecovery: Timer, bpRecovery: Timer, borgRPE: Zap, dyspneaRating: Wind, sixMWT: Footprints,
+  pulsePressure: Gauge, clubbing: Hand, homans: Footprints, abi: GaugeCircle, allensTest: Hand,
+  nyha: HeartPulse,
+  respRate: Wind, chestShape: Move, breathingPattern: Wind, workOfBreathing: Zap,
+  trachea: Move, chestExpansion: Move, fremitus: Vibrate, surgicalEmphysema: AlertTriangle,
+  breathSounds: Stethoscope, addedSounds: Stethoscope, cough: Wind, sputum: Droplet,
+  peakCoughFlow: Wind, spo2: Activity, cyanosis: Eye, spirometry: Wind, mmrc: Gauge, borg: Zap,
+};
 
 // Real data straight from cardiovascularData.js/respiratoryData.js -- the
 // exact same reference library CardiopulmonaryAssessment.jsx's own ⓘ
@@ -29,7 +57,7 @@ const BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" }
 function toCard(id, d) {
   return {
     id,
-    emoji: d.icon,
+    Icon: ICONS[id] || Stethoscope,
     title: d.title,
     subtitle: d.category.replace("Learn · ", ""),
     sections: (
