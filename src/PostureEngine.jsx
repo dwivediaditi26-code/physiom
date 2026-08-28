@@ -5955,8 +5955,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               nothing for sagittal views or when no angle measure resolved. */}
           <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}
             photoUrl={objectUrlRef.current||uploadedImg||capturedImg} landmarks={landmarks}/>
-          {/* Analysed photo preview — manual mode only, shown at top of findings */}
-          {inputMode==="manual"&&manualAnalysed&&(objectUrlRef.current||uploadedImg)&&(
+          {/* Analysed photo preview — was manual mode only ("shown at top of
+              findings"), even though AI Auto's own photo already gets the
+              identical overlay baked in elsewhere (the Capture tab's Layer-2
+              <img>, see PostureEngine.jsx capture panel). AI Auto users had
+              no way to see their annotated photo without leaving Findings.
+              CanvasOverlayOnImage already draws the main grid/plumb/landmark
+              overlay unconditionally off `landmarks` alone -- manualPlaced/
+              manualPointDefs are a separate, additive layer only drawn when
+              provided, so this generalises to AI Auto with no core-drawing
+              changes, just omitting the manual-only props for that mode. */}
+          {((inputMode==="manual"&&manualAnalysed)||(inputMode==="ai"&&landmarks))
+            &&(objectUrlRef.current||uploadedImg)&&(
             <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
               <img src={objectUrlRef.current||uploadedImg} alt="Analysed posture"
                 id="findings-posture-img"
@@ -5967,9 +5977,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   landmarks={landmarks}
                   view={view}
                   measurements={measurements||undefined}
-                  manualPlaced={manualPlaced}
-                  manualPointDefs={manualPointDefs}
-                  manualConnections={manualConnections}
+                  manualPlaced={inputMode==="manual"?manualPlaced:undefined}
+                  manualPointDefs={inputMode==="manual"?manualPointDefs:undefined}
+                  manualConnections={inputMode==="manual"?manualConnections:undefined}
                   imgId="findings-posture-img"
                 />
               )}
