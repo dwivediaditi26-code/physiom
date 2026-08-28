@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
+import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.js";
 
 // Same SVG anatomical hotspot map used by the old Palpation flow
 // (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
@@ -94,8 +95,25 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
+
+  // Same old-flow import OrthoAssessment.jsx's AI-intake landing screen
+  // offers (see orthoAiIntake.js) -- surfaced here too since a therapist
+  // who skips that screen (manual/condition-wise/template entry, or just
+  // scrolled past it) never sees that option otherwise. Only fills fields
+  // still blank so it can't silently clobber anything already typed here.
+  function loadOldSubjective() {
+    const { subjective } = importOldSubjectiveData(patientData);
+    setData((prev) => {
+      const existing = prev.subjective || {};
+      const merged = { ...existing };
+      Object.entries(subjective).forEach(([k, v]) => {
+        if (!String(existing[k] || "").trim()) merged[k] = v;
+      });
+      return { ...prev, subjective: merged };
+    });
+  }
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
   // the wizard's top-level setData, not this section's own scoped `set`
@@ -123,6 +141,11 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
+      {hasOldSubjectiveData(patientData) && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={loadOldSubjective}>
+          📋 Load from this patient's existing Subjective Assessment
+        </button>
+      )}
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
         <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
