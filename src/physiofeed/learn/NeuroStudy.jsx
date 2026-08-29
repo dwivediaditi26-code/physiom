@@ -1,16 +1,119 @@
 import { useState, useMemo, Fragment } from "react";
+import {
+  Brain, Activity, Zap, Eye, Wind, Move, Mic, Milestone, Scale, Vibrate,
+  Footprints, Route, RotateCw, Gauge, Puzzle,
+} from "lucide-react";
 import { DERMATOMES, MYOTOMES, REFLEXES, CRANIAL_NERVES } from "../../sharedClinicalData.js";
+import { neuroConditionLibraryData } from "../../neuroConditionLibraryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+
+// One default icon per condition category, replaced by a more specific
+// icon below for individual items where a closer match exists -- lucide
+// line icons for Learn's study mode only, same treatment CardioStudy.jsx
+// gives cardiovascularData.js/respiratoryData.js. The live
+// NeurologicalAssessment.jsx in-form ⓘ cards still show the original
+// emoji from d.icon, untouched.
+const CONDITION_CATEGORY_ICON = {
+  "Stroke": Brain,
+  "Parkinson's": Vibrate,
+  "Spinal Cord Injury": Zap,
+  "Multiple Sclerosis": Eye,
+  "Traumatic Brain Injury": Brain,
+  "Vestibular Disorders": Eye,
+  "Neuro-Respiratory": Wind,
+  "Communication / Bulbar": Mic,
+  "Peripheral Nerve": Zap,
+  "Ataxia": Move,
+};
+const CONDITION_LABEL_ICON = {
+  "Freezing of gait": Footprints, "Turning / axial rotation": RotateCw, "Dual-task gait": Puzzle,
+  "Functional mobility (stroke)": Footprints, "Transfer ability": Route, "Wheelchair mobility": Route,
+  "Sitting balance (SCI)": Scale, "Postural instability (pull test)": Scale,
+  "Dynamic Gait Index": Footprints, "Neurological level of injury": Milestone,
+  "Hoehn & Yahr staging": Milestone, "ASIA Impairment Scale (AIS)": Milestone,
+  "EDSS staging": Milestone, "Rancho Los Amigos level": Milestone,
+  "Voice / speech intelligibility": Mic, "Dysarthria screen": Mic,
+  "mmrc": Gauge,
+};
 
 const SUB_TABS = [
   { key: "reflexes", label: "Reflexes" },
   { key: "dermatomes", label: "Dermatomes" },
   { key: "myotomes", label: "Myotomes" },
   { key: "cranial", label: "Cranial Nerves" },
+  { key: "conditions", label: "Conditions" },
 ];
+
+// Condition-specific checklist items -- Stroke, Parkinson's, SCI, MS, TBI,
+// Vestibular, Neuro-Respiratory, Communication/Bulbar, Peripheral Nerve,
+// Ataxia. Same InfoCard perform/scale/interpret shape cardiovascularData.js/
+// respiratoryData.js use (see CardioStudy.jsx's toCard for the same
+// mapping pattern), not this file's own reflex/dermatome/myotome/cranial
+// flat-field shape, since this is a different, newer dataset built for
+// NeurologicalAssessment.jsx's in-form ⓘ InfoCards rather than for this
+// screen originally.
+const CONDITION_BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" };
+function conditionRegionOf(d) {
+  return d.category.split("·").pop().trim();
+}
+const CONDITION_REGIONS = [...new Set(Object.values(neuroConditionLibraryData).map(conditionRegionOf))];
+function conditionCard(id, d) {
+  const [, label] = id.split("|||");
+  const region = conditionRegionOf(d);
+  return {
+    id,
+    Icon: CONDITION_LABEL_ICON[label] || CONDITION_CATEGORY_ICON[region] || Brain,
+    title: d.title,
+    subtitle: d.category.replace("Learn · Neuro · ", ""),
+    sections: (
+      <Fragment>
+        {d.perform?.caption && (
+          <InfoBox icon="🖐" label="How to perform" tint="blue">{d.perform.caption}</InfoBox>
+        )}
+        {(d.perform?.boxes || []).map((b, i) => (
+          <InfoBox key={i} label={b.label} tint={CONDITION_BOX_TINTS[b.tone] || "gray"}>{b.text}</InfoBox>
+        ))}
+        {d.scale && (
+          <InfoBox icon="📊" label={d.scaleLabel || "Scale"} tint="violet">
+            <div className="space-y-1.5">
+              {d.scale.rows.map((r, i) =>
+                d.scale.type === "meter" ? (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="shrink-0 text-[10px] font-bold text-white rounded px-1.5 py-0.5" style={{ background: r.color }}>{r.chip}</span>
+                    <div><span className="font-semibold">{r.name}</span> — {r.desc}</div>
+                  </div>
+                ) : (
+                  <div key={i}><span className="font-semibold">{r.k}:</span> {r.v}</div>
+                )
+              )}
+            </div>
+          </InfoBox>
+        )}
+        {d.interpret?.normal && (
+          <InfoBox icon="✅" label="Normal" tint="green">
+            <ul className="list-disc pl-4 space-y-0.5">{d.interpret.normal.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          </InfoBox>
+        )}
+        {d.interpret?.abnormal && (
+          <InfoBox icon="⚠️" label="Abnormal" tint="amber">
+            <ul className="list-disc pl-4 space-y-0.5">{d.interpret.abnormal.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          </InfoBox>
+        )}
+        {d.interpret?.redFlags?.length > 0 && (
+          <InfoBox icon="🚨" label="Red flags" tint="red">
+            <ul className="list-disc pl-4 space-y-0.5">{d.interpret.redFlags.map((x, i) => <li key={i}>{x}</li>)}</ul>
+          </InfoBox>
+        )}
+        {d.interpret?.note && (
+          <InfoBox label="Clinical note" tint="gray">{d.interpret.note}</InfoBox>
+        )}
+      </Fragment>
+    ),
+  };
+}
 
 const REFLEX_GROUPS = ["DTR", "UMN", "Clonus", "LMN"];
 const LEVEL_GROUPS = [
@@ -113,12 +216,17 @@ export default function NeuroStudy({ onBack }) {
   const [subTab, setSubTab] = useState("reflexes");
   const [reflexGroup, setReflexGroup] = useState("DTR");
   const [levelGroup, setLevelGroup] = useState("C");
+  const [conditionRegion, setConditionRegion] = useState(CONDITION_REGIONS[0]);
   const [selected, setSelected] = useState(null);
 
   const reflexCards = useMemo(() => REFLEXES.filter((r) => r.group === reflexGroup).map(reflexCard), [reflexGroup]);
   const dermatomeCards = useMemo(() => DERMATOMES.filter((d) => d.level.startsWith(levelGroup)).map(dermatomeCard), [levelGroup]);
   const myotomeCards = useMemo(() => MYOTOMES.filter((m) => m.level.startsWith(levelGroup)).map(myotomeCard), [levelGroup]);
   const cranialCards = useMemo(() => CRANIAL_NERVES.map(cranialCard), []);
+  const conditionCards = useMemo(
+    () => Object.entries(neuroConditionLibraryData).filter(([, d]) => conditionRegionOf(d) === conditionRegion).map(([id, d]) => conditionCard(id, d)),
+    [conditionRegion]
+  );
 
   if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
 
@@ -173,6 +281,20 @@ export default function NeuroStudy({ onBack }) {
       )}
 
       {subTab === "cranial" && <StudyGrid items={cranialCards} onSelect={setSelected}/>}
+
+      {subTab === "conditions" && (
+        <>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
+            {CONDITION_REGIONS.map((r) => (
+              <button key={r} onClick={() => setConditionRegion(r)}
+                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold ${conditionRegion === r ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
+                {r}
+              </button>
+            ))}
+          </div>
+          <StudyGrid items={conditionCards} onSelect={setSelected}/>
+        </>
+      )}
     </StudyShell>
   );
 }

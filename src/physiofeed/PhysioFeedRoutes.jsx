@@ -9,6 +9,7 @@ import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import PeoplePage from "./pages/PeoplePage.jsx";
 import MessagesPage from "./pages/MessagesPage.jsx";
 import SavedPage from "./pages/SavedPage.jsx";
+import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AdminReportsPage from "./pages/AdminReportsPage.jsx";
 
 // The original version of this file also had stub routes (/dashboard,
@@ -32,6 +33,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/saved" element={<SavedPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>

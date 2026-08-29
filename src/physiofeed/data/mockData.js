@@ -160,11 +160,17 @@ export const PEOPLE = [
   { id: "u-kevin", name: "Dr. Kevin Park", role: "Sports Rehab Specialist", location: "Seoul, South Korea", mutual: 3, grad: "teal", following: false },
 ];
 
+// `link` on like/comment (2026-08-27, "like how it happens in Insta") jumps
+// straight to the post that was liked/commented on -- postId matches
+// INITIAL_POSTS above (p1 = the ACL rehab post, p2 = the hamstring post).
+// FeedPage.jsx reads /feed?post=<id> and opens PostDetailModal.jsx for it.
+// Same behaviour real accounts get from getNotifications() in db.js, once
+// add_notification_post_id.sql is applied server-side.
 export const NOTIFICATIONS = [
-  { id: "n1", iconName: "Heart", text: "Dr. Rahul Mehta liked your post on ACL rehab", time: "12m", tone: "text-rose-500" },
-  { id: "n2", iconName: "MessageCircle", text: "Dr. Sarah Chen commented on your hamstring post", time: "1h", tone: "text-violet-600" },
+  { id: "n1", iconName: "Heart", text: "Dr. Rahul Mehta liked your post on ACL rehab", time: "12m", tone: "text-rose-500", link: "/feed?post=p1" },
+  { id: "n2", iconName: "MessageCircle", text: "Dr. Sarah Chen commented on your hamstring post", time: "1h", tone: "text-violet-600", link: "/feed?post=p2" },
   { id: "n3", iconName: "UserPlus", text: "Dr. Maria Silva started following you", time: "3h", tone: "text-blue-500" },
-  { id: "n4", iconName: "BookOpen", text: "New research added in ACL rehabilitation", time: "6h", tone: "text-emerald-600" },
+  { id: "n4", iconName: "BookOpen", text: "New research added in ACL rehabilitation", time: "6h", tone: "text-emerald-600", link: "/evidence" },
 ];
 
 export const EXERCISES = [

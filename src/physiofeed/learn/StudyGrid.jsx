@@ -15,6 +15,12 @@ import StudyImage from "./StudyImage.jsx";
 // actual clinical screen shows) but no uploaded Cloudinary photo -- shows
 // the real emoji large instead of StudyImage's "no image" placeholder.
 // ROM/MMT/Special/Neuro cards don't set this, so they're unaffected.
+//
+// `item.Icon` (2026-08-27, Cardio & Respiratory / Neuro Conditions study
+// mode): a lucide-react icon component, used instead of emoji for those
+// two datasets so the Learn tab's medical icons are consistent line-art
+// SVGs (same icon set already used everywhere else in the app) rather
+// than platform-inconsistent emoji glyphs. Takes priority over emoji.
 export default function StudyGrid({ items, onSelect }) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -26,7 +32,13 @@ export default function StudyGrid({ items, onSelect }) {
           className="text-left bg-white border border-slate-200 rounded-2xl p-3"
         >
           <div className="h-32 w-full rounded-xl overflow-hidden bg-slate-100 mb-2.5 flex items-center justify-center">
-            {item.emoji ? <span className="text-5xl" aria-hidden="true">{item.emoji}</span> : <StudyImage name={item.image} size={128}/>}
+            {item.Icon ? (
+              <item.Icon size={44} strokeWidth={1.5} className="text-violet-500" aria-hidden="true"/>
+            ) : item.emoji ? (
+              <span className="text-5xl" aria-hidden="true">{item.emoji}</span>
+            ) : (
+              <StudyImage name={item.image} size={128}/>
+            )}
           </div>
           <div className="text-sm font-semibold text-slate-900 leading-tight line-clamp-2">{item.title}</div>
           {item.subtitle && <div className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</div>}

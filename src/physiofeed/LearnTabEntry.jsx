@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import {
   Search, Bell, PersonStanding, Eye, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
-  Waves, Pill, HandMetal, GraduationCap,
+  Waves, Pill, HandMetal, GraduationCap, Activity,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import "./physiofeed.css";
@@ -18,7 +18,7 @@ import "./physiofeed.css";
 // Palpation, and the rest of Advanced Assessment/Treatment & Exercise)
 // still has no such per-item data, so it keeps its single card as before
 // -- no study mode invented for it.
-const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma"]);
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
@@ -33,6 +33,12 @@ const ASSESSMENT_LIBRARY = [
   { key: "special", label: "Special Tests", desc: "Orthopedic (100+)", icon: FlaskConical, tint: "blue" },
   { key: "neuro", label: "Neurological", desc: "Full neuro exam", icon: Brain, tint: "amber" },
   { key: "outcome", label: "Outcome Measures", desc: "Validated scales", icon: BarChart3, tint: "teal" },
+  // Cardio has no single-screen navTo() target of its own (the real
+  // Cardiopulmonary Assessment is reached via the Clinical tab's specialty
+  // picker, not a direct ALL_TESTS key) -- studyOnly routes its whole card
+  // straight into study mode instead of onNav, same reference library
+  // CardiopulmonaryAssessment.jsx's own ⓘ InfoCards already pull from.
+  { key: "cardio", label: "Cardio & Respiratory", desc: "Cardiopulmonary reference library", icon: Activity, tint: "rose", studyOnly: true },
 ];
 
 const ADVANCED_ASSESSMENT = [
@@ -64,14 +70,14 @@ function Card({ item, onNav, onStudy }) {
   const studyable = STUDY_TYPES.has(item.key);
   return (
     <div className="relative bg-white border border-slate-200 rounded-2xl hover:border-violet-200 transition-colors">
-      <button onClick={() => onNav(item.key)} className="text-left w-full p-4">
+      <button onClick={() => (item.studyOnly ? onStudy(item.key) : onNav(item.key))} className="text-left w-full p-4">
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[item.tint]}`}>
           <Icon size={20} strokeWidth={2}/>
         </div>
         <div className="font-semibold text-sm text-slate-900">{item.label}</div>
         <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
       </button>
-      {studyable && (
+      {studyable && !item.studyOnly && (
         <button
           onClick={(e) => { e.stopPropagation(); onStudy(item.key); }}
           className="flex items-center gap-1 mx-4 mb-3.5 -mt-1 text-[11px] font-semibold text-violet-600 bg-violet-50 rounded-full px-2.5 py-1 w-fit"
