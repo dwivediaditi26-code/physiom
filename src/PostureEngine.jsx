@@ -3777,9 +3777,9 @@ const VIEWS={
 
 // ─── Sparkline ────────────────────────────────────────────────────────────────
 function PostureSparkline({sessions,colour=PC.accent}){
-  const pts=sessions.filter(s=>s.score!==undefined).slice(-10);
+  const pts=sessions.filter(s=>s.findings!==undefined).slice(-10);
   if(pts.length<2) return null;
-  const vals=pts.map(p=>p.score);
+  const vals=pts.map(p=>p.findings);
   const mn=Math.min(...vals), mx=Math.max(...vals), range=mx-mn||1;
   const W=100, H=28;
   const xs=pts.map((_,i)=>(i/(pts.length-1))*W);
@@ -3801,24 +3801,13 @@ function PostureSparkline({sessions,colour=PC.accent}){
 }
 
 
-function ScoreRingBand({score,band,colour,size=80}){
-  if(score===null||score===undefined||!colour) return null;
-  const r=(size/2)-7, circ=2*Math.PI*r, dash=(score/100)*circ;
-  return(
-    <div style={{textAlign:"center"}}>
-      <svg width={size} height={size}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${colour}25`} strokeWidth={9}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={colour} strokeWidth={9}
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          transform={`rotate(-90 ${size/2} ${size/2})`}/>
-        <text x={size/2} y={size/2+1} textAnchor="middle" dominantBaseline="middle"
-          fill={colour} fontSize={size>70?18:14} fontWeight={900}>{score}</text>
-        <text x={size/2} y={size/2+14} textAnchor="middle" dominantBaseline="middle"
-          fill={colour} fontSize={8} fontWeight={700}>{band?.slice?.(0,8)}</text>
-      </svg>
-    </div>
-  );
-}
+// ScoreRingBand removed (2026-08-29, Aditi: "remove score", scope
+// "everywhere") along with every caller -- the 0-100 composite score/band
+// this rendered was a hand-tuned, unvalidated aggregate that could
+// disagree with the findings list itself, undermining trust in the tool.
+// scorePosture()/scoreData/mvComposite still compute internally since
+// other logic (Generate Report gating, coverage math) checks their
+// existence, not their value.
 
 // ─── Capture Alignment Guide ───────────────────────────────────────────────────
 // Static positioning overlay shown the instant the camera opens, BEFORE
@@ -6181,106 +6170,63 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               )}
             </div>
           )}
-          {scoreData&&(
-            <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,padding: isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${scoreData.colour}30`,boxShadow:isWide?"0 2px 12px rgba(0,0,0,0.06)":"none"}}>
-              <ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isWide?96:80}/>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:900,fontSize: isWide?"1.1rem":"0.9rem",color:scoreData.colour}}>{scoreData.band}</div>
-                <div style={{fontSize: isWide?"0.72rem":"0.65rem",color:PC.muted,marginTop:2}}>
-                  Score {scoreData.score}/100 &nbsp;·&nbsp;
-                  <span style={{color:scoreData.colour,fontWeight:700}}>
-                    {scoreData.score>=88?"Excellent posture":scoreData.score>=74?"Minor deviations":scoreData.score>=58?"Moderate — clinical review advised":scoreData.score>=40?"Significant — prioritise clinical assessment":highFindings.length>0?"Urgent — multiple high-priority findings":"Multiple areas of interest — clinical review recommended"}
-                  </span>
-                </div>
-                <div style={{fontSize: isWide?"0.68rem":"0.62rem",color:PC.muted,marginTop:2}}>
-                  {findings.length} finding{findings.length!==1?"s":""} · {highFindings.length} high priority
-                </div>
-                <div style={{fontSize: isWide?"0.65rem":"0.6rem",color:PC.muted,marginTop:2}}>
-                  Reliability: {reliability?.score}% ({reliability?.isManual?"Manual ✓ ":""}{reliability?.status})
-                </div>
-                {measurements?.cervicalLoadKg!=null&&(
-                  <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:6,
-                    background:measurements.cervicalLoadKg>18?"rgba(220,38,38,0.1)":measurements.cervicalLoadKg>12?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
-                    border:`1px solid ${measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}40`}}>
-                    <span style={{fontSize:"0.75rem",fontWeight:700,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>
-                      Cervical load ~{measurements.cervicalLoadKg.toFixed(1)}kg
-                    </span>
-                    <span style={{fontSize:"0.78rem",color:PC.muted}}>(neutral 4.5kg)</span>
-                  </div>
-                )}
-                {/* Real cm measurements row */}
-                {measurements?._calibrated&&(
-                  <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:5}}>
-                    {/* CVA — most important single measure; always first if present */}
-                    {measurements.cvaAngle!=null&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.cvaAngle < CVA.moderate?"rgba(220,38,38,0.1)":measurements.cvaAngle < CVA.mild?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
-                        color:measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle < CVA.mild?PC.yellow:PC.green,
-                        border:`1px solid ${measurements.cvaAngle < CVA.moderate?PC.red:measurements.cvaAngle < CVA.mild?PC.yellow:PC.green}40`}}>
-                        CVA {measurements.cvaAngle.toFixed(1)}° {measurements.cvaAngle >= CVA.mild?"✓":`(normal ${CVA_NORM_LABEL})`}
-                      </span>
-                    )}
-                    {/* FHP-cm / Sh diff / Pelvis diff / Trunk shift are all bilateral
-                        (left-vs-right) frontal-plane metrics. In a lateral/sagittal photo
-                        both shoulders sit nearly on top of each other in the image, so the
-                        bilateral-width denominator these formulas divide by collapses to
-                        near-zero, producing meaningless blown-up values (e.g. "FHP 91.2cm").
-                        Sagittal FHP is already shown correctly above via CVA. */}
-                    {!isLat && !isPost && measurements.fhpCm!=null&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.fhpCm>3.5?"rgba(220,38,38,0.1)":measurements.fhpCm>2?"rgba(180,83,9,0.1)":"rgba(5,150,105,0.1)",
-                        color:measurements.fhpCm>3.5?PC.red:measurements.fhpCm>2?PC.yellow:PC.green,
-                        border:`1px solid ${measurements.fhpCm>3.5?PC.red:measurements.fhpCm>2?PC.yellow:PC.green}40`}}>
-                        FHP {measurements.fhpCm}cm
-                      </span>
-                    )}
-                    {!isLat && !isPost && measurements.shoulderDiffCm!=null&&measurements.shoulderDiffCm>0.3&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.shoulderDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
-                        color:measurements.shoulderDiffCm>1.5?PC.red:PC.yellow,
-                        border:`1px solid ${measurements.shoulderDiffCm>1.5?PC.red:PC.yellow}40`}}>
-                        Sh diff {measurements.shoulderDiffCm}cm
-                      </span>
-                    )}
-                    {!isLat && !isPost && measurements.pelvisDiffCm!=null&&measurements.pelvisDiffCm>0.3&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.pelvisDiffCm>1.5?"rgba(220,38,38,0.1)":"rgba(180,83,9,0.1)",
-                        color:measurements.pelvisDiffCm>1.5?PC.red:PC.yellow,
-                        border:`1px solid ${measurements.pelvisDiffCm>1.5?PC.red:PC.yellow}40`}}>
-                        Pelvis diff {measurements.pelvisDiffCm}cm
-                      </span>
-                    )}
-                    {!isLat && !isPost && measurements.trunkShiftCm!=null&&measurements.trunkShiftCm>0.5&&(
-                      <span style={{padding:"2px 8px",borderRadius:6,fontSize:"0.82rem",fontWeight:700,
-                        background:measurements.trunkShiftCm>5?"rgba(156,163,175,0.15)":"rgba(180,83,9,0.1)",
-                        color:measurements.trunkShiftCm>5?PC.muted:PC.yellow,
-                        border:`1px solid ${measurements.trunkShiftCm>5?PC.muted:PC.yellow}40`}}>
-                        Trunk shift {measurements.trunkShiftCm}cm{measurements.trunkShiftCm>5?" ⚠ verify positioning":""}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {!measurements?._calibrated&&(
-                  <div style={{marginTop:6,fontSize:"0.78rem",color:PC.muted,fontStyle:"italic"}}>
-                    Enter patient height in Metrics tab for real cm measurements
-                  </div>
-                )}
-                {/* Sub-score pills on wide screens */}
-                {isWide&&scoreData?.subScores&&(
-                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:10}}>
-                    {Object.entries(scoreData.subScores).map(([region,val])=>{
-                      if(val==null) return null; // region not measured — omit chip
-                      const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
-                      return(
-                        <div key={region} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:20,background:`${col}12`,border:`1px solid ${col}30`}}>
-                          <span style={{fontSize:"0.82rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
-                          <span style={{fontSize:"0.78rem",fontWeight:800,color:col}}>{Math.round(val)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+          {/* 2026-08-29 (Aditi: "why is it showing fair/good/all and on
+              what basis" → "make it simple its so overload"): the old card
+              stacked band, score, descriptor, finding count, reliability,
+              an optional cervical-load pill, up to 4 flagged cm-measurement
+              chips and a 5-region sub-score pill row all inline, all the
+              time. Now only the score + one status line + (if anything is
+              actually flagged) a single callout sentence show by default;
+              everything else -- reliability, cervical load, sub-scores --
+              lives behind the "Details" row and only renders once tapped. */}
+          {/* 2026-08-29 (Aditi: "should we put score, is it worth it, is it
+              reliable?" -> "remove score", scope: "everywhere"): the 0-100
+              composite score/band is a hand-tuned aggregate across 11
+              unrelated metrics plus a landmark-confidence multiplier and a
+              PLI ceiling -- unlike the individual clinical thresholds
+              (CVA/Magee, kneeFrontal/Magee, etc.) this composite itself has
+              no cited validation, and could disagree with the findings list
+              (e.g. "Fair" with 0 findings) in a way that undermines trust
+              in the tool. scorePosture() and scoreData/mvComposite still
+              run internally -- other logic (Generate Report button gating,
+              coverage math) checks their existence, not their displayed
+              value -- but no screen shows the number/band/ring anymore.
+              This card is now just the findings-count + reliability +
+              flagged-measurement summary, with no scoring concept at all. */}
+          {(findings.length>0 || reliability) && (
+            <div style={{marginBottom:16,padding: isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${PC.border}`,boxShadow:isWide?"0 2px 12px rgba(0,0,0,0.06)":"none"}}>
+              <div style={{fontWeight:900,fontSize: isWide?"1rem":"0.88rem",color:PC.text}}>
+                {highFindings.length>0?"Clinical review advised":findings.length>0?`${findings.length} finding${findings.length!==1?"s":""} to review`:"No significant findings"}
               </div>
+              <div style={{fontSize: isWide?"0.75rem":"0.68rem",color:PC.muted,marginTop:4}}>
+                {findings.length} finding{findings.length!==1?"s":""} · {highFindings.length} high priority · {reliability?.score}% reliable ({reliability?.isManual?"Manual":reliability?.status})
+              </div>
+
+              {(() => {
+                const flags = [];
+                if (measurements?.cvaAngle!=null && measurements.cvaAngle < CVA.mild) flags.push(`forward head ${measurements.cvaAngle.toFixed(1)}° CVA`);
+                if (measurements?._calibrated && !isLat && !isPost) {
+                  if (measurements.fhpCm!=null && measurements.fhpCm>2) flags.push(`FHP ${measurements.fhpCm}cm`);
+                  if (measurements.shoulderDiffCm!=null && measurements.shoulderDiffCm>0.3) flags.push(`shoulder diff ${measurements.shoulderDiffCm}cm`);
+                  if (measurements.pelvisDiffCm!=null && measurements.pelvisDiffCm>0.3) flags.push(`pelvis diff ${measurements.pelvisDiffCm}cm`);
+                  if (measurements.trunkShiftCm!=null && measurements.trunkShiftCm>0.5) flags.push(`trunk shift ${measurements.trunkShiftCm}cm${measurements.trunkShiftCm>5?" (verify positioning)":""}`);
+                }
+                if (measurements?.cervicalLoadKg!=null && measurements.cervicalLoadKg>12) flags.push(`cervical load ~${measurements.cervicalLoadKg.toFixed(1)}kg`);
+                if (!flags.length) return null;
+                const flagColour = highFindings.length>0?PC.red:PC.yellow;
+                return (
+                  <div style={{display:"flex",gap:8,marginTop:12,padding:"9px 12px",borderRadius:10,background:`${flagColour}14`,alignItems:"flex-start"}}>
+                    <span style={{fontSize:"0.85rem",flexShrink:0,marginTop:1}}>⚠</span>
+                    <span style={{fontSize:"0.75rem",color:flagColour,fontWeight:700,lineHeight:1.5}}>{flags.join(", ")}</span>
+                  </div>
+                );
+              })()}
+
+              {!measurements?._calibrated&&(
+                <div style={{marginTop:8,fontSize:"0.72rem",color:PC.muted,fontStyle:"italic"}}>
+                  Enter patient height in Metrics tab for real cm measurements
+                </div>
+              )}
             </div>
           )}
 
@@ -6712,26 +6658,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </>
           )}
 
-          {/* Regional sub-scores */}
-          {scoreData?.subScores&&!isWide&&(
-            <>
-              <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:14,marginBottom:7}}>Regional Sub-scores</div>
-              {Object.entries(scoreData.subScores).map(([region,val])=>{
-                if(val==null) return null; // region not measured — omit row
-                const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
-                return(
-                  <div key={region} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${PC.border}`}}>
-                    <div style={{flex:1,fontSize:"0.78rem",color:PC.muted,textTransform:"capitalize"}}>{region}</div>
-                    <div style={{width:60,height:4,background:PC.s2,borderRadius:2,overflow:"hidden"}}>
-                      <div style={{width:`${val}%`,height:"100%",background:col,borderRadius:2}}/>
-                    </div>
-                    <div style={{fontSize:"0.82rem",fontWeight:800,color:col,minWidth:32,textAlign:"right"}}>{Math.round(val)}</div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
           {/* Calibration */}
           <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration — Real Measurements</div>
           <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,marginBottom:8}}>
@@ -6784,15 +6710,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             {sessions.length>0&&<button onClick={clearHistory} style={{fontSize:"0.78rem",color:PC.red,background:"none",border:"none",cursor:"pointer"}}>Clear all</button>}
           </div>
           {sessions.length===0&&<div style={{textAlign:"center",color:PC.muted,fontSize:"0.82rem",padding:"30px"}}>No sessions yet. Capture or analyse a photo to start tracking.</div>}
+          {/* Was "Score Trend" (2026-08-29, Aditi: "remove score",
+              everywhere) -- plots finding count instead. Fewer findings is
+              the improvement direction, opposite of the old score trend, so
+              the up/down arrow colouring is flipped to match. */}
           {sessions.length>=2&&(
             <div style={{padding:"12px 14px",borderRadius:12,border:`1px solid ${PC.border}`,marginBottom:14,background:PC.surface}}>
-              <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Score Trend</div>
+              <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Findings Trend</div>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
                 <PostureSparkline sessions={sessions} colour={PC.accent}/>
                 <div>
-                  <div style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>{sessions[sessions.length-1].score} <span style={{fontSize:"0.75rem",fontWeight:400,color:PC.muted}}>latest</span></div>
-                  <div style={{fontSize:"0.75rem",color:sessions[sessions.length-1].score>=sessions[sessions.length-2].score?PC.green:PC.red}}>
-                    {sessions[sessions.length-1].score>=sessions[sessions.length-2].score?"▲":"▼"} {Math.abs(sessions[sessions.length-1].score-sessions[sessions.length-2].score)} vs prev
+                  <div style={{fontSize:"0.82rem",fontWeight:900,color:PC.accent}}>{sessions[sessions.length-1].findings} <span style={{fontSize:"0.75rem",fontWeight:400,color:PC.muted}}>latest</span></div>
+                  <div style={{fontSize:"0.75rem",color:sessions[sessions.length-1].findings<=sessions[sessions.length-2].findings?PC.green:PC.red}}>
+                    {sessions[sessions.length-1].findings<=sessions[sessions.length-2].findings?"▼":"▲"} {Math.abs(sessions[sessions.length-1].findings-sessions[sessions.length-2].findings)} vs prev
                   </div>
                 </div>
               </div>
@@ -6802,10 +6732,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             {[...sessions].reverse().map((s,i)=>(
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom: isWide?0:8,background:PC.surface}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontWeight:700,fontSize:"0.75rem",color:PC.text}}>{VIEWS[s.view]?.label||s.view} · Score {s.score}</div>
+                  <div style={{fontWeight:700,fontSize:"0.75rem",color:PC.text}}>{VIEWS[s.view]?.label||s.view}</div>
                   <div style={{fontSize:"0.82rem",color:PC.muted}}>{new Date(s.time).toLocaleTimeString()}</div>
                 </div>
-                <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:3}}>{s.band} · {s.findings} finding{s.findings!==1?"s":""}</div>
+                <div style={{fontSize:"0.78rem",color:PC.muted,marginTop:3}}>{s.findings} finding{s.findings!==1?"s":""}</div>
               </div>
             ))}
           </div>
@@ -6947,15 +6877,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <img src={r.img} alt={meta.label} style={{width:"100%",maxHeight:420,objectFit:"contain",display:"block"}}/>
           </div>
         )}
-        {r.scoreData && (
-          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14,padding:isWide?"14px":"12px",background:PC.surface,borderRadius:12,border:`1px solid ${(r.scoreData.colour||PC.border)}30`}}>
-            <ScoreRingBand score={r.scoreData.score} band={r.scoreData.band} colour={r.scoreData.colour} size={isWide?72:60}/>
-            <div>
-              <div style={{fontWeight:900,fontSize:"0.88rem",color:r.scoreData.colour}}>{r.scoreData.band}</div>
-              <div style={{fontSize:"0.78rem",color:PC.muted}}>{meta.label} score: {r.scoreData.score}/100</div>
-            </div>
-          </div>
-        )}
         {landmarkChecks.length>0 && (
           <div style={{marginBottom:16}}>
             <div style={{fontSize:"0.78rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>AI Landmarks</div>
@@ -7017,9 +6938,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         const mvSlideIdx = Math.max(0, mvSlides.indexOf(mvResultView));
         const goToSlide = (i) => setMvResultView(mvSlides[(i+mvSlides.length)%mvSlides.length]);
         const activeMeta = mvResultView==="overview" ? null : VIEWS[mvResultView];
-        const activeScore = mvResultView==="overview"
-          ? mvComposite.compositeScore
-          : mvResults[mvResultView]?.scoreData?.score;
         const activeColour = mvResultView==="overview" ? mvComposite.compositeColour : activeMeta?.colour;
         return (
           <div
@@ -7040,7 +6958,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 <span style={{fontWeight:800,fontSize:"0.85rem",color:activeColour||PC.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                   {mvResultView==="overview" ? "◎ Overview" : `${activeMeta.icon} ${activeMeta.label}`}
                 </span>
-                {activeScore!=null && <span style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,flexShrink:0}}>{activeScore}/100</span>}
               </div>
 
               <button onClick={()=>goToSlide(mvSlideIdx+1)} aria-label="Next view"
@@ -7061,46 +6978,20 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       {mvResultView!=="overview" && mvResults[mvResultView] ? renderViewResult(mvResultView) : (
       <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
-        {/* Score + summary */}
-        <div style={{marginBottom:16,padding:isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${mvComposite.compositeColour}30`}}>
-          {/* Score header */}
-          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
-            <ScoreRingBand score={mvComposite.compositeScore} band={mvComposite.compositeBand} colour={mvComposite.compositeColour} size={isWide?96:80}/>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.88rem",color:mvComposite.compositeColour}}>
-                {mvComposite.compositeBand}
-              </div>
-              <div style={{fontSize:"0.82rem",color:PC.text,fontWeight:700,marginTop:2}}>
-                Posture Score: {mvComposite.compositeScore}/100
-                {mvComposite.frontalScore!=null&&<span style={{fontSize:"0.8rem",opacity:0.75}}> · Frontal: {mvComposite.frontalScore}</span>}
-                {mvComposite.sagittalScore!=null&&<span style={{fontSize:"0.8rem",opacity:0.75}}> · Sagittal: {mvComposite.sagittalScore}</span>}
-                {mvComposite.crossPlaneCount>0&&<span style={{fontSize:"0.8rem",color:PC.green}}> · {mvComposite.crossPlaneCount} cross-plane finding{mvComposite.crossPlaneCount>1?"s":""}</span>}
-              </div>
-              <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
-                {mvComposite.summary}
-              </div>
-            </div>
+        {/* Summary — was a score/band header + scale legend, dropped along
+            with every other numeric score (2026-08-29, Aditi: "remove
+            score", scope "everywhere") in favour of what's actually
+            findings-based: how many findings, across how many views, and
+            how many were corroborated across more than one view. */}
+        <div style={{marginBottom:16,padding:isWide?"18px":"14px",background:PC.surface,borderRadius:14,border:`1px solid ${PC.border}`}}>
+          <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.88rem",color:PC.text}}>
+            {mvComposite.mergedFindings?.length>0
+              ? `${mvComposite.mergedFindings.length} finding${mvComposite.mergedFindings.length!==1?"s":""} across ${mvComposite.coverage.viewCount} view${mvComposite.coverage.viewCount!==1?"s":""}`
+              : `No significant findings across ${mvComposite.coverage.viewCount} view${mvComposite.coverage.viewCount!==1?"s":""}`}
+            {mvComposite.crossPlaneCount>0&&<span style={{fontSize:"0.8rem",color:PC.green,fontWeight:700}}> · {mvComposite.crossPlaneCount} cross-plane finding{mvComposite.crossPlaneCount>1?"s":""}</span>}
           </div>
-          {/* Score scale legend */}
-          <div style={{display:"flex",gap:4,marginTop:4}}>
-            {[["88–100","Optimal","#059669"],["74–87","Good","#22c55e"],["58–73","Fair","#f59e0b"],["40–57","Needs Attention","#f97316"],["0–39","Priority Review","#dc2626"]].map(([range,label,col])=>{
-              const isActive = (()=>{
-                const s=mvComposite.compositeScore;
-                if(range.startsWith("88"))return s>=88;
-                if(range.startsWith("74"))return s>=74&&s<88;
-                if(range.startsWith("58"))return s>=58&&s<74;
-                if(range.startsWith("40"))return s>=40&&s<58;
-                return s<40;
-              })();
-              return(
-                <div key={range} style={{flex:1,textAlign:"center",padding:"5px 2px",borderRadius:7,
-                  background:isActive?col+"20":"transparent",
-                  border:isActive?`1px solid ${col}55`:`1px solid transparent`}}>
-                  <div style={{fontSize:"0.75rem",fontWeight:isActive?800:400,color:isActive?col:PC.muted,lineHeight:1.2}}>{label}</div>
-                  <div style={{fontSize:"0.48rem",color:isActive?col:PC.muted,opacity:0.7}}>{range}</div>
-                </div>
-              );
-            })}
+          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:4,lineHeight:1.5}}>
+            {mvComposite.summary}
           </div>
         </div>
         {/* Named patterns */}
@@ -7116,24 +7007,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 ◈ Frontal: {mvComposite.frontalPattern}
               </div>
             )}
-          </div>
-        )}
-        {/* Regional sub-scores */}
-        {mvComposite.subScores&&(
-          <div style={{marginBottom:16}}>
-            <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Regional Scores</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {Object.entries(mvComposite.subScores).map(([region,val])=>{
-                if(val==null) return null;
-                const col=val>=74?PC.green:val>=55?PC.yellow:PC.red;
-                return(
-                  <div key={region} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:20,background:`${col}12`,border:`1px solid ${col}30`}}>
-                    <span style={{fontSize:"0.82rem",color:PC.muted,textTransform:"capitalize"}}>{region}</span>
-                    <span style={{fontSize:"0.8rem",fontWeight:800,color:col}}>{val}</span>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
         {/* ── FINDINGS — Priority top 5 with expand ── */}
@@ -7325,7 +7198,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       ⏳ Analysing…
                     </div>
                   )}
-                  {scoreData&&!analysing&&<div style={{position:"absolute",top:camInsetTop,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                 </div>
                 <div style={camBarStyle}>
                   <button onClick={retakePhoto} disabled={analysing}
@@ -7378,7 +7250,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     {motionWarning&&<div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.yellow}}>⟳ Hold still</div>}
                     <div style={{padding:"3px 8px",borderRadius:8,background:"rgba(0,0,0,0.7)",fontSize:"0.82rem",fontWeight:700,color:PC.a3}}>— {patientHeightCm}cm</div>
                   </div>
-                  {scoreData&&<div style={{position:"absolute",top:camInsetTop,right:8}}><ScoreRingBand score={scoreData.score} band={scoreData.band} colour={scoreData.colour} size={isMobile?60:80}/></div>}
                   {/* Top-priority framing guidance (e.g. "Feet not visible — move camera back")
                       was already computed by calcReliability but never actually shown during
                       live tracking — only a bare confidence percentage was visible, giving the
@@ -7875,7 +7746,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     const goals = [];
     if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:CVA_NORM_LABEL,timeframe:"6 weeks"});
     if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
-    if(rptScoreData_src?.score!=null) goals.push({metric:"Posture Score",current:rptScoreData_src.score+"/100",target:">60/100",timeframe:"8 weeks"});
 
     const d = {
       analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
@@ -7921,7 +7791,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       soap: {
         subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
-        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. Score ${rptScoreData_src?.score||0}/100 — ${rptScoreData_src?.band||''}. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
+        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
         plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
       },
       goals,
@@ -7978,20 +7848,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       </div>`;
 
     const m = d.metrics;
-    const scoreColour = d.score.colour||C.red;
     // Dynamic photo grid — shows only captured views, no placeholders
     const photoGrid = (imgs, h=200) => {
       if (!imgs || imgs.length === 0) return '';
       const cols = imgs.length === 1 ? '1fr' : '1fr 1fr';
       return `<div style="display:grid;grid-template-columns:${cols};gap:10px">
-        ${imgs.map(({img:src,label,score})=>`
+        ${imgs.map(({img:src,label})=>`
           <div style="border-radius:10px;overflow:hidden;border:1px solid ${C.border}">
             <div style="height:${h}px;background:#0f172a;overflow:hidden">
               <img src="${src}" style="width:100%;height:100%;object-fit:contain"/>
             </div>
-            <div style="padding:4px 8px;background:${C.surface};display:flex;justify-content:space-between;align-items:center">
+            <div style="padding:4px 8px;background:${C.surface}">
               <span style="font-size:0.58rem;font-weight:700;color:${C.muted}">${label||''}</span>
-              ${score!=null?`<span style="font-size:0.6rem;font-weight:800;color:${score>=74?C.green:score>=58?C.yellow:C.red}">${score}/100</span>`:''}
             </div>
           </div>`).join('')}
       </div>`;
@@ -8015,7 +7883,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <div style="padding:8px 10px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                   <span style="font-size:0.63rem;font-weight:800;color:${C.primary}">${v.label}</span>
-                  ${v.score!=null?`<span style="font-size:0.6rem;font-weight:800;color:${v.score>=74?C.green:v.score>=58?C.yellow:C.red}">${v.score}/100</span>`:''}
+                  <span style="font-size:0.6rem;font-weight:800;color:${v.findings.length?C.accent:C.green}">${v.findings.length} finding${v.findings.length!==1?"s":""}</span>
                 </div>
                 ${v.findings.slice(0,max).map(f=>`
                   <div style="font-size:0.6rem;color:${C.primary};padding:3px 0;border-top:1px solid ${C.border}">
@@ -8060,18 +7928,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             </div>
             <div style="display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;margin-bottom:18px">
-              <div style="text-align:center;padding:16px 18px;background:${C.surface};border-radius:12px;border:1px solid ${scoreColour}30">
-                <svg width="90" height="90">
-                  <circle cx="45" cy="45" r="34" fill="none" stroke="${C.border}" stroke-width="8"/>
-                  <circle cx="45" cy="45" r="34" fill="none" stroke="${scoreColour}" stroke-width="8"
-                    stroke-dasharray="${(d.score.value/100)*(2*Math.PI*34)} ${2*Math.PI*34}"
-                    stroke-dashoffset="${2*Math.PI*34*0.25}" stroke-linecap="round"
-                    transform="rotate(-90 45 45)"/>
-                  <text x="45" y="45" text-anchor="middle" dominant-baseline="middle"
-                    fill="${scoreColour}" font-size="20" font-weight="900" font-family="Fraunces">${d.score.value}</text>
-                </svg>
-                <div style="font-family:Fraunces;font-size:0.85rem;font-weight:900;color:${scoreColour};margin-top:4px">${d.score.band}</div>
-                <div style="font-size:0.58rem;color:${C.muted}">out of 100</div>
+              <div style="text-align:center;padding:16px 18px;background:${C.surface};border-radius:12px;border:1px solid ${C.border}">
+                <div style="font-family:Fraunces;font-size:1.8rem;font-weight:900;color:${d.findings.length?C.accent:C.green}">${d.findings.length}</div>
+                <div style="font-size:0.58rem;color:${C.muted};text-transform:uppercase;letter-spacing:1px">finding${d.findings.length!==1?"s":""}</div>
               </div>
               <div>
                 <div style="font-size:0.6rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Body Region Check</div>
@@ -8203,19 +8062,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               </div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:auto 1fr;gap:18px;margin-bottom:20px;padding:18px;border-radius:12px;background:${C.surface};border:1px solid ${scoreColour}25">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:18px;margin-bottom:20px;padding:18px;border-radius:12px;background:${C.surface};border:1px solid ${C.border}">
             <div style="text-align:center">
-              <svg width="100" height="100">
-                <circle cx="50" cy="50" r="38" fill="none" stroke="${C.border}" stroke-width="9"/>
-                <circle cx="50" cy="50" r="38" fill="none" stroke="${scoreColour}" stroke-width="9"
-                  stroke-dasharray="${(d.score.value/100)*(2*Math.PI*38)} ${2*Math.PI*38}"
-                  stroke-dashoffset="${2*Math.PI*38*0.25}" stroke-linecap="round"
-                  transform="rotate(-90 50 50)"/>
-                <text x="50" y="50" text-anchor="middle" dominant-baseline="middle"
-                  fill="${scoreColour}" font-size="22" font-weight="900" font-family="Fraunces">${d.score.value}</text>
-              </svg>
-              <div style="font-family:Fraunces;font-size:0.9rem;font-weight:900;color:${scoreColour};margin-top:4px">${d.score.band}</div>
-              <div style="font-size:0.58rem;color:${C.muted}">/ 100</div>
+              <div style="font-family:Fraunces;font-size:2rem;font-weight:900;color:${d.findings.length?C.accent:C.green}">${d.findings.length}</div>
+              <div style="font-size:0.58rem;color:${C.muted};text-transform:uppercase;letter-spacing:1px">finding${d.findings.length!==1?"s":""}</div>
             </div>
             <div>
               <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:7px">Key Measurements</div>
@@ -8587,9 +8437,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               ≡ Results
               {findings.length>0&&(
                 <span style={{marginLeft:5,padding:"1px 6px",borderRadius:10,
-                  background:scoreData?.colour||PC.accent,color:"#fff",
+                  background:highFindings.length>0?PC.red:PC.accent,color:"#fff",
                   fontSize:"0.82rem",fontWeight:800}}>
-                  {scoreData?.score??findings.length}
+                  {findings.length}
                 </span>
               )}
             </button>
@@ -8664,8 +8514,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             {sessions.length===0&&<div style={{color:PC.muted,fontSize:"0.82rem"}}>No sessions yet.</div>}
             {[...sessions].reverse().map((s,i)=>(
               <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom:8}}>
-                <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label} · Score {s.score} — {s.band}</div>
-                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} findings</div>
+                <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label}</div>
+                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} finding{s.findings!==1?"s":""}</div>
               </div>
             ))}
             <button onClick={()=>setShowHistory(false)} style={{marginTop:14,width:"100%",padding:"13px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}30`,borderRadius:10,color:PC.accent,fontWeight:700,cursor:"pointer"}}>Close</button>
