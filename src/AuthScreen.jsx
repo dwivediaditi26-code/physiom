@@ -128,10 +128,9 @@ export default function AuthScreen({onAuth,onTryGuest}){
       <div style={{width:"100%",maxWidth:420}}>
         {/* Brand */}
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{width:56,height:56,borderRadius:16,margin:"0 auto 14px",background:`linear-gradient(135deg,${A},#9333ea)`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 8px 24px ${A}35`,overflow:"hidden"}}>
-            <img src="/icon-192.png" alt="PhysioMind" style={{width:"70%",height:"70%",objectFit:"contain"}}/>
+          <div style={{width:140,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <img src="/logo-icon.svg" alt="PhysioMind" style={{width:"100%",height:"auto",objectFit:"contain"}}/>
           </div>
-          <div style={{fontWeight:800,fontSize:"1.5rem",color:TX,letterSpacing:"-0.5px"}}>PhysioMind</div>
         </div>
         {/* Card */}
         <div style={{background:SUR,borderRadius:20,padding:"28px 28px 24px",border:`1px solid ${BD}`,boxShadow:`0 4px 32px rgba(124,58,237,0.08)`}}>
