@@ -851,7 +851,11 @@ function CustomSection({ id, meta, data, setData }) {
 function useSectionData(data, setData, key) {
   const section = data[key] || {};
   const set = (field, value) => setData((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-  return [section, set];
+  // Merges several fields in one update -- used by "Mark all normal" quick-pick
+  // buttons so the whole batch lands as a single state change, not one render
+  // per field.
+  const setMany = (fields) => setData((prev) => ({ ...prev, [key]: { ...prev[key], ...fields } }));
+  return [section, set, setMany];
 }
 
 /* ---------- Demographics ---------- */
@@ -1125,11 +1129,34 @@ function VitalsSection({ data, setData, system }) {
 
 /* ---------- Cardiovascular Examination ---------- */
 function CardioSection({ data, setData, system }) {
-  const [d, set] = useSectionData(data, setData, "cardio");
+  const [d, set, setMany] = useSectionData(data, setData, "cardio");
   const detailed = system === "cardio" || system === "combined";
+  // "Quick Normal" -- most patients most of the time have an unremarkable
+  // cardiovascular exam; a real therapist scans for red flags and moves on
+  // rather than opening all 10+ fields to confirm each is normal one at a
+  // time. One tap fills the whole normal/negative baseline (collapsed rows
+  // immediately show it as their summary chip); anything actually abnormal
+  // still gets tapped open and overridden individually.
+  function markAllNormal() {
+    const normal = { generalObs: "No distress", skinColour: "Normal", temperature: "Warm", edema: "None" };
+    if (detailed) {
+      normal.hands = "None";
+      normal.clubbing = "Absent";
+      normal.cyanosis = "None";
+      normal.heartSounds = "S1 normal, S2 normal";
+    }
+    const pulses = {};
+    ["Radial", "Dorsalis pedis", "Posterior tibial"].forEach((r) => ["Right", "Left"].forEach((c) => { pulses[`${r}__${c}`] = "Present"; }));
+    normal.pulses = pulses;
+    setMany(normal);
+  }
   return (
     <>
       <SectionIntro icon="🫀" title="Cardiovascular Examination" sub={(detailed ? "" : "Respiratory pathway — screening level only. ") + "Tap any row to fill it in."} />
+
+      <button type="button" className="quick-normal-btn" onClick={markAllNormal}>
+        ✓ Mark all normal
+      </button>
 
       <CSelectField
         label="General observation"
@@ -2001,6 +2028,11 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .cfield-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
         .cfield-body .field-block { margin-bottom: 0; }
         .cfield-body .vital-field { margin-bottom: 0; }
+
+        /* One-tap "fill the normal/negative baseline" button -- see
+           CardioSection's markAllNormal() comment for why this exists. */
+        .quick-normal-btn { display: block; width: 100%; border: 1.5px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 13.5px; padding: 11px; border-radius: 14px; cursor: pointer; margin-bottom: 14px; }
+        .quick-normal-btn:active { transform: scale(0.98); }
 
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
