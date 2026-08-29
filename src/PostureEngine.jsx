@@ -3901,7 +3901,7 @@ function CaptureAlignmentGuide({ view, visible }) {
 // distances, so the frame's scale cancels out and this report is unaffected by
 // the height-calibration accuracy that every cm-based figure depends on.
 // Do not add cm rows here without revisiting that.
-function SegmentAlignmentReport({ measurements: m, view, PC }) {
+function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks }) {
   if (!m) return null;
   // Frontal-plane only: these measures compare left against right, which a
   // sagittal photo cannot see (the far side is legitimately occluded).
@@ -3915,17 +3915,38 @@ function SegmentAlignmentReport({ measurements: m, view, PC }) {
     ? (view === "anterior" ? "Left" : "Right")
     : (view === "anterior" ? "Right" : "Left");
 
+  // Normalised anchor point for each row's thumbnail crop, from the landmarks
+  // the row is actually derived from. Null when those landmarks aren't
+  // visible, in which case the row simply renders without a thumbnail.
+  // Restored (2026-08-29, Aditi: "i want the before") into the plain-row
+  // layout rather than the old bordered-card one -- the declutter removed
+  // this along with the gradient bar/margin caption, but the per-metric
+  // photo was wanted back specifically.
+  const pt = (i) => {
+    const p = landmarks?.[i];
+    return (p && (p.visibility ?? 1) >= 0.4) ? p : null;
+  };
+  const midPt = (a, b) => {
+    const pa = pt(a), pb = pt(b);
+    return (pa && pb) ? { x:(pa.x+pb.x)/2, y:(pa.y+pb.y)/2 } : null;
+  };
+
   const rows = [
     { label:"Head",       value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
+      anchor:midPt(7,8) || pt(0),
       neutral:"Aligned",  word:(v)=>`Tilt to the ${sideFor(v)}` },
     { label:"Shoulders",  value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
+      anchor:midPt(11,12),
       neutral:"Aligned",  word:(v)=>`Elevation to the ${sideFor(v)}` },
     { label:"Pelvis",     value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
+      anchor:midPt(23,24),
       neutral:"Aligned",  word:(v)=>`Obliquity to the ${sideFor(v)}` },
     // Sign convention taken from buildFindings: negative = valgus (medial).
     { label:"Right Knee", value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(26),
       neutral:"Neutral",  word:(v)=>v<0?"Valgus tendency":"Varus tendency" },
     { label:"Left Knee",  value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
+      anchor:pt(25),
       neutral:"Neutral",  word:(v)=>v<0?"Valgus tendency":"Varus tendency" },
   ].filter(r => r.value !== null && r.value !== undefined && !Number.isNaN(r.value));
 
@@ -3954,13 +3975,22 @@ function SegmentAlignmentReport({ measurements: m, view, PC }) {
       <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.text,textTransform:"uppercase",
         letterSpacing:"1px",marginBottom:10}}>Results</div>
 
-      {withSeverity.map(({label,value,neutral,word,sev}) => {
+      {withSeverity.map(({label,value,neutral,word,sev,anchor}) => {
         const meta = sevMeta(sev);
         return (
-          <div key={label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+          <div key={label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
             padding:"9px 2px",borderBottom:`1px solid ${PC.border}`,fontSize:"0.82rem"}}>
-            <span style={{color:PC.text,fontWeight:600}}>{label}</span>
-            <span style={{display:"flex",alignItems:"center",gap:5,color:meta.colour,fontWeight:700}}>
+            <span style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
+              {photoUrl && anchor && (
+                <div style={{flexShrink:0,width:30,height:30,borderRadius:"50%",
+                  overflow:"hidden",border:`1px solid ${PC.border}`,background:PC.s2,
+                  backgroundImage:`url("${photoUrl}")`,backgroundSize:"260% auto",
+                  backgroundPosition:`${anchor.x*100}% ${anchor.y*100}%`,
+                  backgroundRepeat:"no-repeat"}}/>
+              )}
+              <span style={{color:PC.text,fontWeight:600}}>{label}</span>
+            </span>
+            <span style={{display:"flex",alignItems:"center",gap:5,color:meta.colour,fontWeight:700,flexShrink:0}}>
               <span style={{width:6,height:6,borderRadius:"50%",background:meta.colour,flexShrink:0}}/>
               {sev ? word(value) : neutral}
             </span>
@@ -6060,8 +6090,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <div style={{padding: isWide?"20px 24px":"14px 16px"}}>
           {/* Per-segment alignment summary — frontal/posterior only; renders
               nothing for sagittal views or when no angle measure resolved. */}
+          {/* uploadedImg first, not objectUrlRef.current: by the time this
+              tab has measurements to show, uploadedImg has already been
+              overwritten with the landmark-overlay-baked version (see
+              setUploadedImg(result.annotated) / setUploadedImg(annotatedUrl)
+              above) while objectUrlRef.current stays the raw pre-analysis
+              blob URL for the whole session -- the old precedence always
+              picked the plain photo for these thumbnails (2026-08-29,
+              Aditi: "should show the analysis photo"). */}
           <SegmentAlignmentReport measurements={measurements} view={view} PC={PC}
-            photoUrl={objectUrlRef.current||uploadedImg||capturedImg} landmarks={landmarks}/>
+            photoUrl={uploadedImg||objectUrlRef.current||capturedImg} landmarks={landmarks}/>
           {/* Analysed photo preview — was manual mode only. AI Auto's photo
               gets the identical overlay baked in elsewhere (the Capture
               tab's Layer-2 <img>), but on MOBILE the Capture and Findings
