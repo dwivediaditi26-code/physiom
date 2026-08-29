@@ -578,6 +578,19 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   const leftKneeFrontal  = Vb(23,25,27)?_kfd2(g(23),g(25),g(27),true):null;
   const rightKneeFrontal = Vb(24,26,28)?_kfd2(g(24),g(26),g(28),false):null;
 
+  // Hip adduction/abduction tendency (2026-08-28): deviation of the hip→knee
+  // segment from TRUE VERTICAL, not the hip→ankle line _kfd2 uses above for
+  // knee valgus/varus -- isolates the femur/thigh alignment specifically.
+  // Reuses _kfd2's exact medial/lateral sign convention by substituting a
+  // synthetic point directly below the hip (same x, greater y) as the third
+  // "ankle-like" argument: since that point's x always equals hip.x, the
+  // line _kfd2 measures the knee against becomes a true vertical through
+  // the hip, and every sign/threshold decision downstream inherits the same
+  // already-in-use convention as knee valgus/varus rather than re-deriving
+  // (and risking mis-deriving) a new one.
+  const leftHipFrontal  = Vb(23,25)?_kfd2(g(23),g(25),{x:g(23).x,y:g(23).y+1},true):null;
+  const rightHipFrontal = Vb(24,26)?_kfd2(g(24),g(26),{x:g(24).x,y:g(24).y+1},false):null;
+
   // Q-angle: true angle at the patella between rays to ASIS and to tibial
   // tuberosity. Reuses vec3Angle (angle-at-vertex, already used for
   // leftKneeAngle/rightKneeAngle above) rather than a second copy of the
@@ -940,6 +953,7 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
     sagChain, sagConfidence, sagPelvicShift, sagShoulderShift, sagKneeShift, sagHipShift,
     trunkSagLean, plumb, fhpFromPlumb,
     leftKneeDev, rightKneeDev, leftKneeFrontal, rightKneeFrontal,
+    leftHipFrontal, rightHipFrontal,
     leftQAngle, rightQAngle, anteriorPelvicTiltDeg, pelvicTiltDirection,
     lldProxy, lldSide, ucsIndex, lcsIndex, kneeSymmetry,
     pelvicTiltSagittal: lumbarProxy,
@@ -1090,6 +1104,16 @@ const POSTURE_THRESHOLDS = {
   waistAsymmetry:      { mild:4,   moderate:7,  severe:11  }, // %
   // Knee frontal: Magee p.760 — HKA deviation >6° screened as valgus/varus tendency
   kneeFrontal:         { mild:6,   moderate:10, severe:15  }, // degrees (Magee/Norkin & White)
+  // Hip frontal (adduction/abduction tendency, 2026-08-28): deviation of the
+  // hip→knee segment (femur) from true vertical, isolating the proximal/
+  // thigh contribution specifically -- distinct from kneeFrontal above,
+  // which measures the knee's position relative to the hip→ankle line (the
+  // whole-limb mechanical axis) and so mixes in whatever the tibia/ankle is
+  // doing too. No dedicated photographic-posture citation exists for this
+  // specific proximal-segment cutoff, so this reuses kneeFrontal's numeric
+  // bands as a conservative placeholder pending hip-specific literature --
+  // flagged here rather than presented as independently validated.
+  hipFrontal:          { mild:6,   moderate:10, severe:15  }, // degrees (placeholder, see comment)
   // Q-angle: ASIS-patella-tibial tuberosity, manual mode only (see
   // leftQAngle/rightQAngle -- MediaPipe has no tibial tuberosity landmark).
   // A genuinely different metric from kneeFrontal above (which is HKA
@@ -1471,6 +1495,11 @@ const INTERPRETATIONS = {
     `${side} knee ${pattern} tendency (${deg.toFixed(1)}°) may be associated with reduced ` +
     `hip abductor and external rotator contribution, or increased subtalar pronation. ` +
     `Static posture alone is insufficient to confirm this pattern — functional assessment recommended.`,
+  hipFrontal: (side, deg, pattern) =>
+    `${side} hip ${pattern} tendency (${deg.toFixed(1)}°) reflects the thigh segment's own ` +
+    `alignment relative to true vertical, independent of what the knee/tibia is doing. ` +
+    `${pattern === "adduction" ? "May relate to hip abductor weakness or a habitual weight-shifted stance." : "May relate to hip adductor tightness or a wide-based habitual stance."} ` +
+    `Static posture alone is insufficient to confirm this pattern — functional assessment recommended.`,
   ucs: (idx) =>
     `Observation may be consistent with characteristics of upper crossed pattern (index ${idx.toFixed(1)}). ` +
     `Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. ` +
@@ -1505,6 +1534,7 @@ const MUSCLE_PATTERNS = {
   headTilt:    { tight:["SCM (ipsilateral)","Scalenes (ipsilateral)"],   weak:["Deep cervical flexors","Contralateral SCM"] },
   trunkShift:  { tight:["QL","Lateral abdominals (shift side)"],     weak:["Contralateral QL","Lateral trunk stabilisers"] },
   kneeFrontal: { tight:["TFL/ITB","Hip adductors"],                  weak:["Gluteus medius","VMO"] },
+  hipFrontal:  { tight:["Hip adductors","TFL/ITB"],                  weak:["Gluteus medius","Gluteus minimus"] },
   fhp:         { tight:["Suboccipitals","Cervical extensors","SCM"], weak:["Deep cervical flexors"] },
   kyphosis:    { tight:["Pectoralis major/minor","Upper trapezius"],  weak:["Lower trapezius","Rhomboids","Thoracic erectors"] },
   lumbarAnt:   { tight:["Iliopsoas","Rectus femoris","TFL"],         weak:["Gluteus maximus","Transverse abdominis"] },
@@ -1521,6 +1551,7 @@ const FUNCTIONAL_CORRELATIONS = {
   headTilt:    "May influence upper cervical joint loading and cranial nerve tension if severe.",
   trunkShift:  "May increase contralateral lumbopelvic loading and alter gait mechanics.",
   kneeFrontal: "May increase medial compartment and patellofemoral loading during weight-bearing activities.",
+  hipFrontal: "May alter frontal-plane load distribution through the hip and knee during single-leg stance activities (e.g. stairs, gait).",
   fhp:         "May increase suboccipital and upper cervical extensor loading and reduce cervical flexor capacity.",
   kyphosis:    "May reduce thoracic extension mobility and alter ribcage mechanics during breathing.",
   lumbarAnt:   "May increase lumbar extension loading and reduce lumbopelvic control capacity.",
@@ -1536,6 +1567,7 @@ const OBJECTIVE_ASSESSMENTS = {
   headTilt:    ["Cervical AROM — rotation range bilateral","FRT (Flexion-Rotation Test) for C1–C2","Cranial nerve screen if accompanied by symptoms"],
   trunkShift:  ["Neurological screen: SLR, sensation L3–S1","Kemp's test (facet load)","Hip abductor strength — single-leg balance"],
   kneeFrontal: ["Single-leg squat (observe dynamic valgus/varus)","Hip abductor strength: side-lying abduction","Foot posture index — subtalar pronation"],
+  hipFrontal: ["Trendelenburg test (hip abductor strength)","Single-leg stance balance/alignment","Hip adductor length: Ober's test or similar"],
   fhp:         ["Craniovertebral angle measurement (goniometer)","Deep cervical flexor strength: craniocervical flexion test","Upper cervical joint mobility: ULPA"],
   kyphosis:    ["Passive thoracic extension ROM","Muscle length: pectoralis major (supine)","Strength: lower/mid trapezius (prone Y/T)"],
   lumbarAnt:   ["Thomas test: hip flexor length","Modified Ober test: TFL/ITB length","Glute max strength: prone hip extension"],
@@ -1992,6 +2024,78 @@ function buildFindings(lm, view, m) {
       }
     }
 
+    // ── Hip frontal plane (adduction/abduction tendency) ─────────────────────
+    // Same reliability gate as knee frontal (shares landmarks 23/24/25/26).
+    // Sign convention: reuses _kfd2 unchanged (see leftHipFrontal/
+    // rightHipFrontal above), so medial/lateral here means the exact same
+    // thing geometrically as "medial"/"lateral" already means for knee
+    // valgus/varus just above -- positive = medial deviation = adduction
+    // (thigh angles toward midline), negative = lateral = abduction.
+    // NOTE (2026-08-28): this sign has not yet been empirically verified
+    // against a real photo with a known/observable adduction or abduction
+    // posture -- flag for confirmation on first real-world test rather than
+    // trusting the math alone, since the knee-frontal block just above this
+    // one is internally inconsistent about the same medial/lateral mapping
+    // (bilateral branch treats positive as medial; both single-side
+    // branches treat negative as medial) and that discrepancy was not
+    // something this change should silently inherit without a real check.
+    if (kneeRel.reliable) {
+      const lv = m.leftHipFrontal, rv = m.rightHipFrontal;
+      const lSev = lv !== null ? classifySeverity(Math.abs(lv), POSTURE_THRESHOLDS.hipFrontal) : null;
+      const rSev = rv !== null ? classifySeverity(Math.abs(rv), POSTURE_THRESHOLDS.hipFrontal) : null;
+      if (lSev || rSev) {
+        const bilateral = lSev && rSev;
+        if (bilateral) {
+          const worseAbs = Math.max(Math.abs(lv), Math.abs(rv));
+          const worseSide = Math.abs(lv) >= Math.abs(rv) ? "L" : "R";
+          const lDir = lv >= 0 ? "adduction" : "abduction";
+          const rDir = rv >= 0 ? "adduction" : "abduction";
+          const pattern = (lDir === rDir) ? lDir : "asymmetric";
+          const worstSev = (lSev === "high" || rSev === "high") ? "moderate" : "low";
+          add({
+            region: "Hip Alignment Tendency",
+            findingName: `OBSERVATION: Bilateral hip ${pattern} tendency — ${worseSide} worse (L:${Math.abs(lv).toFixed(1)}° R:${Math.abs(rv).toFixed(1)}°). Clinical confirmation required.`,
+            severity: worstSev, confidenceScore: kneeConf, clinicalSignificance: worstSev,
+            interpretation: INTERPRETATIONS.hipFrontal("Bilateral", worseAbs, pattern),
+            musclePattern: MUSCLE_PATTERNS.hipFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.hipFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.hipFrontal,
+            correction: "General activities some find helpful (discuss with a professional first): glute-med strengthening (side-lying abduction, band walks), hip adductor stretching, single-leg balance with mirror feedback.",
+            icd: "M25.9", norm: "<6° hip frontal deviation (placeholder threshold, see POSTURE_THRESHOLDS.hipFrontal)",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)"],
+          });
+        } else if (lSev) {
+          const pattern = lv >= 0 ? "adduction" : "abduction";
+          add({
+            region: "Hip Alignment Tendency",
+            findingName: `OBSERVATION: Left hip ${pattern} tendency — thigh alignment vs vertical (${Math.abs(lv).toFixed(1)}°). Clinical confirmation required.`,
+            severity: lSev, confidenceScore: kneeConf, clinicalSignificance: lSev,
+            interpretation: INTERPRETATIONS.hipFrontal("Left", Math.abs(lv), pattern),
+            musclePattern: MUSCLE_PATTERNS.hipFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.hipFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.hipFrontal,
+            correction: pattern === "adduction" ? "Glute med activation. Trendelenburg screen." : "Hip adductor stretch. Assess stance width habit.",
+            icd: "M25.9", norm: "<6° hip frontal deviation (placeholder threshold, see POSTURE_THRESHOLDS.hipFrontal)",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)"],
+          });
+        } else if (rSev) {
+          const pattern = rv >= 0 ? "adduction" : "abduction";
+          add({
+            region: "Hip Alignment Tendency",
+            findingName: `OBSERVATION: Right hip ${pattern} tendency — thigh alignment vs vertical (${Math.abs(rv).toFixed(1)}°). Clinical confirmation required.`,
+            severity: rSev, confidenceScore: kneeConf, clinicalSignificance: rSev,
+            interpretation: INTERPRETATIONS.hipFrontal("Right", Math.abs(rv), pattern),
+            musclePattern: MUSCLE_PATTERNS.hipFrontal,
+            functionalCorrelation: FUNCTIONAL_CORRELATIONS.hipFrontal,
+            objectiveAssessments: OBJECTIVE_ASSESSMENTS.hipFrontal,
+            correction: pattern === "adduction" ? "Glute med activation. Trendelenburg screen." : "Hip adductor stretch. Assess stance width habit.",
+            icd: "M25.9", norm: "<6° hip frontal deviation (placeholder threshold, see POSTURE_THRESHOLDS.hipFrontal)",
+            _derivedFrom: ["Hip (lm23/24)", "Knee (lm25/26)"],
+          });
+        }
+      }
+    }
+
     // ── UCS index — lateral/sagittal view only ──────────────────────────────
     // UCS requires CVA (sagittal landmark) — never diagnose from photo alone
     // UCS in frontal view — handled via sagittal engine only
@@ -2019,12 +2123,43 @@ function buildFindings(lm, view, m) {
       const sev = classifySeverity(m.lldProxy, POSTURE_THRESHOLDS.lldProxy);
       const conf = getLandmarkConfidence(lm, [...LANDMARK_GROUPS.hip, ...LANDMARK_GROUPS.ankle]);
       if (sev) {
+        // Apparent-vs-functional pattern (2026-08-28): a single ankle-height
+        // photo genuinely cannot distinguish TRUE/structural LLD from
+        // apparent/postural LLD on its own -- but cross-referencing it
+        // against pelvic obliquity (m.pelvisAngle, already computed by
+        // module F11 above) gives an honest, data-backed lean rather than
+        // one generic "possible LLD" message for every case. Elevation
+        // side convention matches F11's elevationSide11 (line ~914):
+        // pelvisAngle>0 = Right hip elevated, <0 = Left elevated. A raised
+        // hip drops the OPPOSITE ankle lower, so lldSide should be the
+        // opposite side from the elevated hip when obliquity is driving
+        // the ankle asymmetry directly (apparent/postural pattern); no
+        // matching obliquity in that direction suggests the asymmetry
+        // isn't explained by pelvic tilt alone (lean structural).
+        // NOTE: not yet empirically verified against a real photo with a
+        // known LLD/obliquity relationship -- two OTHER places in this
+        // file already disagree with each other on which pelvisAngle sign
+        // means which side is elevated (line ~914/3607 vs ~5818), so this
+        // directional lean should be treated as provisional until checked
+        // against a real capture, same caveat as the hip adduction finding
+        // just above.
+        let patternNote = "";
+        if (m.pelvisAngle !== null && Math.abs(m.pelvisAngle) > POSTURE_THRESHOLDS.pelvisAngle.mild) {
+          const elevatedSide = m.pelvisAngle > 0 ? "Right" : "Left";
+          const expectedLowSide = elevatedSide === "Right" ? "Left" : "Right";
+          const correlates = m.lldSide && m.lldSide === expectedLowSide;
+          patternNote = correlates
+            ? ` Pattern: likely functional/postural — correlates with ${elevatedSide.toLowerCase()} pelvic obliquity (${Math.abs(m.pelvisAngle).toFixed(1)}°).`
+            : ` Pattern: ankle asymmetry does not clearly correlate with the observed pelvic obliquity direction — consider a structural contribution, confirm clinically.`;
+        } else {
+          patternNote = " Pattern: pelvis appears level — if confirmed, a structural (anatomic) contribution is more likely than a purely postural one.";
+        }
         add({
           region: "Leg Length",
-          findingName: `OBSERVATION: Ankle height asymmetry (~${m.lldProxy.toFixed(0)}mm, ${m.lldSide || ""} side lower) — possible leg length asymmetry. Clinical confirmation essential.`,
+          findingName: `OBSERVATION: Ankle height asymmetry (~${m.lldProxy.toFixed(0)}mm, ${m.lldSide || ""} side lower) — possible leg length asymmetry. Clinical confirmation essential.${patternNote}`,
           severity: sev, confidenceScore: Math.min(conf, 55), // cap — proxy measure only
           clinicalSignificance: "low",
-          interpretation: `OBSERVATION ONLY. Ankle height asymmetry observed (~${m.lldProxy.toFixed(0)}mm). This is a camera-based proxy measurement only and cannot diagnose leg length discrepancy. Possible contributors: functional pelvic obliquity, hip asymmetry, habitual weight-bearing pattern, or structural length difference. Clinical measurement is essential before any orthotic intervention.`,
+          interpretation: `OBSERVATION ONLY. Ankle height asymmetry observed (~${m.lldProxy.toFixed(0)}mm).${patternNote} This is a camera-based proxy measurement only and cannot diagnose leg length discrepancy. Possible contributors: functional pelvic obliquity, hip asymmetry, habitual weight-bearing pattern, or structural length difference. Clinical measurement is essential before any orthotic intervention.`,
           musclePattern: MUSCLE_PATTERNS.pelvis,
           functionalCorrelation: FUNCTIONAL_CORRELATIONS.pelvis,
           objectiveAssessments: OBJECTIVE_ASSESSMENTS.pelvis,
@@ -2619,9 +2754,19 @@ const VIEW_PLANE = { anterior:"frontal", posterior:"frontal", left:"sagittal", r
 // describing the same thing. This map is used ONLY to decide which bucket a
 // finding's votes go into; the finding's own displayed `region` (used
 // elsewhere for Exercise Plan / Special Tests lookups) is left untouched.
+// "Pelvic Obliquity"/"Pelvic Level" used to need an entry here too, until
+// (2026-08-28, Aditi: "collapsing them to one canonical Pelvis label") both
+// were renamed at their source to "Pelvis" directly instead of relying on
+// this vote-only synonym map — the actual DISPLAYED region (Screening
+// Observations list, region-grouped views) was still fragmented into three
+// near-duplicate buckets for the same frontal-plane finding, which this map
+// alone never fixed since it only affects cross-view confirmation matching.
+// "Pelvis / Lumbar" is a different clinical plane (sagittal anterior/
+// posterior tilt, not frontal obliquity) and deliberately stays a separate
+// region — it has its own MUSCLE_PATTERNS/OBJECTIVE_ASSESSMENTS entries a
+// merge would silently orphan.
 const REGION_MERGE_SYNONYMS = {
   "Shoulder Level": "Shoulder Girdle",
-  "Pelvic Obliquity": "Pelvis",
   "Head Lateral Tilt": "Head / Cervical",
   "Trunk Lateral Shift": "Lateral Trunk Deviation Screen",
   "Leg Length Discrepancy": "Leg Length",
@@ -3756,7 +3901,7 @@ function CaptureAlignmentGuide({ view, visible }) {
 // distances, so the frame's scale cancels out and this report is unaffected by
 // the height-calibration accuracy that every cm-based figure depends on.
 // Do not add cm rows here without revisiting that.
-function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks }) {
+function SegmentAlignmentReport({ measurements: m, view, PC }) {
   if (!m) return null;
   // Frontal-plane only: these measures compare left against right, which a
   // sagittal photo cannot see (the far side is legitimately occluded).
@@ -3770,35 +3915,18 @@ function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks
     ? (view === "anterior" ? "Left" : "Right")
     : (view === "anterior" ? "Right" : "Left");
 
-  // Normalised anchor point for each row's thumbnail crop, from the landmarks
-  // the row is actually derived from. Null when those landmarks aren't visible,
-  // in which case the row simply renders without a thumbnail.
-  const pt = (i) => {
-    const p = landmarks?.[i];
-    return (p && (p.visibility ?? 1) >= 0.4) ? p : null;
-  };
-  const midPt = (a, b) => {
-    const pa = pt(a), pb = pt(b);
-    return (pa && pb) ? { x:(pa.x+pb.x)/2, y:(pa.y+pb.y)/2 } : null;
-  };
-
   const rows = [
-    { label:"Head",      value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
-      anchor:midPt(7,8) || pt(0),
-      neutral:"ALIGNED", word:(v)=>`TILT TO THE ${sideFor(v).toUpperCase()}` },
-    { label:"Shoulders", value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
-      anchor:midPt(11,12),
-      neutral:"ALIGNED", word:(v)=>`ELEVATION TO THE ${sideFor(v).toUpperCase()}` },
-    { label:"Pelvis",    value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
-      anchor:midPt(23,24),
-      neutral:"ALIGNED", word:(v)=>`OBLIQUITY TO THE ${sideFor(v).toUpperCase()}` },
+    { label:"Head",       value:m.headTiltAngle,    th:POSTURE_THRESHOLDS.headTilt,
+      neutral:"Aligned",  word:(v)=>`Tilt to the ${sideFor(v)}` },
+    { label:"Shoulders",  value:m.shoulderAngle,    th:POSTURE_THRESHOLDS.shoulderAngle,
+      neutral:"Aligned",  word:(v)=>`Elevation to the ${sideFor(v)}` },
+    { label:"Pelvis",     value:m.pelvisAngle,      th:POSTURE_THRESHOLDS.pelvisAngle,
+      neutral:"Aligned",  word:(v)=>`Obliquity to the ${sideFor(v)}` },
     // Sign convention taken from buildFindings: negative = valgus (medial).
-    { label:"Right Knee",value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
-      anchor:pt(26),
-      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
-    { label:"Left Knee", value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
-      anchor:pt(25),
-      neutral:"NEUTRAL", word:(v)=>v<0?"VALGUS TENDENCY":"VARUS TENDENCY" },
+    { label:"Right Knee", value:m.rightKneeFrontal, th:POSTURE_THRESHOLDS.kneeFrontal,
+      neutral:"Neutral",  word:(v)=>v<0?"Valgus tendency":"Varus tendency" },
+    { label:"Left Knee",  value:m.leftKneeFrontal,  th:POSTURE_THRESHOLDS.kneeFrontal,
+      neutral:"Neutral",  word:(v)=>v<0?"Valgus tendency":"Varus tendency" },
   ].filter(r => r.value !== null && r.value !== undefined && !Number.isNaN(r.value));
 
   if (!rows.length) return null;
@@ -3809,81 +3937,59 @@ function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks
   : s === "mild"     ? { label:"Mild",     colour:PC.yellow }
   :                    { label:"Normal",   colour:PC.green };
 
+  // 2026-08-29 (Aditi: "in mobile view result section is so much
+  // congested...can it be redesigned, how other webapp shows result
+  // clean look"): the previous version gave every metric its own
+  // bordered card -- thumbnail crop, big word, gradient bar and margin
+  // caption -- so a screen of five all-normal metrics read as five near-
+  // identical blocks with no visual hierarchy. Now the list itself is
+  // one plain row per metric (label + status dot), and only the rows
+  // that actually cross a threshold get pulled out into a colour-coded
+  // callout below -- normal stays quiet, abnormal stands out.
+  const withSeverity = rows.map(r => ({...r, sev: classifySeverity(Math.abs(r.value), r.th)}));
+  const flagged = withSeverity.filter(r => r.sev);
+
   return (
     <div style={{padding:"4px 0 14px"}}>
       <div style={{fontSize:"0.8rem",fontWeight:800,color:PC.text,textTransform:"uppercase",
-        letterSpacing:"1px",marginBottom:12}}>Results</div>
+        letterSpacing:"1px",marginBottom:10}}>Results</div>
 
-      {rows.map(({label,value,th,neutral,word,anchor}) => {
-        const abs = Math.abs(value);
-        const sev = classifySeverity(abs, th);
+      {withSeverity.map(({label,value,neutral,word,sev}) => {
         const meta = sevMeta(sev);
-
-        // Bar is centred on zero: deviation to either side moves outward from a
-        // green middle band. An absolute-value ramp would collapse left and
-        // right deviation onto the same position and lose the direction, which
-        // is exactly what these frontal measures exist to show.
-        const clamped = Math.max(-th.severe, Math.min(th.severe, value));
-        const pos     = 50 + (clamped / th.severe) * 50;
-        const gMinus  = 50 - 50 * th.mild     / th.severe;
-        const gPlus   = 50 + 50 * th.mild     / th.severe;
-        const aMinus  = 50 - 50 * th.moderate / th.severe;
-        const aPlus   = 50 + 50 * th.moderate / th.severe;
-        const grad = `linear-gradient(90deg,`
-          + ` ${PC.red} 0%, ${PC.red} ${aMinus}%,`
-          + ` ${PC.yellow} ${aMinus}%, ${PC.yellow} ${gMinus}%,`
-          + ` ${PC.green} ${gMinus}%, ${PC.green} ${gPlus}%,`
-          + ` ${PC.yellow} ${gPlus}%, ${PC.yellow} ${aPlus}%,`
-          + ` ${PC.red} ${aPlus}%, ${PC.red} 100%)`;
-
         return (
-          <div key={label} style={{display:"flex",gap:12,alignItems:"center",
-            padding:"12px 0",borderBottom:`1px solid ${PC.border}`}}>
-
-            {/* Region thumbnail — a circular crop of the analysed photo centred
-                on this row's own landmarks. Percentage background-position
-                aligns the same relative point of image and container, so the
-                normalised landmark coordinate centres the crop directly; no
-                canvas work needed. */}
-            {photoUrl && anchor && (
-              <div style={{flex:"0 0 58px",width:58,height:58,borderRadius:"50%",
-                overflow:"hidden",border:`1px solid ${PC.border}`,background:PC.s2,
-                backgroundImage:`url("${photoUrl}")`,backgroundSize:"260% auto",
-                backgroundPosition:`${anchor.x*100}% ${anchor.y*100}%`,
-                backgroundRepeat:"no-repeat"}}/>
-            )}
-
-            <div style={{flex:1,minWidth:0,textAlign:"right"}}>
-              <div style={{fontSize:"0.7rem",color:PC.muted,fontWeight:600}}>{label}</div>
-              <div style={{fontSize:"0.95rem",fontWeight:800,color:PC.text,
-                textTransform:"uppercase",lineHeight:1.25,letterSpacing:"0.2px"}}>
-                {sev ? word(value) : neutral}
-              </div>
-              <div style={{fontSize:"1.15rem",fontWeight:900,color:meta.colour,lineHeight:1.3}}>
-                {value.toFixed(1)}°
-              </div>
-
-              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
-                <span style={{padding:"2px 10px",borderRadius:20,fontSize:"0.65rem",
-                  fontWeight:800,color:"#fff",background:meta.colour,whiteSpace:"nowrap"}}>
-                  {meta.label}
-                </span>
-                <div style={{position:"relative",flex:1,height:5,borderRadius:5,
-                  background:grad,opacity:0.9}}>
-                  <div style={{position:"absolute",left:`${pos}%`,top:-7,
-                    transform:"translateX(-50%)",width:0,height:0,
-                    borderLeft:"4px solid transparent",borderRight:"4px solid transparent",
-                    borderTop:`6px solid ${PC.text}`}}/>
-                </div>
-              </div>
-
-              <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:5}}>
-                Margin of alignment: {th.mild}°
-              </div>
-            </div>
+          <div key={label} style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+            padding:"9px 2px",borderBottom:`1px solid ${PC.border}`,fontSize:"0.82rem"}}>
+            <span style={{color:PC.text,fontWeight:600}}>{label}</span>
+            <span style={{display:"flex",alignItems:"center",gap:5,color:meta.colour,fontWeight:700}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:meta.colour,flexShrink:0}}/>
+              {sev ? word(value) : neutral}
+            </span>
           </div>
         );
       })}
+
+      {flagged.length>0 ? (
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:12}}>
+          {flagged.map(({label,value,word,sev}) => {
+            const meta = sevMeta(sev);
+            return (
+              <div key={label} style={{display:"flex",gap:8,padding:"10px 12px",borderRadius:10,
+                background:`${meta.colour}14`,alignItems:"flex-start"}}>
+                <span style={{fontSize:"0.9rem",flexShrink:0,marginTop:1}}>⚠</span>
+                <span style={{fontSize:"0.78rem",color:meta.colour,fontWeight:700,lineHeight:1.4}}>
+                  {label} {word(value).toLowerCase()} — {Math.abs(value).toFixed(1)}°
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{display:"flex",gap:8,padding:"10px 12px",borderRadius:10,background:`${PC.green}14`,
+          alignItems:"center",marginTop:12}}>
+          <span style={{fontSize:"0.9rem"}}>✓</span>
+          <span style={{fontSize:"0.78rem",color:PC.green,fontWeight:700}}>No findings — all metrics within normal range</span>
+        </div>
+      )}
 
       <div style={{fontSize:"0.63rem",color:PC.muted,marginTop:10,fontStyle:"italic",lineHeight:1.5}}>
         Angle-based screen — independent of height calibration. Educational
@@ -4845,6 +4951,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [mvComposite,setMvComposite] = useState(null);
   const [mvTab,setMvTab]           = useState("capture");  // "capture" | "report"
   const [mvResultView,setMvResultView] = useState("overview"); // "overview" | viewKey — which tab is showing inside the report
+  const mvTouchX = useRef(null); // horizontal swipe tracking for the view slider
   const [showHowItWorks,setShowHowItWorks] = useState(false);
   const [showPatientPicker,setShowPatientPicker] = useState(false);
 
@@ -5128,7 +5235,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         // relaxed fallback path cannot bypass the two-tier visibility model.
         const cv = (...idx) => idx.every(i => (lm[i]?.visibility || 0) >= CLINICAL_MIN_VIS);
         if (cv(11,12)&&m.shoulderAngle!=null&&Math.abs(m.shoulderAngle)>3) { const abs=Math.abs(m.shoulderAngle); const side=m.shoulderAngle>0?"Right":"Left"; const sev=abs>7?"high":abs>5?"moderate":"mild"; fb.push({region:"Shoulder Level",text:`${side} shoulder elevated — ${abs.toFixed(1)}° asymmetry (normal <3°)`,plain:`${side} shoulder higher ${abs.toFixed(1)}°`,severity:sev,confidenceScore:78,clinicalSignificance:sev,correction:"Check for cervical muscle tightness, scapular stabilisation, check LLD.",icd:"M99.0",norm:"<3° shoulder height difference (Magee + healthy-norm)"}); }
-        if (cv(23,24)&&m.pelvisAngle!=null&&Math.abs(m.pelvisAngle)>4) { const abs=Math.abs(m.pelvisAngle); const side=m.pelvisAngle>0?"Right":"Left"; const sev=abs>10?"high":abs>7?"moderate":"mild"; fb.push({region:"Pelvic Obliquity",text:`${side} iliac crest elevated — ${abs.toFixed(1)}° obliquity (normal <4°)`,plain:`Pelvic obliquity ${abs.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Check hip abductor strength, LLD, QL tightness. Thomas test bilaterally.",icd:"M99.0",norm:"<4° pelvic obliquity (healthy-population norm, PMC10229507)"}); }
+        if (cv(23,24)&&m.pelvisAngle!=null&&Math.abs(m.pelvisAngle)>4) { const abs=Math.abs(m.pelvisAngle); const side=m.pelvisAngle>0?"Right":"Left"; const sev=abs>10?"high":abs>7?"moderate":"mild"; fb.push({region:"Pelvis",text:`${side} iliac crest elevated — ${abs.toFixed(1)}° obliquity (normal <4°)`,plain:`Pelvic obliquity ${abs.toFixed(1)}°`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"Check hip abductor strength, LLD, QL tightness. Thomas test bilaterally.",icd:"M99.0",norm:"<4° pelvic obliquity (healthy-population norm, PMC10229507)"}); }
         if (cv(0,11,12)&&m.headLateralOffset!=null&&Math.abs(m.headLateralOffset)>2.5) { const abs=Math.abs(m.headLateralOffset); const side=m.headLateralOffset>0?"Right":"Left"; fb.push({region:"Head Lateral Tilt",text:`Head tilted ${abs.toFixed(1)}% toward ${side} (normal <2.5%)`,plain:`Head lateral tilt ${abs.toFixed(1)}%`,severity:abs>5?"moderate":"mild",confidenceScore:70,clinicalSignificance:"moderate",correction:"Cervical lateral flexion stretch, SCM/scalene release, check atlanto-axial rotation.",icd:"M99.0",norm:"Head centred within 2.5% of midline"}); }
         if (cv(11,12,23,24)&&m.trunkLateralShift!=null&&Math.abs(m.trunkLateralShift)>3.5) { const abs=Math.abs(m.trunkLateralShift); const dir=m.trunkLateralShift>0?"Right":"Left"; const sev=abs>6?"high":abs>4?"moderate":"mild"; fb.push({region:"Trunk Lateral Shift",text:`Trunk shifted ${dir} — ${abs.toFixed(1)}% of frame width (normal <3.5%)`,plain:`Trunk shift ${dir} ${abs.toFixed(1)}%`,severity:sev,confidenceScore:72,clinicalSignificance:sev,correction:"General core and trunk mobility/stability activities may help. Consider a professional assessment if the lean is pronounced.",icd:"M99.0",norm:"<3.5% lateral trunk shift (Magee)"}); }
         if (cv(25,26)&&m.lldProxy!=null&&m.lldProxy>5) { const sev=m.lldProxy>20?"high":m.lldProxy>10?"moderate":"mild"; fb.push({region:"Leg Length Discrepancy",text:`Possible LLD — knee height difference ~${m.lldProxy.toFixed(0)}mm (screen only)`,plain:`LLD screen ${m.lldProxy.toFixed(0)}mm`,severity:sev,confidenceScore:60,clinicalSignificance:sev,correction:"Confirm with X-ray or standing heel raise test. Orthotic if structural LLD confirmed.",icd:"M21.7",norm:"<5mm functional LLD (Magee)"}); }
@@ -5703,7 +5810,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           const sev = absP > 10 ? "high" : absP > 7 ? "moderate" : "low";
           const side = pelAng > 0 ? "Left" : "Right";
           pb.push({
-            region: "Pelvic Level",
+            region: "Pelvis",
             text: absP <= 4
               ? `Pelvic level — within normal limits (${absP.toFixed(1)}° obliquity, normal <4°)`
               : `${side} pelvis elevated — ${absP.toFixed(1)}° obliquity (normal <4° — healthy-population norm)`,
@@ -6861,31 +6968,58 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         </div>
       </div>
 
-      {/* View switcher — Overview + one tab per captured view. Each view
-          tab shows only that photo's own result (renderViewResult above);
-          Overview keeps the cross-view composite summary below. */}
-      <div style={{display:"flex",gap:6,overflowX:"auto",padding:"10px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.s2,WebkitOverflowScrolling:"touch"}}>
-        <button onClick={()=>setMvResultView("overview")}
-          style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
-            border:`1.5px solid ${mvResultView==="overview"?PC.accent:PC.border}`,
-            background:mvResultView==="overview"?`${PC.accent}14`:PC.surface,
-            color:mvResultView==="overview"?PC.accent:PC.muted,fontSize:"0.78rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
-          ◎ Overview
-        </button>
-        {mvCapturedViews.map(vk=>{
-          const meta=VIEWS[vk], res=mvResults[vk], active=mvResultView===vk;
-          return (
-            <button key={vk} onClick={()=>setMvResultView(vk)}
-              style={{flexShrink:0,display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,
-                border:`1.5px solid ${active?meta.colour:PC.border}`,
-                background:active?`${meta.colour}14`:PC.surface,
-                color:active?meta.colour:PC.muted,fontSize:"0.78rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
-              {meta.icon} {meta.label}
-              {res.scoreData&&<span style={{fontSize:"0.7rem",opacity:0.8}}>{res.scoreData.score}</span>}
-            </button>
-          );
-        })}
-      </div>
+      {/* View slider (2026-08-29, Aditi: "the slide version of overview,
+          not list view") — Overview + one slide per captured view, swiped
+          or arrowed through instead of a horizontally-scrolling pill row.
+          mvSlides is the ordered deck; mvSlideIdx is derived from
+          mvResultView rather than duplicated as its own piece of state, so
+          the two can never drift out of sync. */}
+      {(() => {
+        const mvSlides = ["overview", ...mvCapturedViews];
+        const mvSlideIdx = Math.max(0, mvSlides.indexOf(mvResultView));
+        const goToSlide = (i) => setMvResultView(mvSlides[(i+mvSlides.length)%mvSlides.length]);
+        const activeMeta = mvResultView==="overview" ? null : VIEWS[mvResultView];
+        const activeScore = mvResultView==="overview"
+          ? mvComposite.compositeScore
+          : mvResults[mvResultView]?.scoreData?.score;
+        const activeColour = mvResultView==="overview" ? mvComposite.compositeColour : activeMeta?.colour;
+        return (
+          <div
+            style={{padding:"10px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.s2}}
+            onTouchStart={e=>{ mvTouchX.current = e.touches[0].clientX; }}
+            onTouchEnd={e=>{
+              if(mvTouchX.current==null) return;
+              const dx = e.changedTouches[0].clientX - mvTouchX.current;
+              mvTouchX.current = null;
+              if(Math.abs(dx) < 40) return;
+              goToSlide(mvSlideIdx + (dx < 0 ? 1 : -1));
+            }}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <button onClick={()=>goToSlide(mvSlideIdx-1)} aria-label="Previous view"
+                style={{flexShrink:0,width:30,height:30,borderRadius:"50%",border:`1px solid ${PC.border}`,background:PC.surface,color:PC.muted,fontSize:"0.9rem",cursor:"pointer"}}>‹</button>
+
+              <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,minWidth:0}}>
+                <span style={{fontWeight:800,fontSize:"0.85rem",color:activeColour||PC.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {mvResultView==="overview" ? "◎ Overview" : `${activeMeta.icon} ${activeMeta.label}`}
+                </span>
+                {activeScore!=null && <span style={{fontSize:"0.75rem",fontWeight:700,color:PC.muted,flexShrink:0}}>{activeScore}/100</span>}
+              </div>
+
+              <button onClick={()=>goToSlide(mvSlideIdx+1)} aria-label="Next view"
+                style={{flexShrink:0,width:30,height:30,borderRadius:"50%",border:`1px solid ${PC.border}`,background:PC.surface,color:PC.muted,fontSize:"0.9rem",cursor:"pointer"}}>›</button>
+            </div>
+
+            <div style={{display:"flex",justifyContent:"center",gap:6,marginTop:8}}>
+              {mvSlides.map((vk,i)=>(
+                <span key={vk} onClick={()=>goToSlide(i)}
+                  style={{width:i===mvSlideIdx?16:6,height:6,borderRadius:3,cursor:"pointer",
+                    background:i===mvSlideIdx?(activeColour||PC.accent):PC.border,
+                    transition:"width 0.15s,background 0.15s"}}/>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {mvResultView!=="overview" && mvResults[mvResultView] ? renderViewResult(mvResultView) : (
       <div style={{padding:isWide?"20px 24px":"14px 16px"}}>
@@ -7269,7 +7403,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 (2026-08-25, user feedback). */}
             {uploadedImg && !analysing && (
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
-                <button type="button" onClick={handleRemovePhoto}
+                <button type="button" onClick={()=>handleRemovePhoto(view)}
                   style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${PC.red}30`,background:"rgba(220,38,38,0.06)",color:PC.red,fontWeight:700,fontSize:"0.75rem",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                   ✕ Remove Photo
                 </button>
@@ -8624,4 +8758,5 @@ function useVerifiedLandmarks() {
 }
 
 export { PostureAnalysisModule, PC, vec3Angle, dist2D, classifySeverity, POSTURE_THRESHOLDS,
-  getLandmarkConfidence, checkLandmarkReliability, checkAnatomicalOrder };
+  getLandmarkConfidence, checkLandmarkReliability, checkAnatomicalOrder,
+  measureLandmarks, buildFindings };
