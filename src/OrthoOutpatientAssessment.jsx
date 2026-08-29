@@ -431,7 +431,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
-          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} />}
+          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>

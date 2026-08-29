@@ -2076,7 +2076,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-input { border: none; outline: none; font-size: 15px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
 
+        /* min-width: 0 overrides the flex-item default of min-width: auto --
+           without it a wide child (e.g. a text combobox, not just this
+           module's narrow NumberFields) would refuse to shrink and could
+           overflow past the screen edge, same bug confirmed in
+           NeurologicalAssessment.jsx's identical .row-2 definition. */
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
+        .row-2 > * { min-width: 0; }
 
         .textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
 
