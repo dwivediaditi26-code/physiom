@@ -1890,12 +1890,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       patient list should only show patient list"). "Patients"
                       stays the default so tapping the bottom-nav "Clinical"
                       tab still lands exactly where it always has. */}
-                  <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
+                  <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9",overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
                     {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"],["assessment","📋 Assessment"]].map(([k,label])=>(
                       <button key={k} onClick={()=>setClinicalSubTab(k)}
                         style={{padding:"8px 14px",borderRadius:"10px 10px 0 0",border:"none",borderBottom:clinicalSubTab===k?"2px solid #6D28D9":"2px solid transparent",
                           background:clinicalSubTab===k?"#F5F3FF":"transparent",color:clinicalSubTab===k?"#6D28D9":"#6B7280",
-                          fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                          fontSize:"0.8rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                         {label}
                       </button>
                     ))}
