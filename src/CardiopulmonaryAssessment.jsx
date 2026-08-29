@@ -240,10 +240,12 @@ function Segmented({ label, options, value, onChange, hint, howTo, info }) {
 function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
   return (
     <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
-      <div className="vital-label-row">
-        <span className="vital-label">{label}</span>
-        {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
-      </div>
+      {label && (
+        <div className="vital-label-row">
+          <span className="vital-label">{label}</span>
+          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
+        </div>
+      )}
       <div className="vital-input-wrap">
         <input
           type="number"
@@ -271,6 +273,76 @@ function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
         onChange={(e) => onChange(e.target.value)}
       />
     </FieldShell>
+  );
+}
+
+/* Collapsed-by-default row -- tap to reveal the real field widget, with a
+   short answered-state summary shown in the collapsed row. Same interaction
+   pattern as Ortho's ItemCardShell; used to wrap SelectField/TextArea/
+   NumberField/TextField only in the heaviest sections (see the .cfield*
+   CSS comment above for why). */
+function CollapsibleField({ label, answered, summary, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={"cfield" + (answered ? " cfield-answered" : "")}>
+      <div className="cfield-row" onClick={() => setOpen((o) => !o)} role="button">
+        <span className="cfield-label">{label}</span>
+        <div className="cfield-right">
+          {answered && summary && <span className="cfield-summary">{summary}</span>}
+          <span className={"cfield-chevron" + (open ? " open" : "")}>⌄</span>
+        </div>
+      </div>
+      {open && (
+        <div className="cfield-body" onClick={(e) => e.stopPropagation()}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function truncate(s, n) {
+  const str = String(s || "");
+  return str.length > n ? str.slice(0, n) + "…" : str;
+}
+
+function CSelectField(props) {
+  const { label, value } = props;
+  const answered = !!String(value || "").trim();
+  return (
+    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
+      <SelectField {...props} label={undefined} />
+    </CollapsibleField>
+  );
+}
+
+function CTextArea(props) {
+  const { label, value } = props;
+  const answered = !!String(value || "").trim();
+  return (
+    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
+      <TextArea {...props} label={undefined} />
+    </CollapsibleField>
+  );
+}
+
+function CTextField(props) {
+  const { label, value } = props;
+  const answered = !!String(value || "").trim();
+  return (
+    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
+      <TextField {...props} label={undefined} />
+    </CollapsibleField>
+  );
+}
+
+function CNumberField(props) {
+  const { label, value, unit } = props;
+  const answered = value !== undefined && value !== null && value !== "";
+  return (
+    <CollapsibleField label={label} answered={answered} summary={answered ? `${value}${unit ? " " + unit : ""}` : ""}>
+      <NumberField {...props} label={undefined} />
+    </CollapsibleField>
   );
 }
 
@@ -889,8 +961,8 @@ function SubjectiveSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
   return (
     <>
-      <SectionIntro icon="📝" title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses." />
-      <SelectField
+      <SectionIntro icon="📝" title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses. Tap any row to fill it in." />
+      <CSelectField
         label="Chief complaint"
         type="multi"
         options={CHIEF_COMPLAINTS}
@@ -898,19 +970,19 @@ function SubjectiveSection({ data, setData }) {
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient lead before narrowing to focused follow-ups."
       />
-      <TextArea
+      <CTextArea
         label="History of presenting condition"
         value={d.hpc}
         onChange={(v) => set("hpc", v)}
         placeholder="Onset, triggers, what makes it worse/better, course over time..."
         howTo="Work through OPQRST-style prompts: Onset, Provoking/relieving factors, Quality, Severity (relate to function, not just mild/moderate/severe), Timing/course."
       />
-      <SelectField label="Onset" type="single" options={ONSETS} value={d.onset} onChange={(v) => set("onset", v)} />
-      <SelectField label="Aggravating factors" type="multi" options={AGGRAVATING} value={d.aggravating} onChange={(v) => set("aggravating", v)} />
-      <SelectField label="Relieving factors" type="multi" options={RELIEVING} value={d.relieving} onChange={(v) => set("relieving", v)} />
+      <CSelectField label="Onset" type="single" options={ONSETS} value={d.onset} onChange={(v) => set("onset", v)} />
+      <CSelectField label="Aggravating factors" type="multi" options={AGGRAVATING} value={d.aggravating} onChange={(v) => set("aggravating", v)} />
+      <CSelectField label="Relieving factors" type="multi" options={RELIEVING} value={d.relieving} onChange={(v) => set("relieving", v)} />
 
       <div className="subheading">Cough &amp; sputum</div>
-      <SelectField
+      <CSelectField
         label="Cough"
         type="single"
         options={COUGH_TYPES}
@@ -918,8 +990,8 @@ function SubjectiveSection({ data, setData }) {
         onChange={(v) => set("cough", v)}
         howTo="Cough/sputum questions can feel embarrassing — phrase gently: 'does coughing make you leak urine?', 'does this interfere with your physiotherapy?'"
       />
-      <SelectField label="Sputum amount" type="single" options={SPUTUM_AMOUNT} value={d.sputumAmount} onChange={(v) => set("sputumAmount", v)} />
-      <SelectField
+      <CSelectField label="Sputum amount" type="single" options={SPUTUM_AMOUNT} value={d.sputumAmount} onChange={(v) => set("sputumAmount", v)} />
+      <CSelectField
         label="Sputum colour"
         type="single"
         options={SPUTUM_COLOUR}
@@ -928,21 +1000,21 @@ function SubjectiveSection({ data, setData }) {
         hint={d.sputumColour === "Green" ? "Suggests infection." : d.sputumColour === "Blood-stained" ? "Haemoptysis — ranges from streaks to frank blood; correlate urgently." : undefined}
         howTo="Saliva = clear watery. Mucoid = white/opalescent. Mucopurulent = slightly discoloured. Purulent = thick, yellow/dark green/rusty. Frothy pink/white suggests pulmonary oedema. Black specks suggest smoke/dust exposure."
       />
-      <SelectField label="Sputum consistency" type="single" options={SPUTUM_CONSISTENCY} value={d.sputumConsistency} onChange={(v) => set("sputumConsistency", v)} />
+      <CSelectField label="Sputum consistency" type="single" options={SPUTUM_CONSISTENCY} value={d.sputumConsistency} onChange={(v) => set("sputumConsistency", v)} />
 
       <div className="subheading">History</div>
-      <TextArea label="Past medical history" value={d.pmh} onChange={(v) => set("pmh", v)} />
-      <TextArea label="Drug history" value={d.drugHx} onChange={(v) => set("drugHx", v)} />
-      <TextArea label="Family history" value={d.familyHx} onChange={(v) => set("familyHx", v)} />
-      <TextArea label="Social history" value={d.socialHx} onChange={(v) => set("socialHx", v)} placeholder="Smoking, alcohol, living situation, support..." />
-      <TextArea
+      <CTextArea label="Past medical history" value={d.pmh} onChange={(v) => set("pmh", v)} />
+      <CTextArea label="Drug history" value={d.drugHx} onChange={(v) => set("drugHx", v)} />
+      <CTextArea label="Family history" value={d.familyHx} onChange={(v) => set("familyHx", v)} />
+      <CTextArea label="Social history" value={d.socialHx} onChange={(v) => set("socialHx", v)} placeholder="Smoking, alcohol, living situation, support..." />
+      <CTextArea
         label="Functional ability"
         value={d.functionalAbility}
         onChange={(v) => set("functionalAbility", v)}
         placeholder="e.g. could climb 5 flights 3 years ago, now stops after 1"
         howTo="Always relate breathlessness to functional change — what the patient could do before vs now — rather than accepting 'mild/moderate/severe' alone."
       />
-      <TextArea label="Disease awareness" value={d.diseaseAwareness} onChange={(v) => set("diseaseAwareness", v)} placeholder="Patient's understanding of their condition & treatment" />
+      <CTextArea label="Disease awareness" value={d.diseaseAwareness} onChange={(v) => set("diseaseAwareness", v)} placeholder="Patient's understanding of their condition & treatment" />
     </>
   );
 }
@@ -1057,9 +1129,9 @@ function CardioSection({ data, setData, system }) {
   const detailed = system === "cardio" || system === "combined";
   return (
     <>
-      <SectionIntro icon="🫀" title="Cardiovascular Examination" sub={detailed ? undefined : "Respiratory pathway — screening level only."} />
+      <SectionIntro icon="🫀" title="Cardiovascular Examination" sub={(detailed ? "" : "Respiratory pathway — screening level only. ") + "Tap any row to fill it in."} />
 
-      <SelectField
+      <CSelectField
         label="General observation"
         type="multi"
         options={["No distress", "Short of breath", "Sitting on edge of bed", "Visibly distressed", "Cyanosed", "On supplemental oxygen", "Distressed on movement/undressing"]}
@@ -1070,14 +1142,14 @@ function CardioSection({ data, setData, system }) {
 
       {detailed && (
         <>
-          <SelectField
+          <CSelectField
             label="Hands / tremor"
             type="single"
             options={["None", "Fine tremor (bronchodilators)", "Coarse flap (CO2 retention)", "Muscle wasting (Pancoast)", "Nicotine staining"]}
             value={d.hands}
             onChange={(v) => set("hands", v)}
           />
-          <SelectField
+          <CSelectField
             label="Clubbing"
             type="single"
             options={["Absent", "Early — loss of nail-bed angle", "Established — enlarged finger pad", "Spongy nail bed"]}
@@ -1085,7 +1157,7 @@ function CardioSection({ data, setData, system }) {
             onChange={(v) => set("clubbing", v)}
             info={cardiovascularData.clubbing}
           />
-          <SelectField
+          <CSelectField
             label="Cyanosis"
             type="single"
             options={["None", "Peripheral", "Central"]}
@@ -1093,7 +1165,7 @@ function CardioSection({ data, setData, system }) {
             onChange={(v) => set("cyanosis", v)}
             info={respiratoryData.cyanosis}
           />
-          <NumberField
+          <CNumberField
             label="Jugular venous pressure (JVP)"
             value={d.jvp}
             onChange={(v) => set("jvp", v)}
@@ -1104,9 +1176,9 @@ function CardioSection({ data, setData, system }) {
       )}
 
       <div className="subheading">Peripheral perfusion</div>
-      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
-      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
-      <NumberField
+      <CSelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
+      <CSelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
+      <CNumberField
         label="Capillary refill"
         value={d.capRefill}
         onChange={(v) => set("capRefill", v)}
@@ -1123,15 +1195,15 @@ function CardioSection({ data, setData, system }) {
         info={cardiovascularData.pulses}
       />
 
-      <SelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
+      <CSelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
         info={cardiovascularData.edema}
       />
-      <SelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
+      <CSelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
 
       {detailed && (
         <>
           <div className="subheading">Auscultation — heart sounds</div>
-          <SelectField
+          <CSelectField
             label="Sounds heard"
             type="multi"
             options={["S1 normal", "S2 normal", "S3 present", "S4 present", "Murmur present"]}
@@ -1140,7 +1212,7 @@ function CardioSection({ data, setData, system }) {
             info={cardiovascularData.cardiacAuscultation}
           />
           {String(d.heartSounds || "").includes("Murmur present") && (
-            <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
+            <CTextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
           )}
         </>
       )}
@@ -1266,23 +1338,23 @@ function ExerciseSection({ data, setData, setting }) {
       {isRehab && (
         <>
           <div className="subheading">Exercise assessment</div>
-          <SelectField
+          <CSelectField
             label="Exercise mode"
             type="single"
             options={["Treadmill", "Cycle ergometer", "Overground walking", "Arm ergometer", "Combined / circuit", "Other"]}
             value={d.mode}
             onChange={(v) => set("mode", v)}
           />
-          <NumberField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} unit="min" />
-          <SelectField
+          <CNumberField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} unit="min" />
+          <CSelectField
             label="Intensity"
             type="single"
             options={["Low", "Moderate", "High", "Target HR zone-based", "RPE-based"]}
             value={d.intensity}
             onChange={(v) => set("intensity", v)}
           />
-          <TextField label="Frequency" value={d.frequency} onChange={(v) => set("frequency", v)} placeholder="e.g. 3x/week" />
-          <TextField label="Oxygen requirement" value={d.exO2} onChange={(v) => set("exO2", v)} placeholder="L/min if applicable" />
+          <CTextField label="Frequency" value={d.frequency} onChange={(v) => set("frequency", v)} placeholder="e.g. 3x/week" />
+          <CTextField label="Oxygen requirement" value={d.exO2} onChange={(v) => set("exO2", v)} placeholder="L/min if applicable" />
         </>
       )}
 
@@ -1308,7 +1380,7 @@ function ExerciseSection({ data, setData, setting }) {
       </div>
       <ScaleField label="Borg RPE (during)" value={d.duringRPE} onChange={(v) => set("duringRPE", v)} info={cardiovascularData.borgRPE} />
       <ScaleField label="Borg dyspnea (during)" value={d.duringDyspnea} onChange={(v) => set("duringDyspnea", v)} info={respiratoryData.borg} />
-      <SelectField
+      <CSelectField
         label="Symptoms during activity"
         type="multi"
         options={["No symptoms", "Chest discomfort", "Dyspnea", "Dizziness", "Palpitations", "Excessive fatigue", "Leg discomfort", "Desaturation", "Other"]}
@@ -1321,11 +1393,11 @@ function ExerciseSection({ data, setData, setting }) {
         <NumberField label="HR" value={d.postHR} onChange={(v) => set("postHR", v)} unit="bpm" width="30%" info={cardiovascularData.hrRecovery} />
         <NumberField label="SpO₂" value={d.postSpO2} onChange={(v) => set("postSpO2", v)} unit="%" width="30%" info={respiratoryData.spo2} />
       </div>
-      <SelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} info={cardiovascularData.hrRecovery} />
+      <CSelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} info={cardiovascularData.hrRecovery} />
 
       <div className="subheading">6MWT / exercise test</div>
-      <NumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" info={cardiovascularData.sixMWT} />
-      <SelectField
+      <CNumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" info={cardiovascularData.sixMWT} />
+      <CSelectField
         label="Reason for stopping"
         type="single"
         options={["Completed", "Dyspnea", "Fatigue", "Chest discomfort", "Dizziness", "Desaturation", "Other"]}
@@ -1911,6 +1983,24 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
         .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
         .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
+
+        /* Collapsible field row -- same collapsed-by-default / tap-to-expand
+           pattern used in the Ortho Outpatient tool's Suggested Objective
+           step (OrthoSuggestObjectiveStep.jsx's ItemCardShell), applied here
+           to the heaviest sections (Subjective, Cardiovascular Examination,
+           Exercise/Activity Response) so a fast run-through only has to
+           scan compact rows instead of every field's full input widget. */
+        .cfield { border: 1.5px solid ${BRAND.border}; border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
+        .cfield-answered { border-color: ${BRAND.purple}; }
+        .cfield-row { display: flex; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
+        .cfield-label { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
+        .cfield-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .cfield-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 9px; border-radius: 8px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cfield-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
+        .cfield-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
+        .cfield-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
+        .cfield-body .field-block { margin-bottom: 0; }
+        .cfield-body .vital-field { margin-bottom: 0; }
 
         .info-btn-wrap { position: relative; display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
