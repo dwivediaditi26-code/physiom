@@ -865,12 +865,8 @@ function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
       <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" />
-      <div className="row-2">
-        <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
-        <div style={{ flex: 1 }}>
-          <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
-        </div>
-      </div>
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
+      <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
       <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
       <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
