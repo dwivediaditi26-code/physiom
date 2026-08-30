@@ -57,17 +57,20 @@ function Login({onSwitch,onAuth}){
   </form>);
 }
 
-function Register({onSwitch,onAuth}){
+function Register({onSwitch,onAuth,onShowLegal}){
   const [name,setName]=useState("");
   const [clinic,setClinic]=useState("");
   const [email,setEmail]=useState("");
   const [pass,setPass]=useState("");
+  const [agreed,setAgreed]=useState(false);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
   const [msg,setMsg]=useState("");
   const submit=async(e)=>{
-    e.preventDefault();setError("");setMsg("");setLoading(true);
-    if(pass.length<6){setError("Password must be at least 6 characters");setLoading(false);return;}
+    e.preventDefault();setError("");setMsg("");
+    if(pass.length<6){setError("Password must be at least 6 characters");return;}
+    if(!agreed){setError("Please agree to the Terms & Privacy Policy to continue");return;}
+    setLoading(true);
     const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic}}});
     setLoading(false);
     if(er){setError(er.message);return;}
@@ -87,7 +90,16 @@ function Register({onSwitch,onAuth}){
     </div>
     <FocusInput label="Email" type="email" value={email} onChange={setEmail} placeholder="you@clinic.com" required/>
     <FocusInput label="Password (min 6 chars)" type="password" value={pass} onChange={setPass} placeholder="Create a strong password" required/>
-    <button type="submit" style={{...btnS,opacity:loading?0.7:1}} disabled={loading}>{loading?"Creating…":"Create free account →"}</button>
+    <label style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:16,cursor:"pointer"}}>
+      <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:2,flexShrink:0,width:16,height:16,accentColor:A,cursor:"pointer"}}/>
+      <span style={{fontSize:"0.76rem",color:MU,lineHeight:1.5}}>
+        I agree to the{" "}
+        <button type="button" onClick={()=>onShowLegal("terms")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Terms of Service</button>
+        {" "}and{" "}
+        <button type="button" onClick={()=>onShowLegal("privacy")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Privacy Policy</button>
+      </span>
+    </label>
+    <button type="submit" style={{...btnS,opacity:loading||!agreed?0.5:1}} disabled={loading||!agreed}>{loading?"Creating…":"Create free account →"}</button>
     <p style={{textAlign:"center",marginTop:18,fontSize:"0.78rem",color:MU}}>
       Already have an account?{" "}<button type="button" onClick={()=>onSwitch("login")} style={link}>Sign in</button>
     </p>
@@ -137,7 +149,7 @@ export default function AuthScreen({onAuth,onTryGuest}){
           <h1 style={{fontSize:"1.2rem",fontWeight:800,color:TX,marginBottom:4,letterSpacing:"-0.3px"}}>{h}</h1>
           <p style={{fontSize:"0.78rem",color:MU,marginBottom:22}}>{sub}</p>
           {view==="login"    && <Login    onSwitch={setView} onAuth={onAuth}/>}
-          {view==="register" && <Register onSwitch={setView} onAuth={onAuth}/>}
+          {view==="register" && <Register onSwitch={setView} onAuth={onAuth} onShowLegal={setLegal}/>}
           {view==="forgot"   && <Forgot   onSwitch={setView}/>}
         </div>
         {/* Two ways to try before signing up:
@@ -168,7 +180,7 @@ export default function AuthScreen({onAuth,onTryGuest}){
         )}
         {/* Trust badges */}
         <div style={{display:"flex",justifyContent:"center",gap:10,marginTop:20,flexWrap:"wrap"}}>
-          {["🔒 Secure","🏥 HIPAA-ready","🇮🇳 Built for India","✦ Free to start"].map(t=>(
+          {["🔒 Secure","🇮🇳 DPDP Act compliant","🇮🇳 Built for India","✦ Free to start"].map(t=>(
             <span key={t} style={{fontSize:"0.65rem",color:MU,background:SUR,padding:"4px 10px",borderRadius:20,border:`1px solid ${BD}`,fontWeight:600}}>{t}</span>
           ))}
         </div>
