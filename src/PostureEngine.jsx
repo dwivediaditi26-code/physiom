@@ -4983,6 +4983,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [showReportModal,setShowReportModal]=useState(false);
   const [showReportViewer,setShowReportViewer]=useState(false);
   const [reportHtml,setReportHtml]=useState("");
+  const [zoomedImg,setZoomedImg]=useState(null); // fullscreen lightbox src (2026-08-29, Aditi: "result... should be able to zoom")
   const [reportType,setReportType]=useState("basic"); // "basic"|"detailed"
   const [patientInfo,setPatientInfo]=useState({name:"",age:"",sex:"Female",occupation:""});
   const [clinicianInfo,setClinicianInfo]=useState({name:"",credentials:"",clinic:""});
@@ -6037,8 +6038,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           </div>
           {/* PDF export — single-photo mode had no way to reach the report
               modal at all (2026-08-25, user feedback); multi-view already
-              has its own "📄 PDF" button in the composite report header. */}
-          {findings.length>0 && scoreData && (
+              has its own "📄 PDF" button in the composite report header.
+              Was gated on findings.length>0 too (2026-08-29, Aditi: "the
+              pdf button is not showing in single view") -- a genuinely
+              normal capture with zero findings has an empty findings
+              array, so that condition hid the export button on exactly
+              the captures a clinician would most want a clean report
+              for. scoreData alone (set whenever measurements exist,
+              findings or not) is the real "analysis finished" signal. */}
+          {scoreData && (
             <button onClick={()=>setShowReportModal(true)}
               style={{flexShrink:0,padding:"0 14px",border:"none",borderLeft:`1px solid ${PC.border}`,background:"transparent",color:PC.accent,fontWeight:700,fontSize: isWide?"0.78rem":"0.68rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               📄 PDF
@@ -6111,7 +6119,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               changes, just omitting the manual-only props for that mode. */}
           {((inputMode==="manual"&&manualAnalysed)||(inputMode==="ai"&&landmarks&&!isWide))
             &&(objectUrlRef.current||uploadedImg)&&(
-            <div style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`}}>
+            // 2026-08-29 (Aditi: "result... clicking on image is not
+            // showing as zoomed, it should able to zoom"): tapping this
+            // opens the same photo full-screen. uploadedImg first (not
+            // objectUrlRef.current) for the same reason as the metric
+            // thumbnails above -- it's the version with the landmark
+            // overlay actually baked in once analysis has finished.
+            <div onClick={()=>setZoomedImg(uploadedImg||objectUrlRef.current)}
+              style={{position:"relative",borderRadius:12,overflow:"hidden",marginBottom:14,border:`1px solid ${PC.border}`,cursor:"zoom-in"}}>
               <img src={objectUrlRef.current||uploadedImg} alt="Analysed posture"
                 id="findings-posture-img"
                 style={{width:"100%",display:"block"}}/>
@@ -6127,6 +6142,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   imgId="findings-posture-img"
                 />
               )}
+              <div style={{position:"absolute",bottom:8,right:8,width:26,height:26,borderRadius:"50%",background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"0.8rem",pointerEvents:"none"}}>⤢</div>
             </div>
           )}
           {/* Analysis mode badge */}
@@ -6878,8 +6894,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           {meta.label} View · AI Analysis
         </div>
         {r.img && (
-          <div style={{borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,marginBottom:14,background:"#0f172a"}}>
+          <div onClick={()=>setZoomedImg(r.img)}
+            style={{position:"relative",borderRadius:14,overflow:"hidden",border:`1px solid ${PC.border}`,marginBottom:14,background:"#0f172a",cursor:"zoom-in"}}>
             <img src={r.img} alt={meta.label} style={{width:"100%",maxHeight:420,objectFit:"contain",display:"block"}}/>
+            <div style={{position:"absolute",bottom:8,right:8,width:26,height:26,borderRadius:"50%",background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"0.8rem",pointerEvents:"none"}}>⤢</div>
           </div>
         )}
         {landmarkChecks.length>0 && (
@@ -7685,7 +7703,11 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     const rptScoreData_src = isMultiRpt
       ? { score: mvComposite.compositeScore, band: mvComposite.compositeBand, colour: mvComposite.compositeColour, color: mvComposite.compositeColour }
       : scoreData;
-    if(!rptFindings_src?.length || !rptScoreData_src) return;
+    // Was `!rptFindings_src?.length || ...`, silently no-op'ing the whole
+    // report for a clean/normal capture (2026-08-29, Aditi: "pdf button
+    // not showing in single view") -- a zero-findings array is a valid,
+    // reportable outcome, not a reason to refuse to generate anything.
+    if(!rptScoreData_src) return;
     try {
       const annotatedImg = uploadedImg || capturedImg || null;
       // Build ordered array of all captured view images for dynamic photo grid
@@ -8378,10 +8400,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           <button onClick={()=>setShowReportModal(false)}
             style={{flex:1,padding:"11px",border:`1px solid ${PC.border}`,borderRadius:10,
               background:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer"}}>Cancel</button>
-          <button onClick={generateReport} disabled={!(assessMode==="multi"?mvComposite:findings.length&&scoreData)}
+          <button onClick={generateReport} disabled={!(assessMode==="multi"?mvComposite:scoreData)}
             style={{flex:2,padding:"11px",border:"none",borderRadius:10,
-              background:findings.length&&scoreData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
-              color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:findings.length&&scoreData?"pointer":"not-allowed"}}>
+              background:scoreData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
+              color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:scoreData?"pointer":"not-allowed"}}>
             Generate & Open PDF →
           </button>
         </div>
@@ -8470,6 +8492,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       {/* ── Report modal ── */}
       {reportModal}
+
+      {/* ── Image zoom lightbox (2026-08-29, Aditi: "result... it should
+          able to zoom") ── */}
+      {zoomedImg && createPortal(
+        <div onClick={()=>setZoomedImg(null)}
+          style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.92)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <button onClick={()=>setZoomedImg(null)} aria-label="Close"
+            style={{position:"absolute",top:16,right:16,width:36,height:36,borderRadius:"50%",border:"none",background:"rgba(255,255,255,0.15)",color:"#fff",fontSize:"1.1rem",cursor:"pointer"}}>✕</button>
+          <img src={zoomedImg} alt="Posture analysis (zoomed)" onClick={e=>e.stopPropagation()}
+            style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain",borderRadius:8,touchAction:"pinch-zoom"}}/>
+        </div>,
+        document.body
+      )}
 
       {/* ── In-app Report Viewer ── */}
       {showReportViewer&&createPortal(
