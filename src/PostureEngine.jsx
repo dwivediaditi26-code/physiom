@@ -6251,56 +6251,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </div>
           )}
 
-          {/* ── Save to Patient Record — shown right after score ── */}
+          {/* ── Save to Patient Record — shown right after score. Auto-saves
+              itself now (see saveResultToPatientRecord/autoSaveKeyRef
+              effect above, 2026-08-29, Aditi: "it should also saved in
+              patient profile the result image" -> "do it now"); button
+              stays for a manual re-save (e.g. after switching photos). ── */}
           {scoreData&&(
             <div style={{marginBottom:12,padding:"10px 14px",background:activePatient?"rgba(5,150,105,0.07)":"rgba(180,83,9,0.07)",borderRadius:12,border:`1px solid ${activePatient?"rgba(5,150,105,0.25)":"rgba(180,83,9,0.25)"}`}}>
               {activePatient?(
-                <button onClick={async()=>{
-                  const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
-                  const vLabel=VLABELS[view]||view;
-                  try{
-                    // Bake photo + analysis overlay into a persistent JPEG data URL.
-                    // blob: URLs die on reload and must never be stored in the record.
-                    const bakeImg=()=>new Promise(resolve=>{
-                      const src=isLive?capturedImg
-                        :inputMode==="ai"?(uploadedImg||rawUploadedImg)
-                        :(objectUrlRef.current||rawUploadedImg||uploadedImg);
-                      if(!src){resolve(null);return;}
-                      const im=new Image();
-                      const fallback=()=>resolve(typeof src==="string"&&src.startsWith("data:")?src:null);
-                      im.onload=()=>{try{
-                        const natW=im.naturalWidth||im.width,natH=im.naturalHeight||im.height;
-                        const sc=Math.min(1,900/Math.max(natW,natH));
-                        const W=Math.max(1,Math.round(natW*sc)),H=Math.max(1,Math.round(natH*sc));
-                        const oc=document.createElement("canvas");oc.width=W;oc.height=H;
-                        const octx=oc.getContext("2d");
-                        octx.drawImage(im,0,0,W,H);
-                        if(inputMode==="manual"&&landmarks&&landmarks.length){
-                          const vm={anterior:"anterior",posterior:"posterior",back:"posterior",left:"left",right:"right"};
-                          try{drawOverlay({ctx:octx,W,H,lm:landmarks,view:vm[view]||"anterior",showGrid:true,measurements:measurements||{},clearFirst:false});}catch(_){}
-                          try{drawManualOverlay({ctx:octx,W,H,placed:manualPlaced,pointDefs:manualPointDefs,connections:manualConnections});}catch(_){}
-                        }
-                        resolve(oc.toDataURL("image/jpeg",0.8));
-                      }catch(e){fallback();}};
-                      im.onerror=fallback;
-                      im.src=src;
-                    });
-                    const bakedImg=await bakeImg();
-                    const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
-                    const sameView=existing.filter(s=>s.view===view).length+1;
-                    const entry={
-                      view, viewLabel:vLabel, sessionNo:sameView,
-                      sessionLabel:`${vLabel} Session ${sameView}`,
-                      img:bakedImg,
-                      score:scoreData.score, band:scoreData.band||"",
-                      findings:findings||[], kineticChain:"",
-                      source:isLive?"camera":"upload",
-                      capturedAt:new Date().toISOString()
-                    };
-                    setPatientField&&setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
-                    alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
-                  }catch(e){alert("Save failed: "+e.message);}
-                }} style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
+                <button onClick={()=>saveResultToPatientRecord()}
+                  style={{width:"100%",padding:"11px",borderRadius:10,border:"none",cursor:"pointer",
                   background:"linear-gradient(135deg,#059669,#047857)",
                   color:"#fff",fontWeight:800,fontSize:"0.82rem",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                   💾 Save to {activePatient.name} — {{anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"}[view]||view} View
@@ -6870,6 +6830,79 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       if (isMobile) setMobilePanel("results");
     }
   }
+
+  // Extracted from the "Save to Patient Record" button's onClick (2026-08-29,
+  // Aditi: "it should also saved in patient profile the result image" ->
+  // "do it now") so a single-view AI-Auto/Manual analysis can save itself the
+  // moment it finishes, the same way live-camera and composite-report
+  // captures already auto-save elsewhere -- previously this only ever ran on
+  // an explicit button tap. silent=true skips the confirmation alert for the
+  // automatic call; the button keeps using silent=false.
+  async function saveResultToPatientRecord({silent=false}={}) {
+    if (!activePatient || !setPatientField || !scoreData) return false;
+    const VLABELS={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"};
+    const vLabel=VLABELS[view]||view;
+    try{
+      // Bake photo + analysis overlay into a persistent JPEG data URL.
+      // blob: URLs die on reload and must never be stored in the record.
+      const bakeImg=()=>new Promise(resolve=>{
+        const src=isLive?capturedImg
+          :inputMode==="ai"?(uploadedImg||rawUploadedImg)
+          :(objectUrlRef.current||rawUploadedImg||uploadedImg);
+        if(!src){resolve(null);return;}
+        const im=new Image();
+        const fallback=()=>resolve(typeof src==="string"&&src.startsWith("data:")?src:null);
+        im.onload=()=>{try{
+          const natW=im.naturalWidth||im.width,natH=im.naturalHeight||im.height;
+          const sc=Math.min(1,900/Math.max(natW,natH));
+          const W=Math.max(1,Math.round(natW*sc)),H=Math.max(1,Math.round(natH*sc));
+          const oc=document.createElement("canvas");oc.width=W;oc.height=H;
+          const octx=oc.getContext("2d");
+          octx.drawImage(im,0,0,W,H);
+          if(inputMode==="manual"&&landmarks&&landmarks.length){
+            const vm={anterior:"anterior",posterior:"posterior",back:"posterior",left:"left",right:"right"};
+            try{drawOverlay({ctx:octx,W,H,lm:landmarks,view:vm[view]||"anterior",showGrid:true,measurements:measurements||{},clearFirst:false});}catch(_){}
+            try{drawManualOverlay({ctx:octx,W,H,placed:manualPlaced,pointDefs:manualPointDefs,connections:manualConnections});}catch(_){}
+          }
+          resolve(oc.toDataURL("image/jpeg",0.8));
+        }catch(e){fallback();}};
+        im.onerror=fallback;
+        im.src=src;
+      });
+      const bakedImg=await bakeImg();
+      const existing=JSON.parse(activePatient.data?.posture_sessions||"[]");
+      const sameView=existing.filter(s=>s.view===view).length+1;
+      const entry={
+        view, viewLabel:vLabel, sessionNo:sameView,
+        sessionLabel:`${vLabel} Session ${sameView}`,
+        img:bakedImg,
+        score:scoreData.score, band:scoreData.band||"",
+        findings:findings||[], kineticChain:"",
+        source:isLive?"camera":"upload",
+        auto:silent,
+        capturedAt:new Date().toISOString()
+      };
+      setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
+      if(!silent) alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
+      return true;
+    }catch(e){ if(!silent) alert("Save failed: "+e.message); return false; }
+  }
+
+  // Auto-save trigger: fires once per fresh single-view analysis (not
+  // multi-view -- that already auto-saves via saveMvResult/composite
+  // generation) when a patient is loaded, instead of requiring the manual
+  // "Save to Patient Record" tap every time. autoSaveKeyRef dedupes so
+  // switching tabs or re-rendering doesn't fire a second save for the same
+  // result.
+  const autoSaveKeyRef = useRef(null);
+  useEffect(() => {
+    if (assessMode === "multi" || !activePatient || !scoreData) return;
+    const key = `${activePatient.id||activePatient.name}|${view}|${uploadedImg||objectUrlRef.current||""}`.slice(0,300);
+    if (autoSaveKeyRef.current === key) return;
+    autoSaveKeyRef.current = key;
+    saveResultToPatientRecord({silent:true});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessMode, activePatient, scoreData, view]);
 
   // Per-view result screen — its own hero photo, AI landmarks and findings,
   // kept separate from the Overview's cross-view merged list (2026-08-22,
