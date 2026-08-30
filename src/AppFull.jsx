@@ -1013,7 +1013,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {doctorInitials}
         </div>
         <div>
-          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {currentUser?.user_metadata?.full_name?.split(" ")[0]||currentUser?.email?.split("@")[0]||"Doctor"}</div>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {(currentUser?.user_metadata?.full_name||currentUser?.email?.split("@")[0]||"Doctor").replace(/^dr\.?\s+/i,"").split(" ")[0]}</div>
           <div style={{fontSize:"0.78rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
         </div>
       </div>

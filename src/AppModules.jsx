@@ -1803,11 +1803,13 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
           </label>
           <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
             <strong style={{color:PC.text}}>Data Storage Consent</strong><br/>
-            Your clinical data is stored locally on this device only. It is not shared with third parties. You may request deletion at any time.
+            {currentUser?.id
+              ? "Your clinical data is stored securely in your PhysioMind account. It is not shared with third parties. You may request deletion at any time."
+              : "You're in guest mode: this data stays in your browser only and is not saved to any account. Sign in to store it securely and access it later."}
           </div>
           <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
             <input type="checkbox" checked={!!fd.consent_data} onChange={e=>set("consent_data",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
-            <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:500}}>I consent to storage of my clinical data on this device</span>
+            <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:500}}>I consent to storage of my clinical data {currentUser?.id ? "in my PhysioMind account" : "in this browser"}</span>
           </label>
           {!fd.consent_treat && (
             <div style={{padding:"8px 12px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,fontSize:"0.78rem",color:"#ef4444",fontWeight:600}}>
@@ -1815,7 +1817,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
             </div>
           )}
           <div style={{marginTop:12,padding:"8px 12px",background:PC.s3,borderRadius:8,fontSize:"0.75rem",color:PC.muted}}>
-            Consent date: {new Date().toLocaleDateString("en-GB")} · Clinician: Dr. Demo
+            Consent date: {new Date().toLocaleDateString("en-GB")} · Clinician: {currentUser?.user_metadata?.full_name ? `Dr. ${currentUser.user_metadata.full_name.replace(/^dr\.?\s+/i,"")}` : "Guest"}
           </div>
         </div>
       )}
