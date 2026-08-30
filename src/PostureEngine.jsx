@@ -4036,9 +4036,14 @@ function FindingsDisplay({ findings, PC }) {
 
   const confirmed  = sorted.filter(f => f.confirmed);
   const singleView = sorted.filter(f => !f.confirmed);
-  const top5       = sorted.slice(0, 5);
-  const rest       = sorted.slice(5);
-  const shown      = showAll ? sorted : top5;
+  // Top-3-first (2026-08-29, Aditi: "yes" to leading with top issues and
+  // collapsing the rest, matching how most posture/fitness-scan apps
+  // present results): was top 5, tightened to 3 so the primary view stays
+  // to the point even on captures with several findings.
+  const TOP_N      = 3;
+  const topN       = sorted.slice(0, TOP_N);
+  const rest       = sorted.slice(TOP_N);
+  const shown      = showAll ? sorted : topN;
 
   // Landmark confidence check — flag low-visibility metrics
   const lowConfMetrics = ["neck lateral inclination","carrying angle","tibial bowing","ankle height"];
