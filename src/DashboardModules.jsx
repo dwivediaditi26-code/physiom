@@ -525,7 +525,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   }, []);
 
   const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
-  const firstName = currentUser?.user_metadata?.full_name?.split(" ")[0] || "Aditi";
+  const firstName = (currentUser?.user_metadata?.full_name || "Aditi").replace(/^dr\.?\s+/i,"").split(" ")[0];
 
   const feedPost = useMemo(() => {
     if (feedTab==="foryou") return INITIAL_POSTS[0] || null;
