@@ -64,15 +64,16 @@ export function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Demographics" />
       <TextField label="Full name" value={d.name} onChange={(v) => set("name", v)} placeholder="Patient's full name" />
-      <TextField label="Date of birth" value={d.dob} onChange={(v) => set("dob", v)} placeholder="DD/MM/YYYY" />
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
       {/* Segmented (full-width pill row), not the SelectField combobox --
           that combobox was squeezed into a row-2 half-width column here,
           which truncated its "Type or select..." placeholder on mobile.
           Same fixed-choice field orthoCommonSections.jsx's IPD/Post-op
           Demographics already renders as Segmented; Outpatient was the
-          one inconsistent holdout. */}
-      <Segmented label="Sex" options={["Male", "Female", "Other", "Prefer not to say"]} value={d.sex} onChange={(v) => set("sex", v)} wrap />
+          one inconsistent holdout. Matches Cardio's 3-option Gender field. */}
+      <Segmented label="Sex" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
       <Segmented label="Hand dominance" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <div className="row-2">
         <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />
         <TextField label="Employer / industry" value={d.employer} onChange={(v) => set("employer", v)} />
@@ -82,7 +83,6 @@ export function DemographicsSection({ data, setData }) {
       <TextField label="GP name & practice" value={d.gp} onChange={(v) => set("gp", v)} />
       <Segmented label="Affected side" options={["Right", "Left", "Bilateral"]} value={d.affectedSide} onChange={(v) => set("affectedSide", v)} />
       <TextField label="Provisional diagnosis" value={d.provisionalDiagnosis} onChange={(v) => set("provisionalDiagnosis", v)} placeholder="Working / referral diagnosis" />
-      <SelectField label="Consent" type="single" options={["Yes — verbal", "Yes — written", "Not yet"]} value={d.consent} onChange={(v) => set("consent", v)} />
       <TextArea label="Notes" value={d.notes} onChange={(v) => set("notes", v)} placeholder="Any additional context" />
     </>
   );
