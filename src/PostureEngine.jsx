@@ -7113,37 +7113,67 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
           </div>
 
-          {/* Patient — two explicit actions (2026-08-21, user feedback: a
-              single row that silently opened the whole Clinical drawer wasn't
-              clear that "add a new one" and "pick an existing one" are two
-              different things). */}
-          <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSelectPatient||onAddNewPatient)?10:0}}>
-              <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
+          {/* Patient (2026-08-21, user feedback: a single row that silently
+              opened the whole Clinical drawer wasn't clear that "add a new
+              one" and "pick an existing one" are two different things).
+              2026-08-29 (Aditi: "the patient list selection... is so
+              confusing... after we select patient from list the way it
+              shows is not good ui") -- picking a patient used to just swap
+              one line of small grey text, with the same two big equal-
+              weight buttons still sitting right below it as if nothing had
+              happened. Now an active selection gets its own confirmed-state
+              card: initials avatar, name + age, and condition/diagnosis so
+              it's unmistakable who's loaded, with the two actions shrunk to
+              a single "Switch patient" link since "add a new one" is a rare
+              action once someone is already selected. */}
+          {activePatient ? (
+            <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.green}35`,background:`${PC.green}0c`,display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:PC.green,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.82rem",fontWeight:800,flexShrink:0}}>
+                {(activePatient.name||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase()}
+              </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
-                <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:activePatient?PC.muted:PC.red,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                  {activePatient?.name || "No patient selected"}
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{activePatient.name||"Unnamed Patient"}</span>
+                  {activePatient.data?.dem_age && <span style={{fontSize:isWide?"0.76rem":"0.7rem",color:PC.muted,flexShrink:0}}>· {activePatient.data.dem_age}y</span>}
+                </div>
+                <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:PC.muted,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  {activePatient.lastDx || activePatient.data?.cc_main || "No condition recorded"}
                 </div>
               </div>
+              {onSelectPatient && (
+                <button onClick={()=>setShowPatientPicker(true)}
+                  style={{flexShrink:0,padding:"6px 10px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.surface,color:PC.muted,fontWeight:700,fontSize:isWide?"0.74rem":"0.68rem",cursor:"pointer"}}>
+                  Switch
+                </button>
+              )}
             </div>
-            {(onAddNewPatient||onSelectPatient) && (
-              <div style={{display:"flex",gap:8}}>
-                {onAddNewPatient && (
-                  <button onClick={onAddNewPatient}
-                    style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.accent}30`,background:`${PC.accent}0d`,color:PC.accent,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
-                    + Add New Patient
-                  </button>
-                )}
-                {onSelectPatient && (
-                  <button onClick={()=>setShowPatientPicker(true)}
-                    style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
-                    📋 Select from Patient List
-                  </button>
-                )}
+          ) : (
+            <div style={{padding:isWide?"13px 16px":"11px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:(onSelectPatient||onAddNewPatient)?10:0}}>
+                <div style={{width:38,height:38,borderRadius:"50%",background:PC.s3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>👤</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:800,fontSize:isWide?"0.85rem":"0.78rem",color:PC.text}}>Current Patient</div>
+                  <div style={{fontSize:isWide?"0.76rem":"0.7rem",color:PC.red,marginTop:1}}>No patient selected</div>
+                </div>
               </div>
-            )}
-          </div>
+              {(onAddNewPatient||onSelectPatient) && (
+                <div style={{display:"flex",gap:8}}>
+                  {onAddNewPatient && (
+                    <button onClick={onAddNewPatient}
+                      style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.accent}30`,background:`${PC.accent}0d`,color:PC.accent,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                      + Add New Patient
+                    </button>
+                  )}
+                  {onSelectPatient && (
+                    <button onClick={()=>setShowPatientPicker(true)}
+                      style={{flex:1,padding:"9px 8px",borderRadius:9,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.text,fontWeight:700,fontSize:isWide?"0.78rem":"0.7rem",cursor:"pointer"}}>
+                      📋 Select from Patient List
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* AI Auto / Manual Points toggle — global preference; only takes
@@ -8611,6 +8641,18 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <div onClick={()=>setShowPatientPicker(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?480:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"20px",maxHeight:"75vh",display:"flex",flexDirection:"column"}}>
             <div style={{fontWeight:800,fontSize:"1rem",color:PC.text,marginBottom:14}}>📋 Select Patient</div>
+            {/* Add-new folded in here (2026-08-29, Aditi: patient card
+                redesign) rather than as a second big button on the main
+                card -- once someone's already selected, switching to an
+                existing patient is the common case and adding a brand new
+                one is rare, but it still needs one reachable entry point. */}
+            {onAddNewPatient && (
+              <button onClick={()=>{ setShowPatientPicker(false); onAddNewPatient(); }}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"12px 10px",borderRadius:10,cursor:"pointer",border:`1px dashed ${PC.accent}40`,background:`${PC.accent}0a`,color:PC.accent,fontWeight:700,fontSize:"0.85rem",marginBottom:10,width:"100%"}}>
+                <span style={{width:38,height:38,borderRadius:"50%",background:`${PC.accent}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.1rem",flexShrink:0}}>+</span>
+                Add new patient
+              </button>
+            )}
             <div style={{overflowY:"auto",flex:1}}>
               {patients.length===0 && (
                 <div style={{fontSize:"0.82rem",color:PC.muted,textAlign:"center",padding:"20px 0"}}>No patients yet.</div>
