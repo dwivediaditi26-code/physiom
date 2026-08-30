@@ -960,7 +960,7 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           <div>
             <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:2}}>{dateStr}</div>
             <div style={{fontSize:16,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
-              {greeting}, {currentUser?.user_metadata?.full_name?.split(" ")[0] || "Doctor"} 👋
+              {greeting}, {(currentUser?.user_metadata?.full_name||"").replace(/^dr\.?\s+/i,"").split(" ")[0] || "Doctor"} 👋
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
