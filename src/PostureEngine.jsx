@@ -6914,16 +6914,24 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const mvReportPanel = assessMode==="multi" && mvComposite && mvTab==="report" && (
     <div style={{flex:1,overflowY:"auto",paddingBottom:isMobile?80:24}}>
       {/* Header */}
-      <div style={{padding:isWide?"18px 24px":"14px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",alignItems:"center",justifyContent:"space-between",position:isWide?"sticky":"static",top:0,zIndex:5}}>
-        <div>
-          <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.9rem",color:PC.text}}>Multi-View Composite Report</div>
-          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2}}>
+      {/* 2026-08-29 (Aditi: "the pdf button is not able to download due to
+          overlapping in mobile view"): title had no minWidth:0/truncation
+          and the button group had no flexShrink:0, so on a narrow screen
+          the two-line title ("Multi-View Composite Report" + the views/
+          coverage subtitle) could grow past the available width and push
+          or overlap the PDF/Back buttons on the right instead of yielding
+          to them -- title now truncates to one line with ellipsis, buttons
+          are guaranteed their space and never shrink or get covered. */}
+      <div style={{padding:isWide?"18px 24px":"14px 16px",borderBottom:`1px solid ${PC.border}`,background:PC.surface,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,position:isWide?"sticky":"static",top:0,zIndex:5}}>
+        <div style={{minWidth:0,flex:1}}>
+          <div style={{fontWeight:900,fontSize:isWide?"1rem":"0.9rem",color:PC.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Multi-View Composite Report</div>
+          <div style={{fontSize:"0.82rem",color:PC.muted,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {mvComposite.coverage.viewCount} views · {mvComposite.coverage.frontal?"✓ Frontal":"○ Frontal"} · {mvComposite.coverage.sagittal?"✓ Sagittal":"○ Sagittal"}
           </div>
         </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setShowReportModal(true)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,fontSize:"0.78rem",fontWeight:700,color:"#fff",cursor:"pointer"}}>📄 PDF</button>
-          <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.78rem",fontWeight:700,color:PC.muted,cursor:"pointer"}}>← Back</button>
+        <div style={{display:"flex",gap:8,flexShrink:0}}>
+          <button onClick={()=>setShowReportModal(true)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,fontSize:"0.78rem",fontWeight:700,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>📄 PDF</button>
+          <button onClick={()=>setMvTab("capture")} style={{padding:"5px 12px",borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,fontSize:"0.78rem",fontWeight:700,color:PC.muted,cursor:"pointer",whiteSpace:"nowrap"}}>← Back</button>
         </div>
       </div>
 
