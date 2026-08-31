@@ -4,7 +4,8 @@
 //
 //  1. Segment the person from background → clean body silhouette
 //  2. Extract the POSTERIOR body contour (the physio's eye traces this edge)
-//  3. Drop a plumb line from the lateral malleolus (standard Kendall reference)
+//  3. Drop the Kendall plumb line — slightly ANTERIOR to the lateral malleolus,
+//     not through it (see kendallPlumb.js)
 //  4. Trace the full spinal curve profile from shoulder to hip:
 //       • Identify the THORACIC CONVEXITY (upper back bowing posteriorly)
 //       • Find the THORACIC APEX (where it bows most)
@@ -21,6 +22,8 @@
 //  6. Score confidence based on silhouette quality, clothing, visibility
 //
 // This IS the contour analysis. It does not imply Cobb angles or radiographic findings.
+
+import { plumbOffsetPx } from "./kendallPlumb.js";
 
 // ─── CDN ──────────────────────────────────────────────────────────────────────
 const SEG_CDN  = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js";
@@ -297,15 +300,23 @@ function extractSpinalCurveProfile(postContour, antContour, bounds, viewSign) {
 // ─── Plumb line offsets ───────────────────────────────────────────────────────
 // Lateral malleolus as reference — Kendall standard.
 // Positive = anterior to plumb, negative = posterior.
-function computePlumbOffsets(lm, W, H) {
+function computePlumbOffsets(lm, W, H, viewSign = 1) {
   const V = i => (lm[i]?.visibility || 0) > 0.3;
   const px = i => lm[i].x * W;
   const py = i => lm[i].y * H;
   const avgX = (...idxs) => { const v=idxs.filter(i=>V(i)); return v.length?v.reduce((s,i)=>s+px(i),0)/v.length:null; };
   const avgY = (...idxs) => { const v=idxs.filter(i=>V(i)); return v.length?v.reduce((s,i)=>s+py(i),0)/v.length:null; };
 
-  const ankleX = avgX(27,28);
-  if (!ankleX) return null;
+  const ankleMalleolusX = avgX(27,28);
+  if (!ankleMalleolusX) return null;
+
+  // Kendall's plumb sits slightly ANTERIOR to the lateral malleolus, not on it
+  // (see kendallPlumb.js). Offsets here feed interpretOffset's severity bands,
+  // which are tolerances around IDEAL — so the reference has to be where ideal
+  // actually is, or normal posture reads as an anterior finding at every
+  // segment. No height calibration reaches this module, so the offset uses the
+  // same ~170cm frame assumption the uncalibrated sagittal chain falls back to.
+  const ankleX = ankleMalleolusX + plumbOffsetPx(null, H, viewSign);
 
   const norm = d => d === null ? null : Math.round((d/W)*1000)/10; // % frame width
 
@@ -315,6 +326,7 @@ function computePlumbOffsets(lm, W, H) {
     hipOffset:      (avgX(23,24)!== null) ? norm(avgX(23,24)- ankleX) : null,
     kneeOffset:     (avgX(25,26)!== null) ? norm(avgX(25,26)- ankleX) : null,
     _ankleX: ankleX,
+    _malleolusX: ankleMalleolusX,
     _earX:   avgX(7,8),
     _shX:    avgX(11,12),
     _hipX:   avgX(23,24),
@@ -520,7 +532,7 @@ export async function analyzeSagittalContour(imgEl, lm, view) {
   const antContour  = smooth(rawAnt,  10);
   const bounds      = getBodyBounds(lm, W, H);
   const curveProfile= extractSpinalCurveProfile(postContour, antContour, bounds, viewSign);
-  const plumbOffsets= computePlumbOffsets(lm, W, H);
+  const plumbOffsets= computePlumbOffsets(lm, W, H, viewSign);
   const confidence  = scoreContourConfidence(mask, postContour, lm, W, H);
 
   return {

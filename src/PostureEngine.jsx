@@ -6,6 +6,9 @@ import { r1, r2, mid, vis, px, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg, C } from
 import { runViTPoseLateral, warmupViTPose } from "./vitposeEngine";
 import { analyzeSagittalContour, warmupContourEngine } from "./contourEngine";
 import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
+import {
+  plumbOffsetNormX, plumbOffsetPx, deviationFromIdealCm, KENDALL_EXPECTED_OFFSET_CM,
+} from "./kendallPlumb.js";
 import HybridKendall from "./HybridKendall";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -400,10 +403,15 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   const sagHeel = ((heelL?.visibility||0) >= (heelR?.visibility||0)) ? heelL : heelR;
   const sagHeelVis = (sagHeel?.visibility||0) >= MIN_VIS;
 
-  // ── Sagittal plumb reference: anchor at lateral malleolus ─────────────────
-  // Clinical standard (Kendall): plumb line passes through the lateral malleolus
-  // vertically. Positive deviation = anterior to plumb (forward).
-  const plumbX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
+  // ── Sagittal plumb reference: Kendall line, anterior to the malleolus ─────
+  // Kendall's plumb does NOT pass through the lateral malleolus — it falls
+  // slightly ANTERIOR to it, level with the 5th metatarsal tuberosity. Anchoring
+  // on the malleolus itself put the reference ~2cm posterior of clinical, which
+  // made ideally-aligned posture read at the ">2cm anterior" abnormal cutoff for
+  // ear and acromion. See kendallPlumb.js for the full rationale.
+  // plumbX is resolved below, once viewSign and estPxPerCm — both needed to
+  // place the offset — are known.
+  const plumbAnchorNormX = sagAnkleVis ? sagAnkle.x : (sagHeelVis ? sagHeel.x : 0.5);
 
   // viewSign: auto-detected from nose vs shoulder position.
   // If nose is LEFT of shoulder → face points left → anterior = left = smaller x → viewSign = -1
@@ -419,6 +427,11 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   // Otherwise estimate from image height: typical standing person in frame ~170cm
   const estPxPerCm = pixPerCm ? pixPerCm : (imgH ? imgH / 170 : null);
 
+  // Kendall reference line = malleolus anchor shifted anteriorly. Uses the same
+  // estPxPerCm the deviations are converted with, so the offset is exactly 2cm
+  // in whatever units this photo resolves to.
+  const plumbX = plumbAnchorNormX + plumbOffsetNormX(estPxPerCm, imgH, viewSign);
+
   // devCm: deviation in cm from plumb (positive = anterior)
   // Normalised x coords: deviation in image-fraction units × imgH / estPxPerCm
   const devCm = (normX) => {
@@ -429,12 +442,27 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   };
 
   // ── 5-point plumb line deviations ─────────────────────────────────────────
+  // Deviations are measured from the Kendall line (anterior to the malleolus),
+  // so the malleolus itself now sits ~2cm POSTERIOR of the reference rather
+  // than being the zero point.
   const plumb = {
     ear:     sagEarVis   ? devCm(sagEar.x)   : null, // + = anterior (FHP)
     shoulder:sagShVis    ? devCm(sagSh.x)    : null, // + = anterior (rounded sh)
     hip:     sagHipVis   ? devCm(sagHip.x)   : null, // + = anterior (APT) / - = posterior (PPT)
     knee:    sagKneeVis  ? devCm(sagKnee.x)  : null, // - = posterior (recurvatum)
-    ankle:   0,                                       // reference = 0 by definition
+    ankle:   sagAnkleVis ? devCm(sagAnkle.x) : KENDALL_EXPECTED_OFFSET_CM.ankle,
+  };
+
+  // ── Deviation from Kendall IDEAL, not from the line ───────────────────────
+  // Ideal alignment does not place every landmark on the plumb: the hip centre
+  // sits slightly anterior to it and the knee axis slightly posterior. Judging
+  // hip/knee against zero flags normal posture as anterior pelvic shift and
+  // recurvatum, so severity should be read off these instead of off `plumb`.
+  const plumbVsIdeal = {
+    ear:      deviationFromIdealCm("ear",      plumb.ear),
+    shoulder: deviationFromIdealCm("shoulder", plumb.shoulder),
+    hip:      deviationFromIdealCm("hip",      plumb.hip),
+    knee:     deviationFromIdealCm("knee",     plumb.knee),
   };
 
   // ── Sagittal confidence score ─────────────────────────────────────────────
@@ -481,12 +509,22 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   const fhpDevCm = plumb.ear !== null && plumb.shoulder !== null
     ? r1(clamp(plumb.ear - plumb.shoulder, -15, 15)) : null;
 
-  // Cervical load estimate (proxy model — NOT estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) formula; estimated cervical load proxy uses neck flexion angle)
-  // Formula: baseline 4.5kg + 1.08kg per cm FHP. Each 2.5cm FHP ≈ +2.7kg.
-  let cervicalLoadKg = null;
-  if (fhpDevCm !== null && fhpDevCm > 0 && cvaAngle !== null && cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild) {
-    cervicalLoadKg = r1(clamp(4.5 + fhpDevCm * 1.08, 4.5, 32));
-  }
+  // ── Cervical load in kg — REMOVED (2026-08-31) ────────────────────────────
+  // Was: 4.5 + fhpDevCm × 1.08, clamped 4.5–32kg.
+  //
+  // The figure descends from Hansraj 2014 (Surg Technol Int), a single
+  // finite-element model that computed cervical load against head FLEXION
+  // ANGLE (15/30/45/60°) — not against forward-head displacement in cm — and
+  // was never validated against measured in-vivo spinal load. Reviews of
+  // cervical biomechanical models note they are largely crash-derived and that
+  // daily-living cervical loading remains poorly characterised. Converting an
+  // angle-based model into a per-cm linear formula, as this did, has no source
+  // at all; the previous comment here already conceded it was not validated.
+  //
+  // A kilogram figure reads as a hard clinical measurement to patients and
+  // clinicians alike, so it is not demoted to a caveated proxy — it is gone.
+  // Forward head posture is still reported via CVA and fhpDevCm, both of which
+  // are properly evidenced.
 
   // ── 3. Thoracic kyphosis proxy — REMOVED ────────────────────────────────────
   // Trunk-lean proxy (32 + rawAngle × 1.8) deleted. TCI replaces it.
@@ -505,14 +543,16 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   let lumbarProxy = null;
   if (hipMid && kneeMid && heelMid) lumbarProxy = r1((hipMid.x - (kneeMid.x + heelMid.x) / 2) * 100 * viewSign);
 
-  // sagPelvicShift: true plumb line pelvic deviation in cm (+ = anterior)
-  const sagPelvicShift = plumb.hip; // already in cm from plumb
+  // sagPelvicShift: pelvic deviation from Kendall IDEAL in cm (+ = anterior).
+  // Not raw distance from the line: ideal alignment already places the hip
+  // centre slightly anterior to the plumb, so that expectation is subtracted.
+  const sagPelvicShift = plumbVsIdeal.hip;
 
   // ── 6. Hip position vs ankle plumb ─────────────────────────────────────────
   const hipExtensionProxy = hipMid && ankleMid ? r1((hipMid.x - ankleMid.x) * 100 * viewSign) : null;
 
-  // sagHipShift: hip in cm vs plumb (+ = anterior, - = posterior / sway-back pattern)
-  const sagHipShift = plumb.hip;
+  // sagHipShift: hip vs Kendall ideal (+ = anterior, - = posterior / sway-back)
+  const sagHipShift = plumbVsIdeal.hip;
 
   // Sagittal anterior pelvic tilt: angle of the ASIS-PSIS line vs horizontal.
   // extra-only -- ASIS/PSIS have no MediaPipe slot (lm23/24 is the greater
@@ -542,17 +582,25 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
   const sagShoulderShift = plumb.shoulder;
 
   // ── 8. Knee sagittal position ───────────────────────────────────────────────
-  // Knee anterior to plumb: genu flexum tendency
-  // Knee posterior to plumb: genu recurvatum tendency (negative value)
-  const sagKneeShift = plumb.knee;
+  // Measured against Kendall ideal, which already sits slightly posterior to
+  // the plumb — otherwise a normal knee reads as recurvatum.
+  // Anterior to ideal: genu flexum tendency. Posterior: recurvatum tendency.
+  const sagKneeShift = plumbVsIdeal.knee;
 
   // ── 9. Sagittal chain deviations summary (new structured format) ───────────
-  // Each segment relative to plumb (cm). Positive = anterior.
+  // Each segment relative to the Kendall plumb (cm). Positive = anterior.
+  // *VsIdealCm subtract the expected non-zero offsets at hip and knee, and are
+  // what severity should be judged on; the raw *Cm values are kept for display
+  // of where each landmark actually sits relative to the drawn line.
   const sagChain = {
     earCm:      plumb.ear,
     shoulderCm: plumb.shoulder,
     hipCm:      plumb.hip,
     kneeCm:     plumb.knee,
+    earVsIdealCm:      plumbVsIdeal.ear,
+    shoulderVsIdealCm: plumbVsIdeal.shoulder,
+    hipVsIdealCm:      plumbVsIdeal.hip,
+    kneeVsIdealCm:     plumbVsIdeal.knee,
     confidence: sagConfidence,
     isTrueLateral,
   };
@@ -949,7 +997,7 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
     f4, f7, f10, f11,
     shoulderAngle, pelvisAngle, eyeLevelAngle, headTiltAngle, headTiltSide,
     headLateralOffset, trunkLateralShift, weightBearingShift, spinalDeviation, waistAsymmetry,
-    cvaAngle, fhpNorm, fhpDevCm, cervicalLoadKg, thoracicAngle, lumbarProxy, hipExtensionProxy,
+    cvaAngle, fhpNorm, fhpDevCm, thoracicAngle, lumbarProxy, hipExtensionProxy,
     sagChain, sagConfidence, sagPelvicShift, sagShoulderShift, sagKneeShift, sagHipShift,
     trunkSagLean, plumb, fhpFromPlumb,
     leftKneeDev, rightKneeDev, leftKneeFrontal, rightKneeFrontal,
@@ -1505,11 +1553,10 @@ const INTERPRETATIONS = {
     `Possible overactivity: upper trapezius, levator scapulae, SCM, pectoralis minor. ` +
     `Possible underactivity: deep cervical flexors, lower trapezius, serratus anterior. ` +
     `Clinical muscle testing required to confirm.`,
-  fhp: (cva, load) =>
+  fhp: (cva) =>
     `Reduced CVA (${cva.toFixed(1)}°) may indicate a forward head tendency. ` +
     `This pattern may be associated with suboccipital and cervical extensor overactivity ` +
-    `and reduced deep cervical flexor contribution.` +
-    (load ? ` Estimated cervical load increase: ~${load.toFixed(1)}kg (estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula) model — proxy only).` : ""),
+    `and reduced deep cervical flexor contribution.`,
   kyphosis: (deg) =>
     `Increased thoracic curvature (${deg.toFixed(1)}°) may be consistent with a kyphotic tendency. ` +
     `Possible overactivity: pectoralis major/minor, upper trapezius. ` +
@@ -2252,7 +2299,6 @@ function buildFindings(lm, view, m) {
       if (m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
         const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
           : m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
-        const loadStr = m.cervicalLoadKg ? ` Estimated cervical load increase: ~${m.cervicalLoadKg.toFixed(1)}kg (proxy, estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula)).` : "";
         const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
 
         add({
@@ -2261,7 +2307,7 @@ function buildFindings(lm, view, m) {
           findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal ${CVA_NORM_LABEL} (Yip et al. 2008))`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
-          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${loadStr} (Screen note: CVA here is a 2D photo proxy using ear→acromion; the validated clinical method measures tragus→C7 spinous process — confirm with goniometry.)`,
+          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this. (Screen note: CVA here is a 2D photo proxy using ear→acromion; the validated clinical method measures tragus→C7 spinous process — confirm with goniometry.)`,
           possibleMusclePatterns: {
             tight: ["Suboccipital extensors", "Cervical extensors (semispinalis, splenius)","Sternocleidomastoid","Pectoralis minor"],
             weak:  ["Deep cervical flexors (longus colli, longus capitis)","Lower trapezius","Serratus anterior"],
@@ -3018,12 +3064,21 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   // the numerals disagreed with the findings by however far off-centre the
   // patient happened to be standing.
   //   Frontal/posterior — Kendall: plumb falls midway between the heels.
-  //   Sagittal          — Kendall: plumb passes through the lateral malleolus.
+  //   Sagittal          — Kendall: plumb falls SLIGHTLY ANTERIOR to the lateral
+  //                       malleolus (5th metatarsal tuberosity level), not
+  //                       through it. The same offset the measurement chain
+  //                       applies is applied here via kendallPlumb.js, so the
+  //                       drawn line is the line the numbers are measured from.
   const plumbAnchorX = (()=>{
     if(isLat){
       const s=view==="right", iAnk=s?28:27, iHeel=s?30:29;
-      if(V(iAnk))  return lm[iAnk].x*W;
-      if(V(iHeel)) return lm[iHeel].x*W;
+      // Anterior direction: mirrors the measurement chain's viewSign fallback.
+      const vSign = (g(0)?.visibility||0) >= 0.3 && (V(11)||V(12))
+        ? (g(0).x < (V(11)?g(11).x:g(12).x) ? -1 : 1)
+        : (s ? -1 : 1);
+      const off = plumbOffsetPx(m.pixPerCm, H, vSign);
+      if(V(iAnk))  return lm[iAnk].x*W  + off;
+      if(V(iHeel)) return lm[iHeel].x*W + off;
       return W/2;
     }
     const ankMidX = V(27)&&V(28) ? (g(27).x+g(28).x)/2 : null;
@@ -4938,6 +4993,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [rawUploadedImg,setRawUploadedImg]=useState(null); // always the original file URL (never a canvas output)
   const [capturedImg,setCapturedImg]=useState(null);
   const [analysing,setAnalysing]=useState(false);
+  // Landmark review gate. Automatic landmark placement is a PROPOSAL, not a
+  // measurement: every published postural norm was established on palpated
+  // bony points, and the field treats clinician review of each placement as
+  // mandatory rather than optional (PostureScreen states the professional user
+  // "retains sole responsibility for interpretation"). Until the clinician
+  // confirms the landmarks for this photo, the analysis stays AI-estimated and
+  // says so on screen and in the PDF. Reset whenever a new photo is analysed.
+  const [landmarksReviewed,setLandmarksReviewed]=useState(false);
   const [error,setError]=useState(null);
   const [countdown,setCountdown]=useState(null);
   const [showHeatmap]=useState(true);
@@ -4962,7 +5025,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence } = useVerifiedLandmarks();
   const [activeLandmark, setActiveLandmark] = useState(null);
   const verifiedCount = Object.keys(verified).length;
-  const isClinicianVerified = verifiedCount > 0;
+  // Verified means the clinician explicitly confirmed the landmark placement
+  // for this photo — not merely that they happened to drag one point. Nudging
+  // a single landmark used to flip the whole analysis to "Clinician Verified",
+  // which overstated how much of it a human had actually checked.
+  const isClinicianVerified = landmarksReviewed;
+
+  // Any new photo, or a switch to a different view, means the landmarks on
+  // screen are no longer the ones that were reviewed — drop back to unverified
+  // rather than letting a previous confirmation vouch for a new analysis.
+  useEffect(() => { setLandmarksReviewed(false); }, [uploadedImg, capturedImg, view]);
 
   // ── Multi-view state ─────────────────────────────────────────────────────────
   // Redesigned entry screen (2026-08-21) always presents all 4 views up front,
@@ -6145,14 +6217,36 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <div style={{position:"absolute",bottom:8,right:8,width:26,height:26,borderRadius:"50%",background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:"0.8rem",pointerEvents:"none"}}>⤢</div>
             </div>
           )}
-          {/* Analysis mode badge */}
-          <div style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:8,
-            background:isClinicianVerified?'rgba(5,150,105,0.12)':'rgba(100,100,100,0.1)',
-            border:`1px solid ${isClinicianVerified?'rgba(5,150,105,0.35)':'rgba(100,100,100,0.2)'}`,
-            color:isClinicianVerified?'#059669':'#6b7280',
-            fontSize:'0.6rem',fontWeight:700,marginBottom:8}}>
-            {isClinicianVerified?'✅ Clinician Verified Analysis':'🤖 AI Estimated Analysis'}
-          </div>
+          {/* Landmark review gate — the analysis mode badge doubles as the
+              action that changes it. Automatic placement is a proposal until a
+              clinician confirms it; unverified is the honest default, and the
+              badge is not something the app can award itself. */}
+          {isClinicianVerified ? (
+            <div style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:8,
+              background:'rgba(5,150,105,0.12)',border:'1px solid rgba(5,150,105,0.35)',
+              color:'#059669',fontSize:'0.6rem',fontWeight:700,marginBottom:8}}>
+              ✅ Clinician Verified Analysis
+            </div>
+          ) : (
+            <div style={{padding:"10px 12px",borderRadius:10,marginBottom:10,
+              background:"rgba(217,119,6,0.08)",border:"1px solid rgba(217,119,6,0.3)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                <span style={{fontSize:"0.8rem"}}>🤖</span>
+                <span style={{fontWeight:800,fontSize:"0.72rem",color:PC.yellow}}>AI Estimated — landmarks not yet reviewed</span>
+              </div>
+              <div style={{fontSize:"0.68rem",color:PC.muted,lineHeight:1.5,marginBottom:8}}>
+                Landmarks are placed automatically and are a starting point, not a measurement.
+                Check each point against the photo — tap the image to zoom, and use Manual mode to
+                correct any that sit off the anatomical landmark — then confirm below.
+              </div>
+              <button type="button" onClick={()=>setLandmarksReviewed(true)}
+                style={{padding:"7px 13px",borderRadius:8,border:"none",cursor:"pointer",
+                  background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,
+                  color:"#fff",fontWeight:800,fontSize:"0.7rem"}}>
+                I've reviewed the landmarks
+              </button>
+            </div>
+          )}
 
           {/* Kendall Postural Type */}
           {measurements?._kendall&&(view==="left"||view==="right")&&(
@@ -6232,7 +6326,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   if (measurements.pelvisDiffCm!=null && measurements.pelvisDiffCm>0.3) flags.push(`pelvis diff ${measurements.pelvisDiffCm}cm`);
                   if (measurements.trunkShiftCm!=null && measurements.trunkShiftCm>0.5) flags.push(`trunk shift ${measurements.trunkShiftCm}cm${measurements.trunkShiftCm>5?" (verify positioning)":""}`);
                 }
-                if (measurements?.cervicalLoadKg!=null && measurements.cervicalLoadKg>12) flags.push(`cervical load ~${measurements.cervicalLoadKg.toFixed(1)}kg`);
                 if (!flags.length) return null;
                 const flagColour = highFindings.length>0?PC.red:PC.yellow;
                 return (
@@ -6474,14 +6567,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                       {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                     </span>
                   </div>
-                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = High load · estimated cervical load proxy cervical load model</div>
+                  <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = marked forward head tendency</div>
                 </div>
-                {measurements.cervicalLoadKg!=null&&(
-                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                    <div style={{flex:1,fontSize:"0.78rem",color:PC.muted}}>Cervical Load <span style={{fontSize:"0.56rem"}}>(estimated cervical load proxy)</span></div>
-                    <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
-                  </div>
-                )}
                 <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
                 <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
                 {/* Lumbar lordosis: paired with kyphosis — show together */}
@@ -6560,14 +6647,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     {measurements.cvaAngle!=null?`${measurements.cvaAngle.toFixed(1)}°`:"—"}
                   </span>
                 </div>
-                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = High load</div>
+                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = marked forward head tendency</div>
               </div>
-              {measurements.cervicalLoadKg!=null&&(
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
-                  <div style={{flex:1,fontSize:"0.78rem",color:PC.muted}}>Cervical Load Est. <span style={{fontSize:"0.56rem"}}>(estimated cervical extensor load (proxy — not a validated estimated cervical load proxy formula))</span></div>
-                  <div style={{fontSize:"0.75rem",fontWeight:800,color:measurements.cervicalLoadKg>18?PC.red:measurements.cervicalLoadKg>12?PC.yellow:PC.green,minWidth:60,textAlign:"right"}}>{measurements.cervicalLoadKg.toFixed(1)}kg</div>
-                </div>
-              )}
               <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
               <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
               {/* Lumbar lordosis paired with kyphosis */}
@@ -7811,8 +7892,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       const views = isMultiRpt ? Object.keys(mvResults) : [view];
       const m = measurements||{};
 
-    // Build findings for report
-    const isClinicianVerified = Object.keys(verified||{}).length > 0;
+    // Build findings for report. Same gate the on-screen badge uses: the report
+    // may only claim clinician verification if the landmarks were reviewed.
+    const isClinicianVerified = landmarksReviewed;
     const rptFindings = (rptFindings_src||[]).map(f=>({
       region: f.region||f.label||"Finding",
       text: (f.findingName||f.text||f.label||"").replace(/^OBSERVATION[^:]*:\s*/i,"").replace(/^OBSERVATION ONLY[^:]*:\s*/i,""),
@@ -7870,7 +7952,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         return { tight: toObj(mi.tight,"tight"), weak: toObj(mi.weak,"weak") };
       })(),
       metrics: {
-        cvaAngle: m.cvaAngle, cervicalLoadKg: m.cervicalLoadKg,
+        cvaAngle: m.cvaAngle,
         thoracicAngle: m.thoracicAngle, lumbarProxy: m.lumbarProxy,
         shoulderAngle: m.shoulderAngle||0, pelvisAngle: m.pelvisAngle||0,
         trunkShiftCm: m.trunkShiftCm||0, fhpCm: m.fhpCm||0,
@@ -7879,7 +7961,10 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       },
       exercises: rptExercises,
       soap: {
-        subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
+        // escHtml on occupation: this string is interpolated into the printable
+        // report's HTML, so it is an injection sink like any other free text.
+        // It is the last patient-entered field still reaching the report at all.
+        subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${escHtml(patientInfo.occupation||"not specified")}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
         assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
         plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
@@ -8142,7 +8227,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 ${[
                   {label:"CVA (FHP ★)",val:m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",norm:CVA_NORM_LABEL,bad:m.cvaAngle!=null&&m.cvaAngle < CVA.moderate,warn:m.cvaAngle!=null&&m.cvaAngle < CVA.mild},
                   {label:"Thoracic Kyphosis (Trunk Lean Est.)",val:m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—",norm:"20–45°",bad:m.thoracicAngle!=null&&m.thoracicAngle>55,warn:m.thoracicAngle!=null&&m.thoracicAngle>45},
-                  {label:"Cervical Load",val:m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—",norm:"4.5kg",bad:m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,warn:m.cervicalLoadKg!=null&&m.cervicalLoadKg>12},
                   {label:"LCS Index",val:m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—",norm:"<0.5",bad:m.lcsIndex!=null&&m.lcsIndex>1,warn:m.lcsIndex!=null&&m.lcsIndex>0.5},
                 ].map(r=>`<div style="padding:5px 8px;border-radius:6px;background:${r.bad?"#fef2f2":r.warn?"#fffbeb":"#f0fdf4"};border:1px solid ${r.bad?C.red:r.warn?C.yellow:C.green}25;display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.61rem;color:${C.muted}">${r.label}</span><div style="text-align:right"><div style="font-size:0.72rem;font-weight:800;color:${r.bad?C.red:r.warn?C.yellow:C.green}">${r.val}</div><div style="font-size:0.52rem;color:${C.muted}">nrm ${r.norm}</div></div></div>`).join("")}
               </div>
@@ -8255,7 +8339,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <div>
               <div style="font-size:0.59rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.muted};margin-bottom:7px">Sagittal Plane</div>
               ${metRow("CVA Angle ★",m.cvaAngle!=null?m.cvaAngle.toFixed(1)+"°":"—",CVA_NORM_LABEL,m.cvaAngle!=null&&m.cvaAngle < CVA.moderate,m.cvaAngle!=null&&m.cvaAngle < CVA.mild)}
-              ${metRow("Cervical Load (estimated cervical load proxy)",m.cervicalLoadKg!=null?m.cervicalLoadKg.toFixed(1)+"kg":"—","4.5kg",m.cervicalLoadKg!=null&&m.cervicalLoadKg>18,m.cervicalLoadKg!=null&&m.cervicalLoadKg>12)}
               ${metRow("Thoracic Kyphosis (Trunk Lean Est.)",m.thoracicAngle!=null?m.thoracicAngle.toFixed(1)+"°":"—","20–45°",m.thoracicAngle!=null&&m.thoracicAngle>55,m.thoracicAngle!=null&&m.thoracicAngle>45)}
               ${metRow("Lumbar Lordosis (proxy)",m.lumbarProxy!=null?(m.lumbarProxy>0?"↑":"↓")+Math.abs(m.lumbarProxy).toFixed(1)+"%":"—","<5%",Math.abs(m.lumbarProxy||0)>10,Math.abs(m.lumbarProxy||0)>5)}
               ${metRow("LCS Index",m.lcsIndex!=null?m.lcsIndex.toFixed(1):"—","<0.5",m.lcsIndex!=null&&m.lcsIndex>1,m.lcsIndex!=null&&m.lcsIndex>0.5)}
