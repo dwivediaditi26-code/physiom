@@ -227,8 +227,15 @@ export function orthoStyles() {
            and moves on. */
         .movement-card { border-top: 1px solid #F5F3FB; padding: 10px 0; }
         .movement-card:first-of-type { border-top: none; padding-top: 0; }
-        .movement-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-        .movement-name-row { display: flex; align-items: center; gap: 6px; }
+        /* flex-wrap so the L/R grade selects drop to their own line instead
+           of overflowing past the viewport when a muscle/movement name is
+           long ("External + Internal Obliques", "Transversus Abdominis") --
+           .movement-info takes the min-width:0 + flex:1 a flex child needs
+           to actually shrink/wrap its text instead of forcing the row wider
+           than its container. */
+        .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+        .movement-info { flex: 1 1 160px; min-width: 0; }
+        .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }
         .movement-lr { display: flex; gap: 10px; flex-shrink: 0; }

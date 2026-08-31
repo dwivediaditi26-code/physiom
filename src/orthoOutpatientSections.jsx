@@ -64,11 +64,16 @@ export function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Demographics" />
       <TextField label="Full name" value={d.name} onChange={(v) => set("name", v)} placeholder="Patient's full name" />
-      <div className="row-2">
-        <TextField label="Date of birth" value={d.dob} onChange={(v) => set("dob", v)} placeholder="DD/MM/YYYY" />
-        <SelectField label="Sex" type="single" options={["Male", "Female", "Other", "Prefer not to say"]} value={d.sex} onChange={(v) => set("sex", v)} />
-      </div>
-      <SelectField label="Hand dominance" type="single" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
+      {/* Segmented (full-width pill row), not the SelectField combobox --
+          that combobox was squeezed into a row-2 half-width column here,
+          which truncated its "Type or select..." placeholder on mobile.
+          Same fixed-choice field orthoCommonSections.jsx's IPD/Post-op
+          Demographics already renders as Segmented; Outpatient was the
+          one inconsistent holdout. Matches Cardio's 3-option Gender field. */}
+      <Segmented label="Sex" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
+      <Segmented label="Hand dominance" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <div className="row-2">
         <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />
         <TextField label="Employer / industry" value={d.employer} onChange={(v) => set("employer", v)} />
@@ -78,7 +83,6 @@ export function DemographicsSection({ data, setData }) {
       <TextField label="GP name & practice" value={d.gp} onChange={(v) => set("gp", v)} />
       <Segmented label="Affected side" options={["Right", "Left", "Bilateral"]} value={d.affectedSide} onChange={(v) => set("affectedSide", v)} />
       <TextField label="Provisional diagnosis" value={d.provisionalDiagnosis} onChange={(v) => set("provisionalDiagnosis", v)} placeholder="Working / referral diagnosis" />
-      <SelectField label="Consent" type="single" options={["Yes — verbal", "Yes — written", "Not yet"]} value={d.consent} onChange={(v) => set("consent", v)} />
       <TextArea label="Notes" value={d.notes} onChange={(v) => set("notes", v)} placeholder="Any additional context" />
     </>
   );
@@ -130,10 +134,15 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
       )}
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
-      <div className="row-2">
-        <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
-        <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 3 weeks" />
-      </div>
+      {/* Onset is a free-text "type or select" combobox, not a plain input --
+          same class of field as Sex/Hand dominance below, which used to be
+          squeezed into a row-2 half-width column and had their placeholder
+          clipped to unreadable widths on mobile. Full-width here for the
+          same reason; Duration (a plain TextField with a short placeholder)
+          doesn't have that problem and can stay full-width too rather than
+          orphaned alone in a half-empty row. */}
+      <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
+      <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 3 weeks" />
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />
       <TextArea label="Relevant medical history" value={d.medicalHistory} onChange={(v) => set("medicalHistory", v)} />
       <TextField label="Medication" value={d.medication} onChange={(v) => set("medication", v)} />
@@ -354,10 +363,13 @@ function techniqueEntryForm(type, form, set) {
     case "manual":
       return (
         <>
-          <div className="row-2">
-            <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
-            <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
-          </div>
+          {/* Region/joint is a free-text combobox -- same class of field as
+              Onset (orthoOutpatientSections.jsx's Subjective step) that had
+              its placeholder clipped to "Type" when squeezed into a row-2
+              half-width column next to Laterality. Full-width here for the
+              same reason. */}
+          <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
+          <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
           <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
           <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />
           <DosageSteppers form={form} set={set} />
