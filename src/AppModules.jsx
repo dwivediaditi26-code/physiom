@@ -1682,8 +1682,12 @@ function QuickVisitForm({ PC, data, set, navTo }) {
 // (2026-08-31, Aditi: "new patient should [be] 6 ques max for demographic
 // data or patient details and then ask for neuro ortho cardio sports"):
 //
-//   Step 1 — exactly 6 patient-detail questions, nothing more on screen.
+//   Step 1 — 7 patient-detail questions, nothing more on screen.
 //   Step 2 — which specialty this assessment runs under.
+//
+// Step 1 was 6 questions; Address was added as the 7th on request
+// (2026-08-31) after it had first been tucked into "More details". Still a
+// short form -- the point was never the number 6 for its own sake.
 //
 // The old version asked ~20 questions across four tabs (Essential/Contact/
 // Clinical/Consent) before it would create anything, and never asked which
@@ -1692,7 +1696,7 @@ function QuickVisitForm({ PC, data, set, navTo }) {
 // still saves to the same field keys; it just lives behind the optional
 // "More details" toggle on step 1 instead of standing between the clinician
 // and a usable patient record. Consent moved to step 2 (it isn't a
-// demographic question, so it doesn't eat one of the 6) and is still
+// demographic question, so it doesn't take a step-1 slot) and is still
 // required before a record can be created.
 const INTAKE_SPECIALTIES = [
   { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
@@ -1738,6 +1742,14 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   }, [fd, draftKey]);
 
   const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch {} };
+
+  // Two field styles on purpose. `inp`/`lbl`/`field` is the compact
+  // treatment, still used for the optional "More details" section. The
+  // `n*` set below matches the full-page Clinical > Demographics step in
+  // AppFull.jsx exactly -- larger rounded boxes, bold dark labels, red
+  // required asterisk, htmlFor/id pairing -- so the app's two
+  // patient-detail screens read as the same product rather than two
+  // different forms.
   const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:0,boxSizing:"border-box"};
   const lbl = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
   const field = (label, node) => (
@@ -1746,6 +1758,19 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       {node}
     </div>
   );
+  const nInp = {width:"100%",background:PC.surface,border:`1.5px solid ${PC.border}`,borderRadius:10,color:PC.text,fontFamily:"inherit",outline:"none",padding:"11px 13px",fontSize:"0.9rem",boxSizing:"border-box"};
+  const nLbl = {fontSize:"0.82rem",fontWeight:700,color:PC.text,marginBottom:6,display:"block"};
+  const req = <span style={{color:"#dc2626"}}> *</span>;
+  const nField = (label, el, required, id) => (
+    <div style={{marginBottom:16}}>
+      <label htmlFor={id} style={nLbl}>{label}{required&&req}</label>
+      {el}
+    </div>
+  );
+  // Sex as three tappable pills rather than a dropdown, and the same
+  // Male/Female/Other set the Demographics and Cardio screens standardised
+  // on -- one control, one vocabulary across the app.
+  const SEX_OPTS = ["Male","Female","Other"];
   const sel = (k, opts) => (
     <select style={inp} value={fd[k]||""} onChange={e=>set(k,e.target.value)}>
       <option value="">—</option>
@@ -1770,27 +1795,50 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
 
       {/* Two-step progress — deliberately not tabs: the old free-jump tab
           strip is what let a half-filled intake sit around unfinished. */}
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
-        {[["details","1  Patient details"],["specialty","2  Specialty"]].map(([id,label])=>(
-          <div key={id} style={{flex:1,padding:"6px 10px",borderRadius:8,textAlign:"center",fontSize:"0.74rem",fontWeight:800,
-            background: step===id ? PC.accent : PC.s2,
-            color: step===id ? "#fff" : PC.muted}}>
-            {label}
-          </div>
-        ))}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20}}>
+        {[["details","Patient details"],["specialty","Specialty"]].map(([id,label],i)=>{
+          const on = step===id;
+          const done = id==="details" && step==="specialty";
+          return (
+            <div key={id} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:12,
+              border:`1.5px solid ${on?PC.accent:PC.border}`,
+              background: on ? `${PC.accent}12` : PC.surface}}>
+              <span style={{width:20,height:20,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",
+                justifyContent:"center",fontSize:"0.7rem",fontWeight:800,
+                background: on||done ? PC.accent : PC.s2,
+                color: on||done ? "#fff" : PC.muted}}>
+                {done ? "✓" : i+1}
+              </span>
+              <span style={{fontSize:"0.78rem",fontWeight:700,color:on?PC.accent:PC.muted,whiteSpace:"nowrap",
+                overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* ── STEP 1 · exactly 6 questions ── */}
+      {/* ── STEP 1 · the 7 patient-detail questions ── */}
       {step==="details" && (
         <div>
-          {field("Full name *", <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>)}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <div>{field("Age", <input style={inp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
-            <div>{field("Sex", sel("dem_sex",["Female","Male","Non-binary","Prefer not to say"]))}</div>
+          {nField("Full name",<input id="intake_dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>,true,"intake_dem_name")}
+          {nField("Age",<input id="intake_dem_age" style={nInp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,false,"intake_dem_age")}
+          <div style={{marginBottom:16}}>
+            <label style={nLbl}>Sex</label>
+            <div style={{display:"flex",gap:8}}>
+              {SEX_OPTS.map(o=>(
+                <button key={o} type="button" onClick={()=>set("dem_sex",o)}
+                  style={{flex:1,padding:"11px 0",textAlign:"center",borderRadius:10,fontSize:"0.85rem",fontWeight:700,fontFamily:"inherit",
+                    border:`1.5px solid ${fd.dem_sex===o?PC.accent:PC.border}`,
+                    background:fd.dem_sex===o?PC.accent:PC.surface,
+                    color:fd.dem_sex===o?"#fff":PC.text,cursor:"pointer"}}>
+                  {o}
+                </button>
+              ))}
+            </div>
           </div>
-          {field("Phone number", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
-          {field("Occupation", <input style={inp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
-          {field("Chief complaint *", <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>)}
+          {nField("Phone",<input id="intake_dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,false,"intake_dem_phone")}
+          {nField("Occupation",<input id="intake_dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"intake_dem_occupation")}
+          {nField("Address",<input id="intake_dem_address" style={nInp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"intake_dem_address")}
+          {nField("Chief complaint",<input id="intake_cc_main" style={nInp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>,true,"intake_cc_main")}
 
           {/* Everything the old four-tab intake asked for, kept on file and
               kept optional. Nothing was dropped — it just no longer blocks
@@ -1812,7 +1860,6 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
                 <div>{field("Duration", <input style={inp} placeholder="e.g. 3 weeks" value={fd.cc_duration||""} onChange={e=>set("cc_duration",e.target.value)}/>)}</div>
               </div>
               {field("Email address", <input style={inp} type="email" placeholder="patient@email.com" value={fd.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
-              {field("Address", <input style={inp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                 <div>{field("Emergency contact name", <input style={inp} placeholder="Full name" value={fd.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
                 <div>{field("Emergency contact phone", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
@@ -1827,9 +1874,9 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
           )}
 
           <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem",fontFamily:"inherit"}}>Cancel</button>
+            <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"14px",borderRadius:12,border:`1.5px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.88rem",fontFamily:"inherit"}}>Cancel</button>
             <button disabled={!detailsOk} onClick={()=>setStep("specialty")}
-              style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:detailsOk?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:detailsOk?"pointer":"not-allowed",fontSize:"0.82rem",fontFamily:"inherit"}}>
+              style={{flex:2,padding:"14px",borderRadius:12,border:"none",background:detailsOk?PC.accent:"#D1D5DB",color:"#fff",fontWeight:800,cursor:detailsOk?"pointer":"not-allowed",fontSize:"0.9rem",fontFamily:"inherit"}}>
               {detailsOk ? "Next: choose specialty →" : "Name & chief complaint first"}
             </button>
           </div>
@@ -1839,7 +1886,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       {/* ── STEP 2 · which specialty ── */}
       {step==="specialty" && (
         <div>
-          <div style={{fontSize:"0.85rem",fontWeight:700,color:PC.text,marginBottom:2}}>Which specialty is this assessment?</div>
+          <div style={{fontSize:"0.95rem",fontWeight:800,color:PC.text,marginBottom:3}}>Which specialty is this assessment?</div>
           <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:14}}>This decides which assessment flow {fd.dem_name?.trim()||"this patient"} starts in.</div>
 
           {/* Sports and Pedia are listed but not selectable — the same
@@ -1896,9 +1943,9 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
           </div>
 
           <div style={{display:"flex",gap:10,marginTop:16}}>
-            <button onClick={()=>setStep("details")} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem",fontFamily:"inherit"}}>← Back</button>
+            <button onClick={()=>setStep("details")} style={{flex:1,padding:"14px",borderRadius:12,border:`1.5px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.88rem",fontFamily:"inherit"}}>← Back</button>
             <button disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}}
-              style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem",fontFamily:"inherit"}}>
+              style={{flex:2,padding:"14px",borderRadius:12,border:"none",background:canSubmit?PC.accent:"#D1D5DB",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.9rem",fontFamily:"inherit"}}>
               {!specialty?.live ? "Pick a specialty" : !fd.consent_treat ? "Consent required" : `Start ${specialty.label} Assessment →`}
             </button>
           </div>
