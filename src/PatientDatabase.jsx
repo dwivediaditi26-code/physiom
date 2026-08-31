@@ -3898,7 +3898,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 //    Aditi: "no speciality showing") -- speciality now lives only on its
 //    own Assessment sub-tab as square cards, not mixed into the plain
 //    patient list. --
-function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile }) {
+function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile, onEditAssessment }) {
   const day = relativeDay(patient.updatedAt);
   const subtitle = [careSettingLabel, patient.lastDx || "No diagnosis yet"].filter(Boolean).join(" • ");
   return (
@@ -3924,8 +3924,12 @@ function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onPr
           {subtitle}
         </div>
       </div>
-      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:6}}>
         <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
+        <button onClick={e=>{e.stopPropagation();onEditAssessment();}} title="Edit assessment" style={{
+          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>✏️</button>
+        <button onClick={e=>{e.stopPropagation();onProfile();}} title="Profile" style={{
+          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>👤</button>
         <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
           background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
         <span style={{color:"#C4C4CE",fontSize:"0.95rem"}}>›</span>
@@ -4204,6 +4208,12 @@ const innerBody = (
                       if (p?.data?.cardio || p?.data?.neuro) { onSelect(p); if (onNav) onNav("specialty_profile"); }
                       else setProfilePatient(p);
                     }}
+                    // Same "select + close panel" semantics as the profile
+                    // modal's own "Open in Assessment" button (onLoadAssessment
+                    // below) -- just reachable directly from the row instead
+                    // of needing to open Profile first (Aditi: "edit
+                    // assessment and profile should be there in patient").
+                    onEditAssessment={()=>{ onSelect(p); setProfilePatient(null); closePanel(); }}
                   />
                 ))}
               </div>
