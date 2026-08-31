@@ -9,6 +9,7 @@ import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFin
 import {
   plumbOffsetNormX, plumbOffsetPx, deviationFromIdealCm, KENDALL_EXPECTED_OFFSET_CM,
 } from "./kendallPlumb.js";
+import { compareMeasurement, capturesComparable, protocolQuality } from "./measurementError.js";
 import HybridKendall from "./HybridKendall";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -3830,6 +3831,94 @@ const VIEWS={
     checks:["Ear–shoulder–hip–ankle aligned","Neutral gaze","Knees not locked","Arms visible","Full body in frame"]},
 };
 
+// ─── Re-assessment comparison ─────────────────────────────────────────────────
+// Compares the latest session against the previous one of the SAME view, and
+// refuses to report a delta that falls inside the measurement error floor.
+//
+// Photogrammetric postural angles carry MDC 0.8–2.3° even under tripod,
+// marker-based conditions; handheld markerless capture is worse. Presenting a
+// 1° session-to-session difference as improvement is the most common false
+// claim in this category of app, so the panel names the error floor it is
+// applying and says "no measurable change" rather than printing a number.
+const REASSESS_METRICS = [
+  { key:"cvaAngle",      label:"Craniovertebral angle", unit:"deg", lowerIsBetter:false },
+  { key:"shoulderAngle", label:"Shoulder tilt",         unit:"deg", lowerIsBetter:true  },
+  { key:"pelvisAngle",   label:"Hip-centre obliquity",  unit:"deg", lowerIsBetter:true  },
+  { key:"headTiltAngle", label:"Head lateral tilt",     unit:"deg", lowerIsBetter:true  },
+  { key:"fhpDevCm",      label:"Forward head distance", unit:"cm",  lowerIsBetter:true  },
+  { key:"trunkShiftCm",  label:"Trunk lateral shift",   unit:"cm",  lowerIsBetter:true  },
+];
+
+function ReassessmentPanel({ sessions, PC }){
+  const latest = sessions[sessions.length-1];
+  if(!latest) return null;
+  // Same view only — a frontal photo and a lateral one measure different things.
+  const prev = [...sessions].slice(0,-1).reverse().find(s=>s.view===latest.view);
+  if(!prev) return null;
+
+  const cmpCapture = capturesComparable(prev.capture, latest.capture);
+  const conditions = {
+    uncalibrated:      !latest.capture?.calibrated || !prev.capture?.calibrated,
+    unverifiedMarkers: !latest.capture?.landmarksReviewed || !prev.capture?.landmarksReviewed,
+    unknownGeometry:   !latest.capture?.distanceCm || !prev.capture?.distanceCm,
+  };
+
+  const rows = cmpCapture.comparable
+    ? REASSESS_METRICS.map(m=>{
+        const cmp = compareMeasurement(prev.metrics?.[m.key], latest.metrics?.[m.key],
+          { unit:m.unit, conditions, lowerIsBetter:m.lowerIsBetter });
+        return cmp ? { ...m, cmp } : null;
+      }).filter(Boolean)
+    : [];
+
+  return (
+    <div style={{padding:"12px 14px",borderRadius:12,border:`1px solid ${PC.border}`,marginBottom:14,background:PC.surface}}>
+      <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>
+        Change vs previous {latest.view} session
+      </div>
+
+      {!cmpCapture.comparable ? (
+        <div style={{fontSize:"0.76rem",color:PC.yellow,lineHeight:1.55,marginTop:6}}>
+          Not comparable — {cmpCapture.reason}. Re-capture both sessions under the same
+          protocol (same distance and calibration) to track change over time.
+        </div>
+      ) : rows.length===0 ? (
+        <div style={{fontSize:"0.76rem",color:PC.muted,marginTop:6}}>
+          No measurement recorded in both sessions to compare.
+        </div>
+      ) : (
+        <>
+          {rows.map(r=>{
+            const unit = r.cmp.unit==="cm" ? "cm" : "°";
+            const col = !r.cmp.isReal ? PC.muted : r.cmp.direction==="better" ? PC.green : PC.red;
+            return (
+              <div key={r.key} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:`1px solid ${PC.border}`}}>
+                <div style={{flex:1,fontSize:"0.76rem",color:PC.muted}}>{r.label}</div>
+                <div style={{fontSize:"0.78rem",fontWeight:800,color:col,textAlign:"right"}}>
+                  {r.cmp.isReal
+                    ? `${r.cmp.delta>0?"+":""}${r.cmp.delta}${unit}`
+                    : "no measurable change"}
+                </div>
+              </div>
+            );
+          })}
+          <div style={{fontSize:"0.71rem",color:PC.muted,marginTop:9,lineHeight:1.55}}>
+            Differences smaller than the measurement error floor
+            (±{rows[0].cmp.mdc}{rows[0].cmp.unit==="cm"?"cm":"°"}) are not reported as change.
+            {rows[0].cmp.factors.length>0 && " Floor widened because this comparison is "+
+              rows[0].cmp.factors.map(f=>({
+                uncalibrated:"uncalibrated",
+                unverifiedMarkers:"from unreviewed landmarks",
+                unknownGeometry:"missing camera distance",
+                geometryMismatch:"from mismatched capture geometry",
+              }[f]||f)).join(", ")+"."}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Sparkline ────────────────────────────────────────────────────────────────
 function PostureSparkline({sessions,colour=PC.accent}){
   const pts=sessions.filter(s=>s.findings!==undefined).slice(-10);
@@ -5018,6 +5107,44 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // Calibration: patient height (cm) → pixPerCm conversion for real-world measurements
   const [patientHeightCm,setPatientHeightCm]=useState(170);
   const [showCalib,setShowCalib]=useState(false);
+  // ── Capture protocol ──────────────────────────────────────────────────────
+  // Validated photogrammetry fixes the camera on a tripod at a standardised
+  // height (90–115cm in published protocols) and subject distance (~1.5m), over
+  // a marked floor spot, so the geometry repeats exactly. Perspective error from
+  // an unknown camera position is a far larger source of error than anything in
+  // the maths downstream, and two photos taken at different distances are not
+  // measuring the same thing — which is what makes re-assessment comparison
+  // valid or meaningless. Recorded per session so comparisons can check it.
+  const [captureDistanceCm,setCaptureDistanceCm]=useState(null);
+  const [protocolConfirmed,setProtocolConfirmed]=useState(false);
+
+  // Session record for the in-app history list. Carries the angles and the
+  // capture conditions, without which a later session has nothing to compare
+  // against and no way to know whether comparing is even valid.
+  const buildLocalSession = (v, img) => ({
+    view: v,
+    time: new Date().toISOString(),
+    score: scoreData?.score,
+    band: scoreData?.band,
+    findings: findings.length,
+    img,
+    capture: {
+      calibrated: !!measurements?._calibrated,
+      patientHeightCm,
+      distanceCm: captureDistanceCm,
+      protocolConfirmed,
+      landmarksReviewed,
+      view: v,
+    },
+    metrics: measurements ? {
+      cvaAngle: measurements.cvaAngle ?? null,
+      shoulderAngle: measurements.shoulderAngle ?? null,
+      pelvisAngle: measurements.pelvisAngle ?? null,
+      headTiltAngle: measurements.headTiltAngle ?? null,
+      fhpDevCm: measurements.fhpDevCm ?? null,
+      trunkShiftCm: measurements.trunkShiftCm ?? null,
+    } : null,
+  });
   // Mobile panel toggle: "camera" = left panel, "results" = right panel
   const [mobilePanel,setMobilePanel]=useState("camera");
 
@@ -5725,11 +5852,30 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
           const s=scorePosture(m,f,r);
           saveMvResult(currentView,m,f,s,r,annotated);
-          const _pe1={view:currentView,time:new Date().toISOString(),score:s?.score,band:s?.band,findings:f.length,img:annotated};
+          // Built from this view's own m/f/s rather than component state, which
+          // has not been updated for this view yet — but carries the same
+          // capture conditions and metrics the single-view path records.
+          const _pe1={
+            view:currentView,time:new Date().toISOString(),
+            score:s?.score,band:s?.band,findings:f.length,img:annotated,
+            capture:{
+              calibrated: !!m?._calibrated, patientHeightCm,
+              distanceCm: captureDistanceCm, protocolConfirmed,
+              landmarksReviewed, view: currentView,
+            },
+            metrics: m ? {
+              cvaAngle: m.cvaAngle ?? null,
+              shoulderAngle: m.shoulderAngle ?? null,
+              pelvisAngle: m.pelvisAngle ?? null,
+              headTiltAngle: m.headTiltAngle ?? null,
+              fhpDevCm: m.fhpDevCm ?? null,
+              trunkShiftCm: m.trunkShiftCm ?? null,
+            } : null,
+          };
           saveSession(_pe1);
           if(set&&activePatient){try{const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");set("posture_sessions",JSON.stringify([..._ex,_pe1]));}catch(e){}}
         } else {
-          saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:annotated});
+          saveSession(buildLocalSession(currentView, annotated));
         }
       } else {
         // No usable pose in this frame -- resume live tracking instead of
@@ -5737,13 +5883,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         // try Capture again once framing improves.
         captureFrozenRef.current=false; setCapturedImg(null);
         setError(`Could not detect a full body pose in this ${VIEWS[currentView]?.label||"view"} photo — step back so your full body (head to feet) is in frame, improve lighting, and try again.`);
-        if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
+        if(measurements&&findings&&scoreData) saveSession(buildLocalSession(currentView, rawDataUrl));
       }
     } else {
       captureFrozenRef.current=false; setCapturedImg(null);
       URL.revokeObjectURL(blobUrl||""); setAnalysing(false);
       setError(mpStatus!=="ready" ? "AI model is still loading — wait a moment and try again." : "Camera capture failed — please try again.");
-      if(measurements&&findings&&scoreData) saveSession({view:currentView,time:new Date().toISOString(),score:scoreData?.score,band:scoreData?.band,findings:findings.length,img:rawDataUrl});
+      if(measurements&&findings&&scoreData) saveSession(buildLocalSession(currentView, rawDataUrl));
     }
     if(assessMode !== "multi") { setTab("findings"); if(isMobile) setMobilePanel("results"); }
   }
@@ -6248,6 +6394,28 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </div>
           )}
 
+          {/* Capture-protocol ceiling. Landmark visibility says how well the
+              model saw the joints; it says nothing about whether the camera was
+              where it needed to be. Shown separately rather than folded into the
+              reliability score, which measures one specific thing honestly. */}
+          {(()=>{
+            const pq = protocolQuality({
+              calibrated: !!measurements?._calibrated,
+              distanceCm: captureDistanceCm,
+              protocolConfirmed,
+              landmarksReviewed,
+            });
+            if(pq.ceiling>=90) return null;
+            return (
+              <div style={{fontSize:"0.7rem",color:PC.muted,lineHeight:1.55,marginBottom:10,
+                padding:"7px 10px",borderRadius:8,background:PC.surface,border:`1px solid ${PC.border}`}}>
+                <span style={{fontWeight:800,color:PC.text}}>Capture quality: {pq.level}</span>
+                {" — "}{pq.reasons.join(", ")}. Read findings as a screen, not a measurement;
+                set up the capture protocol in the Metrics tab to lift this.
+              </div>
+            );
+          })()}
+
           {/* Kendall Postural Type */}
           {measurements?._kendall&&(view==="left"||view==="right")&&(
             <div style={{marginBottom:14,padding:"12px 14px",borderRadius:12,
@@ -6720,6 +6888,54 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </>
           )}
 
+          {/* Capture protocol — the largest single source of error is here,
+              not in the maths. Recorded per session so re-assessments can be
+              checked for like-for-like geometry. */}
+          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Capture Protocol</div>
+          <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${protocolConfirmed?PC.green+"55":PC.border}`,background:protocolConfirmed?"rgba(5,150,105,0.06)":PC.surface,marginBottom:8}}>
+            <div style={{fontSize:"0.78rem",color:PC.muted,lineHeight:1.6,marginBottom:9}}>
+              Camera position affects the measurements more than anything else in the analysis.
+              Two photos taken from different distances can't be compared.
+            </div>
+            {[
+              ["Phone height", "About chest height (1.0–1.15 m), held vertical"],
+              ["Distance", "About 1.5 m — full body head to feet in frame"],
+              ["Standing spot", "Mark the floor and reuse it every session"],
+              ["Patient", "Barefoot, tight-fitting clothing, feet hip-width"],
+              ["Instruction", "“Stand as you normally do, look straight ahead”"],
+            ].map(([k,v])=>(
+              <div key={k} style={{display:"flex",gap:9,padding:"4px 0",fontSize:"0.76rem",lineHeight:1.5}}>
+                <span style={{color:PC.accent,fontWeight:700,minWidth:96,flexShrink:0}}>{k}</span>
+                <span style={{color:PC.muted}}>{v}</span>
+              </div>
+            ))}
+            <div style={{fontSize:"0.72rem",color:PC.muted,opacity:0.85,margin:"9px 0 10px",lineHeight:1.5}}>
+              Relaxed and corrected posture differ by roughly 5° of craniovertebral angle — more than
+              most severity bands — so give the same instruction every time.
+            </div>
+            <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:10}}>
+              <span style={{fontSize:"0.76rem",color:PC.muted,flexShrink:0}}>Distance</span>
+              <input type="number" min={50} max={500} placeholder="150"
+                value={captureDistanceCm??""}
+                onChange={e=>setCaptureDistanceCm(e.target.value===""?null:Number(e.target.value))}
+                style={{flex:1,minWidth:0,padding:"7px 11px",border:`1px solid ${PC.border}`,borderRadius:9,fontSize:"0.82rem",background:PC.bg,color:PC.text}}/>
+              <span style={{fontSize:"0.75rem",color:PC.muted}}>cm</span>
+            </div>
+            <button type="button" onClick={()=>setProtocolConfirmed(v=>!v)}
+              style={{width:"100%",padding:"8px",borderRadius:9,cursor:"pointer",fontWeight:800,fontSize:"0.75rem",
+                border:protocolConfirmed?`1px solid ${PC.green}55`:"none",
+                background:protocolConfirmed?"transparent":`linear-gradient(135deg,${PC.accent},${PC.a2})`,
+                color:protocolConfirmed?PC.green:"#fff"}}>
+              {protocolConfirmed?"✓ Protocol followed — tap to unset":"Confirm protocol followed"}
+            </button>
+            {!captureDistanceCm&&(
+              <div style={{fontSize:"0.72rem",color:PC.yellow,marginTop:8,lineHeight:1.5}}>
+                Without a recorded distance this session can still be analysed, but it can't be
+                compared against another one.
+              </div>
+            )}
+          </div>
+
           {/* Calibration */}
           <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginTop:18,marginBottom:7}}>Calibration — Real Measurements</div>
           <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${PC.border}`,background:PC.surface,marginBottom:8}}>
@@ -6776,6 +6992,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               everywhere) -- plots finding count instead. Fewer findings is
               the improvement direction, opposite of the old score trend, so
               the up/down arrow colouring is flipped to match. */}
+          {sessions.length>=2&&<ReassessmentPanel sessions={sessions} PC={PC}/>}
           {sessions.length>=2&&(
             <div style={{padding:"12px 14px",borderRadius:12,border:`1px solid ${PC.border}`,marginBottom:14,background:PC.surface}}>
               <div style={{fontSize:"0.8rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:7}}>Findings Trend</div>
@@ -6961,7 +7178,30 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         findings:findings||[], kineticChain:"",
         source:isLive?"camera":"upload",
         auto:silent,
-        capturedAt:new Date().toISOString()
+        capturedAt:new Date().toISOString(),
+        // Capture conditions. Without these a later session cannot tell whether
+        // it is comparable to this one, so a re-assessment delta would be
+        // measuring the camera as much as the patient.
+        capture:{
+          calibrated: !!measurements?._calibrated,
+          patientHeightCm,
+          distanceCm: captureDistanceCm,
+          protocolConfirmed,
+          landmarksReviewed,
+          inputMode,
+        },
+        // The angles a re-assessment actually compares. Previously only the
+        // score and finding list were stored, so no measurement could be
+        // tracked over time even in principle.
+        metrics: measurements ? {
+          cvaAngle: measurements.cvaAngle ?? null,
+          shoulderAngle: measurements.shoulderAngle ?? null,
+          pelvisAngle: measurements.pelvisAngle ?? null,
+          headTiltAngle: measurements.headTiltAngle ?? null,
+          fhpDevCm: measurements.fhpDevCm ?? null,
+          trunkShiftCm: measurements.trunkShiftCm ?? null,
+          sagPelvicShift: measurements.sagPelvicShift ?? null,
+        } : null,
       };
       setPatientField("posture_sessions",JSON.stringify([...existing,entry]));
       if(!silent) alert(`✅ Saved as "${entry.sessionLabel}" to ${activePatient.name}`);
