@@ -602,12 +602,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
   const finaliseNewPatient = (intake) => {
     const name = intake.dem_name || "New Patient";
-    // Stamp which specialty stream this assessment was started under (set by
-    // the New Assessment specialty picker just before createNewPatient()) --
-    // a new, additive field. Patients created before this change simply have
-    // no value here, so they show up under "All" in the Clinical patient
-    // list's specialty filter rather than a guessed/fabricated specialty.
-    const intakeWithSpecialty = { ...intake, assessment_specialty: stream };
+    // Stamp which specialty stream this assessment was started under. The
+    // intake form's own step 2 now asks this outright (2026-08-31), so its
+    // answer wins; the `stream` fallback still covers the older entry points
+    // that set the specialty before calling createNewPatient(). Patients
+    // created before this field existed simply have no value here, so they
+    // show up under "All" in the Clinical patient list's specialty filter
+    // rather than a guessed/fabricated specialty.
+    const chosenSpecialty = intake.assessment_specialty || stream;
+    const intakeWithSpecialty = { ...intake, assessment_specialty: chosenSpecialty };
     const newP = { id: genId(), name, data: intakeWithSpecialty, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
     const updated = [newP, ...patients];
     setPatients(updated);
@@ -615,7 +618,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setData(intakeWithSpecialty);
     setActivePatientId(newP.id);
     setShowIntake(false);
-    navTo("subjective");
+    // Land in the flow the clinician actually picked on step 2, instead of
+    // always dropping into the ortho Subjective wizard. navTo() snaps
+    // `stream` back to "ortho" itself, and both of these are ortho-flow
+    // `active` keys (the same ones startSpecialty() uses), so no extra
+    // setStream() is needed here.
+    navTo(chosenSpecialty === "cardio" ? "cardio_assessment"
+        : chosenSpecialty === "neuro"  ? "neuro_assessment"
+        : "subjective");
     setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };

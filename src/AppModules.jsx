@@ -1678,12 +1678,36 @@ function QuickVisitForm({ PC, data, set, navTo }) {
     sessionsArr={sessionsArr} activeId={activeId} onBack={()=>{setView("list"); setActiveId(null);}}/>;
 }
 
+// The "+ New" button in the top header opens this. Two steps, in this order
+// (2026-08-31, Aditi: "new patient should [be] 6 ques max for demographic
+// data or patient details and then ask for neuro ortho cardio sports"):
+//
+//   Step 1 — exactly 6 patient-detail questions, nothing more on screen.
+//   Step 2 — which specialty this assessment runs under.
+//
+// The old version asked ~20 questions across four tabs (Essential/Contact/
+// Clinical/Consent) before it would create anything, and never asked which
+// specialty the assessment was for -- every new patient silently became an
+// Ortho one. Everything that used to be asked up front is still here and
+// still saves to the same field keys; it just lives behind the optional
+// "More details" toggle on step 1 instead of standing between the clinician
+// and a usable patient record. Consent moved to step 2 (it isn't a
+// demographic question, so it doesn't eat one of the 6) and is still
+// required before a record can be created.
+const INTAKE_SPECIALTIES = [
+  { id:"ortho",  label:"Ortho",  icon:"🦴", color:"#7c3aed", live:true  },
+  { id:"neuro",  label:"Neuro",  icon:"🧠", color:"#0d9488", live:true  },
+  { id:"cardio", label:"Cardio", icon:"❤️", color:"#dc2626", live:true  },
+  { id:"sports", label:"Sports", icon:"🏃", color:"#ea580c", live:false },
+  { id:"pedia",  label:"Pedia",  icon:"🧸", color:"#db2777", live:false },
+];
+
 function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   // Fills the "nothing saves until you finish the whole intake form" gap:
   // before a patient record exists there's nowhere in Supabase to attach
   // this data to yet, and saving it to the cloud before the student has even
-  // reached the Consent tab's "I consent to storage of my data" checkbox
-  // would undercut the consent flow itself — so this is a local-only,
+  // reached the consent checkbox "I consent to storage of my data" would
+  // undercut the consent flow itself — so this is a local-only,
   // short-lived draft (namespaced per signed-in user, same reasoning as the
   // per-user patient DB) that just survives an accidental reload/crash/tab
   // close mid-intake. It's deleted the moment the form is submitted or
@@ -1701,7 +1725,8 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       return raw && typeof raw === "object" ? raw : {};
     } catch { return {}; }
   });
-  const [tab, setTab] = React.useState("essential");
+  const [step, setStep] = React.useState("details"); // "details" | "specialty"
+  const [moreOpen, setMoreOpen] = React.useState(false);
   const set = (k,v) => setFd(p=>({...p,[k]:v}));
 
   React.useEffect(() => {
@@ -1713,7 +1738,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   }, [fd, draftKey]);
 
   const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch {} };
-  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:0};
+  const inp = {width:"100%",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.82rem",marginBottom:0,boxSizing:"border-box"};
   const lbl = {fontSize:"0.78rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.6px"};
   const field = (label, node) => (
     <div style={{marginBottom:12}}>
@@ -1727,13 +1752,14 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       {opts.map(o=><option key={o}>{o}</option>)}
     </select>
   );
-  const tabs = [{id:"essential",label:"Essential"},{id:"contact",label:"Contact"},{id:"clinical",label:"Clinical"},{id:"consent",label:"Consent"}];
-  const tabStyle = (id) => ({
-    padding:"6px 14px", borderRadius:8, border:"none", cursor:"pointer", fontSize:"0.8rem", fontWeight:tab===id?700:500,
-    background: tab===id ? PC.accent : PC.s2,
-    color: tab===id ? "#fff" : PC.muted,
-  });
-  const canSubmit = fd.dem_name?.trim() && fd.consent_treat;
+
+  // Step 1 gate: the two questions a patient record is meaningless without.
+  const detailsOk = !!(fd.dem_name?.trim() && fd.cc_main?.trim());
+  // Step 2 gate: a live specialty AND treatment consent, same hard
+  // requirement the old Consent tab enforced before anything was created.
+  const specialty = INTAKE_SPECIALTIES.find(s=>s.id===fd.assessment_specialty);
+  const canSubmit = detailsOk && !!(specialty?.live) && !!fd.consent_treat;
+
   return (
     <div>
       {restoredDraft && (
@@ -1741,91 +1767,135 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
           ↺ Restored what you'd already typed before this got interrupted.
         </div>
       )}
-      {/* Tabs */}
-      <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
-        {tabs.map(t=><button key={t.id} style={tabStyle(t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
+
+      {/* Two-step progress — deliberately not tabs: the old free-jump tab
+          strip is what let a half-filled intake sit around unfinished. */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18}}>
+        {[["details","1  Patient details"],["specialty","2  Specialty"]].map(([id,label])=>(
+          <div key={id} style={{flex:1,padding:"6px 10px",borderRadius:8,textAlign:"center",fontSize:"0.74rem",fontWeight:800,
+            background: step===id ? PC.accent : PC.s2,
+            color: step===id ? "#fff" : PC.muted}}>
+            {label}
+          </div>
+        ))}
       </div>
 
-      {/* Essential */}
-      {tab==="essential" && (
+      {/* ── STEP 1 · exactly 6 questions ── */}
+      {step==="details" && (
         <div>
           {field("Full name *", <input style={inp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>)}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <div>{field("Date of birth", <input type="date" style={inp} value={fd.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
             <div>{field("Age", <input style={inp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>)}</div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             <div>{field("Sex", sel("dem_sex",["Female","Male","Non-binary","Prefer not to say"]))}</div>
-            <div>{field("Dominant hand", sel("dem_hand",["Right","Left","Ambidextrous"]))}</div>
           </div>
+          {field("Phone number", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
           {field("Occupation", <input style={inp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>)}
           {field("Chief complaint *", <input style={inp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>)}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div>{field("Pain now (0–10)", <input style={inp} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>set("cc_vas_now",e.target.value)}/>)}</div>
-            <div>{field("Duration", <input style={inp} placeholder="e.g. 3 weeks, 6 months" value={fd.cc_duration||""} onChange={e=>set("cc_duration",e.target.value)}/>)}</div>
+
+          {/* Everything the old four-tab intake asked for, kept on file and
+              kept optional. Nothing was dropped — it just no longer blocks
+              getting to the assessment. */}
+          <button type="button" onClick={()=>setMoreOpen(v=>!v)}
+            style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",padding:"4px 0 10px",color:PC.accent,fontWeight:700,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
+            <span style={{transform:moreOpen?"rotate(90deg)":"none",transition:"transform .15s",display:"inline-block"}}>▶</span>
+            More details (optional)
+          </button>
+
+          {moreOpen && (
+            <div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div>{field("Date of birth", <input type="date" style={{...inp,WebkitAppearance:"none",appearance:"none"}} value={fd.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>)}</div>
+                <div>{field("Dominant hand", sel("dem_hand",["Right","Left","Ambidextrous"]))}</div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div>{field("Pain now (0–10)", <input style={inp} type="number" min="0" max="10" placeholder="0–10" value={fd.cc_vas_now||""} onChange={e=>set("cc_vas_now",e.target.value)}/>)}</div>
+                <div>{field("Duration", <input style={inp} placeholder="e.g. 3 weeks" value={fd.cc_duration||""} onChange={e=>set("cc_duration",e.target.value)}/>)}</div>
+              </div>
+              {field("Email address", <input style={inp} type="email" placeholder="patient@email.com" value={fd.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
+              {field("Address", <input style={inp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div>{field("Emergency contact name", <input style={inp} placeholder="Full name" value={fd.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
+                <div>{field("Emergency contact phone", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
+              </div>
+              {field("Referring doctor / GP", <input style={inp} placeholder="Dr. Name, Hospital" value={fd.dem_referral_dr||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>)}
+              {field("Referral source", sel("dem_referral_source",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
+              {field("Insurance / Fund", <input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={fd.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
+              {field("Policy / Member number", <input style={inp} placeholder="Optional" value={fd.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
+              {field("Relevant medical history", <textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={fd.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
+              {field("Current medications", <input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={fd.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
+            </div>
+          )}
+
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem",fontFamily:"inherit"}}>Cancel</button>
+            <button disabled={!detailsOk} onClick={()=>setStep("specialty")}
+              style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:detailsOk?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:detailsOk?"pointer":"not-allowed",fontSize:"0.82rem",fontFamily:"inherit"}}>
+              {detailsOk ? "Next: choose specialty →" : "Name & chief complaint first"}
+            </button>
           </div>
         </div>
       )}
 
-      {/* Contact */}
-      {tab==="contact" && (
+      {/* ── STEP 2 · which specialty ── */}
+      {step==="specialty" && (
         <div>
-          {field("Phone number", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>)}
-          {field("Email address", <input style={inp} type="email" placeholder="patient@email.com" value={fd.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>)}
-          {field("Address", <input style={inp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>)}
-          {field("Emergency contact name", <input style={inp} placeholder="Full name" value={fd.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}
-          {field("Emergency contact phone", <input style={inp} type="tel" placeholder="+91 98765 43210" value={fd.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}
-        </div>
-      )}
+          <div style={{fontSize:"0.85rem",fontWeight:700,color:PC.text,marginBottom:2}}>Which specialty is this assessment?</div>
+          <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:14}}>This decides which assessment flow {fd.dem_name?.trim()||"this patient"} starts in.</div>
 
-      {/* Clinical */}
-      {tab==="clinical" && (
-        <div>
-          {field("Referring doctor / GP", <input style={inp} placeholder="Dr. Name, Hospital" value={fd.dem_referral_dr||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>)}
-          {field("Referral source", sel("dem_referral_source",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
-          {field("Insurance / Fund", <input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={fd.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
-          {field("Policy / Member number", <input style={inp} placeholder="Optional" value={fd.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
-          {field("Relevant medical history", <textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={fd.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
-          {field("Current medications", <input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={fd.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
-        </div>
-      )}
+          {/* Sports and Pedia are listed but not selectable — the same
+              honest SOON treatment the Clinical tab's specialty grid uses,
+              rather than offering a card that leads nowhere. */}
+          <div data-testid="intake-specialty-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(96px,1fr))",gap:8,marginBottom:16}}>
+            {INTAKE_SPECIALTIES.map(sp=>{
+              const picked = fd.assessment_specialty === sp.id;
+              return (
+                <button key={sp.id} type="button"
+                  onClick={()=>{ if(!sp.live) return; set("assessment_specialty", sp.id); }}
+                  style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,
+                    padding:"14px 6px",borderRadius:14,fontFamily:"inherit",
+                    cursor:sp.live?"pointer":"not-allowed",opacity:sp.live?1:0.55,
+                    border:`1.5px solid ${picked?sp.color:(sp.live?sp.color+"50":"#E5E7EB")}`,
+                    background:picked?sp.color+"1f":(sp.live?sp.color+"0d":"#F9FAFB")}}>
+                  {!sp.live && <span style={{position:"absolute",top:6,right:6,fontSize:"0.55rem",fontWeight:800,padding:"1px 5px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                  <span style={{fontSize:"1.5rem",lineHeight:1}}>{sp.icon}</span>
+                  <span style={{fontWeight:700,fontSize:"0.8rem",color:sp.live?sp.color:"#9CA3AF"}}>{sp.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Consent */}
-      {tab==="consent" && (
-        <div>
-          <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
+          {/* Consent — unchanged wording and unchanged hard requirement,
+              just no longer a whole tab of its own. */}
+          <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:12,marginBottom:12,fontSize:"0.8rem",color:PC.muted,lineHeight:1.6}}>
             <strong style={{color:PC.text}}>Consent to Treatment</strong><br/>
-            I consent to physiotherapy assessment and treatment. I understand I may withdraw consent at any time. Treatment goals and procedures have been explained to me.
+            I consent to physiotherapy assessment and treatment. I understand I may withdraw consent at any time. Treatment goals and procedures have been explained to me. Clinical data is stored on this device and is not shared with third parties.
           </div>
-          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
+          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:10}}>
             <input type="checkbox" checked={!!fd.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
             <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>I consent to physiotherapy assessment and treatment <span style={{color:"#ef4444"}}>*</span></span>
           </label>
-          <div style={{background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:10,padding:14,marginBottom:14,fontSize:"0.82rem",color:PC.muted,lineHeight:1.6}}>
-            <strong style={{color:PC.text}}>Data Storage Consent</strong><br/>
-            Your clinical data is stored locally on this device only. It is not shared with third parties. You may request deletion at any time.
-          </div>
-          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:14}}>
+          <label style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",marginBottom:12}}>
             <input type="checkbox" checked={!!fd.consent_data} onChange={e=>set("consent_data",e.target.checked)} style={{marginTop:3,width:16,height:16,flexShrink:0}}/>
             <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:500}}>I consent to storage of my clinical data on this device</span>
           </label>
           {!fd.consent_treat && (
-            <div style={{padding:"8px 12px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,fontSize:"0.78rem",color:"#ef4444",fontWeight:600}}>
+            <div style={{padding:"8px 12px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,fontSize:"0.78rem",color:"#ef4444",fontWeight:600,marginBottom:10}}>
               ⚠ Treatment consent is required to create a patient record.
             </div>
           )}
-          <div style={{marginTop:12,padding:"8px 12px",background:PC.s3,borderRadius:8,fontSize:"0.75rem",color:PC.muted}}>
-            Consent date: {new Date().toLocaleDateString("en-GB")} · Clinician: Dr. Demo
+          <div style={{padding:"8px 12px",background:PC.s3,borderRadius:8,fontSize:"0.75rem",color:PC.muted}}>
+            Consent date: {new Date().toLocaleDateString("en-GB")}
+          </div>
+
+          <div style={{display:"flex",gap:10,marginTop:16}}>
+            <button onClick={()=>setStep("details")} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem",fontFamily:"inherit"}}>← Back</button>
+            <button disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}}
+              style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem",fontFamily:"inherit"}}>
+              {!specialty?.live ? "Pick a specialty" : !fd.consent_treat ? "Consent required" : `Start ${specialty.label} Assessment →`}
+            </button>
           </div>
         </div>
       )}
-
-      <div style={{display:"flex",gap:10,marginTop:20}}>
-        <button onClick={()=>{clearDraft();onCancel();}} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${PC.border}`,background:"transparent",color:PC.muted,fontWeight:700,cursor:"pointer",fontSize:"0.82rem"}}>Cancel</button>
-        <button disabled={!canSubmit} onClick={()=>{clearDraft();onSubmit(fd);}} style={{flex:2,padding:"10px",borderRadius:10,border:"none",background:canSubmit?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",color:"#fff",fontWeight:800,cursor:canSubmit?"pointer":"not-allowed",fontSize:"0.82rem"}}>
-          {canSubmit ? "Start Assessment →" : "Complete Consent tab first"}
-        </button>
-      </div>
     </div>
   );
 }

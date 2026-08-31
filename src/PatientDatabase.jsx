@@ -3955,7 +3955,17 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // was removed from this tab per Aditi's separate "no speciality showing"
   // request. Both filters compose (AND), same as filterCareSetting below.
   const [filterSpecialty, setFilterSpecialty] = useState("all");
-  const specialtyOf = (p) => (p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho");
+  // The intake form now asks outright which specialty an assessment is for
+  // (2026-08-31) and stores the answer on the record, so use it when it's
+  // there. "ortho_new" is the Ortho wizard's own stream id, which older
+  // records may carry -- it's still Ortho as far as this filter goes. Only
+  // records predating that question fall back to the old guess from
+  // specialty-specific field names.
+  const specialtyOf = (p) => {
+    const stated = p.data?.assessment_specialty;
+    if (stated) return stated === "ortho_new" ? "ortho" : stated;
+    return p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho";
+  };
   const SPECIALTIES = [
     { id:"ortho",  label:"Ortho" },
     { id:"cardio", label:"Cardio" },
