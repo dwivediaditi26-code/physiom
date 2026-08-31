@@ -165,7 +165,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
           return (
             <div className="movement-card" key={m.id}>
               <div className="movement-head">
-                <div>
+                <div className="movement-info">
                   <div className="movement-name-row">
                     <span className="movement-name">{m.mv}</span>
                     <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
@@ -332,7 +332,7 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
           return (
             <div className="movement-card" key={m.id}>
               <div className="movement-head">
-                <div>
+                <div className="movement-info">
                   <div className="movement-name-row">
                     <span className="movement-name">{m.muscle}</span>
                     <InfoButton title={m.muscle} text={mmtInfoText(m)} richItem={mmtRichItem(m)} />

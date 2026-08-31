@@ -12,6 +12,7 @@
    ============================================================ */
 import { ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA, matchRegionKey } from "./orthoClinicalData.js";
 import { allPostureFieldsForRegion } from "./orthoObservationData.js";
+import { NKT_REGIONS, NKT_REGION_KEYS } from "./orthoAdvancedLibrary.js";
 
 export function suggestIndividualItems(selectedRegions = []) {
   const rom = [], mmt = [], specialTests = [], observation = [];
@@ -40,6 +41,29 @@ export function suggestIndividualItems(selectedRegions = []) {
   });
 
   return { rom, mmt, specialTests, observation };
+}
+
+// Same region-matching CPA/CpaSection (orthoAdvancedTools.jsx) reads --
+// resolves each selected region onto NKT_REGIONS so an inline answer here
+// and a later visit to the full CPA page are the exact same
+// data.cpa[regionKey][testId] field, not a duplicate.
+export function suggestCpaItems(selectedRegions = []) {
+  const cpa = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, NKT_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (NKT_REGIONS[key]?.tests || []).forEach((t) => cpa.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return cpa;
+}
+export function cpaWhy(t) {
+  return t.compensator ? `Common compensator if inhibited: ${t.compensator}` : "Screens for a facilitated/inhibited motor-control pattern.";
+}
+export function cpaHow(t) {
+  return t.how ? [t.how] : [];
 }
 
 // Same default-side logic SpecialTestsSection uses (not exported there).

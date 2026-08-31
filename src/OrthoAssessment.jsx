@@ -114,6 +114,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         onExit={restart}
         onSave={onSave}
         activePatientId={activePatientId}
+        patientData={patientData}
         requireAuth={requireAuth}
         initialAiUpdates={pendingAiUpdates}
       />

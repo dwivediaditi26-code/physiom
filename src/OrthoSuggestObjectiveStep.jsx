@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, Segmented, SelectField, TextArea, useSectionData } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, suggestCpaItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
+import { OptionChips } from "./orthoAdvancedTools.jsx";
+import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
 /* ============================================================
    OrthoSuggestObjectiveStep — Objective Assessment as a list of
@@ -403,6 +405,122 @@ function ObservationItemCard({ item, obsData, setPostureRegion }) {
   );
 }
 
+/* ---------- Palpation (always a base step, so always shown here -- not
+   part of the suggested/optional library like CPA/Outcome Measure below).
+   Only the 4 flat structured findings fields (writes to the exact same
+   data.palpation fields PalpationSection reads/writes) -- the interactive
+   body map stays on the full Palpation page, linked below rather than
+   duplicated inline. ---------- */
+function PalpationInlineCard({ palpationData, setPalpation }) {
+  const d = palpationData;
+  const answered = !!(d.swelling || d.muscleTone?.length || d.triggerPoints || d.scarMobility?.length);
+  const summary = [d.swelling, d.muscleTone, d.scarMobility].filter(Boolean).join(" · ");
+  return (
+    <ItemCardShell
+      label="Palpation findings"
+      answered={answered}
+      summary={summary}
+      whyLines="Swelling, tone, trigger points, and scar/tissue mobility help localize the tissue source and guide manual treatment technique choice."
+      howLines={["Palpate systematically over and around the affected region, comparing bilaterally where possible.", "Use the full Palpation page for pin-by-pin structure/tenderness detail on the body map."]}
+      howEyebrow="HOW TO PALPATE"
+    >
+      <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => setPalpation("swelling", v)} />
+      <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => setPalpation("muscleTone", v)} />
+      <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => setPalpation("triggerPoints", v)} placeholder="Location and referral pattern..." />
+      <SelectField label="Scar / tissue mobility" type="multi" options={["N/A", "Normal", "Adherent", "Restricted", "Hypersensitive"]} value={d.scarMobility} onChange={(v) => setPalpation("scarMobility", v)} />
+    </ItemCardShell>
+  );
+}
+
+/* ---------- CPA (Compensation Pattern Analysis / NKT) -- suggested/
+   optional, same as before, but now an inline per-test item list (colored
+   Facilitated/Inhibited/Overactive chips) instead of an "Enter →" jump. ---------- */
+function CpaItemCard({ item, cpaData, setCpa }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = cpaData[regionKey] || {};
+  const value = entry[itemId];
+  return (
+    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={cpaWhy(meta)} howLines={cpaHow(meta)} howEyebrow="HOW TO TEST">
+      <OptionChips options={meta.options} value={value} onChange={(v) => setCpa(regionKey, { ...entry, [itemId]: v })} />
+    </ItemCardShell>
+  );
+}
+
+/* ---------- Outcome Measure -- suggested/optional, same as before, but
+   now the actual question set fills inline (one collapsible card per
+   suggested measure) instead of an "Enter →" jump. Writes to the exact
+   same data.outcomeMeasure.instances[measureId].history shape
+   OrthoOutcomeMeasureFlow.jsx's own saveEntry() produces, so a "Reassess"
+   later on the full page sees this entry as real history, not a
+   duplicate. A discrete "Save entry" action (rather than live-writing
+   each answer) because a half-answered scale has no valid score and an
+   instrument's history is meant to be a series of complete, timestamped
+   administrations, not a rolling draft. ---------- */
+function OutcomeMeasureInlineCard({ measure, reason, instance, onSave }) {
+  const [open, setOpen] = useState(false);
+  const [answers, setAnswers] = useState({});
+  const score = measure.score(answers);
+  const interp = score != null ? measure.interpret(score) : null;
+  const history = instance?.history || [];
+  const latest = history[history.length - 1];
+  const hasHistory = history.length > 0;
+  function pick(itemId, value) {
+    setAnswers((a) => ({ ...a, [itemId]: a[itemId] === value ? undefined : value }));
+  }
+  function save() {
+    onSave(measure.id, answers, score);
+    setAnswers({});
+  }
+  return (
+    <div className="obj-item">
+      <div className="obj-item-row" onClick={() => setOpen((o) => !o)} role="button">
+        <div className="obj-item-row-label">
+          <span className="obj-item-row-name">
+            {measure.icon} {measure.label}
+          </span>
+          <span className="obj-item-row-sub">{measure.full}</span>
+        </div>
+        <div className="obj-item-row-right">
+          {hasHistory && (
+            <span className="obj-item-row-summary">
+              Last: {latest.score}
+              {measure.unit}
+            </span>
+          )}
+          <span className={"obj-item-chevron" + (open ? " open" : "")}>⌄</span>
+        </div>
+      </div>
+      {open && (
+        <div className="obj-item-body" onClick={(e) => e.stopPropagation()}>
+          {reason && (
+            <div className="obj-card-reason" style={{ marginBottom: 8 }}>
+              {reason}
+            </div>
+          )}
+          {measure.items.map((it) => (
+            <div key={it.id} style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 12.5, color: "#334155", marginBottom: 4 }}>{it.prompt}</div>
+              <div className="test-radio-row">
+                {it.options.map((o) => (
+                  <button type="button" key={o.value} className={"test-radio" + (answers[it.id] === o.value ? " test-radio-selected" : "")} onClick={() => pick(it.id, o.value)}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="obj-card-actions" style={{ marginTop: 4 }}>
+            <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, color: interp?.color || "#64748b" }}>{score != null ? `Score: ${score}${measure.unit} — ${interp.label}` : "Answer every item to see the score"}</span>
+            <button type="button" className="obj-card-add" disabled={score == null} onClick={save}>
+              💾 Save entry
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegions, condition, activeIds, onToggle, library, onJump }) {
   const [q, setQ] = useState("");
 
@@ -410,12 +528,26 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const [mmtData, setMmtD] = useSectionData(data, setData, "mmt");
   const [specialData, setSpecialD] = useSectionData(data, setData, "specialTests");
   const [obsData, setObsD] = useSectionData(data, setData, "observation");
+  const [palpationData, setPalpationD] = useSectionData(data, setData, "palpation");
+  const [cpaData, setCpaD] = useSectionData(data, setData, "cpa");
+  const [omData, setOmD] = useSectionData(data, setData, "outcomeMeasure");
   const setRom = (k, v) => setRomD(k, v);
   const setMmt = (k, v) => setMmtD(k, v);
   const setSpecial = (k, v) => {
     setSpecialD(k, v);
     if (!activeIds.has("specialTests")) onToggle("specialTests");
   };
+  const setPalpation = (k, v) => setPalpationD(k, v); // always a base step -- no activeIds toggle needed
+  const setCpa = (k, v) => {
+    setCpaD(k, v);
+    if (!activeIds.has("cpa")) onToggle("cpa");
+  };
+  const omInstances = omData.instances || {};
+  function saveOutcomeEntry(measureId, answers, score) {
+    const history = [...(omInstances[measureId]?.history || []), { score, date: new Date().toISOString(), answers }].slice(-10);
+    setOmD("instances", { ...omInstances, [measureId]: { history } });
+    if (!activeIds.has("outcomeMeasure")) onToggle("outcomeMeasure");
+  }
   const setPostureRegion = (regionKey, view, fieldId, value) => {
     const posture = obsData.posture || {};
     const regions = posture.regions || {};
@@ -430,6 +562,20 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     () => suggestObjectiveTests({ subjective: data.subjective || {}, pain: data.pain || {}, condition, selectedRegions }).filter((s) => !["rom", "mmt", "specialTests"].includes(s.id)),
     [data.subjective, data.pain, condition, selectedRegions]
   );
+
+  // CPA and Outcome Measure are optional (unlike ROM/MMT/Special
+  // Tests/Palpation, which are always relevant) -- only fill inline once
+  // suggested by suggestObjectiveTests/suggestMeasures or already added,
+  // same gating the old whole-category "Enter →" card used.
+  const cpaReason = suggestions.find((s) => s.id === "cpa")?.reason;
+  const showCpa = !!cpaReason || activeIds.has("cpa");
+  const cpaItems = useMemo(() => (showCpa ? suggestCpaItems(selectedRegions) : []), [showCpa, selectedRegions]);
+
+  const { recommended: omRecommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion }), [selectedRegions]);
+  const omReasonById = Object.fromEntries(omRecommended.map((r) => [r.id, r.reason]));
+  const omSuggestedFromReasoning = suggestions.find((s) => s.id === "outcomeMeasure")?.reason;
+  const showOutcomeMeasure = omRecommended.length > 0 || !!omSuggestedFromReasoning || activeIds.has("outcomeMeasure");
+  const outcomeMeasureIds = showOutcomeMeasure ? [...new Set([...omRecommended.map((r) => r.id), ...(activeIds.has("outcomeMeasure") ? Object.keys(omInstances) : [])])] : [];
   const lumbarRegion = selectedRegions.find((r) => contentKeyForRegion(r) === "lumbarSI");
   const lumbarRegionData = lumbarRegion && data.subjective?.regions?.[lumbarRegion.id];
   const lumbarResult = useMemo(() => {
@@ -439,7 +585,13 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
 
   const suggestedIds = new Set(suggestions.map((s) => s.id));
   const libraryById = Object.fromEntries(library.map((it) => [it.id, it]));
-  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && libraryById[id]);
+  // cpa/outcomeMeasure now fill inline above (like rom/mmt/specialTests) --
+  // excluded here (and from `suggestions` below at render time) so they
+  // don't also duplicate as a whole-category "Enter →" card. Kept in
+  // `suggestions` itself since cpaReason/omSuggestedFromReasoning above
+  // still read their `reason` text off it.
+  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure"].includes(id) && libraryById[id]);
+  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure"].includes(s.id));
 
   const query = q.trim().toLowerCase();
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
@@ -504,8 +656,32 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         </>
       )}
 
-      {(suggestions.length > 0 || manuallyAdded.length > 0) && <div className="subheading">Other suggested assessments</div>}
-      {suggestions.map((s) => {
+      <div className="subheading">🖐️ Palpation</div>
+      <PalpationInlineCard palpationData={palpationData} setPalpation={setPalpation} />
+
+      {showCpa && cpaItems.length > 0 && (
+        <>
+          <div className="subheading">🧠 CPA — Compensation Pattern Analysis</div>
+          {cpaReason && <Hint>{cpaReason}</Hint>}
+          {cpaItems.map((item) => (
+            <CpaItemCard key={`cpa-${item.regionKey}-${item.itemId}`} item={item} cpaData={cpaData} setCpa={setCpa} />
+          ))}
+        </>
+      )}
+
+      {showOutcomeMeasure && outcomeMeasureIds.length > 0 && (
+        <>
+          <div className="subheading">📊 Outcome Measure</div>
+          {outcomeMeasureIds.map((id) => {
+            const measure = MEASURES[id];
+            if (!measure) return null;
+            return <OutcomeMeasureInlineCard key={id} measure={measure} reason={omReasonById[id]} instance={omInstances[id]} onSave={saveOutcomeEntry} />;
+          })}
+        </>
+      )}
+
+      {(otherSuggestions.length > 0 || manuallyAdded.length > 0) && <div className="subheading">Other suggested assessments</div>}
+      {otherSuggestions.map((s) => {
         const meta = libraryById[s.id];
         if (!meta) return null;
         return (

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, Stepper, InfoButton, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES } from "./sharedClinicalData.js";
+import { matchRegionKey } from "./orthoClinicalData.js";
 
 /* ============================================================
    EXERCISE PRESCRIPTION — the same exercise library + programme
@@ -117,10 +118,15 @@ function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
   );
 }
 
-export function ExercisePrescriptionSection({ data, setData }) {
+export function ExercisePrescriptionSection({ data, setData, selectedRegions = [] }) {
   const [d, set] = useSectionData(data, setData, "exercisePrescription");
   const programme = Array.isArray(d.programme) ? d.programme : [];
-  const [activeRegion, setActiveRegion] = useState(Object.keys(EXERCISE_DB)[0]);
+  // Defaults to the case's own first selected region (same matchRegionKey
+  // ROM/MMT/Special Tests/CPA already use) instead of always "cervical" --
+  // previously this always opened on Cervical Spine exercises regardless
+  // of the actual case, e.g. showing Chin Tucks for a lumbar-only patient.
+  const defaultRegionKey = selectedRegions.length ? matchRegionKey(selectedRegions[0].id, Object.keys(EXERCISE_DB)) : Object.keys(EXERCISE_DB)[0];
+  const [activeRegion, setActiveRegion] = useState(defaultRegionKey);
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
   const [templatesOpen, setTemplatesOpen] = useState(false);

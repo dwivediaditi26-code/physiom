@@ -32,31 +32,102 @@ const SYMPTOM_PATTERN_MAP = {
 // data.pain; nothing here is written automatically, the caller always
 // shows this for review first.
 export function mapParseResultToOrthoUpdates(result = {}) {
+  const asArray = (v) => (Array.isArray(v) ? v : []);
+  const painQuality = asArray(result.painQuality);
+  const morningSymptoms = asArray(result.morningSymptoms);
+  const nightSymptoms = asArray(result.nightSymptoms);
+  const aggMovements = asArray(result.aggMovements);
+  const aggActivities = asArray(result.aggActivities);
+  const relMovements = asArray(result.relMovements);
+  const neuroSymptoms = asArray(result.neuroSymptoms);
+  const functionalLimitations = asArray(result.functionalLimitations);
+
   const subjective = {};
   if (result.chiefComplaint) subjective.chiefComplaint = result.chiefComplaint;
+  // SelectField (orthoFieldKit.jsx) is a free-text input with a suggestion
+  // popover, not a locked enum -- so onset's own fixed option list doesn't
+  // block writing the AI's specific mechanism string here, same as this
+  // wizard's own "Load from old Subjective Assessment" import already does
+  // with the old flow's free-text onset. onsetContext (hedged/uncertain
+  // cause) only exists when onset itself is a vague fallback like "Gradual
+  // — insidious", so appending it keeps that nuance instead of losing it.
+  if (result.onset) subjective.onset = result.onset + (result.onsetContext ? ` — ${result.onsetContext}` : "");
+  else if (result.onsetContext) subjective.onset = `Uncertain: ${result.onsetContext}`;
   if (result.duration) subjective.duration = result.duration;
-  if (result.priorTreatmentTried) subjective.previousTreatment = result.priorTreatmentTried;
+
+  // "Previous treatment" is the wizard's one field for both treatment
+  // already tried this episode AND any distinct prior episode -- the old
+  // flow shows these as two separate rows (Previous Episodes / Previous
+  // Treatment) but this wizard only has room for one, so combine them.
+  const prevTreatmentParts = [];
+  if (result.priorTreatmentTried) prevTreatmentParts.push(result.priorTreatmentTried);
+  if (result.priorEpisodeCount && result.priorEpisodeCount !== "First episode") {
+    prevTreatmentParts.push(`Previous episodes: ${result.priorEpisodeCount}` + (result.priorEpisodeOutcome ? ` (${result.priorEpisodeOutcome})` : ""));
+  }
+  if (prevTreatmentParts.length) subjective.previousTreatment = prevTreatmentParts.join(". ");
+
   if (result.medicalHistory) subjective.medicalHistory = result.medicalHistory;
   if (result.medications) subjective.medication = result.medications;
-  if (Array.isArray(result.functionalLimitations) && result.functionalLimitations.length) {
-    subjective.functionalLimitations = result.functionalLimitations.join(", ");
-  }
-  if (result.patientGoals) subjective.patientGoals = result.patientGoals;
+
+  // Aggravating/relieving factors have no dedicated field in this wizard's
+  // top-level Subjective (only inside each region's own checklist, which
+  // this mapper deliberately never guesses at -- see the old-flow-import
+  // comment on why silently picking the wrong region's field is worse than
+  // not filling it). "Functional limitations" is the closest fit already
+  // reviewed by the clinician before Apply, since aggravating/relieving
+  // factors are exactly what's driving those limitations day to day.
+  const functionalParts = [];
+  if (functionalLimitations.length) functionalParts.push(functionalLimitations.join(", "));
+  const agg = [...aggMovements, ...aggActivities];
+  if (agg.length) functionalParts.push(`Aggravated by: ${agg.join(", ")}`);
+  if (relMovements.length) functionalParts.push(`Relieved by: ${relMovements.join(", ")}`);
+  if (functionalParts.length) subjective.functionalLimitations = functionalParts.join(". ");
+
+  // patientConcern/patientBelief have no dedicated field either -- fold
+  // into Patient goals using the same "; Concern:" convention the old
+  // flow's own goal_main field already uses for exactly this combination
+  // (confirmed on real seed data), so this reads the same way clinicians
+  // already expect from the old tool.
+  const goalParts = [];
+  if (result.patientGoals) goalParts.push(result.patientGoals);
+  if (result.patientConcern) goalParts.push(`Concern: ${result.patientConcern}`);
+  if (result.patientBelief) goalParts.push(`Patient's belief: ${result.patientBelief}`);
+  if (goalParts.length) subjective.patientGoals = goalParts.join("; ");
 
   const pain = {};
   if (result.nrsNow != null) pain.current = String(result.nrsNow);
   if (result.nrsBest != null) pain.best = String(result.nrsBest);
   if (result.nrsWorst != null) pain.worst = String(result.nrsWorst);
-  if (Array.isArray(result.painQuality) && result.painQuality.length) {
-    // Character is a fixed-option SelectField -- only keep values that
-    // match one of its real options so the UI shows recognised chips
-    // instead of a value it can't render as selected.
-    const matched = result.painQuality.filter((q) => PAIN_CHARACTER_OPTIONS.includes(q));
-    if (matched.length) pain.character = matched.join(", ");
+  if (painQuality.length) {
+    // Character is a free-text multi SelectField too -- matching against
+    // the fixed list first (so ordinary quality words render as
+    // recognised chips) and appending anything unmatched (electric shock,
+    // tingling, numbness, etc -- real /api/parse options this list
+    // doesn't cover) rather than silently dropping it.
+    const matched = painQuality.filter((q) => PAIN_CHARACTER_OPTIONS.includes(q));
+    const unmatched = painQuality.filter((q) => !PAIN_CHARACTER_OPTIONS.includes(q));
+    if (matched.length || unmatched.length) pain.character = [...matched, ...unmatched].join(", ");
   }
   const mappedPattern = SYMPTOM_PATTERN_MAP[result.symptomPattern];
   if (mappedPattern) pain.pattern = mappedPattern;
-  else if (Array.isArray(result.nightSymptoms) && result.nightSymptoms.length) pain.pattern = "Night pain";
+  else if (nightSymptoms.length) pain.pattern = "Night pain";
+
+  // Location is also a free-text multi field -- the natural home for the
+  // patient's own location wording plus radiation, since neither has a
+  // dedicated field anywhere else in this wizard's top-level Subjective/Pain.
+  const locationParts = [];
+  if (result.locationDescription) locationParts.push(result.locationDescription);
+  if (result.hasRadiation === false) locationParts.push("No radiation");
+  else if (result.hasRadiation && result.radiationArea) {
+    locationParts.push(`Radiates: ${result.radiationArea}` + (result.radiationSide ? ` (${result.radiationSide})` : ""));
+  }
+  if (result.diurnalPattern) locationParts.push(result.diurnalPattern);
+  if (morningSymptoms.length) locationParts.push(`Morning: ${morningSymptoms.join(", ")}`);
+  if (nightSymptoms.length) locationParts.push(`Night: ${nightSymptoms.join(", ")}`);
+  if (neuroSymptoms.length && !(neuroSymptoms.length === 1 && neuroSymptoms[0] === "No neurological symptoms" && locationParts.length === 0)) {
+    locationParts.push(`Neuro: ${neuroSymptoms.join(", ")}`);
+  }
+  if (locationParts.length) pain.location = locationParts.join(" | ");
 
   const conditionCategory = VALID_CONDITION_CATEGORIES.includes(result.conditionCategory) ? result.conditionCategory : null;
 

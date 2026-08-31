@@ -1826,84 +1826,81 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
         </div>
       </div>
 
-      {/* ── PATIENT HEADER CARD ── */}
-      <div style={{background:"#F5F3FF",padding:"20px 20px 18px",flexShrink:0}}>
-        <div style={{display:"flex",gap:16,alignItems:"flex-start"}}>
+      {/* ── PATIENT HEADER CARD ──
+          Restyled to match SpecialtyPatientProfile.jsx's (Cardio/Neuro)
+          header language -- flat light-tint avatar instead of a gradient
+          circle, muted grey tag pills instead of colored ones, same
+          typographic weights/sizes. Function unchanged: still the same
+          name/PID/working-dx/age/occupation/details-toggle data, just
+          restyled so the two profile screens read as one visual system
+          (Aditi: "the function will be the same... make it look the way
+          it is present in cardio and neuro"). */}
+      <div style={{background:C.white,padding:"18px 20px",flexShrink:0,borderBottom:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",gap:14,alignItems:"center"}}>
           {/* Avatar */}
-          <div style={{width:76,height:76,borderRadius:"50%",
-            background:"linear-gradient(135deg,#C4B5FD,#7C3AED)",
+          <div style={{width:56,height:56,borderRadius:"50%",
+            background:C.primaryBg,color:C.primary,
             display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,fontWeight:800,color:"white",flexShrink:0,
-            border:"3px solid white",boxShadow:"0 4px 12px rgba(109,40,217,0.2)"}}>
+            fontSize:18,fontWeight:800,flexShrink:0}}>
             {name.split(" ").map(w=>w[0]).join("").slice(0,2)}
           </div>
           {/* Info */}
-          <div style={{flex:1}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div>
-                <div style={{fontSize:20,fontWeight:800,color:C.text,letterSpacing:"-0.5px",lineHeight:1.1}}>
-                  {name}
-                  <span style={{fontSize:14,marginLeft:6}}>{sex==="Male"||sex==="M"?"♂":sex==="Female"||sex==="F"?"♀":"⚧"}</span>
-                </div>
-                <div style={{fontSize:11.5,color:C.muted,marginTop:3}}>PID: {pid}</div>
-                {(()=>{
-                  const ci = Array.isArray(d.clinical_impression)?d.clinical_impression:[];
-                  const primary = ci.find(x=>x.tag==="primary");
-                  if(!primary) return null;
-                  return (
-                    <div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:5,background:"#EDE9FE",border:"1px solid #C4B5FD",borderRadius:99,padding:"3px 10px"}}>
-                      <span style={{fontSize:9,fontWeight:800,color:"#5B21B6",textTransform:"uppercase",letterSpacing:"0.5px"}}>Working Dx</span>
-                      <span style={{fontSize:11,fontWeight:700,color:"#4C1D95"}}>{primary.label}</span>
-                      {primary.icdCode&&<span style={{fontSize:9,color:"#7C3AED",fontWeight:600}}>{primary.icdCode}</span>}
-                    </div>
-                  );
-                })()}
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:5,
-                background:"#ECFDF5",border:"1px solid #BBF7D0",
-                padding:"4px 10px",borderRadius:99}}>
-                <div style={{width:6,height:6,borderRadius:"50%",background:C.green,
-                  animation:"pulseDot 1.5s infinite"}}/>
-                <span style={{fontSize:11,fontWeight:700,color:C.green}}>Active</span>
-              </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:16,fontWeight:800,color:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {name}
+              <span style={{fontSize:13,marginLeft:6,fontWeight:400}}>{sex==="Male"||sex==="M"?"♂":sex==="Female"||sex==="F"?"♀":"⚧"}</span>
             </div>
-            <div style={{display:"flex",gap:12,marginTop:10,alignItems:"center",flexWrap:"wrap"}}>
-              {age&&<span style={{fontSize:12,color:C.muted,background:"#F3F4F6",padding:"3px 9px",borderRadius:99}}>{age} yrs</span>}
-              {d.dem_occupation&&<span style={{fontSize:12,color:C.muted,background:"#F3F4F6",padding:"3px 9px",borderRadius:99,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.dem_occupation}</span>}
-              <button onClick={()=>setShowDetails(v=>!v)} style={{fontSize:11,color:C.primary,fontWeight:700,background:"none",border:"none",cursor:"pointer",padding:"3px 0"}}>
-                {showDetails?"▲ Less":"▼ Details"}
-              </button>
+            <div style={{fontSize:12,color:"#94a3b8"}}>
+              PID: {pid}{age && ` · ${age} yrs`}{d.dem_occupation && ` · ${d.dem_occupation}`}
             </div>
-            {showDetails&&(
-              <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:4,padding:"10px 12px",background:"transparent",borderRadius:10}}>
-                {phone&&<div style={{fontSize:11.5,color:C.text}}>📞 {phone}</div>}
-                {email&&<div style={{fontSize:11.5,color:C.text}}>✉️ {email}</div>}
-                {dob&&<div style={{fontSize:11.5,color:C.text}}>🎂 {dob}</div>}
-                {mrn&&<div style={{fontSize:11.5,color:C.text}}>🪪 MRN: {mrn}</div>}
-                {d.dem_gp&&<div style={{fontSize:11.5,color:C.text}}>🏥 GP: {d.dem_gp}</div>}
-                {d.dem_referral&&<div style={{fontSize:11.5,color:C.text}}>📋 Ref: {d.dem_referral}</div>}
-              </div>
-            )}
           </div>
         </div>
+        <div style={{display:"flex",gap:10,marginTop:12,alignItems:"center",flexWrap:"wrap"}}>
+          {(()=>{
+            const ci = Array.isArray(d.clinical_impression)?d.clinical_impression:[];
+            const primary = ci.find(x=>x.tag==="primary");
+            if(!primary) return null;
+            return (
+              <span style={{fontSize:11,fontWeight:700,color:C.primary,background:C.primaryBg,padding:"4px 10px",borderRadius:20}}>
+                Working Dx: {primary.label}{primary.icdCode&&` · ${primary.icdCode}`}
+              </span>
+            );
+          })()}
+          <span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"#16a34a",background:"#dcfce7",padding:"4px 10px",borderRadius:20}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:"#16a34a"}}/>Active
+          </span>
+          <button onClick={()=>setShowDetails(v=>!v)} style={{marginLeft:"auto",fontSize:12,color:C.primary,fontWeight:700,background:"none",border:"none",cursor:"pointer",padding:"3px 0"}}>
+            {showDetails?"▲ Less":"▼ Details"}
+          </button>
+        </div>
+        {showDetails&&(
+          <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:5,padding:"10px 12px",background:"#f8fafc",borderRadius:10}}>
+            {phone&&<div style={{fontSize:12,color:C.text}}>📞 {phone}</div>}
+            {email&&<div style={{fontSize:12,color:C.text}}>✉️ {email}</div>}
+            {dob&&<div style={{fontSize:12,color:C.text}}>🎂 {dob}</div>}
+            {mrn&&<div style={{fontSize:12,color:C.text}}>🪪 MRN: {mrn}</div>}
+            {d.dem_gp&&<div style={{fontSize:12,color:C.text}}>🏥 GP: {d.dem_gp}</div>}
+            {d.dem_referral&&<div style={{fontSize:12,color:C.text}}>📋 Ref: {d.dem_referral}</div>}
+          </div>
+        )}
       </div>
 
-
-      {/* ── TABS ── */}
-      <div style={{background:C.white,borderBottom:`1px solid ${C.border}`,flexShrink:0,
-        display:"flex",overflowX:"auto",padding:"0 8px"}}>
-        {TABS.map(t=>(
-          <button key={t.k} onClick={()=>setTab(t.k)} style={{
-            flex:"1 0 auto",padding:"14px 12px 12px",border:"none",background:"none",
-            cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-            borderBottom:`2.5px solid ${tab===t.k?C.primary:"transparent"}`,
-            transition:"all 0.2s",whiteSpace:"nowrap",minWidth:76,
-          }}>
-            <span style={{fontSize:15,filter:tab===t.k?"none":"grayscale(1)",opacity:tab===t.k?1:0.5}}>{t.icon}</span>
-            <span style={{fontSize:10,fontWeight:700,color:tab===t.k?C.primary:C.muted,
-              letterSpacing:"0.1px"}}>{t.label}</span>
-          </button>
-        ))}
+      {/* ── TABS ── — same pill-segmented-control shape as Cardio/Neuro's
+          profile tab bar (grey track, white active pill with shadow), no
+          icons, instead of the old icon+underline scrolling tab row. */}
+      <div style={{background:C.white,padding:"10px 20px",flexShrink:0,borderBottom:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",gap:6,background:"#f1f5f9",borderRadius:12,padding:4,overflowX:"auto"}}>
+          {TABS.map(t=>(
+            <button key={t.k} onClick={()=>setTab(t.k)} style={{
+              flex:"1 0 auto",padding:"8px 10px",borderRadius:9,border:"none",cursor:"pointer",
+              background:tab===t.k?C.white:"transparent",color:tab===t.k?C.text:C.muted,
+              fontWeight:700,fontSize:12.5,boxShadow:tab===t.k?"0 1px 4px rgba(0,0,0,0.08)":"none",
+              whiteSpace:"nowrap",transition:"all 0.2s",
+            }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── TAB CONTENT ── */}
@@ -3898,7 +3895,7 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 //    Aditi: "no speciality showing") -- speciality now lives only on its
 //    own Assessment sub-tab as square cards, not mixed into the plain
 //    patient list. --
-function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile }) {
+function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile, onEditAssessment }) {
   const day = relativeDay(patient.updatedAt);
   const subtitle = [careSettingLabel, patient.lastDx || "No diagnosis yet"].filter(Boolean).join(" • ");
   return (
@@ -3924,8 +3921,12 @@ function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onPr
           {subtitle}
         </div>
       </div>
-      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:6}}>
         <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
+        <button onClick={e=>{e.stopPropagation();onEditAssessment();}} title="Edit assessment" style={{
+          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>✏️</button>
+        <button onClick={e=>{e.stopPropagation();onProfile();}} title="Profile" style={{
+          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>👤</button>
         <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
           background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
         <span style={{color:"#C4C4CE",fontSize:"0.95rem"}}>›</span>
@@ -3955,7 +3956,17 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // was removed from this tab per Aditi's separate "no speciality showing"
   // request. Both filters compose (AND), same as filterCareSetting below.
   const [filterSpecialty, setFilterSpecialty] = useState("all");
-  const specialtyOf = (p) => (p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho");
+  // The intake form now asks outright which specialty an assessment is for
+  // (2026-08-31) and stores the answer on the record, so use it when it's
+  // there. "ortho_new" is the Ortho wizard's own stream id, which older
+  // records may carry -- it's still Ortho as far as this filter goes. Only
+  // records predating that question fall back to the old guess from
+  // specialty-specific field names.
+  const specialtyOf = (p) => {
+    const stated = p.data?.assessment_specialty;
+    if (stated) return stated === "ortho_new" ? "ortho" : stated;
+    return p.data?.cardio ? "cardio" : p.data?.neuro ? "neuro" : "ortho";
+  };
   const SPECIALTIES = [
     { id:"ortho",  label:"Ortho" },
     { id:"cardio", label:"Cardio" },
@@ -4191,19 +4202,27 @@ const innerBody = (
                     onDelete={()=>onDelete(p.id)}
                     // One profile per patient, not two buttons (Aditi:
                     // "just be one patient profile...not show speciality
-                    // profile"). A patient with Cardio/Neuro data opens the
-                    // simple specialty hub (SpecialtyPatientProfile.jsx,
-                    // reached via Clinical/active==="specialty_profile");
-                    // everyone else keeps the existing Ortho PatientProfileModal.
+                    // profile"). A patient with Cardio/Neuro/new-Ortho data
+                    // opens the simple specialty hub (SpecialtyPatientProfile.jsx,
+                    // reached via Clinical/active==="specialty_profile"), which
+                    // now has a real Ortho Assessment summary (redesigned per
+                    // Aditi's request to match the new Ortho wizard's own
+                    // structure); everyone else keeps the legacy PatientProfileModal.
                     // "Edit Assessment" moved off the row itself (2026-08-27,
                     // minimalist redesign) -- PatientProfileModal already has
                     // its own "Continue Assessment" action (onLoadAssessment),
                     // so nothing was actually lost by making the whole row a
                     // single tap into Profile instead of two competing buttons.
                     onProfile={()=>{
-                      if (p?.data?.cardio || p?.data?.neuro) { onSelect(p); if (onNav) onNav("specialty_profile"); }
+                      if (p?.data?.cardio || p?.data?.neuro || p?.data?.ortho_outpatient_assessment) { onSelect(p); if (onNav) onNav("specialty_profile"); }
                       else setProfilePatient(p);
                     }}
+                    // Same "select + close panel" semantics as the profile
+                    // modal's own "Open in Assessment" button (onLoadAssessment
+                    // below) -- just reachable directly from the row instead
+                    // of needing to open Profile first (Aditi: "edit
+                    // assessment and profile should be there in patient").
+                    onEditAssessment={()=>{ onSelect(p); setProfilePatient(null); closePanel(); }}
                   />
                 ))}
               </div>

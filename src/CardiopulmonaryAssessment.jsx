@@ -865,12 +865,8 @@ function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
       <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" />
-      <div className="row-2">
-        <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
-        <div style={{ flex: 1 }}>
-          <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
-        </div>
-      </div>
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
+      <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
       <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
       <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
@@ -2076,7 +2072,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-input { border: none; outline: none; font-size: 15px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
 
+        /* min-width: 0 overrides the flex-item default of min-width: auto --
+           without it a wide child (e.g. a text combobox, not just this
+           module's narrow NumberFields) would refuse to shrink and could
+           overflow past the screen edge, same bug confirmed in
+           NeurologicalAssessment.jsx's identical .row-2 definition. */
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
+        .row-2 > * { min-width: 0; }
 
         .textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
 

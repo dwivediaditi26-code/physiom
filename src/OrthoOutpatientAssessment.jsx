@@ -179,7 +179,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI, initialAiUpdates }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates }) {
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
@@ -381,6 +381,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
               autoOpenAI={autoOpenAI}
               onConditionDetected={handleConditionDetected}
               detectedConditionLabel={detectedConditionLabel}
+              patientData={patientData}
             />
           )}
           {current.id === "redFlags" && <RedFlagScreenSection data={data} setData={setData} />}
@@ -431,7 +432,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
-          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} />}
+          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>

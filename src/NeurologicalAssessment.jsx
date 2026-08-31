@@ -2219,7 +2219,13 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .vital-input { border: none; outline: none; font-size: 16px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
 
+        /* min-width: 0 overrides the flex-item default of min-width: auto,
+           which otherwise refuses to shrink a child below its content's
+           natural width -- without it, "Age" next to "Patient name" got
+           pushed past the edge of a phone screen instead of shrinking to
+           fit its flex-basis. */
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
+        .row-2 > * { min-width: 0; }
 
         .textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 10px 12px; font-size: 16px; font-family: inherit; outline: none; resize: vertical; }
 
