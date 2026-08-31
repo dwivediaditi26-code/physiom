@@ -7847,14 +7847,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
     const d = {
       analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
-      patient: {
-        name: escHtml(patientInfo.name||"Patient"),
-        age: patientInfo.age||"—",
-        sex: patientInfo.sex||"—",
-        height: patientHeightCm+"cm",
-        weight: "—",
-        occupation: escHtml(patientInfo.occupation||"—"),
-      },
       clinician: {
         name: escHtml(clinicianInfo.name||"Clinician"),
         credentials: escHtml(clinicianInfo.credentials||""),
@@ -7917,7 +7909,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     // same injectViewerControls close/print bar, but drives print()
     // automatically and closes the tab afterwards — same one-tap download
     // flow already used by PdfReportsModal elsewhere in the app.
-    downloadPDFFromHTML(fullHtml, `PostureAI-Report-${d.patient.name.replace(/[^a-z0-9]+/gi,"_")}.pdf`);
+    downloadPDFFromHTML(fullHtml, `PostureAI-Report-${new Date().toISOString().slice(0,10)}-Session${d.clinician.session}.pdf`);
     setShowReportModal(false);
     } catch(err) {
       console.error("generateReport error:", err);
@@ -8010,20 +8002,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         <div class="page">
           ${hdr("Basic Posture Report", d.clinician.date)}
           <div style="padding:20px 32px 80px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;padding:14px;background:${C.surface};border-radius:10px;border:1px solid ${C.border}">
-              <div>
-                <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Patient</div>
-                <div style="font-family:Fraunces;font-size:1.1rem;font-weight:700;color:${C.primary}">${d.patient.name}</div>
-              <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:5px;font-size:0.55rem;font-weight:700;background:${d.analysisMode==="Clinician Verified"?"#d1fae5":"#f1f5f9"};color:${d.analysisMode==="Clinician Verified"?"#059669":"#64748b"};border:1px solid ${d.analysisMode==="Clinician Verified"?"#6ee7b7":"#e2e8f0"}">${d.analysisMode||"AI Estimated"} Analysis</div>
-                <div style="font-size:0.68rem;color:${C.muted};margin-top:3px">${d.patient.age} yrs · ${d.patient.sex} · ${d.patient.height}</div>
-                <div style="font-size:0.65rem;color:${C.muted}">Occupation: ${d.patient.occupation}</div>
-              </div>
-              <div style="border-left:1px solid ${C.border};padding-left:14px">
-                <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Assessed by</div>
-                <div style="font-family:Fraunces;font-size:1rem;font-weight:700;color:${C.primary}">${d.clinician.name}</div>
-                <div style="font-size:0.68rem;color:${C.muted}">${d.clinician.credentials}</div>
-                <div style="font-size:0.65rem;color:${C.muted}">${d.clinician.clinic}</div>
-              </div>
+            <div style="margin-bottom:18px;padding:14px;background:${C.surface};border-radius:10px;border:1px solid ${C.border}">
+              <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Assessed by</div>
+              <div style="font-family:Fraunces;font-size:1rem;font-weight:700;color:${C.primary}">${d.clinician.name}</div>
+              <div style="font-size:0.68rem;color:${C.muted}">${d.clinician.credentials}</div>
+              <div style="font-size:0.65rem;color:${C.muted}">${d.clinician.clinic}</div>
+              <div style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:5px;font-size:0.55rem;font-weight:700;background:${d.analysisMode==="Clinician Verified"?"#d1fae5":"#f1f5f9"};color:${d.analysisMode==="Clinician Verified"?"#059669":"#64748b"};border:1px solid ${d.analysisMode==="Clinician Verified"?"#6ee7b7":"#e2e8f0"}">${d.analysisMode||"AI Estimated"} Analysis</div>
             </div>
             <div style="display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;margin-bottom:18px">
               <div style="text-align:center;padding:16px 18px;background:${C.surface};border-radius:12px;border:1px solid ${C.border}">
@@ -8138,26 +8122,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             </div>
           </div>
           <div style="height:1px;background:linear-gradient(90deg,${C.accent},transparent);margin-bottom:18px"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
-            <div style="padding:14px;border-radius:10px;background:${C.surface};border:1px solid ${C.border}">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.accent};margin-bottom:7px">Patient Information</div>
-              <div style="font-family:Fraunces;font-size:1.15rem;font-weight:900;color:${C.primary}">${d.patient.name}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:8px;font-size:0.63rem;color:${C.muted}">
-                <span>Age: <strong style="color:${C.primary}">${d.patient.age}y</strong></span>
-                <span>Sex: <strong style="color:${C.primary}">${d.patient.sex}</strong></span>
-                <span>Height: <strong style="color:${C.primary}">${d.patient.height}</strong></span>
-                <span>Weight: <strong style="color:${C.primary}">${d.patient.weight}</strong></span>
-                <span style="grid-column:1/-1">Occupation: <strong style="color:${C.primary}">${d.patient.occupation}</strong></span>
-              </div>
-            </div>
-            <div style="padding:14px;border-radius:10px;background:${C.surface};border:1px solid ${C.border}">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.accent};margin-bottom:7px">Clinician</div>
-              <div style="font-family:Fraunces;font-size:1.05rem;font-weight:900;color:${C.primary}">${d.clinician.name}</div>
-              <div style="font-size:0.67rem;color:${C.muted};margin-top:3px">${d.clinician.credentials}</div>
-              <div style="font-size:0.65rem;color:${C.muted}">${d.clinician.clinic}</div>
-              <div style="margin-top:10px;border-top:1px solid ${C.border};padding-top:8px;font-size:0.57rem;color:${C.muted}">
-                Views: <strong>${d.views.join(", ")}</strong> · Reliability: <strong style="color:${C.green}">${m.reliability}% (Excellent)</strong>
-              </div>
+          <div style="margin-bottom:20px;padding:14px;border-radius:10px;background:${C.surface};border:1px solid ${C.border}">
+            <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${C.accent};margin-bottom:7px">Clinician</div>
+            <div style="font-family:Fraunces;font-size:1.05rem;font-weight:900;color:${C.primary}">${d.clinician.name}</div>
+            <div style="font-size:0.67rem;color:${C.muted};margin-top:3px">${d.clinician.credentials}</div>
+            <div style="font-size:0.65rem;color:${C.muted}">${d.clinician.clinic}</div>
+            <div style="margin-top:10px;border-top:1px solid ${C.border};padding-top:8px;font-size:0.57rem;color:${C.muted}">
+              Views: <strong>${d.views.join(", ")}</strong> · Reliability: <strong style="color:${C.green}">${m.reliability}% (Excellent)</strong>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:auto 1fr;gap:18px;margin-bottom:20px;padding:18px;border-radius:12px;background:${C.surface};border:1px solid ${C.border}">
@@ -8372,7 +8343,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             <div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border}">
               <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:18px">Patient Acknowledgement</div>
               <div style="border-bottom:1px solid ${C.primary};margin-bottom:5px"></div>
-              <div style="font-size:0.59rem;color:${C.muted}">${d.patient.name} · Date: ___________</div>
+              <div style="font-size:0.59rem;color:${C.muted}">Signature · Date: ___________</div>
               <div style="font-size:0.56rem;color:${C.muted};margin-top:6px;line-height:1.5">I confirm I have received and understood this report and exercise programme.</div>
             </div>
           </div>
