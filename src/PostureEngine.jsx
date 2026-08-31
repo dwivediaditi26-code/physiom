@@ -7879,7 +7879,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       },
       exercises: rptExercises,
       soap: {
-        subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${patientInfo.occupation||"not specified"}. No red flags identified during screening.`,
+        // escHtml: this string is interpolated raw into the report HTML via
+        // ${s.text} in the SOAP block, which is document.write()n into a
+        // same-origin popup -- so occupation, a free-text field, needs the
+        // same escaping the clinician fields get above. (patientHeightCm is
+        // numeric state, not free text.) The original escaping pass covered
+        // the d.patient.* fields but missed this separate interpolation.
+        subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${escHtml(patientInfo.occupation||"not specified")}. No red flags identified during screening.`,
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
         assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
         plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,

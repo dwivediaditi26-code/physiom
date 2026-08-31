@@ -36,7 +36,7 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     expect(src).toMatch(/["'&][\s\S]{0,60}&amp;[\s\S]{0,80}&lt;[\s\S]{0,80}&gt;[\s\S]{0,80}&quot;[\s\S]{0,80}&#39;/);
   });
 
-  test("patient.name, patient.occupation, clinician.name/credentials/clinic are all wrapped in escHtml() where the report data object is built", () => {
+  test("clinician.name/credentials/clinic are all wrapped in escHtml() where the report data object is built", () => {
     // Scoped to the `d = { ... }` report-data construction, not the whole
     // file, so this can't accidentally pass by matching escHtml() calls
     // added somewhere unrelated.
@@ -44,11 +44,30 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     expect(dBlockMatch).not.toBeNull();
     const dBlock = dBlockMatch[0];
 
-    expect(dBlock).toMatch(/name:\s*escHtml\(patientInfo\.name/);
-    expect(dBlock).toMatch(/occupation:\s*escHtml\(patientInfo\.occupation/);
     expect(dBlock).toMatch(/name:\s*escHtml\(clinicianInfo\.name/);
     expect(dBlock).toMatch(/credentials:\s*escHtml\(clinicianInfo\.credentials/);
     expect(dBlock).toMatch(/clinic:\s*escHtml\(clinicianInfo\.clinic/);
+  });
+
+  test("patient name is gone from the report entirely, and the occupation that remains is escaped", () => {
+    // The d.patient block this test originally guarded was removed outright
+    // (privacy change: patient-identifying data no longer ships in the PDF,
+    // its signature line, or its filename). Not sending the field beats
+    // escaping it, so for the name we assert absence.
+    //
+    // Occupation is the exception: it still appears, in the generated SOAP
+    // subjective line, via a SEPARATE interpolation the original escaping
+    // pass missed -- and that string reaches the report HTML raw through
+    // ${s.text}. Removing d.patient is what exposed it. It's escaped now,
+    // and this asserts it stays that way.
+    const dBlockMatch = src.match(/const d = \{[\s\S]*?redFlags: \{ triggered: false, items: \[\] \},\s*\};/);
+    expect(dBlockMatch).not.toBeNull();
+    const dBlock = dBlockMatch[0];
+
+    expect(dBlock).not.toMatch(/patientInfo\.name/);
+    // Every surviving patientInfo.occupation read goes through escHtml().
+    expect(dBlock).toMatch(/escHtml\(patientInfo\.occupation/);
+    expect(dBlock).not.toMatch(/(?<!escHtml\()patientInfo\.occupation/);
   });
 
   test("the raw, unescaped interpolation pattern this bug shipped as is gone", () => {
