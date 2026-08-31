@@ -12,15 +12,16 @@
 // null/missing id, so these stay null until real photos/illustrations
 // are uploaded — nothing here fabricates image content.
 //
-// Region coverage so far: Shoulder Girdle (Chapter 10, "Tour #1") — all
-// 15 structures in that tour, in full. The rest of the book (10 more
-// muscle tours + 3 bone/ligament chapters) follows the same
-// OCR-and-structure process in later passes; PALPATION_REGIONS below
-// marks those as not yet added rather than pretending they're covered.
+// Region coverage so far: Shoulder Girdle (Chapter 10, "Tour #1") and
+// Cervical (Chapter 11, "Tour #2") — every structure in both tours, in
+// full. The rest of the book (9 more muscle tours + 3 bone/ligament
+// chapters) follows the same OCR-and-structure process in later passes;
+// PALPATION_REGIONS below marks those as not yet added rather than
+// pretending they're covered.
 
 export const PALPATION_REGIONS = [
   { key: "shoulder", label: "Shoulder Girdle", available: true },
-  { key: "cervical", label: "Cervical", available: false },
+  { key: "cervical", label: "Cervical", available: true },
   { key: "head", label: "Head", available: false },
   { key: "arm", label: "Arm", available: false },
   { key: "forearm", label: "Forearm", available: false },
@@ -33,6 +34,7 @@ export const PALPATION_REGIONS = [
 ];
 
 const SRC = "The Muscle and Bone Palpation Manual, Ch.10 — Tour #1: Palpation of the Muscles of the Shoulder Girdle";
+const SRC_NECK = "The Muscle and Bone Palpation Manual, Ch.11 — Tour #2: Palpation of the Neck Muscles";
 
 export const PALPATION_DATA = {
   shoulder: [
@@ -427,6 +429,348 @@ export const PALPATION_DATA = {
       ],
       clinicalConsiderations: "TrPs can produce costoclavicular syndrome (neurologic/vascular arm symptoms). Often confused with cervical disc syndrome, anterior scalene syndrome, or pectoralis minor syndrome.",
       source: `${SRC}, pp.177–178`,
+      images: [null, null, null],
+    },
+  ],
+
+  cervical: [
+    {
+      id: "palp_scm",
+      name: "Sternocleidomastoid (SCM)",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Manubrium of the sternum and the medial 1/3 of the clavicle",
+        insertion: "Mastoid process of the temporal bone and the lateral 1/3 of the superior nuchal line of the occiput",
+      },
+      actions: "Flexes the lower neck and extends the head/upper neck; laterally flexes and contralaterally rotates the head and neck; elevates the sternum and clavicle.",
+      patientPosition: "Supine, head and neck contralaterally rotated.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just superior to the sternoclavicular joint.",
+      steps: [
+        "Ask the client to lift the head and neck from the table; look for the SCM to become visible.",
+        "Resistance is often unnecessary — lifting against gravity usually provides enough.",
+        "Palpate toward the superior attachment, strumming perpendicular to the fibres.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "The sternal head (usually clearly visible) and the clavicular head (less obvious — palpate just lateral to the inferior sternal head if not visible); a gap between the two heads that varies a lot between people.",
+      notes: [
+        "Pincer palpation (not flat palpation) is recommended — the carotid sinus lies deep to the SCM, and flat pressure against it can trigger a reflex that lowers blood pressure.",
+        "The SCM forms the anterior border of the posterior triangle of the neck and is a key landmark for locating the scalenes and the longus colli/capitis.",
+      ],
+      clinicalConsiderations: "TrPs commonly relate to sustained head-turned postures, protracted head posture, tight collars/ties, or whiplash. Can produce headaches, restricted neck ROM, sore throat, and autonomic symptoms (eye symptoms from the sternal head, vasoconstriction/sweating from the clavicular head). Often misread as swollen lymph nodes, sinus/migraine headache, or TMJ dysfunction.",
+      source: `${SRC_NECK}, pp.187–189`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_platysma",
+      name: "Platysma (detour)",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Subcutaneous fascia of the superior chest",
+        insertion: "Mandible and subcutaneous fascia of the lower face",
+      },
+      actions: "Creates wrinkles in the neck skin when contracted; a very thin superficial sheet, not a prime mover.",
+      steps: [
+        "Ask the client to forcefully depress and draw the lower lip laterally while keeping the mandible slightly depressed.",
+      ],
+      feelFor: "A thin superficial sheet over the SCM, visible as neck-skin wrinkling on contraction.",
+      clinicalConsiderations: "TrPs relate to habitual facial expressions (disgust/horror) or TrPs in the SCM/scalenes; produce prickly pain over the mandible. TrPs are usually located over the SCM.",
+      source: `${SRC_NECK}, p.189`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_scalene_group",
+      name: "Scalene Group (anterior, middle, posterior)",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Anterior: first rib. Middle: first rib. Posterior: second rib.",
+        insertion: "Transverse processes of C3–C6 (anterior), C2–C7 (middle), C5–C7 (posterior).",
+      },
+      actions: "Anterior: flexes, laterally flexes, contralaterally rotates the neck; elevates rib 1. Middle: flexes and laterally flexes the neck; elevates rib 1. Posterior: laterally flexes the neck; elevates rib 2.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Posterior triangle of the neck, just superior to the clavicle and just lateral to the clavicular head of the SCM.",
+      steps: [
+        "Locate the lateral border of the clavicular head of the SCM, then drop immediately off it laterally onto the scalenes.",
+        "With finger pads on the scalenes, ask the client to take short, quick breaths through the nose; feel for the contraction.",
+        "Palpate as much of the scalenes as possible in the posterior triangle (between SCM, upper trapezius, levator scapulae, and clavicle), strumming perpendicular to the fibres.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Anterior scalene (mostly deep to SCM, fibres toward C3–C6), middle scalene (most present in the posterior triangle, fibres toward C2–C7, hardest of the three to isolate), posterior scalene (deepest/hardest to find, fibres nearly horizontal toward C5–C7, just anterior to upper trapezius/levator scapulae).",
+      notes: [
+        "To access the transverse-process attachments deep to the SCM, first slacken the SCM (passive flexion + same-side lateral flexion), then sink in slowly toward the spine.",
+        "Palpate carefully — the brachial plexus and subclavian artery run between the anterior and middle scalenes.",
+      ],
+      clinicalConsiderations: "TrPs relate to coughing, laboured breathing, or trauma (MVA). Can produce thoracic outlet syndrome, restricted neck rotation/lateral flexion, or first/second rib dysfunction. Often confused with cervical disc syndrome, angina (left side), or carpal tunnel syndrome.",
+      source: `${SRC_NECK}, pp.190–193`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_omohyoid_inferior_belly",
+      name: "Omohyoid, Inferior Belly (detour)",
+      type: "Muscle",
+      position: "Supine",
+      handPlacement: "Posterior triangle of the neck, just lateral to the SCM and superior to the clavicle.",
+      steps: [
+        "Feel for the horizontal fibres of the omohyoid as the client depresses the mandible at the TMJs against resistance.",
+      ],
+      feelFor: "Fairly easily palpable horizontal fibres in the posterior triangle.",
+      clinicalConsiderations: "See the full Hyoid Group entry for its trigger-point notes (its tension is thought to contribute to thoracic outlet syndrome via the brachial plexus).",
+      source: `${SRC_NECK}, p.193`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_longus_colli_capitis",
+      name: "Longus Colli & Longus Capitis",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Longus colli: vertebral bodies/transverse processes between T3 and C1. Longus capitis: transverse processes of C3–C5.",
+        insertion: "Longus colli: superior vertebral bodies/transverse processes. Longus capitis: occiput.",
+      },
+      actions: "Longus colli: flexes, laterally flexes, contralaterally rotates the neck. Longus capitis: flexes and laterally flexes the head and neck.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just medial to the sternal head of the SCM; support hand on the forehead if resistance is needed.",
+      steps: [
+        "Locate the medial border of the sternal head of the SCM, then drop immediately off it medially.",
+        "Gently, slowly, but firmly sink toward the anterior surface of the cervical vertebral bodies.",
+        "Confirm placement by asking the client to lift the head into flexion and feel for the contraction.",
+        "Strum perpendicular to the fibres, palpating as far superiorly and inferiorly as possible.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Firm cord-like muscle against the anterior vertebral bodies; if you feel a pulse, you're on the carotid artery — move slightly to one side.",
+      notes: [
+        "Sink in slowly and gently but firmly — the anterior neck has several fragile structures (carotid sinus, trachea).",
+        "If it's hard to discern from the SCM, ask the client to rotate the head/neck to the same side being palpated to relax the SCM.",
+      ],
+      clinicalConsiderations: "Frequently injured in whiplash. TrPs cause sore throat, difficulty swallowing, and tight posterior neck muscles compensating. Referral patterns for this muscle group have not been well mapped.",
+      source: `${SRC_NECK}, pp.194–196`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_rectus_capitis_ant_lat",
+      name: "Rectus Capitis Anterior & Lateralis (detour)",
+      type: "Muscle",
+      position: "Supine or seated",
+      attachments: {
+        origin: "Occiput (both)",
+        insertion: "Transverse process of the atlas (C1)",
+      },
+      actions: "Anterior: flexes the head at the atlanto-occipital joint. Lateralis: laterally flexes the head at the atlanto-occipital joint.",
+      handPlacement: "Immediately superior to the transverse process of the atlas (posterior to the mandible ramus, inferior to the ear) for the lateralis; the anterior is too deep to palpate.",
+      steps: [
+        "Press gently into the small depression just superior to the C1 transverse process and feel for the rectus capitis lateralis.",
+      ],
+      feelFor: "Can be very difficult to discern from adjacent soft tissue.",
+      notes: [
+        "Be careful not to press too forcefully — the facial nerve and styloid process are nearby.",
+      ],
+      clinicalConsiderations: "Rectus capitis anterior is extremely deep and usually not palpable. TrP referral zones for both muscles have not been mapped out.",
+      source: `${SRC_NECK}, p.196`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_hyoid_group",
+      name: "Hyoid Group (infra- & suprahyoids)",
+      type: "Muscle group",
+      position: "Supine",
+      attachments: {
+        origin: "Infrahyoids: sternum/scapula/thyroid cartilage. Suprahyoids: mastoid notch/styloid process/mandible.",
+        insertion: "All attach to the hyoid bone (digastric via a central tendon; omohyoid has a central tendon to the clavicle).",
+      },
+      actions: "Depresses the mandible at the TMJs; flexes the head and neck. Infrahyoids depress the hyoid; suprahyoids elevate it.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Immediately inferior to the hyoid, just off centre, for the infrahyoids; support hand under the chin.",
+      steps: [
+        "Infrahyoids: resist mandibular depression at the TMJs; feel for the contraction, strumming perpendicular to the fibres.",
+        "Continue palpating inferiorly toward the sternum.",
+        "Suprahyoids: place the hand just inferior to the mandible, resist depression, and feel for the contraction.",
+        "Continue toward the hyoid bone, strumming perpendicular.",
+        "For stylohyoid and the digastric's superior belly, continue laterally from the hyoid toward the mastoid process while resisting mandibular depression.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Multiple small, thin muscles that can be hard to discern from each other; all contract together when mandibular depression is resisted.",
+      clinicalConsiderations: "Of the group, digastric referral is best mapped: inferior belly TrPs cause lower incisor/tongue/throat pain and swallowing difficulty; superior belly TrPs relate to occipitofrontalis TrPs. Stylohyoid can entrap the external carotid artery. Omohyoid tension is thought to contribute to thoracic outlet syndrome. Often misread as dental problems.",
+      source: `${SRC_NECK}, pp.197–200`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_upper_trapezius_seated",
+      name: "Upper Trapezius (seated variant)",
+      type: "Muscle",
+      position: "Seated",
+      attachments: {
+        origin: "External occipital protuberance, medial 1/3 of the superior nuchal line, nuchal ligament, spinous process of C7",
+        insertion: "Lateral clavicle and acromion process",
+      },
+      actions: "Elevates, retracts, upwardly rotates the scapula; extends, laterally flexes, contralaterally rotates the head and neck.",
+      patientPosition: "Seated, head and neck rotated contralaterally.",
+      therapistPosition: "Standing to the side of the client.",
+      handPlacement: "On the upper trapezius at the top of the shoulder; support hand on the back of the head.",
+      steps: [
+        "Resist extension of the head and neck; look and feel for the contraction.",
+        "Continue palpating superiorly to the occiput and inferiorly to the scapula/clavicle, strumming perpendicular.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Contraction visible/palpable at the top of the shoulder; contralateral head rotation reciprocally inhibits splenius capitis/cervicis, isolating the trapezius more forcefully.",
+      notes: [
+        "Same muscle as the prone Trapezius entry in Shoulder Girdle (source pp.142–145) — this is the book's seated variant, useful when the client can't lie prone.",
+      ],
+      clinicalConsiderations: "See the Trapezius entry in Shoulder Girdle for full trigger-point notes — this is the most commonly found TrP location in the body.",
+      source: `${SRC_NECK}, pp.201–203`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_levator_scapulae_seated",
+      name: "Levator Scapulae (seated variant)",
+      type: "Muscle",
+      position: "Seated",
+      attachments: {
+        origin: "Transverse processes of C1–C4",
+        insertion: "Medial border of the scapula, root of the spine to the superior angle",
+      },
+      actions: "Elevates and downwardly rotates the scapula; extends, laterally flexes, ipsilaterally rotates the neck.",
+      patientPosition: "Seated, hand in the small of the back.",
+      therapistPosition: "Standing behind or to the side of the client.",
+      handPlacement: "Just superior and medial to the superior angle of the scapula; support hand on top of the shoulder.",
+      steps: [
+        "With the hand in the small of the back, ask for a gentle, short scapular elevation; feel for the contraction deep to the trapezius.",
+        "Continue palpating toward the superior attachment, strumming perpendicular.",
+        "Once in the posterior triangle, the hand can leave the low back and elevation can be more forceful/resisted.",
+        "Palpate as far superiorly as possible (near its top attachment it runs deep to the SCM).",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Same three-part accessibility as the prone version: deep to trapezius near the scapula, superficial in the posterior triangle, deep to the SCM near its spinal attachment.",
+      notes: [
+        "Same muscle as the prone Levator Scapulae entry in Shoulder Girdle (source pp.149–151) — this is the seated variant, and includes an extra note on reaching the superior attachment under the SCM by first slackening it (flex + ipsilateral lateral flex).",
+      ],
+      clinicalConsiderations: "See the Shoulder Girdle Levator Scapulae entry for full trigger-point notes (classic “stiff neck”/torticollis presentation).",
+      source: `${SRC_NECK}, pp.204–206`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_splenius_capitis",
+      name: "Splenius Capitis",
+      type: "Muscle",
+      position: "Seated",
+      attachments: {
+        origin: "Nuchal ligament (C3–C6 level) and spinous processes of C7–T4",
+        insertion: "Mastoid process of the temporal bone and lateral 1/4 of the superior nuchal line",
+      },
+      actions: "Extends, laterally flexes, and ipsilaterally rotates the head and neck.",
+      patientPosition: "Seated, head and neck ipsilaterally rotated.",
+      therapistPosition: "Standing behind the client.",
+      handPlacement: "Upper posterior triangle, just inferior to the occiput and just posterior to the SCM (superficial here).",
+      steps: [
+        "With the head/neck ipsilaterally rotated, resist extension and feel for the contraction.",
+        "Strum perpendicular to the fibres in the posterior triangle until reaching the upper trapezius border.",
+        "Alternate resisted extension/relaxation to feel it contracting deep to the upper trapezius; continue as far inferiorly as possible.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Ipsilateral rotation reciprocally relaxes the SCM and upper trapezius, making the splenius capitis easier to isolate; only gentle resistance is needed or the trapezius will override it.",
+      notes: [
+        "The inferior attachment on the upper thoracic spinous processes can be reached by pressing anterior to the upper trapezius border, downward toward the spinous processes.",
+      ],
+      clinicalConsiderations: "TrPs relate to prolonged forward-head or rotated-neck postures (e.g. off-centre monitor) or whiplash. Cause restricted flexion/contralateral rotation, restricted same-side rotation, or headaches. Often confused with cervical joint dysfunction or migraine.",
+      source: `${SRC_NECK}, pp.207–208`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_splenius_cervicis",
+      name: "Splenius Cervicis (detour)",
+      type: "Muscle",
+      position: "Seated",
+      attachments: {
+        origin: "Spinous processes of T3–T6",
+        insertion: "Transverse processes of C1–C3",
+      },
+      actions: "Same as splenius capitis but moves only the neck, not the head.",
+      handPlacement: "Between the levator scapulae and splenius capitis.",
+      steps: [
+        "Ask the client to ipsilaterally rotate the neck (against resistance if needed) and feel for the contraction.",
+        "Follow toward both attachments once located.",
+      ],
+      feelFor: "Deep to other musculature for its entire course — best first located between levator scapulae and splenius capitis.",
+      clinicalConsiderations: "Same TrP-perpetuating factors as splenius capitis. Can cause headaches, eye pain, or ipsilateral visual blurriness.",
+      source: `${SRC_NECK}, p.209`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_semispinalis_capitis",
+      name: "Semispinalis Capitis",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Transverse processes of C7–T6 and articular processes of C4–C6",
+        insertion: "Medial 1/3 of the occipital bone, between the superior and inferior nuchal lines",
+      },
+      actions: "Extends and laterally flexes the head and neck.",
+      patientPosition: "Supine, hand in the small of the back and/or head/neck ipsilaterally rotated.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just below the occiput, just lateral to the midline (over the laminar groove).",
+      steps: [
+        "Ask the client to gently press the head into the table (extension); feel for the contraction deep to the upper trapezius.",
+        "Continue palpating superiorly to the occiput and inferiorly, strumming perpendicular to the fibres.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "The largest, thickest muscle of the neck (bigger than the better-known upper trapezius), contracting deep to the trapezius.",
+      notes: [
+        "Only gentle extension is needed — a forceful contraction overrides the reciprocal inhibition of the upper trapezius and blocks palpation.",
+      ],
+      clinicalConsiderations: "TrPs relate to protracted head posture, prone reading/elbow-propping, whiplash, or cervical osteoarthritis. Can cause headaches, restricted flexion, or greater occipital nerve entrapment (posterior scalp tingling/pain).",
+      source: `${SRC_NECK}, pp.210–211`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_longissimus_capitis_group",
+      name: "Longissimus Capitis, Semispinalis Cervicis, Cervical Multifidus & Rotatores (detour)",
+      type: "Muscle group",
+      position: "Supine",
+      attachments: {
+        origin: "Longissimus capitis: transverse/articular processes of C5–T5. Semispinalis cervicis: transverse processes of T1–T5.",
+        insertion: "Longissimus capitis: mastoid process. Semispinalis cervicis: spinous processes of C2–C5.",
+      },
+      actions: "Extension and (for longissimus capitis) ipsilateral rotation of the head/neck; multifidus and rotatores extend and contralaterally rotate the neck.",
+      handPlacement: "Lateral to the splenius capitis, deep to the levator scapulae and upper trapezius, for longissimus capitis.",
+      steps: [
+        "Gentle head extension against the table with the head/neck ipsilaterally rotated brings out the contraction.",
+      ],
+      feelFor: "All deep and challenging to palpate/discern — the cervical multifidus and rotatores are very deep within the laminar groove.",
+      clinicalConsiderations: "Longissimus capitis TrPs refer pain posterior to the ear; semispinalis cervicis refers similarly to semispinalis capitis; cervical multifidus refers to the suboccipital region and medial scapular border; rotatores refer to the spinal midline at the TrP's segmental level.",
+      source: `${SRC_NECK}, p.212`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_suboccipital_group",
+      name: "Suboccipital Group",
+      type: "Muscle group",
+      position: "Supine",
+      attachments: {
+        origin: "RCPMaj: spinous process of C2. RCPMin: posterior tubercle of C1. OCI: spinous process of C2. OCS: transverse process of C1.",
+        insertion: "RCPMaj/RCPMin/OCS: occiput (nuchal lines). OCI: transverse process of C1.",
+      },
+      actions: "As a group: extends and anteriorly translates the head at the atlanto-occipital joint. Obliquus capitis inferior also ipsilaterally rotates the atlas at the atlantoaxial joint.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just superior and slightly lateral to the spinous process of C2 (the axis).",
+      steps: [
+        "Rectus capitis posterior major (easiest to find): palpate just superolateral to the C2 spinous process, strumming perpendicular; follow superolaterally toward the occiput.",
+        "Rectus capitis posterior minor: same approach starting just superolateral to the posterior tubercle of C1; anterior translation of the head can bring out its contraction.",
+        "Obliquus capitis inferior: palpate between the C2 spinous process and the C1 transverse process; gentle resisted ipsilateral head rotation helps engage it.",
+        "Obliquus capitis superior (most difficult): feel just lateral to the superior attachment of RCPMaj.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Deep muscles, best felt when relaxed; RCPMaj is the easiest of the four to distinguish, OCS the hardest.",
+      notes: [
+        "Palpate the suboccipital triangle carefully — the vertebral artery and suboccipital nerve pass through it, and the greater occipital nerve is nearby.",
+      ],
+      clinicalConsiderations: "TrPs relate to sustained head extension/rotation, chronic forward-head posture, whiplash, or atlanto-occipital/atlantoaxial joint dysfunction. Produce diffuse, hard-to-localize headache pain and restricted flexion/rotation. Often misread as migraine or greater occipital neuralgia.",
+      source: `${SRC_NECK}, pp.213–216`,
       images: [null, null, null],
     },
   ],
