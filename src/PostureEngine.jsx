@@ -247,6 +247,16 @@ const MANUAL_POINTS_SAGITTAL = [
   // let AI Auto's real face detections silently produce a fabricated angle.
   { id:8, label:"ASIS",           extraKey:"asis", desc:"Anterior superior iliac spine (near side)" },
   { id:9, label:"PSIS",           extraKey:"psis", desc:"Posterior superior iliac spine (near side)" },
+  // C7 spinous process. The single most valuable manual point in the app:
+  // the published craniovertebral angle cutoff (<48–50° = forward head) and
+  // the forward shoulder angle cutoff (≥52° = rounded shoulder) are BOTH
+  // defined on a line through C7, and MediaPipe has no C7 landmark. Auto mode
+  // substitutes the acromion, which sits anterior and inferior to C7, so the
+  // automatic angle is systematically different from the one those cutoffs
+  // describe. Placing this one point turns two proxy figures into measures
+  // comparable with the literature.
+  // extraKey, not mpIdx — same reasoning as ASIS/PSIS above.
+  { id:10, label:"C7",            extraKey:"c7",   desc:"C7 spinous process — most prominent bump at the neck base" },
 ];
 
 // Connections to draw between placed manual points (frontal)
@@ -258,7 +268,9 @@ const MANUAL_CONNECTIONS_FRONTAL = [
 ];
 const MANUAL_CONNECTIONS_SAGITTAL = [
   [0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],
-  [8,9], // ASIS-PSIS line (anterior pelvic tilt)
+  [8,9],  // ASIS-PSIS line (anterior pelvic tilt)
+  [1,10], // ear→C7 — the true craniovertebral angle line
+  [10,2], // C7→acromion — the forward shoulder angle line
 ];
 
 // Convert manual placed points {[id]: {x,y} normalised} to MediaPipe-like landmark array.
@@ -498,6 +510,80 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
       }
     }
   }
+
+  // ── 1a. True CVA + Forward Shoulder Angle, from a manually placed C7 ───────
+  // Both published cutoffs are defined on a line through the C7 spinous
+  // process, which MediaPipe does not detect:
+  //
+  //   CVA = angle(tragus→C7, horizontal)      FHP at < 48–50°
+  //   FSA = angle(C7→acromion, horizontal)    rounded shoulder at ≥ 52°
+  //
+  // cvaAngle above substitutes the acromion for C7 and is therefore a
+  // different angle that cannot carry those numbers. When the clinician has
+  // placed C7 these are the comparable measures, and cvaSource records which
+  // one the reported figure came from so nothing downstream has to guess.
+  let cvaTrueAngle = null, forwardShoulderAngle = null;
+  const c7 = extra?.c7 || null;
+  if (isLateralView && c7) {
+    if (sagEarVis) {
+      const dx = Math.abs(sagEar.x - c7.x);
+      const dy = Math.abs(sagEar.y - c7.y);
+      if (dx > 0.005 || dy > 0.005) {
+        const raw = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (raw >= 20 && raw <= 85) cvaTrueAngle = r1(raw);
+      }
+    }
+    if (sagShVis) {
+      // FSA is conventionally reported as the angle of the C7→acromion line
+      // from the horizontal, the same convention the 52° cutoff uses.
+      const dx = Math.abs(sagSh.x - c7.x);
+      const dy = Math.abs(sagSh.y - c7.y);
+      if (dx > 0.005 || dy > 0.005) {
+        const raw = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (raw >= 0 && raw <= 90) forwardShoulderAngle = r1(raw);
+      }
+    }
+  }
+  // Which landmark the reported CVA actually came from. "c7" = comparable with
+  // the published cutoff; "acromion-proxy" = not.
+  const cvaSource = cvaTrueAngle !== null ? "c7" : (cvaAngle !== null ? "acromion-proxy" : null);
+
+  // ── 1b. CRA — Cranial Rotation Angle ───────────────────────────────────────
+  // Angle between the horizontal and the line from the eye (lateral canthus)
+  // to the ear (tragus). CVA and CRA describe two DIFFERENT things that CVA
+  // alone conflates:
+  //   CVA low  + CRA normal → the head is translated forward on the neck
+  //   CVA low  + CRA raised → the head is also extended on the upper cervical
+  //                           spine (chin poke)
+  // They need different treatment — the first is lower cervical/thoracic, the
+  // second is suboccipital — so reporting only CVA loses the distinction.
+  //
+  // Costs nothing extra: eyes (2/5) and ears (7/8) are already detected, no
+  // manual landmark needed. Lateral view only, same as CVA — in a frontal
+  // photo the eye-to-ear horizontal distance is a face-width artefact.
+  //
+  // Reported as a magnitude with direction, not against a cutoff: no
+  // photographic CRA cutoff is as well established as CVA's <48–50°, and
+  // reported means vary with landmark definition. Interpreted alongside CVA.
+  let craAngle = null;
+  const sagEyeL = g(2), sagEyeR = g(5);
+  const sagEye = ((sagEyeL?.visibility||0) >= (sagEyeR?.visibility||0)) ? sagEyeL : sagEyeR;
+  const sagEyeVis = (sagEye?.visibility||0) >= MIN_VIS;
+  if (isLateralView && sagEyeVis && sagEarVis) {
+    const dx = Math.abs(sagEye.x - sagEar.x);
+    const dy = Math.abs(sagEye.y - sagEar.y);
+    // Require a real horizontal separation: eye and ear are nearly level in
+    // neutral, so a near-zero dx is noise rather than a measurable angle.
+    if (dx > 0.01) {
+      const rawCra = Math.atan2(dy, dx) * 180 / Math.PI;
+      // Eye-to-ear line beyond ~60° from horizontal is not a head posture,
+      // it's a landmark error (usually a mis-detected ear in profile).
+      if (rawCra <= 60) craAngle = r1(rawCra);
+    }
+  }
+  // Direction: eye ABOVE ear = head extended (chin poke); eye below = flexed.
+  const craDirection = (craAngle === null || !sagEyeVis || !sagEarVis) ? null
+    : (sagEye.y < sagEar.y ? "extended" : "flexed");
 
   // ── 2. FHP metrics ─────────────────────────────────────────────────────────
   // fhpNorm: retained for backward compatibility (% image width)
@@ -998,7 +1084,8 @@ function measureLandmarks(lm, calibration, view="anterior", extra=null) {
     f4, f7, f10, f11,
     shoulderAngle, pelvisAngle, eyeLevelAngle, headTiltAngle, headTiltSide,
     headLateralOffset, trunkLateralShift, weightBearingShift, spinalDeviation, waistAsymmetry,
-    cvaAngle, fhpNorm, fhpDevCm, thoracicAngle, lumbarProxy, hipExtensionProxy,
+    cvaAngle, cvaTrueAngle, cvaSource, forwardShoulderAngle,
+    craAngle, craDirection, fhpNorm, fhpDevCm, thoracicAngle, lumbarProxy, hipExtensionProxy,
     sagChain, sagConfidence, sagPelvicShift, sagShoulderShift, sagKneeShift, sagHipShift,
     trunkSagLean, plumb, fhpFromPlumb,
     leftKneeDev, rightKneeDev, leftKneeFrontal, rightKneeFrontal,
@@ -1897,6 +1984,15 @@ function buildFindings(lm, view, m) {
           interpretation:
             `${f11.clinicalCorrelation} ` +
             `Pattern: ${f11.obliquityPattern}. ` +
+            // The published obliquity norms (healthy population 0–5.6°, median
+            // 2.0°) are defined on the ASIS/iliac crest line. Automatic
+            // detection has no such landmark — lm23/24 are hip JOINT CENTRES —
+            // so the auto figure is a proxy measuring a different line, and
+            // says so rather than borrowing the norm silently. Manual mode
+            // places real iliac crest/PSIS points, where the note does not apply.
+            `${(lm?.[23]?._verified && lm?.[24]?._verified)
+                ? ""
+                : "Screen note: measured from hip joint centres, not the ASIS/iliac crest line the published obliquity norms are defined on — place the pelvic landmarks manually for a comparable figure. "}` +
             `Findings should be confirmed clinically with pelvic landmark palpation.`,
           musclePattern: MUSCLE_PATTERNS.pelvis,
           functionalCorrelation:
@@ -2297,18 +2393,26 @@ function buildFindings(lm, view, m) {
       const fhpCm = m.fhpDevCm ?? m.fhpFromPlumb ?? null;
 
       // Threshold: mild at <54° (Neiva 2009 — normal >54°); lowered confidence gate for sagittal
-      if (m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
-        const sev = m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
-          : m.cvaAngle < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
+      // Prefer the tragus-C7 angle when the clinician placed C7: the cutoffs
+      // this is graded against are defined on that line, and the acromion
+      // substitution is a different angle. cvaSource records which was used.
+      const cvaUsed = m.cvaTrueAngle ?? m.cvaAngle;
+      const cvaIsProxy = m.cvaSource !== "c7";
+      if (cvaUsed < POSTURE_THRESHOLDS.cvaAngle.mild && cvaConf >= 28) {
+        const sev = cvaUsed < POSTURE_THRESHOLDS.cvaAngle.severe ? "high"
+          : cvaUsed < POSTURE_THRESHOLDS.cvaAngle.moderate ? "moderate" : "mild";
         const fhpCmStr = fhpCm !== null && fhpCm > 0 ? ` Ear ~${fhpCm.toFixed(1)}cm anterior to acromion.` : "";
+        const cvaNote = cvaIsProxy
+          ? " (Screen note: measured ear\u2192acromion because C7 is not detected automatically; the cutoff this is graded against is defined on tragus\u2192C7. Place C7 in Manual mode for a comparable figure, or confirm with goniometry.)"
+          : " (Measured tragus\u2192C7 from the manually placed C7 spinous process.)";
 
         add({
           clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Cervical / CVA",
-          findingName: `Forward head tendency — CVA ${m.cvaAngle.toFixed(1)}° (normal ${CVA_NORM_LABEL} (Yip et al. 2008))`,
+          findingName: `Forward head tendency — CVA ${cvaUsed.toFixed(1)}° (normal ${CVA_NORM_LABEL} (Yip et al. 2008))`,
           severity: sev, confidenceScore: cvaConf,
           clinicalSignificance: sev,
-          interpretation: `Reduced craniovertebral angle (${m.cvaAngle.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this. (Screen note: CVA here is a 2D photo proxy using ear→acromion; the validated clinical method measures tragus→C7 spinous process — confirm with goniometry.)`,
+          interpretation: `Reduced craniovertebral angle (${cvaUsed.toFixed(1)}°) may be consistent with a forward head posture tendency.${fhpCmStr} This pattern may be associated with suboccipital and cervical extensor overactivity, and reduced deep cervical flexor contribution. Static posture alone is insufficient to confirm this.${cvaNote}`,
           possibleMusclePatterns: {
             tight: ["Suboccipital extensors", "Cervical extensors (semispinalis, splenius)","Sternocleidomastoid","Pectoralis minor"],
             weak:  ["Deep cervical flexors (longus colli, longus capitis)","Lower trapezius","Serratus anterior"],
@@ -2403,7 +2507,16 @@ function buildFindings(lm, view, m) {
     }
 
     // ── 4. Pelvic Tilt (sagittal) ────────────────────────────────────────────
-    // Primary: plumb-line hip deviation. Fallback: lumbarProxy.
+    // Primary: plumb-line hip deviation, now measured against Kendall's ideal
+    // rather than against zero (see kendallPlumb.js).
+    //
+    // Fallback: lumbarProxy — hip midpoint vs the knee/heel midpoint, as a %
+    // of frame width. This has NO counterpart in any validated postural
+    // protocol; it is an internal geometric heuristic. The contour-derived
+    // Lumbar Curvature Index in sagittalFindings.js is the measure with an
+    // actual construction behind it (the flexicurve depth-chord method), so
+    // the proxy is used only when the plumb deviation is unavailable, and
+    // says what it is when it surfaces.
     const pelvisCm = m.sagPelvicShift ?? null;
     const pelvisProxy = m.lumbarProxy ?? null;
 
@@ -2423,8 +2536,8 @@ function buildFindings(lm, view, m) {
       if (sev && (sagRel.reliable || visHipKnee.length>=1 || visHipKneeRelaxed.length>=2)) {
         const dir = pelvisValue > 0 ? "Anterior" : "Posterior";
         const measureStr = pelvisIsCm
-          ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to plumb`
-          : `proxy deviation ${abs.toFixed(1)}%`;
+          ? `hip ~${abs.toFixed(1)}cm ${dir.toLowerCase()} to Kendall plumb`
+          : `geometric proxy ${abs.toFixed(1)}% — not a validated pelvic measure`;
         add({
           clusterBoost: 15, // sagittal provisional — refined by clustering step
           region: "Pelvis / Lumbar",
@@ -6737,6 +6850,50 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   </div>
                   <div style={{fontSize:"0.57rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = marked forward head tendency</div>
                 </div>
+
+                {measurements.craAngle!=null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"0.78rem",color:PC.muted}}>Cranial Rotation Angle</div>
+                      <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>
+                        Eye-to-ear line vs horizontal — separates head translation from upper-cervical extension
+                      </div>
+                    </div>
+                    <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,textAlign:"right",whiteSpace:"nowrap"}}>
+                      {measurements.craAngle.toFixed(1)}°
+                      {measurements.craDirection&&(
+                        <span style={{fontSize:"0.62rem",fontWeight:600,color:PC.muted,marginLeft:5}}>
+                          {measurements.craDirection}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {measurements.cvaTrueAngle!=null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"0.78rem",color:PC.muted}}>CVA (tragus–C7)</div>
+                      <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>Manual C7 — comparable with the published &lt;48–50° cutoff</div>
+                    </div>
+                    <div style={{fontSize:"0.82rem",fontWeight:800,textAlign:"right",whiteSpace:"nowrap",
+                      color:measurements.cvaTrueAngle<48?PC.red:measurements.cvaTrueAngle<50?PC.yellow:PC.green}}>
+                      {measurements.cvaTrueAngle.toFixed(1)}°
+                    </div>
+                  </div>
+                )}
+                {measurements.forwardShoulderAngle!=null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"0.78rem",color:PC.muted}}>Forward Shoulder Angle</div>
+                      <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>C7–acromion vs horizontal · rounded shoulder at ≥52°</div>
+                    </div>
+                    <div style={{fontSize:"0.82rem",fontWeight:800,textAlign:"right",whiteSpace:"nowrap",
+                      color:measurements.forwardShoulderAngle>=52?PC.red:PC.green}}>
+                      {measurements.forwardShoulderAngle.toFixed(1)}°
+                    </div>
+                  </div>
+                )}
                 <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
                 <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
                 {/* Lumbar lordosis: paired with kyphosis — show together */}
@@ -6817,6 +6974,50 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 </div>
                 <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>Normal &gt;{CVA.mild}° · &lt;{CVA.moderate}° = marked forward head tendency</div>
               </div>
+
+              {measurements.craAngle!=null&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"0.78rem",color:PC.muted}}>Cranial Rotation Angle</div>
+                    <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>
+                      Eye-to-ear line vs horizontal — separates head translation from upper-cervical extension
+                    </div>
+                  </div>
+                  <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,textAlign:"right",whiteSpace:"nowrap"}}>
+                    {measurements.craAngle.toFixed(1)}°
+                    {measurements.craDirection&&(
+                      <span style={{fontSize:"0.62rem",fontWeight:600,color:PC.muted,marginLeft:5}}>
+                        {measurements.craDirection}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {measurements.cvaTrueAngle!=null&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"0.78rem",color:PC.muted}}>CVA (tragus–C7)</div>
+                    <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>Manual C7 — comparable with the published &lt;48–50° cutoff</div>
+                  </div>
+                  <div style={{fontSize:"0.82rem",fontWeight:800,textAlign:"right",whiteSpace:"nowrap",
+                    color:measurements.cvaTrueAngle<48?PC.red:measurements.cvaTrueAngle<50?PC.yellow:PC.green}}>
+                    {measurements.cvaTrueAngle.toFixed(1)}°
+                  </div>
+                </div>
+              )}
+              {measurements.forwardShoulderAngle!=null&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:`1px solid ${PC.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:"0.78rem",color:PC.muted}}>Forward Shoulder Angle</div>
+                    <div style={{fontSize:"0.7rem",color:PC.muted,opacity:0.75}}>C7–acromion vs horizontal · rounded shoulder at ≥52°</div>
+                  </div>
+                  <div style={{fontSize:"0.82rem",fontWeight:800,textAlign:"right",whiteSpace:"nowrap",
+                    color:measurements.forwardShoulderAngle>=52?PC.red:PC.green}}>
+                    {measurements.forwardShoulderAngle.toFixed(1)}°
+                  </div>
+                </div>
+              )}
               <MetricRow label="Forward Head" value={measurements.fhpNorm} unit="%" normal={3} abnormal={7}/>
               <MetricRow label="Thoracic Kyphosis (Est.)" value={measurements.thoracicAngle} unit="°" normal={45} abnormal={55}/>
               {/* Lumbar lordosis paired with kyphosis */}

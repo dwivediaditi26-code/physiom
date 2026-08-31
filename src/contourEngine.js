@@ -292,6 +292,12 @@ function extractSpinalCurveProfile(postContour, antContour, bounds, viewSign) {
     // Overall pattern
     curvePattern,
     bodyDepth,
+    // Trunk height in PIXELS (shoulder→hip). Needed to put the apex depth and
+    // the chord length into the same units, which the flexicurve index and
+    // angle require — thorMaxDevNorm is normalised to bodyDepth while the
+    // chord is normalised to trunk height, so the two are not directly
+    // divisible without this.
+    trunkHPx: trunkH,
     // Full deviation profile for debug overlay
     _deviations: profile.map(p => ({ y: p.yNorm, dev: Math.round(p.devNorm * 1000)/10 })),
   };
