@@ -8468,11 +8468,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           </div>
         </div>
 
-        {/* Credits note */}
-        <div style={{padding:"8px 12px",borderRadius:8,background:`${PC.accent}08`,
-          border:`1px solid ${PC.accent}25`,marginBottom:16,fontSize:"0.82rem",color:PC.accent}}>
-        </div>
-
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>setShowReportModal(false)}
             style={{flex:1,padding:"11px",border:`1px solid ${PC.border}`,borderRadius:10,
