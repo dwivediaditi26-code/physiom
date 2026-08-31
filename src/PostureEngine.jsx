@@ -5262,7 +5262,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [mobilePanel,setMobilePanel]=useState("camera");
 
   // ── Landmark verification (hybrid AI + clinician) ─────────────────────────
-  const { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence } = useVerifiedLandmarks();
+  const { verified, setVerified, clearVerified, resetVerified, mergeWithMediaPipe, boostFindingConfidence } = useVerifiedLandmarks();
   const [activeLandmark, setActiveLandmark] = useState(null);
   const verifiedCount = Object.keys(verified).length;
   // Verified means the clinician explicitly confirmed the landmark placement
@@ -5274,7 +5274,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // Any new photo, or a switch to a different view, means the landmarks on
   // screen are no longer the ones that were reviewed — drop back to unverified
   // rather than letting a previous confirmation vouch for a new analysis.
-  useEffect(() => { setLandmarksReviewed(false); }, [uploadedImg, capturedImg, view]);
+  // Corrected landmark positions are dropped for the same reason: they are
+  // coordinates on one specific photo, and carrying them onto the next one
+  // would silently move that photo's landmarks to where the last one's were.
+  useEffect(() => {
+    setLandmarksReviewed(false);
+    setActiveLandmark(null);
+    resetVerified();
+  }, [uploadedImg, capturedImg, view]);
 
   // ── Multi-view state ─────────────────────────────────────────────────────────
   // Redesigned entry screen (2026-08-21) always presents all 4 views up front,
@@ -6489,14 +6496,25 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           ) : (
             <div style={{padding:"10px 12px",borderRadius:10,marginBottom:10,
               background:"rgba(217,119,6,0.08)",border:"1px solid rgba(217,119,6,0.3)"}}>
+              {/* Wording follows how the landmarks actually got there. In
+                  Manual mode the clinician placed every point, so calling it
+                  "AI Estimated" and telling them to switch to Manual mode
+                  (which they are already in) is simply wrong. */}
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                <span style={{fontSize:"0.8rem"}}>🤖</span>
-                <span style={{fontWeight:800,fontSize:"0.72rem",color:PC.yellow}}>AI Estimated — landmarks not yet reviewed</span>
+                <span style={{fontSize:"0.8rem"}}>{inputMode==="manual"?"✋":"🤖"}</span>
+                <span style={{fontWeight:800,fontSize:"0.72rem",color:PC.yellow}}>
+                  {inputMode==="manual"
+                    ? "Manually placed — not yet confirmed"
+                    : "AI Estimated — landmarks not yet reviewed"}
+                </span>
               </div>
               <div style={{fontSize:"0.68rem",color:PC.muted,lineHeight:1.5,marginBottom:8}}>
-                Landmarks are placed automatically and are a starting point, not a measurement.
-                Check each point against the photo — tap the image to zoom, and use Manual mode to
-                correct any that sit off the anatomical landmark — then confirm below.
+                {inputMode==="manual"
+                  ? <>Check your placements against the photo — tap the image to zoom, and drag any
+                      point that has drifted off its anatomical landmark — then confirm below.</>
+                  : <>Landmarks are placed automatically and are a starting point, not a measurement.
+                      Check each point against the photo — tap the image to zoom, and use “Fix a
+                      landmark” to move any that sit off the anatomical landmark — then confirm below.</>}
               </div>
               <button type="button" onClick={()=>setLandmarksReviewed(true)}
                 style={{padding:"7px 13px",borderRadius:8,border:"none",cursor:"pointer",
@@ -7146,6 +7164,27 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 onChange={e=>setPatientHeightCm(Number(e.target.value))}
                 style={{flex:1,padding:"8px 12px",border:`1px solid ${PC.border}`,borderRadius:9,fontSize:"0.85rem",background:PC.bg,color:PC.text}}/>
               <span style={{fontSize:"0.75rem",color:PC.muted}}>cm</span>
+            </div>
+            {/* Sex drives the sex-specific CVA reference range shown against the
+                cervical measurements. Its only input used to live in the report
+                modal's patient-details form; when that form was removed the
+                value became unsettable and silently stuck on its default, so it
+                lives here now with the other measurement parameters. */}
+            <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:6}}>Sex — selects the reference range shown for cervical angles</div>
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              {["Female","Male","Not specified"].map(opt=>{
+                const active = (patientInfo?.sex||"Female")===opt;
+                return(
+                  <button key={opt} type="button"
+                    onClick={()=>setPatientInfo(p=>({...p,sex:opt}))}
+                    style={{flex:1,padding:"7px 4px",borderRadius:8,cursor:"pointer",
+                      border:`1.5px solid ${active?PC.accent:PC.border}`,
+                      background:active?`${PC.accent}1a`:"transparent",
+                      color:active?PC.accent:PC.muted,fontWeight:700,fontSize:"0.72rem"}}>
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
             {measurements?._calibrated?(
               <div>
@@ -8123,6 +8162,27 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                     return;
                   }
 
+                  // ── Correct one AI-placed landmark ──
+                  // Frontal/posterior only. Lateral views use HybridKendall,
+                  // which has its own drag-to-correct with a magnifier.
+                  if (activeLandmark) {
+                    setVerified(activeLandmark, x, y);
+                    setActiveLandmark(null);
+                    // Re-run the analysis through the corrected landmark set so
+                    // the numbers update immediately rather than on next capture.
+                    if (landmarks) {
+                      const corrected = mergeWithMediaPipe(
+                        landmarks.map((l,i) =>
+                          VERIFIED_LANDMARK_MAP[activeLandmark]?.mpIdx === i
+                            ? { ...l, x, y, visibility: 1.0, _verified: true }
+                            : l
+                        )
+                      );
+                      setTimeout(()=>processLandmarks(corrected, view, null), 50);
+                    }
+                    return;
+                  }
+
                   // ── AI 5-point landmark tap ──
                   if (!aiSagActive) return;
                   const placed = AI_SAG_5_POINTS.filter(p=>!aiSagPlaced[p.id]);
@@ -8175,6 +8235,25 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   </div>
                 )}
 
+                {/* Corrected-landmark dots — shows where the clinician moved a
+                    point to, so a correction is visible rather than silent. */}
+                {Object.entries(verified).map(([key,p])=>{
+                  const def = VERIFIED_LANDMARK_MAP[key];
+                  if(!def||!p) return null;
+                  return(
+                    <div key={key} style={{position:"absolute",left:`${p.x*100}%`,top:`${p.y*100}%`,transform:"translate(-50%,-50%)",pointerEvents:"none",zIndex:22}}>
+                      <div style={{width:13,height:13,borderRadius:"50%",background:PC.green,border:"2px solid #fff",boxShadow:`0 0 6px ${PC.green}`}}/>
+                      <span style={{position:"absolute",left:15,top:-3,fontSize:"0.7rem",fontWeight:800,color:PC.green,whiteSpace:"nowrap",textShadow:"0 1px 3px rgba(0,0,0,0.9)"}}>{def.label}</span>
+                    </div>
+                  );
+                })}
+                {/* Prompt while waiting for a corrected position */}
+                {activeLandmark&&(
+                  <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.78)",color:PC.a3,padding:"5px 12px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:22}}>
+                    👆 Tap the correct position for {VERIFIED_LANDMARK_MAP[activeLandmark]?.label}
+                  </div>
+                )}
+
                 {/* 5-point dot overlay */}
                 {aiSagActive&&AI_SAG_5_POINTS.map(pt=>{
                   const p=aiSagPlaced[pt.id]; if(!p) return null;
@@ -8223,6 +8302,66 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                   <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.85)",color:spinalLevelMode==='c7'?"#fbbf24":"#f87171",padding:"5px 14px",borderRadius:20,fontSize:"0.75rem",fontWeight:800,whiteSpace:"nowrap",pointerEvents:"none",zIndex:30}}>
                     👆 Tap to mark {spinalLevelMode==='c7'?"C7 — base of neck":"T12 — thoracolumbar junction"}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Correct AI landmarks (frontal / posterior) ──────────────────
+                Automatic placement is a proposal. Lateral views already have
+                this via HybridKendall's drag-to-correct; before this, frontal
+                and posterior had no way to fix a misplaced point short of
+                redoing every landmark by hand in Manual mode. */}
+            {inputMode==="ai" && (rawUploadedImg||uploadedImg) && landmarks &&
+              !(view==="left"||view==="right") && (
+              <div style={{marginTop:10,padding:"10px 12px",borderRadius:10,
+                background:activeLandmark?`${PC.accent}0d`:PC.surface,
+                border:`1px solid ${activeLandmark?PC.accent:PC.border}`}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:7}}>
+                  <div style={{fontSize:"0.75rem",fontWeight:800,color:PC.text,textTransform:"uppercase",letterSpacing:"0.5px"}}>
+                    ◎ Fix a landmark
+                  </div>
+                  {Object.keys(verified).length>0&&(
+                    <span style={{fontSize:"0.68rem",fontWeight:700,color:PC.green}}>
+                      {Object.keys(verified).length} corrected
+                    </span>
+                  )}
+                </div>
+                <div style={{fontSize:"0.7rem",color:PC.muted,lineHeight:1.5,marginBottom:8}}>
+                  Pick a point that sits in the wrong place, then tap where it should be on the photo.
+                  The analysis re-runs with your correction.
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+                  {VERIFIED_LANDMARK_ORDER.map(key=>{
+                    const def = VERIFIED_LANDMARK_MAP[key];
+                    const isActive = activeLandmark===key;
+                    const isFixed  = !!verified[key];
+                    return(
+                      <button key={key} type="button"
+                        onClick={()=>setActiveLandmark(isActive?null:key)}
+                        style={{padding:"6px 8px",borderRadius:7,cursor:"pointer",textAlign:"left",
+                          border:`1.5px solid ${isActive?PC.accent:isFixed?PC.green+"66":PC.border}`,
+                          background:isActive?`${PC.accent}1a`:isFixed?`${PC.green}0f`:"transparent",
+                          color:isActive?PC.accent:isFixed?PC.green:PC.muted,
+                          fontWeight:700,fontSize:"0.72rem"}}>
+                        {isFixed?"✓ ":""}{def.label}
+                        <div style={{fontSize:"0.6rem",fontWeight:400,opacity:0.8}}>
+                          {isActive?"👆 Tap photo":isFixed?"Corrected":def.desc}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {Object.keys(verified).length>0&&(
+                  <button type="button"
+                    onClick={()=>{
+                      Object.keys(verified).forEach(k=>clearVerified(k));
+                      setActiveLandmark(null);
+                      if(landmarks) setTimeout(()=>processLandmarks(landmarks, view, null), 50);
+                    }}
+                    style={{width:"100%",marginTop:7,padding:"6px",borderRadius:7,border:"none",
+                      background:"rgba(255,77,109,0.1)",color:PC.red,fontSize:"0.68rem",fontWeight:700,cursor:"pointer"}}>
+                    ✕ Reset all corrections
+                  </button>
                 )}
               </div>
             )}
@@ -9194,6 +9333,44 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 // Confidence boost by priority level
 const LANDMARK_CONF_BOOST = { 1: 20, 2: 12, 3: 8 };
 
+// ─── Correctable landmarks (frontal / posterior views) ──────────────────────
+// Which AI-placed points a clinician can drag to the right place, what each
+// one feeds, and how much confidence a hand-placed point earns the findings
+// that depend on it.
+//
+// NOTE (2026-08-31): useVerifiedLandmarks referenced this map but it was never
+// defined — the hook only avoided a ReferenceError because `verified` was
+// always empty, so neither loop body ever ran. Wiring the correction UI
+// without defining it would have thrown on the first corrected point.
+//
+// `affects` entries are matched against a finding's metric key, and against
+// its text after camelCase is split into words ("shoulderAngle" →
+// "shoulder angle"), so they must be written in camelCase to match both.
+//
+// priority: 1 = the point a measurement is defined on (moving it changes the
+// number directly), 2 = contributes to a derived/composite measure, 3 = a
+// secondary reference. Maps to LANDMARK_CONF_BOOST above.
+//
+// Lateral views are NOT here: HybridKendall already provides drag-to-correct
+// with a magnifier for the sagittal chain, and owns its own landmark state.
+const VERIFIED_LANDMARK_MAP = {
+  lEar:      { mpIdx: 7,  label: "L Ear",      desc: "Left ear tragus",        priority: 1, affects: ["headTilt", "cvaAngle", "craAngle"] },
+  rEar:      { mpIdx: 8,  label: "R Ear",      desc: "Right ear tragus",       priority: 1, affects: ["headTilt", "cvaAngle", "craAngle"] },
+  lShoulder: { mpIdx: 11, label: "L Acromion", desc: "Left acromion tip",      priority: 1, affects: ["shoulderAngle", "trunkLateralShift", "waistAsymmetry"] },
+  rShoulder: { mpIdx: 12, label: "R Acromion", desc: "Right acromion tip",     priority: 1, affects: ["shoulderAngle", "trunkLateralShift", "waistAsymmetry"] },
+  lHip:      { mpIdx: 23, label: "L Hip",      desc: "Left iliac crest / PSIS", priority: 1, affects: ["pelvisAngle", "lldProxy", "spinalDeviation"] },
+  rHip:      { mpIdx: 24, label: "R Hip",      desc: "Right iliac crest / PSIS", priority: 1, affects: ["pelvisAngle", "lldProxy", "spinalDeviation"] },
+  lKnee:     { mpIdx: 25, label: "L Knee",     desc: "Left knee joint line",   priority: 2, affects: ["kneeFrontal", "qAngle", "lldProxy"] },
+  rKnee:     { mpIdx: 26, label: "R Knee",     desc: "Right knee joint line",  priority: 2, affects: ["kneeFrontal", "qAngle", "lldProxy"] },
+  lAnkle:    { mpIdx: 27, label: "L Ankle",    desc: "Left medial malleolus",  priority: 2, affects: ["ankleLLD", "tibialVarum"] },
+  rAnkle:    { mpIdx: 28, label: "R Ankle",    desc: "Right medial malleolus", priority: 2, affects: ["ankleLLD", "tibialVarum"] },
+};
+
+// Display order for the correction panel — head down to feet.
+const VERIFIED_LANDMARK_ORDER = [
+  "lEar","rEar","lShoulder","rShoulder","lHip","rHip","lKnee","rKnee","lAnkle","rAnkle",
+];
+
 // ─── useVerifiedLandmarks hook ────────────────────────────────────────────────
 function useVerifiedLandmarks() {
   const [verified, setVerifiedState] = useState({});
@@ -9205,6 +9382,10 @@ function useVerifiedLandmarks() {
   const clearVerified = useCallback((key) => {
     setVerifiedState(prev => { const n={...prev}; delete n[key]; return n; });
   }, []);
+
+  // Drop every correction at once. Needed when the photo or view changes:
+  // corrections are coordinates on one specific image.
+  const resetVerified = useCallback(() => setVerifiedState({}), []);
 
   const mergeWithMediaPipe = useCallback((mpLandmarks) => {
     if (!mpLandmarks) return mpLandmarks;
@@ -9241,7 +9422,7 @@ function useVerifiedLandmarks() {
     });
   }, [verified]);
 
-  return { verified, setVerified, clearVerified, mergeWithMediaPipe, boostFindingConfidence };
+  return { verified, setVerified, clearVerified, resetVerified, mergeWithMediaPipe, boostFindingConfidence };
 }
 
 export { PostureAnalysisModule, PC, vec3Angle, dist2D, classifySeverity, POSTURE_THRESHOLDS,
