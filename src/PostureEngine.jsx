@@ -8369,7 +8369,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       <div onClick={e=>e.stopPropagation()}
         style={{width:"100%",maxWidth:440,background:PC.surface,borderRadius:16,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{fontWeight:900,fontSize:"1rem",color:PC.text,marginBottom:4}}>📄 Generate Report</div>
-        <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:18}}>Fill in patient details then choose report type</div>
+        <div style={{fontSize:"0.78rem",color:PC.muted,marginBottom:18}}>Choose a report type</div>
 
         {/* Report type toggle */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
@@ -8386,25 +8386,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 fontSize:"0.82rem",fontWeight:700}}>{t.pages}</div>
             </button>
           ))}
-        </div>
-
-        {/* Patient info */}
-        <div style={{marginBottom:14}}>
-          <div style={{fontSize:"0.82rem",fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Patient Information</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {[{key:"name",label:"Full Name",placeholder:"e.g. Priya Sharma",full:true},
-              {key:"age",label:"Age",placeholder:"e.g. 28"},
-              {key:"sex",label:"Sex",placeholder:"Female / Male"},
-              {key:"occupation",label:"Occupation",placeholder:"e.g. Software Engineer",full:true}].map(f=>(
-              <div key={f.key} style={{gridColumn:f.full?"1/-1":"auto"}}>
-                <div style={{fontSize:"0.8rem",color:PC.muted,marginBottom:3}}>{f.label}</div>
-                <input value={patientInfo[f.key]||""} placeholder={f.placeholder}
-                  onChange={e=>setPatientInfo(p=>({...p,[f.key]:e.target.value}))}
-                  style={{width:"100%",padding:"7px 10px",border:`1px solid ${PC.border}`,borderRadius:7,
-                    fontSize:"0.82rem",color:PC.text,background:PC.bg,outline:"none"}}/>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Clinician info */}
