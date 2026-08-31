@@ -262,6 +262,13 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
       onClose();
     }
   }
+  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
+  // the space of screen"): was one full-width lavender pill per option --
+  // on a real phone, several of those plus the header/Done button pushed
+  // well past the fold. Now a compact checklist (thin divider rows, a
+  // small check/radio box instead of a full color-fill flip) with its OWN
+  // capped, internally-scrolling list -- header and Done stay pinned and
+  // visible no matter how many options a field has.
   return (
     <div className="select-popover">
       <div className="popover-head">
@@ -275,15 +282,17 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
           const isSel = multi ? selected.includes(opt) : value === opt;
           return (
             <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span>{opt}</span>
-              {isSel && <span className="popover-check">✓</span>}
+              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
+                {isSel && "✓"}
+              </span>
+              <span className="popover-item-label">{opt}</span>
             </button>
           );
         })}
       </div>
       {multi && (
         <button type="button" className="popover-done" onClick={onClose}>
-          Done
+          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
         </button>
       )}
     </div>

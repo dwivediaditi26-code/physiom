@@ -160,6 +160,14 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
       onClose();
     }
   }
+  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
+  // the space of screen"): was one full-width lavender pill per option --
+  // on a real phone, 4-8 of those plus the header/Done button pushed well
+  // past the fold, so opening a symptom list buried its own confirm button
+  // off-screen. Now a compact checklist (thin divider rows, a small check/
+  // radio box instead of a full color-fill flip) with its OWN capped,
+  // internally-scrolling list -- the header and Done stay pinned and
+  // visible no matter how many options a field has.
   return (
     <div className="select-popover">
       <div className="popover-head">
@@ -173,15 +181,17 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
           const isSel = multi ? selected.includes(opt) : value === opt;
           return (
             <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span>{opt}</span>
-              {isSel && <span className="popover-check">✓</span>}
+              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
+                {isSel && "✓"}
+              </span>
+              <span className="popover-item-label">{opt}</span>
             </button>
           );
         })}
       </div>
       {multi && (
         <button type="button" className="popover-done" onClick={onClose}>
-          Done
+          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
         </button>
       )}
     </div>
@@ -2043,14 +2053,18 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 8px 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 10px; max-height: 280px; overflow-y: auto; }
-        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.gray}; margin-bottom: 8px; padding: 0 2px; }
-        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 12px; }
-        .popover-list { display: flex; flex-direction: column; gap: 3px; }
-        .popover-item { display: flex; justify-content: space-between; align-items: center; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.ink}; padding: 9px 10px; border-radius: 9px; font-size: 13px; text-align: left; cursor: pointer; }
-        .popover-item-active { background: ${BRAND.purple}; color: #fff; font-weight: 600; }
-        .popover-check { font-size: 12px; }
-        .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 9px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
+        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
+        .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 9px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; }
+        .popover-item:last-child { border-bottom: none; }
+        .popover-item-label { flex: 1; }
+        .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+        .popover-check-icon-radio { border-radius: 50%; }
+        .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
+        .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
+        .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied
