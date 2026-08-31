@@ -287,7 +287,7 @@ export function orthoStyles() {
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; min-height: 36px; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
         .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
         .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
         .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
