@@ -6,6 +6,7 @@ import OutcomeStudy from "./OutcomeStudy.jsx";
 import KineticStudy from "./KineticStudy.jsx";
 import FunctionalStudy from "./FunctionalStudy.jsx";
 import CardioStudy from "./CardioStudy.jsx";
+import PalpationStudy from "./PalpationStudy.jsx";
 
 export default function StudyMode({ type, onBack }) {
   if (type === "rom") return <RomStudy onBack={onBack}/>;
@@ -16,5 +17,6 @@ export default function StudyMode({ type, onBack }) {
   if (type === "kinetic") return <KineticStudy onBack={onBack}/>;
   if (type === "fma") return <FunctionalStudy onBack={onBack}/>;
   if (type === "cardio") return <CardioStudy onBack={onBack}/>;
+  if (type === "palpation") return <PalpationStudy onBack={onBack}/>;
   return null;
 }

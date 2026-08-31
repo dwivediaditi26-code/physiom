@@ -14,11 +14,14 @@ import "./physiofeed.css";
 // alongside their existing card that opens the real clinical screen.
 // Outcome Measures/Kinetic Chain/Functional Movement joined ROM/MMT/
 // Special/Neuro here 2026-08-19 (Aditi's request: same grid treatment).
-// Everything else (Demographics, Subjective, Posture, Observation,
-// Palpation, and the rest of Advanced Assessment/Treatment & Exercise)
-// still has no such per-item data, so it keeps its single card as before
-// -- no study mode invented for it.
-const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio"]);
+// Palpation joined 2026-08-29 (Aditi: "Learn -> Palpation should be a
+// complete teaching library, not just a little 'How to palpate' popup"),
+// backed by real per-structure data OCR'd from the uploaded textbook --
+// see src/palpationData.js for how that content was sourced.
+// Everything else (Demographics, Subjective, and the rest of Advanced
+// Assessment/Treatment & Exercise) still has no such per-item data, so
+// it keeps its single card as before -- no study mode invented for it.
+const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinetic", "fma", "cardio", "palpation"]);
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the

@@ -1,0 +1,433 @@
+// Real reference content extracted from the uploaded textbook ("The Muscle
+// and Bone Palpation Manual with Trigger Points, Referral Patterns, and
+// Stretching", 1st ed.) — the PDF has no embedded text layer (it's a
+// scanned book), so every field here was pulled by OCR'ing the specific
+// page range cited in `source` for that structure, not invented or
+// paraphrased from general anatomy knowledge. Where the book didn't state
+// something the template asks for, the field is omitted rather than
+// filled with a guess.
+//
+// `images` is always a 3-slot array of Cloudinary public ids (or null).
+// StudyImage.jsx already renders a clean "no image" placeholder for a
+// null/missing id, so these stay null until real photos/illustrations
+// are uploaded — nothing here fabricates image content.
+//
+// Region coverage so far: Shoulder Girdle (Chapter 10, "Tour #1") — all
+// 15 structures in that tour, in full. The rest of the book (10 more
+// muscle tours + 3 bone/ligament chapters) follows the same
+// OCR-and-structure process in later passes; PALPATION_REGIONS below
+// marks those as not yet added rather than pretending they're covered.
+
+export const PALPATION_REGIONS = [
+  { key: "shoulder", label: "Shoulder Girdle", available: true },
+  { key: "cervical", label: "Cervical", available: false },
+  { key: "head", label: "Head", available: false },
+  { key: "arm", label: "Arm", available: false },
+  { key: "forearm", label: "Forearm", available: false },
+  { key: "trunk", label: "Trunk", available: false },
+  { key: "pelvis", label: "Pelvis", available: false },
+  { key: "thigh", label: "Thigh", available: false },
+  { key: "leg", label: "Leg", available: false },
+  { key: "foot", label: "Foot", available: false },
+  { key: "bones", label: "Bones & Ligaments", available: false },
+];
+
+const SRC = "The Muscle and Bone Palpation Manual, Ch.10 — Tour #1: Palpation of the Muscles of the Shoulder Girdle";
+
+export const PALPATION_DATA = {
+  shoulder: [
+    {
+      id: "palp_trapezius",
+      name: "Trapezius",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "External occipital protuberance, medial 1/3 of the superior nuchal line, nuchal ligament, and the spinous processes of C7 through T12",
+        insertion: "Lateral 1/3 of the clavicle, acromion process, and spine of the scapula",
+      },
+      actions: "Upper: elevates, retracts and upwardly rotates the scapula; extends, laterally flexes and contralaterally rotates the head/neck. Middle: retracts the scapula. Lower: depresses, retracts and upwardly rotates the scapula.",
+      patientPosition: "Prone, arm resting on the table at the side of the body.",
+      therapistPosition: "Standing to the side of the client.",
+      handPlacement: "Palpating hand just lateral to the lower thoracic spine, on the lower trapezius.",
+      steps: [
+        "Ask the client to abduct the arm to 90° with the elbow extended, and slightly retract the scapula (“pinch the shoulder blade toward the spine”). Gentle resistance can be added.",
+        "Palpate the lower trapezius: locate its lateral border by palpating perpendicular to it, then palpate the entire lower trapezius.",
+        "Repeat for the middle trapezius between the scapula and spine, strumming perpendicular to the fibres (vertically).",
+        "For the upper trapezius, ask the client to slightly extend the head and neck, then palpate the entire upper trapezius.",
+        "Once located, have the client relax the muscle and palpate to assess baseline tone.",
+      ],
+      feelFor: "The belly of each of the three functional parts (upper/middle/lower) contracting under your fingers as the client performs the corresponding action; baseline tone once relaxed.",
+      notes: [
+        "Retracting the scapula engages the whole trapezius, especially the middle fibres — clients often lift the arm into the air instead of just retracting; cue “pinch the shoulder blade back” without over-retracting.",
+        "The lateral border of the lower trapezius is often visible — look for it before placing your hands.",
+      ],
+      clinicalConsiderations: "TrPs are the most commonly found in the body (especially upper trapezius) and often relate to chronic elevation/anterior head posture, poor ergonomics, or compression (bag straps, tight bra). Referral must be distinguished from sternocleidomastoid, levator scapulae, and other cervical muscles depending on which fibres are involved.",
+      source: `${SRC}, pp.142–145`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_rhomboids",
+      name: "Rhomboids (major & minor)",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Spinous processes of C7 through T5",
+        insertion: "Medial border of the scapula, from the root of the spine to the inferior angle",
+      },
+      actions: "Retracts, elevates, and downwardly rotates the scapula at the scapulocostal joint.",
+      patientPosition: "Prone, hand resting in the small of the back.",
+      therapistPosition: "Standing to the side of the client.",
+      handPlacement: "Between the spinal column and the scapula at the midscapular level.",
+      steps: [
+        "Ask the client to lift the hand away from the small of the back.",
+        "Look for the lower border of the rhomboids to become visible — don't cover it with your palpating hand.",
+        "Palpate from the inferior to the superior aspect, strumming perpendicular to the fibre direction.",
+        "Once located, have the client relax the muscle and palpate baseline tone.",
+      ],
+      feelFor: "The muscle bulk becoming visible/palpable between the spine and scapula as the hand lifts off the low back; a gap between the rhomboids and levator scapulae superiorly.",
+      notes: [
+        "Hand-in-small-of-back position causes reciprocal inhibition of the trapezius, so you can palpate through it more easily.",
+        "The superior border is harder to find than the inferior border; it usually isn't possible to clearly distinguish rhomboid major from minor.",
+      ],
+      clinicalConsiderations: "TrPs often relate to overuse as scapular retractors/stabilizers, or chronic stretch from a rounded-shoulder posture with tight anterior pectorals. Pain is typically superficial and felt at rest; can be confused with fibromyalgia.",
+      source: `${SRC}, pp.146–147`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_serratus_posterior_superior",
+      name: "Serratus Posterior Superior",
+      type: "Muscle",
+      position: "Prone (detour from Rhomboids)",
+      attachments: {
+        origin: "Spinous processes of C7–T3",
+        insertion: "Ribs two through five",
+      },
+      patientPosition: "Prone, arm hanging off the table to protract the scapula and expose the muscle.",
+      handPlacement: "Deep to the rhomboids/scapula, over ribs two through five.",
+      steps: [
+        "With the arm hanging off the table (scapula protracted), palpate deep to the scapula over ribs 2–5.",
+      ],
+      feelFor: "A deep muscle layer beneath the rhomboids, over the upper posterior ribs.",
+      clinicalConsiderations: "TrPs often relate to labored breathing (COPD, asthma, bronchitis) and TrPs in the scalenes. Produces a deep ache felt deep to the scapula, sometimes numbness in the little finger, or C7–T3 joint dysfunction.",
+      source: `${SRC}, p.148`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_levator_scapulae",
+      name: "Levator Scapulae",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Transverse processes of C1 through C4",
+        insertion: "Medial border of the scapula, from the root of the spine to the superior angle",
+      },
+      actions: "Elevates and downwardly rotates the scapula; extends, laterally flexes and ipsilaterally rotates the neck.",
+      patientPosition: "Prone, hand resting in the small of the back.",
+      therapistPosition: "Standing or seated to the side of the client.",
+      handPlacement: "Just superior and medial to the superior angle of the scapula.",
+      steps: [
+        "With the hand in the small of the back, ask for a very short, gentle scapular elevation. Feel for the contraction deep to the trapezius.",
+        "Continue palpating toward its superior attachment, strumming perpendicular to the fibres.",
+        "Once palpating in the posterior triangle (superior to trapezius), the hand no longer needs to stay on the back; elevation can be more forceful and resisted.",
+        "Palpate as far superiorly as possible — near its top attachment it runs deep to the sternocleidomastoid.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Contraction deep to the trapezius near the superior angle of the scapula; in the posterior triangle it becomes superficial and is sometimes visible in middle-aged/older adults.",
+      notes: [
+        "Do not ask for a forceful elevation early — it overcomes the reciprocal inhibition of the upper trapezius and blocks palpation at the inferior attachment.",
+        "The transverse process of C1 sits directly inferior to the ear, between the mastoid process and the mandible ramus.",
+      ],
+      clinicalConsiderations: "Classic “stiff neck” / torticollis presentation with restricted contralateral neck rotation. Often related to bag/purse straps, phone-cradling, poor monitor position, or psychological stress.",
+      source: `${SRC}, pp.149–151`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_posterior_deltoid",
+      name: "Posterior Deltoid",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Spine of the scapula",
+        insertion: "Deltoid tuberosity of the humerus",
+      },
+      actions: "Extends, abducts, laterally rotates, and horizontally extends the arm at the shoulder joint.",
+      patientPosition: "Prone, arm abducted 90° and resting on the table, forearm hanging off the table.",
+      therapistPosition: "Standing or seated to the side of the client.",
+      handPlacement: "Just inferior to the lateral end of the spine of the scapula; support hand on the distal arm.",
+      steps: [
+        "Ask the client to horizontally extend the arm (lift straight up toward the ceiling); feel for the posterior fibres contracting. Resistance can be added.",
+        "Palpate from the spine of the scapula to the deltoid tuberosity.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Contraction of the posterior fibres just inferior to the scapular spine, tracking distally to the deltoid tuberosity.",
+      notes: [
+        "Do not ask for lateral rotation to isolate this muscle — infraspinatus/teres minor will also engage, blurring the inferior border.",
+      ],
+      clinicalConsiderations: "Overuse from prolonged abduction/extension (e.g. keyboard work) or direct trauma. Often confused with rotator cuff tear, subdeltoid bursitis, or joint arthritis.",
+      source: `${SRC}, pp.152–153`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_infraspinatus_teres_minor",
+      name: "Infraspinatus & Teres Minor",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Infraspinatus: infraspinous fossa of the scapula. Teres minor: superior 2/3 of the dorsal surface of the lateral border of the scapula.",
+        insertion: "Both to the greater tubercle of the humerus.",
+      },
+      actions: "Infraspinatus: laterally rotates the arm. Teres minor: laterally rotates and adducts the arm.",
+      patientPosition: "Prone, arm resting on the table, forearm hanging off the table.",
+      therapistPosition: "Seated to the side of the client, client's forearm between your knees.",
+      handPlacement: "Just inferior to the spine of the scapula, in the infraspinous fossa.",
+      steps: [
+        "Ask the client to laterally rotate the arm against the resistance of your knee; feel for infraspinatus contraction in the infraspinous fossa.",
+        "Continue palpating distally toward the greater tubercle, strumming perpendicular to the fibres.",
+        "Locate the superior lateral border of the scapula for teres minor; feel it contract with the same lateral-rotation action.",
+        "Continue palpating its tendon toward the greater tubercle.",
+        "Once located, relax both and assess baseline tone.",
+      ],
+      feelFor: "Contraction with resisted lateral rotation; distinguishing the two from teres major by alternating lateral (teres minor/infraspinatus) vs medial (teres major) rotation.",
+      notes: [
+        "Distal tendons run deep to the posterior deltoid, which also contracts with lateral rotation — use a very gentle contraction, or flex the shoulder (seated), to reduce deltoid interference.",
+        "The infraspinatus/teres minor border can be hard to find; the teres minor/teres major border is easier (alternate lateral vs medial rotation).",
+      ],
+      clinicalConsiderations: "Restricts medial rotation (e.g. reaching to the lower back); infraspinatus TrPs give deep anterior shoulder pain, teres minor TrPs can cause quadrilateral space syndrome (axillary nerve entrapment). Often misread as rotator cuff lesions or cervical disc syndrome.",
+      source: `${SRC}, pp.154–157`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_teres_major",
+      name: "Teres Major",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Inferior angle and inferior 1/3 of the dorsal surface of the lateral border of the scapula",
+        insertion: "Medial lip of the bicipital groove of the humerus",
+      },
+      actions: "Medially rotates, adducts, and extends the arm; upwardly rotates the scapula.",
+      patientPosition: "Prone, arm resting on the table, forearm hanging off the table.",
+      therapistPosition: "Seated to the side of the client, client's forearm between your knees.",
+      handPlacement: "Just lateral to the lower aspect of the lateral border of the scapula.",
+      steps: [
+        "Ask the client to medially rotate the arm against the resistance of your knee; feel for contraction at the inferior lateral border of the scapula.",
+        "Continue palpating distally toward the humerus, strumming perpendicular to the fibres.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Contraction with resisted medial rotation, distinguished from teres minor (which contracts with lateral rotation instead).",
+      notes: [
+        "Can be hard to distinguish from latissimus dorsi, which sits next to it and shares the same actions; on the humerus, latissimus attaches more anteriorly, teres major slightly more distal.",
+      ],
+      clinicalConsiderations: "TrPs from forceful arm extension (e.g. rowing) give deep posterior-shoulder pain, restricted abduction, or scapular winging/lateral tilt.",
+      source: `${SRC}, pp.158–159`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_latissimus_dorsi_detour",
+      name: "Latissimus Dorsi (detour)",
+      type: "Muscle",
+      position: "Prone",
+      handPlacement: "Alongside teres major, at the posterior axillary fold.",
+      steps: [
+        "With the client prone, ask for resisted extension or medial rotation of the arm and palpate alongside the teres major.",
+      ],
+      feelFor: "The tendon is more easily distinguished at the humerus than teres major's, since it attaches more anteriorly (more superficial of the two tendons).",
+      clinicalConsiderations: "Full palpation of latissimus dorsi is covered separately in Tour #7 (Chapter 16, p.353) — not yet added to this library.",
+      source: `${SRC}, p.159`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_supraspinatus",
+      name: "Supraspinatus",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Supraspinous fossa of the scapula",
+        insertion: "Greater tubercle of the humerus",
+      },
+      actions: "Abducts and flexes the arm at the shoulder joint.",
+      patientPosition: "Prone, arm resting on the table at the side of the body.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Just superior to the spine of the scapula, in the supraspinous fossa; support hand just proximal to the elbow if resistance is given.",
+      steps: [
+        "Ask for a very short (~10–20°) shoulder abduction; feel for the belly contracting in the supraspinous fossa.",
+        "Gentle resistance from the support hand can bring out the contraction further.",
+        "For the distal tendon: locate the acromion process and drop just distally/laterally off it, deep to the deltoid.",
+        "Strum perpendicular to the distal tendon with the muscle either relaxed or gently contracting.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "The belly contracting superior to the scapular spine on a short abduction; the distal tendon deep to the deltoid just off the acromion.",
+      notes: [
+        "The upper trapezius (superficial to supraspinatus) also stabilizes the scapula during abduction — asking for movement halfway between abduction and flexion (seated) minimizes trapezius interference.",
+        "Two ways to find the distal tendon: follow the scapular spine line to just distal of the acromion, or find the bicipital groove and palpate just posterior to it on the greater tubercle.",
+      ],
+      clinicalConsiderations: "TrPs from sustained overhead work, carrying weight with the arm hanging, or trauma. Produces joint crepitus, painful abduction, and tenderness at the humeral attachment. Often misdiagnosed as rotator cuff tendinitis, bursitis, cervical disc syndrome, or frozen shoulder. Shares a referral zone with infraspinatus at the lateral shoulder, though infraspinatus referral tends to be a deeper ache.",
+      source: `${SRC}, pp.160–162`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_anterior_deltoid",
+      name: "Anterior Deltoid",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Lateral 1/3 of the clavicle",
+        insertion: "Deltoid tuberosity of the humerus",
+      },
+      actions: "Flexes, abducts, medially rotates, and horizontally flexes the arm at the shoulder joint.",
+      patientPosition: "Supine, arm resting on the table against the body.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just inferior to the lateral end of the clavicle; support hand just proximal to the elbow.",
+      steps: [
+        "Ask the client to lift the arm halfway between flexion and abduction; feel for the anterior deltoid contracting.",
+        "Gentle resistance from the support hand brings out the contraction further.",
+        "Strum the fibres perpendicular, from the lateral clavicle to the deltoid tuberosity.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "A palpable gap between the anterior deltoid and the clavicular head of pectoralis major when both are contracted.",
+      notes: [
+        "The clavicular head of pectoralis major usually co-contracts with horizontal flexion — expect it, don't mistake it for deltoid.",
+      ],
+      clinicalConsiderations: "Overuse from sustained abduction/flexion or direct trauma. Often confused with rotator cuff tear, bicipital tendinitis, or subacromial bursitis.",
+      source: `${SRC}, pp.163–164`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_subscapularis",
+      name: "Subscapularis",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Subscapular fossa of the scapula",
+        insertion: "Lesser tubercle of the humerus",
+      },
+      actions: "Medially rotates the arm at the shoulder joint.",
+      patientPosition: "Supine, arm resting on the trunk, other hand gently holding the elbow of the side being palpated.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Finger pads against the anterior surface of the scapula; support hand reaches under the body to grip the medial border of the scapula.",
+      steps: [
+        "Passively retract the client's scapula with your support hand.",
+        "Ask the client to take a deep breath; as they exhale, slowly and firmly press your finger pads against the anterior scapular surface.",
+        "Verify placement by asking for medial rotation (the arm will lift slightly) and feeling for the contraction.",
+        "Palpate as much of the muscle as possible, pressing deeper toward the medial border.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "A firm sheet against the anterior scapula that contracts on medial rotation; the distal tendon near the lesser tubercle after following the muscle in small steps.",
+      notes: [
+        "Sink in slowly, on the exhale, with a firm confident touch — not painful for the client if done this way.",
+        "Subscapularis (anterior scapular surface) and serratus anterior (rib cage wall) are both between scapula and ribs — orientation of your finger pads is what separates the two.",
+      ],
+      clinicalConsiderations: "TrPs from overuse (e.g. swimming), trauma, prolonged immobilization in medial rotation, or chronic rounded-shoulder posture. Restricts and pains lateral rotation (and therefore full abduction). Often confused with frozen shoulder, rotator cuff lesions, or thoracic outlet syndrome.",
+      source: `${SRC}, pp.165–168`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_serratus_anterior",
+      name: "Serratus Anterior",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Anterolateral surfaces of ribs one through nine",
+        insertion: "Anterior surface of the entire medial border of the scapula",
+      },
+      actions: "Protracts and upwardly rotates the scapula; upper fibres can elevate, lower fibres can depress the scapula.",
+      patientPosition: "Supine, arm straight up in the air pointed at the ceiling.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Finger pads against the lateral rib cage wall, directly inferior to the axilla.",
+      steps: [
+        "Ask the client to reach the hand toward the ceiling (scapular protraction); feel for the contraction.",
+        "Resistance can be added with the support hand.",
+        "Continue palpating as much of the muscle as possible.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "A sheet contracting against the lateral rib wall on protraction; upper fibres (angle the arm ~135° flexion) vs lower fibres (angle the arm ~45° flexion) separately.",
+      notes: [
+        "Upper fibres near the first two ribs are extremely difficult to access; sink in slowly and firmly deep to pectoralis major.",
+        "Serratus anterior (rib cage) and subscapularis (anterior scapula) sit in the same interval — finger-pad orientation distinguishes them.",
+      ],
+      clinicalConsiderations: "TrPs from push-ups, punching, racquet sports, or laboured breathing. Restricts scapular retraction; can mimic angina/heart attack referral if on the left side, or costochondritis, rib dysfunction, thoracic outlet syndrome.",
+      source: `${SRC}, pp.169–171`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_pectoralis_major",
+      name: "Pectoralis Major",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Medial half of the clavicle, sternum, and costal cartilages of ribs one through seven",
+        insertion: "Lateral lip of the bicipital groove of the humerus",
+      },
+      actions: "Whole muscle: adducts, medially rotates, horizontally flexes the arm; protracts the scapula. Clavicular head: flexes the arm. Sternocostal head: extends the arm from flexion; depresses the scapula.",
+      patientPosition: "Supine, arm resting at the side.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Over the lower aspect of the anterior axillary fold of tissue for the sternocostal head; just inferior to the medial clavicle for the clavicular head.",
+      steps: [
+        "Sternocostal head: ask the client to adduct the arm against resistance (or against the body wall); feel for contraction and palpate toward the medial attachment.",
+        "Clavicular head: place the hand just inferior to the medial clavicle, ask for an oblique flexion+adduction movement against resistance.",
+        "Feel for the clavicular head contracting and palpate toward the distal attachment, strumming perpendicular.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "A visible/palpable groove between the clavicular head and the anterior deltoid, and between the two heads of pectoralis major during resisted horizontal flexion.",
+      notes: [
+        "Abducting the arm away from the body lets you grasp the whole anterior axillary fold (the muscle) between your fingers.",
+      ],
+      clinicalConsiderations: "TrPs from repetitive lifting/adduction, rounded-shoulder posture, sling/cast use, or tight bra straps; a TrP between ribs 5–6 on the right has been linked to cardiac arrhythmia. Can mimic angina/MI (especially left-sided), rib dysfunction, or costochondritis.",
+      source: `${SRC}, pp.172–174`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_pectoralis_minor",
+      name: "Pectoralis Minor",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Ribs three through five",
+        insertion: "Medial surface of the coracoid process of the scapula",
+      },
+      actions: "Protracts, depresses, and downwardly rotates the scapula; elevates ribs 3–5.",
+      patientPosition: "Supine, hand under the body in the small of the back.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Just inferior to the coracoid process of the scapula.",
+      steps: [
+        "Ask the client to press the hand/forearm down against the table; feel for the contraction through pectoralis major.",
+        "Continue palpating toward the rib attachments, strumming perpendicular to the fibres.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "Contraction felt through pectoralis major; usually possible to distinguish each of its three slips individually.",
+      notes: [
+        "This action requires downward rotation of the scapula — easiest to feel with the client seated instead.",
+      ],
+      clinicalConsiderations: "TrPs can cause pectoralis minor syndrome (neurologic/vascular symptoms in the arm), rounded-shoulder posture, or scapular winging. Overuse, sling/cast use, heavy backpack straps, or referral from pectoralis major/scalene TrPs are common causes.",
+      source: `${SRC}, pp.175–176`,
+      images: [null, null, null],
+    },
+    {
+      id: "palp_subclavius",
+      name: "Subclavius",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "First rib at the junction with its costal cartilage",
+        insertion: "Middle 1/3 of the inferior surface of the clavicle",
+      },
+      actions: "Depresses, protracts, and downwardly rotates the clavicle; elevates the first rib.",
+      patientPosition: "Supine, arm medially rotated at the shoulder and resting on the table.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Fingers curled around the clavicle, finger pads on its inferior surface.",
+      steps: [
+        "With the region relaxed, feel for the subclavius on the underside of the clavicle.",
+        "Ask the client to depress the shoulder girdle (scapula and clavicle); feel for the contraction.",
+        "Palpate from attachment to attachment.",
+        "Once located, relax and assess baseline tone.",
+      ],
+      feelFor: "A narrow band under the clavicle, more accessible with the arm passively medially rotated (slackens pectoralis major) and passively abducted (upwardly rotates the clavicle, exposing more of its inferior surface).",
+      notes: [
+        "Described in the source as one of the more challenging structures in this tour to palpate confidently.",
+      ],
+      clinicalConsiderations: "TrPs can produce costoclavicular syndrome (neurologic/vascular arm symptoms). Often confused with cervical disc syndrome, anterior scalene syndrome, or pectoralis minor syndrome.",
+      source: `${SRC}, pp.177–178`,
+      images: [null, null, null],
+    },
+  ],
+};
