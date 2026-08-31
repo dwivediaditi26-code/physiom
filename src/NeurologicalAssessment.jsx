@@ -1908,6 +1908,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       if (prev.meta && prev.meta.setting === meta.setting && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
       return { ...prev, meta };
     });
+    // Also mirror the chosen setting onto the shared patient record's own
+    // top-level care_setting field (2026-08-31) -- PatientDatabase.jsx's
+    // IPD/Outpatient/Post-op filter pills read that field directly; without
+    // this, picking "Inpatient" here never showed up as IPD in the patient
+    // list at all.
+    if (setting) {
+      const careSetting = setting === "postop" ? "postop" : (setting === "inpatient" || setting === "icu") ? "ipd" : "outpatient";
+      onSave?.("care_setting", careSetting);
+    }
   }, [phase, setting, stepOrder, customStepsMeta]);
 
   // One shared patient identity with Ortho's Demographics, not two

@@ -241,7 +241,7 @@ function AddAssessmentModal({ activeIds, onToggle, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region + type
    of surgery have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoPostOpAssessment({ selectedRegions, condition, customConditionLabel, onExit }) {
+export default function OrthoPostOpAssessment({ selectedRegions, condition, customConditionLabel, onExit, onSave, activePatientId, patientData }) {
   const conditionMeta = POSTOP_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -250,9 +250,21 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
     return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || promoted.includes(id));
   });
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({});
+  // Seed Case Info's name/age/sex from the patient already open (if any) so
+  // this doesn't ask the physio to re-type demographics that already exist
+  // on the record, and so Save below writes back onto the same person
+  // instead of an unnamed/mismatched one.
+  const [data, setData] = useState(() => {
+    const dem = patientData || {};
+    const caseInfo = {};
+    if (dem.dem_name) caseInfo.name = dem.dem_name;
+    if (dem.dem_age) caseInfo.age = dem.dem_age;
+    if (dem.dem_sex) caseInfo.sex = dem.dem_sex;
+    return Object.keys(caseInfo).length ? { caseInfo } : {};
+  });
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -299,6 +311,28 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   const caseInfo = data.caseInfo || {};
   const patientHeader = [caseInfo.name, [caseInfo.age && `${caseInfo.age}y`, caseInfo.sex].filter(Boolean).join(" / "), caseInfo.caseId].filter(Boolean);
   const regionsLabel = regionLabelList(selectedRegions) || "—";
+
+  // Persist a snapshot on the active patient record -- same set(key,value)
+  // pattern Outpatient/Cardio/Neuro's own Final Review "Save" already uses.
+  // This was entirely missing before (2026-08-31 fix): this component never
+  // received onSave/activePatientId at all, so a full post-op assessment
+  // vanished the moment you left the screen.
+  function saveAssessment() {
+    if (!onSave) return;
+    onSave("ortho_postop_assessment", JSON.stringify({
+      savedAt: new Date().toISOString(),
+      patientId: activePatientId || null,
+      regions: regionsLabel,
+      condition: conditionLabel,
+      data,
+    }));
+    if (caseInfo.name) onSave("dem_name", caseInfo.name);
+    // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
+    // top-level field directly.
+    onSave("care_setting", "postop");
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1800);
+  }
 
   return (
     <div className="app-shell">
@@ -349,17 +383,24 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "outcomeMeasure" && <OutcomeMeasureSection data={data} setData={setData} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
           {current.id === "review" && (
-            <AssessmentSummary
-              icon="✅"
-              title="Post-operative Rehab Assessment"
-              sub={`${regionsLabel} · ${conditionLabel}`}
-              steps={steps}
-              data={data}
-              onEdit={jumpTo}
-              exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
-              extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
-              formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection }}
-            />
+            <>
+              <AssessmentSummary
+                icon="✅"
+                title="Post-operative Rehab Assessment"
+                sub={`${regionsLabel} · ${conditionLabel}`}
+                steps={steps}
+                data={data}
+                onEdit={jumpTo}
+                exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
+                extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
+                formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection }}
+              />
+              {onSave && (
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                  {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+                </button>
+              )}
+            </>
           )}
         </div>
 

@@ -3965,19 +3965,23 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     { id:"pedia",  label:"Pedia" },
   ];
   // Care setting (2026-08-27, Aditi: "each patient specify ipd opd
-  // outpatients etc") -- nothing in the intake or Ortho pathway wizard
-  // actually persists which pathway (IPD/Post-op/Outpatient) a patient was
-  // assessed under onto the shared patient record yet, so this derives a
-  // best-effort guess from field names that are unique to each pathway
-  // component (OrthoIPDAssessment.jsx / OrthoPostOpAssessment.jsx) and
-  // honestly defaults to Outpatient -- the pathway picker's default and by
-  // far the most common case -- rather than fabricating a setting with no
-  // basis. Once pathway gets written to the record for real, this starts
-  // reading real data with no call-site changes needed.
+  // outpatients etc") -- every assessment wizard (Ortho IPD/Post-op/
+  // Outpatient, Neuro, Cardio) now writes a real top-level
+  // data.care_setting field on save, so that's read first and is
+  // authoritative. Records saved before that existed have no such field,
+  // so this still falls back to a best-effort guess from field names
+  // unique to each pathway (Ortho's legacy IPD/Post-op field names, then
+  // Neuro/Cardio's own meta.setting) before finally defaulting to
+  // Outpatient -- the pathway picker's default and by far the most common
+  // case -- rather than fabricating a setting with no basis at all.
   const careSettingOf = (p) => {
     const d = p.data || {};
+    if (d.care_setting === "ipd" || d.care_setting === "postop" || d.care_setting === "outpatient") return d.care_setting;
     if (d.postOpDay || d.surgeryDate || d.surgeonInstructions) return "postop";
     if (d.reductionMethod || d.amputationCause || d.recordReview) return "ipd";
+    const legacySetting = d.neuro?.meta?.setting || d.cardio?.meta?.setting;
+    if (legacySetting === "postop") return "postop";
+    if (legacySetting === "inpatient" || legacySetting === "icu") return "ipd";
     return "outpatient";
   };
   const CARE_SETTINGS = [
