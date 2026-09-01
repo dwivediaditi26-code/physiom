@@ -29,10 +29,15 @@ describe("PhysioFeed tab", () => {
 
   it("renders the feed with a clear demo-content disclosure, not silently as real community content", async () => {
     render(<App />);
-    await waitFor(() => {
-      expect(screen.getAllByText("PhysioFeed").length).toBeGreaterThan(0);
-    }, { timeout: 10_000 });
-    const [physiofeedTab] = screen.getAllByText("PhysioFeed");
+    // Plain text "PhysioFeed" is ambiguous -- the Home dashboard also
+    // renders a "PhysioFeed" preview widget (DashboardModules.jsx) whose
+    // heading is that same literal text but isn't a nav control, and it
+    // sits earlier in DOM order than the real bottom-nav tab button below.
+    // getAllByText(...)[0]/.first() isn't guaranteed to land on the real
+    // tab, so this used to click a no-op and time out waiting for "Demo
+    // content". data-testid="bnav-tab-physiofeed" (AppFull.jsx) targets the
+    // actual tab button unambiguously.
+    const physiofeedTab = await screen.findByTestId("bnav-tab-physiofeed", {}, { timeout: 10_000 });
     fireEvent.click(physiofeedTab);
     await waitFor(() => {
       expect(screen.getByText(/Demo content/i)).toBeTruthy();
