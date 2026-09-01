@@ -100,12 +100,6 @@ export default function PalpationDetail({ item, onBack }) {
           {item.clinicalConsiderations && (
             <InfoBox icon="⚠️" label="Clinical considerations" tint="amber">{item.clinicalConsiderations}</InfoBox>
           )}
-
-          {item.source && (
-            <div className="text-[11px] text-slate-400 border-t border-slate-100 pt-2.5">
-              📚 Source: {item.source}
-            </div>
-          )}
         </div>
       </div>
     </div>

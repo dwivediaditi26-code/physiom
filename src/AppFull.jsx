@@ -505,17 +505,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // a specialty does the exact same real thing (blank-slate + navigate to
   // that specialty's real tool) no matter which entry point was used.
   function startSpecialty(st) {
+    // Only blank-slate when there's no patient already open. Wiping
+    // activePatientId unconditionally used to do this every time, even with
+    // a patient already loaded -- so tapping e.g. "Neuro" right after
+    // creating/opening a patient silently started a second, disconnected
+    // blank record instead of continuing that same patient's chart, and
+    // the wizard's own name field being re-typed then auto-created a
+    // duplicate patient (see the "no active patient" auto-create effect
+    // above). Keeping the active patient here lets the wizard seed from
+    // and save back onto the one record instead.
+    const hasActivePatient = !!activePatientId;
     if (st.id === "cardio") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("ortho_new_assessment");
     } else {
       setStream(st.id);

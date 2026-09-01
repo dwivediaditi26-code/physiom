@@ -1,6 +1,11 @@
 import React, { useState, useRef } from "react";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
 import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
+import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
+import { orthoStyles } from "./orthoStyles.js";
+import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
+import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
+import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
@@ -204,6 +209,28 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   const neuroDem = d.neuro?.demographics || {};
   const activeDem = cardioDem.diagnosis ? cardioDem : neuroDem;
   const primaryDiagnosis = cardioDem.diagnosis || neuroDem.diagnosis || "No diagnosis recorded yet";
+
+  // Ortho (2026-09-01, Aditi: "ortho patient profile should be same as
+  // cardio/neuro, don't build a separate one") -- IPD/Post-op/Outpatient
+  // each save their own JSON-stringified snapshot (see saveAssessment in
+  // OrthoIPDAssessment.jsx / OrthoPostOpAssessment.jsx /
+  // OrthoOutpatientAssessment.jsx), unlike Cardio/Neuro's real nested
+  // object, so this parses whichever one exists. Body chart data lives
+  // inside the parsed snapshot's own Pain section (data.pain.body_chart_pro)
+  // and is folded into that section's rows automatically by each pathway's
+  // formatPainSection -- no separate widget needed, same as it already
+  // works inside each wizard's own Final Review screen.
+  const orthoPathway = d.ortho_ipd_assessment ? "ipd" : d.ortho_postop_assessment ? "postop" : d.ortho_outpatient_assessment ? "outpatient" : null;
+  const orthoParsed = (() => {
+    try {
+      const raw = orthoPathway === "ipd" ? d.ortho_ipd_assessment : orthoPathway === "postop" ? d.ortho_postop_assessment : orthoPathway === "outpatient" ? d.ortho_outpatient_assessment : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+  const orthoSteps = orthoPathway === "ipd" ? buildOrthoIPDAssessSteps() : orthoPathway === "postop" ? buildOrthoPostOpAssessSteps() : orthoPathway === "outpatient" ? buildOrthoAssessSteps() : null;
+  const orthoFormatters = orthoPathway === "ipd" ? orthoIPDSummaryFormatters : orthoPathway === "postop" ? orthoPostOpSummaryFormatters : orthoPathway === "outpatient" ? orthoSummaryFormatters : null;
+  const orthoTitle = orthoPathway === "ipd" ? "IPD Orthopedic Assessment" : orthoPathway === "postop" ? "Post-operative Rehab Assessment" : "Outpatient Musculoskeletal Assessment";
+  const hasOrtho = !!(orthoParsed && orthoSteps);
   const pid = patient?.id ? "PM-" + patient.id.slice(0, 6).toUpperCase() : "";
   const name = d.dem_name || patient?.name || "";
   const initials = (name || "?").split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
@@ -334,7 +361,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {/* ═══ ASSESSMENT ═══ */}
       {tab === "assessment" && (
         <>
-          {!hasCardio && !hasNeuro && (
+          {!hasCardio && !hasNeuro && !hasOrtho && (
             <Card><EmptyRow>No assessments recorded yet.</EmptyRow></Card>
           )}
           {hasCardio && <CardioSummaryStyles />}
@@ -360,18 +387,43 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             </Card>
           )}
 
-          {/* New Ortho Assessment -- standalone tool, same pattern as
-              Cardio/Neuro above. Doesn't persist to the patient record yet
-              (see OrthoAssessmentNew.jsx), so this is always offered as a
-              start/continue entry point rather than a saved-data summary. */}
-          <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 24 }}>🦴</span>
-              <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>Ortho Assessment</span>
-            </div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Standalone orthopaedic assessment tool.</div>
-            <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ width: "100%" }}>+ Open Ortho Assessment</GhostBtn>
-          </Card>
+          {/* Ortho Assessment -- real saved summary (2026-09-01), same
+              pattern as Cardio/Neuro above: their own module's summary
+              renderer, fed with their own saved data, jumping back into
+              the real wizard to edit. Which pathway (IPD/Post-op/
+              Outpatient) is whichever one this patient was actually
+              assessed under -- see orthoPathway above. */}
+          {hasOrtho ? (
+            <>
+              <style>{orthoStyles()}</style>
+              <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontSize: 24 }}>🦴</span>
+                  <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
+                  <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
+                </div>
+                <OrthoAssessmentSummary
+                  icon="🦴"
+                  title={orthoTitle}
+                  sub={[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}
+                  steps={orthoSteps}
+                  data={orthoParsed.data || {}}
+                  onEdit={() => onNav?.("ortho_new_assessment")}
+                  exportHeaderLines={[orthoTitle.toUpperCase()]}
+                  formatters={orthoFormatters}
+                />
+              </Card>
+            </>
+          ) : (
+            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 24 }}>🦴</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>Ortho Assessment</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Standalone orthopaedic assessment tool.</div>
+              <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ width: "100%" }}>+ Open Ortho Assessment</GhostBtn>
+            </Card>
+          )}
         </>
       )}
 

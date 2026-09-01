@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -100,17 +100,53 @@ function PerformPane({ perform }) {
   const active = slots[Math.min(idx, slots.length - 1)];
   const activeSrc = active.src && !erroredSrcs.has(active.src) ? active.src : null;
 
+  // Swipe left/right between the (up to 3) photo slots (2026-09-01, Aditi:
+  // "the infocard that have images is not able to slide when I slide left
+  // or right ... three images per infocard, it is not moving") -- only the
+  // dots were clickable before, no touch-drag handling existed at all. A
+  // genuine swipe (past SWIPE_THRESHOLD) pages the photo instead of the
+  // tap-to-fullscreen action below; didSwipe suppresses the click that
+  // mobile browsers still fire after touchend so a swipe doesn't also pop
+  // the lightbox open.
+  const touchStartX = useRef(null);
+  const didSwipe = useRef(false);
+  const SWIPE_THRESHOLD = 30;
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+    didSwipe.current = false;
+  }
+  function handleTouchEnd(e) {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < SWIPE_THRESHOLD || slots.length < 2) return;
+    didSwipe.current = true;
+    if (dx < 0) setIdx((i) => Math.min(slots.length - 1, i + 1)); // swiped left -> next photo
+    else setIdx((i) => Math.max(0, i - 1)); // swiped right -> previous photo
+  }
+  function handleImageClick() {
+    if (didSwipe.current) { didSwipe.current = false; return; }
+    setFullscreen(true);
+  }
+
   return (
     <>
       {/* Image slot(s) — pass perform.image (single) or perform.images (up
           to 3, each a URL or {src,label}) once real photos exist; until
           then this shows a placeholder per slot so the layout never has
           to change when photos are added one at a time. Tapping a real
-          photo opens it full-screen (ImageLightbox below) -- same
-          renderer for every Cardio and Neuro card, so this applies
-          everywhere at once. */}
+          photo opens it full-screen (ImageLightbox below), swiping pages
+          between slots -- same renderer for every Cardio and Neuro card,
+          so this applies everywhere at once. */}
       {activeSrc ? (
-        <div style={{ ...s.illusImg, cursor: "pointer" }} onClick={() => setFullscreen(true)} role="button" aria-label="View photo full screen">
+        <div
+          style={{ ...s.illusImg, cursor: "pointer", touchAction: "pan-y" }}
+          onClick={handleImageClick}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          role="button"
+          aria-label="View photo full screen, swipe for more photos"
+        >
           <img
             src={activeSrc}
             alt={active.label || perform.caption || ""}
@@ -120,7 +156,10 @@ function PerformPane({ perform }) {
           {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
         </div>
       ) : (
-        <div style={s.illus}>
+        // Swipe still needs to work from here too -- a slot with no photo
+        // yet (partial upload progress) shouldn't block swiping across to
+        // a sibling slot that does have one.
+        <div style={{ ...s.illus, touchAction: "pan-y" }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div style={s.illusPlaceholder}>
             <div style={s.illusPlaceholderIcon}>🖼️</div>
             <div style={s.illusCap}>{active.label || perform.caption || "Add position/technique image"}</div>
@@ -159,10 +198,32 @@ function PerformPane({ perform }) {
 // a dot to page between the card's other photos without leaving fullscreen.
 function ImageLightbox({ slots, idx, setIdx, caption, onClose }) {
   const active = slots[idx];
+  // Same swipe-to-page gesture as the inline card view above -- only
+  // click-dots worked here too. Pages among slots that actually have a
+  // photo (matching which slots the dots below render for).
+  const validIdx = slots.map((sl, i) => (sl.src ? i : null)).filter((i) => i !== null);
+  const touchStartX = useRef(null);
+  function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function handleTouchEnd(e) {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 30 || validIdx.length < 2) return;
+    const pos = validIdx.indexOf(idx);
+    if (dx < 0 && pos < validIdx.length - 1) setIdx(validIdx[pos + 1]); // swiped left -> next
+    else if (dx > 0 && pos > 0) setIdx(validIdx[pos - 1]); // swiped right -> previous
+  }
   return createPortal(
     <div style={s.lightboxDim} onClick={onClose}>
       <button type="button" style={s.lightboxClose} onClick={onClose} aria-label="Close full-screen photo">✕</button>
-      <img src={active.src} alt={active.label || caption || ""} style={s.lightboxImg} onClick={(e) => e.stopPropagation()} />
+      <img
+        src={active.src}
+        alt={active.label || caption || ""}
+        style={{ ...s.lightboxImg, touchAction: "pan-y" }}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      />
       {(active.label || caption) && <div style={s.lightboxCap}>{active.label || caption}</div>}
       {slots.filter((sl) => sl.src).length > 1 && (
         <div style={s.imgDots} onClick={(e) => e.stopPropagation()}>
