@@ -105,6 +105,15 @@ const STEP_META = {
 
 const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 
+// Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
+// the EXACT same summary this wizard's own Final Review step uses (same
+// pattern as OrthoOutpatientAssessment.jsx's buildOrthoAssessSteps /
+// orthoSummaryFormatters).
+export function buildOrthoPostOpAssessSteps() {
+  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+}
+export const orthoPostOpSummaryFormatters = { rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
+
 /* ============================================================
    SECTION CONTENT
    ============================================================ */
