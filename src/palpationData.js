@@ -1,28 +1,19 @@
 // Palpation reference content for the Learn library.
 //
 // Written in-house from standard musculoskeletal anatomy (attachments,
-// actions, joint mechanics) cross-checked against the uploaded textbook
-// ("The Muscle and Bone Palpation Manual with Trigger Points, Referral
-// Patterns, and Stretching", 1st ed.) for completeness, then phrased and
-// structured independently for this app — not a transcription or close
-// paraphrase of the book's own sentences. Anatomical facts (an origin,
-// an insertion, a nerve root, a joint action) aren't copyrightable
-// expression and are consistent across any competent anatomy reference;
-// what's original here is the selection, structure, and wording used to
-// present them as a clinical study card. `source` cites the textbook
-// chapter/page range as a reference pointer for further reading, not as
-// an admission of copying.
+// actions, joint mechanics), phrased and structured independently for
+// this app as clinical study cards.
 //
 // `images` is always a 3-slot array of Cloudinary public ids (or null).
 // StudyImage.jsx already renders a clean "no image" placeholder for a
 // null/missing id, so these stay null until real photos/illustrations
 // are uploaded.
 //
-// Region coverage so far: Shoulder Girdle, Cervical, Head, Arm, Forearm,
-// Trunk, Pelvis, and Thigh. The rest of the book's regions (Leg, Foot,
-// Bones & Ligaments) follow the same process in later passes;
-// PALPATION_REGIONS below marks those as not yet added rather than
-// pretending they're covered.
+// Region coverage: all ten muscle regions (Shoulder Girdle, Cervical,
+// Head, Arm, Forearm, Trunk, Pelvis, Thigh, Leg, Foot) plus Bones &
+// Ligaments, covering the upper extremity, axial body, and lower
+// extremity bone-palpation chapters as grouped landmark surveys rather
+// than one entry per individual bone.
 
 export const PALPATION_REGIONS = [
   { key: "shoulder", label: "Shoulder Girdle", available: true },
@@ -33,19 +24,10 @@ export const PALPATION_REGIONS = [
   { key: "trunk", label: "Trunk", available: true },
   { key: "pelvis", label: "Pelvis", available: true },
   { key: "thigh", label: "Thigh", available: true },
-  { key: "leg", label: "Leg", available: false },
-  { key: "foot", label: "Foot", available: false },
-  { key: "bones", label: "Bones & Ligaments", available: false },
+  { key: "leg", label: "Leg", available: true },
+  { key: "foot", label: "Foot", available: true },
+  { key: "bones", label: "Bones & Ligaments", available: true },
 ];
-
-const REF_SHOULDER = "The Muscle and Bone Palpation Manual — Ch.10, Shoulder Girdle muscles (reference)";
-const REF_NECK = "The Muscle and Bone Palpation Manual — Ch.11, Neck muscles (reference)";
-const REF_HEAD = "The Muscle and Bone Palpation Manual — Ch.12, Head muscles (reference)";
-const REF_ARM = "The Muscle and Bone Palpation Manual — Ch.13, Arm muscles (reference)";
-const REF_FOREARM = "The Muscle and Bone Palpation Manual — Ch.14, Forearm muscles (reference)";
-const REF_TRUNK = "The Muscle and Bone Palpation Manual — Ch.16, Trunk muscles (reference)";
-const REF_PELVIS = "The Muscle and Bone Palpation Manual — Ch.17, Pelvic muscles (reference)";
-const REF_THIGH = "The Muscle and Bone Palpation Manual — Ch.18, Thigh muscles (reference)";
 
 export const PALPATION_DATA = {
   shoulder: [
@@ -75,7 +57,6 @@ export const PALPATION_DATA = {
         "The lower fibres' outer edge is often visible before you even touch the skin.",
       ],
       clinicalConsiderations: "One of the most frequently symptomatic muscles in clinical practice, particularly the upper fibres — linked to sustained shoulder elevation, forward-head postures, desk ergonomics, and strap/bra compression. Because several neighbouring muscles (SCM, levator scapulae) share referral territory, confirm findings against those before attributing symptoms here.",
-      source: `${REF_SHOULDER}, pp.142–145`,
       images: [null, null, null],
     },
     {
@@ -103,7 +84,6 @@ export const PALPATION_DATA = {
         "Major and minor bellies blend together and usually can't be told apart by feel alone.",
       ],
       clinicalConsiderations: "Symptoms here often trace back to sustained retraction/stabilizing load, or a chronically lengthened state from rounded shoulders and tight pectorals. Pain tends to sit close to the surface and can be mistaken for a fibromyalgia tender point if examined in isolation.",
-      source: `${REF_SHOULDER}, pp.146–147`,
       images: [null, null, null],
     },
     {
@@ -122,7 +102,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A thin sheet beneath the rhomboids, over the upper back ribs — subtle compared to the more superficial muscles around it.",
       clinicalConsiderations: "Associated with chronic respiratory effort (COPD, asthma) and with scalene dysfunction. Presents as a deep, hard-to-pinpoint ache under the scapula, occasionally with little-finger numbness or stiffness around C7–T3.",
-      source: `${REF_SHOULDER}, p.148`,
       images: [null, null, null],
     },
     {
@@ -151,7 +130,6 @@ export const PALPATION_DATA = {
         "Landmark tip: C1's transverse process sits just below the earlobe, between the mastoid tip and the jaw.",
       ],
       clinicalConsiderations: "A textbook cause of acute wry neck / torticollis, with restricted turning to the opposite side. Common triggers include shoulder-bag straps, phone-cradling, poor monitor height, and general tension-holding.",
-      source: `${REF_SHOULDER}, pp.149–151`,
       images: [null, null, null],
     },
     {
@@ -177,7 +155,6 @@ export const PALPATION_DATA = {
         "Don't use lateral rotation to bring this muscle out — infraspinatus and teres minor join in and muddy the lower border.",
       ],
       clinicalConsiderations: "Overload from sustained reaching/typing postures or a direct blow. Symptom pattern overlaps enough with rotator cuff tears, subacromial bursitis, and joint arthritis that those need ruling out separately.",
-      source: `${REF_SHOULDER}, pp.152–153`,
       images: [null, null, null],
     },
     {
@@ -206,7 +183,6 @@ export const PALPATION_DATA = {
         "The infraspinatus/teres-minor boundary is subtle; the teres-minor/teres-major boundary is much easier to find by alternating rotation direction.",
       ],
       clinicalConsiderations: "Limits reaching-behind-the-back motions. Infraspinatus involvement often produces a deep ache at the front of the shoulder; teres minor can mimic quadrilateral space compression of the axillary nerve. Both get mistaken for rotator cuff pathology or a cervical disc issue.",
-      source: `${REF_SHOULDER}, pp.154–157`,
       images: [null, null, null],
     },
     {
@@ -232,7 +208,6 @@ export const PALPATION_DATA = {
         "Sits right beside latissimus dorsi with overlapping actions; on the humerus latissimus sits slightly more toward the front, teres major slightly more distal.",
       ],
       clinicalConsiderations: "Overload from repetitive forceful extension (rowing motions) can produce deep posterior shoulder pain, abduction restriction, or a subtle scapular tilt.",
-      source: `${REF_SHOULDER}, pp.158–159`,
       images: [null, null, null],
     },
     {
@@ -246,7 +221,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Its tendon is easier to pick out at the humerus than teres major's — it sits more toward the front, closer to the surface.",
       clinicalConsiderations: "Full technique for this muscle belongs to a different body-region tour and isn't in this library yet.",
-      source: `${REF_SHOULDER}, p.159`,
       images: [null, null, null],
     },
     {
@@ -275,7 +249,6 @@ export const PALPATION_DATA = {
         "Two landmarks for the tendon: follow the scapular-spine line just past the acromion, or find the bicipital groove and feel just behind it on the greater tubercle.",
       ],
       clinicalConsiderations: "Linked to sustained overhead work, carrying loads with the arm hanging, or trauma. Presents with crepitus, painful abduction, and tenderness at the humeral attachment — frequently mistaken for rotator cuff tendinitis, bursitis, a cervical disc problem, or frozen shoulder. Referral overlaps with infraspinatus at the outer shoulder, though infraspinatus tends to feel like a deeper ache.",
-      source: `${REF_SHOULDER}, pp.160–162`,
       images: [null, null, null],
     },
     {
@@ -302,7 +275,6 @@ export const PALPATION_DATA = {
         "Pectoralis major's clavicular head typically joins in during horizontal flexion — that's expected, not a sign you've moved off-target.",
       ],
       clinicalConsiderations: "Overload from sustained overhead reaching or direct impact. Overlaps clinically with rotator cuff tear, biceps tendinitis, and subacromial bursitis.",
-      source: `${REF_SHOULDER}, pp.163–164`,
       images: [null, null, null],
     },
     {
@@ -331,7 +303,6 @@ export const PALPATION_DATA = {
         "Subscapularis (against the scapula) and serratus anterior (against the ribs) occupy the same general space — which surface your fingers are oriented toward tells them apart.",
       ],
       clinicalConsiderations: "Linked to overuse (swimming), trauma, prolonged immobilization in medial rotation, or a chronically rounded-shoulder posture. Restricts and pains lateral rotation, which indirectly limits full abduction. Differential includes frozen shoulder, rotator cuff lesions, and thoracic outlet syndrome.",
-      source: `${REF_SHOULDER}, pp.165–168`,
       images: [null, null, null],
     },
     {
@@ -359,7 +330,6 @@ export const PALPATION_DATA = {
         "Serratus anterior (against the ribs) and subscapularis (against the scapula) occupy the same space — finger orientation is what separates them.",
       ],
       clinicalConsiderations: "Overload from push-ups, punching, racquet sports, or heavy breathing effort. Restricts scapular retraction; left-sided symptoms can mimic cardiac referral, so rib dysfunction, costochondritis, and thoracic outlet syndrome all belong on the differential list too.",
-      source: `${REF_SHOULDER}, pp.169–171`,
       images: [null, null, null],
     },
     {
@@ -386,7 +356,6 @@ export const PALPATION_DATA = {
         "Abducting the arm away from the body lets you grasp the whole anterior fold of muscle directly between your fingers.",
       ],
       clinicalConsiderations: "Linked to repetitive lifting, a rounded-shoulder posture, immobilization, or tight strap compression; a trigger point near ribs 5–6 on the right has been associated with cardiac arrhythmia in the literature. Left-sided presentations warrant ruling out cardiac referral alongside rib and costochondral causes.",
-      source: `${REF_SHOULDER}, pp.172–174`,
       images: [null, null, null],
     },
     {
@@ -412,7 +381,6 @@ export const PALPATION_DATA = {
         "This cue requires the scapula to rotate downward — easier to feel with the client sitting up.",
       ],
       clinicalConsiderations: "Can produce neurovascular symptoms down the arm (pectoralis minor syndrome), a rounded-shoulder posture, or scapular winging. Backpack strap pressure and referral from pectoralis major or the scalenes are common contributors.",
-      source: `${REF_SHOULDER}, pp.175–176`,
       images: [null, null, null],
     },
     {
@@ -439,7 +407,6 @@ export const PALPATION_DATA = {
         "Generally considered one of the harder structures in this region to palpate with confidence.",
       ],
       clinicalConsiderations: "Can contribute to costoclavicular compression symptoms in the arm. Differential includes cervical disc issues, anterior scalene syndrome, and pectoralis minor syndrome.",
-      source: `${REF_SHOULDER}, pp.177–178`,
       images: [null, null, null],
     },
   ],
@@ -470,7 +437,6 @@ export const PALPATION_DATA = {
         "A useful landmark for finding the scalenes and the longus colli/capitis nearby.",
       ],
       clinicalConsiderations: "Linked to sustained head-turned postures, forward-head posture, restrictive collars, or whiplash. Can produce headache, restricted neck motion, throat discomfort, and autonomic symptoms (eye changes from the sternal head; sweating/vasoconstriction from the clavicular head) — frequently mistaken for swollen glands, sinus or migraine headache, or a jaw-joint problem.",
-      source: `${REF_NECK}, pp.187–189`,
       images: [null, null, null],
     },
     {
@@ -488,7 +454,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Faint neck-skin wrinkling directly over the SCM.",
       clinicalConsiderations: "Associated with habitual facial expressions or with SCM/scalene involvement; produces a prickling sensation over the jaw.",
-      source: `${REF_NECK}, p.189`,
       images: [null, null, null],
     },
     {
@@ -516,7 +481,6 @@ export const PALPATION_DATA = {
         "Palpate with care — the brachial plexus and subclavian artery pass between the anterior and middle bellies.",
       ],
       clinicalConsiderations: "Linked to coughing, laboured breathing, or whiplash-type trauma. Can drive thoracic outlet symptoms, restricted neck rotation/side-bending, or upper-rib dysfunction — differential includes cervical disc issues, left-sided cardiac referral, and carpal tunnel syndrome.",
-      source: `${REF_NECK}, pp.190–193`,
       images: [null, null, null],
     },
     {
@@ -530,7 +494,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A readily palpable horizontal band in the posterior triangle.",
       clinicalConsiderations: "See the full Hyoid Group entry for symptom notes — tension here is thought to play a role in thoracic outlet presentations via its relationship to the brachial plexus.",
-      source: `${REF_NECK}, p.193`,
       images: [null, null, null],
     },
     {
@@ -559,7 +522,6 @@ export const PALPATION_DATA = {
         "If it's hard to separate from the SCM, rotating the head toward the side being palpated relaxes the SCM out of the way.",
       ],
       clinicalConsiderations: "A frequent casualty of whiplash injuries. Can produce sore throat, swallowing discomfort, and compensatory tightness in the posterior neck. Referral mapping for this group is limited in the literature.",
-      source: `${REF_NECK}, pp.194–196`,
       images: [null, null, null],
     },
     {
@@ -581,7 +543,6 @@ export const PALPATION_DATA = {
         "Keep pressure light — the facial nerve and styloid process are close by.",
       ],
       clinicalConsiderations: "The anterior belly is essentially inaccessible to palpation. Symptom-referral patterns for either muscle aren't well documented.",
-      source: `${REF_NECK}, p.196`,
       images: [null, null, null],
     },
     {
@@ -607,7 +568,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A cluster of small, thin bands that are hard to tell apart individually but all engage together when jaw-opening is resisted.",
       clinicalConsiderations: "Digastric has the best-documented referral pattern in this group: its lower belly can refer to the lower incisors, tongue, and throat with swallowing discomfort; its upper belly relates to occipitofrontalis symptoms. Stylohyoid has been linked to external carotid artery entrapment; omohyoid tension is thought to contribute to thoracic outlet symptoms. Frequently mistaken for dental problems.",
-      source: `${REF_NECK}, pp.197–200`,
       images: [null, null, null],
     },
     {
@@ -633,7 +593,6 @@ export const PALPATION_DATA = {
         "This is a seated alternative to the prone Trapezius technique already covered under Shoulder Girdle (pp.142–145) — useful when a client can't lie face-down.",
       ],
       clinicalConsiderations: "See the Shoulder Girdle Trapezius entry for full symptom notes — arguably the single most commonly affected muscle site clinically.",
-      source: `${REF_NECK}, pp.201–203`,
       images: [null, null, null],
     },
     {
@@ -661,7 +620,6 @@ export const PALPATION_DATA = {
         "Seated alternative to the prone technique already covered under Shoulder Girdle (pp.149–151); includes an extra tip for reaching the top attachment under the SCM by slackening it first (flex plus same-side bend).",
       ],
       clinicalConsiderations: "See the Shoulder Girdle Levator Scapulae entry for full symptom notes (a classic acute wry-neck presentation).",
-      source: `${REF_NECK}, pp.204–206`,
       images: [null, null, null],
     },
     {
@@ -688,7 +646,6 @@ export const PALPATION_DATA = {
         "Its lower attachment on the upper thoracic spinous processes is reachable by pressing just in front of the trapezius border, down toward the spine.",
       ],
       clinicalConsiderations: "Linked to prolonged forward or rotated head postures (off-centre monitor setups) or whiplash. Restricts flexion/opposite rotation and same-side rotation, and can produce headache — differential includes cervical joint dysfunction and migraine.",
-      source: `${REF_NECK}, pp.207–208`,
       images: [null, null, null],
     },
     {
@@ -708,7 +665,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Buried under other muscle for its whole length — easiest to first find in the gap between levator scapulae and splenius capitis.",
       clinicalConsiderations: "Shares the same aggravating factors as splenius capitis; can produce headache, eye pain, or blurred vision on the same side.",
-      source: `${REF_NECK}, p.209`,
       images: [null, null, null],
     },
     {
@@ -734,7 +690,6 @@ export const PALPATION_DATA = {
         "A light contraction is enough; pushing too hard overrides the trapezius's reciprocal relaxation and blocks access to the muscle beneath it.",
       ],
       clinicalConsiderations: "Linked to protracted head posture, prone reading/elbow-propping habits, whiplash, or cervical osteoarthritis. Can produce headache, restricted flexion, or greater occipital nerve irritation (tingling/pain across the back of the scalp).",
-      source: `${REF_NECK}, pp.210–211`,
       images: [null, null, null],
     },
     {
@@ -753,7 +708,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "All four are deep and difficult to isolate individually — the multifidus and rotatores sit very deep in the laminar groove.",
       clinicalConsiderations: "Longissimus capitis symptoms tend to sit behind the ear; semispinalis cervicis mirrors semispinalis capitis's referral; cervical multifidus refers toward the base of the skull and the inner scapular border; rotatores refer locally at the segmental level involved.",
-      source: `${REF_NECK}, p.212`,
       images: [null, null, null],
     },
     {
@@ -781,7 +735,6 @@ export const PALPATION_DATA = {
         "Work this area cautiously — the vertebral artery, suboccipital nerve, and greater occipital nerve all pass close by.",
       ],
       clinicalConsiderations: "Linked to sustained head extension or rotation, chronic forward-head posture, whiplash, or upper cervical joint dysfunction. Produces diffuse, hard-to-localize headache and restricted flexion/rotation — often mistaken for migraine or greater occipital neuralgia.",
-      source: `${REF_NECK}, pp.213–216`,
       images: [null, null, null],
     },
   ],
@@ -810,7 +763,6 @@ export const PALPATION_DATA = {
         "Seated or prone positioning works just as well if supine isn't practical.",
       ],
       clinicalConsiderations: "Frequently tight in clients with tension-type headaches. Frontalis tightness tends to refer toward the forehead and can mimic supraorbital nerve irritation; occipitalis tightness refers toward the back of the head and behind the eye and is often mistaken for greater occipital neuralgia. Because the sheet is thin, confirm which belly is involved before assuming the neighbouring neck muscles are clear.",
-      source: `${REF_HEAD}, pp.223–225`,
       images: [null, null, null],
     },
     {
@@ -837,7 +789,6 @@ export const PALPATION_DATA = {
         "All four are superficial and easy to reach once you know where to look, even though the contraction itself is hard to elicit.",
       ],
       clinicalConsiderations: "Rarely a primary source of symptoms on their own; included mainly for completeness of the scalp musculature and to avoid mistaking normal ear-adjacent tissue for something else.",
-      source: `${REF_HEAD}, p.225`,
       images: [null, null, null],
     },
     {
@@ -865,7 +816,6 @@ export const PALPATION_DATA = {
         "Also easily palpated with the client seated instead of supine.",
       ],
       clinicalConsiderations: "Commonly tight with habitual clenching or grinding, prolonged mouth-opening (dental work), bite asymmetry, forward-head posture, or general TMJ dysfunction. Refers toward the head, upper teeth, and gums, and is frequently mistaken for a dental problem or an isolated TMJ disorder — cross-check against the masseter and pterygoids before attributing findings solely here.",
-      source: `${REF_HEAD}, pp.226–228`,
       images: [null, null, null],
     },
     {
@@ -892,7 +842,6 @@ export const PALPATION_DATA = {
         "Equally accessible with the client seated.",
       ],
       clinicalConsiderations: "Shares the same overuse triggers as the temporalis (clenching, grinding, gum chewing, bite asymmetry, TMJ dysfunction) and can refer to the molars and TMJ, and — less intuitively — produce ipsilateral eye puffiness or ear symptoms via nearby vascular and nerve structures. Restricted jaw opening is a common associated finding.",
-      source: `${REF_HEAD}, pp.228–230`,
       images: [null, null, null],
     },
     {
@@ -920,7 +869,6 @@ export const PALPATION_DATA = {
         "Sits close to the auriculotemporal nerve — this region tends to be tender to palpation regardless of muscle condition.",
       ],
       clinicalConsiderations: "The muscle of mastication most likely to develop trigger points. Tightness follows the same clenching/grinding/bite-asymmetry pattern as the other jaw muscles and commonly produces TMJ pain, clicking or crepitus, and restricted same-side jaw deviation. Unlike the temporalis and masseter, it doesn't typically refer into the teeth.",
-      source: `${REF_HEAD}, pp.231–233`,
       images: [null, null, null],
     },
     {
@@ -948,7 +896,6 @@ export const PALPATION_DATA = {
         "Both pterygoids sit under only a thin layer of mucosa internally and tend to be tender even when uninvolved — don't over-read mild discomfort as pathology.",
       ],
       clinicalConsiderations: "Same overuse pattern as the other muscles of mastication. Tends to produce a diffuse ache felt in the mouth, tongue, and throat, TMJ pain, a sensation of ear fullness (via eustachian tube involvement), and difficulty swallowing — a presentation easily mistaken for an ear infection or sore throat rather than a muscular one. Like the lateral pterygoid, it doesn't typically refer to the teeth.",
-      source: `${REF_HEAD}, pp.234–236`,
       images: [null, null, null],
     },
     {
@@ -971,7 +918,6 @@ export const PALPATION_DATA = {
         "Two fingers (index and middle) generally give a better read than one on these small muscles.",
       ],
       clinicalConsiderations: "Tightness is linked to habitual squinting or frowning, and can also track with tension in the sternal head of the sternocleidomastoid. Referred discomfort tends to be felt around the nose and is easily mistaken for sinus irritation or a general headache.",
-      source: `${REF_HEAD}, pp.238–239`,
       images: [null, null, null],
     },
     {
@@ -993,7 +939,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A small, cord-like band just under the medial eyebrow — easy to confuse with the nearby orbicularis oculi if the client also closes the eye while frowning, so watch for that.",
       clinicalConsiderations: "Chronic frowning — from stress, sun squinting, or uncorrected near vision — is the typical driver of tightness here.",
-      source: `${REF_HEAD}, p.239`,
       images: [null, null, null],
     },
     {
@@ -1015,7 +960,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "An extremely thin, subtle contraction limited to the eyelid itself — the least substantial structure in this region to confirm by feel.",
       clinicalConsiderations: "Not typically a primary source of musculoskeletal symptoms; included for completeness of the periorbital muscle group.",
-      source: `${REF_HEAD}, p.240`,
       images: [null, null, null],
     },
     {
@@ -1039,7 +983,6 @@ export const PALPATION_DATA = {
         "Easy to confuse with the corrugator supercilii, which also pulls the medial eyebrow down — the nose-wrinkle component is what distinguishes this one.",
       ],
       clinicalConsiderations: "Tightness tracks with habitual frowning/squinting expressions, similarly to the corrugator supercilii.",
-      source: `${REF_HEAD}, p.241`,
       images: [null, null, null],
     },
     {
@@ -1063,7 +1006,6 @@ export const PALPATION_DATA = {
         "Distinguish from the procerus by confirming the client isn't also lifting the skin of the nose, and from the levator labii superioris alaeque nasi by confirming the movement is nostril flare rather than lip elevation.",
       ],
       clinicalConsiderations: "Rarely symptomatic in isolation; included for completeness of the nasal expression group.",
-      source: `${REF_HEAD}, p.242`,
       images: [null, null, null],
     },
     {
@@ -1087,7 +1029,6 @@ export const PALPATION_DATA = {
         "Distinguish from the orbicularis oris by confirming the client isn't also closing or pursing the lips.",
       ],
       clinicalConsiderations: "Rarely symptomatic on its own; included for completeness.",
-      source: `${REF_HEAD}, p.243`,
       images: [null, null, null],
     },
     {
@@ -1112,7 +1053,6 @@ export const PALPATION_DATA = {
         "Counted as both a nose muscle and a mouth muscle since it acts on each.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped here with the other small perioral muscles for completeness.",
-      source: `${REF_HEAD}, pp.244–245`,
       images: [null, null, null],
     },
     {
@@ -1136,7 +1076,6 @@ export const PALPATION_DATA = {
         "Sits between the levator labii superioris alaeque nasi (medial) and zygomaticus minor (lateral) — both also raise the upper lip, so hand placement is what separates them.",
       ],
       clinicalConsiderations: "Tightness, typically from habitual smiling, can produce allergy-like symptoms (sneezing, itchy eyes) and a sensation resembling sinus pain — worth ruling out before assuming a sinus cause.",
-      source: `${REF_HEAD}, pp.245–246`,
       images: [null, null, null],
     },
     {
@@ -1160,7 +1099,6 @@ export const PALPATION_DATA = {
         "Sandwiched between the levator labii superioris (medial) and zygomaticus major (lateral) — both contract with related lip movements, so use hand position rather than the cue alone to tell them apart.",
       ],
       clinicalConsiderations: "Not typically symptomatic on its own; grouped with the other lip elevators.",
-      source: `${REF_HEAD}, p.246`,
       images: [null, null, null],
     },
     {
@@ -1185,7 +1123,6 @@ export const PALPATION_DATA = {
         "The modiolus — a firm knot of connective tissue at the corner of the mouth where several of these muscles converge (zygomaticus major, levator anguli oris, risorius, depressor anguli oris, buccinator, orbicularis oris) — can be felt directly by gently pinching the corner of the mouth between a gloved finger inside the cheek and the thumb outside.",
       ],
       clinicalConsiderations: "Tightness, typically from habitual smiling, can mimic allergy symptoms or sinus pressure, similarly to the levator labii superioris.",
-      source: `${REF_HEAD}, p.247`,
       images: [null, null, null],
     },
     {
@@ -1209,7 +1146,6 @@ export const PALPATION_DATA = {
         "Distinguish from the zygomaticus major, which raises the same corner of the mouth but pulls it outward as well as up.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped with the other mouth-corner elevators.",
-      source: `${REF_HEAD}, p.248`,
       images: [null, null, null],
     },
     {
@@ -1233,7 +1169,6 @@ export const PALPATION_DATA = {
         "Confirm you haven't drifted onto the more superficial zygomaticus major, which can also pull the corner laterally.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source.",
-      source: `${REF_HEAD}, p.249`,
       images: [null, null, null],
     },
     {
@@ -1257,7 +1192,6 @@ export const PALPATION_DATA = {
         "Very difficult to distinguish confidently from the neighbouring depressor labii inferioris by feel alone, since both engage together with a downward, lateral lip/corner movement.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped with the other mouth depressors.",
-      source: `${REF_HEAD}, p.250`,
       images: [null, null, null],
     },
     {
@@ -1281,7 +1215,6 @@ export const PALPATION_DATA = {
         "As with the depressor anguli oris, expect this one to be hard to isolate cleanly from its neighbour since both act together.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source.",
-      source: `${REF_HEAD}, p.251`,
       images: [null, null, null],
     },
     {
@@ -1302,7 +1235,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "The lower portion is superficial and easy to feel; the upper portion sits deep to the depressor labii inferioris and is harder to distinguish.",
       clinicalConsiderations: "Not typically a primary symptom source; often tight alongside general perioral habits like lip pursing.",
-      source: `${REF_HEAD}, p.252`,
       images: [null, null, null],
     },
     {
@@ -1323,7 +1255,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A broad, flat sheet in the cheek — much of it sits deep to the masseter and other facial muscles, so full confirmation can be difficult.",
       clinicalConsiderations: "Overuse (wind/brass instruments, repeated balloon-blowing) or ill-fitting dental appliances can tighten this muscle, producing a deep jaw ache and difficulty chewing or swallowing — a presentation easy to mistake for a TMJ problem.",
-      source: `${REF_HEAD}, p.253`,
       images: [null, null, null],
     },
     {
@@ -1343,7 +1274,6 @@ export const PALPATION_DATA = {
         "Distinguish the lower portion from the nearby mentalis, since both raise/protract the lower lip.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; included for completeness of the perioral muscle group.",
-      source: `${REF_HEAD}, p.254`,
       images: [null, null, null],
     },
   ],
@@ -1375,7 +1305,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine (anterior fibres) or prone (posterior fibres) if seated positioning isn't practical.",
       ],
       clinicalConsiderations: "Tightness or overuse here is linked to sustained overhead work, direct trauma, or injections, and often co-occurs with supraspinatus/infraspinatus involvement. Can produce abduction weakness and is frequently mistaken for a rotator cuff tear, bicipital tendinitis, or subacromial bursitis — worth ruling those out before attributing findings solely to the deltoid.",
-      source: `${REF_ARM}, pp.262–264`,
       images: [null, null, null],
     },
     {
@@ -1404,7 +1333,6 @@ export const PALPATION_DATA = {
         "Also works well supine.",
       ],
       clinicalConsiderations: "Overuse — lifting with the forearm fully supinated, prolonged manual-screwdriver-type work — is the typical trigger, and can also follow infraspinatus involvement. Produces a superficial, dull pain or restricted elbow extension, and is easily mistaken for bicipital tendinitis, subacromial bursitis, or glenohumeral arthritis.",
-      source: `${REF_ARM}, pp.265–267`,
       images: [null, null, null],
     },
     {
@@ -1434,7 +1362,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to the same forearm-flexion overuse pattern as the biceps, or to prolonged elbow flexion (e.g. sleeping with the elbow fully bent). Can produce thumb weakness or a presentation resembling radial nerve entrapment, and is often mistaken for bicipital or supraspinatus tendinitis, or carpal tunnel syndrome.",
-      source: `${REF_ARM}, pp.268–270`,
       images: [null, null, null],
     },
     {
@@ -1463,7 +1390,6 @@ export const PALPATION_DATA = {
         "Once located, the nearby humeral attachments of latissimus dorsi and teres major (just proximal, on the medial lip of the bicipital groove) and subscapularis (further proximal, on the lesser tubercle) are reachable from the same axillary approach.",
       ],
       clinicalConsiderations: "Overuse from lifting heavy objects in front of the body is the typical trigger. Can produce marked pain, restricted shoulder abduction/extension, and musculocutaneous nerve entrapment — often mistaken for carpal tunnel syndrome, subacromial bursitis, or supraspinatus tendinitis given the referral pattern.",
-      source: `${REF_ARM}, pp.271–273`,
       images: [null, null, null],
     },
     {
@@ -1491,7 +1417,6 @@ export const PALPATION_DATA = {
         "Also easily palpated prone, with the arm abducted 90° and hanging off the table.",
       ],
       clinicalConsiderations: "Overuse triggers include repetitive backhand strokes, push-ups, manual gear-shifting, or crutch use. Produces vague diffuse pain in its referral zone and can involve radial nerve entrapment; commonly mistaken for epicondylitis, olecranon bursitis, thoracic outlet syndrome, or elbow arthritis.",
-      source: `${REF_ARM}, pp.274–276`,
       images: [null, null, null],
     },
     {
@@ -1512,7 +1437,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A small, superficial wedge at the back of the proximal forearm, easy to reach directly.",
       clinicalConsiderations: "A trigger point here can be mistaken for tennis elbow given the overlapping location — worth distinguishing from lateral epicondyle tendon pathology before treating either.",
-      source: `${REF_ARM}, p.277`,
       images: [null, null, null],
     },
   ],
@@ -1542,7 +1466,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse triggers include lifting with the forearm in a neutral rotation, shovelling, or extensive handshaking. Can produce elbow-flexion weakness and limited pronation, and is often mistaken for lateral epicondylitis, cervical nerve compression, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.286–288`,
       images: [null, null, null],
     },
     {
@@ -1571,7 +1494,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to screwdriver-type work or a poor-form tennis forehand, and can entrap the median nerve. Often mistaken for medial epicondylitis, thoracic outlet syndrome, carpal tunnel syndrome, or general wrist dysfunction.",
-      source: `${REF_FOREARM}, pp.289–291`,
       images: [null, null, null],
     },
     {
@@ -1601,7 +1523,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from gripping activities (tennis, painting) or direct trauma are common triggers. Palmaris longus trigger points produce a distinctively sharp, needle-like referral rather than the usual deep ache; FCU trigger points can entrap the ulnar nerve. The group as a whole is frequently mistaken for medial epicondylitis, a cervical disc issue, thoracic outlet syndrome, or carpal tunnel syndrome.",
-      source: `${REF_FOREARM}, pp.292–295`,
       images: [null, null, null],
     },
     {
@@ -1630,7 +1551,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive or forceful gripping (steering wheels, racquets, tools) is the typical trigger. Can produce sharp referral pain extending past the fingertip, median/ulnar nerve entrapment, and restricted finger/wrist extension — often mistaken for a cervical disc problem, thoracic outlet syndrome, carpal tunnel syndrome, or pronator teres syndrome.",
-      source: `${REF_FOREARM}, pp.296–298`,
       images: [null, null, null],
     },
     {
@@ -1659,7 +1579,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Same gripping-overuse pattern as the other forearm flexors. Produces sharp referral pain reaching past the thumb tip and can restrict thumb/wrist extension — frequently mistaken for carpal tunnel syndrome, thoracic outlet syndrome, or thumb osteoarthritis.",
-      source: `${REF_FOREARM}, pp.299–301`,
       images: [null, null, null],
     },
     {
@@ -1688,7 +1607,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive gripping or a one-handed tennis backhand is typical, often alongside scalene or supraspinatus involvement. Can produce a weak or painful grip, restricted ulnar deviation, and — for the ECRB specifically — radial nerve entrapment. Frequently mistaken for lateral epicondylitis, cervical nerve compression, carpal tunnel syndrome, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.302–304`,
       images: [null, null, null],
     },
     {
@@ -1716,7 +1634,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive finger movements (typing, string instruments) or prolonged finger flexion (e.g. during sleep) is typical. Produces finger stiffness and reduced flexion, and is often mistaken for lateral epicondylitis, arthritis of the fingers, or cervical nerve compression.",
-      source: `${REF_FOREARM}, pp.305–307`,
       images: [null, null, null],
     },
     {
@@ -1745,7 +1662,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to sustained ulnar-deviated postures (e.g. typing) or direct trauma. Often mistaken for wrist joint dysfunction, carpal tunnel syndrome, or cervical nerve compression.",
-      source: `${REF_FOREARM}, pp.308–309`,
       images: [null, null, null],
     },
     {
@@ -1774,7 +1690,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse triggers include screwdriver use, forcing a tight doorknob, or a poor-form tennis backhand. The single most common trigger-point source of lateral-epicondyle-area pain, and can entrap the deep radial nerve branch — frequently mistaken for lateral epicondylitis, cervical nerve compression, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.310–312`,
       images: [null, null, null],
     },
     {
@@ -1804,7 +1719,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive index-finger or thumb motion (typing, instruments) is typical. Produces fine-motor difficulty with the thumb and/or index finger and is often mistaken for wrist dysfunction or de Quervain's tenosynovitis. Referral patterns for the thumb muscles specifically haven't been well mapped in this reference.",
-      source: `${REF_FOREARM}, pp.313–315`,
       images: [null, null, null],
     },
   ],
@@ -1834,7 +1748,6 @@ export const PALPATION_DATA = {
         "Also easily palpated standing, with the client's arm resting on the therapist's shoulder while pushing down against it.",
       ],
       clinicalConsiderations: "Overuse (rowing, pushing down to move the body, forceful overhead-to-down pulling), overstretching (hanging by the hands), or compression (a tight bra) are typical triggers. Produces a constant ache at rest and with contraction, disrupted sleep on the affected side, and is often mistaken for cervical disc syndrome, thoracic outlet syndrome, supraspinatus nerve entrapment, or bicipital tendinitis.",
-      source: `${REF_TRUNK}, pp.353–356`,
       images: [null, null, null],
     },
     {
@@ -1861,7 +1774,6 @@ export const PALPATION_DATA = {
         "Fibres run vertically throughout; keep that orientation in mind when brushing across them.",
       ],
       clinicalConsiderations: "Linked to stooped/forward-leaning posture, flexed-and-rotated lifting, prolonged sitting or immobility, scoliosis, or a back-pocket wallet. Produces restricted trunk flexion/contralateral flexion and altered spinal curves, and is very frequently mistaken for spinal joint dysfunction, disc pathology, facet syndrome, or even visceral or cardiac conditions given how broad its referral pattern can be.",
-      source: `${REF_TRUNK}, pp.359–361`,
       images: [null, null, null],
     },
     {
@@ -1892,7 +1804,6 @@ export const PALPATION_DATA = {
         "Also palpable with the client supine for the cervical portion, though more awkward.",
       ],
       clinicalConsiderations: "Same overuse/posture triggers as the erector spinae group. Produces restricted trunk motion and altered spinal curves, and shares the same broad list of differential mimics — spinal joint dysfunction, disc pathology, facet syndrome, or visceral/cardiac referral.",
-      source: `${REF_TRUNK}, pp.362–364`,
       images: [null, null, null],
     },
     {
@@ -1922,7 +1833,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying, pressing down toward the table instead of medially.",
       ],
       clinicalConsiderations: "Linked to repeated heavy lifting, sudden overload while stretched (flexion plus contralateral bending/rotation), thoracolumbar joint dysfunction, leg-length asymmetry, or a back-pocket wallet. Produces a deep low-back ache, difficulty sleeping or turning over in bed, and pain on coughing/sneezing — frequently mistaken for sacroiliac dysfunction, disc syndrome, sciatica, or trochanteric bursitis given its referral toward the greater trochanter.",
-      source: `${REF_TRUNK}, pp.365–367`,
       images: [null, null, null],
     },
     {
@@ -1951,7 +1861,6 @@ export const PALPATION_DATA = {
         "Also palpable prone, ideally with a roll under the abdomen to help open the interspinous spaces.",
       ],
       clinicalConsiderations: "Trigger point patterns for this muscle haven't been clearly mapped in this reference; findings here are best interpreted alongside the more thoroughly documented erector spinae and transversospinalis groups rather than in isolation.",
-      source: `${REF_TRUNK}, pp.369–370`,
       images: [null, null, null],
     },
     {
@@ -1980,7 +1889,6 @@ export const PALPATION_DATA = {
         "The subcostales (ribs 10–12 to ribs 8–10, depressing ribs 8–10) and transversus thoracis (internal sternum/xiphoid/costal cartilage to internal costal cartilages 2–6, depressing ribs 2–6) sit deep to the ribcage and are essentially not distinguishable from surrounding tissue by palpation.",
       ],
       clinicalConsiderations: "Linked to forceful or prolonged breathing effort, chronic coughing or retching, trauma (including surgical), rib dysfunction, or shingles. Produces local pain that can spread to neighbouring spaces, breathing/coughing discomfort, and restricted trunk or arm motion — frequently mistaken for rib joint dysfunction, costochondritis, or even a cardiac event, so unexplained findings here warrant ruling out those possibilities through the appropriate channels before treating locally.",
-      source: `${REF_TRUNK}, pp.371–373`,
       images: [null, null, null],
     },
     {
@@ -2008,7 +1916,6 @@ export const PALPATION_DATA = {
         "This is the only muscle sitting directly in the abdominal midline; the oblique and transverse muscles are all lateral to it.",
       ],
       clinicalConsiderations: "Linked to heavy ab-focused exercise, straining, chronic coughing, forceful abdominal breathing, direct or surgical trauma, visceral disease, or general stress-related guarding. Produces referred pain that can mimic a wide range of visceral conditions (ulcer, gallbladder, gynecologic) — trigger points here should prompt ruling out those causes rather than being assumed by default, especially with new or unexplained abdominal symptoms.",
-      source: `${REF_TRUNK}, pp.375–377`,
       images: [null, null, null],
     },
     {
@@ -2038,7 +1945,6 @@ export const PALPATION_DATA = {
         "The transversus abdominis sits deep to both obliques and acts like a corset, compressing the abdominal contents on a forced exhale — it's very difficult to distinguish from the obliques by feel since they co-contract for that same action.",
       ],
       clinicalConsiderations: "Same overuse/trauma/visceral/stress triggers as the rectus abdominis. Produces referral into the chest, abdomen, pelvis, and groin depending on which portion is involved, and shares the same wide differential of visceral mimics as the rectus abdominis — again, a region to interpret cautiously rather than assume is purely musculoskeletal.",
-      source: `${REF_TRUNK}, pp.378–381`,
       images: [null, null, null],
     },
     {
@@ -2066,7 +1972,6 @@ export const PALPATION_DATA = {
         "Also palpable side-lying or seated, with the trunk slightly flexed either way to slacken the anterior wall.",
       ],
       clinicalConsiderations: "Linked to vigorous forceful breathing, chronic hiccups, or chronic coughing. Produces exertional pain at deep exhale, often described as a side stitch, or a sense of breathlessness — commonly mistaken for a peptic ulcer, gallbladder disease, reflux, or a hiatal hernia, so unexplained findings here warrant the same caution as the abdominal wall muscles.",
-      source: `${REF_TRUNK}, pp.382–384`,
       images: [null, null, null],
     },
     {
@@ -2098,7 +2003,6 @@ export const PALPATION_DATA = {
         "A small, often-absent muscle called the psoas minor sits directly on the psoas major's anterior surface and shares its trunk-flexion action, making it very difficult to distinguish as a separate structure by feel.",
       ],
       clinicalConsiderations: "Linked to heavy curl-up/crunch training, excessive running or kicking, prolonged hip flexion (sitting, fetal sleeping position, excessive lordosis), leg-length asymmetry, or a back-pocket wallet. Produces reduced hip extension or a characteristic vertical lumbar ache that's worse standing and eased lying down — frequently mistaken for thoracic, lumbar, or sacroiliac joint dysfunction, or even appendicitis given its referral pattern.",
-      source: `${REF_TRUNK}, pp.385–388`,
       images: [null, null, null],
     },
   ],
@@ -2128,7 +2032,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying — since the thigh isn't working against gravity in that position, add manual resistance to get a clear contraction.",
       ],
       clinicalConsiderations: "Overuse (uphill walking while leaning forward, forceful swimming strokes), prolonged hip flexion (sleeping position), prolonged sitting (especially on a thick wallet), direct trauma, or injections are typical triggers. Produces restlessness sitting, sleep disruption, pain walking uphill or bending forward, and restricted hip flexion — often mistaken for sacroiliac dysfunction, lumbar facet syndrome, trochanteric bursitis, or coccyx pain.",
-      source: `${REF_PELVIS}, pp.400–401`,
       images: [null, null, null],
     },
     {
@@ -2157,7 +2060,6 @@ export const PALPATION_DATA = {
         "The gluteus minimus sits entirely deep to this muscle and shares the same actions, so while technically palpable, it's essentially impossible to distinguish it from the gluteus medius by feel.",
       ],
       clinicalConsiderations: "Overuse (excessive walking/running, soft-sand walking, prolonged one-leg standing), prolonged immobility, sacroiliac dysfunction, or a back-pocket wallet are typical triggers. Produces pain sleeping on the involved side or walking, restricted hip adduction, an antalgic gait, and sciatica-like referral — frequently mistaken for low back pain, sacroiliac dysfunction, lumbar facet syndrome, or trochanteric bursitis.",
-      source: `${REF_PELVIS}, pp.403–406`,
       images: [null, null, null],
     },
     {
@@ -2187,7 +2089,6 @@ export const PALPATION_DATA = {
         "With the thigh pre-flexed 60° or more, this muscle's action flips to abduction/medial rotation, which changes how it needs to be stretched.",
       ],
       clinicalConsiderations: "Linked to prolonged shortening (foot on the gas pedal, side-sleeping with the top thigh flexed/adducted), sacroiliac sprain, hip arthritis, or leg-length/foot-mechanics asymmetry. Produces sitting discomfort, a turned-out foot from lateral rotation, and restricted medial rotation — frequently mistaken for sacroiliac dysfunction, \"piriformis syndrome\" sciatic compression, disc-related nerve compression, or facet syndrome.",
-      source: `${REF_PELVIS}, pp.407–408`,
       images: [null, null, null],
     },
     {
@@ -2215,7 +2116,6 @@ export const PALPATION_DATA = {
         "The sciatic nerve runs directly over this muscle — palpate with care.",
       ],
       clinicalConsiderations: "Trigger point patterns specific to this muscle haven't been separated from the piriformis's in this reference, and the same overuse and positional triggers as the piriformis likely apply here too.",
-      source: `${REF_PELVIS}, pp.409–410`,
       images: [null, null, null],
     },
     {
@@ -2242,7 +2142,6 @@ export const PALPATION_DATA = {
         "Same resistance caution as the piriformis and quadratus femoris: too forceful a contraction recruits the gluteus maximus and masks this deeper layer.",
       ],
       clinicalConsiderations: "Trigger point patterns specific to these four muscles haven't been separated from the piriformis's in this reference; the same overuse and positional triggers likely apply.",
-      source: `${REF_PELVIS}, p.411`,
       images: [null, null, null],
     },
   ],
@@ -2274,7 +2173,6 @@ export const PALPATION_DATA = {
         "Also palpable seated with the foot flat on the floor, using knee rotation to bring out the distal tendons (including the gracilis alongside the semitendinosus on the medial side).",
       ],
       clinicalConsiderations: "Overuse or compression (an ill-fitting chair edge against the distal thigh) and prolonged shortening (fetal sleeping position) are typical triggers. Medial hamstring pain reads as superficial and sharp; lateral hamstring pain reads as deeper and duller and often disturbs sleep. Frequently mistaken for sciatica or knee joint degenerative disease.",
-      source: `${REF_THIGH}, pp.420–422`,
       images: [null, null, null],
     },
     {
@@ -2303,7 +2201,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying.",
       ],
       clinicalConsiderations: "Linked to general overuse and prolonged shortening (sitting, fetal sleeping position). Frequently mistaken for trochanteric bursitis, sacroiliac joint syndrome, or meralgia paresthetica.",
-      source: `${REF_THIGH}, pp.424–425`,
       images: [null, null, null],
     },
     {
@@ -2333,7 +2230,6 @@ export const PALPATION_DATA = {
         "The distal belly and tendon of the iliopsoas sits just medial to this muscle's proximal tendon — slide medially off it and confirm with a small trunk curl-up.",
       ],
       clinicalConsiderations: "Linked to prolonged shortening (cross-legged sitting, fetal sleeping position). Produces superficial, sharp pain or tingling rather than the deeper dull ache typical of most trigger points — frequently mistaken for meralgia paresthetica or a medial knee problem.",
-      source: `${REF_THIGH}, pp.427–429`,
       images: [null, null, null],
     },
     {
@@ -2366,7 +2262,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying for the vastus lateralis specifically, adding manual resistance since gravity doesn't provide any in that position.",
       ],
       clinicalConsiderations: "Overuse (running, cycling), direct trauma, or restricted knee flexion range (sedentary lifestyle, post-surgical) are typical triggers, along with sustained heavy loading on the lap (laptop, child) or repeated injections. Produces knee pain and sometimes knee-buckling weakness — frequently mistaken for knee joint dysfunction, trochanteric bursitis, or meralgia paresthetica.",
-      source: `${REF_THIGH}, pp.431–434`,
       images: [null, null, null],
     },
     {
@@ -2396,7 +2291,6 @@ export const PALPATION_DATA = {
         "The femoral nerve, artery, and vein run over this region — if you feel a pulse or the client reports shooting pain, reposition your fingers.",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction/flexion (horseback riding, gymnastics) or prolonged shortening (cross-legged sitting, fetal sleeping position). Produces a deep, dull groin ache — frequently mistaken for hip joint degenerative disease or obturator nerve entrapment.",
-      source: `${REF_THIGH}, pp.436–437`,
       images: [null, null, null],
     },
     {
@@ -2426,7 +2320,6 @@ export const PALPATION_DATA = {
         "The adductor brevis sits almost entirely deep to this muscle, shares its actions, and is essentially indistinguishable from it by feel; a small part is sometimes reachable by pressing between the adductor longus and gracilis, or by palpating through the adductor longus itself.",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged sitting with legs crossed). May be a leading cause of groin pain and restricted hip abduction — frequently mistaken for adductor tendinitis, hip joint degenerative disease, inguinal hernia, prostatitis, or obturator/genitofemoral nerve entrapment.",
-      source: `${REF_THIGH}, pp.439–441`,
       images: [null, null, null],
     },
     {
@@ -2455,7 +2348,6 @@ export const PALPATION_DATA = {
         "Also palpable seated, prone (where it sits just in front of the adductor magnus), or side-lying (with the opposite leg flexed out of the way).",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged cross-legged sitting). Can produce a hot, stinging quality of pain rather than the usual dull ache, and clients often struggle to find a comfortable resting position — frequently mistaken for adductor tendinitis, inguinal hernia, pes anserine bursitis, prostatitis, or obturator/genitofemoral nerve entrapment.",
-      source: `${REF_THIGH}, pp.443–445`,
       images: [null, null, null],
     },
     {
@@ -2486,7 +2378,686 @@ export const PALPATION_DATA = {
         "Also palpable prone (directly in front of the medial hamstrings) or side-lying (with the top leg flexed out of the way).",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (skiing, horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged cross-legged sitting). The more proximal trigger point can refer pain felt within the pelvis, sometimes during intercourse — frequently mistaken for adductor tendinitis, inguinal hernia, prostatitis, or visceral/gynecologic disease.",
-      source: `${REF_THIGH}, pp.447–449`,
+      images: [null, null, null],
+    },
+  ],
+  leg: [
+    {
+      id: "palp_tibialis_anterior",
+      name: "Tibialis Anterior",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Lateral tibial condyle and the proximal two-thirds of the tibia's anterior border",
+        insertion: "First cuneiform and the base of the first metatarsal",
+      },
+      actions: "Dorsiflexes the foot at the ankle; inverts the foot at the tarsal joints.",
+      patientPosition: "Supine.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Look first, then place your hand — the tendon is usually visible without touching.",
+      steps: [
+        "Resist the client from dorsiflexing and inverting the foot and look for the tendon standing out on the medial ankle/foot.",
+        "Strum across the tendon, then trace the belly proximally to the lateral tibial condyle, brushing across the fibres — it runs directly lateral to the tibia's shaft.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Both the belly and distal tendon are usually visible before you even touch the leg — look first so your hand doesn't block your own view.",
+      notes: [
+        "Distinguish from the neighbouring extensor digitorum longus using inversion versus eversion rather than dorsiflexion, since dorsiflexion engages both: inversion engages this muscle, eversion engages the EDL.",
+        "The extensor hallucis longus sits right alongside it and also responds to dorsiflexion/inversion; if it's confusing your read, cue big-toe flexion instead, which reciprocally relaxes the EHL without much affecting this muscle.",
+        "Also easily palpated seated.",
+      ],
+      clinicalConsiderations: "Linked to general overuse, trauma, or postures that shorten the muscle, especially against tight plantarflexors. Produces dorsiflexion weakness (foot drop/slap) — frequently mistaken for anterior compartment syndrome, shin splints, or L5 nerve compression.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_extensor_digitorum_longus",
+      name: "Extensor Digitorum Longus (EDL)",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Proximal three-quarters of the anterior fibula and the lateral tibial condyle",
+        insertion: "Dorsal surfaces of the middle and distal phalanges of toes two through five",
+      },
+      actions: "Extends toes two through five; dorsiflexes the foot at the ankle; everts the foot at the tarsal joints.",
+      patientPosition: "Supine.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Look first, then place your fingers on the dorsum of the foot.",
+      steps: [
+        "Resist the client from extending toes two through five and look for the tendons standing out on the dorsum of the foot.",
+        "Strum across the distal tendons, then trace the belly proximally, brushing across the fibres — most of it sits between the tibialis anterior and fibularis longus.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Distal tendons usually visible without touching; the belly, higher up, is sandwiched between two neighbouring muscles.",
+      notes: [
+        "If the client struggles to extend toes two through five without also extending the big toe, don't restrain the big toe — that just changes what you're feeling without stopping the extensor hallucis longus from contracting anyway.",
+        "Separate from the tibialis anterior using eversion/inversion rather than dorsiflexion (eversion engages this muscle, inversion the tibialis anterior); separate from the fibularis longus using dorsiflexion/plantarflexion (dorsiflexion engages this muscle, plantarflexion the fibularis longus).",
+        "The fibularis tertius is essentially this muscle's most distal, lateral slip, running from the distal anterior fibula to the fifth metatarsal — find it just lateral to this muscle's little-toe tendon, using a fingernail if needed, and confirm with resisted eversion/dorsiflexion; it's often absent altogether.",
+        "Also easily palpated seated.",
+      ],
+      clinicalConsiderations: "Linked to a weak fibularis longus, postures that chronically shorten or lengthen the muscle (angled gas pedals, high heels), tight antagonist plantarflexors, trauma, or nerve compression. Produces dorsiflexion weakness and can involve deep fibular nerve entrapment — frequently mistaken for tarsal or metatarsophalangeal joint dysfunction.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_extensor_hallucis_longus",
+      name: "Extensor Hallucis Longus (EHL)",
+      type: "Muscle",
+      position: "Supine",
+      attachments: {
+        origin: "Middle third of the anterior fibula",
+        insertion: "Dorsal surface of the big toe's distal phalanx",
+      },
+      actions: "Extends the big toe; dorsiflexes the foot at the ankle; inverts the foot at the tarsal joints.",
+      patientPosition: "Supine.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Fingers of the support hand on the dorsal surface of the big toe's distal phalanx; look first before placing the palpating hand.",
+      steps: [
+        "Resist the client from extending the big toe and look for the tendon.",
+        "Strum across the distal tendon, then trace proximally — once it runs deep to the tibialis anterior and EDL, stop strumming and instead feel for its contraction directly.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Superficial and visible distally; deep and subtle once it tucks under the tibialis anterior and EDL — closing your eyes and using very light pressure helps here.",
+      notes: [
+        "If the client can't isolate big-toe extension from the other toes, don't restrain the other toes — you just want to avoid crediting the EDL's contraction to this muscle.",
+        "Rule out dorsiflexion, inversion, and eversion of the foot while testing, since each of those recruits a different neighbouring muscle that would blur the read.",
+        "Also easily palpated seated.",
+      ],
+      clinicalConsiderations: "Same postural/overuse triggers as the tibialis anterior and EDL. Produces dorsiflexion weakness — frequently mistaken for metatarsophalangeal dysfunction or L4-L5 nerve compression.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_fibularis_longus_brevis",
+      name: "Fibularis Longus & Brevis",
+      type: "Muscle group",
+      position: "Side lying",
+      attachments: {
+        origin: "Fibularis longus: proximal two-thirds of the lateral fibula. Fibularis brevis: distal half of the lateral fibula.",
+        insertion: "Fibularis longus: first cuneiform and the base of the first metatarsal, via a path around the cuboid to the sole. Fibularis brevis: lateral side of the base of the fifth metatarsal.",
+      },
+      actions: "Both evert the foot at the tarsal joints and plantarflex it at the ankle.",
+      patientPosition: "Side lying.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Lateral fibula, just below the fibular head.",
+      steps: [
+        "Resist the client from everting the foot and feel for the fibularis longus contracting.",
+        "Trace it distally, brushing across the fibres — it turns to tendon roughly halfway down the leg, reachable just behind the lateral malleolus.",
+        "For the fibularis brevis, palpate on either side of the fibularis longus in the distal half of the leg; its own distal tendon is often visible just below the lateral malleolus.",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "The longus becomes tendon early, around mid-leg, and both tendons are readily reachable near the lateral malleolus.",
+      notes: [
+        "Eversion alone won't separate this pair from the EDL, since both respond to it — use dorsiflexion (EDL) versus plantarflexion (this pair) instead; eversion does separate this pair from the soleus, an invertor.",
+        "Once the fibularis longus tendon dives around the cuboid into the sole, it's too deep to trace further except at its very end attachment.",
+        "Also easily palpated supine, prone, or seated.",
+      ],
+      clinicalConsiderations: "Linked to overuse, prolonged shortening (plantarflexed sleeping position), immobilization, an inversion ankle sprain, flat feet, or uneven-surface running. Produces weak ankles, pain with active eversion, and possible fibular nerve entrapment — frequently mistaken for lateral compartment syndrome or a lumbar disc issue.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_gastrocnemius",
+      name: "Gastrocnemius",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Posterior surfaces of the femur's medial and lateral condyles",
+        insertion: "Posterior calcaneus, via the calcaneal (Achilles) tendon",
+      },
+      actions: "Plantarflexes the foot at the ankle; inverts the foot at the tarsal joints; flexes the leg at the knee.",
+      patientPosition: "Prone, knee fully or nearly fully extended.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Proximal posterior leg.",
+      steps: [
+        "Resist the client from plantarflexing the foot and feel for the contraction of both the medial and lateral bellies.",
+        "Trace distally — around mid-leg it becomes tendon; follow that all the way to the calcaneus.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Two clearly separable bellies proximally, converging into one thick tendon at mid-leg.",
+      notes: [
+        "Each proximal femoral-condyle attachment is reachable by following a belly proximally during resisted plantarflexion, staying medial to the biceps femoris tendon for the lateral head and lateral to the semitendinosus/semimembranosus tendons for the medial head; in the popliteal fossa itself, work cautiously given the tibial and common fibular nerves and the popliteal vessels there.",
+        "The plantaris sits directly medial to the lateral head's proximal attachment — palpate from the centre of the popliteal fossa outward until you find tissue that contracts with plantarflexion; it's essentially indistinguishable from the lateral head by feel, since both share the same action.",
+        "Also easily palpated standing — rising onto the toes makes both bellies stand out visibly.",
+      ],
+      clinicalConsiderations: "Linked to uphill walking/running, prolonged shortening (high heels, plantarflexed sleeping/driving position), a too-low bike seat, cold exposure, immobilization, or S1 nerve compression. Produces calf cramps (including nocturnal) and can mimic intermittent claudication — frequently mistaken for posterior compartment syndrome or deep vein thrombosis, both of which should be ruled out first given the seriousness of a missed DVT.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_soleus",
+      name: "Soleus",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Head and proximal half of the posterior fibula and the soleal line of the posterior tibia",
+        insertion: "Posterior calcaneus, via the calcaneal (Achilles) tendon",
+      },
+      actions: "Plantarflexes the foot at the ankle; inverts the foot at the tarsal joints.",
+      patientPosition: "Prone, knee flexed to roughly 90°.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Proximal posterior leg.",
+      steps: [
+        "With the knee flexed, which slackens the gastrocnemius out of the way, ask the client to plantarflex gently against resistance and feel for the contraction beneath the gastrocnemius.",
+        "Trace it to its proximal attachment, and distally to the calcaneus via the Achilles tendon.",
+        "It's also directly superficial and reachable from the lateral leg, and partly the medial proximal leg, without going through the gastrocnemius at all.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Deep to the gastrocnemius posteriorly, but superficial and directly reachable laterally.",
+      notes: [
+        "Keep resistance gentle — flexing the knee only inhibits the gastrocnemius if the contraction stays light; push too hard and the gastrocnemius overrides the inhibition and gets in the way again.",
+      ],
+      clinicalConsiderations: "Linked to uphill walking/running, prolonged shortening (high heels, plantarflexed sleeping/driving position), trauma, or cold exposure. Produces restricted dorsiflexion, uphill/stair walking pain, and possible tibial nerve entrapment — frequently mistaken for posterior shin splints, Achilles tendinitis, a Baker's cyst, deep vein thrombosis, or plantar fasciitis.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_popliteus",
+      name: "Popliteus",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Lateral surface of the femur's lateral condyle",
+        insertion: "Medial side of the proximal posterior tibia",
+      },
+      actions: "Medially rotates and flexes the leg at the knee.",
+      patientPosition: "Prone, knee flexed to 90°.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Fingers curled around the posterior side of the tibia's medial border.",
+      steps: [
+        "With fingers curled against the tibia, ask the client to medially rotate the leg at the knee and feel for the contraction, adding resistance if needed.",
+        "Once felt at the tibia, continue tracing it proximally through the gastrocnemius toward its femoral attachment, alternating contraction and relaxation.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "A deep, subtle contraction — closing your eyes and using very light pressure helps distinguish it from the surrounding gastrocnemius; its proximal end disappears into the knee joint capsule and stops being reachable.",
+      notes: [
+        "Many clients need a moment to feel out what medial knee rotation is before you start palpating — walk them through the motion passively first.",
+        "This motion is easier for the client to isolate seated with the foot flat on the floor than prone.",
+        "The proximal femoral attachment is reachable just behind the lateral collateral ligament on the lateral condyle, confirmed the same way: resisted medial rotation, feeling the distal tendon tense.",
+      ],
+      clinicalConsiderations: "Linked to downhill running/skiing, cutting on a semi-flexed knee, excessive foot pronation, high heels, or a torn posterior cruciate ligament. Produces posterior knee pain when crouching or descending — frequently mistaken for a Baker's cyst, knee instability, popliteus tendinitis, or a meniscal tear.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_tom_dick_harry",
+      name: "Tibialis Posterior, Flexor Digitorum Longus & Flexor Hallucis Longus",
+      type: "Muscle group",
+      position: "Prone",
+      attachments: {
+        origin: "Tibialis posterior: proximal two-thirds of the posterior tibia and fibula. Flexor digitorum longus: middle third of the posterior tibia. Flexor hallucis longus: distal two-thirds of the posterior fibula.",
+        insertion: "Tibialis posterior: plantar surface of the foot (metatarsals two to four and most tarsals except the talus). Flexor digitorum longus: plantar surfaces of the distal phalanges of toes two through five. Flexor hallucis longus: plantar surface of the big toe's distal phalanx.",
+      },
+      actions: "All three plantarflex the foot at the ankle and invert it at the tarsal joints; the flexor digitorum longus also flexes toes two through five, and the flexor hallucis longus also flexes the big toe.",
+      patientPosition: "Prone, roll under the ankles.",
+      therapistPosition: "Standing or seated on the other side of the client.",
+      handPlacement: "Just posterior and distal to the medial malleolus — look for the tendons first, before placing your hand.",
+      steps: [
+        "For the tibialis posterior, ask the client to plantarflex and invert the foot and look for its tendon just behind the distal tibia and the medial malleolus, then strum across it and trace it proximally and distally.",
+        "For the flexor digitorum longus, feel for its belly between the soleus and the tibia's shaft during resisted toe flexion (toes two through five), then trace it — its distal tendon sits slightly further from the medial malleolus than the tibialis posterior's.",
+        "For the flexor hallucis longus, feel for a small superficial portion between the flexor digitorum longus and the Achilles tendon during resisted big-toe flexion; its distal tendon runs deep near the malleolus but becomes reachable again in the sole.",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "All three tendons converge just behind the medial malleolus, in order from closest to farthest: tibialis posterior, flexor digitorum longus, flexor hallucis longus — sometimes remembered as \"Tom, Dick, and Harry.\"",
+      notes: [
+        "Look before placing your palpating hand — it's easy to block your own view of these tendons.",
+        "To isolate the tibialis posterior, cue extension of all five toes, which relaxes the other two via reciprocal inhibition.",
+        "Avoid plantarflexion/inversion cues when trying to isolate the flexor digitorum longus or flexor hallucis longus specifically, since that recruits all three at once.",
+        "In the posterior leg, the deep bellies sit in a predictable side-by-side order: flexor digitorum longus medial, flexor hallucis longus lateral, tibialis posterior in the middle — closing your eyes and pressing very lightly helps pick out each one's subtle contraction.",
+        "A small portion of the flexor hallucis longus is also reachable in the lateral leg, between the soleus and the fibularis muscles, during resisted big-toe flexion without plantarflexion, which would recruit its neighbours too.",
+        "Also easily palpated side-lying or supine, with the top leg flexed out of the way if side-lying.",
+      ],
+      clinicalConsiderations: "Linked to overuse on soft or uneven ground, excessive foot pronation, high heels, or foot-mechanics asymmetry. Produces plantar foot pain (especially the ball of the foot or toes) with walking or running — frequently mistaken for shin splints, deep posterior compartment syndrome, tarsal tunnel syndrome, or tenosynovitis of the involved tendon.",
+      images: [null, null, null],
+    },
+  ],
+  foot: [
+    {
+      id: "palp_edb_ehb",
+      name: "Extensor Digitorum Brevis & Extensor Hallucis Brevis",
+      type: "Muscle group",
+      position: "Supine",
+      attachments: {
+        origin: "Both share a proximal attachment on the dorsal calcaneus",
+        insertion: "EDB: joins the extensor digitorum longus tendons to toes two through four. EHB: dorsal base of the big toe's proximal phalanx.",
+      },
+      actions: "EDB extends toes two through four; EHB extends the big toe — both at the metatarsophalangeal joint, the EDB also at the interphalangeal joints.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Common belly on the proximal dorsolateral foot, about an inch below the lateral malleolus — visualize it first.",
+      steps: [
+        "Resist toe extension, toes two through four, with support-hand pressure on their proximal phalanges, and look for the belly's contraction before placing your palpating hand.",
+        "Once seen, palpate it, then trace it distally toward the toes.",
+        "Repeat for the big toe alone to bring out the EHB portion, this time resisting at the big toe's proximal phalanx.",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "Structurally one muscle that's only functionally split into two names by which toes its distal fibres serve — EDB fibres sit lateral within the shared belly, EHB fibres medial.",
+      notes: [
+        "Distinguishing the two requires the client to isolate big-toe extension from the other toes, which many people can't do; holding a toe still doesn't help since the muscle belly still contracts isometrically regardless.",
+        "The distal portions run deep to the extensor digitorum longus tendons, which also tense with the same motion — expect some difficulty separating the two at that level.",
+        "Also easily palpated seated.",
+      ],
+      clinicalConsiderations: "Linked to overuse, ill-fitting or inflexible-soled shoes, sustained toe-flexed or toe-extended postures, trauma, or metatarsal stress fracture. Produces reduced toe flexion and foot cramping — frequently mistaken for a metatarsal stress fracture or a digital nerve entrapment between metatarsals.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_dorsal_interossei_pedis",
+      name: "Dorsal Interossei Pedis (DIP)",
+      type: "Muscle group",
+      position: "Supine",
+      attachments: {
+        origin: "Each of the four (numbered medial to lateral) attaches to both sides of its adjacent metatarsals",
+        insertion: "One side of a toe's proximal phalanx (the side away from the second toe's centre) plus the extensor digitorum longus tendon to that toe",
+      },
+      actions: "Abduct and flex toes two through four at the metatarsophalangeal joints; extend those toes at the interphalangeal joints.",
+      patientPosition: "Supine.",
+      therapistPosition: "Seated to the side of the client.",
+      handPlacement: "Dorsal foot, between the target pair of metatarsals.",
+      steps: [
+        "For the fourth DIP, resist the client from abducting the fourth toe and feel for the contraction between the fourth and fifth metatarsals.",
+        "Trace it proximally and distally.",
+        "Repeat between the third/fourth metatarsals (resisting third-toe abduction), then the second/third (resisting fibular, lateral, abduction of the second toe), then the first/second (resisting tibial, medial, abduction of the second toe).",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "Four narrow strips tucked directly between the metatarsals, most reliably confirmed by the exact direction of toe movement rather than by feel alone.",
+      notes: [
+        "The second toe is the only one that abducts in both directions — laterally (fibular abduction) and medially (tibial abduction) — which is what lets you isolate the first and second DIP separately from just that one toe.",
+        "Many clients can't isolate toe abduction at all; if so, just palpate each muscle by location while relaxed rather than chasing a contraction.",
+        "Keep the toes from extending during this palpation — the more superficial toe extensors will otherwise mask these muscles.",
+        "Also easily palpated seated.",
+      ],
+      clinicalConsiderations: "Linked to soft-sand walking, ill-fitting or inflexible-soled shoes, casting, excessive foot pronation, structural foot deformity, or metatarsal stress fracture. Produces sore, tender feet with weight-bearing and reduced/painful toe adduction or extension — frequently mistaken for plantar fasciitis, a metatarsal stress fracture, a digital nerve entrapment, or tarsal joint dysfunction.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_abductor_flexor_hallucis_brevis",
+      name: "Abductor Hallucis & Flexor Hallucis Brevis",
+      type: "Muscle group",
+      position: "Prone",
+      attachments: {
+        origin: "Abductor hallucis: calcaneal tuberosity. Flexor hallucis brevis: cuboid and the third cuneiform.",
+        insertion: "Both converge on the base of the big toe's proximal phalanx, medial and lateral sides respectively",
+      },
+      actions: "Abductor hallucis abducts and flexes the big toe; flexor hallucis brevis flexes it — both at the metatarsophalangeal joint.",
+      patientPosition: "Prone.",
+      therapistPosition: "Seated at the end of the table.",
+      handPlacement: "Medial side of the foot, close to the plantar surface, for the abductor hallucis; over the first metatarsal on the plantar side for the flexor hallucis brevis.",
+      steps: [
+        "Ask the client to abduct the big toe, a medial motion, and feel for the abductor hallucis contracting along the medial foot.",
+        "Trace it proximally and distally, brushing across the fibres.",
+        "Move to the plantar first metatarsal, ask the client to flex the big toe, and feel for the flexor hallucis brevis.",
+        "Trace it toward the big toe and as far proximally as possible.",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "Both superficial and readily palpable along their full length — among the more straightforward intrinsic foot muscles to confirm.",
+      notes: [
+        "If the client can't isolate big-toe abduction, pressing a finger against the medial side of the proximal phalanx and asking them to push into it often helps produce the motion.",
+        "If that still doesn't work, resist big-toe flexion at the MTP joint while keeping the toe's tip joint extended — the abductor hallucis contracts with that too, and keeping the tip extended keeps the flexor hallucis brevis from taking over.",
+        "Distinguish the abductor hallucis from the flexor hallucis brevis by adding extension to the abduction cue — extension reciprocally relaxes the flexor hallucis brevis.",
+        "The flexor hallucis longus tendon runs directly superficial to the flexor hallucis brevis and shares the same action, so expect some difficulty telling them apart; isolating flexion at the MTP joint while keeping the toe tip extended favours the brevis over the longus.",
+        "The adductor hallucis — two heads, oblique and transverse, running from metatarsals two to four, the fibularis longus tendon, and the plantar MTP ligaments to the base of the big toe's proximal phalanx, adducting and flexing it — sits deep to the plantar fascia and flexor digitorum brevis; reach the transverse head by palpating over the second-to-fourth metatarsal heads while resisting big-toe adduction, and the oblique head similarly, nearby.",
+        "Also easily palpated supine.",
+      ],
+      clinicalConsiderations: "Linked to soft-sand walking, ill-fitting shoes, casting, excessive pronation, structural deformity, or metatarsal stress fracture. The abductor hallucis can also entrap the posterior tibial nerve or its plantar branches. Frequently mistaken for Achilles tendinitis, tarsal joint dysfunction, gout, plantar fasciitis, or a metatarsal stress fracture.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_admp_fdmp",
+      name: "Abductor Digiti Minimi Pedis & Flexor Digiti Minimi Pedis",
+      type: "Muscle group",
+      position: "Prone",
+      attachments: {
+        origin: "Abductor digiti minimi pedis: calcaneal tuberosity. Flexor digiti minimi pedis: plantar base of the fifth metatarsal and the fibularis longus tendon.",
+        insertion: "Both converge on the base of the little toe's proximal phalanx, lateral and plantar sides respectively",
+      },
+      actions: "Abductor digiti minimi pedis abducts and flexes the little toe; flexor digiti minimi pedis flexes it — both at the metatarsophalangeal joint.",
+      patientPosition: "Prone.",
+      therapistPosition: "Seated at the end of the table.",
+      handPlacement: "Lateral side of the distal foot, close to the plantar surface, for the abductor; over the fifth metatarsal on the plantar side for the flexor.",
+      steps: [
+        "Ask the client to abduct the little toe, a lateral motion, and feel for the abductor contracting.",
+        "Trace it proximally and distally, brushing across the fibres.",
+        "Move to the plantar fifth metatarsal, ask the client to flex the little toe, and feel for the flexor.",
+        "Trace it toward the little toe and as far proximally as possible.",
+        "Release and compare resting tone.",
+      ],
+      feelFor: "Both superficial and easiest to isolate in the distal half of the foot.",
+      notes: [
+        "If the client can't isolate little-toe abduction, pressing a finger against the toe's lateral side and asking them to push into it usually helps.",
+        "Distinguish the two by adding extension to the abduction cue — extension reciprocally relaxes the flexor.",
+        "The flexor digitorum brevis and the flexor digitorum longus tendon to the little toe both sit superficial to the flexor digiti minimi pedis and share its flexion action, so isolating little-toe MTP flexion while keeping the toe's other joints extended is the best way to favour this muscle over its neighbours — many clients can't manage it, though.",
+        "The lumbricals pedis — four, medial to lateral, running from the flexor digitorum longus tendons to the extensor digitorum longus tendons, flexing toes two to five at the MTP joints and extending them at the IP joints — are reachable between the metatarsals if the client can flex the MTP joints while keeping the toe tips extended.",
+        "The plantar interossei — three, running from metatarsals three to five to the medial side of the proximal phalanges of toes three to five, adducting those toes — sit deeper still, under the lumbricals and partly the flexor digitorum brevis, and are genuinely difficult to isolate given how few clients can isolate toe adduction.",
+        "Also easily palpated supine.",
+      ],
+      clinicalConsiderations: "Same overuse/footwear/structural triggers as the other intrinsic foot muscles. Frequently mistaken for plantar fasciitis, a metatarsal stress fracture, or tarsal joint dysfunction.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_flexor_digitorum_brevis",
+      name: "Flexor Digitorum Brevis",
+      type: "Muscle",
+      position: "Prone",
+      attachments: {
+        origin: "Calcaneal tuberosity",
+        insertion: "Plantar surfaces of the middle phalanges of toes two through five",
+      },
+      actions: "Flexes toes two through five at the metatarsophalangeal and proximal interphalangeal joints.",
+      patientPosition: "Prone.",
+      therapistPosition: "Seated at the end of the table.",
+      handPlacement: "Midline of the plantar surface, proximal foot.",
+      steps: [
+        "Ask the client to flex toes two through five and feel for the contraction.",
+        "Trace proximally to the calcaneus and distally as far as possible, brushing across the fibres.",
+        "Release and assess resting tone.",
+      ],
+      feelFor: "Sits deep to the plantar fascia but is still fairly easy to feel contract; its distal tendons run directly over the flexor digitorum longus tendons, which share the same action and are hard to tell apart from it there.",
+      notes: [
+        "Isolating MTP-joint flexion while keeping the toe tips extended favours this muscle over the deeper flexor digitorum longus, though many clients can't manage that isolation.",
+        "The quadratus plantae sits directly beneath this muscle, running from the calcaneus to the flexor digitorum longus tendon, and shares the same toe-flexion action — reach for it in the same midline proximal-plantar spot, but expect it to be very difficult to distinguish from this muscle.",
+        "Also fairly easily palpated supine.",
+      ],
+      clinicalConsiderations: "Same overuse/footwear/structural triggers as the other intrinsic foot muscles. Produces reduced toe extension, plantar discomfort, and foot cramping — frequently mistaken for plantar fasciitis, a metatarsal stress fracture, or tarsal joint dysfunction.",
+      images: [null, null, null],
+    },
+  ],
+  bones: [
+    {
+      id: "palp_bones_shoulder_girdle",
+      name: "Shoulder Girdle Landmarks",
+      type: "Bony landmarks",
+      position: "Supine or seated",
+      patientPosition: "Supine or seated, arm relaxed.",
+      therapistPosition: "Standing or seated facing the client.",
+      handPlacement: "Start at the suprasternal notch, at the top of the sternum between the two clavicles.",
+      steps: [
+        "From the suprasternal notch, press laterally to find the sternoclavicular joint, then follow the clavicle's shaft laterally to its far end — the medial end curves forward, the lateral end curves back.",
+        "From the far end of the clavicle, drop down and slightly medial (deep to the pectoralis major) to find the tip of the coracoid process, which points laterally.",
+        "Return to the clavicle's lateral end and continue onto the acromion process — the tip of the shoulder — then press medially from it toward the clavicle to find the acromioclavicular joint line.",
+        "From the acromion, trace posteriorly along the spine of the scapula toward the medial border, strumming up and down across it as you go.",
+        "Just above and below the spine of the scapula are the supraspinous and infraspinous fossae; drop off the spine in either direction to feel them.",
+        "Where the spine meets the medial border is the root of the spine — from there, trace the medial border up to the superior angle and down to the inferior angle, then follow the lateral border back up toward the infraglenoid tubercle, just below the glenoid fossa.",
+        "The superior border and the subscapular fossa (the scapula's anterior surface) are reachable but more challenging — the subscapular fossa specifically requires the client supine, with the scapula's medial border grasped and gently protracted to expose it.",
+      ],
+      feelFor: "A connected chain of landmarks you can walk between without losing contact — the clavicle and scapula's borders are mostly subcutaneous and easy to trace once you find the first one.",
+      notes: [
+        "Cueing scapular protraction/retraction, elevation, or resisted forearm extension at specific points (per the steps above) makes several of these borders and the infraglenoid tubercle stand out more clearly.",
+        "Muscle attachments here, broadly: sternocleidomastoid and upper trapezius to the clavicle's upper surface; pectoralis major, anterior deltoid, and subclavius to its lower surface; short head of biceps brachii, coracobrachialis, and pectoralis minor to the coracoid process; upper trapezius and deltoid to the acromion; posterior deltoid and trapezius to the scapular spine (rhomboid minor at its root); supraspinatus to the supraspinous fossa; infraspinatus to the infraspinous fossa; levator scapulae and rhomboids (plus serratus anterior anteriorly) to the medial border; latissimus dorsi and teres major near the inferior angle; teres major/minor to the lateral border (long head of triceps brachii at the infraglenoid tubercle, subscapularis on the anterior side); omohyoid and levator scapulae to the superior border; subscapularis to the subscapular fossa.",
+      ],
+      clinicalConsiderations: "This chain is the backbone reference for locating almost every shoulder-girdle muscle covered elsewhere in this library — get comfortable tracing it end to end before attempting individual muscle palpation in this region.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_elbow_arm",
+      name: "Elbow & Arm Landmarks",
+      type: "Bony landmarks",
+      position: "Supine or seated",
+      patientPosition: "Supine or seated, elbow flexed to roughly 90°.",
+      therapistPosition: "Facing or beside the client.",
+      handPlacement: "Lateral margin of the acromion, dropping onto the head of the humerus.",
+      steps: [
+        "From the acromion's anterolateral edge, drop onto the humeral head and you're on the greater tubercle; with the arm passively rotated, feel your finger dip into the bicipital groove and then land on the lesser tubercle just medial to it.",
+        "About a third of the way down the lateral humeral shaft, feel for the deltoid tuberosity.",
+        "With the elbow flexed to 90°, run your fingers down the medial and lateral sides of the arm until they land on the medial and lateral epicondyles — the widest points near the elbow.",
+        "Halfway between the two epicondyles, and more distal if the elbow is flexed, is the olecranon process of the ulna; with the elbow partly flexed, drop just proximal to it to find the olecranon fossa of the humerus.",
+        "From each epicondyle, trace proximally onto the corresponding supracondylar ridge, then continue onto the lateral or medial humeral shaft, with pressure directed against the shaft toward the midline.",
+        "Just distal to the lateral epicondyle is the radial head — confirm it by feeling it rotate under your fingers as the client alternates pronation and supination.",
+        "From the olecranon, trace distally along the ulna's medial border to its distal end; from the radial head, trace distally along the lateral radial shaft (pronating/supinating the forearm helps bring it out) to the radial styloid process at its far end.",
+      ],
+      feelFor: "A continuous run of subcutaneous bone from the shoulder to the wrist, interrupted mainly by the ulnar nerve's exposed path between the medial epicondyle and the olecranon — palpate that specific stretch gently.",
+      notes: [
+        "Muscle attachments here, broadly: supraspinatus/infraspinatus/teres minor to the greater tubercle, subscapularis to the lesser tubercle, the long head of biceps brachii's tendon runs through the bicipital groove; deltoid to the deltoid tuberosity (brachialis attaches close by); five forearm flexors (pronator teres, flexor carpi radialis, palmaris longus, flexor carpi ulnaris, flexor digitorum superficialis, usually also flexor pollicis longus) to the medial epicondyle; six forearm extensors (extensor carpi radialis brevis, extensor digitorum, extensor digiti minimi, extensor carpi ulnaris, anconeus, supinator) to the lateral epicondyle; triceps brachii and anconeus to the olecranon; brachioradialis and extensor carpi radialis longus to the lateral supracondylar ridge; pronator teres to the distal medial supracondylar ridge; brachioradialis to the radial styloid.",
+      ],
+      clinicalConsiderations: "The gap between the medial epicondyle and the olecranon overlies the ulnar nerve (the \"funny bone\") — keep pressure light there. The medial epicondyle, lateral epicondyle, and olecranon are also the classic three-point landmark check used to rule out an elbow dislocation from a supracondylar fracture.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_wrist_carpals",
+      name: "Wrist Landmarks (Carpals)",
+      type: "Bony landmarks",
+      position: "Seated or supine",
+      patientPosition: "Seated or supine, forearm resting, wrist relaxed.",
+      therapistPosition: "Facing the client.",
+      handPlacement: "Lateral (radial) side of the wrist, at the radial styloid process.",
+      steps: [
+        "From the radial styloid, move posteriorly across the distal radius to find the dorsal (Lister's) tubercle — a bump that separates the extensor carpi radialis tendons from the extensor pollicis longus tendon.",
+        "From the dorsal tubercle, move medially onto the distal ulna to find the ulnar styloid process.",
+        "Drop distally off the radial styloid onto the scaphoid; cueing radial/ulnar deviation makes it alternately press into and disappear from your finger. On the dorsal side, having the client extend and abduct the thumb opens up the anatomic snuffbox, bordered by the abductor pollicis longus and extensor pollicis brevis tendons laterally and the extensor pollicis longus medially — the scaphoid forms its floor.",
+        "Just distal to the scaphoid, along the same line as the thumb's metacarpal, is the trapezium and the thumb's saddle (carpometacarpal) joint.",
+        "In line with the dorsal tubercle and the base of the third metacarpal, drop proximally off that metacarpal base onto the capitate, cued by active wrist flexion with ulnar deviation.",
+        "From the capitate, move proximally and slightly ulnar into a depression for the lunate — presses into your finger with wrist flexion, disappears with extension.",
+        "On the ulnar side, drop distally off the ulnar styloid onto the triquetrum (presses in with radial deviation, disappears with ulnar deviation); from there, palpate distally toward the fifth metacarpal base for the hamate, and radially toward the second metacarpal base, dropping proximally, for the trapezoid.",
+        "Anteriorly, the pisiform sits prominently just distal to the ulna; the hook of the hamate is about an inch distal-and-medial to it — it's pointy, so press gently. The tubercles of the scaphoid and trapezium are similarly reachable anteriorly, just off each bone's lateral surface.",
+      ],
+      feelFor: "The wrist's eight carpal bones read as a connected mosaic once you've anchored on the radial and ulnar styloid processes — most individual carpals reveal themselves only with a specific wrist motion that makes them press into your finger.",
+      notes: [
+        "Four anterior carpal landmarks are the most consistently easy to find: the pisiform and hook of the hamate on the ulnar side, the tubercles of the scaphoid and trapezium on the radial side — together they mark the corners of the carpal tunnel and anchor the transverse carpal ligament.",
+        "Broadly: adductor pollicis attaches to the capitate; opponens pollicis to the trapezium's tubercle; abductor pollicis brevis to both the scaphoid and trapezium tubercles; flexor pollicis brevis to the trapezium's anterior surface; flexor carpi ulnaris and abductor digiti minimi manus to the pisiform; flexor carpi ulnaris, flexor digiti minimi manus, and opponens digiti minimi to the hamate's hook.",
+      ],
+      clinicalConsiderations: "The scaphoid is the carpal bone most often fractured after a fall onto an outstretched hand — anatomic snuffbox tenderness there is a standard clinical red flag worth recognizing even outside formal fracture workup.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_hand",
+      name: "Hand Landmarks",
+      type: "Bony landmarks",
+      position: "Seated or supine",
+      patientPosition: "Seated or supine, hand relaxed.",
+      therapistPosition: "Facing the client.",
+      handPlacement: "Shaft of any metacarpal, dorsal side.",
+      steps: [
+        "Find a metacarpal's shaft first, then trace proximally to its expanded base (the carpometacarpal joint sits just proximal to it) and distally to its expanded head (the metacarpophalangeal joint sits just distal to it) — repeat for each of the five.",
+        "Distal to each MCP joint, trace each finger's proximal, middle, and distal phalanx in turn — each has its own base, shaft, and head — with the proximal and distal interphalangeal joints falling between them (the thumb has only two phalanges and one interphalangeal joint).",
+      ],
+      feelFor: "All five metacarpals and all the phalanges are subcutaneous and reachable from the dorsal, radial, and ulnar sides; the distal phalanx is a little harder to isolate under the fingernail.",
+      notes: [
+        "The third metacarpal's base is the largest and most prominent of the five, and a useful starting landmark for the wrist's central carpal row.",
+        "Broadly: flexor/extensor carpi radialis and ulnaris, plus the interossei, attach onto metacarpals two through four; abductor pollicis longus, flexor pollicis brevis, opponens pollicis, adductor pollicis, and dorsal interossei manus onto the first metacarpal; the interossei and abductor/flexor digiti minimi manus onto the proximal phalanges; extensor digitorum, digiti minimi, and indicis onto the middle phalanges; flexor digitorum profundus and the same extensors onto the distal phalanges.",
+      ],
+      clinicalConsiderations: "Not typically load-bearing for clinical red flags on their own, but a reliable starting reference for finger-joint range-of-motion and swelling assessment.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_ligaments_upper_extremity",
+      name: "Ligaments of the Upper Extremity",
+      type: "Ligaments",
+      position: "Varies by joint",
+      patientPosition: "Positioned per the joint being examined.",
+      handPlacement: "Over the joint capsule itself, since most of these ligaments blend with and reinforce the capsule rather than standing apart from it.",
+      steps: [
+        "Most upper-extremity ligaments aren't palpable as separate, isolated structures — they largely fuse into their joint's capsule. Locate the joint first, via the bony landmarks on either side of it, then palpate directly over the joint line to assess the capsule/ligament complex as a whole.",
+        "Specific named ligaments worth knowing by location: the coracoclavicular (conoid and trapezoid) and coracoacromial ligaments span the coracoid process; the acromioclavicular ligament reinforces the AC joint; the glenohumeral ligaments and coracohumeral ligament reinforce the shoulder capsule anteriorly; the radial and ulnar collateral ligaments flank the elbow, with the annular ligament wrapping the radial head; the interosseous membrane runs the length of the forearm between the radius and ulna; the transverse carpal ligament (flexor retinaculum) roofs the carpal tunnel, anchored to the scaphoid and trapezium tubercles on one side and the pisiform and hamate hook on the other; and each finger joint (MCP, PIP, DIP) has its own capsule reinforced by collateral ligaments and a palmar plate.",
+      ],
+      feelFor: "Firm, taut tissue directly over a joint line rather than a separately mobile cord — true isolated ligament palpation is the exception, not the rule, in this region.",
+      clinicalConsiderations: "Ligament integrity here is mostly assessed functionally — joint stress/stability tests (varus/valgus stress at the elbow, AC joint stress tests, and so on) — rather than by palpation alone, since most of these structures can't be distinguished from the capsule by feel.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_face_cranium",
+      name: "Face & Cranium Landmarks",
+      type: "Bony landmarks",
+      position: "Seated or supine",
+      patientPosition: "Seated or supine, facing the therapist.",
+      handPlacement: "Inferior border of the mandible's body.",
+      steps: [
+        "Trace the mandible's body along its inferior border, back to the angle of the jaw — the transition point where the body becomes the ramus.",
+        "From the angle, trace the ramus's posterior border upward to the condyle, just in front of the ear; cueing the client to open and close the mouth makes the condyle's movement at the TMJ obvious.",
+        "The ramus's anterior border, and the coronoid process it leads to, are reachable from outside with the mouth nearly fully open, or more directly from inside the mouth with a gloved finger.",
+        "The maxilla sits above the mouth and is easily explored to its borders with the zygomatic and frontal bones; the zygomatic bone itself, the cheekbone, sits just below-and-lateral to the eye.",
+        "From the zygomatic bone, trace posteriorly onto the zygomatic arch of the temporal bone, strumming vertically to confirm it, and separately palpate just behind the earlobe, pressing medially, for the mastoid process.",
+        "The frontal bone (above the eyes) and parietal bone (crown of the skull) are both directly subcutaneous and simple to trace.",
+        "At the back of the skull, the external occipital protuberance (EOP) is a prominent midline bump; from it, trace laterally along the superior nuchal line, a horizontal ridge easiest to feel by strumming vertically across it — the inferior nuchal line runs parallel just below it and is harder to find.",
+      ],
+      feelFor: "Almost the entire facial and cranial skeleton is directly subcutaneous — the main technical skill here is distinguishing bone from the muscle bellies and cartilage lying over parts of it (the nose's cartilaginous tip, for instance, is noticeably softer than the nasal bone above it).",
+      notes: [
+        "Broadly: depressor anguli oris, depressor labii inferioris, mentalis, and platysma attach to the mandible's outer surface, digastric/mylohyoid/geniohyoid to its inner surface, masseter and medial pterygoid to its angle, temporalis and masseter to the coronoid process, lateral pterygoid to the condyle; orbicularis oris, nasalis, and several lip elevators to the maxilla; masseter and the zygomaticus muscles to the zygomatic bone; procerus overlies the nasal bone; orbicularis oculi and corrugator supercilii attach to the frontal bone (frontalis overlies it), temporalis to the parietal bone; masseter to the zygomatic arch; sternocleidomastoid, splenius capitis, and longissimus capitis to the mastoid process; occipitalis to the occipital bone, upper trapezius to the EOP and superior nuchal line (splenius capitis and sternocleidomastoid also reach the superior nuchal line).",
+      ],
+      clinicalConsiderations: "The TMJ condyle can also be palpated from inside the ear canal (gloved fingertip, pressing anteromedially) for a clearer read on joint play — useful when assessing TMJ dysfunction, but confirm client comfort and appropriate scope before doing so.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_anterior_neck",
+      name: "Anterior Neck Landmarks",
+      type: "Bony landmarks",
+      position: "Supine",
+      patientPosition: "Supine, neck relaxed in neutral or slight flexion.",
+      therapistPosition: "Seated at the head of the table.",
+      handPlacement: "Under the chin, moving inferiorly into the anterior neck.",
+      steps: [
+        "Move inferiorly from the mandible until you feel firm tissue — this is the hyoid bone; cueing a swallow confirms it by movement, and it can be gently shifted side to side, since it's the one bone in the body that doesn't articulate with another.",
+        "Drop just below the hyoid, through a small joint space, onto the thyroid cartilage — feel its small midline notch, then gently explore both sides; a swallow cue again confirms it.",
+        "Continue inferiorly along the thyroid cartilage to a joint line, and just below that is the first cricoid cartilage; further cricoid rings continue down to roughly the suprasternal notch.",
+        "From the first cricoid cartilage, drop laterally about half an inch and press gently but firmly backward to find the carotid tubercle — the largest anterior tubercle of the cervical transverse processes, at C6.",
+        "From the carotid tubercle, palpate up and down to find the remaining cervical transverse processes, directing pressure posteriorly/posteromedially; C1's transverse process, the widest, sits in a soft-tissue hollow directly below the ear, behind the mandible's ramus and in front of the mastoid process.",
+      ],
+      feelFor: "A midline chain of cartilage and bone from the jaw down to the chest, with the transverse processes reachable just off to the side at each level — all of it demands a light, patient touch given how much sensitive soft tissue overlies it.",
+      notes: [
+        "Work one side of the neck at a time, and stay alert for a pulse under your fingers — that's the carotid artery, and pressing on it can restrict blood flow to the brain or trigger a reflex drop in blood pressure. If you feel a pulse, shift off it immediately.",
+        "Broadly: all four suprahyoid and (except sternothyroid) all four infrahyoid muscles attach to the hyoid; sternothyroid and thyrohyoid to the thyroid cartilage; levator scapulae, the scalenes, longus colli/capitis, and the deeper posterior neck groups to the C2–C7 transverse processes; levator scapulae, splenius cervicis, and the suboccipital group to C1's transverse process.",
+      ],
+      clinicalConsiderations: "This is the single most safety-sensitive palpation region in the body given the carotid arteries, the airway, and the facial nerve's proximity near C1's transverse process — always work gently, gradually, and on one side at a time.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_posterior_neck",
+      name: "Posterior Neck & Cervical Spine Landmarks",
+      type: "Bony landmarks",
+      position: "Supine or prone",
+      patientPosition: "Supine (for articular processes) or prone (for spinous processes), neck relaxed.",
+      therapistPosition: "At the head of the table.",
+      handPlacement: "Midline of the posterior neck, starting from the external occipital protuberance.",
+      steps: [
+        "Drop inferiorly off the EOP onto the cervical spine — the first spinous process you reach is C2, typically felt as two points (bifid) rather than one.",
+        "Continue palpating down the midline; C7's spinous process is noticeably larger than its neighbours, hence \"vertebra prominens,\" and, along with C2, is almost always palpable even when the others aren't. If C6 versus C7 is in question, passively flex and extend the neck — C6 disappears on extension, C7 doesn't.",
+        "C1 has no true spinous process — instead, palpate between C2's spinous process and the occiput, pressing forward, to find its posterior tubercle.",
+        "For the articular processes, which stack to form the \"articular pillar,\" have the client supine and relaxed; starting at C2's spinous process, palpate about an inch lateral to it and work down the neck.",
+        "Just lateral to the spinous processes, between them and the articular processes, is the laminar groove — a channel that several deep neck muscles run through.",
+      ],
+      feelFor: "How many individual segments you can distinguish depends heavily on the client's natural cervical curve — a flatter curve exposes more spinous processes; a pronounced lordosis hides more of them in the concavity.",
+      notes: [
+        "The articular processes are a common contact point for cervical spine mobilization technique.",
+        "Broadly: upper trapezius, splenius capitis/cervicis, interspinales, and the erector spinae/transversospinalis groups attach to or via the nuchal ligament over the cervical spinous processes (rhomboid minor and serratus posterior superior specifically at C7, rectus capitis posterior major and obliquus capitis inferior at C2, rectus capitis posterior minor at C1's posterior tubercle); the erector spinae and transversospinalis groups also attach onto the articular processes and lie in the laminar groove.",
+      ],
+      clinicalConsiderations: "The C6/C7 distinction via flexion-extension is a genuinely useful quick check before doing segment-specific work anywhere in the lower cervical spine.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_trunk",
+      name: "Trunk Landmarks (Sternum, Ribs & Spine)",
+      type: "Bony landmarks",
+      position: "Supine or prone",
+      patientPosition: "Supine (anterior trunk) or prone (posterior trunk).",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Superior border of the sternum, at the suprasternal notch.",
+      steps: [
+        "From the suprasternal notch, palpate down the sternum's anterior surface to a horizontal ridge — the angle of Louis, where the manubrium meets the body of the sternum, also the level of the second rib's attachment — then continue down to the small pointed xiphoid process at the very bottom, which yields slightly to gentle pressure since it's cartilaginous.",
+        "For ribs two through ten, work lateral to the sternum and strum down the chest, counting intercostal spaces from the angle of Louis (rib two); ribs seven through ten are easier to trace further out toward the side of the trunk.",
+        "Ribs eleven and twelve don't reach the sternum — find their free, pointed ends at the bottom of the rib cage, above the iliac crest, in the lateral/posterolateral trunk.",
+        "The first rib is the hardest to reach: find the upper trapezius's anterior border and drop just in front of it, pressing down against the rib — a deep breath lifts it up into your fingers.",
+        "Posteriorly, find C7's spinous process (vertebra prominens) and continue down the midline, counting spinous processes through the thoracic and lumbar spine; the thoracic ones stand out more due to the kyphotic curve, while the lumbar ones need firmer pressure due to the opposite, lordotic, curve.",
+        "The trunk's transverse processes sit about an inch lateral to the spinous processes but at a different vertebral level than the same-numbered spinous process — confirm the exact level by pressing on a candidate transverse process and feeling which spinous process moves.",
+        "The laminar groove, between the spinous and transverse processes, and the posterior ribs, most reachable in the interscapular region and lower thoracic spine, fill out the rest of the posterior trunk survey.",
+      ],
+      feelFor: "A long, continuous survey from the collarbone to the pelvis — most of it is directly subcutaneous, though breast tissue can limit anterior access in some clients, and the transverse processes require a specific confirmatory trick rather than being obviously locatable by feel alone.",
+      notes: [
+        "Broadly: rectus abdominis attaches to the xiphoid's outer surface (transversus thoracis and the diaphragm to its inner surface); serratus anterior, the pectorals, subclavius, the intercostals, and the abdominal wall muscles attach to or overlie the anterior rib cage; posteriorly, latissimus dorsi, the serratus posterior muscles, the erector spinae and transversospinalis groups, and quadratus lumborum attach to the rib cage, spinous processes, and/or transverse processes as appropriate to level.",
+      ],
+      clinicalConsiderations: "The xiphoid process is the landmark used to find correct hand position for chest compressions in CPR — worth knowing even outside a treatment context.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_ligaments_axial",
+      name: "Ligaments of the Axial Body",
+      type: "Ligaments",
+      position: "Varies by segment",
+      patientPosition: "Positioned per the segment being examined.",
+      handPlacement: "Over the spinous processes, laminae, or joint line, since most of these ligaments blend with the spinal column and its capsules.",
+      steps: [
+        "As with the upper extremity, most axial ligaments blend into the joint capsules and spinal column rather than standing apart as separately palpable cords — locate the adjacent bony landmarks first, then assess the ligament/capsule complex as a whole over that joint or segment.",
+        "Specific named structures worth knowing by location: the anterior and posterior longitudinal ligaments run the full length of the vertebral bodies front and back; the ligamentum flavum connects adjacent laminae (its upward continuation behind the upper cervical spine is the posterior atlanto-occipital membrane); the nuchal ligament runs along the cervical spinous processes; the supraspinous and interspinous ligaments connect adjacent spinous processes through the rest of the spine; the alar and cruciate ligaments of the dens stabilize C1–C2 specifically; costotransverse and radiate ligaments anchor each rib to the spine; and at the pelvis, the sacrotuberous, sacrospinous, and iliolumbar ligaments stabilize the sacroiliac joints, with the anterior sternoclavicular, costoclavicular, and interclavicular ligaments doing the equivalent job at the sternoclavicular joints.",
+      ],
+      feelFor: "Firm tissue directly over the spinous processes, laminae, or joint lines rather than an isolated mobile structure.",
+      clinicalConsiderations: "As in the upper extremity, most of this is assessed through segmental motion and stability testing rather than isolated palpation.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_pelvis",
+      name: "Pelvis Landmarks",
+      type: "Bony landmarks",
+      position: "Prone",
+      patientPosition: "Prone.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Iliac crest.",
+      steps: [
+        "Follow the iliac crest forward to the anterior superior iliac spine (ASIS), then back to the posterior superior iliac spine (PSIS) — the PSIS often sits under a visible skin dimple, roughly two inches off the midline at the base of the sacrum.",
+        "From the PSIS, palpate the sacrum's midline for the sacral tubercles, the second is usually level with the PSISs, then continue down to the coccyx, feeling for the sacrococcygeal joint at its top.",
+        "The ischial tuberosity sits deep to the gluteal fold, slightly medial to the buttock's midpoint — approach from below rather than through the gluteus maximus, and use moderate-to-deep pressure.",
+        "At roughly the same level, or slightly higher, move to the lateral proximal thigh for the greater trochanter — large and easy to strum across once found.",
+        "Anteriorly, the anterior inferior iliac spine (AIIS) sits just below the ASIS but under thicker musculature — the reliable way in is to trace the rectus femoris proximally to its AIIS attachment with the hip passively flexed.",
+        "The pubic bone and pubic tubercle sit at the very bottom of the anterior abdominal wall — approach gradually from above with the abdominal wall relaxed, using the ulnar edge of the hand directed down and back.",
+      ],
+      feelFor: "The iliac crest anchors the whole survey — everything else in the pelvis is found by measuring distance and direction from it or from the ischial tuberosity.",
+      notes: [
+        "The sacroiliac joint itself isn't directly palpable — the PSIS overhangs it, and the joint's own ligaments block direct access.",
+        "Broadly: latissimus dorsi, the erector spinae group, quadratus lumborum, the abdominal wall muscles, gluteus maximus, and tensor fasciae latae attach to the iliac crest; latissimus dorsi and gluteus maximus to the PSIS and coccyx; the erector spinae/transversospinalis groups and gluteus maximus to the posterior sacrum (piriformis and iliacus to the anterior sacrum); adductor magnus, the gemelli, quadratus femoris, and the hamstrings to the ischial tuberosity; gluteus medius/minimus, piriformis, the obturators/gemelli, and vastus lateralis to the greater trochanter; tensor fasciae latae and sartorius to the ASIS; rectus femoris to the AIIS; rectus abdominis, pectineus, adductor longus, gracilis, and adductor brevis to the pubic bone.",
+      ],
+      clinicalConsiderations: "PSIS symmetry, or the lack of it, is a commonly used, though imperfect, landmark for informal pelvic-alignment screening.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_thigh_knee",
+      name: "Thigh & Knee Landmarks",
+      type: "Bony landmarks",
+      position: "Supine",
+      patientPosition: "Supine, knee flexed to roughly 90° for the knee-region landmarks.",
+      therapistPosition: "Standing beside the client.",
+      handPlacement: "Greater trochanter, proximal lateral thigh.",
+      steps: [
+        "From the greater trochanter, the lesser trochanter is reachable medially only by first locating the psoas major's distal portion, following it down, relaxing it (hip flexed and laterally rotated), and pressing in against the femur.",
+        "With the knee relaxed and slightly flexed, glide over the patella in all directions; just above it, in the midline, is the trochlear groove of the femur, only exposed with the knee flexed, since full extension tucks the patella up into it.",
+        "With the knee flexed to 90°, drop off the patella's inferior border to find the knee joint line on both sides, then press proximally against the femur for the medial/lateral femoral condyles, or distally against the tibia for the medial/lateral tibial condyles.",
+        "Continuing along the lateral tibial condyle's superior margin leads to the head of the fibula — palpable from the front, side, and back.",
+        "A couple of inches below the patella's lower edge, in the midline of the proximal anterior tibia, is the tibial tuberosity — from there the entire anteromedial tibial shaft is subcutaneous and traceable all the way down to the medial malleolus.",
+        "From the fibular head, the lateral fibular shaft is reachable down to the lateral malleolus, though a stretch of it near the top is masked by the supinator muscle.",
+      ],
+      feelFor: "The tibia and fibula give a long, continuous run of directly subcutaneous bone from knee to ankle; the femur is far more muscle-covered and only exposed at its two ends.",
+      notes: [
+        "Broadly: iliopsoas attaches to the lesser trochanter; the quadriceps femoris group to the patella and tibial tuberosity; adductor magnus, gastrocnemius, plantaris, and popliteus to the femoral condyles; biceps femoris and semimembranosus to the posterior tibial condyles (gluteus maximus and tensor fasciae latae to the lateral one, via the IT band); biceps femoris, fibularis longus, soleus, and extensor digitorum longus to the fibular head; tibialis anterior, the pes anserine group, and the quadriceps to the anterior tibial shaft (popliteus, soleus, tibialis posterior, and flexor digitorum longus to the posterior shaft); fibularis longus/brevis to the lateral fibular shaft (extensor digitorum longus, extensor hallucis longus, and fibularis tertius anteriorly; soleus, tibialis posterior, and flexor hallucis longus posteriorly).",
+        "The medial and lateral menisci are palpable within the knee joint line against the anterior tibia.",
+      ],
+      clinicalConsiderations: "The common fibular nerve runs superficially right at the fibular head — palpate that specific spot gently.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_bones_foot_ankle",
+      name: "Foot & Ankle Landmarks",
+      type: "Bony landmarks",
+      position: "Supine",
+      patientPosition: "Supine, foot relaxed.",
+      therapistPosition: "Seated at the end of the table.",
+      handPlacement: "Medial malleolus (large and prominent, at the end of the tibial shaft) or lateral malleolus (the fibula's distal end, sitting slightly further distal than the medial malleolus).",
+      steps: [
+        "From the medial malleolus, drop distally and slightly posterior about an inch to find the navicular tuberosity, then continue about an inch further posterior for the sustentaculum tali of the calcaneus, a shelf the talus rests on — the medial tubercle of the talus sits just behind that, and the talus's head sits just in front of the navicular, most obvious with the foot inverted/everted.",
+        "From the lateral malleolus, drop distally and slightly forward into a depression overlying the tarsal sinus, pressing medially/inferiorly; the fibular tubercle of the calcaneus sits just below the malleolus and separates the fibularis longus and brevis tendons.",
+        "Working forward along the lateral foot from the calcaneus, a depression just proximal to the fifth metatarsal marks the cuboid — press firmly medially to feel it.",
+        "On the dorsum, each metatarsal (all five) and each toe's phalanges are traceable by their expanded base, shaft, and head, with the first cuneiform reachable just proximal to the first metatarsal's base, and the second/third cuneiforms similarly just proximal to the second/third metatarsal bases.",
+        "On the plantar side, all five metatarsal heads are reachable, with two small sesamoid bones sitting under the first metatarsal head; the calcaneal tuberosity is reachable with firm pressure on either side of the plantar heel's midline, medial side usually more prominent.",
+        "The posterior surface of the calcaneus, the heel, is reachable by continuing from the medial or lateral views around to the back of the foot.",
+      ],
+      feelFor: "The three most consistently easy medial-foot landmarks to anchor on are the medial malleolus, the sustentaculum tali, and the navicular tuberosity — most other tarsal landmarks are found by measured distance from one of those three.",
+      notes: [
+        "The talus is the only tarsal bone with no muscle attachments at all — useful to know when a muscle-attachment note for it comes up empty.",
+        "Broadly: tibialis anterior, fibularis longus, and tibialis posterior attach around the first cuneiform/first metatarsal; tibialis posterior to the navicular tuberosity and to the plantar cuboid/second and third cuneiforms; fibularis brevis and tertius to the fifth metatarsal's styloid process; extensor digitorum/hallucis brevis to the lateral calcaneus and tarsal sinus; abductor hallucis, abductor digiti minimi pedis, and flexor digitorum brevis to the calcaneal tuberosity; flexor hallucis brevis to the first-metatarsal-head sesamoids; gastrocnemius, soleus, and plantaris to the calcaneus's posterior surface.",
+      ],
+      clinicalConsiderations: "The medial malleolus, sustentaculum tali, and navicular tuberosity together are the standard reference triad for orienting anywhere else in the midfoot.",
+      images: [null, null, null],
+    },
+    {
+      id: "palp_ligaments_lower_extremity",
+      name: "Ligaments of the Lower Extremity",
+      type: "Ligaments",
+      position: "Varies by joint",
+      patientPosition: "Positioned per the joint being examined.",
+      handPlacement: "Over the joint capsule itself, since most of these ligaments blend with and reinforce the capsule rather than standing apart from it.",
+      steps: [
+        "As elsewhere, most lower-extremity ligaments blend into their joint's capsule rather than standing apart as isolated cords — find the bony landmarks bordering the joint first, then assess the capsule/ligament complex as a whole.",
+        "Specific named structures worth knowing by location: the iliofemoral, pubofemoral, and ischiofemoral ligaments (plus the zona orbicularis) reinforce the hip capsule; the sacrotuberous, sacrospinous, and iliolumbar ligaments stabilize the sacroiliac joints, shared with the axial body; the medial and lateral collateral ligaments flank the knee, with the cruciate ligaments and menisci inside the joint and the iliotibial band running along the lateral thigh to the lateral tibial condyle; the interosseous membrane spans the tibia and fibula; the deltoid ligament reinforces the ankle's medial side, the anterior/posterior talofibular and calcaneofibular ligaments its lateral side; and the plantar aponeurosis, spring ligament, and long/short plantar ligaments support the foot's arches from below.",
+      ],
+      feelFor: "Firm tissue directly over a joint line rather than a separately mobile structure, with the notable exception of the iliotibial band, which is a genuinely distinct, tensionable band running the length of the lateral thigh.",
+      clinicalConsiderations: "Ankle sprains most often involve the anterior talofibular ligament specifically — worth knowing its location, just in front of the lateral malleolus, even though, like most ligaments here, it's assessed more through stress testing than isolated palpation.",
       images: [null, null, null],
     },
   ],

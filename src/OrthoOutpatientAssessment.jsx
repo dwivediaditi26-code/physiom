@@ -51,6 +51,28 @@ function formatPalpationSection(section) {
   return [...pinRows, ...restRows(rest)];
 }
 
+// Exported alongside buildOrthoAssessSteps (see below) so
+// SpecialtyPatientProfile.jsx's Ortho Assessment tab can render nested,
+// region-driven sections (ROM/MMT/Special Tests/Palpation/...) correctly
+// instead of falling back to the generic Object.entries flattener.
+export const orthoSummaryFormatters = {
+  subjective: formatSubjectiveSection,
+  redFlags: formatRedFlagsSection,
+  pain: formatPainSection,
+  palpation: formatPalpationSection,
+  observation: formatGeneralObservationSection,
+  rom: formatRomSection,
+  mmt: formatMmtSection,
+  specialTests: formatSpecialTestsSection,
+  kineticChain: formatKineticChainSection,
+  cpa: formatCpaSection,
+  sttt: formatSttSection,
+  fma: formatFmaSection,
+  outcomeMeasure: formatOutcomeMeasureSection,
+  techniques: formatTreatmentTechniquesSection,
+  exercisePrescription: formatExercisePrescriptionSection,
+};
+
 /* ============================================================
    CONDITION TEMPLATE ENGINE — Outpatient / Musculoskeletal
    pathway. Region + condition are chosen one screen earlier
@@ -73,6 +95,16 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
+
+// Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
+// the EXACT same summary the wizard's own Review step uses (same pattern as
+// CardiopulmonaryAssessment's buildCardioAssessSteps/SummarySection) instead
+// of a separately-built generic renderer. The saved snapshot (onSave below)
+// doesn't persist stepOrder, so this always returns the full canonical
+// order -- AssessmentSummary already skips any step with no data.
+export function buildOrthoAssessSteps() {
+  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+}
 
 const STEP_META = {
   demographics: { icon: "📋", label: "Demographics" },
@@ -303,23 +335,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   }
 
   const regionsLabel = regionLabelList(selectedRegions) || "—";
-  const summaryFormatters = {
-    subjective: formatSubjectiveSection,
-    redFlags: formatRedFlagsSection,
-    pain: formatPainSection,
-    palpation: formatPalpationSection,
-    observation: formatGeneralObservationSection,
-    rom: formatRomSection,
-    mmt: formatMmtSection,
-    specialTests: formatSpecialTestsSection,
-    kineticChain: formatKineticChainSection,
-    cpa: formatCpaSection,
-    sttt: formatSttSection,
-    fma: formatFmaSection,
-    outcomeMeasure: formatOutcomeMeasureSection,
-    techniques: formatTreatmentTechniquesSection,
-    exercisePrescription: formatExercisePrescriptionSection,
-  };
 
   // Persist a snapshot on the active patient record -- same set(key,value)
   // pattern Cardio/Neuro's own Final Review "Save" already uses. Keyed by
@@ -333,6 +348,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
       condition: conditionLabel,
       data,
     }));
+    // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
+    // top-level field directly (2026-08-31) -- same convention IPD/Post-op
+    // now write on their own save.
+    onSave("care_setting", "outpatient");
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
@@ -444,7 +463,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 data={data}
                 onEdit={jumpTo}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={summaryFormatters}
+                formatters={orthoSummaryFormatters}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
@@ -506,7 +525,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                   setReviewOpen(false);
                 }}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={summaryFormatters}
+                formatters={orthoSummaryFormatters}
               />
             </div>
           </div>

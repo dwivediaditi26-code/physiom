@@ -209,13 +209,82 @@ export const EXPERTISE = [
   { name: "Pain Management", stars: 4, endorsed: false, count: 9 },
 ];
 
+// Real, verified papers (2026-09-01, Evidence tab redesign) -- title/journal/
+// year/URL all checked against the actual source before going in here, not
+// invented. category is one of the four subjects the Evidence tab now
+// filters by (MSK/Neuro/Sports/Cardio); sourceUrl+sourceName back the "Read
+// on <site>" link on ResearchCard.jsx, summary+conclusion are its two new
+// sections. This is what a signed-out visitor (or any visitor before the
+// research_articles table has real rows -- see add_evidence_source_and_summary.sql)
+// sees, same "never look empty" fallback every other PhysioFeed list uses.
 export const EVIDENCE = [
-  { id: "ev1", title: "Progressive loading in hamstring injury rehabilitation", journal: "British Journal of Sports Medicine", type: "Systematic Review", year: 2026, level: "Level 1", category: "Sports", tags: ["Hamstring", "SportsRehab"], grad: "violet", saved: false },
-  { id: "ev2", title: "Criteria-based vs time-based return to sport after ACL reconstruction", journal: "JOSPT", type: "Meta-Analysis", year: 2025, level: "Level 1", category: "Sports", tags: ["ACL", "ReturnToSport"], grad: "blue", saved: false },
-  { id: "ev3", title: "Dry needling for myofascial pain: an updated review", journal: "Physical Therapy Reviews", type: "Systematic Review", year: 2025, level: "Level 2", category: "Pain", tags: ["DryNeedling", "PainScience"], grad: "rose", saved: false },
-  { id: "ev4", title: "Early mobilization after stroke: functional outcomes", journal: "Stroke Rehabilitation Journal", type: "RCT", year: 2026, level: "Level 1", category: "Neuro", tags: ["Stroke", "Neuro"], grad: "teal", saved: false },
-  { id: "ev5", title: "Load management strategies in tendinopathy", journal: "Sports Medicine", type: "Narrative Review", year: 2024, level: "Level 3", category: "MSK", tags: ["Tendinopathy", "LoadManagement"], grad: "amber", saved: true },
-  { id: "ev6", title: "Pelvic floor rehabilitation in postpartum women", journal: "Women's Health Physical Therapy", type: "Systematic Review", year: 2025, level: "Level 2", category: "Women's Health", tags: ["PostPartum", "PelvicFloor"], grad: "slate", saved: false },
+  { id: "ev1", title: "Warming-up for the Latest on Diagnosing and Managing Tendinopathy", journal: "JOSPT", type: "Narrative Review", year: 2023, level: "Level 3", category: "MSK", tags: ["Tendinopathy", "Diagnosis"], grad: "blue", saved: false,
+    sourceUrl: "https://www.jospt.org/doi/10.2519/jospt.2023.12440", sourceName: "JOSPT",
+    summary: "Editorial overview framing a JOSPT evidence update on tendinopathy — persistent tendon pain and dysfunction without the classic inflammatory histopathology seen in acute injury.",
+    conclusion: "Positions tendon load-capacity and clinical reasoning, not imaging findings, as the primary anchor for diagnosis and management planning." },
+  { id: "ev2", title: "The Efficacy of Exercise Therapy for Rotator Cuff–Related Shoulder Pain According to the FITT Principle", journal: "JOSPT", type: "Systematic Review", year: 2024, level: "Level 1", category: "MSK", tags: ["RotatorCuff", "ExerciseTherapy"], grad: "blue", saved: false,
+    sourceUrl: "https://www.jospt.org/doi/10.2519/jospt.2024.12453", sourceName: "JOSPT",
+    summary: "Systematic review with meta-analyses examining how exercise-therapy dosing — Frequency, Intensity, Time, Type (the FITT principle) — relates to outcomes in rotator cuff-related shoulder pain (RCRSP).",
+    conclusion: "Exercise therapy reduced pain and improved shoulder function in RCRSP across a range of FITT parameters, supporting individualized dosing over any single prescribed protocol." },
+  { id: "ev3", title: "Efficacy of very early mobilization in patients with acute stroke", journal: "Annals of Palliative Medicine", type: "Systematic Review", year: 2021, level: "Level 1", category: "Neuro", tags: ["Stroke", "EarlyMobilization"], grad: "teal", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/34872302/", sourceName: "PubMed",
+    summary: "Systematic review and meta-analysis pooling trials of very early mobilization (VEM, generally <24–48h post-stroke) against usual-care timing, assessing adverse events, disability, bed-related complications, length of stay, and activities of daily living (ADL).",
+    conclusion: "VEM did not clearly improve disability or ADL outcomes and was linked to more adverse events in some pooled trials — supports individualized mobilization timing rather than a routine very-early protocol for every patient." },
+  { id: "ev4", title: "Efficacy of Early Mobilization in Stroke Patients in Relation to Quality of Life and Level of Dependency", journal: "PubMed", type: "Systematic Review", year: 2025, level: "Level 2", category: "Neuro", tags: ["Stroke", "QualityOfLife"], grad: "teal", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41517009/", sourceName: "PubMed",
+    summary: "Systematic review of nine studies assessing early mobilization (24–48h post-stroke) against dependency level and health-related quality of life (HRQoL).",
+    conclusion: "Early mobilization was associated with reduced dependency, but showed no significant improvement in quality-of-life scores — functional gains and perceived quality of life didn't move together." },
+  { id: "ev5", title: "Fifty-five per cent return to competitive sport following ACL reconstruction surgery", journal: "British Journal of Sports Medicine", type: "Meta-Analysis", year: 2014, level: "Level 1", category: "Sports", tags: ["ACL", "ReturnToSport"], grad: "violet", saved: false,
+    sourceUrl: "https://doi.org/10.1136/bjsports-2013-093398", sourceName: "BJSM",
+    summary: "Updated systematic review and meta-analysis pooling return-to-sport outcomes after ACL reconstruction, incorporating physical-functioning and psychological/contextual factors.",
+    conclusion: "Only 55% of patients returned to their competitive level of sport — notably lower than general return-to-sport rates — indicating physical recovery alone doesn't guarantee competitive return; psychological readiness is a significant limiting factor." },
+  { id: "ev6", title: "Provocation With Progressive Loading Is the Most Common Diagnostic Method for Achilles Tendinopathy — 1048 Physiotherapists", journal: "JOSPT Open", type: "Cross-Sectional Study", year: 2024, level: "Level 3", category: "Sports", tags: ["Achilles", "Tendinopathy"], grad: "violet", saved: false,
+    sourceUrl: "https://www.jospt.org/doi/abs/10.2519/josptopen.2024.0080", sourceName: "JOSPT",
+    summary: "International cross-sectional survey of 1,048 physiotherapists on the diagnostic methods used for Achilles tendinopathy.",
+    conclusion: "Symptom provocation via a series of progressive tendon-loading tests was the most commonly used diagnostic method, rated helpful by 92% of respondents — clinical loading tests, not imaging, dominate real-world diagnosis." },
+  { id: "ev7", title: "Core Components of Cardiac Rehabilitation/Secondary Prevention Programs: 2007 Update", journal: "Circulation (AHA / AACVPR)", type: "Scientific Statement", year: 2007, level: "Level 1", category: "Cardio", tags: ["CardiacRehab", "SecondaryPrevention"], grad: "rose", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/17513578/", sourceName: "PubMed",
+    summary: "Scientific statement defining the core components required in a cardiac rehabilitation / secondary-prevention program.",
+    conclusion: "Set baseline patient assessment, nutritional counseling, risk-factor management (lipids, blood pressure, weight, diabetes, tobacco), psychosocial intervention, and physical-activity/exercise training as required components — exercise training in isolation does not constitute cardiac rehabilitation." },
+  { id: "ev8", title: "Core Components of Cardiac Rehabilitation Programs: 2024 Update", journal: "Circulation (AHA / AACVPR)", type: "Scientific Statement", year: 2024, level: "Level 1", category: "Cardio", tags: ["CardiacRehab", "2024Update"], grad: "rose", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/39315436/", sourceName: "PubMed",
+    summary: "Updated scientific statement revising the core-components framework for cardiac rehabilitation programs in light of current evidence.",
+    conclusion: "Reaffirms the same multidisciplinary core-components model while incorporating current evidence — described by the writing group as a substantial progression in the field since the prior update." },
+  // Batch 2 (2026-09-01, "I add more now" -- Aditi asked for more of each
+  // subject). Same rule as batch 1: every title/journal/year/URL checked
+  // against the real source, nothing invented.
+  { id: "ev9", title: "Interventions for the Management of Acute and Chronic Low Back Pain: Revision 2021", journal: "JOSPT", type: "Clinical Practice Guideline", year: 2021, level: "Level 1", category: "MSK", tags: ["LowBackPain", "ClinicalGuideline"], grad: "blue", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/34719942/", sourceName: "PubMed",
+    summary: "Clinical practice guideline update from the Academy of Orthopaedic Physical Therapy (APTA), synthesizing evidence on non-pharmacologic interventions physical therapists deliver for acute and chronic low back pain (LBP).",
+    conclusion: "Recommends exercise therapy, manual therapy, and patient education as first-line physical therapy management for LBP, with recommendation strength varying by intervention and by acute vs. chronic presentation." },
+  { id: "ev10", title: "Effectiveness of exercise therapy in patients with knee osteoarthritis: an overview of systematic reviews", journal: "PubMed", type: "Overview of Reviews", year: 2025, level: "Level 2", category: "MSK", tags: ["KneeOA", "ExerciseTherapy"], grad: "blue", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/40669904/", sourceName: "PubMed",
+    summary: "Overview (review-of-reviews) synthesizing systematic reviews on exercise therapy for knee osteoarthritis, evaluating both patient outcomes and the methodological quality of the underlying evidence base.",
+    conclusion: "63.7% of the included reviews found exercise therapy improved outcomes, led by muscle-strengthening and aerobic exercise — but 87.4% of those reviews were themselves rated critically low quality, so the positive signal is real but the evidence base underneath it is weak." },
+  { id: "ev11", title: "Parkinson's disease and intensive exercise therapy — a systematic review and meta-analysis of randomized controlled trials", journal: "PubMed", type: "Meta-Analysis", year: 2015, level: "Level 1", category: "Neuro", tags: ["Parkinsons", "ExerciseTherapy"], grad: "teal", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/25936252/", sourceName: "PubMed",
+    summary: "Systematic review and meta-analysis of randomized controlled trials evaluating intensive exercise therapy in Parkinson's disease (PD).",
+    conclusion: "Intensive exercise therapy is feasible and safe in PD, with beneficial effects on motor symptom severity." },
+  { id: "ev12", title: "Effect of Physiotherapy Interventions on Motor Symptoms in People With Parkinson's Disease: A Systematic Review and Meta-Analysis", journal: "PubMed", type: "Systematic Review", year: 2023, level: "Level 1", category: "Neuro", tags: ["Parkinsons", "MotorSymptoms"], grad: "teal", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/37070664/", sourceName: "PubMed",
+    summary: "Systematic review and meta-analysis comparing physiotherapy modalities — strength training, mind-body exercise, aerobic exercise, and non-invasive brain stimulation — for motor symptoms in Parkinson's disease.",
+    conclusion: "Exercise-based physiotherapy (strength training, mind-body exercise, aerobic exercise) improved motor symptoms and outperformed non-invasive brain stimulation and acupuncture, supporting exercise as the preferred modality for PD motor symptoms." },
+  { id: "ev13", title: "Why methods matter in a meta-analysis: a reappraisal showed inconclusive injury preventive effect of Nordic hamstring exercise", journal: "PubMed", type: "Meta-Analysis", year: 2021, level: "Level 2", category: "Sports", tags: ["HamstringInjury", "NordicExercise"], grad: "violet", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/34520846/", sourceName: "PubMed",
+    summary: "Methodological reappraisal re-analyzing the trials behind earlier meta-analyses on the Nordic hamstring exercise's effect on hamstring injury prevention.",
+    conclusion: "When appropriate meta-analytic methods are applied, the injury-preventive effect of the Nordic hamstring exercise is inconclusive — a caution against over-interpreting the ~50% risk-reduction figure commonly cited from earlier reviews." },
+  { id: "ev14", title: "Effectiveness of Injury Prevention Programs With Core Muscle Strengthening Exercises to Reduce the Incidence of Hamstring Injury Among Soccer Players: A Systematic Review and Meta-Analysis", journal: "PubMed", type: "Meta-Analysis", year: 2023, level: "Level 1", category: "Sports", tags: ["HamstringInjury", "InjuryPrevention"], grad: "violet", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/37139743/", sourceName: "PubMed",
+    summary: "Systematic review and meta-analysis of injury-prevention programs combining core muscle strengthening with other exercises to reduce hamstring injury incidence in soccer players.",
+    conclusion: "Core-strengthening-based prevention programs meaningfully reduced hamstring injury incidence in soccer players, supporting their inclusion in athlete conditioning alongside eccentric hamstring work." },
+  { id: "ev15", title: "Pulmonary Rehabilitation: Joint ACCP/AACVPR Evidence-Based Clinical Practice Guidelines", journal: "PubMed", type: "Clinical Practice Guideline", year: 2007, level: "Level 1", category: "Cardio", tags: ["PulmonaryRehab", "COPD"], grad: "rose", saved: false,
+    sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/17494825/", sourceName: "PubMed",
+    summary: "Joint clinical practice guideline from the American College of Chest Physicians (ACCP) and AACVPR on pulmonary rehabilitation for chronic lung disease.",
+    conclusion: "Established pulmonary rehabilitation, centered on structured exercise training, as an evidence-based standard of care for COPD and other chronic lung diseases." },
+  { id: "ev16", title: "Pulmonary rehabilitation for chronic obstructive pulmonary disease", journal: "Cochrane Database of Systematic Reviews", type: "Systematic Review", year: 2015, level: "Level 1", category: "Cardio", tags: ["PulmonaryRehab", "COPD"], grad: "rose", saved: false,
+    sourceUrl: "https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD003793.pub3/full", sourceName: "Cochrane",
+    summary: "Cochrane systematic review pooling randomized controlled trials of pulmonary rehabilitation programs (exercise training, with or without education/psychosocial support) versus usual care in COPD.",
+    conclusion: "Pulmonary rehabilitation significantly improved health-related quality of life and exercise capacity in COPD, rated among the highest-quality evidence in respiratory rehabilitation." },
 ];
 
 export const COMMUNITIES = [

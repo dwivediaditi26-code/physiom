@@ -216,7 +216,7 @@ const MOBILE_CSS = `
 
   /* ── Global touch targets — EVERY button/input gets 44px min ── */
   @media (max-width: 767px) {
-    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm) {
+    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm):not(.popover-item):not(.popover-close) {
       min-height: 40px;
     }
     input, select, textarea {

@@ -3975,19 +3975,23 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     { id:"pedia",  label:"Pedia" },
   ];
   // Care setting (2026-08-27, Aditi: "each patient specify ipd opd
-  // outpatients etc") -- nothing in the intake or Ortho pathway wizard
-  // actually persists which pathway (IPD/Post-op/Outpatient) a patient was
-  // assessed under onto the shared patient record yet, so this derives a
-  // best-effort guess from field names that are unique to each pathway
-  // component (OrthoIPDAssessment.jsx / OrthoPostOpAssessment.jsx) and
-  // honestly defaults to Outpatient -- the pathway picker's default and by
-  // far the most common case -- rather than fabricating a setting with no
-  // basis. Once pathway gets written to the record for real, this starts
-  // reading real data with no call-site changes needed.
+  // outpatients etc") -- every assessment wizard (Ortho IPD/Post-op/
+  // Outpatient, Neuro, Cardio) now writes a real top-level
+  // data.care_setting field on save, so that's read first and is
+  // authoritative. Records saved before that existed have no such field,
+  // so this still falls back to a best-effort guess from field names
+  // unique to each pathway (Ortho's legacy IPD/Post-op field names, then
+  // Neuro/Cardio's own meta.setting) before finally defaulting to
+  // Outpatient -- the pathway picker's default and by far the most common
+  // case -- rather than fabricating a setting with no basis at all.
   const careSettingOf = (p) => {
     const d = p.data || {};
+    if (d.care_setting === "ipd" || d.care_setting === "postop" || d.care_setting === "outpatient") return d.care_setting;
     if (d.postOpDay || d.surgeryDate || d.surgeonInstructions) return "postop";
     if (d.reductionMethod || d.amputationCause || d.recordReview) return "ipd";
+    const legacySetting = d.neuro?.meta?.setting || d.cardio?.meta?.setting;
+    if (legacySetting === "postop") return "postop";
+    if (legacySetting === "inpatient" || legacySetting === "icu") return "ipd";
     return "outpatient";
   };
   const CARE_SETTINGS = [
@@ -4202,19 +4206,23 @@ const innerBody = (
                     onDelete={()=>onDelete(p.id)}
                     // One profile per patient, not two buttons (Aditi:
                     // "just be one patient profile...not show speciality
-                    // profile"). A patient with Cardio/Neuro/new-Ortho data
-                    // opens the simple specialty hub (SpecialtyPatientProfile.jsx,
-                    // reached via Clinical/active==="specialty_profile"), which
-                    // now has a real Ortho Assessment summary (redesigned per
-                    // Aditi's request to match the new Ortho wizard's own
-                    // structure); everyone else keeps the legacy PatientProfileModal.
-                    // "Edit Assessment" moved off the row itself (2026-08-27,
-                    // minimalist redesign) -- PatientProfileModal already has
-                    // its own "Continue Assessment" action (onLoadAssessment),
-                    // so nothing was actually lost by making the whole row a
-                    // single tap into Profile instead of two competing buttons.
+                    // profile"). A patient with Cardio/Neuro/any Ortho
+                    // pathway (Outpatient/IPD/Post-op) opens the simple
+                    // specialty hub (SpecialtyPatientProfile.jsx, reached via
+                    // Clinical/active==="specialty_profile"), which has a
+                    // real Ortho Assessment summary matching the wizard's own
+                    // structure (2026-09-01, Aditi: "ortho patient profile
+                    // should be same as cardio/neuro, don't build a separate
+                    // one" -- all three Ortho pathways route here now, not
+                    // just Outpatient); everyone else keeps the legacy
+                    // PatientProfileModal. "Edit Assessment" moved off the
+                    // row itself (2026-08-27, minimalist redesign) --
+                    // PatientProfileModal already has its own "Continue
+                    // Assessment" action (onLoadAssessment), so nothing was
+                    // actually lost by making the whole row a single tap
+                    // into Profile instead of two competing buttons.
                     onProfile={()=>{
-                      if (p?.data?.cardio || p?.data?.neuro || p?.data?.ortho_outpatient_assessment) { onSelect(p); if (onNav) onNav("specialty_profile"); }
+                      if (p?.data?.cardio || p?.data?.neuro || p?.data?.ortho_outpatient_assessment || p?.data?.ortho_ipd_assessment || p?.data?.ortho_postop_assessment) { onSelect(p); if (onNav) onNav("specialty_profile"); }
                       else setProfilePatient(p);
                     }}
                     // Same "select + close panel" semantics as the profile
@@ -4606,4 +4614,5 @@ export {
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, PatientProfileModal, TreatmentCaseloadPanel,
+  PostureSessionsView,
 };

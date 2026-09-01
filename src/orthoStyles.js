@@ -221,6 +221,17 @@ export function orthoStyles() {
         .stepper-low .stepper-input { color: #8A5A0A; }
         .stepper-high { border-color: #B8E6CC; background: ${BRAND.greenBg}; }
         .stepper-high .stepper-input { color: #12603A; }
+        /* Square variant (2026-09-01, Aditi: "sets duration frequency ...
+           square button, square section, not rectangle") -- used only by
+           the Technique section's Sets/Duration/Frequency steppers
+           (DosageSteppers in orthoOutpatientSections.jsx), not the base
+           .stepper class every other numeric field in Ortho also uses, so
+           this doesn't reflow any of those. Height matches the 62px width;
+           the arrow column grows to fill it instead of leaving empty space. */
+        .stepper-square { width: 62px; height: 62px; }
+        .stepper-square .stepper-input { font-size: 15px; }
+        .stepper-square .stepper-arrows { flex: 0 0 22px; }
+        .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
 
         /* Movement / muscle card — used by ROM + MMT. Large, scannable,
            tap-first — the therapist reads the name, taps a value or chip,
@@ -287,14 +298,18 @@ export function orthoStyles() {
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; min-height: 36px; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 10px; max-height: 280px; overflow-y: auto; }
-        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.gray}; margin-bottom: 8px; padding: 0 2px; }
-        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 12px; }
-        .popover-list { display: flex; flex-direction: column; gap: 3px; }
-        .popover-item { display: flex; justify-content: space-between; align-items: center; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.ink}; padding: 11px 10px; border-radius: 9px; font-size: 13px; text-align: left; cursor: pointer; min-height: 44px; }
-        .popover-item-active { background: ${BRAND.purple}; color: #fff; font-weight: 600; }
-        .popover-check { font-size: 12px; }
-        .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 11px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
+        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
+        .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 10px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; min-height: 0; }
+        .popover-item:last-child { border-bottom: none; }
+        .popover-item-label { flex: 1; }
+        .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+        .popover-check-icon-radio { border-radius: 50%; }
+        .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
+        .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
+        .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied

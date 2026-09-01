@@ -343,13 +343,13 @@ const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", g
    week) as tap-to-adjust counters instead of free-typed text (2026-08-26,
    user feedback: wanted these "in a plus/minus format", not typed
    manually). Duration is always in minutes. */
-function StepperField({ label, value, onChange, unit, max = 60 }) {
+function StepperField({ label, value, onChange, unit, max = 60, square }) {
   return (
     <div className="vital-field">
       <div className="vital-label-row">
         <span className="vital-label">{label}</span>
       </div>
-      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} />
+      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} square={square} />
       {unit && <div className="hint" style={{ marginTop: 2 }}>{unit}</div>}
     </div>
   );
@@ -358,9 +358,9 @@ function StepperField({ label, value, onChange, unit, max = 60 }) {
 function DosageSteppers({ form, set }) {
   return (
     <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
-      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} />
-      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} />
-      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} />
+      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} square />
+      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} square />
+      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} square />
     </div>
   );
 }
@@ -562,7 +562,15 @@ export function TreatmentTechniquesSection({ data, setData }) {
 export function formatTreatmentTechniquesSection(section) {
   const entries = Array.isArray(section.entries) ? section.entries : [];
   if (!entries.length) return [];
-  return entries.map((t, i) => ({ label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${t.dosage ? ` — ${t.dosage}` : ""}` }));
+  // Was only appending t.dosage (free text, only ever set on "st" /
+  // soft-tissue techniques) -- sets/duration/frequency, entered via
+  // DosageSteppers and already shown correctly in the live "Techniques
+  // this session" card via dosageMeta() above, were silently dropped from
+  // Final Review. Reuse that same formatter here so both views agree.
+  return entries.map((t, i) => {
+    const meta = dosageMeta(t);
+    return { label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${meta ? ` — ${meta}` : ""}` };
+  });
 }
 
 function ProgressRow({ label, prev, curr, onPrev, onCurr, change, onChange }) {

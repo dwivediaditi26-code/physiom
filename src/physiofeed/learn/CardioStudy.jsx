@@ -54,10 +54,33 @@ const REGIONS = [...new Set(Object.values(ALL).map(regionOf))];
 
 const BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" };
 
+// The live InfoCard.jsx popup (cardiovascularData.js/respiratoryData.js's
+// perform.image/perform.images) already stores real photos, just as full
+// Cloudinary URLs built from the same base + "f_auto,q_auto/" transform
+// StudyImage.jsx also uses -- StudyImage takes a bare public id and builds
+// its own URL, so this strips that known prefix back off instead of
+// passing the full URL through (which would double it). Falls back to null
+// (→ the lucide icon below) for anything that isn't that exact pattern.
+const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+function firstRealImage(d) {
+  const first = Array.isArray(d.perform?.images) && d.perform.images.length
+    ? (typeof d.perform.images[0] === "object" ? d.perform.images[0]?.src : d.perform.images[0])
+    : d.perform?.image;
+  if (!first || typeof first !== "string" || !first.startsWith(CLOUDINARY_PREFIX)) return null;
+  return first.slice(CLOUDINARY_PREFIX.length);
+}
+
 function toCard(id, d) {
+  // 2026-09-01, Aditi: "learn study mode doesn't show the same photos as
+  // the live cardio infocards" -- pass through the real photo (same
+  // Cloudinary asset the live InfoCard.jsx popup already shows) alongside
+  // the icon; StudyGrid/StudyDetail try the photo first and only fall
+  // back to Icon if it hasn't actually been uploaded yet (404), so this
+  // no longer has to guess whether a photo will load before choosing.
   return {
     id,
     Icon: ICONS[id] || Stethoscope,
+    image: firstRealImage(d),
     title: d.title,
     subtitle: d.category.replace("Learn · ", ""),
     sections: (
