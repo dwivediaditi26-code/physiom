@@ -1179,6 +1179,88 @@ export const neuroExamLibraryData = {
     },
   },
 
+  lightTouch: {
+    title: "Light Touch Sensation",
+    icon: "🖐️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Wisp of cotton wool, eyes closed, compare side to side",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed with eyes closed so they can't anticipate where or when you'll touch." },
+        { tone: "blue", label: "🖐️ Technique", text: "Use a wisp of cotton wool (or fingertip) to lightly touch each dermatome/region, alternating unpredictably between sides. Ask the patient to say 'yes' each time they feel it, and compare side to side and proximal to distal." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Map the border of any deficit carefully — a sensory level (e.g. a clear cutoff at a spinal segment) points to cord pathology, while a stocking/glove pattern points to peripheral polyneuropathy." },
+        { tone: "amber", label: "⚠️ Tip", text: "Demonstrate the stimulus on an unaffected area first (e.g. the sternum) with eyes open, so the patient knows what 'a touch' should feel like before testing with eyes closed." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Touch felt and localised correctly, both sides" },
+      { k: "Impaired", v: "Reduced sensation (hypoesthesia)" },
+      { k: "Absent", v: "No sensation reported" },
+      { k: "Hyperesthesia", v: "Increased/exaggerated sensitivity" },
+    ]},
+    interpret: {
+      normal: ["Intact and symmetric across all tested regions"],
+      abnormal: ["Dermatomal pattern → nerve root involvement", "Stocking/glove pattern → peripheral polyneuropathy", "Clear sensory level → spinal cord lesion at that level"],
+      note: "Always test light touch alongside pain/pinprick — a dissociated sensory loss (one modality affected, the other spared) is itself diagnostically significant (e.g. Brown-Séquard, syringomyelia).",
+    },
+  },
+
+  sensoryTemperature: {
+    title: "Temperature Sensation",
+    icon: "🌡️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Warm and cold objects, eyes closed, compare side to side",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb exposed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Use two test tubes (or the warm/cold ends of a tuning fork/metal object) — one warm, one cold — and touch each to the skin unpredictably. Ask the patient to identify 'warm' or 'cold' and compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Temperature and pain travel together in the spinothalamic tract — an isolated temperature deficit with normal light touch/proprioception suggests a spinothalamic (anterolateral) lesion." },
+        { tone: "amber", label: "⚠️ Tip", text: "If dedicated warm/cold rollers aren't available, pain/pinprick testing is an acceptable proxy since both travel the same pathway." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies warm/cold, both sides" },
+      { k: "Impaired", v: "Reduced discrimination or delayed response" },
+      { k: "Absent", v: "Cannot distinguish warm from cold" },
+    ]},
+    interpret: {
+      normal: ["Intact and symmetric"],
+      abnormal: ["Loss with preserved light touch/proprioception → spinothalamic tract lesion (e.g. syringomyelia, anterior cord syndrome)"],
+      note: "A dissociated loss of pain/temperature with preserved touch/proprioception (or vice versa) localises to a specific tract, not just 'sensory loss' generally.",
+    },
+  },
+
+  proprioception: {
+    title: "Proprioception (Joint Position Sense)",
+    icon: "🦵",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Move digit up/down with eyes closed, patient names the direction",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, digit held by its sides (not the pad) to avoid giving pressure cues." },
+        { tone: "blue", label: "🖐️ Technique", text: "Hold the digit by its sides, move it up or down a small amount with the patient's eyes closed, and ask them to name the direction moved. Start distally (fingers/toes) and move proximally if impaired." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Impaired proprioception is a major fall-risk factor and often goes unnoticed by the patient until directly tested — always screen it before a functional mobility assessment." },
+        { tone: "amber", label: "⚠️ Tip", text: "Demonstrate 'up' and 'down' with eyes open first so the patient understands the two response options before eyes-closed testing begins." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies direction of movement" },
+      { k: "Impaired", v: "Inconsistent or delayed identification" },
+      { k: "Absent", v: "Cannot identify direction, or reports movement that didn't occur" },
+    ]},
+    interpret: {
+      normal: ["Intact distally, both sides"],
+      abnormal: ["Impaired distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, MS, tabes dorsalis) — correlate with vibration sense, which travels the same pathway"],
+      note: "Proprioceptive loss with a normal motor exam can still cause significant functional impairment (sensory ataxia) — don't assume gait/balance is fine just because strength is normal.",
+    },
+  },
+
   gcs: {
     title: "Glasgow Coma Scale (GCS)",
     icon: "🧠",
@@ -1204,6 +1286,122 @@ export const neuroExamLibraryData = {
       abnormal: ["Any reduction from baseline — reassess the trend, not just the single value"],
       redFlags: ["GCS ≤8, or a drop of ≥2 points from a prior score — escalate for urgent medical review before continuing therapy"],
       note: "In TBI/neurosurgical patients, always check the most recent medical GCS before starting treatment, and stop if it has dropped.",
+    },
+  },
+
+  gcsVerbal: {
+    title: "GCS — Verbal Response (V)",
+    icon: "🗣️",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Best verbal response to voice, escalating to pain if needed",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Address the patient by name in a normal tone before escalating to a louder voice or painful stimulus." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask an orientation question (name, place, date). Score the best response: 5 = oriented, 4 = confused conversation, 3 = inappropriate words (no conversation), 2 = incomprehensible sounds (moaning), 1 = no verbal response." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Record 'T' instead of a verbal score if the patient is intubated — never estimate or omit; note it clearly since it affects how the total GCS is interpreted." },
+        { tone: "amber", label: "⚠️ Tip", text: "A patient who is oriented to person but not place/time still scores 4 (confused), not 5 — 5 requires full orientation to person, place, and time." },
+      ],
+    },
+    scaleLabel: "Verbal response (V) score",
+    scale: { type: "table", rows: [
+      { k: "5", v: "Oriented" },
+      { k: "4", v: "Confused conversation" },
+      { k: "3", v: "Inappropriate words" },
+      { k: "2", v: "Incomprehensible sounds" },
+      { k: "1", v: "None" },
+    ]},
+    interpret: {
+      normal: ["5 — fully oriented"],
+      abnormal: ["Any score <5 → reassess for delirium, intoxication, or a new neurological event"],
+      note: "Verbal score is the component most confounded by intubation, sedation, aphasia, or a language barrier — always note the reason a full verbal score wasn't obtainable rather than just recording a low number.",
+    },
+  },
+
+  gcsMotor: {
+    title: "GCS — Motor Response (M)",
+    icon: "🤲",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Best motor response to command, then to a painful stimulus",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Start with a simple verbal command (e.g. 'squeeze my hand'); only apply a painful stimulus if there is no response to voice." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score the single best response from either limb: 6 = obeys commands, 5 = localises to pain (a limb crosses the midline toward the stimulus), 4 = withdraws from pain, 3 = abnormal flexion (decorticate), 2 = abnormal extension (decerebrate), 1 = none." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Use a central painful stimulus (trapezius pinch or supraorbital pressure), not just a peripheral nail-bed pinch, since a peripheral stimulus can trigger a spinal reflex withdrawal that looks like a better response than the patient's true best." },
+        { tone: "amber", label: "⚠️ Tip", text: "Abnormal flexion (decorticate, 3) and abnormal extension (decerebrate, 2) are both ominous signs of significant brain injury — either should trigger urgent escalation, not just a documented score." },
+      ],
+    },
+    scaleLabel: "Motor response (M) score",
+    scale: { type: "table", rows: [
+      { k: "6", v: "Obeys commands" },
+      { k: "5", v: "Localises to pain" },
+      { k: "4", v: "Withdraws from pain" },
+      { k: "3", v: "Abnormal flexion (decorticate)" },
+      { k: "2", v: "Abnormal extension (decerebrate)" },
+      { k: "1", v: "None" },
+    ]},
+    interpret: {
+      normal: ["6 — obeys commands"],
+      abnormal: ["≤4 → significant impairment; ≤3 (abnormal flexion/extension) is a medical emergency"],
+      redFlags: ["New abnormal flexion or extension posturing — escalate for urgent medical review immediately"],
+      note: "Motor is the single most predictive GCS component for outcome after TBI — a falling motor score deserves the fastest escalation of the three.",
+    },
+  },
+
+  balance: {
+    title: "Balance Assessment (Sitting / Standing)",
+    icon: "⚖️",
+    category: "Learn · Neuro · Balance",
+    perform: {
+      images: [null, null, null],
+      caption: "Static and dynamic balance, sitting and standing, with stand-by guard",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Test sitting balance before standing, and always have a stand-by guard/gait belt ready for standing balance in an at-risk patient." },
+        { tone: "blue", label: "🖐️ Technique", text: "Static: ask the patient to maintain the position (sitting/standing) unsupported and observe steadiness. Dynamic: ask them to reach, turn, or perturb their base of support (e.g. weight shifts, reaching outside base) while maintaining balance." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Dynamic balance typically fails before static balance as impairment progresses — a patient who looks steady sitting still may be unsafe the moment they reach or turn." },
+        { tone: "amber", label: "⚠️ Tip", text: "Pair this with a standardised outcome measure (Berg Balance Scale, Functional Reach) whenever possible so change over time is measurable, not just descriptive." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Maintains position/task without any loss of balance" },
+      { k: "Good", v: "Minor unsteadiness, no loss of balance, no support needed" },
+      { k: "Fair", v: "Requires occasional support or contact guard" },
+      { k: "Poor", v: "Requires continuous support/assistance" },
+      { k: "Absent", v: "Unable to maintain the position even with support" },
+    ]},
+    interpret: {
+      normal: ["Normal static and dynamic balance, sitting and standing"],
+      abnormal: ["Impaired dynamic > static balance → early/mild impairment", "Impaired static balance → significant impairment, high fall risk"],
+      note: "Balance impairment is multifactorial (proprioceptive, vestibular, visual, motor, cognitive) — pair this exam with the sensory and coordination findings to localise the likely contributor(s).",
+    },
+  },
+
+  dvt: {
+    title: "DVT Precautions",
+    icon: "🩸",
+    category: "Learn · Neuro · Safety Screen",
+    perform: {
+      images: [null, null, null],
+      caption: "Screen for calf pain/swelling/warmth before mobilising a high-risk patient",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Inspect and gently palpate both calves with the patient supine, comparing side to side." },
+        { tone: "blue", label: "🖐️ Technique", text: "Check for unilateral calf swelling, warmth, redness, and tenderness. Ask about calf pain, especially on dorsiflexion. Review the chart for any known DVT/PE history, anticoagulation status, or recent immobility (post-op, prolonged bed rest, stroke, SCI)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Homans' sign (calf pain on forced ankle dorsiflexion) is neither sensitive nor specific for DVT and should never be relied on alone to rule a DVT in or out." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stroke, SCI, and prolonged post-op immobility are all independent high-risk states for DVT — have a low threshold to flag for medical review even with a normal-looking calf." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Not applicable", v: "No known risk factors or concerning findings" },
+      { k: "Confirmed/suspected", v: "Avoid limb massage/vigorous mobilisation of that limb, monitor for signs of PE, escalate to medical team" },
+    ]},
+    interpret: {
+      normal: ["No calf swelling, warmth, redness, or tenderness; no known DVT risk factors"],
+      abnormal: ["Unilateral calf swelling/warmth/tenderness in an at-risk patient → suspect DVT, do not massage or vigorously mobilise the limb, escalate immediately"],
+      redFlags: ["Sudden dyspnea, pleuritic chest pain, or tachycardia in a patient with suspected DVT → possible pulmonary embolism, medical emergency"],
+      note: "This is a precautions screen, not a diagnostic test — a normal-looking calf never fully excludes DVT; when risk factors are present, defer to imaging/medical workup rather than clinical exam alone.",
     },
   },
 
