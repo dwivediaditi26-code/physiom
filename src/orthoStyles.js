@@ -221,6 +221,17 @@ export function orthoStyles() {
         .stepper-low .stepper-input { color: #8A5A0A; }
         .stepper-high { border-color: #B8E6CC; background: ${BRAND.greenBg}; }
         .stepper-high .stepper-input { color: #12603A; }
+        /* Square variant (2026-09-01, Aditi: "sets duration frequency ...
+           square button, square section, not rectangle") -- used only by
+           the Technique section's Sets/Duration/Frequency steppers
+           (DosageSteppers in orthoOutpatientSections.jsx), not the base
+           .stepper class every other numeric field in Ortho also uses, so
+           this doesn't reflow any of those. Height matches the 62px width;
+           the arrow column grows to fill it instead of leaving empty space. */
+        .stepper-square { width: 62px; height: 62px; }
+        .stepper-square .stepper-input { font-size: 15px; }
+        .stepper-square .stepper-arrows { flex: 0 0 22px; }
+        .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
 
         /* Movement / muscle card — used by ROM + MMT. Large, scannable,
            tap-first — the therapist reads the name, taps a value or chip,
