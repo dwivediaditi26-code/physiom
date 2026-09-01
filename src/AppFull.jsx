@@ -2340,7 +2340,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
               const handleClick = () => { if (isClinical) navTo("clinical"); else navTo(item.key); };
               return item.center ? (
-                <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
                   {/* 3D glossy bubble -- gradient fill + bottom ridge + inset
                       top highlight, same "raised button" formula already used
@@ -2354,7 +2354,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
                 </button>
               ) : (
-                <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
                   <span className="pm-bnav-tab-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name={item.icon}/></span>
                   <span className="pm-bnav-tab-label">{item.label}</span>
                 </button>
