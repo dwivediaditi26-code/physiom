@@ -4610,4 +4610,5 @@ export {
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, PatientProfileModal, TreatmentCaseloadPanel,
+  PostureSessionsView,
 };

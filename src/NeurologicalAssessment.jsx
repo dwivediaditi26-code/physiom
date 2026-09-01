@@ -164,6 +164,13 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
       onClose();
     }
   }
+  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
+  // the space of screen"): was one full-width lavender pill per option --
+  // on a real phone, a handful of those plus the header/search/Done button
+  // pushed well past the fold. Now a compact checklist (thin divider rows,
+  // a small check/radio box instead of a full color-fill flip) with its
+  // OWN capped, internally-scrolling list -- header/search/Done stay
+  // pinned and visible no matter how many options a field has.
   return (
     <div className="select-popover">
       <div className="popover-head">
@@ -180,15 +187,17 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
           const isSel = multi ? selected.includes(opt) : value === opt;
           return (
             <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span>{opt}</span>
-              {isSel && <span className="popover-check">✓</span>}
+              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
+                {isSel && "✓"}
+              </span>
+              <span className="popover-item-label">{opt}</span>
             </button>
           );
         })}
       </div>
       {multi && (
         <button type="button" className="popover-done" onClick={onClose}>
-          Done
+          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
         </button>
       )}
     </div>
@@ -212,6 +221,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
           className="select-input"
           value={value || ""}
           placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
+          onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
@@ -1101,8 +1111,8 @@ function CognitionSection({ data, setData }) {
       <SectionIntro icon="🧠" title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
       <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcs} />
-      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} />
-      <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} />
+      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
+      <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} info={neuroExamLibraryData.gcsMotor} />
       {gcsTotal > 0 && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
       <SelectField
         label="Orientation"
@@ -1150,10 +1160,10 @@ function SensorySection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="🖐️" title="Sensory Examination" />
-      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." />
+      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." info={neuroExamLibraryData.lightTouch} />
       <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." />
-      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} />
-      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." />
+      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
+      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} />
       <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
       <div className="subheading">Cortical sensation</div>
       <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
@@ -1257,7 +1267,7 @@ function BalanceSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="⚖️" title="Balance" />
-      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} />
+      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} info={neuroExamLibraryData.balance} />
       <SelectField label="Dynamic sitting balance" type="single" options={BALANCE_GRADES} value={d.sitDynamic} onChange={(v) => set("sitDynamic", v)} />
       <SelectField label="Static standing balance" type="single" options={BALANCE_GRADES} value={d.standStatic} onChange={(v) => set("standStatic", v)} />
       <SelectField label="Dynamic standing balance" type="single" options={BALANCE_GRADES} value={d.standDynamic} onChange={(v) => set("standDynamic", v)} />
@@ -1375,7 +1385,7 @@ function PrecautionsSection({ data, setData, setting }) {
       <SelectField label="Fall risk" type="single" options={["Low", "Moderate", "High"]} value={d.fallRisk} onChange={(v) => set("fallRisk", v)} />
       <SelectField label="Seizure precautions" type="single" options={["Not applicable", "Active - pad/clear environment, supervise closely"]} value={d.seizure} onChange={(v) => set("seizure", v)} />
       <SelectField label="Aspiration / swallow precautions" type="single" options={["Not applicable", "Upright positioning required", "Modified diet/thickened fluids", "Nil by mouth"]} value={d.aspiration} onChange={(v) => set("aspiration", v)} />
-      <SelectField label="DVT precautions" type="single" options={["Not applicable", "Confirmed/suspected DVT - avoid limb massage, monitor for PE signs"]} value={d.dvt} onChange={(v) => set("dvt", v)} />
+      <SelectField label="DVT precautions" type="single" options={["Not applicable", "Confirmed/suspected DVT - avoid limb massage, monitor for PE signs"]} value={d.dvt} onChange={(v) => set("dvt", v)} info={neuroExamLibraryData.dvt} />
       <SelectField label="Autonomic dysreflexia monitoring (SCI ≥T6)" type="single" options={["Not applicable", "Monitor BP/symptoms during treatment"]} value={d.ad} onChange={(v) => set("ad", v)} />
       <SelectField label="Skin / pressure care" type="single" options={["No issues noted", "At-risk areas identified - reposition regularly, offload during treatment"]} value={d.skin} onChange={(v) => set("skin", v)} />
       <SelectField label="Positioning / splinting" type="multi" options={["None", "Resting hand splint", "AFO", "Shoulder support/sling", "Positioning schedule in place"]} value={d.positioning} onChange={(v) => set("positioning", v)} />
@@ -2198,15 +2208,19 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 700; padding: 8px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 10px; max-height: 300px; overflow-y: auto; }
-        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.gray}; margin-bottom: 8px; padding: 0 2px; }
-        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 12px; }
-        .popover-search { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 10px; padding: 7px 10px; font-size: 16px; margin-bottom: 8px; outline: none; font-family: inherit; }
-        .popover-list { display: flex; flex-direction: column; gap: 3px; }
-        .popover-item { display: flex; justify-content: space-between; align-items: center; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.ink}; padding: 9px 10px; border-radius: 9px; font-size: 13px; text-align: left; cursor: pointer; }
-        .popover-item-active { background: ${BRAND.purple}; color: #fff; font-weight: 600; }
-        .popover-check { font-size: 12px; }
-        .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 9px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
+        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
+        .popover-search { width: 100%; border: 1px solid ${BRAND.border}; border-radius: 10px; padding: 7px 10px; font-size: 16px; margin-bottom: 6px; outline: none; font-family: inherit; flex-shrink: 0; }
+        .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 9px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; }
+        .popover-item:last-child { border-bottom: none; }
+        .popover-item-label { flex: 1; }
+        .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+        .popover-check-icon-radio { border-radius: 50%; }
+        .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
+        .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
+        .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied

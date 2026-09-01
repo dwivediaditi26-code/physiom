@@ -3,18 +3,23 @@ import { Search } from "lucide-react";
 import ResearchCard from "../components/evidence/ResearchCard.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
-const CATEGORIES = ["All", "MSK", "Neuro", "Sports", "Pain", "Women's Health"];
+const CATEGORIES = ["All", "MSK", "Neuro", "Sports", "Cardio"];
+const SORTS = [{ key: "oldest", label: "Oldest first" }, { key: "newest", label: "Newest first" }];
 
 export default function EvidencePage() {
   const { evidence } = useAppData();
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("oldest");
 
-  const filtered = evidence.filter((e) => {
-    const matchesCategory = category === "All" || e.category === category;
-    const matchesQuery = !query.trim() || e.title.toLowerCase().includes(query.toLowerCase()) || e.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()));
-    return matchesCategory && matchesQuery;
-  });
+  const filtered = evidence
+    .filter((e) => {
+      const matchesCategory = category === "All" || e.category === category;
+      const q = query.trim().toLowerCase();
+      const matchesQuery = !q || e.title.toLowerCase().includes(q) || e.journal.toLowerCase().includes(q) || e.tags.some((t) => t.toLowerCase().includes(q));
+      return matchesCategory && matchesQuery;
+    })
+    .sort((a, b) => (sort === "oldest" ? a.year - b.year : b.year - a.year));
 
   return (
     <main className="flex-1 min-w-0">
@@ -28,14 +33,26 @@ export default function EvidencePage() {
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search research, tags…" className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400" />
       </div>
 
-      <div className="flex items-center gap-1.5 mb-5 overflow-x-auto no-scrollbar">
-        {CATEGORIES.map((c) => (
-          <button key={c} onClick={() => setCategory(c)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${category === c ? "bg-violet-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
-            {c}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {CATEGORIES.map((c) => (
+            <button key={c} onClick={() => setCategory(c)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${category === c ? "bg-violet-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center shrink-0 bg-white border border-slate-200 rounded-full p-0.5">
+          {SORTS.map((s) => (
+            <button key={s.key} onClick={() => setSort(s.key)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${sort === s.key ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      <p className="text-xs text-slate-400 mb-4">Showing {filtered.length} of {evidence.length}</p>
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-slate-400 text-sm">No research matches that search.</div>

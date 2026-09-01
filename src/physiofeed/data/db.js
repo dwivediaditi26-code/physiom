@@ -924,9 +924,14 @@ export async function toggleFollowPerson(id) {
 export async function getEvidence() {
   try {
     const uid = await currentUserId();
+    // select("*") deliberately, not a named column list -- source_url/
+    // source_name/summary/conclusion (add_evidence_source_and_summary.sql)
+    // may not have run in production yet, and an unknown column in a named
+    // select fails the whole query (see the file-level comment above and
+    // getPosts()/getPeople() for the same rule elsewhere in this file).
     const { data: articles, error } = await supabase
       .from("research_articles")
-      .select("id, title, journal, type, year, level, category, tags, gradient")
+      .select("*")
       .order("year", { ascending: false });
     if (error) throw error;
     if (!articles || articles.length === 0) return clone(_evidence);
@@ -939,6 +944,8 @@ export async function getEvidence() {
     return articles.map((a) => ({
       id: a.id, title: a.title, journal: a.journal, type: a.type, year: a.year,
       level: a.level, category: a.category, tags: a.tags || [], grad: a.gradient,
+      sourceUrl: a.source_url || "", sourceName: a.source_name || "",
+      summary: a.summary || "", conclusion: a.conclusion || "",
       saved: savedSet.has(a.id),
     }));
   } catch (e) {
