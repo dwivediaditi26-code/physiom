@@ -499,25 +499,76 @@ export function orthoStyles() {
 
         .obj-item-lr { display: flex; align-items: center; gap: 10px; }
         .obj-item-lr-field { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${BRAND.gray}; }
-        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; text-align: center; }
+        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 16px; font-family: inherit; text-align: center; }
         .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
         .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
 
         /* Collapsed-by-default item row (ItemCardShell) -- replaces every
            named ROM/MMT/Special Test/Observation item always rendering its
            full input widget expanded, which is what made a single
-           Suggested Objective step run thousands of px of scroll. */
+           Suggested Objective step run thousands of px of scroll.
+           Three visual states layered on the same shell:
+             plain border   -- Suggested, not yet selected
+             purple border  -- Selected, awaiting a result
+             green border   -- answered AND the result is a finding */
         .obj-item { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; margin-bottom: 6px; overflow: hidden; }
         .obj-item-answered { border-color: ${BRAND.purple}; }
+        .obj-item-selected { border-color: ${BRAND.purple}; }
+        .obj-item-finding { border-color: ${BRAND.green}; background: ${BRAND.greenBg}; }
         .obj-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
         .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
         .obj-item-row-name { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-item-finding .obj-item-row-name { color: #12603A; }
         .obj-item-row-sub { font-size: 11px; color: ${BRAND.gray}; }
-        .obj-item-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .obj-item-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .obj-item-row-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+        .obj-item-finding .obj-item-row-summary { color: #12603A; background: #fff; }
         .obj-item-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
         .obj-item-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
         .obj-item-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
+        .obj-item-select-btn { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 11.5px; padding: 7px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+
+        /* Possible Matches -- horizontal condition-pathway cards above the
+           suggested list. Purely informational context (real Phase 0.5
+           numbers, tapping never adds/removes anything); restyled from the
+           old always-expanded LumbarDifferentialCard rows into a compact
+           swipeable row so the reasoning is visible without owning the page. */
+        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; }
+        .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
+        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
+        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
+        .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+
+        /* Findings summary -- collapsible drawer built purely by scanning
+           already-answered rom/mmt/specialTests/observation data for a
+           positive/abnormal/recorded result; no separate state to keep in sync. */
+        .obj-findings-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; background: ${BRAND.greenBg}; color: #12603A; border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; cursor: pointer; font-weight: 700; font-size: 12.5px; font-family: inherit; }
+        .obj-findings-toggle .obj-findings-chev { transition: transform .15s; }
+        .obj-findings-toggle.open .obj-findings-chev { transform: rotate(180deg); }
+        .obj-findings-drawer { display: flex; flex-direction: column; gap: 6px; margin: -8px 0 14px; padding: 0 2px; }
+        .obj-findings-drawer div { font-size: 12.5px; color: ${BRAND.ink}; }
+        .obj-findings-drawer b { color: #12603A; margin-right: 4px; }
+        .obj-findings-empty { font-size: 12px; color: ${BRAND.grayLight}; margin: -8px 0 14px; padding: 0 2px; }
+
+        /* Sticky Selected tray -- appears once anything has been selected on
+           this step; View Assessment swaps the step into review mode inline
+           (same component, no extra wizard step) so only selected items and
+           the findings that came from them are shown. */
+        .obj-tray { position: sticky; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 10px 14px; margin: 16px 0; box-shadow: 0 12px 28px -14px rgba(20,10,45,.28); }
+        .obj-tray-info { flex: 1; min-width: 0; }
+        .obj-tray-count { font-weight: 800; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-tray-chips { display: flex; gap: 5px; margin-top: 4px; overflow: hidden; white-space: nowrap; }
+        .obj-tray-chip { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+        .obj-tray-cta { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 12.5px; padding: 11px 16px; border-radius: 12px; cursor: pointer; font-family: inherit; }
+
+        .obj-review-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .obj-review-back { border: none; background: none; color: ${BRAND.purple}; font-weight: 700; font-size: 13px; padding: 0; cursor: pointer; font-family: inherit; }
+        .obj-review-findings { background: ${BRAND.greenBg}; border-radius: 12px; padding: 14px 14px 10px; margin: 14px 0 20px; }
+        .obj-review-findings h4 { margin: 0 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #12603A; }
+        .obj-review-findings div { font-size: 12.5px; color: ${BRAND.ink}; margin-bottom: 6px; }
+        .obj-review-findings b { color: #12603A; margin-right: 4px; }
+        .obj-review-done { width: 100%; margin: 8px 0 24px; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 13.5px; padding: 13px; border-radius: 12px; cursor: pointer; font-family: inherit; }
 
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
