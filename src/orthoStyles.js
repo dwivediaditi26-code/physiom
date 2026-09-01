@@ -482,7 +482,12 @@ export function orthoStyles() {
         .obj-card-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: ${BRAND.gray}; }
         .obj-card-badge-ai { color: ${BRAND.purple}; }
         .obj-card-check { font-size: 10.5px; font-weight: 800; color: ${BRAND.purple}; }
-        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; }
+        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; display: flex; align-items: center; gap: 6px; }
+        /* Small (i) variant, sized to sit inline right next to a test/card
+           name -- the full 26px .info-btn reads oversized next to 13-14px
+           text. Replaces the old separate "Why?"/"How?" text links: one
+           icon opens both, right beside the name it explains. */
+        .info-btn-sm { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; line-height: 1; }
         .obj-card-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
         .obj-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
         .obj-card-link { border: none; background: none; padding: 0; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -516,7 +521,7 @@ export function orthoStyles() {
         .obj-item-selected { border-color: ${BRAND.purple}; }
         .obj-item-finding { border-color: ${BRAND.green}; background: ${BRAND.greenBg}; }
         .obj-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
-        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .obj-item-row-name { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; }
         .obj-item-finding .obj-item-row-name { color: #12603A; }
         .obj-item-row-sub { font-size: 11px; color: ${BRAND.gray}; }

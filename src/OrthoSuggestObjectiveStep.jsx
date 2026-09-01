@@ -17,7 +17,7 @@ import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
    categories with a real named-item library (Observation/ROM/MMT/
    Special Tests), each individual item (e.g. "Lachman's Test",
    "Quadriceps", "Knee flexion", "Scapula") gets its own card with
-   Why?/How? and its real inline answer control -- writing straight
+   an (i) info button and its real inline answer control -- writing straight
    into the exact field the full ROM/MMT/Special Tests/Observation
    page reads, via the same useSectionData sections those pages use.
    Everything else (edema, neuro screen, kinetic chain, ...) doesn't
@@ -44,20 +44,38 @@ function Sheet({ open, onClose, eyebrow, title, children }) {
   );
 }
 
-function LineSheet({ open, onClose, eyebrow, label, lines }) {
-  const isEmpty = Array.isArray(lines) ? lines.length === 0 : !lines;
+// One combined sheet per item -- Why (whyLines) and How (howLines) stacked
+// under one (i) trigger, instead of two separate "Why?"/"How?" text links.
+function LineInfoSheet({ open, onClose, label, whyLines, howLines, howEyebrow = "How to perform" }) {
+  const whyEmpty = Array.isArray(whyLines) ? whyLines.length === 0 : !whyLines;
+  const howEmpty = !howLines || howLines.length === 0;
   return (
-    <Sheet open={open} onClose={onClose} eyebrow={eyebrow} title={label}>
-      {isEmpty ? (
+    <Sheet open={open} onClose={onClose} eyebrow="ABOUT THIS TEST" title={label}>
+      {whyEmpty && howEmpty ? (
         <Hint>No additional reference notes for this one yet.</Hint>
-      ) : Array.isArray(lines) ? (
-        <ul className="obj-what-list">
-          {lines.map((l, i) => (
-            <li key={i}>{l}</li>
-          ))}
-        </ul>
       ) : (
-        <p className="obj-why-text">{lines}</p>
+        <>
+          {!whyEmpty && (
+            <>
+              <div className="subheading" style={{ marginTop: 0 }}>Why this test</div>
+              {Array.isArray(whyLines) ? (
+                <ul className="obj-what-list">
+                  {whyLines.map((l, i) => <li key={i}>{l}</li>)}
+                </ul>
+              ) : (
+                <p className="obj-why-text">{whyLines}</p>
+              )}
+            </>
+          )}
+          {!howEmpty && (
+            <>
+              <div className="subheading">{howEyebrow}</div>
+              <ul className="obj-what-list">
+                {howLines.map((l, i) => <li key={i}>{l}</li>)}
+              </ul>
+            </>
+          )}
+        </>
       )}
     </Sheet>
   );
@@ -65,63 +83,56 @@ function LineSheet({ open, onClose, eyebrow, label, lines }) {
 
 /* ---------- Whole-category cards (edema, neuroScreen, kineticChain, ...) ---------- */
 
-function WhySheet({ open, onClose, label, content }) {
-  return (
-    <Sheet open={open} onClose={onClose} eyebrow="WHY THIS ASSESSMENT?" title={label}>
-      <p className="obj-why-text">{content?.why}</p>
-      {content?.what?.length > 0 && (
-        <>
-          <div className="subheading" style={{ marginTop: 4 }}>
-            What it tells you
-          </div>
-          <ul className="obj-what-list">
-            {content.what.map((w, i) => (
-              <li key={i}>{w}</li>
-            ))}
-          </ul>
-        </>
-      )}
-    </Sheet>
-  );
-}
-
-function HowSheet({ open, onClose, label, content }) {
+// Same merge for the whole-category cards -- one (i) trigger opens why +
+// what-it-tells-you + the structured how-to-perform detail together.
+function InfoSheet({ open, onClose, label, content }) {
   const how = content?.how;
+  const isEmpty = !content?.why && !content?.what?.length && !how;
   return (
-    <Sheet open={open} onClose={onClose} eyebrow="HOW TO PERFORM" title={label}>
-      {how ? (
+    <Sheet open={open} onClose={onClose} eyebrow="ABOUT THIS ASSESSMENT" title={label}>
+      {isEmpty ? (
+        <Hint>No additional reference notes for this one yet.</Hint>
+      ) : (
         <>
-          <div className="obj-how-row">
-            <div className="obj-how-label">Purpose</div>
-            <div className="obj-how-val">{how.purpose}</div>
-          </div>
-          <div className="obj-how-row">
-            <div className="obj-how-label">Position</div>
-            <div className="obj-how-val">{how.position}</div>
-          </div>
-          {how.needs?.length > 0 && (
-            <div className="obj-how-row">
-              <div className="obj-how-label">What you need</div>
+          {content?.why && <p className="obj-why-text">{content.why}</p>}
+          {content?.what?.length > 0 && (
+            <>
+              <div className="subheading" style={{ marginTop: 4 }}>What it tells you</div>
               <ul className="obj-what-list">
-                {how.needs.map((n, i) => (
-                  <li key={i}>{n}</li>
-                ))}
+                {content.what.map((w, i) => <li key={i}>{w}</li>)}
               </ul>
-            </div>
+            </>
           )}
-          {how.steps?.length > 0 && (
-            <div className="obj-how-row">
-              <div className="obj-how-label">Steps</div>
-              <ol className="obj-steps-list">
-                {how.steps.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ol>
-            </div>
+          {how && (
+            <>
+              <div className="subheading">How to perform</div>
+              <div className="obj-how-row">
+                <div className="obj-how-label">Purpose</div>
+                <div className="obj-how-val">{how.purpose}</div>
+              </div>
+              <div className="obj-how-row">
+                <div className="obj-how-label">Position</div>
+                <div className="obj-how-val">{how.position}</div>
+              </div>
+              {how.needs?.length > 0 && (
+                <div className="obj-how-row">
+                  <div className="obj-how-label">What you need</div>
+                  <ul className="obj-what-list">
+                    {how.needs.map((n, i) => <li key={i}>{n}</li>)}
+                  </ul>
+                </div>
+              )}
+              {how.steps?.length > 0 && (
+                <div className="obj-how-row">
+                  <div className="obj-how-label">Steps</div>
+                  <ol className="obj-steps-list">
+                    {how.steps.map((s, i) => <li key={i}>{s}</li>)}
+                  </ol>
+                </div>
+              )}
+            </>
           )}
         </>
-      ) : (
-        <Hint>No structured guide for this one yet.</Hint>
       )}
     </Sheet>
   );
@@ -218,7 +229,7 @@ function ConditionDetailPanel({ condition }) {
 }
 
 function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump }) {
-  const [sheet, setSheet] = useState(null); // null | "why" | "how"
+  const [infoOpen, setInfoOpen] = useState(false);
   const content = OBJECTIVE_CONTENT[id];
   return (
     <div className={"obj-card" + (active ? " obj-card-active" : "")}>
@@ -226,15 +237,14 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
         <span className={"obj-card-badge" + (suggested ? " obj-card-badge-ai" : "")}>{suggested ? "✨ Suggested" : "Added by you"}</span>
         {active && <span className="obj-card-check">✓ Added</span>}
       </div>
-      <div className="obj-card-title">{label}</div>
+      <div className="obj-card-title">
+        {label}
+        <button type="button" className="info-btn-sm" onClick={() => setInfoOpen(true)} aria-label={`About ${label}`}>
+          ⓘ
+        </button>
+      </div>
       {reason && <div className="obj-card-reason">{reason}</div>}
       <div className="obj-card-actions">
-        <button type="button" className="obj-card-link" onClick={() => setSheet("why")}>
-          Why?
-        </button>
-        <button type="button" className="obj-card-link" onClick={() => setSheet("how")}>
-          How?
-        </button>
         <span style={{ flex: 1 }} />
         {active ? (
           <>
@@ -251,8 +261,7 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
           </button>
         )}
       </div>
-      <WhySheet open={sheet === "why"} onClose={() => setSheet(null)} label={label} content={content} />
-      <HowSheet open={sheet === "how"} onClose={() => setSheet(null)} label={label} content={content} />
+      <InfoSheet open={infoOpen} onClose={() => setInfoOpen(false)} label={label} content={content} />
     </div>
   );
 }
@@ -260,22 +269,23 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
 /* ---------- Individual-item cards (ROM / MMT / Special Tests / Observation) ---------- */
 
 // Collapsed by default -- a single compact row (name + optional value
-// summary + Why?/How?) -- expanding only the actual input widget
+// summary + an (i) info button) -- expanding only the actual input widget
 // (`children`) on tap. Previously every named item (every ROM movement,
 // every MMT muscle, every special test) rendered its FULL input widget
 // inline and always expanded, which is what made a single Suggested
-// Objective step run 6000+px of scroll for one region. Why?/How? stay
-// visible in the collapsed row so a clinician can still learn about a
-// test without opening it to fill it in.
+// Objective step run 6000+px of scroll for one region. The (i) button sits
+// right beside the item name (was two separate "Why?"/"How?" text links)
+// so a clinician can still learn about a test without opening it to fill
+// it in.
 // `selected` defaults to true so callers that never pass it (Palpation,
 // which is always a base step, not part of the Suggested->Selected->Finding
 // gate) keep the old always-expandable behavior unchanged. Callers that DO
 // pass selected/onSelect (Rom/Mmt/SpecialTest/Observation) get the three-state
 // row: plain "+ Select" button -> tap opens the real input -> an answer that
 // is itself a positive/abnormal/recorded result turns the row green (finding).
-function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "HOW TO PERFORM", selected = true, onSelect, finding = false, children }) {
+function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "How to perform", selected = true, onSelect, finding = false, children }) {
   const [open, setOpen] = useState(selected && !answered);
-  const [sheet, setSheet] = useState(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   function handleRowClick() {
     if (!selected) { onSelect?.(); setOpen(true); return; }
     setOpen((o) => !o);
@@ -286,16 +296,13 @@ function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines,
       <div className="obj-item-row" onClick={handleRowClick} role="button">
         <div className="obj-item-row-label">
           <span className="obj-item-row-name">{label}</span>
+          <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoOpen(true); }} aria-label={`About ${label}`}>
+            ⓘ
+          </button>
           {sublabel && <span className="obj-item-row-sub">{sublabel}</span>}
         </div>
         <div className="obj-item-row-right">
           {selected && answered && summary && <span className="obj-item-row-summary">{finding ? "✓ " : ""}{summary}</span>}
-          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("why"); }}>
-            Why?
-          </button>
-          <button type="button" className="obj-card-link" onClick={(e) => { e.stopPropagation(); setSheet("how"); }}>
-            How?
-          </button>
           {!selected ? (
             <button type="button" className="obj-item-select-btn" onClick={(e) => { e.stopPropagation(); onSelect?.(); setOpen(true); }}>
               + Select
@@ -310,8 +317,7 @@ function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines,
           {children}
         </div>
       )}
-      <LineSheet open={sheet === "why"} onClose={() => setSheet(null)} eyebrow="WHY THIS ASSESSMENT?" label={label} lines={whyLines} />
-      <LineSheet open={sheet === "how"} onClose={() => setSheet(null)} eyebrow={howEyebrow} label={label} lines={howLines} />
+      <LineInfoSheet open={infoOpen} onClose={() => setInfoOpen(false)} label={label} whyLines={whyLines} howLines={howLines} howEyebrow={howEyebrow} />
     </div>
   );
 }
