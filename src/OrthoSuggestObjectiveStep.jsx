@@ -10,6 +10,7 @@ import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
+import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
 import { OptionChips } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -660,30 +661,38 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const showOutcomeMeasure = omRecommended.length > 0 || !!omSuggestedFromReasoning || activeIds.has("outcomeMeasure");
   const outcomeMeasureIds = showOutcomeMeasure ? [...new Set([...omRecommended.map((r) => r.id), ...(activeIds.has("outcomeMeasure") ? Object.keys(omInstances) : [])])] : [];
   // Every region with a ported Phase 0.5 engine for THIS tool's data shape
-  // (today: Lumbar/SI and Cervical) -- add a region here once its own
-  // orthoXReasoning.js adapter exists, same shape as the two below.
-  // Thoracic/Shoulder/etc. simply aren't in this map yet, so engineMatch
-  // stays null for them and Suggested Objective falls back to the
-  // unfiltered full library, same as before any of this existed.
+  // (today: Lumbar/SI, Cervical, Thoracic, Shoulder) -- add a region here
+  // once its own orthoXReasoning.js adapter exists. Elbow/Wrist/Hand, Hip,
+  // Knee, Ankle/Foot simply aren't in this map yet, so engineMatch stays
+  // null for them and Suggested Objective falls back to the unfiltered
+  // full library, same as before any of this existed.
+  //
+  // hasData/run take the full `data` object (not a narrower regionData
+  // slice) so every engine can read whatever it actually needs -- Lumbar/
+  // Cervical/Thoracic only read data.subjective.regions[region.id], but
+  // Shoulder (see orthoShoulderReasoning.js's own header comment) has no
+  // equivalent subjective checklist and reads data.rom/data.mmt/
+  // data.specialTests instead, live, updating as the therapist fills in
+  // items on this same screen rather than being fixed from Subjective alone.
   const REGION_ENGINES = {
-    lumbarSI: { hasData: hasLumbarChecklistData, run: runLumbarDifferential, itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
-    cervical: { hasData: hasCervicalChecklistData, run: runCervicalDifferential, itemIds: cervicalConditionItemIds, label: "Cervical" },
-    thoracic: { hasData: hasThoracicChecklistData, run: runThoracicDifferential, itemIds: thoracicConditionItemIds, label: "Thoracic" },
+    lumbarSI: { hasData: (d, r) => hasLumbarChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runLumbarDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
+    cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runCervicalDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: cervicalConditionItemIds, label: "Cervical" },
+    thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runThoracicDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: thoracicConditionItemIds, label: "Thoracic" },
+    shoulder: { hasData: (d) => hasShoulderChecklistData(d), run: (d) => runShoulderDifferential(d), itemIds: shoulderConditionItemIds, label: "Shoulder" },
   };
   const engineMatch = useMemo(() => {
     for (const region of selectedRegions) {
       const key = contentKeyForRegion(region);
       const engine = REGION_ENGINES[key];
       if (!engine) continue;
-      const regionData = data.subjective?.regions?.[region.id];
-      if (!engine.hasData(regionData)) continue;
+      if (!engine.hasData(data, region)) continue;
       try {
-        const result = engine.run(regionData, data.subjective || {});
+        const result = engine.run(data, region);
         return { region, key, engine, result };
       } catch { continue; }
     }
     return null;
-  }, [selectedRegions, data.subjective]);
+  }, [selectedRegions, data]);
   const engineResult = engineMatch?.result || null;
 
   const suggestedIds = new Set(suggestions.map((s) => s.id));
