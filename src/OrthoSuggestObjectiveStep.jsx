@@ -9,6 +9,7 @@ import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
+import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { OptionChips } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -667,6 +668,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const REGION_ENGINES = {
     lumbarSI: { hasData: hasLumbarChecklistData, run: runLumbarDifferential, itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
     cervical: { hasData: hasCervicalChecklistData, run: runCervicalDifferential, itemIds: cervicalConditionItemIds, label: "Cervical" },
+    thoracic: { hasData: hasThoracicChecklistData, run: runThoracicDifferential, itemIds: thoracicConditionItemIds, label: "Thoracic" },
   };
   const engineMatch = useMemo(() => {
     for (const region of selectedRegions) {
