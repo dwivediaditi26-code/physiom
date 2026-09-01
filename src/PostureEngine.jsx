@@ -9074,18 +9074,36 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           border:`1px solid ${PC.accent}25`,marginBottom:16,fontSize:"0.82rem",color:PC.accent}}>
         </div>
 
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={()=>setShowReportModal(false)}
-            style={{flex:1,padding:"11px",border:`1px solid ${PC.border}`,borderRadius:10,
-              background:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer"}}>Cancel</button>
-          <button onClick={generateReport} disabled={!(assessMode==="multi"?mvComposite:scoreData)}
-            style={{flex:2,padding:"11px",border:"none",borderRadius:10,
-              background:scoreData?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
-              color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:scoreData?"pointer":"not-allowed"}}>
-            Generate & Open PDF →
-          </button>
-        </div>
-        {!(assessMode==="multi"?mvComposite:findings.length)&&<div style={{fontSize:"0.82rem",color:PC.red,textAlign:"center",marginTop:8}}>{assessMode==="multi"?"Capture ≥2 views and generate composite first":"Analyse a photo first to generate a report"}</div>}
+        {/* generateReport() already falls back to single-view scoreData/findings
+            whenever mvComposite isn't available (see isMultiRpt there) — it
+            only needs 2+ views for the composite path, otherwise it happily
+            reports on whatever single view was analysed. This gate used to
+            require mvComposite outright whenever assessMode was "multi",
+            which is the view-count *mode*, not how many views were actually
+            captured -- so a single-view capture made while in multi mode
+            (the default mode) could never generate a report even though
+            generateReport() would have handled it fine. Match its own
+            fallback instead of re-deriving a stricter one here. */}
+        {(() => {
+          const hasComposite = assessMode==="multi" && mvComposite && Object.keys(mvResults||{}).length>=2;
+          const canGenerate = hasComposite || !!scoreData;
+          return (
+            <>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setShowReportModal(false)}
+                  style={{flex:1,padding:"11px",border:`1px solid ${PC.border}`,borderRadius:10,
+                    background:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer"}}>Cancel</button>
+                <button onClick={generateReport} disabled={!canGenerate}
+                  style={{flex:2,padding:"11px",border:"none",borderRadius:10,
+                    background:canGenerate?`linear-gradient(135deg,${PC.accent},${PC.a2})`:"#ccc",
+                    color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:canGenerate?"pointer":"not-allowed"}}>
+                  Generate & Open PDF →
+                </button>
+              </div>
+              {!canGenerate&&<div style={{fontSize:"0.82rem",color:PC.red,textAlign:"center",marginTop:8}}>{assessMode==="multi"?"Capture and analyse at least 1 view — 2+ views also gives you a composite report":"Analyse a photo first to generate a report"}</div>}
+            </>
+          );
+        })()}
       </div>
     </div>,
     document.body
