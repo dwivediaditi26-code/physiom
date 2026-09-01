@@ -10,6 +10,9 @@
 // Test, Sit-to-Stand Test, Step Test, and the 3 Cardiac Rehab cards
 // (pre-exercise / monitoring / recovery assessment).
 
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+const img = (id) => `${CLOUDINARY_BASE}${id}`;
+
 export const cardiovascularData = {
 
   /* ===================== 1–10: BASIC EXAMINATION ===================== */
@@ -19,7 +22,7 @@ export const cardiovascularData = {
     icon: "❤️",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_heart_rate"), img("c_heart_rate_2"), img("c_heart_rate_3")],
       caption: "Radial or carotid pulse, index + middle finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Seated or supine, arm relaxed and fully supported — an unsupported arm raises the reading." },
@@ -47,7 +50,7 @@ export const cardiovascularData = {
     icon: "〰️",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_pulse_rhythm"), img("c_pulse_rhythm_2"), img("c_pulse_rhythm_3")],
       caption: "Palpate radial pulse, assess regularity over 30–60s",
       boxes: [
         { tone: "", label: "👤 Position", text: "Seated or supine, wrist relaxed and supported." },
@@ -75,7 +78,7 @@ export const cardiovascularData = {
     icon: "📶",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_pulse_volume"), img("c_pulse_volume_2"), img("c_pulse_volume_3")],
       caption: "Assess force of each beat, compare sides",
       boxes: [
         { tone: "", label: "👤 Position", text: "Limb relaxed and supported, palpating the pulse point with light-to-moderate pressure." },
@@ -105,7 +108,7 @@ export const cardiovascularData = {
     icon: "💓",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_pulses"), img("c_pulses_2"), img("c_pulses_3")],
       caption: "Radial · brachial · carotid · femoral · popliteal · pedal",
       boxes: [
         { tone: "", label: "👤 Position", text: "Supine or seated, room warm, limb relaxed and fully supported so muscle tension doesn't mask the pulse." },
@@ -133,7 +136,7 @@ export const cardiovascularData = {
     icon: "🩸",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_bp"), img("c_bp_2"), img("c_bp_3")],
       caption: "Cuff at heart level, mid-bladder over brachial artery",
       boxes: [
         { tone: "", label: "👤 Position", text: "Seated with legs uncrossed, arm fully exposed and supported at heart level, after a minimum 5-minute rest." },
@@ -163,7 +166,7 @@ export const cardiovascularData = {
     icon: "🧍",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_orthostatic"), img("c_orthostatic_2"), img("c_orthostatic_3")],
       caption: "Supine → standing, measured at set intervals",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine for at least 5 minutes, then stands. Have a chair ready and stay close in case of dizziness." },
@@ -191,7 +194,7 @@ export const cardiovascularData = {
     icon: "⏱️",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_cap_refill"), img("c_cap_refill_2"), img("c_cap_refill_3")],
       caption: "Press nail bed, release, time the colour return",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hand at heart level, room at a comfortable temperature — cold hands falsely prolong refill time." },
@@ -219,7 +222,7 @@ export const cardiovascularData = {
     icon: "🦶",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_edema"), img("c_edema_2"), img("c_edema_3")],
       caption: "Press firmly over the tibia or sacrum for ~5 seconds",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated, ankles and lower legs exposed; check the sacrum in bed-bound patients." },
@@ -248,7 +251,7 @@ export const cardiovascularData = {
     icon: "🫀",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_jvp"), img("c_jvp_2"), img("c_jvp_3")],
       caption: "Reclined 45°, head turned slightly away, good light",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient reclined at 45°, head turned slightly away, neck relaxed and well lit." },
@@ -276,7 +279,7 @@ export const cardiovascularData = {
     icon: "🩺",
     category: "Learn · Cardiovascular · Basic Examination",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ausc_overview"), img("c_ausc_overview_2"), img("c_ausc_overview_3")],
       caption: "All four areas, diaphragm and bell, systematic sequence",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated, chest exposed, quiet room. Left lateral brings out mitral sounds; leaning forward brings out aortic sounds." },
@@ -307,7 +310,7 @@ export const cardiovascularData = {
     icon: "🅰️",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ausc_aortic"), img("c_ausc_aortic_2"), img("c_ausc_aortic_3")],
       caption: "2nd right intercostal space, sternal border",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated, sometimes leaning forward in expiration to bring the area closer to the chest wall." },
@@ -333,7 +336,7 @@ export const cardiovascularData = {
     icon: "🅿️",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ausc_pulmonary"), img("c_ausc_pulmonary_2"), img("c_ausc_pulmonary_3")],
       caption: "2nd left intercostal space, sternal border",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated." },
@@ -359,7 +362,7 @@ export const cardiovascularData = {
     icon: "🅃",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ausc_tricuspid"), img("c_ausc_tricuspid_2"), img("c_ausc_tricuspid_3")],
       caption: "Lower left sternal border, 4th–5th ICS",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated." },
@@ -385,7 +388,7 @@ export const cardiovascularData = {
     icon: "🅼",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ausc_mitral"), img("c_ausc_mitral_2"), img("c_ausc_mitral_3")],
       caption: "5th left ICS, midclavicular line (apex)",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, or left lateral decubitus to bring the apex closer to the chest wall." },
@@ -411,7 +414,7 @@ export const cardiovascularData = {
     icon: "1️⃣",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_s1s2"), img("c_s1s2_2"), img("c_s1s2_3")],
       caption: "Identify and characterize the two primary heart sounds",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or seated, chest exposed, quiet room." },
@@ -437,7 +440,7 @@ export const cardiovascularData = {
     icon: "3️⃣",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_s3s4"), img("c_s3s4_2"), img("c_s3s4_3")],
       caption: "Bell, lightly applied, at the apex",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine or left lateral decubitus, apex exposed." },
@@ -463,7 +466,7 @@ export const cardiovascularData = {
     icon: "🔊",
     category: "Learn · Cardiovascular · Auscultation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_murmur"), img("c_murmur_2"), img("c_murmur_3")],
       caption: "Timing, location, radiation, and grade",
       boxes: [
         { tone: "", label: "👤 Position", text: "Same setup as heart sound auscultation — supine/seated, plus left lateral and leaning-forward positions if needed." },
@@ -496,7 +499,7 @@ export const cardiovascularData = {
     icon: "🎨",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_skin_colour"), img("c_skin_colour_2"), img("c_skin_colour_3")],
       caption: "Inspect limbs, compare both sides",
       boxes: [
         { tone: "", label: "👤 Position", text: "Limbs exposed, good natural or white lighting." },
@@ -524,7 +527,7 @@ export const cardiovascularData = {
     icon: "🌡️",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_skin_temp"), img("c_skin_temp_2"), img("c_skin_temp_3")],
       caption: "Back of hand, proximal to distal, both sides",
       boxes: [
         { tone: "", label: "👤 Position", text: "Limbs exposed, room at a comfortable ambient temperature." },
@@ -552,7 +555,7 @@ export const cardiovascularData = {
     icon: "🩸",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_perfusion"), img("c_perfusion_2"), img("c_perfusion_3")],
       caption: "Combine colour, temperature, pulses, and refill",
       boxes: [
         { tone: "", label: "👤 Position", text: "Limbs exposed, comfortable ambient room temperature." },
@@ -580,7 +583,7 @@ export const cardiovascularData = {
     icon: "⚖️",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_limb_symmetry"), img("c_limb_symmetry_2"), img("c_limb_symmetry_3")],
       caption: "Compare circumference, colour, temperature side to side",
       boxes: [
         { tone: "", label: "👤 Position", text: "Both limbs exposed and positioned identically for a fair comparison." },
@@ -607,7 +610,7 @@ export const cardiovascularData = {
     icon: "🔍",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_pv_inspection"), img("c_pv_inspection_2"), img("c_pv_inspection_3")],
       caption: "General visual survey of the limbs",
       boxes: [
         { tone: "", label: "👤 Position", text: "Limbs fully exposed, good lighting, patient standing if assessing for varicosities." },
@@ -636,7 +639,7 @@ export const cardiovascularData = {
     icon: "🛋️",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_resting_response"), img("c_resting_response_2"), img("c_resting_response_3")],
       caption: "Baseline HR, BP, SpO₂ before starting exercise",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated and rested for at least 5 minutes before measuring." },
@@ -664,7 +667,7 @@ export const cardiovascularData = {
     icon: "📈",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ex_hr"), img("c_ex_hr_2"), img("c_ex_hr_3")],
       caption: "Monitor HR through increasing workload",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient actively exercising, HR monitored continuously or at set intervals." },
@@ -691,7 +694,7 @@ export const cardiovascularData = {
     icon: "📉",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_ex_bp"), img("c_ex_bp_2"), img("c_ex_bp_3")],
       caption: "Monitor systolic/diastolic BP through workload",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient actively exercising, BP checked at rest and at set intervals or workload increments." },
@@ -719,7 +722,7 @@ export const cardiovascularData = {
     icon: "⏳",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_hr_recovery"), img("c_hr_recovery_2"), img("c_hr_recovery_3")],
       caption: "HR at 1 and 2 minutes after stopping exercise",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or lying quietly immediately after stopping exercise." },
@@ -745,7 +748,7 @@ export const cardiovascularData = {
     icon: "📊",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_bp_recovery"), img("c_bp_recovery_2"), img("c_bp_recovery_3")],
       caption: "BP at 1, 3, and 5 minutes after stopping exercise",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated quietly after stopping exercise." },
@@ -772,7 +775,7 @@ export const cardiovascularData = {
     icon: "🎚️",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_borg_rpe"), img("c_borg_rpe_2"), img("c_borg_rpe_3")],
       caption: "6–20 or 0–10 scale shown during activity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Used during or immediately after an exercise task." },
@@ -802,7 +805,7 @@ export const cardiovascularData = {
     icon: "💨",
     category: "Learn · Cardiovascular · Exercise Response",
     perform: {
-      images: [null, null, null],
+      images: [img("c_dyspnea"), img("c_dyspnea_2"), img("c_dyspnea_3")],
       caption: "0–10 breathlessness scale during activity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Used during or immediately after an exercise task." },
@@ -834,7 +837,7 @@ export const cardiovascularData = {
     icon: "🚶",
     category: "Learn · Cardiovascular · Functional Capacity",
     perform: {
-      images: [null, null, null],
+      images: [img("c_6mwt"), img("c_6mwt_2"), img("c_6mwt_3")],
       caption: "30m flat corridor, cones at each end",
       boxes: [
         { tone: "", label: "👤 Position", text: "Flat, enclosed corridor at least 30m long, marked with cones at each turnaround point." },
@@ -864,7 +867,7 @@ export const cardiovascularData = {
     icon: "📏",
     category: "Learn · Cardiovascular · General",
     perform: {
-      images: [null, null, null],
+      images: [img("c_pulse_pressure"), img("c_pulse_pressure_2"), img("c_pulse_pressure_3")],
       caption: "Systolic minus diastolic, same brachial reading",
       boxes: [
         { tone: "", label: "👤 Position", text: "Same setup as a standard blood pressure measurement — seated, arm supported at heart level." },
@@ -891,7 +894,7 @@ export const cardiovascularData = {
     icon: "✋",
     category: "Learn · Cardiovascular · Observation",
     perform: {
-      images: [null, null, null],
+      images: [img("c_clubbing"), img("c_clubbing_2"), img("c_clubbing_3")],
       caption: "Schamroth's window test — oppose corresponding nails",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, hands relaxed and well supported, good lighting." },
@@ -920,7 +923,7 @@ export const cardiovascularData = {
     icon: "🦵",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_homans"), img("c_homans_2"), img("c_homans_3")],
       caption: "Passive ankle dorsiflexion with knee extended",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, knee extended and relaxed." },
@@ -948,7 +951,7 @@ export const cardiovascularData = {
     icon: "📐",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_abi"), img("c_abi_2"), img("c_abi_3")],
       caption: "Doppler pressures — highest ankle ÷ highest arm",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine and rested 5–10 minutes, arms and ankles exposed." },
@@ -977,7 +980,7 @@ export const cardiovascularData = {
     icon: "🤚",
     category: "Learn · Cardiovascular · Peripheral Vascular",
     perform: {
-      images: [null, null, null],
+      images: [img("c_allens"), img("c_allens_2"), img("c_allens_3")],
       caption: "Occlude both wrist arteries, release one at a time",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, hand elevated and the fist clenched tightly to drain blood from the palm." },
@@ -1003,7 +1006,7 @@ export const cardiovascularData = {
     icon: "📋",
     category: "Learn · Cardiovascular · Functional",
     perform: {
-      images: [null, null, null],
+      images: [img("c_nyha"), img("c_nyha_2"), img("c_nyha_3")],
       caption: "Patient-reported symptoms with activity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Interview format — best done with a family member present who can corroborate typical activity tolerance." },
