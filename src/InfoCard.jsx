@@ -89,8 +89,16 @@ function PerformPane({ perform }) {
   const slots = normalizeImages(perform);
   const [idx, setIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  // Cardio/neuro image slots are now wired to a Cloudinary asset id per
+  // slot even before the photo is actually uploaded there (so an upload
+  // shows up immediately with no further code change) -- which means a
+  // slot's `src` can 404 if that particular photo hasn't been uploaded
+  // yet. Track which src's have failed to load and fall back to the same
+  // placeholder a `null` slot shows, instead of a broken-image icon.
+  const [erroredSrcs, setErroredSrcs] = useState(() => new Set());
   useEffect(() => { setIdx(0); setFullscreen(false); }, [perform]);
   const active = slots[Math.min(idx, slots.length - 1)];
+  const activeSrc = active.src && !erroredSrcs.has(active.src) ? active.src : null;
 
   return (
     <>
@@ -101,9 +109,14 @@ function PerformPane({ perform }) {
           photo opens it full-screen (ImageLightbox below) -- same
           renderer for every Cardio and Neuro card, so this applies
           everywhere at once. */}
-      {active.src ? (
+      {activeSrc ? (
         <div style={{ ...s.illusImg, cursor: "pointer" }} onClick={() => setFullscreen(true)} role="button" aria-label="View photo full screen">
-          <img src={active.src} alt={active.label || perform.caption || ""} style={s.illusImgTag} />
+          <img
+            src={activeSrc}
+            alt={active.label || perform.caption || ""}
+            style={s.illusImgTag}
+            onError={() => setErroredSrcs((prev) => new Set(prev).add(activeSrc))}
+          />
           {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
         </div>
       ) : (

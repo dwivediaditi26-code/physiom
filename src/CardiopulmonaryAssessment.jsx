@@ -215,6 +215,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
           className="select-input"
           value={value || ""}
           placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
+          onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
@@ -2023,7 +2024,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            to the heaviest sections (Subjective, Cardiovascular Examination,
            Exercise/Activity Response) so a fast run-through only has to
            scan compact rows instead of every field's full input widget. */
-        .cfield { border: 1.5px solid ${BRAND.border}; border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
+        .cfield { border: 1.5px solid ${BRAND.border}; border-radius: 14px; margin-bottom: 8px; }
         .cfield-answered { border-color: ${BRAND.purple}; }
         .cfield-row { display: flex; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
         .cfield-label { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }

@@ -188,9 +188,20 @@ function myotomeCard(m) {
     ),
   };
 }
+// CRANIAL_NERVES.id (sharedClinicalData.js) is a bare short id ("cn1",
+// "cn346", ...) used elsewhere for exam-field wiring, not a Cloudinary
+// asset id -- the real uploaded photos live under the "n_"-prefixed,
+// fully-spelled-out ids ("n_cn1", "n_cn3_4_6", ...), same convention as
+// every other neuro asset. Map explicitly rather than string-munging so
+// this doesn't silently drift if either naming ever changes.
+const CRANIAL_IMAGE_ID = {
+  cn1: "n_cn1", cn2: "n_cn2", cn346: "n_cn3_4_6", cn5: "n_cn5", cn7: "n_cn7",
+  cn8: "n_cn8", cn910: "n_cn9_10", cn11: "n_cn11", cn12: "n_cn12",
+};
+
 function cranialCard(cn) {
   return {
-    id: cn.id, image: cn.id, title: `CN ${cn.numeral} — ${cn.name}`,
+    id: cn.id, image: CRANIAL_IMAGE_ID[cn.id] || cn.id, title: `CN ${cn.numeral} — ${cn.name}`,
     sections: (
       <Fragment>
         {cn.test && (
