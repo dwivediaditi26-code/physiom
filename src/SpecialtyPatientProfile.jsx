@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
 import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { PostureSessionsView } from "./PatientDatabase.jsx";
+import { injectViewerControls } from "./sharedClinicalData.js";
 
 // Simple, separate profile for Cardio/Neuro (+ new Ortho Assessment)
 // patients (2026-08-20, Aditi's request) -- deliberately NOT the existing
@@ -26,7 +28,7 @@ import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 const C = {
   bg: "#F8FAFC", white: "#FFFFFF", primary: "#6D28D9", primaryBg: "#EDE9FE",
   text: "#1e293b", muted: "#64748b", faint: "#94a3b8", border: "#e2e8f0",
-  green: "#16a34a", greenBg: "#dcfce7", red: "#dc2626",
+  green: "#16a34a", greenBg: "#dcfce7", red: "#dc2626", orange: "#d97706",
 };
 
 function Card({ children, style }) {
@@ -103,12 +105,95 @@ function PainTrend({ sessions }) {
   );
 }
 
+// Documents tab -- same storage shape (data.uploaded_docs, saved through
+// onSaveField) as the Ortho PatientProfileModal's Docs tab in
+// PatientDatabase.jsx, so a document uploaded from either profile shows up
+// in both.
+function DocumentsPanel({ patient, onSaveField }) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const uploadedDocs = patient?.data?.uploaded_docs || [];
+  const setUploadedDocs = (docs) => {
+    if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert("File too large. Maximum size is 5MB."); return; }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const newDoc = {
+        id: Date.now().toString(),
+        name: file.name,
+        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        size: file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.round(file.size / 1024) + " KB",
+        type: file.type,
+        icon: file.type.includes("pdf") ? "📋" : file.type.includes("image") ? "🖼" : file.type.includes("video") ? "🎥" : "📄",
+        dataUrl: ev.target.result,
+        uploadedAt: new Date().toISOString(),
+      };
+      setUploadedDocs([newDoc, ...uploadedDocs]);
+      setUploading(false);
+    };
+    reader.onerror = () => { setUploading(false); alert("Failed to read file."); };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleDeleteDoc = (id) => setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
+  const handleDownloadDoc = (doc) => { const a = document.createElement("a"); a.href = doc.dataUrl; a.download = doc.name; a.click(); };
+  const handlePreviewDoc = (doc) => {
+    const w = window.open();
+    if (!w) return;
+    const inner = doc.type.includes("image") ? `<img src="${doc.dataUrl}" style="max-width:100%;"/>` : `<iframe src="${doc.dataUrl}" style="width:100%;height:100vh;border:none;"></iframe>`;
+    w.document.write(injectViewerControls(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${doc.name || "Document"}</title><style>body{margin:0}</style></head><body>${inner}</body></html>`));
+    w.document.close();
+  };
+
+  return (
+    <>
+      <input ref={fileInputRef} type="file" style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4" onChange={handleFileUpload} />
+      <div onClick={() => fileInputRef.current?.click()} style={{ background: "#F5F3FF", border: `2px dashed ${C.primary}`, borderRadius: 16, padding: "28px 20px", textAlign: "center", marginBottom: 16, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
+        {uploading ? (
+          <><div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Uploading…</div></>
+        ) : (
+          <><div style={{ fontSize: 36, marginBottom: 8 }}>📤</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Upload Document</div><div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>PDF, Image, MRI, X-Ray — max 5MB</div></>
+        )}
+      </div>
+      <Card>
+        <CardTitle action={<div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>{uploadedDocs.length} file{uploadedDocs.length !== 1 ? "s" : ""}</div>}>Documents</CardTitle>
+        {uploadedDocs.length === 0 ? (
+          <EmptyRow>No documents yet. Tap the upload zone above to add files.</EmptyRow>
+        ) : (
+          uploadedDocs.map((doc, i) => (
+            <div key={doc.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 0", borderTop: i > 0 ? `1px solid #f1f5f9` : "none" }}>
+              <div onClick={() => handlePreviewDoc(doc)} style={{ width: 40, height: 40, borderRadius: 10, background: C.primaryBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, cursor: "pointer", overflow: "hidden" }}>
+                {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{doc.icon}</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => handlePreviewDoc(doc)}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>{doc.date} · {doc.size}</div>
+              </div>
+              <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                <button onClick={() => handleDownloadDoc(doc)} title="Download" style={{ width: 30, height: 30, borderRadius: 8, background: C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>⬇</button>
+                <button onClick={() => handleDeleteDoc(doc.id)} title="Delete" style={{ width: 30, height: 30, borderRadius: 8, background: "#FEF2F2", border: "none", cursor: "pointer", fontSize: 13 }}>🗑</button>
+              </div>
+            </div>
+          ))
+        )}
+      </Card>
+    </>
+  );
+}
+
 const hepDose = (e) => {
   const st = e.customSets || e.sets, rp = e.customReps || e.reps, hd = e.customHold || e.hold, fq = e.customFreq || e.freq;
   return `${st}×${rp}${hd ? ` · hold ${hd}s` : ""}${fq ? ` · ${fq}` : ""}`;
 };
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack }) {
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture }) {
   const [tab, setTab] = useState("overview");
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [expandedSession, setExpandedSession] = useState(0);
@@ -142,6 +227,8 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack }) {
     { k: "progress", label: "Progress" },
     { k: "treatment", label: "Treatment" },
     { k: "home", label: "Home" },
+    { k: "documents", label: "Docs" },
+    { k: "posture", label: "Posture" },
   ];
 
   return (
@@ -405,6 +492,17 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack }) {
             <LinkBtn onClick={() => downloadHepPdf(d)}>📄 Download as PDF</LinkBtn>
           )}
         </>
+      )}
+
+      {/* ═══ DOCUMENTS ═══ (2026-09-01, Aditi: upload patient files here,
+          same storage as the Ortho profile's Docs tab so records line up
+          across specialties) */}
+      {tab === "documents" && <DocumentsPanel patient={patient} onSaveField={onSaveField} />}
+
+      {/* ═══ POSTURE ═══ (2026-09-01, Aditi: posture analysis results should
+          land in the patient profile like they already do for Ortho) */}
+      {tab === "posture" && (
+        <PostureSessionsView d={d} C={C} onNav={() => onOpenPosture?.(patient)} />
       )}
     </div>
   );

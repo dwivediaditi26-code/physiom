@@ -1831,6 +1831,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 onNav={navTo}
                 onBack={()=>navTo("clinical")}
+                onSaveField={(id,newData)=>{
+                  setPatients(prev=>{
+                    const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
+                    savePatientDB(updated, currentUser?.id);
+                    return updated;
+                  });
+                }}
+                onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
             </div>
           )}
