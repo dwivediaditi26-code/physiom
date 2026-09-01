@@ -44,7 +44,10 @@ export default function Sidebar() {
     <aside className="hidden md:block w-60 shrink-0">
       <NavSection title="PhysioFeed" items={PRO_NAV} />
       {profile?.isAdmin && (
-        <NavSection title="Admin" items={[{ path: "/admin/reports", label: "Reported posts", icon: "ShieldCheck" }]} />
+        <NavSection title="Admin" items={[
+          { path: "/admin/reports", label: "Reported posts", icon: "ShieldCheck" },
+          { path: "/admin/evidence", label: "Add Evidence", icon: "Plus" },
+        ]} />
       )}
     </aside>
   );
