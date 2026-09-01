@@ -133,7 +133,6 @@ const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} 
 const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, SensoryRegion: SensoryRegionWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
-  { id:"ortho",     label:"Old Ortho",        icon:"🦴", color:"#7c3aed", live:true  },
   { id:"ortho_new", label:"Ortho Assessment", icon:"🦴", color:"#7c3aed", live:true  },
   { id:"neuro",     label:"Neuro",            icon:"🧠", color:"#0d9488", live:true  },
   { id:"sports",    label:"Sports",           icon:"🏃", color:"#ea580c", live:false },
@@ -514,11 +513,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       setData({});
       setActivePatientId(null);
       navTo("neuro_assessment");
-    } else if (st.id === "ortho") {
-      setStream("ortho");
-      setData({});
-      setActivePatientId(null);
-      navTo("demographics");
     } else if (st.id === "ortho_new") {
       setData({});
       setActivePatientId(null);
@@ -1079,8 +1073,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* 3. Assessment (collapsible) */}
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
-        <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
-        <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
         <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
         <SidebarItem navKey="ortho_new_assessment" icon="🦴" label="Ortho Assessment"/>
@@ -1919,7 +1911,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
@@ -1985,7 +1977,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
