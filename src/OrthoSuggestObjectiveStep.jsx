@@ -779,7 +779,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
 
   if (reviewMode) {
     return (
-      <>
+      <div className="obj-no-zoom">
         <div className="obj-review-head">
           <button type="button" className="obj-review-back" onClick={() => setReviewMode(false)}>← Back to suggestions</button>
         </div>
@@ -837,12 +837,12 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         <button type="button" className="obj-review-done" onClick={() => setReviewMode(false)}>
           Done — back to summary
         </button>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="obj-no-zoom">
       <SectionIntro icon="🧠" title="Objective Assessment" info="Individual items below come from the region(s) you picked; the categories at the bottom come from what you documented in Subjective and Pain — none of this is a live AI/diagnosis call." />
 
       {topConditions.length > 0 && (
@@ -984,6 +984,6 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

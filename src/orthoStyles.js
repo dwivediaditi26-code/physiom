@@ -528,6 +528,16 @@ export function orthoStyles() {
         .obj-item-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
         .obj-item-select-btn { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 11.5px; padding: 7px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; white-space: nowrap; }
 
+        /* Every text/number/select/textarea on this step at >=16px --
+           below that, iOS Safari auto-zooms the whole page on focus
+           regardless of the viewport's user-scalable=no. Scoped to this
+           step (rather than changing .text-input/.textarea globally)
+           since those shared classes are also used by pages that weren't
+           part of this redesign. Specificity (class + tag) beats the
+           shared single-class rules those inputs already carry, so this
+           wins regardless of source order. */
+        .obj-no-zoom input, .obj-no-zoom select, .obj-no-zoom textarea { font-size: 16px; }
+
         /* Possible Matches -- horizontal condition-pathway cards above the
            suggested list. Purely informational context (real Phase 0.5
            numbers, tapping never adds/removes anything); restyled from the
