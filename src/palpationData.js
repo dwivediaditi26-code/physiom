@@ -1,17 +1,8 @@
 // Palpation reference content for the Learn library.
 //
 // Written in-house from standard musculoskeletal anatomy (attachments,
-// actions, joint mechanics) cross-checked against the uploaded textbook
-// ("The Muscle and Bone Palpation Manual with Trigger Points, Referral
-// Patterns, and Stretching", 1st ed.) for completeness, then phrased and
-// structured independently for this app — not a transcription or close
-// paraphrase of the book's own sentences. Anatomical facts (an origin,
-// an insertion, a nerve root, a joint action) aren't copyrightable
-// expression and are consistent across any competent anatomy reference;
-// what's original here is the selection, structure, and wording used to
-// present them as a clinical study card. `source` cites the textbook
-// chapter/page range as a reference pointer for further reading, not as
-// an admission of copying.
+// actions, joint mechanics), phrased and structured independently for
+// this app as clinical study cards.
 //
 // `images` is always a 3-slot array of Cloudinary public ids (or null).
 // StudyImage.jsx already renders a clean "no image" placeholder for a
@@ -37,20 +28,6 @@ export const PALPATION_REGIONS = [
   { key: "foot", label: "Foot", available: true },
   { key: "bones", label: "Bones & Ligaments", available: true },
 ];
-
-const REF_SHOULDER = "The Muscle and Bone Palpation Manual — Ch.10, Shoulder Girdle muscles (reference)";
-const REF_NECK = "The Muscle and Bone Palpation Manual — Ch.11, Neck muscles (reference)";
-const REF_HEAD = "The Muscle and Bone Palpation Manual — Ch.12, Head muscles (reference)";
-const REF_ARM = "The Muscle and Bone Palpation Manual — Ch.13, Arm muscles (reference)";
-const REF_FOREARM = "The Muscle and Bone Palpation Manual — Ch.14, Forearm muscles (reference)";
-const REF_TRUNK = "The Muscle and Bone Palpation Manual — Ch.16, Trunk muscles (reference)";
-const REF_PELVIS = "The Muscle and Bone Palpation Manual — Ch.17, Pelvic muscles (reference)";
-const REF_THIGH = "The Muscle and Bone Palpation Manual — Ch.18, Thigh muscles (reference)";
-const REF_LEG = "The Muscle and Bone Palpation Manual — Ch.19, Leg muscles (reference)";
-const REF_FOOT = "The Muscle and Bone Palpation Manual — Ch.20, Intrinsic foot muscles (reference)";
-const REF_BONES_UPPER = "The Muscle and Bone Palpation Manual — Ch.7, Upper extremity bones and ligaments (reference)";
-const REF_BONES_AXIAL = "The Muscle and Bone Palpation Manual — Ch.8, Axial body bones and ligaments (reference)";
-const REF_BONES_LOWER = "The Muscle and Bone Palpation Manual — Ch.9, Lower extremity bones and ligaments (reference)";
 
 export const PALPATION_DATA = {
   shoulder: [
@@ -80,7 +57,6 @@ export const PALPATION_DATA = {
         "The lower fibres' outer edge is often visible before you even touch the skin.",
       ],
       clinicalConsiderations: "One of the most frequently symptomatic muscles in clinical practice, particularly the upper fibres — linked to sustained shoulder elevation, forward-head postures, desk ergonomics, and strap/bra compression. Because several neighbouring muscles (SCM, levator scapulae) share referral territory, confirm findings against those before attributing symptoms here.",
-      source: `${REF_SHOULDER}, pp.142–145`,
       images: [null, null, null],
     },
     {
@@ -108,7 +84,6 @@ export const PALPATION_DATA = {
         "Major and minor bellies blend together and usually can't be told apart by feel alone.",
       ],
       clinicalConsiderations: "Symptoms here often trace back to sustained retraction/stabilizing load, or a chronically lengthened state from rounded shoulders and tight pectorals. Pain tends to sit close to the surface and can be mistaken for a fibromyalgia tender point if examined in isolation.",
-      source: `${REF_SHOULDER}, pp.146–147`,
       images: [null, null, null],
     },
     {
@@ -127,7 +102,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A thin sheet beneath the rhomboids, over the upper back ribs — subtle compared to the more superficial muscles around it.",
       clinicalConsiderations: "Associated with chronic respiratory effort (COPD, asthma) and with scalene dysfunction. Presents as a deep, hard-to-pinpoint ache under the scapula, occasionally with little-finger numbness or stiffness around C7–T3.",
-      source: `${REF_SHOULDER}, p.148`,
       images: [null, null, null],
     },
     {
@@ -156,7 +130,6 @@ export const PALPATION_DATA = {
         "Landmark tip: C1's transverse process sits just below the earlobe, between the mastoid tip and the jaw.",
       ],
       clinicalConsiderations: "A textbook cause of acute wry neck / torticollis, with restricted turning to the opposite side. Common triggers include shoulder-bag straps, phone-cradling, poor monitor height, and general tension-holding.",
-      source: `${REF_SHOULDER}, pp.149–151`,
       images: [null, null, null],
     },
     {
@@ -182,7 +155,6 @@ export const PALPATION_DATA = {
         "Don't use lateral rotation to bring this muscle out — infraspinatus and teres minor join in and muddy the lower border.",
       ],
       clinicalConsiderations: "Overload from sustained reaching/typing postures or a direct blow. Symptom pattern overlaps enough with rotator cuff tears, subacromial bursitis, and joint arthritis that those need ruling out separately.",
-      source: `${REF_SHOULDER}, pp.152–153`,
       images: [null, null, null],
     },
     {
@@ -211,7 +183,6 @@ export const PALPATION_DATA = {
         "The infraspinatus/teres-minor boundary is subtle; the teres-minor/teres-major boundary is much easier to find by alternating rotation direction.",
       ],
       clinicalConsiderations: "Limits reaching-behind-the-back motions. Infraspinatus involvement often produces a deep ache at the front of the shoulder; teres minor can mimic quadrilateral space compression of the axillary nerve. Both get mistaken for rotator cuff pathology or a cervical disc issue.",
-      source: `${REF_SHOULDER}, pp.154–157`,
       images: [null, null, null],
     },
     {
@@ -237,7 +208,6 @@ export const PALPATION_DATA = {
         "Sits right beside latissimus dorsi with overlapping actions; on the humerus latissimus sits slightly more toward the front, teres major slightly more distal.",
       ],
       clinicalConsiderations: "Overload from repetitive forceful extension (rowing motions) can produce deep posterior shoulder pain, abduction restriction, or a subtle scapular tilt.",
-      source: `${REF_SHOULDER}, pp.158–159`,
       images: [null, null, null],
     },
     {
@@ -251,7 +221,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Its tendon is easier to pick out at the humerus than teres major's — it sits more toward the front, closer to the surface.",
       clinicalConsiderations: "Full technique for this muscle belongs to a different body-region tour and isn't in this library yet.",
-      source: `${REF_SHOULDER}, p.159`,
       images: [null, null, null],
     },
     {
@@ -280,7 +249,6 @@ export const PALPATION_DATA = {
         "Two landmarks for the tendon: follow the scapular-spine line just past the acromion, or find the bicipital groove and feel just behind it on the greater tubercle.",
       ],
       clinicalConsiderations: "Linked to sustained overhead work, carrying loads with the arm hanging, or trauma. Presents with crepitus, painful abduction, and tenderness at the humeral attachment — frequently mistaken for rotator cuff tendinitis, bursitis, a cervical disc problem, or frozen shoulder. Referral overlaps with infraspinatus at the outer shoulder, though infraspinatus tends to feel like a deeper ache.",
-      source: `${REF_SHOULDER}, pp.160–162`,
       images: [null, null, null],
     },
     {
@@ -307,7 +275,6 @@ export const PALPATION_DATA = {
         "Pectoralis major's clavicular head typically joins in during horizontal flexion — that's expected, not a sign you've moved off-target.",
       ],
       clinicalConsiderations: "Overload from sustained overhead reaching or direct impact. Overlaps clinically with rotator cuff tear, biceps tendinitis, and subacromial bursitis.",
-      source: `${REF_SHOULDER}, pp.163–164`,
       images: [null, null, null],
     },
     {
@@ -336,7 +303,6 @@ export const PALPATION_DATA = {
         "Subscapularis (against the scapula) and serratus anterior (against the ribs) occupy the same general space — which surface your fingers are oriented toward tells them apart.",
       ],
       clinicalConsiderations: "Linked to overuse (swimming), trauma, prolonged immobilization in medial rotation, or a chronically rounded-shoulder posture. Restricts and pains lateral rotation, which indirectly limits full abduction. Differential includes frozen shoulder, rotator cuff lesions, and thoracic outlet syndrome.",
-      source: `${REF_SHOULDER}, pp.165–168`,
       images: [null, null, null],
     },
     {
@@ -364,7 +330,6 @@ export const PALPATION_DATA = {
         "Serratus anterior (against the ribs) and subscapularis (against the scapula) occupy the same space — finger orientation is what separates them.",
       ],
       clinicalConsiderations: "Overload from push-ups, punching, racquet sports, or heavy breathing effort. Restricts scapular retraction; left-sided symptoms can mimic cardiac referral, so rib dysfunction, costochondritis, and thoracic outlet syndrome all belong on the differential list too.",
-      source: `${REF_SHOULDER}, pp.169–171`,
       images: [null, null, null],
     },
     {
@@ -391,7 +356,6 @@ export const PALPATION_DATA = {
         "Abducting the arm away from the body lets you grasp the whole anterior fold of muscle directly between your fingers.",
       ],
       clinicalConsiderations: "Linked to repetitive lifting, a rounded-shoulder posture, immobilization, or tight strap compression; a trigger point near ribs 5–6 on the right has been associated with cardiac arrhythmia in the literature. Left-sided presentations warrant ruling out cardiac referral alongside rib and costochondral causes.",
-      source: `${REF_SHOULDER}, pp.172–174`,
       images: [null, null, null],
     },
     {
@@ -417,7 +381,6 @@ export const PALPATION_DATA = {
         "This cue requires the scapula to rotate downward — easier to feel with the client sitting up.",
       ],
       clinicalConsiderations: "Can produce neurovascular symptoms down the arm (pectoralis minor syndrome), a rounded-shoulder posture, or scapular winging. Backpack strap pressure and referral from pectoralis major or the scalenes are common contributors.",
-      source: `${REF_SHOULDER}, pp.175–176`,
       images: [null, null, null],
     },
     {
@@ -444,7 +407,6 @@ export const PALPATION_DATA = {
         "Generally considered one of the harder structures in this region to palpate with confidence.",
       ],
       clinicalConsiderations: "Can contribute to costoclavicular compression symptoms in the arm. Differential includes cervical disc issues, anterior scalene syndrome, and pectoralis minor syndrome.",
-      source: `${REF_SHOULDER}, pp.177–178`,
       images: [null, null, null],
     },
   ],
@@ -475,7 +437,6 @@ export const PALPATION_DATA = {
         "A useful landmark for finding the scalenes and the longus colli/capitis nearby.",
       ],
       clinicalConsiderations: "Linked to sustained head-turned postures, forward-head posture, restrictive collars, or whiplash. Can produce headache, restricted neck motion, throat discomfort, and autonomic symptoms (eye changes from the sternal head; sweating/vasoconstriction from the clavicular head) — frequently mistaken for swollen glands, sinus or migraine headache, or a jaw-joint problem.",
-      source: `${REF_NECK}, pp.187–189`,
       images: [null, null, null],
     },
     {
@@ -493,7 +454,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Faint neck-skin wrinkling directly over the SCM.",
       clinicalConsiderations: "Associated with habitual facial expressions or with SCM/scalene involvement; produces a prickling sensation over the jaw.",
-      source: `${REF_NECK}, p.189`,
       images: [null, null, null],
     },
     {
@@ -521,7 +481,6 @@ export const PALPATION_DATA = {
         "Palpate with care — the brachial plexus and subclavian artery pass between the anterior and middle bellies.",
       ],
       clinicalConsiderations: "Linked to coughing, laboured breathing, or whiplash-type trauma. Can drive thoracic outlet symptoms, restricted neck rotation/side-bending, or upper-rib dysfunction — differential includes cervical disc issues, left-sided cardiac referral, and carpal tunnel syndrome.",
-      source: `${REF_NECK}, pp.190–193`,
       images: [null, null, null],
     },
     {
@@ -535,7 +494,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A readily palpable horizontal band in the posterior triangle.",
       clinicalConsiderations: "See the full Hyoid Group entry for symptom notes — tension here is thought to play a role in thoracic outlet presentations via its relationship to the brachial plexus.",
-      source: `${REF_NECK}, p.193`,
       images: [null, null, null],
     },
     {
@@ -564,7 +522,6 @@ export const PALPATION_DATA = {
         "If it's hard to separate from the SCM, rotating the head toward the side being palpated relaxes the SCM out of the way.",
       ],
       clinicalConsiderations: "A frequent casualty of whiplash injuries. Can produce sore throat, swallowing discomfort, and compensatory tightness in the posterior neck. Referral mapping for this group is limited in the literature.",
-      source: `${REF_NECK}, pp.194–196`,
       images: [null, null, null],
     },
     {
@@ -586,7 +543,6 @@ export const PALPATION_DATA = {
         "Keep pressure light — the facial nerve and styloid process are close by.",
       ],
       clinicalConsiderations: "The anterior belly is essentially inaccessible to palpation. Symptom-referral patterns for either muscle aren't well documented.",
-      source: `${REF_NECK}, p.196`,
       images: [null, null, null],
     },
     {
@@ -612,7 +568,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A cluster of small, thin bands that are hard to tell apart individually but all engage together when jaw-opening is resisted.",
       clinicalConsiderations: "Digastric has the best-documented referral pattern in this group: its lower belly can refer to the lower incisors, tongue, and throat with swallowing discomfort; its upper belly relates to occipitofrontalis symptoms. Stylohyoid has been linked to external carotid artery entrapment; omohyoid tension is thought to contribute to thoracic outlet symptoms. Frequently mistaken for dental problems.",
-      source: `${REF_NECK}, pp.197–200`,
       images: [null, null, null],
     },
     {
@@ -638,7 +593,6 @@ export const PALPATION_DATA = {
         "This is a seated alternative to the prone Trapezius technique already covered under Shoulder Girdle (pp.142–145) — useful when a client can't lie face-down.",
       ],
       clinicalConsiderations: "See the Shoulder Girdle Trapezius entry for full symptom notes — arguably the single most commonly affected muscle site clinically.",
-      source: `${REF_NECK}, pp.201–203`,
       images: [null, null, null],
     },
     {
@@ -666,7 +620,6 @@ export const PALPATION_DATA = {
         "Seated alternative to the prone technique already covered under Shoulder Girdle (pp.149–151); includes an extra tip for reaching the top attachment under the SCM by slackening it first (flex plus same-side bend).",
       ],
       clinicalConsiderations: "See the Shoulder Girdle Levator Scapulae entry for full symptom notes (a classic acute wry-neck presentation).",
-      source: `${REF_NECK}, pp.204–206`,
       images: [null, null, null],
     },
     {
@@ -693,7 +646,6 @@ export const PALPATION_DATA = {
         "Its lower attachment on the upper thoracic spinous processes is reachable by pressing just in front of the trapezius border, down toward the spine.",
       ],
       clinicalConsiderations: "Linked to prolonged forward or rotated head postures (off-centre monitor setups) or whiplash. Restricts flexion/opposite rotation and same-side rotation, and can produce headache — differential includes cervical joint dysfunction and migraine.",
-      source: `${REF_NECK}, pp.207–208`,
       images: [null, null, null],
     },
     {
@@ -713,7 +665,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Buried under other muscle for its whole length — easiest to first find in the gap between levator scapulae and splenius capitis.",
       clinicalConsiderations: "Shares the same aggravating factors as splenius capitis; can produce headache, eye pain, or blurred vision on the same side.",
-      source: `${REF_NECK}, p.209`,
       images: [null, null, null],
     },
     {
@@ -739,7 +690,6 @@ export const PALPATION_DATA = {
         "A light contraction is enough; pushing too hard overrides the trapezius's reciprocal relaxation and blocks access to the muscle beneath it.",
       ],
       clinicalConsiderations: "Linked to protracted head posture, prone reading/elbow-propping habits, whiplash, or cervical osteoarthritis. Can produce headache, restricted flexion, or greater occipital nerve irritation (tingling/pain across the back of the scalp).",
-      source: `${REF_NECK}, pp.210–211`,
       images: [null, null, null],
     },
     {
@@ -758,7 +708,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "All four are deep and difficult to isolate individually — the multifidus and rotatores sit very deep in the laminar groove.",
       clinicalConsiderations: "Longissimus capitis symptoms tend to sit behind the ear; semispinalis cervicis mirrors semispinalis capitis's referral; cervical multifidus refers toward the base of the skull and the inner scapular border; rotatores refer locally at the segmental level involved.",
-      source: `${REF_NECK}, p.212`,
       images: [null, null, null],
     },
     {
@@ -786,7 +735,6 @@ export const PALPATION_DATA = {
         "Work this area cautiously — the vertebral artery, suboccipital nerve, and greater occipital nerve all pass close by.",
       ],
       clinicalConsiderations: "Linked to sustained head extension or rotation, chronic forward-head posture, whiplash, or upper cervical joint dysfunction. Produces diffuse, hard-to-localize headache and restricted flexion/rotation — often mistaken for migraine or greater occipital neuralgia.",
-      source: `${REF_NECK}, pp.213–216`,
       images: [null, null, null],
     },
   ],
@@ -815,7 +763,6 @@ export const PALPATION_DATA = {
         "Seated or prone positioning works just as well if supine isn't practical.",
       ],
       clinicalConsiderations: "Frequently tight in clients with tension-type headaches. Frontalis tightness tends to refer toward the forehead and can mimic supraorbital nerve irritation; occipitalis tightness refers toward the back of the head and behind the eye and is often mistaken for greater occipital neuralgia. Because the sheet is thin, confirm which belly is involved before assuming the neighbouring neck muscles are clear.",
-      source: `${REF_HEAD}, pp.223–225`,
       images: [null, null, null],
     },
     {
@@ -842,7 +789,6 @@ export const PALPATION_DATA = {
         "All four are superficial and easy to reach once you know where to look, even though the contraction itself is hard to elicit.",
       ],
       clinicalConsiderations: "Rarely a primary source of symptoms on their own; included mainly for completeness of the scalp musculature and to avoid mistaking normal ear-adjacent tissue for something else.",
-      source: `${REF_HEAD}, p.225`,
       images: [null, null, null],
     },
     {
@@ -870,7 +816,6 @@ export const PALPATION_DATA = {
         "Also easily palpated with the client seated instead of supine.",
       ],
       clinicalConsiderations: "Commonly tight with habitual clenching or grinding, prolonged mouth-opening (dental work), bite asymmetry, forward-head posture, or general TMJ dysfunction. Refers toward the head, upper teeth, and gums, and is frequently mistaken for a dental problem or an isolated TMJ disorder — cross-check against the masseter and pterygoids before attributing findings solely here.",
-      source: `${REF_HEAD}, pp.226–228`,
       images: [null, null, null],
     },
     {
@@ -897,7 +842,6 @@ export const PALPATION_DATA = {
         "Equally accessible with the client seated.",
       ],
       clinicalConsiderations: "Shares the same overuse triggers as the temporalis (clenching, grinding, gum chewing, bite asymmetry, TMJ dysfunction) and can refer to the molars and TMJ, and — less intuitively — produce ipsilateral eye puffiness or ear symptoms via nearby vascular and nerve structures. Restricted jaw opening is a common associated finding.",
-      source: `${REF_HEAD}, pp.228–230`,
       images: [null, null, null],
     },
     {
@@ -925,7 +869,6 @@ export const PALPATION_DATA = {
         "Sits close to the auriculotemporal nerve — this region tends to be tender to palpation regardless of muscle condition.",
       ],
       clinicalConsiderations: "The muscle of mastication most likely to develop trigger points. Tightness follows the same clenching/grinding/bite-asymmetry pattern as the other jaw muscles and commonly produces TMJ pain, clicking or crepitus, and restricted same-side jaw deviation. Unlike the temporalis and masseter, it doesn't typically refer into the teeth.",
-      source: `${REF_HEAD}, pp.231–233`,
       images: [null, null, null],
     },
     {
@@ -953,7 +896,6 @@ export const PALPATION_DATA = {
         "Both pterygoids sit under only a thin layer of mucosa internally and tend to be tender even when uninvolved — don't over-read mild discomfort as pathology.",
       ],
       clinicalConsiderations: "Same overuse pattern as the other muscles of mastication. Tends to produce a diffuse ache felt in the mouth, tongue, and throat, TMJ pain, a sensation of ear fullness (via eustachian tube involvement), and difficulty swallowing — a presentation easily mistaken for an ear infection or sore throat rather than a muscular one. Like the lateral pterygoid, it doesn't typically refer to the teeth.",
-      source: `${REF_HEAD}, pp.234–236`,
       images: [null, null, null],
     },
     {
@@ -976,7 +918,6 @@ export const PALPATION_DATA = {
         "Two fingers (index and middle) generally give a better read than one on these small muscles.",
       ],
       clinicalConsiderations: "Tightness is linked to habitual squinting or frowning, and can also track with tension in the sternal head of the sternocleidomastoid. Referred discomfort tends to be felt around the nose and is easily mistaken for sinus irritation or a general headache.",
-      source: `${REF_HEAD}, pp.238–239`,
       images: [null, null, null],
     },
     {
@@ -998,7 +939,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A small, cord-like band just under the medial eyebrow — easy to confuse with the nearby orbicularis oculi if the client also closes the eye while frowning, so watch for that.",
       clinicalConsiderations: "Chronic frowning — from stress, sun squinting, or uncorrected near vision — is the typical driver of tightness here.",
-      source: `${REF_HEAD}, p.239`,
       images: [null, null, null],
     },
     {
@@ -1020,7 +960,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "An extremely thin, subtle contraction limited to the eyelid itself — the least substantial structure in this region to confirm by feel.",
       clinicalConsiderations: "Not typically a primary source of musculoskeletal symptoms; included for completeness of the periorbital muscle group.",
-      source: `${REF_HEAD}, p.240`,
       images: [null, null, null],
     },
     {
@@ -1044,7 +983,6 @@ export const PALPATION_DATA = {
         "Easy to confuse with the corrugator supercilii, which also pulls the medial eyebrow down — the nose-wrinkle component is what distinguishes this one.",
       ],
       clinicalConsiderations: "Tightness tracks with habitual frowning/squinting expressions, similarly to the corrugator supercilii.",
-      source: `${REF_HEAD}, p.241`,
       images: [null, null, null],
     },
     {
@@ -1068,7 +1006,6 @@ export const PALPATION_DATA = {
         "Distinguish from the procerus by confirming the client isn't also lifting the skin of the nose, and from the levator labii superioris alaeque nasi by confirming the movement is nostril flare rather than lip elevation.",
       ],
       clinicalConsiderations: "Rarely symptomatic in isolation; included for completeness of the nasal expression group.",
-      source: `${REF_HEAD}, p.242`,
       images: [null, null, null],
     },
     {
@@ -1092,7 +1029,6 @@ export const PALPATION_DATA = {
         "Distinguish from the orbicularis oris by confirming the client isn't also closing or pursing the lips.",
       ],
       clinicalConsiderations: "Rarely symptomatic on its own; included for completeness.",
-      source: `${REF_HEAD}, p.243`,
       images: [null, null, null],
     },
     {
@@ -1117,7 +1053,6 @@ export const PALPATION_DATA = {
         "Counted as both a nose muscle and a mouth muscle since it acts on each.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped here with the other small perioral muscles for completeness.",
-      source: `${REF_HEAD}, pp.244–245`,
       images: [null, null, null],
     },
     {
@@ -1141,7 +1076,6 @@ export const PALPATION_DATA = {
         "Sits between the levator labii superioris alaeque nasi (medial) and zygomaticus minor (lateral) — both also raise the upper lip, so hand placement is what separates them.",
       ],
       clinicalConsiderations: "Tightness, typically from habitual smiling, can produce allergy-like symptoms (sneezing, itchy eyes) and a sensation resembling sinus pain — worth ruling out before assuming a sinus cause.",
-      source: `${REF_HEAD}, pp.245–246`,
       images: [null, null, null],
     },
     {
@@ -1165,7 +1099,6 @@ export const PALPATION_DATA = {
         "Sandwiched between the levator labii superioris (medial) and zygomaticus major (lateral) — both contract with related lip movements, so use hand position rather than the cue alone to tell them apart.",
       ],
       clinicalConsiderations: "Not typically symptomatic on its own; grouped with the other lip elevators.",
-      source: `${REF_HEAD}, p.246`,
       images: [null, null, null],
     },
     {
@@ -1190,7 +1123,6 @@ export const PALPATION_DATA = {
         "The modiolus — a firm knot of connective tissue at the corner of the mouth where several of these muscles converge (zygomaticus major, levator anguli oris, risorius, depressor anguli oris, buccinator, orbicularis oris) — can be felt directly by gently pinching the corner of the mouth between a gloved finger inside the cheek and the thumb outside.",
       ],
       clinicalConsiderations: "Tightness, typically from habitual smiling, can mimic allergy symptoms or sinus pressure, similarly to the levator labii superioris.",
-      source: `${REF_HEAD}, p.247`,
       images: [null, null, null],
     },
     {
@@ -1214,7 +1146,6 @@ export const PALPATION_DATA = {
         "Distinguish from the zygomaticus major, which raises the same corner of the mouth but pulls it outward as well as up.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped with the other mouth-corner elevators.",
-      source: `${REF_HEAD}, p.248`,
       images: [null, null, null],
     },
     {
@@ -1238,7 +1169,6 @@ export const PALPATION_DATA = {
         "Confirm you haven't drifted onto the more superficial zygomaticus major, which can also pull the corner laterally.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source.",
-      source: `${REF_HEAD}, p.249`,
       images: [null, null, null],
     },
     {
@@ -1262,7 +1192,6 @@ export const PALPATION_DATA = {
         "Very difficult to distinguish confidently from the neighbouring depressor labii inferioris by feel alone, since both engage together with a downward, lateral lip/corner movement.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; grouped with the other mouth depressors.",
-      source: `${REF_HEAD}, p.250`,
       images: [null, null, null],
     },
     {
@@ -1286,7 +1215,6 @@ export const PALPATION_DATA = {
         "As with the depressor anguli oris, expect this one to be hard to isolate cleanly from its neighbour since both act together.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source.",
-      source: `${REF_HEAD}, p.251`,
       images: [null, null, null],
     },
     {
@@ -1307,7 +1235,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "The lower portion is superficial and easy to feel; the upper portion sits deep to the depressor labii inferioris and is harder to distinguish.",
       clinicalConsiderations: "Not typically a primary symptom source; often tight alongside general perioral habits like lip pursing.",
-      source: `${REF_HEAD}, p.252`,
       images: [null, null, null],
     },
     {
@@ -1328,7 +1255,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A broad, flat sheet in the cheek — much of it sits deep to the masseter and other facial muscles, so full confirmation can be difficult.",
       clinicalConsiderations: "Overuse (wind/brass instruments, repeated balloon-blowing) or ill-fitting dental appliances can tighten this muscle, producing a deep jaw ache and difficulty chewing or swallowing — a presentation easy to mistake for a TMJ problem.",
-      source: `${REF_HEAD}, p.253`,
       images: [null, null, null],
     },
     {
@@ -1348,7 +1274,6 @@ export const PALPATION_DATA = {
         "Distinguish the lower portion from the nearby mentalis, since both raise/protract the lower lip.",
       ],
       clinicalConsiderations: "Not typically a primary symptom source; included for completeness of the perioral muscle group.",
-      source: `${REF_HEAD}, p.254`,
       images: [null, null, null],
     },
   ],
@@ -1380,7 +1305,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine (anterior fibres) or prone (posterior fibres) if seated positioning isn't practical.",
       ],
       clinicalConsiderations: "Tightness or overuse here is linked to sustained overhead work, direct trauma, or injections, and often co-occurs with supraspinatus/infraspinatus involvement. Can produce abduction weakness and is frequently mistaken for a rotator cuff tear, bicipital tendinitis, or subacromial bursitis — worth ruling those out before attributing findings solely to the deltoid.",
-      source: `${REF_ARM}, pp.262–264`,
       images: [null, null, null],
     },
     {
@@ -1409,7 +1333,6 @@ export const PALPATION_DATA = {
         "Also works well supine.",
       ],
       clinicalConsiderations: "Overuse — lifting with the forearm fully supinated, prolonged manual-screwdriver-type work — is the typical trigger, and can also follow infraspinatus involvement. Produces a superficial, dull pain or restricted elbow extension, and is easily mistaken for bicipital tendinitis, subacromial bursitis, or glenohumeral arthritis.",
-      source: `${REF_ARM}, pp.265–267`,
       images: [null, null, null],
     },
     {
@@ -1439,7 +1362,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to the same forearm-flexion overuse pattern as the biceps, or to prolonged elbow flexion (e.g. sleeping with the elbow fully bent). Can produce thumb weakness or a presentation resembling radial nerve entrapment, and is often mistaken for bicipital or supraspinatus tendinitis, or carpal tunnel syndrome.",
-      source: `${REF_ARM}, pp.268–270`,
       images: [null, null, null],
     },
     {
@@ -1468,7 +1390,6 @@ export const PALPATION_DATA = {
         "Once located, the nearby humeral attachments of latissimus dorsi and teres major (just proximal, on the medial lip of the bicipital groove) and subscapularis (further proximal, on the lesser tubercle) are reachable from the same axillary approach.",
       ],
       clinicalConsiderations: "Overuse from lifting heavy objects in front of the body is the typical trigger. Can produce marked pain, restricted shoulder abduction/extension, and musculocutaneous nerve entrapment — often mistaken for carpal tunnel syndrome, subacromial bursitis, or supraspinatus tendinitis given the referral pattern.",
-      source: `${REF_ARM}, pp.271–273`,
       images: [null, null, null],
     },
     {
@@ -1496,7 +1417,6 @@ export const PALPATION_DATA = {
         "Also easily palpated prone, with the arm abducted 90° and hanging off the table.",
       ],
       clinicalConsiderations: "Overuse triggers include repetitive backhand strokes, push-ups, manual gear-shifting, or crutch use. Produces vague diffuse pain in its referral zone and can involve radial nerve entrapment; commonly mistaken for epicondylitis, olecranon bursitis, thoracic outlet syndrome, or elbow arthritis.",
-      source: `${REF_ARM}, pp.274–276`,
       images: [null, null, null],
     },
     {
@@ -1517,7 +1437,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "A small, superficial wedge at the back of the proximal forearm, easy to reach directly.",
       clinicalConsiderations: "A trigger point here can be mistaken for tennis elbow given the overlapping location — worth distinguishing from lateral epicondyle tendon pathology before treating either.",
-      source: `${REF_ARM}, p.277`,
       images: [null, null, null],
     },
   ],
@@ -1547,7 +1466,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse triggers include lifting with the forearm in a neutral rotation, shovelling, or extensive handshaking. Can produce elbow-flexion weakness and limited pronation, and is often mistaken for lateral epicondylitis, cervical nerve compression, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.286–288`,
       images: [null, null, null],
     },
     {
@@ -1576,7 +1494,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to screwdriver-type work or a poor-form tennis forehand, and can entrap the median nerve. Often mistaken for medial epicondylitis, thoracic outlet syndrome, carpal tunnel syndrome, or general wrist dysfunction.",
-      source: `${REF_FOREARM}, pp.289–291`,
       images: [null, null, null],
     },
     {
@@ -1606,7 +1523,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from gripping activities (tennis, painting) or direct trauma are common triggers. Palmaris longus trigger points produce a distinctively sharp, needle-like referral rather than the usual deep ache; FCU trigger points can entrap the ulnar nerve. The group as a whole is frequently mistaken for medial epicondylitis, a cervical disc issue, thoracic outlet syndrome, or carpal tunnel syndrome.",
-      source: `${REF_FOREARM}, pp.292–295`,
       images: [null, null, null],
     },
     {
@@ -1635,7 +1551,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive or forceful gripping (steering wheels, racquets, tools) is the typical trigger. Can produce sharp referral pain extending past the fingertip, median/ulnar nerve entrapment, and restricted finger/wrist extension — often mistaken for a cervical disc problem, thoracic outlet syndrome, carpal tunnel syndrome, or pronator teres syndrome.",
-      source: `${REF_FOREARM}, pp.296–298`,
       images: [null, null, null],
     },
     {
@@ -1664,7 +1579,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Same gripping-overuse pattern as the other forearm flexors. Produces sharp referral pain reaching past the thumb tip and can restrict thumb/wrist extension — frequently mistaken for carpal tunnel syndrome, thoracic outlet syndrome, or thumb osteoarthritis.",
-      source: `${REF_FOREARM}, pp.299–301`,
       images: [null, null, null],
     },
     {
@@ -1693,7 +1607,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive gripping or a one-handed tennis backhand is typical, often alongside scalene or supraspinatus involvement. Can produce a weak or painful grip, restricted ulnar deviation, and — for the ECRB specifically — radial nerve entrapment. Frequently mistaken for lateral epicondylitis, cervical nerve compression, carpal tunnel syndrome, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.302–304`,
       images: [null, null, null],
     },
     {
@@ -1721,7 +1634,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive finger movements (typing, string instruments) or prolonged finger flexion (e.g. during sleep) is typical. Produces finger stiffness and reduced flexion, and is often mistaken for lateral epicondylitis, arthritis of the fingers, or cervical nerve compression.",
-      source: `${REF_FOREARM}, pp.305–307`,
       images: [null, null, null],
     },
     {
@@ -1750,7 +1662,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to sustained ulnar-deviated postures (e.g. typing) or direct trauma. Often mistaken for wrist joint dysfunction, carpal tunnel syndrome, or cervical nerve compression.",
-      source: `${REF_FOREARM}, pp.308–309`,
       images: [null, null, null],
     },
     {
@@ -1779,7 +1690,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse triggers include screwdriver use, forcing a tight doorknob, or a poor-form tennis backhand. The single most common trigger-point source of lateral-epicondyle-area pain, and can entrap the deep radial nerve branch — frequently mistaken for lateral epicondylitis, cervical nerve compression, or de Quervain's tenosynovitis.",
-      source: `${REF_FOREARM}, pp.310–312`,
       images: [null, null, null],
     },
     {
@@ -1809,7 +1719,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Overuse from repetitive index-finger or thumb motion (typing, instruments) is typical. Produces fine-motor difficulty with the thumb and/or index finger and is often mistaken for wrist dysfunction or de Quervain's tenosynovitis. Referral patterns for the thumb muscles specifically haven't been well mapped in this reference.",
-      source: `${REF_FOREARM}, pp.313–315`,
       images: [null, null, null],
     },
   ],
@@ -1839,7 +1748,6 @@ export const PALPATION_DATA = {
         "Also easily palpated standing, with the client's arm resting on the therapist's shoulder while pushing down against it.",
       ],
       clinicalConsiderations: "Overuse (rowing, pushing down to move the body, forceful overhead-to-down pulling), overstretching (hanging by the hands), or compression (a tight bra) are typical triggers. Produces a constant ache at rest and with contraction, disrupted sleep on the affected side, and is often mistaken for cervical disc syndrome, thoracic outlet syndrome, supraspinatus nerve entrapment, or bicipital tendinitis.",
-      source: `${REF_TRUNK}, pp.353–356`,
       images: [null, null, null],
     },
     {
@@ -1866,7 +1774,6 @@ export const PALPATION_DATA = {
         "Fibres run vertically throughout; keep that orientation in mind when brushing across them.",
       ],
       clinicalConsiderations: "Linked to stooped/forward-leaning posture, flexed-and-rotated lifting, prolonged sitting or immobility, scoliosis, or a back-pocket wallet. Produces restricted trunk flexion/contralateral flexion and altered spinal curves, and is very frequently mistaken for spinal joint dysfunction, disc pathology, facet syndrome, or even visceral or cardiac conditions given how broad its referral pattern can be.",
-      source: `${REF_TRUNK}, pp.359–361`,
       images: [null, null, null],
     },
     {
@@ -1897,7 +1804,6 @@ export const PALPATION_DATA = {
         "Also palpable with the client supine for the cervical portion, though more awkward.",
       ],
       clinicalConsiderations: "Same overuse/posture triggers as the erector spinae group. Produces restricted trunk motion and altered spinal curves, and shares the same broad list of differential mimics — spinal joint dysfunction, disc pathology, facet syndrome, or visceral/cardiac referral.",
-      source: `${REF_TRUNK}, pp.362–364`,
       images: [null, null, null],
     },
     {
@@ -1927,7 +1833,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying, pressing down toward the table instead of medially.",
       ],
       clinicalConsiderations: "Linked to repeated heavy lifting, sudden overload while stretched (flexion plus contralateral bending/rotation), thoracolumbar joint dysfunction, leg-length asymmetry, or a back-pocket wallet. Produces a deep low-back ache, difficulty sleeping or turning over in bed, and pain on coughing/sneezing — frequently mistaken for sacroiliac dysfunction, disc syndrome, sciatica, or trochanteric bursitis given its referral toward the greater trochanter.",
-      source: `${REF_TRUNK}, pp.365–367`,
       images: [null, null, null],
     },
     {
@@ -1956,7 +1861,6 @@ export const PALPATION_DATA = {
         "Also palpable prone, ideally with a roll under the abdomen to help open the interspinous spaces.",
       ],
       clinicalConsiderations: "Trigger point patterns for this muscle haven't been clearly mapped in this reference; findings here are best interpreted alongside the more thoroughly documented erector spinae and transversospinalis groups rather than in isolation.",
-      source: `${REF_TRUNK}, pp.369–370`,
       images: [null, null, null],
     },
     {
@@ -1985,7 +1889,6 @@ export const PALPATION_DATA = {
         "The subcostales (ribs 10–12 to ribs 8–10, depressing ribs 8–10) and transversus thoracis (internal sternum/xiphoid/costal cartilage to internal costal cartilages 2–6, depressing ribs 2–6) sit deep to the ribcage and are essentially not distinguishable from surrounding tissue by palpation.",
       ],
       clinicalConsiderations: "Linked to forceful or prolonged breathing effort, chronic coughing or retching, trauma (including surgical), rib dysfunction, or shingles. Produces local pain that can spread to neighbouring spaces, breathing/coughing discomfort, and restricted trunk or arm motion — frequently mistaken for rib joint dysfunction, costochondritis, or even a cardiac event, so unexplained findings here warrant ruling out those possibilities through the appropriate channels before treating locally.",
-      source: `${REF_TRUNK}, pp.371–373`,
       images: [null, null, null],
     },
     {
@@ -2013,7 +1916,6 @@ export const PALPATION_DATA = {
         "This is the only muscle sitting directly in the abdominal midline; the oblique and transverse muscles are all lateral to it.",
       ],
       clinicalConsiderations: "Linked to heavy ab-focused exercise, straining, chronic coughing, forceful abdominal breathing, direct or surgical trauma, visceral disease, or general stress-related guarding. Produces referred pain that can mimic a wide range of visceral conditions (ulcer, gallbladder, gynecologic) — trigger points here should prompt ruling out those causes rather than being assumed by default, especially with new or unexplained abdominal symptoms.",
-      source: `${REF_TRUNK}, pp.375–377`,
       images: [null, null, null],
     },
     {
@@ -2043,7 +1945,6 @@ export const PALPATION_DATA = {
         "The transversus abdominis sits deep to both obliques and acts like a corset, compressing the abdominal contents on a forced exhale — it's very difficult to distinguish from the obliques by feel since they co-contract for that same action.",
       ],
       clinicalConsiderations: "Same overuse/trauma/visceral/stress triggers as the rectus abdominis. Produces referral into the chest, abdomen, pelvis, and groin depending on which portion is involved, and shares the same wide differential of visceral mimics as the rectus abdominis — again, a region to interpret cautiously rather than assume is purely musculoskeletal.",
-      source: `${REF_TRUNK}, pp.378–381`,
       images: [null, null, null],
     },
     {
@@ -2071,7 +1972,6 @@ export const PALPATION_DATA = {
         "Also palpable side-lying or seated, with the trunk slightly flexed either way to slacken the anterior wall.",
       ],
       clinicalConsiderations: "Linked to vigorous forceful breathing, chronic hiccups, or chronic coughing. Produces exertional pain at deep exhale, often described as a side stitch, or a sense of breathlessness — commonly mistaken for a peptic ulcer, gallbladder disease, reflux, or a hiatal hernia, so unexplained findings here warrant the same caution as the abdominal wall muscles.",
-      source: `${REF_TRUNK}, pp.382–384`,
       images: [null, null, null],
     },
     {
@@ -2103,7 +2003,6 @@ export const PALPATION_DATA = {
         "A small, often-absent muscle called the psoas minor sits directly on the psoas major's anterior surface and shares its trunk-flexion action, making it very difficult to distinguish as a separate structure by feel.",
       ],
       clinicalConsiderations: "Linked to heavy curl-up/crunch training, excessive running or kicking, prolonged hip flexion (sitting, fetal sleeping position, excessive lordosis), leg-length asymmetry, or a back-pocket wallet. Produces reduced hip extension or a characteristic vertical lumbar ache that's worse standing and eased lying down — frequently mistaken for thoracic, lumbar, or sacroiliac joint dysfunction, or even appendicitis given its referral pattern.",
-      source: `${REF_TRUNK}, pp.385–388`,
       images: [null, null, null],
     },
   ],
@@ -2133,7 +2032,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying — since the thigh isn't working against gravity in that position, add manual resistance to get a clear contraction.",
       ],
       clinicalConsiderations: "Overuse (uphill walking while leaning forward, forceful swimming strokes), prolonged hip flexion (sleeping position), prolonged sitting (especially on a thick wallet), direct trauma, or injections are typical triggers. Produces restlessness sitting, sleep disruption, pain walking uphill or bending forward, and restricted hip flexion — often mistaken for sacroiliac dysfunction, lumbar facet syndrome, trochanteric bursitis, or coccyx pain.",
-      source: `${REF_PELVIS}, pp.400–401`,
       images: [null, null, null],
     },
     {
@@ -2162,7 +2060,6 @@ export const PALPATION_DATA = {
         "The gluteus minimus sits entirely deep to this muscle and shares the same actions, so while technically palpable, it's essentially impossible to distinguish it from the gluteus medius by feel.",
       ],
       clinicalConsiderations: "Overuse (excessive walking/running, soft-sand walking, prolonged one-leg standing), prolonged immobility, sacroiliac dysfunction, or a back-pocket wallet are typical triggers. Produces pain sleeping on the involved side or walking, restricted hip adduction, an antalgic gait, and sciatica-like referral — frequently mistaken for low back pain, sacroiliac dysfunction, lumbar facet syndrome, or trochanteric bursitis.",
-      source: `${REF_PELVIS}, pp.403–406`,
       images: [null, null, null],
     },
     {
@@ -2192,7 +2089,6 @@ export const PALPATION_DATA = {
         "With the thigh pre-flexed 60° or more, this muscle's action flips to abduction/medial rotation, which changes how it needs to be stretched.",
       ],
       clinicalConsiderations: "Linked to prolonged shortening (foot on the gas pedal, side-sleeping with the top thigh flexed/adducted), sacroiliac sprain, hip arthritis, or leg-length/foot-mechanics asymmetry. Produces sitting discomfort, a turned-out foot from lateral rotation, and restricted medial rotation — frequently mistaken for sacroiliac dysfunction, \"piriformis syndrome\" sciatic compression, disc-related nerve compression, or facet syndrome.",
-      source: `${REF_PELVIS}, pp.407–408`,
       images: [null, null, null],
     },
     {
@@ -2220,7 +2116,6 @@ export const PALPATION_DATA = {
         "The sciatic nerve runs directly over this muscle — palpate with care.",
       ],
       clinicalConsiderations: "Trigger point patterns specific to this muscle haven't been separated from the piriformis's in this reference, and the same overuse and positional triggers as the piriformis likely apply here too.",
-      source: `${REF_PELVIS}, pp.409–410`,
       images: [null, null, null],
     },
     {
@@ -2247,7 +2142,6 @@ export const PALPATION_DATA = {
         "Same resistance caution as the piriformis and quadratus femoris: too forceful a contraction recruits the gluteus maximus and masks this deeper layer.",
       ],
       clinicalConsiderations: "Trigger point patterns specific to these four muscles haven't been separated from the piriformis's in this reference; the same overuse and positional triggers likely apply.",
-      source: `${REF_PELVIS}, p.411`,
       images: [null, null, null],
     },
   ],
@@ -2279,7 +2173,6 @@ export const PALPATION_DATA = {
         "Also palpable seated with the foot flat on the floor, using knee rotation to bring out the distal tendons (including the gracilis alongside the semitendinosus on the medial side).",
       ],
       clinicalConsiderations: "Overuse or compression (an ill-fitting chair edge against the distal thigh) and prolonged shortening (fetal sleeping position) are typical triggers. Medial hamstring pain reads as superficial and sharp; lateral hamstring pain reads as deeper and duller and often disturbs sleep. Frequently mistaken for sciatica or knee joint degenerative disease.",
-      source: `${REF_THIGH}, pp.420–422`,
       images: [null, null, null],
     },
     {
@@ -2308,7 +2201,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying.",
       ],
       clinicalConsiderations: "Linked to general overuse and prolonged shortening (sitting, fetal sleeping position). Frequently mistaken for trochanteric bursitis, sacroiliac joint syndrome, or meralgia paresthetica.",
-      source: `${REF_THIGH}, pp.424–425`,
       images: [null, null, null],
     },
     {
@@ -2338,7 +2230,6 @@ export const PALPATION_DATA = {
         "The distal belly and tendon of the iliopsoas sits just medial to this muscle's proximal tendon — slide medially off it and confirm with a small trunk curl-up.",
       ],
       clinicalConsiderations: "Linked to prolonged shortening (cross-legged sitting, fetal sleeping position). Produces superficial, sharp pain or tingling rather than the deeper dull ache typical of most trigger points — frequently mistaken for meralgia paresthetica or a medial knee problem.",
-      source: `${REF_THIGH}, pp.427–429`,
       images: [null, null, null],
     },
     {
@@ -2371,7 +2262,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying for the vastus lateralis specifically, adding manual resistance since gravity doesn't provide any in that position.",
       ],
       clinicalConsiderations: "Overuse (running, cycling), direct trauma, or restricted knee flexion range (sedentary lifestyle, post-surgical) are typical triggers, along with sustained heavy loading on the lap (laptop, child) or repeated injections. Produces knee pain and sometimes knee-buckling weakness — frequently mistaken for knee joint dysfunction, trochanteric bursitis, or meralgia paresthetica.",
-      source: `${REF_THIGH}, pp.431–434`,
       images: [null, null, null],
     },
     {
@@ -2401,7 +2291,6 @@ export const PALPATION_DATA = {
         "The femoral nerve, artery, and vein run over this region — if you feel a pulse or the client reports shooting pain, reposition your fingers.",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction/flexion (horseback riding, gymnastics) or prolonged shortening (cross-legged sitting, fetal sleeping position). Produces a deep, dull groin ache — frequently mistaken for hip joint degenerative disease or obturator nerve entrapment.",
-      source: `${REF_THIGH}, pp.436–437`,
       images: [null, null, null],
     },
     {
@@ -2431,7 +2320,6 @@ export const PALPATION_DATA = {
         "The adductor brevis sits almost entirely deep to this muscle, shares its actions, and is essentially indistinguishable from it by feel; a small part is sometimes reachable by pressing between the adductor longus and gracilis, or by palpating through the adductor longus itself.",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged sitting with legs crossed). May be a leading cause of groin pain and restricted hip abduction — frequently mistaken for adductor tendinitis, hip joint degenerative disease, inguinal hernia, prostatitis, or obturator/genitofemoral nerve entrapment.",
-      source: `${REF_THIGH}, pp.439–441`,
       images: [null, null, null],
     },
     {
@@ -2460,7 +2348,6 @@ export const PALPATION_DATA = {
         "Also palpable seated, prone (where it sits just in front of the adductor magnus), or side-lying (with the opposite leg flexed out of the way).",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged cross-legged sitting). Can produce a hot, stinging quality of pain rather than the usual dull ache, and clients often struggle to find a comfortable resting position — frequently mistaken for adductor tendinitis, inguinal hernia, pes anserine bursitis, prostatitis, or obturator/genitofemoral nerve entrapment.",
-      source: `${REF_THIGH}, pp.443–445`,
       images: [null, null, null],
     },
     {
@@ -2491,7 +2378,6 @@ export const PALPATION_DATA = {
         "Also palpable prone (directly in front of the medial hamstrings) or side-lying (with the top leg flexed out of the way).",
       ],
       clinicalConsiderations: "Linked to activities loading hip adduction (skiing, horseback riding) or prolonged shortening (side-sleeping with the thigh adducted, prolonged cross-legged sitting). The more proximal trigger point can refer pain felt within the pelvis, sometimes during intercourse — frequently mistaken for adductor tendinitis, inguinal hernia, prostatitis, or visceral/gynecologic disease.",
-      source: `${REF_THIGH}, pp.447–449`,
       images: [null, null, null],
     },
   ],
@@ -2521,7 +2407,6 @@ export const PALPATION_DATA = {
         "Also easily palpated seated.",
       ],
       clinicalConsiderations: "Linked to general overuse, trauma, or postures that shorten the muscle, especially against tight plantarflexors. Produces dorsiflexion weakness (foot drop/slap) — frequently mistaken for anterior compartment syndrome, shin splints, or L5 nerve compression.",
-      source: `${REF_LEG}, pp.456–457`,
       images: [null, null, null],
     },
     {
@@ -2550,7 +2435,6 @@ export const PALPATION_DATA = {
         "Also easily palpated seated.",
       ],
       clinicalConsiderations: "Linked to a weak fibularis longus, postures that chronically shorten or lengthen the muscle (angled gas pedals, high heels), tight antagonist plantarflexors, trauma, or nerve compression. Produces dorsiflexion weakness and can involve deep fibular nerve entrapment — frequently mistaken for tarsal or metatarsophalangeal joint dysfunction.",
-      source: `${REF_LEG}, pp.459–462`,
       images: [null, null, null],
     },
     {
@@ -2578,7 +2462,6 @@ export const PALPATION_DATA = {
         "Also easily palpated seated.",
       ],
       clinicalConsiderations: "Same postural/overuse triggers as the tibialis anterior and EDL. Produces dorsiflexion weakness — frequently mistaken for metatarsophalangeal dysfunction or L4-L5 nerve compression.",
-      source: `${REF_LEG}, pp.463–464`,
       images: [null, null, null],
     },
     {
@@ -2607,7 +2490,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine, prone, or seated.",
       ],
       clinicalConsiderations: "Linked to overuse, prolonged shortening (plantarflexed sleeping position), immobilization, an inversion ankle sprain, flat feet, or uneven-surface running. Produces weak ankles, pain with active eversion, and possible fibular nerve entrapment — frequently mistaken for lateral compartment syndrome or a lumbar disc issue.",
-      source: `${REF_LEG}, pp.466–468`,
       images: [null, null, null],
     },
     {
@@ -2635,7 +2517,6 @@ export const PALPATION_DATA = {
         "Also easily palpated standing — rising onto the toes makes both bellies stand out visibly.",
       ],
       clinicalConsiderations: "Linked to uphill walking/running, prolonged shortening (high heels, plantarflexed sleeping/driving position), a too-low bike seat, cold exposure, immobilization, or S1 nerve compression. Produces calf cramps (including nocturnal) and can mimic intermittent claudication — frequently mistaken for posterior compartment syndrome or deep vein thrombosis, both of which should be ruled out first given the seriousness of a missed DVT.",
-      source: `${REF_LEG}, pp.469–472`,
       images: [null, null, null],
     },
     {
@@ -2662,7 +2543,6 @@ export const PALPATION_DATA = {
         "Keep resistance gentle — flexing the knee only inhibits the gastrocnemius if the contraction stays light; push too hard and the gastrocnemius overrides the inhibition and gets in the way again.",
       ],
       clinicalConsiderations: "Linked to uphill walking/running, prolonged shortening (high heels, plantarflexed sleeping/driving position), trauma, or cold exposure. Produces restricted dorsiflexion, uphill/stair walking pain, and possible tibial nerve entrapment — frequently mistaken for posterior shin splints, Achilles tendinitis, a Baker's cyst, deep vein thrombosis, or plantar fasciitis.",
-      source: `${REF_LEG}, pp.473–475`,
       images: [null, null, null],
     },
     {
@@ -2690,7 +2570,6 @@ export const PALPATION_DATA = {
         "The proximal femoral attachment is reachable just behind the lateral collateral ligament on the lateral condyle, confirmed the same way: resisted medial rotation, feeling the distal tendon tense.",
       ],
       clinicalConsiderations: "Linked to downhill running/skiing, cutting on a semi-flexed knee, excessive foot pronation, high heels, or a torn posterior cruciate ligament. Produces posterior knee pain when crouching or descending — frequently mistaken for a Baker's cyst, knee instability, popliteus tendinitis, or a meniscal tear.",
-      source: `${REF_LEG}, pp.476–477`,
       images: [null, null, null],
     },
     {
@@ -2722,7 +2601,6 @@ export const PALPATION_DATA = {
         "Also easily palpated side-lying or supine, with the top leg flexed out of the way if side-lying.",
       ],
       clinicalConsiderations: "Linked to overuse on soft or uneven ground, excessive foot pronation, high heels, or foot-mechanics asymmetry. Produces plantar foot pain (especially the ball of the foot or toes) with walking or running — frequently mistaken for shin splints, deep posterior compartment syndrome, tarsal tunnel syndrome, or tenosynovitis of the involved tendon.",
-      source: `${REF_LEG}, pp.479–483`,
       images: [null, null, null],
     },
   ],
@@ -2753,7 +2631,6 @@ export const PALPATION_DATA = {
         "Also easily palpated seated.",
       ],
       clinicalConsiderations: "Linked to overuse, ill-fitting or inflexible-soled shoes, sustained toe-flexed or toe-extended postures, trauma, or metatarsal stress fracture. Produces reduced toe flexion and foot cramping — frequently mistaken for a metatarsal stress fracture or a digital nerve entrapment between metatarsals.",
-      source: `${REF_FOOT}, pp.492–494`,
       images: [null, null, null],
     },
     {
@@ -2783,7 +2660,6 @@ export const PALPATION_DATA = {
         "Also easily palpated seated.",
       ],
       clinicalConsiderations: "Linked to soft-sand walking, ill-fitting or inflexible-soled shoes, casting, excessive foot pronation, structural foot deformity, or metatarsal stress fracture. Produces sore, tender feet with weight-bearing and reduced/painful toe adduction or extension — frequently mistaken for plantar fasciitis, a metatarsal stress fracture, a digital nerve entrapment, or tarsal joint dysfunction.",
-      source: `${REF_FOOT}, pp.495–497`,
       images: [null, null, null],
     },
     {
@@ -2816,7 +2692,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Linked to soft-sand walking, ill-fitting shoes, casting, excessive pronation, structural deformity, or metatarsal stress fracture. The abductor hallucis can also entrap the posterior tibial nerve or its plantar branches. Frequently mistaken for Achilles tendinitis, tarsal joint dysfunction, gout, plantar fasciitis, or a metatarsal stress fracture.",
-      source: `${REF_FOOT}, pp.498–502`,
       images: [null, null, null],
     },
     {
@@ -2849,7 +2724,6 @@ export const PALPATION_DATA = {
         "Also easily palpated supine.",
       ],
       clinicalConsiderations: "Same overuse/footwear/structural triggers as the other intrinsic foot muscles. Frequently mistaken for plantar fasciitis, a metatarsal stress fracture, or tarsal joint dysfunction.",
-      source: `${REF_FOOT}, pp.503–507`,
       images: [null, null, null],
     },
     {
@@ -2877,7 +2751,6 @@ export const PALPATION_DATA = {
         "Also fairly easily palpated supine.",
       ],
       clinicalConsiderations: "Same overuse/footwear/structural triggers as the other intrinsic foot muscles. Produces reduced toe extension, plantar discomfort, and foot cramping — frequently mistaken for plantar fasciitis, a metatarsal stress fracture, or tarsal joint dysfunction.",
-      source: `${REF_FOOT}, pp.508–510`,
       images: [null, null, null],
     },
   ],
@@ -2905,7 +2778,6 @@ export const PALPATION_DATA = {
         "Muscle attachments here, broadly: sternocleidomastoid and upper trapezius to the clavicle's upper surface; pectoralis major, anterior deltoid, and subclavius to its lower surface; short head of biceps brachii, coracobrachialis, and pectoralis minor to the coracoid process; upper trapezius and deltoid to the acromion; posterior deltoid and trapezius to the scapular spine (rhomboid minor at its root); supraspinatus to the supraspinous fossa; infraspinatus to the infraspinous fossa; levator scapulae and rhomboids (plus serratus anterior anteriorly) to the medial border; latissimus dorsi and teres major near the inferior angle; teres major/minor to the lateral border (long head of triceps brachii at the infraglenoid tubercle, subscapularis on the anterior side); omohyoid and levator scapulae to the superior border; subscapularis to the subscapular fossa.",
       ],
       clinicalConsiderations: "This chain is the backbone reference for locating almost every shoulder-girdle muscle covered elsewhere in this library — get comfortable tracing it end to end before attempting individual muscle palpation in this region.",
-      source: `${REF_BONES_UPPER}, pp.70–75`,
       images: [null, null, null],
     },
     {
@@ -2930,7 +2802,6 @@ export const PALPATION_DATA = {
         "Muscle attachments here, broadly: supraspinatus/infraspinatus/teres minor to the greater tubercle, subscapularis to the lesser tubercle, the long head of biceps brachii's tendon runs through the bicipital groove; deltoid to the deltoid tuberosity (brachialis attaches close by); five forearm flexors (pronator teres, flexor carpi radialis, palmaris longus, flexor carpi ulnaris, flexor digitorum superficialis, usually also flexor pollicis longus) to the medial epicondyle; six forearm extensors (extensor carpi radialis brevis, extensor digitorum, extensor digiti minimi, extensor carpi ulnaris, anconeus, supinator) to the lateral epicondyle; triceps brachii and anconeus to the olecranon; brachioradialis and extensor carpi radialis longus to the lateral supracondylar ridge; pronator teres to the distal medial supracondylar ridge; brachioradialis to the radial styloid.",
       ],
       clinicalConsiderations: "The gap between the medial epicondyle and the olecranon overlies the ulnar nerve (the \"funny bone\") — keep pressure light there. The medial epicondyle, lateral epicondyle, and olecranon are also the classic three-point landmark check used to rule out an elbow dislocation from a supracondylar fracture.",
-      source: `${REF_BONES_UPPER}, pp.76–79`,
       images: [null, null, null],
     },
     {
@@ -2957,7 +2828,6 @@ export const PALPATION_DATA = {
         "Broadly: adductor pollicis attaches to the capitate; opponens pollicis to the trapezium's tubercle; abductor pollicis brevis to both the scaphoid and trapezium tubercles; flexor pollicis brevis to the trapezium's anterior surface; flexor carpi ulnaris and abductor digiti minimi manus to the pisiform; flexor carpi ulnaris, flexor digiti minimi manus, and opponens digiti minimi to the hamate's hook.",
       ],
       clinicalConsiderations: "The scaphoid is the carpal bone most often fractured after a fall onto an outstretched hand — anatomic snuffbox tenderness there is a standard clinical red flag worth recognizing even outside formal fracture workup.",
-      source: `${REF_BONES_UPPER}, pp.80–86`,
       images: [null, null, null],
     },
     {
@@ -2978,7 +2848,6 @@ export const PALPATION_DATA = {
         "Broadly: flexor/extensor carpi radialis and ulnaris, plus the interossei, attach onto metacarpals two through four; abductor pollicis longus, flexor pollicis brevis, opponens pollicis, adductor pollicis, and dorsal interossei manus onto the first metacarpal; the interossei and abductor/flexor digiti minimi manus onto the proximal phalanges; extensor digitorum, digiti minimi, and indicis onto the middle phalanges; flexor digitorum profundus and the same extensors onto the distal phalanges.",
       ],
       clinicalConsiderations: "Not typically load-bearing for clinical red flags on their own, but a reliable starting reference for finger-joint range-of-motion and swelling assessment.",
-      source: `${REF_BONES_UPPER}, pp.87–88`,
       images: [null, null, null],
     },
     {
@@ -2994,7 +2863,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Firm, taut tissue directly over a joint line rather than a separately mobile cord — true isolated ligament palpation is the exception, not the rule, in this region.",
       clinicalConsiderations: "Ligament integrity here is mostly assessed functionally — joint stress/stability tests (varus/valgus stress at the elbow, AC joint stress tests, and so on) — rather than by palpation alone, since most of these structures can't be distinguished from the capsule by feel.",
-      source: `${REF_BONES_UPPER}, pp.89–92`,
       images: [null, null, null],
     },
     {
@@ -3018,7 +2886,6 @@ export const PALPATION_DATA = {
         "Broadly: depressor anguli oris, depressor labii inferioris, mentalis, and platysma attach to the mandible's outer surface, digastric/mylohyoid/geniohyoid to its inner surface, masseter and medial pterygoid to its angle, temporalis and masseter to the coronoid process, lateral pterygoid to the condyle; orbicularis oris, nasalis, and several lip elevators to the maxilla; masseter and the zygomaticus muscles to the zygomatic bone; procerus overlies the nasal bone; orbicularis oculi and corrugator supercilii attach to the frontal bone (frontalis overlies it), temporalis to the parietal bone; masseter to the zygomatic arch; sternocleidomastoid, splenius capitis, and longissimus capitis to the mastoid process; occipitalis to the occipital bone, upper trapezius to the EOP and superior nuchal line (splenius capitis and sternocleidomastoid also reach the superior nuchal line).",
       ],
       clinicalConsiderations: "The TMJ condyle can also be palpated from inside the ear canal (gloved fingertip, pressing anteromedially) for a clearer read on joint play — useful when assessing TMJ dysfunction, but confirm client comfort and appropriate scope before doing so.",
-      source: `${REF_BONES_AXIAL}, pp.94–98`,
       images: [null, null, null],
     },
     {
@@ -3042,7 +2909,6 @@ export const PALPATION_DATA = {
         "Broadly: all four suprahyoid and (except sternothyroid) all four infrahyoid muscles attach to the hyoid; sternothyroid and thyrohyoid to the thyroid cartilage; levator scapulae, the scalenes, longus colli/capitis, and the deeper posterior neck groups to the C2–C7 transverse processes; levator scapulae, splenius cervicis, and the suboccipital group to C1's transverse process.",
       ],
       clinicalConsiderations: "This is the single most safety-sensitive palpation region in the body given the carotid arteries, the airway, and the facial nerve's proximity near C1's transverse process — always work gently, gradually, and on one side at a time.",
-      source: `${REF_BONES_AXIAL}, pp.99–101`,
       images: [null, null, null],
     },
     {
@@ -3066,7 +2932,6 @@ export const PALPATION_DATA = {
         "Broadly: upper trapezius, splenius capitis/cervicis, interspinales, and the erector spinae/transversospinalis groups attach to or via the nuchal ligament over the cervical spinous processes (rhomboid minor and serratus posterior superior specifically at C7, rectus capitis posterior major and obliquus capitis inferior at C2, rectus capitis posterior minor at C1's posterior tubercle); the erector spinae and transversospinalis groups also attach onto the articular processes and lie in the laminar groove.",
       ],
       clinicalConsiderations: "The C6/C7 distinction via flexion-extension is a genuinely useful quick check before doing segment-specific work anywhere in the lower cervical spine.",
-      source: `${REF_BONES_AXIAL}, pp.102–103`,
       images: [null, null, null],
     },
     {
@@ -3091,7 +2956,6 @@ export const PALPATION_DATA = {
         "Broadly: rectus abdominis attaches to the xiphoid's outer surface (transversus thoracis and the diaphragm to its inner surface); serratus anterior, the pectorals, subclavius, the intercostals, and the abdominal wall muscles attach to or overlie the anterior rib cage; posteriorly, latissimus dorsi, the serratus posterior muscles, the erector spinae and transversospinalis groups, and quadratus lumborum attach to the rib cage, spinous processes, and/or transverse processes as appropriate to level.",
       ],
       clinicalConsiderations: "The xiphoid process is the landmark used to find correct hand position for chest compressions in CPR — worth knowing even outside a treatment context.",
-      source: `${REF_BONES_AXIAL}, pp.103–107`,
       images: [null, null, null],
     },
     {
@@ -3107,7 +2971,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Firm tissue directly over the spinous processes, laminae, or joint lines rather than an isolated mobile structure.",
       clinicalConsiderations: "As in the upper extremity, most of this is assessed through segmental motion and stability testing rather than isolated palpation.",
-      source: `${REF_BONES_AXIAL}, pp.108–111`,
       images: [null, null, null],
     },
     {
@@ -3132,7 +2995,6 @@ export const PALPATION_DATA = {
         "Broadly: latissimus dorsi, the erector spinae group, quadratus lumborum, the abdominal wall muscles, gluteus maximus, and tensor fasciae latae attach to the iliac crest; latissimus dorsi and gluteus maximus to the PSIS and coccyx; the erector spinae/transversospinalis groups and gluteus maximus to the posterior sacrum (piriformis and iliacus to the anterior sacrum); adductor magnus, the gemelli, quadratus femoris, and the hamstrings to the ischial tuberosity; gluteus medius/minimus, piriformis, the obturators/gemelli, and vastus lateralis to the greater trochanter; tensor fasciae latae and sartorius to the ASIS; rectus femoris to the AIIS; rectus abdominis, pectineus, adductor longus, gracilis, and adductor brevis to the pubic bone.",
       ],
       clinicalConsiderations: "PSIS symmetry, or the lack of it, is a commonly used, though imperfect, landmark for informal pelvic-alignment screening.",
-      source: `${REF_BONES_LOWER}, pp.114–118`,
       images: [null, null, null],
     },
     {
@@ -3157,7 +3019,6 @@ export const PALPATION_DATA = {
         "The medial and lateral menisci are palpable within the knee joint line against the anterior tibia.",
       ],
       clinicalConsiderations: "The common fibular nerve runs superficially right at the fibular head — palpate that specific spot gently.",
-      source: `${REF_BONES_LOWER}, pp.118–123`,
       images: [null, null, null],
     },
     {
@@ -3182,7 +3043,6 @@ export const PALPATION_DATA = {
         "Broadly: tibialis anterior, fibularis longus, and tibialis posterior attach around the first cuneiform/first metatarsal; tibialis posterior to the navicular tuberosity and to the plantar cuboid/second and third cuneiforms; fibularis brevis and tertius to the fifth metatarsal's styloid process; extensor digitorum/hallucis brevis to the lateral calcaneus and tarsal sinus; abductor hallucis, abductor digiti minimi pedis, and flexor digitorum brevis to the calcaneal tuberosity; flexor hallucis brevis to the first-metatarsal-head sesamoids; gastrocnemius, soleus, and plantaris to the calcaneus's posterior surface.",
       ],
       clinicalConsiderations: "The medial malleolus, sustentaculum tali, and navicular tuberosity together are the standard reference triad for orienting anywhere else in the midfoot.",
-      source: `${REF_BONES_LOWER}, pp.123–131`,
       images: [null, null, null],
     },
     {
@@ -3198,7 +3058,6 @@ export const PALPATION_DATA = {
       ],
       feelFor: "Firm tissue directly over a joint line rather than a separately mobile structure, with the notable exception of the iliotibial band, which is a genuinely distinct, tensionable band running the length of the lateral thigh.",
       clinicalConsiderations: "Ankle sprains most often involve the anterior talofibular ligament specifically — worth knowing its location, just in front of the lateral malleolus, even though, like most ligaments here, it's assessed more through stress testing than isolated palpation.",
-      source: `${REF_BONES_LOWER}, pp.132–135`,
       images: [null, null, null],
     },
   ],
