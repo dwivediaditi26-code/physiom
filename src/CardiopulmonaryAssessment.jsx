@@ -1232,6 +1232,19 @@ function CardioSection({ data, setData, system }) {
       <CSelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
         info={cardiovascularData.edema}
       />
+      {d.edema && d.edema !== "None" && (
+        <CSelectField label="Pitting or non-pitting" type="single" options={["Pitting", "Non-pitting"]} value={d.edemaType} onChange={(v) => set("edemaType", v)} />
+      )}
+      {d.edemaType === "Pitting" && (
+        <CSelectField
+          label="Pitting grade"
+          type="single"
+          options={["1+ Trace — barely detectable, resolves almost immediately", "2+ Mild — pit resolves within ~15 seconds", "3+ Moderate — pit resolves within ~30 seconds", "4+ Severe — deep pit lasting >30 seconds"]}
+          value={d.edemaGrade}
+          onChange={(v) => set("edemaGrade", v)}
+          info={cardiovascularData.edema}
+        />
+      )}
       <CSelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
 
       {detailed && (
