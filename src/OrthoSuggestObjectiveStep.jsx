@@ -7,7 +7,7 @@ import { suggestIndividualItems, suggestCpaItems, defaultSideFor, romWhy, romHow
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
-import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
+import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
 import { OptionChips } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -683,6 +683,13 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   );
   const activeConditionIdOrDefault = activeConditionId ?? topConditions[0]?.id ?? null;
   const activeConditionObj = topConditions.find((c) => c.id === activeConditionIdOrDefault) || null;
+  // Narrows the suggested Observation/ROM/MMT/Special Tests lists down to
+  // what THIS condition's own objectiveTests actually cover, instead of
+  // always showing the region's entire test library regardless of which
+  // condition is suspected -- null (no condition matched/selected, or a
+  // region without a ported Phase 0.5 engine) means "show everything",
+  // same as before this existed.
+  const conditionFilter = useMemo(() => (activeConditionObj ? lumbarConditionItemIds(activeConditionObj) : null), [activeConditionObj]);
 
   // Scans the exact same rom/mmt/specialTests/observation data the item
   // cards above write into, and derives (a) which named items are
@@ -754,6 +761,22 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const reviewRom = rom.filter((item) => selectedKeys.has(itemKey("rom", item.regionKey, item.itemId)));
   const reviewMmt = mmt.filter((item) => selectedKeys.has(itemKey("mmt", item.regionKey, item.itemId)));
   const reviewSpecial = specialTests.filter((item) => selectedKeys.has(itemKey("special", item.regionKey, item.itemId)));
+
+  // Suggest-screen lists only -- narrowed by conditionFilter (see above),
+  // but never hides an item that's already selected/answered just because
+  // the therapist switched to a different condition tab afterwards.
+  function passesConditionFilter(type, itemId) {
+    if (!conditionFilter) return true;
+    if (type === "observation") return conditionFilter.showObservation;
+    if (type === "rom") return conditionFilter.rom.has(itemId);
+    if (type === "mmt") return conditionFilter.mmt.has(itemId);
+    if (type === "special") return conditionFilter.special.has(itemId);
+    return true;
+  }
+  const visibleObservation = observation.filter((item) => selectedKeys.has(itemKey("observation", item.regionKey, `${item.meta.view}:${item.itemId}`)) || passesConditionFilter("observation", item.itemId));
+  const visibleRom = rom.filter((item) => selectedKeys.has(itemKey("rom", item.regionKey, item.itemId)) || passesConditionFilter("rom", item.itemId));
+  const visibleMmt = mmt.filter((item) => selectedKeys.has(itemKey("mmt", item.regionKey, item.itemId)) || passesConditionFilter("mmt", item.itemId));
+  const visibleSpecial = specialTests.filter((item) => selectedKeys.has(itemKey("special", item.regionKey, item.itemId)) || passesConditionFilter("special", item.itemId));
 
   const traySelectionCount = selectedKeys.size + manuallyAdded.length + activeOtherSuggestions.length;
   const trayLabels = [
@@ -868,39 +891,43 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
 
       {findingsBlock}
 
-      {observation.length > 0 && (
+      {conditionFilter && (rom.length || mmt.length || specialTests.length || observation.length) ? (
+        <Hint>Narrowed to what {activeConditionObj.name} actually calls for — switch the match above, or use search below, for anything else.</Hint>
+      ) : null}
+
+      {visibleObservation.length > 0 && (
         <>
           <div className="subheading" style={{ marginTop: 0 }}>
             👁️ Observation
           </div>
-          {observation.map((item) => (
+          {visibleObservation.map((item) => (
             <ObservationItemCard key={`obs-${item.regionKey}-${item.itemId}`} item={item} obsData={obsData} setPostureRegion={setPostureRegion} selectionData={selectionData} onSelectItem={onSelectItem} />
           ))}
         </>
       )}
 
-      {rom.length > 0 && (
+      {visibleRom.length > 0 && (
         <>
           <div className="subheading">📐 Range of Motion</div>
-          {rom.map((item) => (
+          {visibleRom.map((item) => (
             <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
           ))}
         </>
       )}
 
-      {mmt.length > 0 && (
+      {visibleMmt.length > 0 && (
         <>
           <div className="subheading">💪 Muscle Strength (MMT)</div>
-          {mmt.map((item) => (
+          {visibleMmt.map((item) => (
             <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
           ))}
         </>
       )}
 
-      {specialTests.length > 0 && (
+      {visibleSpecial.length > 0 && (
         <>
           <div className="subheading">🔬 Special Tests</div>
-          {specialTests.map((item) => (
+          {visibleSpecial.map((item) => (
             <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} selectionData={selectionData} onSelectItem={onSelectItem} />
           ))}
         </>
