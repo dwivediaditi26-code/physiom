@@ -221,6 +221,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
           className="select-input"
           value={value || ""}
           placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
+          onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
