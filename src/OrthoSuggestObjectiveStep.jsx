@@ -8,6 +8,7 @@ import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
+import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { OptionChips } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -657,12 +658,31 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const omSuggestedFromReasoning = suggestions.find((s) => s.id === "outcomeMeasure")?.reason;
   const showOutcomeMeasure = omRecommended.length > 0 || !!omSuggestedFromReasoning || activeIds.has("outcomeMeasure");
   const outcomeMeasureIds = showOutcomeMeasure ? [...new Set([...omRecommended.map((r) => r.id), ...(activeIds.has("outcomeMeasure") ? Object.keys(omInstances) : [])])] : [];
-  const lumbarRegion = selectedRegions.find((r) => contentKeyForRegion(r) === "lumbarSI");
-  const lumbarRegionData = lumbarRegion && data.subjective?.regions?.[lumbarRegion.id];
-  const lumbarResult = useMemo(() => {
-    if (!lumbarRegion || !hasLumbarChecklistData(lumbarRegionData)) return null;
-    try { return runLumbarDifferential(lumbarRegionData, data.subjective || {}); } catch { return null; }
-  }, [lumbarRegion, lumbarRegionData, data.subjective]);
+  // Every region with a ported Phase 0.5 engine for THIS tool's data shape
+  // (today: Lumbar/SI and Cervical) -- add a region here once its own
+  // orthoXReasoning.js adapter exists, same shape as the two below.
+  // Thoracic/Shoulder/etc. simply aren't in this map yet, so engineMatch
+  // stays null for them and Suggested Objective falls back to the
+  // unfiltered full library, same as before any of this existed.
+  const REGION_ENGINES = {
+    lumbarSI: { hasData: hasLumbarChecklistData, run: runLumbarDifferential, itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
+    cervical: { hasData: hasCervicalChecklistData, run: runCervicalDifferential, itemIds: cervicalConditionItemIds, label: "Cervical" },
+  };
+  const engineMatch = useMemo(() => {
+    for (const region of selectedRegions) {
+      const key = contentKeyForRegion(region);
+      const engine = REGION_ENGINES[key];
+      if (!engine) continue;
+      const regionData = data.subjective?.regions?.[region.id];
+      if (!engine.hasData(regionData)) continue;
+      try {
+        const result = engine.run(regionData, data.subjective || {});
+        return { region, key, engine, result };
+      } catch { continue; }
+    }
+    return null;
+  }, [selectedRegions, data.subjective]);
+  const engineResult = engineMatch?.result || null;
 
   const suggestedIds = new Set(suggestions.map((s) => s.id));
   const libraryById = Object.fromEntries(library.map((it) => [it.id, it]));
@@ -678,8 +698,8 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
 
   const topConditions = useMemo(
-    () => (lumbarResult ? lumbarResult.conditions.filter((c) => c.matchTier !== "Unlikely").slice(0, 3) : []),
-    [lumbarResult]
+    () => (engineResult ? engineResult.conditions.filter((c) => c.matchTier !== "Unlikely").slice(0, 3) : []),
+    [engineResult]
   );
   const activeConditionIdOrDefault = activeConditionId ?? topConditions[0]?.id ?? null;
   const activeConditionObj = topConditions.find((c) => c.id === activeConditionIdOrDefault) || null;
@@ -689,7 +709,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // condition is suspected -- null (no condition matched/selected, or a
   // region without a ported Phase 0.5 engine) means "show everything",
   // same as before this existed.
-  const conditionFilter = useMemo(() => (activeConditionObj ? lumbarConditionItemIds(activeConditionObj) : null), [activeConditionObj]);
+  const conditionFilter = useMemo(() => (activeConditionObj && engineMatch ? engineMatch.engine.itemIds(activeConditionObj) : null), [activeConditionObj, engineMatch]);
 
   // Scans the exact same rom/mmt/specialTests/observation data the item
   // cards above write into, and derives (a) which named items are
@@ -876,12 +896,12 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
 
       {topConditions.length > 0 && (
         <>
-          <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — Lumbar/SI</div>
-          {lumbarResult.redFlagOverride?.triggered && (
+          <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
+          {engineResult.redFlagOverride?.triggered && (
             <div style={{ background: "#fee2e2", border: "1.5px solid #dc2626", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
-              <div style={{ fontWeight: 800, fontSize: 12.5, color: "#991b1b" }}>⚠ {lumbarResult.redFlagOverride.urgency.replace(/_/g, " ")}</div>
-              <div style={{ fontSize: 12.5, color: "#991b1b", marginTop: 2 }}>{lumbarResult.redFlagOverride.reason}</div>
-              <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 4 }}>{lumbarResult.redFlagOverride.action}</div>
+              <div style={{ fontWeight: 800, fontSize: 12.5, color: "#991b1b" }}>⚠ {engineResult.redFlagOverride.urgency.replace(/_/g, " ")}</div>
+              <div style={{ fontSize: 12.5, color: "#991b1b", marginTop: 2 }}>{engineResult.redFlagOverride.reason}</div>
+              <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 4 }}>{engineResult.redFlagOverride.action}</div>
             </div>
           )}
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
