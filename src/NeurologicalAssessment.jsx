@@ -1111,7 +1111,7 @@ function CognitionSection({ data, setData }) {
     <>
       <SectionIntro icon="🧠" title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
-      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcs} />
+      <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcsEye} />
       <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
       <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} info={neuroExamLibraryData.gcsMotor} />
       {gcsTotal > 0 && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
