@@ -4,6 +4,7 @@ import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHAB_PHASES, LIMITED_EVIDENCE_NOTICE } from "./neuroTreatmentCatalog.js";
 import { authHeader } from "./supabase.js";
+import { SCALES } from "./sharedClinicalData.js";
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -1339,21 +1340,53 @@ function FunctionalSection({ data, setData }) {
   );
 }
 
-/* ---------- Outcome Measures ---------- */
-function OutcomesSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "outcomes");
+/* ---------- Outcome Measures ----------
+   Was a plain "type the score in yourself" field per measure. Replaced
+   with the same real card-per-scale + "Take full test →" pattern the
+   Cognition domain step already uses (moca/mmse/minicog, above) --
+   sc.score(data)/sc.interpret() come straight from the real SCALES
+   guided-item logic in sharedClinicalData.js (the same data OutcomeMeasuresPro's
+   own live-guided fill uses, read here flat off top-level `data` fields),
+   so this is a preview + a link into the one real guided flow, not a
+   second implementation of it. */
+const NEURO_OUTCOME_SCALE_IDS = ["moca", "mmse", "minicog", "bbs", "tug", "mwt10", "fma", "barthel", "rankin"];
+function OutcomesSection({ data, setData, onNav }) {
   return (
     <>
-      <SectionIntro icon="📊" title="Outcome Measures" sub="Record whichever standardised measures are relevant to this patient." />
-      <TextField label="MMSE / MoCA" value={d.cogScore} onChange={(v) => set("cogScore", v)} placeholder="e.g. MoCA 24/30" info={neuroExamLibraryData.mocaMmse} />
-      <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" />
-      <NumberField label="Timed Up and Go (TUG)" value={d.tug} onChange={(v) => set("tug", v)} unit="sec" howTo="Stand from chair, walk 3m, turn, walk back, sit down. Over 13.5 sec is associated with increased fall risk." />
-      <NumberField label="10-Metre Walk Test" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" />
-      <NumberField label="Functional Reach" value={d.functionalReach} onChange={(v) => set("functionalReach", v)} unit="cm" />
-      <NumberField label="Fugl-Meyer total" value={d.fuglMeyer} onChange={(v) => set("fuglMeyer", v)} unit="/226" />
-      <NumberField label="Barthel Index" value={d.barthel} onChange={(v) => set("barthel", v)} unit="/100" />
-      <TextField label="Modified Rankin Scale" value={d.mrs} onChange={(v) => set("mrs", v)} placeholder="0-6" />
-      <TextField label="Other outcome measure" value={d.other} onChange={(v) => set("other", v)} placeholder="Name and score" />
+      <SectionIntro icon="📊" title="Outcome Measures" sub="Tap a scale to fill it in question-by-question, same as the rest of the app -- scores here aren't typed in free-hand." />
+      {NEURO_OUTCOME_SCALE_IDS.map((scaleId) => {
+        const sc = SCALES[scaleId];
+        if (!sc) return null;
+        const score = sc.score(data);
+        const interp = score !== null ? sc.interpret(score) : null;
+        return (
+          <div key={scaleId} style={{ background: "#fff", border: `1px solid ${interp ? interp.color + "50" : "#E5E7EB"}`, borderRadius: 10, padding: "11px 13px", marginBottom: 9 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#0D0D0D" }}>
+                  {sc.icon} {sc.full}
+                </div>
+                {score !== null ? (
+                  <div style={{ fontSize: "0.72rem", color: interp.color, fontWeight: 600, marginTop: 2 }}>
+                    {score}
+                    {sc.unit} — {interp.label}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "0.72rem", color: "#6B6B7A", marginTop: 2 }}>Not yet recorded</div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => onNav && onNav("outcome", { scaleId })}
+                style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
+              >
+                {score !== null ? "Review →" : "Take full test →"}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+      <TextField label="Other outcome measure" value={data.outcomes?.other} onChange={(v) => setData((prev) => ({ ...prev, outcomes: { ...(prev.outcomes || {}), other: v } }))} placeholder="Name and score" />
     </>
   );
 }
@@ -2478,7 +2511,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
               {current.id === "gait" && <GaitSection data={data} setData={setData} />}
               {current.id === "functional" && <FunctionalSection data={data} setData={setData} />}
-              {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} />}
+              {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
               {current.id === "aiTreatment" && <AiTreatmentSuggestionsSection data={data} setData={setData} />}
