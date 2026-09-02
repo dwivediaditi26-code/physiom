@@ -132,7 +132,12 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   // ROM/MMT/Special Tests/CPA already use) instead of always "cervical" --
   // previously this always opened on Cervical Spine exercises regardless
   // of the actual case, e.g. showing Chin Tucks for a lumbar-only patient.
-  const defaultRegionKey = selectedRegions.length ? matchRegionKey(selectedRegions[0].id, Object.keys(EXERCISE_DB)) : Object.keys(EXERCISE_DB)[0];
+  // matchRegionKey() now returns null rather than guessing when there's no
+  // real match (see its own comment) -- for picking a starting TAB that's
+  // fine to fall back arbitrarily on, unlike the clinical-content call
+  // sites that need to know "no match" means "skip it", so the fallback
+  // lives here rather than inside matchRegionKey itself.
+  const defaultRegionKey = (selectedRegions.length && matchRegionKey(selectedRegions[0].id, Object.keys(EXERCISE_DB))) || Object.keys(EXERCISE_DB)[0];
   const [activeRegion, setActiveRegion] = useState(defaultRegionKey);
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
