@@ -2,6 +2,7 @@
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
 import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
@@ -3895,12 +3896,20 @@ function PatientCard({ patient, isActive, onSelect, onDelete, onProfile }) {
 //    Aditi: "no speciality showing") -- speciality now lives only on its
 //    own Assessment sub-tab as square cards, not mixed into the plain
 //    patient list. --
-function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onProfile, onEditAssessment }) {
+// Minimal row -- avatar, name, "Specialty • Care setting" subtitle, relative
+// day, chevron (2026-09-02, Aditi: "make the patient page in clinical same
+// to same" as a reference design). Edit/Delete used to sit as their own
+// icon buttons in the row itself, which the reference design has no room
+// for (its rows are tap-the-whole-row-for-profile, chevron only) -- both
+// actions still work, just tucked behind a "⋮" so the row reads as clean
+// as the reference while nothing is actually lost.
+function PatientRowCompact({ patient, isActive, specialtyLabel, careSettingLabel, onDelete, onProfile, onEditAssessment }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const day = relativeDay(patient.updatedAt);
-  const subtitle = [careSettingLabel, patient.lastDx || "No diagnosis yet"].filter(Boolean).join(" • ");
+  const subtitle = [specialtyLabel, careSettingLabel].filter(Boolean).join(" • ");
   return (
     <div onClick={onProfile} role="button" tabIndex={0} style={{
-      width:"100%",textAlign:"left",cursor:"pointer",
+      width:"100%",textAlign:"left",cursor:"pointer",position:"relative",
       padding:"12px 4px", borderBottom:"1px solid #F1F0FA",
       background: isActive ? "#F5F3FF" : "transparent", borderRadius:10,
       display:"flex",alignItems:"center",gap:12,
@@ -3921,16 +3930,28 @@ function PatientRowCompact({ patient, isActive, careSettingLabel, onDelete, onPr
           {subtitle}
         </div>
       </div>
-      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:6}}>
-        <span style={{fontSize:"0.7rem",color:"#9CA3AF",whiteSpace:"nowrap"}}>{day}</span>
-        <button onClick={e=>{e.stopPropagation();onEditAssessment();}} title="Edit assessment" style={{
-          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>✏️</button>
-        <button onClick={e=>{e.stopPropagation();onProfile();}} title="Profile" style={{
-          background:"none",border:"none",padding:3,cursor:"pointer",fontSize:"0.85rem",lineHeight:1}}>👤</button>
-        <button onClick={e=>{e.stopPropagation();onDelete();}} title="Delete" style={{
-          background:"none",border:"none",padding:2,cursor:"pointer",fontSize:"0.75rem",color:"#C4C4CE"}}>✕</button>
-        <span style={{color:"#C4C4CE",fontSize:"0.95rem"}}>›</span>
+      <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:4}}>
+        <span style={{fontSize:"0.76rem",color:"#9CA3AF",whiteSpace:"nowrap",marginRight:2}}>{day}</span>
+        <button onClick={e=>{e.stopPropagation();setMenuOpen(v=>!v);}} title="More" style={{
+          background:"none",border:"none",padding:3,cursor:"pointer",color:"#C4C4CE",display:"flex"}}>
+          <MoreVertical size={15}/>
+        </button>
+        <ChevronRight size={17} color="#C4C4CE"/>
       </div>
+      {menuOpen && (
+        <div onClick={e=>e.stopPropagation()} style={{
+          position:"absolute",top:"100%",right:4,zIndex:5,marginTop:2,
+          background:"#fff",border:"1px solid #EEEDF5",borderRadius:10,
+          boxShadow:"0 8px 24px rgba(30,20,60,0.12)",overflow:"hidden",minWidth:150}}>
+          <button onClick={()=>{setMenuOpen(false);onEditAssessment();}} style={{
+            display:"block",width:"100%",textAlign:"left",padding:"9px 14px",background:"none",
+            border:"none",borderBottom:"1px solid #F1F0FA",fontSize:"0.8rem",fontWeight:600,
+            color:"#111827",cursor:"pointer"}}>✏️ Edit assessment</button>
+          <button onClick={()=>{setMenuOpen(false);onDelete();}} style={{
+            display:"block",width:"100%",textAlign:"left",padding:"9px 14px",background:"none",
+            border:"none",fontSize:"0.8rem",fontWeight:600,color:"#ef4444",cursor:"pointer"}}>🗑 Delete</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3974,6 +3995,17 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     { id:"sports", label:"Sports" },
     { id:"pedia",  label:"Pedia" },
   ];
+  // Full names + real SVG icon/colour per specialty, for the "By Speciality"
+  // card grid and each row's subtitle (2026-09-02 redesign) -- same 4
+  // specialties/colours STREAMS (AppFull.jsx) already uses elsewhere, kept
+  // in sync by hand since STREAMS itself isn't reachable from this file.
+  const SPECIALTY_LABEL = { ortho:"Orthopaedic", cardio:"Cardiovascular", neuro:"Neurology", sports:"Sports", pedia:"Pediatric" };
+  const SPECIALTY_CARD_META = [
+    { id:"ortho",  label:"Orthopaedic",    Icon:Bone,       color:"#7c3aed", bg:"#F3EEFF" },
+    { id:"cardio", label:"Cardiovascular", Icon:HeartPulse, color:"#dc2626", bg:"#FDEAEC" },
+    { id:"neuro",  label:"Neurology",      Icon:Brain,      color:"#0d9488", bg:"#E6FBF8" },
+    { id:"sports", label:"Sports",         Icon:Footprints, color:"#ea580c", bg:"#FFF1E6" },
+  ];
   // Care setting (2026-08-27, Aditi: "each patient specify ipd opd
   // outpatients etc") -- every assessment wizard (Ortho IPD/Post-op/
   // Outpatient, Neuro, Cardio) now writes a real top-level
@@ -4000,6 +4032,12 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     { id:"postop",      label:"Post-op" },
   ];
   const [filterCareSetting, setFilterCareSetting] = useState("all");
+  // "Recent Patients" shows just the newest few with a "View all" link
+  // (2026-09-02 redesign, matching the reference design) unless a search/
+  // filter is already active, in which case the full filtered list always
+  // shows (nothing to "view all" of beyond what's already narrowed down).
+  const [recentExpanded, setRecentExpanded] = useState(false);
+  const RECENT_LIMIT = 4;
   const [profilePatient, setProfilePatient] = useState(null);
   const [localPatients, setLocalPatients] = useState(patients);
   const fileRef = useRef(null);
@@ -4042,11 +4080,15 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
 
-  // "All Patients" now always shows the complete filtered list (2026-08-27,
-  // Aditi: "list of all patient should show standalone") -- no more 5-item
-  // cap/"View all" toggle. isNarrowed just controls the section title
-  // ("Patients" once a search/filter is active vs "All Patients" by default).
+  // isNarrowed controls the section title/cap: "Recent Patients" (capped to
+  // RECENT_LIMIT, "View all" link) once nothing is filtered, vs "Patients"
+  // showing the complete filtered list once search/a filter is active --
+  // reinstating the reference design's Recent Patients pattern (2026-09-02);
+  // superseded the flat "always show everything" list from 2026-08-27.
   const isNarrowed = !!search || filterCareSetting !== "all" || filterSpecialty !== "all" || filterFlag;
+  const showCap = !isNarrowed && !recentExpanded;
+  const displayed = showCap ? filtered.slice(0, RECENT_LIMIT) : filtered;
+  const listTitle = isNarrowed ? "Patients" : recentExpanded ? "All Patients" : "Recent Patients";
 
   const handleImportFile = (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -4055,7 +4097,10 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     reader.readAsText(file);
   };
 
-  const redFlagCount = localPatients.filter(p=>p.hasRedFlags).length;
+  const specialtyCounts = SPECIALTY_CARD_META.reduce((acc, sp) => {
+    acc[sp.id] = localPatients.filter(p => specialtyOf(p) === sp.id).length;
+    return acc;
+  }, {});
 
   // Real, computed clinic-status counts (2026-08-17) -- not placeholders.
   // "In progress": has some real clinical content beyond a bare demographic
@@ -4075,44 +4120,32 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
 const innerBody = (
     <div style={{flex:1,overflowY:embedded?"visible":"auto"}}>
 
-          {/* Header (2026-08-27, Aditi: minimalist "Patients" redesign) */}
+          {/* Header (2026-09-02, Aditi: "make the patient page in clinical
+              same to same" as a reference design) -- title + subtitle only,
+              no bell clutter (the red-flag count still surfaces via the
+              "Flags only" filter in Sort, filters & backup below). The ✕
+              close button stays, but only for the non-embedded Switch/Load
+              Patient popup -- that's a real modal with no other explicit
+              close control besides the backdrop tap; the embedded Clinical
+              tab this redesign targets never rendered it anyway. */}
           <div style={{padding:"20px 18px 2px",display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
             <div>
               <div style={{fontWeight:900,fontSize:"1.5rem",color:"#111827",letterSpacing:"-0.4px"}}>Patients</div>
               <div style={{fontSize:"0.82rem",color:"#9CA3AF",marginTop:2}}>Organize and manage your patients</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginTop:2}}>
-              <div style={{position:"relative",fontSize:"1.15rem"}}>
-                🔔
-                {redFlagCount>0 && (
-                  <span style={{position:"absolute",top:-4,right:-6,background:"#ef4444",color:"#fff",
-                    borderRadius:99,fontSize:"0.6rem",fontWeight:800,padding:"1px 4px",minWidth:14,textAlign:"center"}}>
-                    {redFlagCount}
-                  </span>
-                )}
-              </div>
-              {!embedded && (
-                <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
-                  borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700}}>✕</button>
-              )}
-            </div>
+            {!embedded && (
+              <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
+                borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700,marginTop:2}}>✕</button>
+            )}
           </div>
 
-          {/* Search -- icon given a fixed-width box + centered line-height
-              (2026-08-27, Aditi: "the search bar magnifying glass is
-              overlapping") -- a global mobile stylesheet rule
-              (utils.jsx) forces `padding: 10px 12px !important` on every
-              input, which always won over this input's own inline
-              padding-left, no matter how large -- the icon and the "S" in
-              the placeholder were fighting for the same 12px inset
-              regardless. Fixed by taking the icon out of the input's own
-              box entirely: icon and input are flex siblings now, so the
-              forced padding only insets the input from its OWN left edge,
-              which flex has already pushed clear of the icon. */}
+          {/* Search -- real SVG icon (lucide Search) in place of the emoji,
+              same layout fix as before (icon and input are flex siblings so
+              utils.jsx's global forced input padding never crowds it). */}
           <div style={{padding:"14px 18px 0"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,border:"1px solid #EEEDF5",
-              borderRadius:14,background:"#F8F7FC",paddingLeft:12}}>
-              <span style={{flexShrink:0,fontSize:"0.8rem",color:"#9CA3AF",pointerEvents:"none"}}>🔍</span>
+              borderRadius:14,background:"#F8F7FC",paddingLeft:14}}>
+              <SearchIcon size={16} color="#9CA3AF" style={{flexShrink:0}}/>
               <input value={search} onChange={e=>setSearch(e.target.value)}
                 placeholder="Search patients…"
                 style={{flex:1,minWidth:0,border:"none",color:"#111827",background:"transparent",
@@ -4120,11 +4153,13 @@ const innerBody = (
             </div>
           </div>
 
-          {/* Care-setting filter pills (2026-08-27) -- All / Outpatient /
-              IPD / Post-op, for which pathway a patient was assessed under.
-              See careSettingOf above for why this is a best-effort
-              derivation, not stored data, until the Ortho pathway wizard
-              persists it for real. */}
+          {/* Care-setting filter pills -- All / Outpatient / IPD / Post-op,
+              for which pathway a patient was assessed under. See
+              careSettingOf above for why this is a best-effort derivation,
+              not stored data, until the Ortho pathway wizard persists it for
+              real. The old second "speciality" pill row underneath this one
+              is gone (2026-09-02) -- speciality is now the By Speciality
+              card grid below, matching the reference design. */}
           <div style={{padding:"14px 18px 0",display:"flex",gap:8,overflowX:"auto"}}>
             {[{id:"all",label:"All"}, ...CARE_SETTINGS].map(cs => {
               const active = filterCareSetting === cs.id;
@@ -4140,26 +4175,36 @@ const innerBody = (
             })}
           </div>
 
-          {/* Speciality sub-filter (2026-08-27, Aditi: "put speciality as
-              here subtopic") -- a second, smaller pill row nested under
-              the care-setting pills above, instead of the earlier full
-              card grid (removed per Aditi's separate "no speciality
-              showing" request). Composes with the care-setting filter --
-              e.g. IPD + Neuro narrows to just IPD neuro patients. */}
-          <div style={{padding:"8px 18px 0",display:"flex",gap:6,overflowX:"auto"}}>
-            {[{id:"all",label:"All"}, ...SPECIALTIES].map(sp => {
-              const active = filterSpecialty === sp.id;
-              return (
-                <button key={sp.id} onClick={()=>setFilterSpecialty(sp.id)}
-                  style={{flexShrink:0,padding:"5px 12px",borderRadius:99,
-                    border:`1px solid ${active?"#7c3aed":"#EEEDF5"}`,
-                    background:active?"#F5F3FF":"#fff",
-                    color:active?"#7c3aed":"#6B7280",fontSize:"0.74rem",fontWeight:700,cursor:"pointer",
-                    whiteSpace:"nowrap"}}>
-                  {sp.label}
-                </button>
-              );
-            })}
+          {/* By Speciality -- 2×2 card grid with a real lucide icon per
+              specialty (2026-09-02, replaces the old speciality pill row),
+              same interaction the pill row had: tapping toggles that
+              specialty as a filter over the list below (tap again to
+              clear). Counts are real, computed from localPatients. */}
+          <div style={{padding:"22px 18px 0"}}>
+            <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827",marginBottom:10}}>By Speciality</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}}>
+              {SPECIALTY_CARD_META.map(sp => {
+                const active = filterSpecialty === sp.id;
+                const Icon = sp.Icon;
+                return (
+                  <button key={sp.id} type="button"
+                    onClick={()=>setFilterSpecialty(active ? "all" : sp.id)}
+                    style={{textAlign:"left",cursor:"pointer",fontFamily:"inherit",
+                      background:"#fff",border:`1.5px solid ${active?"#7c3aed":"#EEEDF5"}`,
+                      borderRadius:18,padding:"16px 14px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+                      <div style={{width:44,height:44,borderRadius:14,background:sp.bg,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <Icon size={22} color={sp.color} strokeWidth={1.75}/>
+                      </div>
+                      <ChevronRight size={17} color="#C4C4CE"/>
+                    </div>
+                    <div style={{fontWeight:800,fontSize:"0.92rem",color:"#111827",marginTop:12}}>{sp.label}</div>
+                    <div style={{fontSize:"0.78rem",color:"#9CA3AF",marginTop:1}}>{specialtyCounts[sp.id]} Patients</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* New Assessment CTA -- only shown in the non-embedded (Switch/
@@ -4176,15 +4221,21 @@ const innerBody = (
             </div>
           )}
 
-          {/* All Patients -- standalone card (2026-08-27, Aditi: "list of
-              all patient should show standalone") -- shows every filtered
-              patient (no 5-item cap/"View all" toggle anymore) inside its
-              own bordered white container, same visual language as the By
-              Speciality cards above, instead of bare rows sitting directly
-              on the page background. */}
+          {/* Recent Patients -- capped to RECENT_LIMIT with a "View all"
+              link (2026-09-02, matching the reference design) once nothing
+              is filtered; a search/filter already narrows the list, so the
+              cap and link both drop out and every match shows under
+              "Patients" instead. */}
           <div style={{padding:"24px 18px 0"}}>
-            <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827",marginBottom:10}}>
-              {isNarrowed ? "Patients" : "All Patients"}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827"}}>{listTitle}</div>
+              {!isNarrowed && !recentExpanded && filtered.length > RECENT_LIMIT && (
+                <button onClick={()=>setRecentExpanded(true)} style={{background:"none",border:"none",
+                  padding:0,cursor:"pointer",display:"flex",alignItems:"center",gap:2,
+                  color:"#7c3aed",fontSize:"0.82rem",fontWeight:700}}>
+                  View all <ChevronRight size={15}/>
+                </button>
+              )}
             </div>
 
             {filtered.length === 0 ? (
@@ -4197,11 +4248,12 @@ const innerBody = (
               </div>
             ) : (
               <div style={{background:"#fff",border:"1.5px solid #EEEDF5",borderRadius:16,padding:"4px 10px"}}>
-                {filtered.map(p => (
+                {displayed.map(p => (
                   <PatientRowCompact
                     key={p.id}
                     patient={p}
                     isActive={p.id === activeId}
+                    specialtyLabel={SPECIALTY_LABEL[specialtyOf(p)]}
                     careSettingLabel={CARE_SETTINGS.find(cs=>cs.id===careSettingOf(p))?.label}
                     onDelete={()=>onDelete(p.id)}
                     // One profile per patient, not two buttons (Aditi:
