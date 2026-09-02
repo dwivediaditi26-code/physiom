@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { getC } from "./utils.jsx";
 import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
-import { INITIAL_POSTS } from "./physiofeed/data/mockData.js";
+import { getEvidence } from "./physiofeed/data/db.js";
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
@@ -440,37 +440,6 @@ function PostureDefectModule() {
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
 // ═══════════════════════════════════════════════════════════════════════════
-function initialsOf(fullName) {
-  const clean = (fullName || "").replace(/^Dr\.?\s*/, "").split(",")[0].trim();
-  const parts = clean.split(" ").filter(Boolean);
-  return parts.slice(0, 2).map(w => w[0]).join("").toUpperCase();
-}
-
-const HeartIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
-  </svg>
-);
-const CommentIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-  </svg>
-);
-const ShareIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>
-  </svg>
-);
-const BookmarkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-  </svg>
-);
-const FeedIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/>
-  </svg>
-);
 const GridIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
@@ -502,16 +471,7 @@ const GreetingIllustration = () => (
   </svg>
 );
 
-const FEED_TABS = [
-  { key: "foryou", label: "For You" },
-  { key: "following", label: "Following" },
-  { key: "research", label: "Research" },
-  { key: "casestudies", label: "Case Studies" },
-  { key: "journalclub", label: "Journal Club" },
-];
-
 function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser }) {
-  const [feedTab, setFeedTab] = useState("foryou");
   // Home was a fixed 640px mobile column even on laptop/desktop widths,
   // leaving large empty gutters either side of the sidebar-plus-content
   // shell (2026-08-25, laptop redesign). Widen the content column itself
@@ -527,13 +487,14 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
   const firstName = (currentUser?.user_metadata?.full_name || "Aditi").replace(/^dr\.?\s+/i,"").split(" ")[0];
 
-  const feedPost = useMemo(() => {
-    if (feedTab==="foryou") return INITIAL_POSTS[0] || null;
-    if (feedTab==="following") return INITIAL_POSTS.find(p=>p.following) || null;
-    if (feedTab==="research") return INITIAL_POSTS.find(p=>p.category==="Research") || null;
-    if (feedTab==="casestudies") return INITIAL_POSTS.find(p=>p.category==="Case Studies") || null;
-    return null; // Journal Club -- no seeded posts in that category yet
-  }, [feedTab]);
+  // Real research_articles from PhysioFeed's Evidence tab (getEvidence()
+  // falls back to the same seeded demo library the Evidence page itself
+  // shows when the table is empty -- see db.js's own comment -- so this
+  // preview is never a second, different "fake" feed, just the newest
+  // couple of whatever Evidence actually has right now).
+  const [evidence, setEvidence] = useState([]);
+  useEffect(() => { getEvidence().then(setEvidence).catch(() => {}); }, []);
+  const latestEvidence = evidence.slice(0, 3);
 
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
@@ -582,55 +543,36 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
         ))}
       </div>
 
-      {/* ── PhysioFeed preview ── */}
+      {/* ── Evidence preview (was a scripted demo PhysioFeed post; now the
+          real research_articles Evidence has, via the same getEvidence()
+          the Evidence tab itself reads from) ── */}
       <div style={{background:"#fff", border:"1px solid #EDEDF2", borderRadius:18, padding:"16px 16px 14px", marginBottom:18, boxShadow:"0 1px 4px rgba(16,24,40,0.04)"}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:12}}>
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-            <FeedIcon/>
+            <span style={{fontSize:18,lineHeight:1}}>📚</span>
             <div style={{minWidth:0}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>PhysioFeed</div>
-              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Stay updated with clinical insights and community</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>Evidence</div>
+              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Latest research and papers</div>
             </div>
           </div>
           <button onClick={()=>onNav("physiofeed")} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
         </div>
 
-        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4,marginBottom:12,scrollbarWidth:"none"}}>
-          {FEED_TABS.map(t=>(
-            <button key={t.key} onClick={()=>setFeedTab(t.key)} style={{
-              flexShrink:0, padding:"7px 14px", borderRadius:99, fontSize:11.5, fontWeight:700, cursor:"pointer",
-              border: feedTab===t.key ? "none" : "1px solid #E5E5EA",
-              background: feedTab===t.key ? "#7C3AED" : "#fff",
-              color: feedTab===t.key ? "#fff" : "#48484F",
-            }}>{t.label}</button>
-          ))}
-        </div>
-
-        {feedPost ? (
-          <div style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"12px 14px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:9}}>
-              <div style={{width:36,height:36,borderRadius:"50%",background:"#EDE4FF",color:"#6D28D9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>
-                {initialsOf(feedPost.author)}
+        {latestEvidence.length ? (
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {latestEvidence.map((a,i)=>(
+              <div key={a.id} onClick={()=>onNav("physiofeed")} style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"11px 13px", cursor:"pointer"}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+                  <div style={{fontSize:12.5,fontWeight:800,color:"#111827",lineHeight:1.35}}>{a.title}</div>
+                  {i===0 && <span style={{flexShrink:0,fontSize:9,fontWeight:800,color:"#059669",background:"#ECFDF5",borderRadius:99,padding:"2.5px 8px",whiteSpace:"nowrap"}}>NEW</span>}
+                </div>
+                <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:4}}>{a.journal}{a.year ? ` · ${a.year}` : ""}</div>
+                {a.category && <span style={{display:"inline-block",fontSize:10,fontWeight:700,color:"#6D28D9",background:"#F5F0FF",borderRadius:99,padding:"3px 10px",marginTop:8}}>{a.category}</span>}
               </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:12.5,fontWeight:800,color:"#111827"}}>{feedPost.author.split(",")[0]}</div>
-                <div style={{fontSize:10.5,color:"#9A9AA2"}}>{feedPost.role.split("·")[0].trim()} · {feedPost.time}</div>
-              </div>
-              <span style={{color:"#C7C7CE",fontSize:16,lineHeight:1}}>⋮</span>
-            </div>
-            <div style={{fontSize:12.5,color:"#26262B",lineHeight:1.5,marginBottom:10}}>{feedPost.caption}</div>
-            <span style={{display:"inline-block",fontSize:10,fontWeight:700,color:"#6D28D9",background:"#F5F0FF",borderRadius:99,padding:"3px 10px",marginBottom:11}}>{feedPost.category}</span>
-            <div style={{display:"flex",alignItems:"center",gap:16,marginTop:2,color:"#6B6B76"}}>
-              <span style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600}}><HeartIcon/> {feedPost.likes}</span>
-              <span style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:600}}><CommentIcon/> {feedPost.commentList?.length || 0}</span>
-              <span style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:14}}>
-                <ShareIcon/>
-                <BookmarkIcon/>
-              </span>
-            </div>
+            ))}
           </div>
         ) : (
-          <div style={{textAlign:"center",padding:"20px 10px",color:"#9A9AA2",fontSize:12}}>No posts here yet — check back soon.</div>
+          <div style={{textAlign:"center",padding:"20px 10px",color:"#9A9AA2",fontSize:12}}>No evidence added yet — check back soon.</div>
         )}
       </div>
 
