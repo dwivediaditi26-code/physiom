@@ -54,13 +54,20 @@ function exerciseInfoBody(ex) {
 
 // richItem (not a plain `text` string) so the "How to Perform" sheet gets
 // a reference-photo slot (SheetHero, orthoFieldKit.jsx) the same way ROM/
-// MMT/Special Tests already do -- `image` is a Cloudinary asset id, left
-// undefined here since EXERCISE_DB doesn't carry one yet; SheetHero shows
-// its existing "No reference photo" placeholder until one is uploaded and
-// wired to ex.id below, same pattern as the Cardio/Neuro photo checklist.
+// MMT/Special Tests already do -- `image` is a Cloudinary asset id.
+// 2026-09-02, Aditi: "exercise photo same as study mode is not showing" --
+// this said `image: ex.image` despite EXERCISE_DB never actually carrying
+// an `image` field (confirmed: zero entries have one), so it was always
+// undefined and every exercise showed the "No reference photo" fallback
+// no matter what. romRichItem/mmtRichItem/specialRichItem (same file's
+// siblings, orthoRegionAssessments.jsx) all wire this to the item's own
+// id instead -- SheetHero looks that id up directly as the Cloudinary
+// asset name -- so a photo just has to be uploaded under an exercise's id
+// (e.g. "lb_glute_bridge") to show up here with no further code change,
+// same as ROM/MMT/Special Tests already work. Matching that convention.
 function exerciseRichItem(ex) {
   return {
-    image: ex.image,
+    image: ex.id,
     title: ex.name,
     subtitle: ex.target,
     perform: exerciseInfoBody(ex),

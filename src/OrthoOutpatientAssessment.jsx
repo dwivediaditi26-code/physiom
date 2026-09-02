@@ -345,6 +345,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   }
 
   const regionsLabel = regionLabelList(selectedRegions) || "—";
+  const demographicsName = (data.demographics?.name || "").trim();
 
   // Persist a snapshot on the active patient record -- same set(key,value)
   // pattern Cardio/Neuro's own Final Review "Save" already uses. Keyed by
@@ -362,9 +363,36 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     // top-level field directly (2026-08-31) -- same convention IPD/Post-op
     // now write on their own save.
     onSave("care_setting", "outpatient");
+    // 2026-09-02, Aditi: "not saving patient... patient name... nothing
+    // saving" -- this was the missing piece for Outpatient specifically:
+    // IPD/Post-op already mirror their own Case Info name onto the
+    // app-wide dem_name field on save, but Outpatient never did, so the
+    // app-wide "create a patient row once dem_name appears" effect
+    // (AppFull.jsx) never had anything to fire on -- Outpatient could
+    // never actually create/persist a patient at all, autosave or not.
+    if (demographicsName) onSave("dem_name", demographicsName);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
+
+  // Auto-save (2026-09-02, Aditi: "not saving... automatically") -- this
+  // whole wizard keeps its own local `data` state (see the useState near
+  // the top of this component), entirely separate from the app-wide
+  // data/set pair AppFull.jsx's real autosave (2s-debounced, local draft +
+  // Supabase) actually watches. Previously nothing here ever reached that
+  // pipeline until the therapist manually scrolled all the way to Review
+  // and tapped Save -- closing the app, switching patients, or just not
+  // reaching that last step meant the whole assessment (and the patient
+  // record itself, per demographicsName above) silently never existed.
+  // Debounced auto-save calls the exact same saveAssessment() the Save
+  // button does, just automatically, ~2s after the last edit -- same
+  // pattern every other module's autosave already uses.
+  useEffect(() => {
+    if (Object.keys(data).length === 0) return;
+    const t = setTimeout(() => saveAssessment(), 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   return (
     <div className="app-shell">

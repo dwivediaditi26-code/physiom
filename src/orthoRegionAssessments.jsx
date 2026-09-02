@@ -165,13 +165,16 @@ function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal
           {norm && <span className="rom-norm">{norm}</span>}
         </div>
         <div className="rom-row-cell">
-          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+          {/* square (2026-09-02, Aditi: "make it square") -- same square
+              stepper Treatment Techniques' Sets/Duration/Frequency already
+              use, instead of the flatter default rectangle. */}
+          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
           {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
         </div>
         <div className="rom-row-cell">
           {m.bilateral !== false && (
             <>
-              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
               {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
             </>
           )}
@@ -185,18 +188,26 @@ function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal
         </div>
       </div>
       {detailOpen && (
+        // List format (2026-09-02, Aditi: "make the pain end feel in
+        // listing format") -- replaces the wrapped pill-chip row with a
+        // stacked list of full-width rows, same tap-to-select/tap-again-
+        // to-clear behaviour as the chips had.
         <>
-          <div className="chip-mini-row">
+          <div className="mini-list-label">Pain quality</div>
+          <div className="mini-list">
             {ROM_PAIN_OPTIONS.map((o) => (
-              <button type="button" key={o} className={"chip-mini" + (pain === o ? " chip-mini-active" : "")} onClick={() => onSetMeta(m.id, "pain", o)}>
-                {o}
+              <button type="button" key={o} className={"mini-list-row" + (pain === o ? " mini-list-row-active" : "")} onClick={() => onSetMeta(m.id, "pain", o)}>
+                <span>{o}</span>
+                {pain === o && <span className="mini-list-check">✓</span>}
               </button>
             ))}
           </div>
-          <div className="chip-mini-row">
+          <div className="mini-list-label">End feel</div>
+          <div className="mini-list">
             {END_FEEL_OPTIONS.map((o) => (
-              <button type="button" key={o} className={"chip-mini" + (endFeel === o ? " chip-mini-active" : "")} onClick={() => onSetMeta(m.id, "ef", o)}>
-                {o}
+              <button type="button" key={o} className={"mini-list-row" + (endFeel === o ? " mini-list-row-active" : "")} onClick={() => onSetMeta(m.id, "ef", o)}>
+                <span>{o}</span>
+                {endFeel === o && <span className="mini-list-check">✓</span>}
               </button>
             ))}
           </div>
