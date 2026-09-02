@@ -36,7 +36,7 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     expect(src).toMatch(/["'&][\s\S]{0,60}&amp;[\s\S]{0,80}&lt;[\s\S]{0,80}&gt;[\s\S]{0,80}&quot;[\s\S]{0,80}&#39;/);
   });
 
-  test("clinician.name/credentials/clinic are all wrapped in escHtml() where the report data object is built", () => {
+  test("every free-text field reaching the report data object is wrapped in escHtml()", () => {
     // Scoped to the `d = { ... }` report-data construction, not the whole
     // file, so this can't accidentally pass by matching escHtml() calls
     // added somewhere unrelated.
@@ -47,6 +47,26 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     expect(dBlock).toMatch(/name:\s*escHtml\(clinicianInfo\.name/);
     expect(dBlock).toMatch(/credentials:\s*escHtml\(clinicianInfo\.credentials/);
     expect(dBlock).toMatch(/clinic:\s*escHtml\(clinicianInfo\.clinic/);
+    // Occupation is the one patient-entered field still reaching the report,
+    // via the SOAP subjective line -- it is an injection sink like any other.
+    expect(dBlock).toMatch(/escHtml\(patientInfo\.occupation/);
+  });
+
+  test("patient identity no longer reaches the report data object at all", () => {
+    // 2026-08-31: patient name/age/sex/height/weight were removed from the
+    // generated PDF and from the report-generation form. The strongest
+    // guarantee against leaking them is that they are never assembled into
+    // the report data in the first place -- nothing to escape, nothing to
+    // print. If a future edit reintroduces them, this fails and whoever
+    // does it has to make the escaping decision deliberately.
+    const dBlockMatch = src.match(/const d = \{[\s\S]*?redFlags: \{ triggered: false, items: \[\] \},\s*\};/);
+    const dBlock = dBlockMatch[0];
+
+    expect(dBlock).not.toMatch(/patientInfo\.name/);
+    expect(dBlock).not.toMatch(/patientInfo\.age/);
+    expect(dBlock).not.toMatch(/patientInfo\.sex/);
+    // ...and the report body must not print a patient block either.
+    expect(src).not.toMatch(/d\.patient\./);
   });
 
   test("patient name is gone from the report entirely, and the occupation that remains is escaped", () => {
