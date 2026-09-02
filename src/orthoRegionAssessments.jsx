@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData } from "./orthoFieldKit.jsx";
+import React, { useState, useEffect, useRef } from "react";
+import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
 
@@ -127,6 +127,96 @@ function romCountFor(entry, movements) {
   return n;
 }
 
+/* The movement row itself (name + L/R degree Stepper) stays always visible
+   -- that's the field a therapist fills for every single movement, so
+   hiding it behind a tap would just add a click to the most common case.
+   Only the pain-quality + end-feel chip rows (secondary detail, not
+   filled for every movement) collapse behind their own small toggle,
+   reusing the wizard-wide .obj-item-chevron/.obj-item-row-summary styling
+   from orthoStyles.js so it still reads as the same interaction pattern
+   as Suggested Objective, just scoped to the one sub-section that was
+   actually adding bulk to every row.
+
+   The degree fields are a Stepper (+/- one degree at a time, same control
+   Treatment Techniques uses for sets/duration/frequency) pre-loaded to the
+   movement's own normal value as a starting point to nudge from, rather
+   than a blank box demanding an exact number typed from scratch -- typing
+   the exact value directly still works, the Stepper's box is a real,
+   always-editable number field. */
+function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
+  // 2026-09-02, Aditi: "when I click on the collapsible button... it is
+  // going away from the screen and only half thing is showing" -- opening
+  // the Pain quality & end feel chips pushes new content in below the
+  // toggle, which can land partly under the bottom nav bar/keyboard with
+  // nothing scrolling it into view on its own. Scrolls the newly-opened
+  // panel fully into view (not just the toggle row) the moment it expands.
+  const rowRef = useRef(null);
+  useEffect(() => {
+    if (detailOpen) rowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [detailOpen]);
+  return (
+    <div className="rom-row" ref={rowRef}>
+      <div className="rom-row-grid">
+        <div className="rom-row-name">
+          <span className="movement-name">{m.mv}</span>
+          <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
+          {norm && <span className="rom-norm">{norm}</span>}
+        </div>
+        <div className="rom-row-cell">
+          {/* square (2026-09-02, Aditi: "make it square") -- same square
+              stepper Treatment Techniques' Sets/Duration/Frequency already
+              use, instead of the flatter default rectangle. */}
+          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
+          {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
+        </div>
+        <div className="rom-row-cell">
+          {m.bilateral !== false && (
+            <>
+              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
+              {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
+            </>
+          )}
+        </div>
+      </div>
+      <div className="obj-item-row rom-detail-toggle" onClick={() => setDetailOpen((o) => !o)} role="button">
+        <span className="obj-item-row-sub">Pain quality &amp; end feel</span>
+        <div className="obj-item-row-right">
+          {!detailOpen && detailSummary && <span className="obj-item-row-summary">{detailSummary}</span>}
+          <span className={"obj-item-chevron" + (detailOpen ? " open" : "")}>⌄</span>
+        </div>
+      </div>
+      {detailOpen && (
+        // List format (2026-09-02, Aditi: "make the pain end feel in
+        // listing format") -- replaces the wrapped pill-chip row with a
+        // stacked list of full-width rows, same tap-to-select/tap-again-
+        // to-clear behaviour as the chips had.
+        <>
+          <div className="mini-list-label">Pain quality</div>
+          <div className="mini-list">
+            {ROM_PAIN_OPTIONS.map((o) => (
+              <button type="button" key={o} className={"mini-list-row" + (pain === o ? " mini-list-row-active" : "")} onClick={() => onSetMeta(m.id, "pain", o)}>
+                <span>{o}</span>
+                {pain === o && <span className="mini-list-check">✓</span>}
+              </button>
+            ))}
+          </div>
+          <div className="mini-list-label">End feel</div>
+          <div className="mini-list">
+            {END_FEEL_OPTIONS.map((o) => (
+              <button type="button" key={o} className={"mini-list-row" + (endFeel === o ? " mini-list-row-active" : "")} onClick={() => onSetMeta(m.id, "ef", o)}>
+                <span>{o}</span>
+                {endFeel === o && <span className="mini-list-check">✓</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" }) {
   const { d, set, activeKey, setActiveKey } = useSimpleRegionTab(data, setData, sectionKey, ROM_REGION_KEYS, selectedRegions);
   const movements = ROM_DATA[activeKey] || [];
@@ -155,6 +245,12 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
         <div className="rom-card-title">{activeKey}</div>
         <Segmented options={["Active", "Passive", "Resisted"]} value={mode === "arom" ? "Active" : mode === "prom" ? "Passive" : "Resisted"} onChange={(v) => set(activeKey, { ...entry, mode: v === "Active" ? "arom" : v === "Passive" ? "prom" : v === "Resisted" ? "resisted" : "arom" })} />
 
+        <div className="rom-row-grid rom-table-head">
+          <span>Movement</span>
+          <span>L</span>
+          <span>R</span>
+        </div>
+
         {allMovements.map((m) => {
           const val = entry[m.id] || {};
           const gradeL = m.normal ? RESTRICTION_GRADE(Number(val.left), m.normal) : null;
@@ -163,55 +259,18 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
           const endFeel = entry[m.id + "_ef"];
           const norm = [m.plane, m.normal != null ? `N=${m.normal}${m.unit || "°"}` : null].filter(Boolean).join(" · ");
           return (
-            <div className="movement-card" key={m.id}>
-              <div className="movement-head">
-                <div className="movement-info">
-                  <div className="movement-name-row">
-                    <span className="movement-name">{m.mv}</span>
-                    <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
-                  </div>
-                  {norm && <div className="rom-norm">{norm}</div>}
-                </div>
-                <div className="movement-lr">
-                  <div className="movement-lr-col-stack">
-                    <span className="movement-lr-tag">L</span>
-                    <input className="value-input" type="number" placeholder="--" value={val.left ?? ""} onChange={(e) => setVal(m.id, "left", e.target.value)} />
-                    {gradeL && (
-                      <div className="restriction-bar" title={gradeL.label}>
-                        <div className="restriction-bar-fill" style={{ width: Math.min(100, gradeL.pct) + "%", background: gradeL.color }} />
-                      </div>
-                    )}
-                    {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
-                  </div>
-                  {m.bilateral !== false && (
-                    <div className="movement-lr-col-stack">
-                      <span className="movement-lr-tag">R</span>
-                      <input className="value-input" type="number" placeholder="--" value={val.right ?? ""} onChange={(e) => setVal(m.id, "right", e.target.value)} />
-                      {gradeR && (
-                        <div className="restriction-bar" title={gradeR.label}>
-                          <div className="restriction-bar-fill" style={{ width: Math.min(100, gradeR.pct) + "%", background: gradeR.color }} />
-                        </div>
-                      )}
-                      {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="chip-mini-row">
-                {ROM_PAIN_OPTIONS.map((o) => (
-                  <button type="button" key={o} className={"chip-mini" + (pain === o ? " chip-mini-active" : "")} onClick={() => setMeta(m.id, "pain", o)}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-              <div className="chip-mini-row">
-                {END_FEEL_OPTIONS.map((o) => (
-                  <button type="button" key={o} className={"chip-mini" + (endFeel === o ? " chip-mini-active" : "")} onClick={() => setMeta(m.id, "ef", o)}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <RomMovementCard
+              key={m.id}
+              m={m}
+              val={val}
+              gradeL={gradeL}
+              gradeR={gradeR}
+              pain={pain}
+              endFeel={endFeel}
+              norm={norm}
+              onSetVal={setVal}
+              onSetMeta={setMeta}
+            />
           );
         })}
         <AddMovementRow onAdd={(name) => set(activeKey, { ...entry, extraMovements: [...extraMovements, name] })} placeholder="+ Add movement" />

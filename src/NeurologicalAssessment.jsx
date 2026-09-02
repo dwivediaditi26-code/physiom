@@ -221,6 +221,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
           className="select-input"
           value={value || ""}
           placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
+          onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
@@ -1110,8 +1111,8 @@ function CognitionSection({ data, setData }) {
       <SectionIntro icon="🧠" title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
       <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcs} />
-      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} />
-      <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} />
+      <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
+      <SelectField label="Motor response (M)" type="single" options={["6 - Obeys commands", "5 - Localises pain", "4 - Withdraws from pain", "3 - Abnormal flexion", "2 - Abnormal extension", "1 - None"]} value={d.gcsMotor} onChange={(v) => set("gcsMotor", v)} info={neuroExamLibraryData.gcsMotor} />
       {gcsTotal > 0 && <Hint>Total GCS: {gcsTotal}/15 {gcsTotal <= 8 ? "(severe)" : gcsTotal <= 12 ? "(moderate)" : "(mild)"}</Hint>}
       <SelectField
         label="Orientation"
@@ -1159,10 +1160,10 @@ function SensorySection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="🖐️" title="Sensory Examination" />
-      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." />
+      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." info={neuroExamLibraryData.lightTouch} />
       <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." />
-      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} />
-      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." />
+      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
+      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} />
       <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
       <div className="subheading">Cortical sensation</div>
       <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
@@ -1266,7 +1267,7 @@ function BalanceSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="⚖️" title="Balance" />
-      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} />
+      <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} info={neuroExamLibraryData.balance} />
       <SelectField label="Dynamic sitting balance" type="single" options={BALANCE_GRADES} value={d.sitDynamic} onChange={(v) => set("sitDynamic", v)} />
       <SelectField label="Static standing balance" type="single" options={BALANCE_GRADES} value={d.standStatic} onChange={(v) => set("standStatic", v)} />
       <SelectField label="Dynamic standing balance" type="single" options={BALANCE_GRADES} value={d.standDynamic} onChange={(v) => set("standDynamic", v)} />
@@ -1384,7 +1385,7 @@ function PrecautionsSection({ data, setData, setting }) {
       <SelectField label="Fall risk" type="single" options={["Low", "Moderate", "High"]} value={d.fallRisk} onChange={(v) => set("fallRisk", v)} />
       <SelectField label="Seizure precautions" type="single" options={["Not applicable", "Active - pad/clear environment, supervise closely"]} value={d.seizure} onChange={(v) => set("seizure", v)} />
       <SelectField label="Aspiration / swallow precautions" type="single" options={["Not applicable", "Upright positioning required", "Modified diet/thickened fluids", "Nil by mouth"]} value={d.aspiration} onChange={(v) => set("aspiration", v)} />
-      <SelectField label="DVT precautions" type="single" options={["Not applicable", "Confirmed/suspected DVT - avoid limb massage, monitor for PE signs"]} value={d.dvt} onChange={(v) => set("dvt", v)} />
+      <SelectField label="DVT precautions" type="single" options={["Not applicable", "Confirmed/suspected DVT - avoid limb massage, monitor for PE signs"]} value={d.dvt} onChange={(v) => set("dvt", v)} info={neuroExamLibraryData.dvt} />
       <SelectField label="Autonomic dysreflexia monitoring (SCI ≥T6)" type="single" options={["Not applicable", "Monitor BP/symptoms during treatment"]} value={d.ad} onChange={(v) => set("ad", v)} />
       <SelectField label="Skin / pressure care" type="single" options={["No issues noted", "At-risk areas identified - reposition regularly, offload during treatment"]} value={d.skin} onChange={(v) => set("skin", v)} />
       <SelectField label="Positioning / splinting" type="multi" options={["None", "Resting hand splint", "AFO", "Shoulder support/sling", "Positioning schedule in place"]} value={d.positioning} onChange={(v) => set("positioning", v)} />
@@ -1917,6 +1918,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       if (prev.meta && prev.meta.setting === meta.setting && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
       return { ...prev, meta };
     });
+    // Also mirror the chosen setting onto the shared patient record's own
+    // top-level care_setting field (2026-08-31) -- PatientDatabase.jsx's
+    // IPD/Outpatient/Post-op filter pills read that field directly; without
+    // this, picking "Inpatient" here never showed up as IPD in the patient
+    // list at all.
+    if (setting) {
+      const careSetting = setting === "postop" ? "postop" : (setting === "inpatient" || setting === "icu") ? "ipd" : "outpatient";
+      onSave?.("care_setting", careSetting);
+    }
   }, [phase, setting, stepOrder, customStepsMeta]);
 
   // One shared patient identity with Ortho's Demographics, not two

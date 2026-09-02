@@ -23,7 +23,7 @@ import {
   INITIAL_POSTS, STORIES, PEOPLE, NOTIFICATIONS, EXERCISES, EDUCATION,
   ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER,
 } from "./mockData.js";
-import { supabase } from "../../supabase.js";
+import { supabase, authHeader } from "../../supabase.js";
 import { initialsOf } from "../components/shared/constants.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
@@ -924,9 +924,14 @@ export async function toggleFollowPerson(id) {
 export async function getEvidence() {
   try {
     const uid = await currentUserId();
+    // select("*") deliberately, not a named column list -- source_url/
+    // source_name/summary/conclusion (add_evidence_source_and_summary.sql)
+    // may not have run in production yet, and an unknown column in a named
+    // select fails the whole query (see the file-level comment above and
+    // getPosts()/getPeople() for the same rule elsewhere in this file).
     const { data: articles, error } = await supabase
       .from("research_articles")
-      .select("id, title, journal, type, year, level, category, tags, gradient")
+      .select("*")
       .order("year", { ascending: false });
     if (error) throw error;
     if (!articles || articles.length === 0) return clone(_evidence);
@@ -939,6 +944,8 @@ export async function getEvidence() {
     return articles.map((a) => ({
       id: a.id, title: a.title, journal: a.journal, type: a.type, year: a.year,
       level: a.level, category: a.category, tags: a.tags || [], grad: a.gradient,
+      sourceUrl: a.source_url || "", sourceName: a.source_name || "",
+      summary: a.summary || "", conclusion: a.conclusion || "",
       saved: savedSet.has(a.id),
     }));
   } catch (e) {
@@ -1160,6 +1167,104 @@ export async function removeReportedPost(reportId, postId) {
     console.error("removeReportedPost(): --", e?.message || e);
     return false;
   }
+}
+
+/* ---------------- add evidence (admin) ---------------- */
+//
+// AdminAddEvidencePage.jsx's search-PubMed-and-import flow (2026-09-01,
+// replaces asking Aditi for copy-paste SQL each time). searchPubMedForEvidence
+// and draftEvidenceFromPubMed call the two new serverless endpoints
+// (api/pubmedSearch.js, api/pubmedDraft.js) -- same authHeader() pattern
+// AIAssistant.jsx already uses for /api/chat. addEvidence() writes straight
+// to research_articles via the existing research_articles_admin_write RLS
+// policy (add_evidence_communities.sql) -- no new endpoint needed for the
+// write itself, same as toggleSaveEvidence() below writing to research_saves.
+
+// Both endpoints always return JSON on success -- but a request that never
+// reaches the handler (404 route, platform-level error page, or -- in
+// local `vite dev`, which doesn't run /api/*.js at all -- no server) comes
+// back with a non-JSON or empty body. Parse defensively so that shows up
+// as a plain "request failed" message instead of a raw
+// "Unexpected end of JSON input" parse error.
+async function readApiJson(res) {
+  try {
+    return await res.json();
+  } catch {
+    throw new Error(`Request failed (${res.status}). If you're running this locally with vite dev, the /api endpoints only run when deployed.`);
+  }
+}
+
+export async function searchPubMedForEvidence(query) {
+  const res = await fetch("/api/pubmedSearch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ query }),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "PubMed search failed.");
+  return json.results || [];
+}
+
+export async function draftEvidenceFromPubMed(result) {
+  const res = await fetch("/api/pubmedDraft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(result),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Couldn't draft a summary.");
+  return json.draft;
+}
+
+// Second live-search source (Evidence tab -> Search Live), alongside
+// PubMed above -- same shape, same defensive readApiJson(). See
+// api/europepmcSearch.js for why: a free public API (europepmc.org) that
+// also reaches PMC full-text, restricted server-side to peer-reviewed
+// sources (MEDLINE/PMC, preprints excluded).
+export async function searchEuropePMCForEvidence(query) {
+  const res = await fetch("/api/europepmcSearch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ query }),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Europe PMC search failed.");
+  return json.results || [];
+}
+
+export async function draftEvidenceFromEuropePMC(result) {
+  const res = await fetch("/api/europepmcDraft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(result),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Couldn't draft a summary.");
+  return json.draft;
+}
+
+// Returns the inserted row in the same shape getEvidence() produces, so the
+// caller can hand it straight to ResearchCard.jsx for a real (not
+// hand-rolled) preview of exactly what just got published.
+export async function addEvidence(article) {
+  const { data, error } = await supabase
+    .from("research_articles")
+    .insert({
+      title: article.title, journal: article.journal, type: article.type,
+      year: article.year, level: article.level, category: article.category,
+      tags: article.tags, gradient: article.gradient || "violet",
+      source_url: article.sourceUrl, source_name: article.sourceName,
+      summary: article.summary, conclusion: article.conclusion,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return {
+    id: data.id, title: data.title, journal: data.journal, type: data.type, year: data.year,
+    level: data.level, category: data.category, tags: data.tags || [], grad: data.gradient,
+    sourceUrl: data.source_url || "", sourceName: data.source_name || "",
+    summary: data.summary || "", conclusion: data.conclusion || "", saved: false,
+  };
 }
 
 /* ---------------- direct messages ---------------- */

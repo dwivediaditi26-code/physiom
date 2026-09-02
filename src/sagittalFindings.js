@@ -92,6 +92,64 @@ function interpretOffset(offsetPct, viewSign, segment) {
 //   TCI 14–22% → Moderate Increased Thoracic Curvature
 //   TCI > 22%  → Severe Increased Thoracic Curvature
 
+// ─── FLEXICURVE INDEX & ANGLE ────────────────────────────────────────────────
+// The depth-over-chord construction above is the same geometry as the
+// Milne & Lauder flexicurve method, the standard radiation-free way to put a
+// spinal curve on an interpretable scale:
+//
+//   Kyphosis Index  KI = (apex depth A / chord length L) × 100
+//   Kyphosis angle  θ  = arctan(A / B1) + arctan(A / B2)
+//                        where B1 = C7→apex and B2 = apex→T12 along the chord
+//
+// HOW FAR THE COMPARISON GOES, HONESTLY:
+// Same geometric construction, DIFFERENT acquisition. The flexicurve is a
+// flexible ruler pressed against the back and traced, so A and L describe the
+// spine's own contour. Here they come from the posterior body silhouette in a
+// photo, which includes soft tissue and clothing, and the chord runs
+// vertically rather than along the spine.
+//
+// So this does NOT inherit the flexicurve literature's validation — not the
+// ICC 0.906 against radiographic Cobb, not the 85%/97% sensitivity and
+// specificity for hyperkyphosis, and not the Cobb 20-50 degree normal band as
+// a diagnostic cutoff. What it does give is an output on a scale a clinician
+// can actually reason about, instead of a private percentage. It is reported
+// as a silhouette-derived estimate and must stay labelled that way.
+//
+// TCI's own 8/14/22 bands are kept as the app's calibrated scale; these are
+// additional, differently-derived figures, not a replacement.
+function buildFlexicurve(cp, c7YNorm, t12YNorm, apexYNorm) {
+  const trunkHPx  = cp?.trunkHPx;
+  const bodyDepth = cp?.bodyDepth;
+  if (!trunkHPx || !bodyDepth || apexYNorm === null || apexYNorm === undefined) return null;
+
+  // Put depth and chord into the same units (pixels) — TCI cannot, because it
+  // divides a bodyDepth-normalised depth by a trunkHeight-normalised chord.
+  const apexDepthPx   = (cp.thorMaxDevNorm / 10) * bodyDepth;
+  const chordLengthPx = Math.abs(t12YNorm - c7YNorm) * trunkHPx;
+  if (chordLengthPx < 1 || apexDepthPx <= 0) return null;
+
+  // Apex must fall between the chord endpoints for the two-segment angle to
+  // mean anything.
+  const b1 = Math.abs(apexYNorm - c7YNorm)  * trunkHPx;
+  const b2 = Math.abs(t12YNorm  - apexYNorm) * trunkHPx;
+  if (b1 < 1 || b2 < 1) return null;
+
+  const index = Math.round((apexDepthPx / chordLengthPx) * 100 * 10) / 10;
+  const angle = Math.round(
+    (Math.atan(apexDepthPx / b1) + Math.atan(apexDepthPx / b2)) * 180 / Math.PI * 10
+  ) / 10;
+
+  return {
+    index,
+    angleDeg: angle,
+    apexDepthPx: Math.round(apexDepthPx * 10) / 10,
+    chordLengthPx: Math.round(chordLengthPx * 10) / 10,
+    formula: "KI = (A / L) × 100 · θ = arctan(A/B1) + arctan(A/B2)",
+    basis: "Milne & Lauder flexicurve construction, computed from the posterior body silhouette rather than a traced spinal contour",
+    caveat: "Silhouette-derived estimate. Does not carry the flexicurve method's validation against radiographic Cobb, and is not a Cobb angle.",
+  };
+}
+
 function buildTCI(cp, confidence, manualC7Y, manualT12Y) {
   if (!cp) return null;
 
@@ -124,6 +182,8 @@ function buildTCI(cp, confidence, manualC7Y, manualT12Y) {
     ? ` · apex: ${cp.thorApexRegion.replace("-"," ")}`
     : "";
 
+  const flexicurve = buildFlexicurve(cp, c7YNorm, t12YNorm, cp.thorApexYNorm);
+
   return {
     id: "tci",
     category: "Thoracic Curvature Index",
@@ -133,6 +193,10 @@ function buildTCI(cp, confidence, manualC7Y, manualT12Y) {
     grade,
     severity: ["Normal","Mild","Moderate","Severe"][grade],
     tci,
+    // Same curve on the flexicurve scale, so the output is interpretable as a
+    // curvature figure rather than only as this app's own percentage. Carries
+    // its own caveat — see buildFlexicurve.
+    flexicurve,
     thorMaxDevNorm: Math.round(thorMaxDevNorm * 1000) / 10,
     chordLength: Math.round(chordLength * 100),
     apexRegion: cp.thorApexRegion,

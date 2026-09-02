@@ -133,7 +133,6 @@ const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} 
 const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, SensoryRegion: SensoryRegionWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
-  { id:"ortho",     label:"Old Ortho",        icon:"🦴", color:"#7c3aed", live:true  },
   { id:"ortho_new", label:"Ortho Assessment", icon:"🦴", color:"#7c3aed", live:true  },
   { id:"neuro",     label:"Neuro",            icon:"🧠", color:"#0d9488", live:true  },
   { id:"sports",    label:"Sports",           icon:"🏃", color:"#ea580c", live:false },
@@ -193,6 +192,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+  // Every tab stays mounted once visited (DeferredMount below just toggles
+  // display:none/block, see mountedTabs) inside this one shared scrollable
+  // container -- so switching tabs never naturally resets scroll the way a
+  // real page navigation would; whatever scrollTop the previous tab was at
+  // carries straight over, landing the new page "mid-scroll" instead of at
+  // its top. navTo (the one place every nav path funnels through) resets it.
+  const mainScrollRef = useRef(null);
 
   // ── Guest Mode auth gate ─────────────────────────────────────────────
   // Guests can browse and use the whole real workflow (nothing they do
@@ -506,22 +512,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // a specialty does the exact same real thing (blank-slate + navigate to
   // that specialty's real tool) no matter which entry point was used.
   function startSpecialty(st) {
+    // Only blank-slate when there's no patient already open. Wiping
+    // activePatientId unconditionally used to do this every time, even with
+    // a patient already loaded -- so tapping e.g. "Neuro" right after
+    // creating/opening a patient silently started a second, disconnected
+    // blank record instead of continuing that same patient's chart, and
+    // the wizard's own name field being re-typed then auto-created a
+    // duplicate patient (see the "no active patient" auto-create effect
+    // above). Keeping the active patient here lets the wizard seed from
+    // and save back onto the one record instead.
+    const hasActivePatient = !!activePatientId;
     if (st.id === "cardio") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("neuro_assessment");
-    } else if (st.id === "ortho") {
-      setStream("ortho");
-      setData({});
-      setActivePatientId(null);
-      navTo("demographics");
     } else if (st.id === "ortho_new") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("ortho_new_assessment");
     } else {
       setStream(st.id);
@@ -787,6 +795,22 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
+    // Every tab stays mounted (display:none/block, not unmounted) inside
+    // the one shared .pm-main scroll container, so it never gets a fresh
+    // scrollTop of its own the way a real page load would -- without this,
+    // navigating in after scrolling down on the previous tab lands the new
+    // page already scrolled to wherever the old one left off, instead of
+    // its top (see mainScrollRef above).
+    // The actual scrolling element here is <body> itself (utils.jsx's
+    // .pm-shell/global CSS gives html AND body their own independent
+    // overflow-y:auto, with html pinned to the viewport height and body
+    // holding the real scrollable content) -- window.scrollTo/scrollY is a
+    // no-op against it, so body.scrollTop is reset directly. mainScrollRef
+    // is reset too for any layout where .pm-main itself ends up being the
+    // scrollable one instead (e.g. the desktop sidebar layout above, which
+    // constrains its own height).
+    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
     // Mount tab on first visit
     setMountedTabs(prev => {
       if (prev.has(key)) return prev;
@@ -844,6 +868,27 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const goBack = useCallback(() => {
     try { window.history.back(); } catch {}
   }, []);
+
+  // Single choke point for every "open this patient's profile" action.
+  // PatientDatabase.jsx's own patient-row tap already sends anyone with
+  // Cardio/Neuro/any Ortho pathway data to the new SpecialtyPatientProfile
+  // hub instead of the legacy PatientProfileModal, but the other profile
+  // entry points in this file (sidebar "👤 Profile" button, patient bar
+  // name tap, dashboard/treatment-list profile buttons) called
+  // setProfilePatient directly and always opened the old modal, so an
+  // Ortho patient looked "old" from everywhere except the patient list.
+  // Routing all of them through here keeps that one rule in one place.
+  const openPatientProfile = useCallback((p, tab) => {
+    if (!p) return;
+    const d = p.data || {};
+    if (d.cardio || d.neuro || d.ortho_outpatient_assessment || d.ortho_ipd_assessment || d.ortho_postop_assessment) {
+      selectPatient(p);
+      navTo("specialty_profile");
+    } else {
+      setProfilePatient(p);
+      if (tab) setProfileTab(tab);
+    }
+  }, [selectPatient, navTo]);
 
   const Field = useCallback(({t})=>{
     const base = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"8px 10px", fontSize:"0.8rem" };
@@ -1054,7 +1099,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Profile / Start Session buttons */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
               <button
-                onClick={()=>setProfilePatient(activePatient)}
+                onClick={()=>openPatientProfile(activePatient)}
                 style={{padding:"7px 6px",background:"linear-gradient(135deg,#1a3a5c,#2563eb)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(37,99,235,0.3)"}}>
                 👤 Profile
               </button>
@@ -1079,8 +1124,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* 3. Assessment (collapsible) */}
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
-        <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
-        <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
         <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
         <SidebarItem navKey="ortho_new_assessment" icon="🦴" label="Ortho Assessment"/>
@@ -1522,7 +1565,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Row 1: dot + name + age/gender */}
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
-            <div onClick={()=>setProfilePatient(activePatient)}
+            <div onClick={()=>openPatientProfile(activePatient)}
               style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",minWidth:0,flex:1,overflow:"hidden"}}
               onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
@@ -1567,7 +1610,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
 
         {/* Main */}
-        <div className="pm-main" style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
+        <div className="pm-main" ref={mainScrollRef} style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
@@ -1831,6 +1874,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 onNav={navTo}
                 onBack={()=>navTo("clinical")}
+                onSaveField={(id,newData)=>{
+                  setPatients(prev=>{
+                    const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
+                    savePatientDB(updated, currentUser?.id);
+                    return updated;
+                  });
+                }}
+                onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
             </div>
           )}
@@ -1873,7 +1924,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               )}
 
               {tests==="HOME_MODULE"?(
-                <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser}/>
+                <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
               ):tests==="PHYSIOFEED_MODULE"?(
                 <div style={{margin:"-24px -20px 0"}}>
                   <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
@@ -1900,22 +1951,40 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       patient list should only show patient list"). "Patients"
                       stays the default so tapping the bottom-nav "Clinical"
                       tab still lands exactly where it always has. */}
-                  <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9",overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+                  <div style={{display:"flex",gap:4,padding:"10px 12px",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
                     {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"],["assessment","📋 Assessment"]].map(([k,label])=>(
                       <button key={k} onClick={()=>setClinicalSubTab(k)}
-                        style={{padding:"8px 14px",borderRadius:"10px 10px 0 0",border:"none",borderBottom:clinicalSubTab===k?"2px solid #6D28D9":"2px solid transparent",
-                          background:clinicalSubTab===k?"#F5F3FF":"transparent",color:clinicalSubTab===k?"#6D28D9":"#6B7280",
-                          fontSize:"0.8rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                        style={{flex:1,padding:"6px 4px",borderRadius:"999px",border:"none",
+                          background:clinicalSubTab===k?"#6D28D9":"#F3F4F6",color:clinicalSubTab===k?"#fff":"#6B7280",
+                          fontSize:"0.68rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                         {label}
                       </button>
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
-                      onProfile={(p)=>{ setProfilePatient(p); setProfileTab("treatment"); }}/>
+                      onProfile={(p)=>openPatientProfile(p, "treatment")}
+                      // 2026-09-02, Aditi: "in treatment we can remove the
+                      // old treatments... delete if we want to delete" --
+                      // this list had no way to clear a patient's logged
+                      // treatment sessions (only Continue/Profile), so a
+                      // finished/old case just stayed in "Ongoing Treatment"
+                      // forever. Clears tx_sessions only -- the patient
+                      // record itself (demographics, assessment, etc.)
+                      // isn't touched, they just drop off this caseload
+                      // list; deleting the whole patient is a separate,
+                      // already-existing action on the Patients tab.
+                      onDeleteTreatment={(p)=>{
+                        setPatients(prev=>{
+                          const updated = prev.map(x=>x.id===p.id?{...x,data:{...x.data,tx_sessions:[]},updatedAt:new Date().toISOString()}:x);
+                          savePatientDB(updated, currentUser?.id);
+                          return updated;
+                        });
+                        if (p.id===activePatientId) set("tx_sessions", []);
+                      }}/>
                   ) : clinicalSubTab==="assessment" ? (
                     <div style={{padding:"22px 18px 24px"}}>
                       <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
@@ -1977,7 +2046,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
@@ -2340,7 +2409,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
               const handleClick = () => { if (isClinical) navTo("clinical"); else navTo(item.key); };
               return item.center ? (
-                <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
                   {/* 3D glossy bubble -- gradient fill + bottom ridge + inset
                       top highlight, same "raised button" formula already used
@@ -2354,7 +2423,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
                 </button>
               ) : (
-                <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
                   <span className="pm-bnav-tab-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name={item.icon}/></span>
                   <span className="pm-bnav-tab-label">{item.label}</span>
                 </button>

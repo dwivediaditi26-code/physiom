@@ -32,7 +32,7 @@ export const neuroExamLibraryData = {
     icon: "👃",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn1"), img("n_cn1_2"), img("n_cn1_3")],
       caption: "Smell identification, each nostril separately, eyes closed",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, one nostril occluded at a time." },
@@ -57,7 +57,7 @@ export const neuroExamLibraryData = {
     icon: "👁️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn2"), img("n_cn2_2"), img("n_cn2_3")],
       caption: "Visual acuity, fields by confrontation, fundoscopy if trained",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated facing the examiner at arm's length, room adequately lit." },
@@ -81,7 +81,7 @@ export const neuroExamLibraryData = {
     icon: "👀",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn3_4_6"), img("n_cn3_4_6_2"), img("n_cn3_4_6_3")],
       caption: "Pupillary light reflex, full 'H'-pattern extraocular movements, ptosis, diplopia",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, head still, following your finger or a pen torch." },
@@ -109,7 +109,7 @@ export const neuroExamLibraryData = {
     icon: "😐",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn5"), img("n_cn5_2"), img("n_cn5_3")],
       caption: "Facial sensation (3 divisions), jaw clench, corneal reflex",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed for sensory testing." },
@@ -133,7 +133,7 @@ export const neuroExamLibraryData = {
     icon: "😊",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn7"), img("n_cn7_2"), img("n_cn7_3")],
       caption: "Symmetry at rest, raise eyebrows, screw eyes shut, smile, puff cheeks",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated facing the examiner, good lighting to see facial symmetry clearly." },
@@ -160,7 +160,7 @@ export const neuroExamLibraryData = {
     icon: "👂",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn8"), img("n_cn8_2"), img("n_cn8_3")],
       caption: "Gross hearing, Weber test, Rinne test",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, quiet room for hearing screen." },
@@ -186,7 +186,7 @@ export const neuroExamLibraryData = {
     icon: "🗣️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn9_10"), img("n_cn9_10_2"), img("n_cn9_10_3")],
       caption: "Palatal rise, gag reflex, voice quality, swallow screen",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, mouth open, adequate lighting to view the palate/uvula." },
@@ -213,7 +213,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn11"), img("n_cn11_2"), img("n_cn11_3")],
       caption: "Shoulder shrug and head turn against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, examiner positioned to apply resistance safely." },
@@ -238,7 +238,7 @@ export const neuroExamLibraryData = {
     icon: "👅",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_cn12"), img("n_cn12_2"), img("n_cn12_3")],
       caption: "Tongue protrusion, look for deviation, atrophy, or fasciculations",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, mouth open, good lighting to view the tongue clearly." },
@@ -266,7 +266,7 @@ export const neuroExamLibraryData = {
     icon: "👆",
     category: "Learn · Neuro · Coordination",
     perform: {
-      images: [null, null, null],
+      images: [img("n_finger_nose"), img("n_finger_nose_2"), img("n_finger_nose_3")],
       caption: "Alternately touch examiner's moving finger and own nose",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, adequate arm room, examiner's finger held at a comfortable arm's-length distance." },
@@ -294,7 +294,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Coordination",
     perform: {
-      images: [null, null, null],
+      images: [img("n_heel_shin"), img("n_heel_shin_2"), img("n_heel_shin_3")],
       caption: "Slide heel smoothly down the opposite shin, knee to ankle",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, legs extended and relaxed." },
@@ -322,7 +322,7 @@ export const neuroExamLibraryData = {
     icon: "🔄",
     category: "Learn · Neuro · Coordination",
     perform: {
-      images: [null, null, null],
+      images: [img("n_ram"), img("n_ram_2"), img("n_ram_3")],
       caption: "Rapid pronation/supination, or thumb-to-finger tapping in sequence",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, forearm resting on the thigh or held out." },
@@ -352,7 +352,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_bicep"), null, null],
+      images: [img("n_ref_bicep"), img("n_ref_bicep_2"), img("n_ref_bicep_3")],
       caption: "Thumb on biceps tendon, tap thumb with reflex hammer",
       boxes: [
         { tone: "", label: "👤 Position", text: "Elbow flexed to ~90°, arm relaxed and supported." },
@@ -380,7 +380,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_brad"), null, null],
+      images: [img("n_ref_brad"), img("n_ref_brad_2"), img("n_ref_brad_3")],
       caption: "Tap the tendon 2–3cm proximal to the radial styloid",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm in neutral (semi-pronated), resting on the thigh." },
@@ -409,7 +409,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_tricep"), null, null],
+      images: [img("n_ref_tricep"), img("n_ref_tricep_2"), img("n_ref_tricep_3")],
       caption: "Tap directly above the olecranon",
       boxes: [
         { tone: "", label: "👤 Position", text: "Support the arm at 90° abduction, or drape it over the forearm." },
@@ -437,7 +437,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_patella"), null, null],
+      images: [img("n_ref_patella"), img("n_ref_patella_2"), img("n_ref_patella_3")],
       caption: "Tap the patellar tendon, seated or supine with knee supported",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated with legs hanging freely, or supine with the knee supported at 20–30° flexion." },
@@ -465,7 +465,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_achilles"), null, null],
+      images: [img("n_ref_achilles"), img("n_ref_achilles_2"), img("n_ref_achilles_3")],
       caption: "Dorsiflex the foot to tension the tendon, then tap",
       boxes: [
         { tone: "", label: "👤 Position", text: "Knee flexed, hip externally rotated (patient kneeling or prone works well)." },
@@ -493,7 +493,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_babinski"), null, null],
+      images: [img("n_ref_babinski"), img("n_ref_babinski_2"), img("n_ref_babinski_3")],
       caption: "Stroke firmly along the lateral sole, heel to ball, curving medially",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine and relaxed." },
@@ -521,7 +521,7 @@ export const neuroExamLibraryData = {
     icon: "✋",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_hoffmann"), null, null],
+      images: [img("n_ref_hoffmann"), img("n_ref_hoffmann_2"), img("n_ref_hoffmann_3")],
       caption: "Flick the middle finger's distal phalanx downward, watch the thumb",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hold the patient's middle finger loosely, forearm slightly pronated." },
@@ -547,7 +547,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [img("n_ref_clonus_ankle"), null, null],
+      images: [img("n_ref_clonus_ankle"), img("n_ref_clonus_ankle_2"), img("n_ref_clonus_ankle_3")],
       caption: "Sudden sustained stretch, count rhythmic beats",
       boxes: [
         { tone: "", label: "👤 Position", text: "Ankle: knee in slight flexion, foot supported. Patellar: supine, leg extended. Wrist: forearm supported." },
@@ -580,7 +580,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_c5"), null, null],
+      images: [img("n_c5"), img("n_c5_2"), img("n_c5_3")],
       caption: "Lateral arm / deltoid badge region",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -602,7 +602,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_c6"), null, null],
+      images: [img("n_c6"), img("n_c6_2"), img("n_c6_3")],
       caption: "Lateral forearm / thumb + index finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -624,7 +624,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_c7"), null, null],
+      images: [img("n_c7"), img("n_c7_2"), img("n_c7_3")],
       caption: "Middle finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -646,7 +646,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_c8"), null, null],
+      images: [img("n_c8"), img("n_c8_2"), img("n_c8_3")],
       caption: "Little + ring finger / medial forearm",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -668,7 +668,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_t1"), null, null],
+      images: [img("n_t1"), img("n_t1_2"), img("n_t1_3")],
       caption: "Medial forearm / elbow",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -690,7 +690,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_t4"), img("n_t4_2"), img("n_t4_3")],
       caption: "Nipple line — key ASIA sensory landmark",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, chest exposed." },
@@ -712,7 +712,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_t10"), img("n_t10_2"), img("n_t10_3")],
       caption: "Umbilicus — key ASIA sensory landmark",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, abdomen exposed." },
@@ -734,7 +734,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_l3"), null, null],
+      images: [img("n_l3"), img("n_l3_2"), img("n_l3_3")],
       caption: "Medial knee / lower anterior thigh",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -756,7 +756,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_l4"), null, null],
+      images: [img("n_l4"), img("n_l4_2"), img("n_l4_3")],
       caption: "Medial leg / medial foot",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -778,7 +778,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_l5"), null, null],
+      images: [img("n_l5"), img("n_l5_2"), img("n_l5_3")],
       caption: "Dorsum of foot / 1st–2nd web space",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -800,7 +800,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_s1"), null, null],
+      images: [img("n_s1"), img("n_s1_2"), img("n_s1_3")],
       caption: "Lateral foot / heel / sole",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
@@ -822,7 +822,7 @@ export const neuroExamLibraryData = {
     icon: "🚨",
     category: "Learn · Neuro · Dermatomes",
     perform: {
-      images: [img("n_s4s5"), null, null],
+      images: [img("n_s4s5"), img("n_s4s5_2"), img("n_s4s5_3")],
       caption: "Perianal / saddle region — the single most important sensory point in SCI",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient positioned for a dignified, private perianal exam." },
@@ -851,7 +851,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_c5"), null, null],
+      images: [img("myo_c5"), img("myo_c5_2"), img("myo_c5_3")],
       caption: "Shoulder abduction / elbow flexion — arm abduction 0–90° against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, arm at side to start." },
@@ -873,7 +873,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_c6"), null, null],
+      images: [img("myo_c6"), img("myo_c6_2"), img("myo_c6_3")],
       caption: "Wrist extension — make a fist, extend wrist against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm supported, wrist in neutral to start." },
@@ -895,7 +895,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_c7"), null, null],
+      images: [img("myo_c7"), img("myo_c7_2"), img("myo_c7_3")],
       caption: "Elbow extension / wrist flexion — triceps push, wrist curl against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Arm supported at 90° abduction or elbow flexed to start." },
@@ -917,7 +917,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_c8"), null, null],
+      images: [img("myo_c8"), img("myo_c8_2"), img("myo_c8_3")],
       caption: "Finger flexion (grip) — grip dynamometer or resist 3rd–5th DIP flexion",
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm supported, fingers relaxed to start." },
@@ -939,7 +939,7 @@ export const neuroExamLibraryData = {
     icon: "💪",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_t1"), null, null],
+      images: [img("myo_t1"), img("myo_t1_2"), img("myo_t1_3")],
       caption: "Finger abduction — spread fingers, resist adduction",
       boxes: [
         { tone: "", label: "👤 Position", text: "Hand relaxed, fingers together to start." },
@@ -961,7 +961,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_l1_l2"), null, null],
+      images: [img("myo_l1_l2"), img("myo_l1_l2_2"), img("myo_l1_l2_3")],
       caption: "Hip flexion — seated, resist hip flexion 0–90°",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, hip and knee flexed to start." },
@@ -983,7 +983,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_l3"), null, null],
+      images: [img("myo_l3"), img("myo_l3_2"), img("myo_l3_3")],
       caption: "Knee extension — extend knee from 90° against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, knee flexed to 90° to start." },
@@ -1005,7 +1005,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_l4"), null, null],
+      images: [img("myo_l4"), img("myo_l4_2"), img("myo_l4_3")],
       caption: "Ankle dorsiflexion — walk on heels, or resist dorsiflexion",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or standing to start." },
@@ -1027,7 +1027,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_l5"), null, null],
+      images: [img("myo_l5"), img("myo_l5_2"), img("myo_l5_3")],
       caption: "Great toe extension — lift big toe against resistance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or supine, foot relaxed to start." },
@@ -1049,7 +1049,7 @@ export const neuroExamLibraryData = {
     icon: "🦶",
     category: "Learn · Neuro · Myotomes",
     perform: {
-      images: [img("myo_s1"), null, null],
+      images: [img("myo_s1"), img("myo_s1_2"), img("myo_s1_3")],
       caption: "Ankle plantarflexion — 25 single-leg calf raises",
       boxes: [
         { tone: "", label: "👤 Position", text: "Standing, holding support for balance." },
@@ -1073,7 +1073,7 @@ export const neuroExamLibraryData = {
     icon: "🦾",
     category: "Learn · Neuro · Tone / Reflexes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_mas"), img("n_mas_2"), img("n_mas_3")],
       caption: "Passively move the limb through range at a moderate, consistent speed",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed and supported, limb positioned in a neutral resting posture before starting." },
@@ -1103,7 +1103,7 @@ export const neuroExamLibraryData = {
     icon: "🧍",
     category: "Learn · Neuro · Balance",
     perform: {
-      images: [null, null, null],
+      images: [img("n_romberg"), img("n_romberg_2"), img("n_romberg_3")],
       caption: "Feet together, eyes open then closed, stand ready to catch",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient stands with feet together, arms at sides, on a firm surface." },
@@ -1130,7 +1130,7 @@ export const neuroExamLibraryData = {
     icon: "🔔",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_vibration"), img("n_vibration_2"), img("n_vibration_3")],
       caption: "Strike the fork, apply to a bony prominence, patient reports when it stops",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb supported." },
@@ -1157,7 +1157,7 @@ export const neuroExamLibraryData = {
     icon: "📍",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_two_point"), img("n_two_point_2"), img("n_two_point_3")],
       caption: "Calibrated two-point discriminator, gradually narrowing distance",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, testing surface (typically fingertip) relaxed and supported." },
@@ -1179,12 +1179,94 @@ export const neuroExamLibraryData = {
     },
   },
 
+  lightTouch: {
+    title: "Light Touch Sensation",
+    icon: "🖐️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Wisp of cotton wool, eyes closed, compare side to side",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed with eyes closed so they can't anticipate where or when you'll touch." },
+        { tone: "blue", label: "🖐️ Technique", text: "Use a wisp of cotton wool (or fingertip) to lightly touch each dermatome/region, alternating unpredictably between sides. Ask the patient to say 'yes' each time they feel it, and compare side to side and proximal to distal." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Map the border of any deficit carefully — a sensory level (e.g. a clear cutoff at a spinal segment) points to cord pathology, while a stocking/glove pattern points to peripheral polyneuropathy." },
+        { tone: "amber", label: "⚠️ Tip", text: "Demonstrate the stimulus on an unaffected area first (e.g. the sternum) with eyes open, so the patient knows what 'a touch' should feel like before testing with eyes closed." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Touch felt and localised correctly, both sides" },
+      { k: "Impaired", v: "Reduced sensation (hypoesthesia)" },
+      { k: "Absent", v: "No sensation reported" },
+      { k: "Hyperesthesia", v: "Increased/exaggerated sensitivity" },
+    ]},
+    interpret: {
+      normal: ["Intact and symmetric across all tested regions"],
+      abnormal: ["Dermatomal pattern → nerve root involvement", "Stocking/glove pattern → peripheral polyneuropathy", "Clear sensory level → spinal cord lesion at that level"],
+      note: "Always test light touch alongside pain/pinprick — a dissociated sensory loss (one modality affected, the other spared) is itself diagnostically significant (e.g. Brown-Séquard, syringomyelia).",
+    },
+  },
+
+  sensoryTemperature: {
+    title: "Temperature Sensation",
+    icon: "🌡️",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Warm and cold objects, eyes closed, compare side to side",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb exposed and supported." },
+        { tone: "blue", label: "🖐️ Technique", text: "Use two test tubes (or the warm/cold ends of a tuning fork/metal object) — one warm, one cold — and touch each to the skin unpredictably. Ask the patient to identify 'warm' or 'cold' and compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Temperature and pain travel together in the spinothalamic tract — an isolated temperature deficit with normal light touch/proprioception suggests a spinothalamic (anterolateral) lesion." },
+        { tone: "amber", label: "⚠️ Tip", text: "If dedicated warm/cold rollers aren't available, pain/pinprick testing is an acceptable proxy since both travel the same pathway." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies warm/cold, both sides" },
+      { k: "Impaired", v: "Reduced discrimination or delayed response" },
+      { k: "Absent", v: "Cannot distinguish warm from cold" },
+    ]},
+    interpret: {
+      normal: ["Intact and symmetric"],
+      abnormal: ["Loss with preserved light touch/proprioception → spinothalamic tract lesion (e.g. syringomyelia, anterior cord syndrome)"],
+      note: "A dissociated loss of pain/temperature with preserved touch/proprioception (or vice versa) localises to a specific tract, not just 'sensory loss' generally.",
+    },
+  },
+
+  proprioception: {
+    title: "Proprioception (Joint Position Sense)",
+    icon: "🦵",
+    category: "Learn · Neuro · Sensory",
+    perform: {
+      images: [null, null, null],
+      caption: "Move digit up/down with eyes closed, patient names the direction",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, digit held by its sides (not the pad) to avoid giving pressure cues." },
+        { tone: "blue", label: "🖐️ Technique", text: "Hold the digit by its sides, move it up or down a small amount with the patient's eyes closed, and ask them to name the direction moved. Start distally (fingers/toes) and move proximally if impaired." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Impaired proprioception is a major fall-risk factor and often goes unnoticed by the patient until directly tested — always screen it before a functional mobility assessment." },
+        { tone: "amber", label: "⚠️ Tip", text: "Demonstrate 'up' and 'down' with eyes open first so the patient understands the two response options before eyes-closed testing begins." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Intact", v: "Correctly identifies direction of movement" },
+      { k: "Impaired", v: "Inconsistent or delayed identification" },
+      { k: "Absent", v: "Cannot identify direction, or reports movement that didn't occur" },
+    ]},
+    interpret: {
+      normal: ["Intact distally, both sides"],
+      abnormal: ["Impaired distally → dorsal column pathology (peripheral neuropathy, B12 deficiency, MS, tabes dorsalis) — correlate with vibration sense, which travels the same pathway"],
+      note: "Proprioceptive loss with a normal motor exam can still cause significant functional impairment (sensory ataxia) — don't assume gait/balance is fine just because strength is normal.",
+    },
+  },
+
   gcs: {
     title: "Glasgow Coma Scale (GCS)",
     icon: "🧠",
     category: "Learn · Neuro · Mental Status",
     perform: {
-      images: [null, null, null],
+      images: [img("n_gcs"), img("n_gcs_2"), img("n_gcs_3")],
       caption: "Score Eye, Verbal, and Motor response independently, then sum",
       boxes: [
         { tone: "", label: "👤 Position", text: "Any position — this is an observation + graded-stimulus scale, not a positional test." },
@@ -1207,12 +1289,128 @@ export const neuroExamLibraryData = {
     },
   },
 
+  gcsVerbal: {
+    title: "GCS — Verbal Response (V)",
+    icon: "🗣️",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Best verbal response to voice, escalating to pain if needed",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Address the patient by name in a normal tone before escalating to a louder voice or painful stimulus." },
+        { tone: "blue", label: "🖐️ Technique", text: "Ask an orientation question (name, place, date). Score the best response: 5 = oriented, 4 = confused conversation, 3 = inappropriate words (no conversation), 2 = incomprehensible sounds (moaning), 1 = no verbal response." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Record 'T' instead of a verbal score if the patient is intubated — never estimate or omit; note it clearly since it affects how the total GCS is interpreted." },
+        { tone: "amber", label: "⚠️ Tip", text: "A patient who is oriented to person but not place/time still scores 4 (confused), not 5 — 5 requires full orientation to person, place, and time." },
+      ],
+    },
+    scaleLabel: "Verbal response (V) score",
+    scale: { type: "table", rows: [
+      { k: "5", v: "Oriented" },
+      { k: "4", v: "Confused conversation" },
+      { k: "3", v: "Inappropriate words" },
+      { k: "2", v: "Incomprehensible sounds" },
+      { k: "1", v: "None" },
+    ]},
+    interpret: {
+      normal: ["5 — fully oriented"],
+      abnormal: ["Any score <5 → reassess for delirium, intoxication, or a new neurological event"],
+      note: "Verbal score is the component most confounded by intubation, sedation, aphasia, or a language barrier — always note the reason a full verbal score wasn't obtainable rather than just recording a low number.",
+    },
+  },
+
+  gcsMotor: {
+    title: "GCS — Motor Response (M)",
+    icon: "🤲",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Best motor response to command, then to a painful stimulus",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Start with a simple verbal command (e.g. 'squeeze my hand'); only apply a painful stimulus if there is no response to voice." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score the single best response from either limb: 6 = obeys commands, 5 = localises to pain (a limb crosses the midline toward the stimulus), 4 = withdraws from pain, 3 = abnormal flexion (decorticate), 2 = abnormal extension (decerebrate), 1 = none." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Use a central painful stimulus (trapezius pinch or supraorbital pressure), not just a peripheral nail-bed pinch, since a peripheral stimulus can trigger a spinal reflex withdrawal that looks like a better response than the patient's true best." },
+        { tone: "amber", label: "⚠️ Tip", text: "Abnormal flexion (decorticate, 3) and abnormal extension (decerebrate, 2) are both ominous signs of significant brain injury — either should trigger urgent escalation, not just a documented score." },
+      ],
+    },
+    scaleLabel: "Motor response (M) score",
+    scale: { type: "table", rows: [
+      { k: "6", v: "Obeys commands" },
+      { k: "5", v: "Localises to pain" },
+      { k: "4", v: "Withdraws from pain" },
+      { k: "3", v: "Abnormal flexion (decorticate)" },
+      { k: "2", v: "Abnormal extension (decerebrate)" },
+      { k: "1", v: "None" },
+    ]},
+    interpret: {
+      normal: ["6 — obeys commands"],
+      abnormal: ["≤4 → significant impairment; ≤3 (abnormal flexion/extension) is a medical emergency"],
+      redFlags: ["New abnormal flexion or extension posturing — escalate for urgent medical review immediately"],
+      note: "Motor is the single most predictive GCS component for outcome after TBI — a falling motor score deserves the fastest escalation of the three.",
+    },
+  },
+
+  balance: {
+    title: "Balance Assessment (Sitting / Standing)",
+    icon: "⚖️",
+    category: "Learn · Neuro · Balance",
+    perform: {
+      images: [null, null, null],
+      caption: "Static and dynamic balance, sitting and standing, with stand-by guard",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Test sitting balance before standing, and always have a stand-by guard/gait belt ready for standing balance in an at-risk patient." },
+        { tone: "blue", label: "🖐️ Technique", text: "Static: ask the patient to maintain the position (sitting/standing) unsupported and observe steadiness. Dynamic: ask them to reach, turn, or perturb their base of support (e.g. weight shifts, reaching outside base) while maintaining balance." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Dynamic balance typically fails before static balance as impairment progresses — a patient who looks steady sitting still may be unsafe the moment they reach or turn." },
+        { tone: "amber", label: "⚠️ Tip", text: "Pair this with a standardised outcome measure (Berg Balance Scale, Functional Reach) whenever possible so change over time is measurable, not just descriptive." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Normal", v: "Maintains position/task without any loss of balance" },
+      { k: "Good", v: "Minor unsteadiness, no loss of balance, no support needed" },
+      { k: "Fair", v: "Requires occasional support or contact guard" },
+      { k: "Poor", v: "Requires continuous support/assistance" },
+      { k: "Absent", v: "Unable to maintain the position even with support" },
+    ]},
+    interpret: {
+      normal: ["Normal static and dynamic balance, sitting and standing"],
+      abnormal: ["Impaired dynamic > static balance → early/mild impairment", "Impaired static balance → significant impairment, high fall risk"],
+      note: "Balance impairment is multifactorial (proprioceptive, vestibular, visual, motor, cognitive) — pair this exam with the sensory and coordination findings to localise the likely contributor(s).",
+    },
+  },
+
+  dvt: {
+    title: "DVT Precautions",
+    icon: "🩸",
+    category: "Learn · Neuro · Safety Screen",
+    perform: {
+      images: [null, null, null],
+      caption: "Screen for calf pain/swelling/warmth before mobilising a high-risk patient",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Inspect and gently palpate both calves with the patient supine, comparing side to side." },
+        { tone: "blue", label: "🖐️ Technique", text: "Check for unilateral calf swelling, warmth, redness, and tenderness. Ask about calf pain, especially on dorsiflexion. Review the chart for any known DVT/PE history, anticoagulation status, or recent immobility (post-op, prolonged bed rest, stroke, SCI)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Homans' sign (calf pain on forced ankle dorsiflexion) is neither sensitive nor specific for DVT and should never be relied on alone to rule a DVT in or out." },
+        { tone: "amber", label: "⚠️ Tip", text: "Stroke, SCI, and prolonged post-op immobility are all independent high-risk states for DVT — have a low threshold to flag for medical review even with a normal-looking calf." },
+      ],
+    },
+    scaleLabel: "Recording",
+    scale: { type: "table", rows: [
+      { k: "Not applicable", v: "No known risk factors or concerning findings" },
+      { k: "Confirmed/suspected", v: "Avoid limb massage/vigorous mobilisation of that limb, monitor for signs of PE, escalate to medical team" },
+    ]},
+    interpret: {
+      normal: ["No calf swelling, warmth, redness, or tenderness; no known DVT risk factors"],
+      abnormal: ["Unilateral calf swelling/warmth/tenderness in an at-risk patient → suspect DVT, do not massage or vigorously mobilise the limb, escalate immediately"],
+      redFlags: ["Sudden dyspnea, pleuritic chest pain, or tachycardia in a patient with suspected DVT → possible pulmonary embolism, medical emergency"],
+      note: "This is a precautions screen, not a diagnostic test — a normal-looking calf never fully excludes DVT; when risk factors are present, defer to imaging/medical workup rather than clinical exam alone.",
+    },
+  },
+
   pronatorDrift: {
     title: "Pronator Drift Test",
     icon: "🙌",
     category: "Learn · Neuro · Motor",
     perform: {
-      images: [null, null, null],
+      images: [img("n_pronator_drift"), img("n_pronator_drift_2"), img("n_pronator_drift_3")],
       caption: "Arms outstretched, palms up, eyes closed, watch for drift",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient standing or seated, both arms fully extended forward at shoulder height, palms facing up." },
@@ -1238,7 +1436,7 @@ export const neuroExamLibraryData = {
     icon: "🚶",
     category: "Learn · Neuro · Gait",
     perform: {
-      images: [null, null, null],
+      images: [img("n_tandem_gait"), img("n_tandem_gait_2"), img("n_tandem_gait_3")],
       caption: "Walk heel-to-toe in a straight line, arms at sides",
       boxes: [
         { tone: "", label: "👤 Position", text: "Clear, straight path at least a few metres long, therapist walking alongside for safety." },
@@ -1265,7 +1463,7 @@ export const neuroExamLibraryData = {
     icon: "👁️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_pupillary_light"), img("n_pupillary_light_2"), img("n_pupillary_light_3")],
       caption: "Shine a light into one eye, observe direct and consensual response",
       boxes: [
         { tone: "", label: "👤 Position", text: "Dim room, patient looking at a distant fixed point to control accommodation." },
@@ -1296,7 +1494,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_stereognosis"), img("n_stereognosis_2"), img("n_stereognosis_3")],
       caption: "Eyes closed, identify a familiar object placed in the hand",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, hand relaxed and supported." },
@@ -1323,7 +1521,7 @@ export const neuroExamLibraryData = {
     icon: "✍️",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_graphesthesia"), img("n_graphesthesia_2"), img("n_graphesthesia_3")],
       caption: "Eyes closed, trace a number on the palm, patient identifies it",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, eyes closed, palm facing up and supported." },
@@ -1350,7 +1548,7 @@ export const neuroExamLibraryData = {
     icon: "🦾",
     category: "Learn · Neuro · Tone / Reflexes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_rigidity"), img("n_rigidity_2"), img("n_rigidity_3")],
       caption: "Passively move the limb through range, feel for resistance quality",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, seated or supine, limb fully supported by the examiner." },
@@ -1378,7 +1576,7 @@ export const neuroExamLibraryData = {
     icon: "🔲",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_abdominal_reflexes"), img("n_abdominal_reflexes_2"), img("n_abdominal_reflexes_3")],
       caption: "Lightly stroke each abdominal quadrant, watch for muscle contraction toward the stimulus",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, abdomen relaxed and exposed, room warm (a cold or tense abdomen suppresses the response)." },
@@ -1405,7 +1603,7 @@ export const neuroExamLibraryData = {
     icon: "👁️",
     category: "Learn · Neuro · Cranial Nerves",
     perform: {
-      images: [null, null, null],
+      images: [img("n_corneal_reflex"), img("n_corneal_reflex_2"), img("n_corneal_reflex_3")],
       caption: "Lightly touch the cornea with a wisp of cotton, watch for bilateral blink",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient looking away from the side being tested, to avoid a visual blink reflex confounding the result." },
@@ -1432,7 +1630,7 @@ export const neuroExamLibraryData = {
     icon: "🚶",
     category: "Learn · Neuro · Gait",
     perform: {
-      images: [null, null, null],
+      images: [img("n_gait_pattern"), img("n_gait_pattern_2"), img("n_gait_pattern_3")],
       caption: "Observe from front, side, and behind over several strides",
       boxes: [
         { tone: "", label: "👤 Position", text: "Clear walkway, adequate lighting, patient in appropriate footwear (or barefoot if assessing foot clearance/positioning)." },
@@ -1464,7 +1662,7 @@ export const neuroExamLibraryData = {
     icon: "🚩",
     category: "Learn · Neuro · Safety Screen",
     perform: {
-      images: [null, null, null],
+      images: [img("n_meningeal"), img("n_meningeal_2"), img("n_meningeal_3")],
       caption: "Passive neck flexion and hip/knee manoeuvres, watch for involuntary guarding",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, relaxed, on a firm surface." },
@@ -1492,7 +1690,7 @@ export const neuroExamLibraryData = {
     icon: "👶",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_primitive_reflexes"), img("n_primitive_reflexes_2"), img("n_primitive_reflexes_3")],
       caption: "Grasp reflex: stroke the palm. Palmomental reflex: stroke the thenar eminence, watch the chin.",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, hand resting supported, face visible to the examiner." },
@@ -1519,7 +1717,7 @@ export const neuroExamLibraryData = {
     icon: "🧩",
     category: "Learn · Neuro · Mental Status",
     perform: {
-      images: [null, null, null],
+      images: [img("n_moca_mmse"), img("n_moca_mmse_2"), img("n_moca_mmse_3")],
       caption: "Standardised, scored questionnaire — administered exactly as written, not adapted on the fly",
       boxes: [
         { tone: "", label: "👤 Position", text: "Quiet room, minimal distraction, patient seated comfortably with their glasses/hearing aids in place if used." },

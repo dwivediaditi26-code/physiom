@@ -102,10 +102,8 @@ export function RedFlagScreenSection({ data, setData }) {
 export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
-  // Same old-flow import OrthoAssessment.jsx's AI-intake landing screen
-  // offers (see orthoAiIntake.js) -- surfaced here too since a therapist
-  // who skips that screen (manual/condition-wise/template entry, or just
-  // scrolled past it) never sees that option otherwise. Only fills fields
+  // Three equal, always-visible entry options for this step: say it, write
+  // it, or pull it in from this patient's own history. Only fills fields
   // still blank so it can't silently clobber anything already typed here.
   function loadOldSubjective() {
     const { subjective } = importOldSubjectiveData(patientData);
@@ -117,6 +115,10 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       });
       return { ...prev, subjective: merged };
     });
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function scrollToManualFields() {
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
@@ -145,17 +147,27 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
-      {hasOldSubjectiveData(patientData) && (
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={loadOldSubjective}>
-          📋 Load from this patient's existing Subjective Assessment
-        </button>
-      )}
+
+      {/* Three equal entry options -- say it, write it, or pull it in from
+          this patient's own history -- instead of the AI panel being the
+          only prominent choice with manual entry an implicit fallback
+          further down the page. */}
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
         <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
+      <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
+        ✍️ Write it manually
+      </button>
+      {hasOldSubjectiveData(patientData) && (
+        <button type="button" className="ai-intake-toggle" onClick={loadOldSubjective}>
+          📋 Load from this patient's existing Subjective Assessment
+        </button>
+      )}
+
       {detectedConditionLabel && (
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
       )}
+      <div id="subjective-manual-start" />
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       {/* Onset is a free-text "type or select" combobox, not a plain input --
           same class of field as Sex/Hand dominance below, which used to be
@@ -343,13 +355,13 @@ const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", g
    week) as tap-to-adjust counters instead of free-typed text (2026-08-26,
    user feedback: wanted these "in a plus/minus format", not typed
    manually). Duration is always in minutes. */
-function StepperField({ label, value, onChange, unit, max = 60 }) {
+function StepperField({ label, value, onChange, unit, max = 60, square }) {
   return (
     <div className="vital-field">
       <div className="vital-label-row">
         <span className="vital-label">{label}</span>
       </div>
-      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} />
+      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} square={square} />
       {unit && <div className="hint" style={{ marginTop: 2 }}>{unit}</div>}
     </div>
   );
@@ -358,9 +370,9 @@ function StepperField({ label, value, onChange, unit, max = 60 }) {
 function DosageSteppers({ form, set }) {
   return (
     <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
-      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} />
-      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} />
-      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} />
+      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} square />
+      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} square />
+      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} square />
     </div>
   );
 }
@@ -562,7 +574,15 @@ export function TreatmentTechniquesSection({ data, setData }) {
 export function formatTreatmentTechniquesSection(section) {
   const entries = Array.isArray(section.entries) ? section.entries : [];
   if (!entries.length) return [];
-  return entries.map((t, i) => ({ label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${t.dosage ? ` — ${t.dosage}` : ""}` }));
+  // Was only appending t.dosage (free text, only ever set on "st" /
+  // soft-tissue techniques) -- sets/duration/frequency, entered via
+  // DosageSteppers and already shown correctly in the live "Techniques
+  // this session" card via dosageMeta() above, were silently dropped from
+  // Final Review. Reuse that same formatter here so both views agree.
+  return entries.map((t, i) => {
+    const meta = dosageMeta(t);
+    return { label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${meta ? ` — ${meta}` : ""}` };
+  });
 }
 
 function ProgressRow({ label, prev, curr, onPrev, onCurr, change, onChange }) {

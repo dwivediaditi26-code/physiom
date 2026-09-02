@@ -205,8 +205,29 @@ export function orthoStyles() {
            Colour communicates clinical meaning: green = normal, amber =
            mild finding, red = significant finding. Everything else stays
            white/neutral. */
-        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 62px; transition: border-color .15s, background .15s; }
-        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 0; width: 100%; min-width: 0; color: ${BRAND.ink}; }
+        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 68px; transition: border-color .15s, background .15s; }
+        /* 2026-09-02, Aditi: "I'm not able to see the whole number" on ROM's
+           degree Stepper -- two compounding causes:
+           1) this input never suppressed the browser's own native
+              number-input spinner, so on real mobile Chrome/Safari it
+              rendered its OWN spin buttons stacked on top of/beside the
+              custom .stepper-arrows, squeezing the digits into a sliver.
+              appearance:none removes it.
+           2) the REAL culprit: utils.jsx's global mobile stylesheet forces
+              min-height:44px, font-size:16px, padding:10px 12px, all
+              !important, onto every plain input element (same rule that
+              already needed a .pm-compact-select escape hatch for MMT's
+              grade dropdowns, see that comment in utils.jsx) -- 24px of forced
+              horizontal padding alone doesn't fit in a 62-68px-wide
+              stepper box, so PART OF THE DIGITS RENDERED OUTSIDE the
+              padding box and got clipped by .stepper's overflow:hidden.
+              A plain (non-!important) rule here can never win against
+              that -- !important beats higher specificity outright -- so
+              every size property below needs its own !important too.
+              The box is widened slightly as well so a 3-digit value (a
+              180° shoulder flexion norm, say) always has clear room. */
+        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px !important; font-weight: 700; padding: 6px 2px !important; min-height: 0 !important; width: 100%; min-width: 0; color: ${BRAND.ink}; -moz-appearance: textfield; appearance: none; }
+        .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
@@ -221,6 +242,17 @@ export function orthoStyles() {
         .stepper-low .stepper-input { color: #8A5A0A; }
         .stepper-high { border-color: #B8E6CC; background: ${BRAND.greenBg}; }
         .stepper-high .stepper-input { color: #12603A; }
+        /* Square variant (2026-09-01, Aditi: "sets duration frequency ...
+           square button, square section, not rectangle") -- used only by
+           the Technique section's Sets/Duration/Frequency steppers
+           (DosageSteppers in orthoOutpatientSections.jsx), not the base
+           .stepper class every other numeric field in Ortho also uses, so
+           this doesn't reflow any of those. Height matches the 62px width;
+           the arrow column grows to fill it instead of leaving empty space. */
+        .stepper-square { width: 62px; height: 62px; }
+        .stepper-square .stepper-input { font-size: 15px !important; }
+        .stepper-square .stepper-arrows { flex: 0 0 22px; }
+        .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
 
         /* Movement / muscle card — used by ROM + MMT. Large, scannable,
            tap-first — the therapist reads the name, taps a value or chip,
@@ -232,10 +264,27 @@ export function orthoStyles() {
            long ("External + Internal Obliques", "Transversus Abdominis") --
            .movement-info takes the min-width:0 + flex:1 a flex child needs
            to actually shrink/wrap its text instead of forcing the row wider
-           than its container. */
+           than its container. Still used by MMT (RomSection moved to the
+           .rom-row table layout below). */
         .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
         .movement-info { flex: 1 1 160px; min-width: 0; }
         .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
+           detail collapses, not the whole movement row (degree steppers
+           stay visible since they're filled for every movement). */
+        .rom-detail-toggle { padding: 6px 2px; margin-bottom: 4px; border: none; border-radius: 8px; }
+        .rom-detail-toggle:hover { background: ${BRAND.purpleFaint}; }
+
+        /* ROM as a compact table -- one line per movement (name | L | R),
+           columns aligned across every row via a shared grid template so
+           the degree fields line up regardless of movement-name length. */
+        .rom-row { border-top: 1px solid #F5F3FB; padding: 7px 0; }
+        .rom-row:first-of-type { border-top: none; padding-top: 0; }
+        .rom-row-grid { display: grid; grid-template-columns: 1fr 68px 68px; align-items: center; gap: 8px; }
+        .rom-table-head { padding-bottom: 6px; border-bottom: 1.5px solid ${BRAND.border}; margin-bottom: 2px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.grayLight}; }
+        .rom-table-head span:not(:first-child) { text-align: center; }
+        .rom-row-name { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
+        .rom-row-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }
         .movement-lr { display: flex; gap: 10px; flex-shrink: 0; }
@@ -259,6 +308,17 @@ export function orthoStyles() {
         .chip-mini-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
         .chip-mini { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; padding: 5px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; cursor: pointer; min-height: 28px; }
         .chip-mini-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
+
+        /* Stacked full-width option list -- ROM's Pain quality/End feel
+           (2026-09-02, Aditi: "make the pain end feel in listing format"),
+           tap-to-select/tap-again-to-clear same as chip-mini above, just
+           one option per row instead of wrapped pills. */
+        .mini-list-label { font-size: 10.5px; font-weight: 700; color: ${BRAND.grayLight}; text-transform: uppercase; letter-spacing: .04em; margin: 8px 0 4px; }
+        .mini-list { border: 1px solid ${BRAND.border}; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+        .mini-list-row { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; border: none; border-top: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 9px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; min-height: 38px; }
+        .mini-list-row:first-child { border-top: none; }
+        .mini-list-row-active { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; }
+        .mini-list-check { color: ${BRAND.purple}; font-weight: 800; font-size: 13px; }
         .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pill-tag { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px; }
         .pill-tag-root { background: #F0F0F0; color: ${BRAND.gray}; }
@@ -388,14 +448,19 @@ export function orthoStyles() {
         .rom-card-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; letter-spacing: -.01em; }
         .funky-role-badge { font-size: 9px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }
         .funky-chip { border-width: 1.5px; border-style: solid; background: #fff; }
-        .rom-table { border: 1px solid ${BRAND.border}; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
-        .rom-row { display: flex; border-bottom: 1px solid ${BRAND.border}; align-items: center; }
-        .rom-row:last-child { border-bottom: none; }
-        .rom-head { background: ${BRAND.purpleFaint}; font-weight: 700; font-size: 11px; color: ${BRAND.purpleDark}; text-transform: uppercase; letter-spacing: .03em; }
-        .rom-cell { flex: 1; padding: 8px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px; }
-        .rom-move { flex: 1.3; font-weight: 600; }
-        .rom-input { width: 100%; border: none; outline: none; font-size: 15px; font-weight: 700; background: transparent; color: ${BRAND.purple}; min-width: 0; }
-        .rom-deg { font-size: 11px; color: ${BRAND.grayLight}; }
+        /* 2026-09-02, Aditi: "the ROM button is not fixed" -- a second,
+           dead ".rom-row { display: flex; ... }" rule used to live here,
+           left over from an old table-based ROM layout (.rom-table/
+           .rom-head/.rom-cell/.rom-move/.rom-input/.rom-deg) that no JSX
+           has referenced in a long time. Coming AFTER the real ".rom-row"
+           rule above (orthoRegionAssessments.jsx's actual card layout,
+           block + rom-row-grid), it silently won the cascade and flexed
+           every child of a ROM movement row -- including the expanded
+           "Pain quality & end feel" chip rows -- into a squeezed
+           side-by-side column instead of stacking normally, which is
+           exactly the "collapsible goes off screen, half showing" glitch.
+           Removed the whole dead block rather than only the offending
+           rule, since none of it is reachable from any component anymore. */
         .add-row-btn { width: 100%; border: 1.5px dashed ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; min-height: 40px; }
         .add-row-input { display: flex; gap: 6px; }
         .add-row-confirm { border: none; background: ${BRAND.purple}; color: #fff; padding: 0 14px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
@@ -486,7 +551,12 @@ export function orthoStyles() {
         .obj-card-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: ${BRAND.gray}; }
         .obj-card-badge-ai { color: ${BRAND.purple}; }
         .obj-card-check { font-size: 10.5px; font-weight: 800; color: ${BRAND.purple}; }
-        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; }
+        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; display: flex; align-items: center; gap: 6px; }
+        /* Small (i) variant, sized to sit inline right next to a test/card
+           name -- the full 26px .info-btn reads oversized next to 13-14px
+           text. Replaces the old separate "Why?"/"How?" text links: one
+           icon opens both, right beside the name it explains. */
+        .info-btn-sm { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; line-height: 1; }
         .obj-card-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
         .obj-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
         .obj-card-link { border: none; background: none; padding: 0; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -503,25 +573,86 @@ export function orthoStyles() {
 
         .obj-item-lr { display: flex; align-items: center; gap: 10px; }
         .obj-item-lr-field { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${BRAND.gray}; }
-        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; text-align: center; }
+        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 16px; font-family: inherit; text-align: center; }
         .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
         .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
 
         /* Collapsed-by-default item row (ItemCardShell) -- replaces every
            named ROM/MMT/Special Test/Observation item always rendering its
            full input widget expanded, which is what made a single
-           Suggested Objective step run thousands of px of scroll. */
+           Suggested Objective step run thousands of px of scroll.
+           Three visual states layered on the same shell:
+             plain border   -- Suggested, not yet selected
+             purple border  -- Selected, awaiting a result
+             green border   -- answered AND the result is a finding */
         .obj-item { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; margin-bottom: 6px; overflow: hidden; }
         .obj-item-answered { border-color: ${BRAND.purple}; }
+        .obj-item-selected { border-color: ${BRAND.purple}; }
+        .obj-item-finding { border-color: ${BRAND.green}; background: ${BRAND.greenBg}; }
         .obj-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
-        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .obj-item-row-name { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-item-finding .obj-item-row-name { color: #12603A; }
         .obj-item-row-sub { font-size: 11px; color: ${BRAND.gray}; }
-        .obj-item-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .obj-item-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .obj-item-row-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+        .obj-item-finding .obj-item-row-summary { color: #12603A; background: #fff; }
         .obj-item-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
         .obj-item-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
         .obj-item-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
+        .obj-item-select-btn { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 11.5px; padding: 7px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+
+        /* Every text/number/select/textarea on this step at >=16px --
+           below that, iOS Safari auto-zooms the whole page on focus
+           regardless of the viewport's user-scalable=no. Scoped to this
+           step (rather than changing .text-input/.textarea globally)
+           since those shared classes are also used by pages that weren't
+           part of this redesign. Specificity (class + tag) beats the
+           shared single-class rules those inputs already carry, so this
+           wins regardless of source order. */
+        .obj-no-zoom input, .obj-no-zoom select, .obj-no-zoom textarea { font-size: 16px; }
+
+        /* Possible Matches -- horizontal condition-pathway cards above the
+           suggested list. Purely informational context (real Phase 0.5
+           numbers, tapping never adds/removes anything); restyled from the
+           old always-expanded LumbarDifferentialCard rows into a compact
+           swipeable row so the reasoning is visible without owning the page. */
+        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; }
+        .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
+        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
+        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
+        .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+
+        /* Findings summary -- collapsible drawer built purely by scanning
+           already-answered rom/mmt/specialTests/observation data for a
+           positive/abnormal/recorded result; no separate state to keep in sync. */
+        .obj-findings-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; background: ${BRAND.greenBg}; color: #12603A; border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; cursor: pointer; font-weight: 700; font-size: 12.5px; font-family: inherit; }
+        .obj-findings-toggle .obj-findings-chev { transition: transform .15s; }
+        .obj-findings-toggle.open .obj-findings-chev { transform: rotate(180deg); }
+        .obj-findings-drawer { display: flex; flex-direction: column; gap: 6px; margin: -8px 0 14px; padding: 0 2px; }
+        .obj-findings-drawer div { font-size: 12.5px; color: ${BRAND.ink}; }
+        .obj-findings-drawer b { color: #12603A; margin-right: 4px; }
+        .obj-findings-empty { font-size: 12px; color: ${BRAND.grayLight}; margin: -8px 0 14px; padding: 0 2px; }
+
+        /* Sticky Selected tray -- appears once anything has been selected on
+           this step; View Assessment swaps the step into review mode inline
+           (same component, no extra wizard step) so only selected items and
+           the findings that came from them are shown. */
+        .obj-tray { position: sticky; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 10px 14px; margin: 16px 0; box-shadow: 0 12px 28px -14px rgba(20,10,45,.28); }
+        .obj-tray-info { flex: 1; min-width: 0; }
+        .obj-tray-count { font-weight: 800; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-tray-chips { display: flex; gap: 5px; margin-top: 4px; overflow: hidden; white-space: nowrap; }
+        .obj-tray-chip { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+        .obj-tray-cta { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 12.5px; padding: 11px 16px; border-radius: 12px; cursor: pointer; font-family: inherit; }
+
+        .obj-review-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .obj-review-back { border: none; background: none; color: ${BRAND.purple}; font-weight: 700; font-size: 13px; padding: 0; cursor: pointer; font-family: inherit; }
+        .obj-review-findings { background: ${BRAND.greenBg}; border-radius: 12px; padding: 14px 14px 10px; margin: 14px 0 20px; }
+        .obj-review-findings h4 { margin: 0 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #12603A; }
+        .obj-review-findings div { font-size: 12.5px; color: ${BRAND.ink}; margin-bottom: 6px; }
+        .obj-review-findings b { color: #12603A; margin-right: 4px; }
+        .obj-review-done { width: 100%; margin: 8px 0 24px; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 13.5px; padding: 13px; border-radius: 12px; cursor: pointer; font-family: inherit; }
 
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }
