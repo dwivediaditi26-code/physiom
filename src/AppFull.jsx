@@ -192,6 +192,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+  // Every tab stays mounted once visited (DeferredMount below just toggles
+  // display:none/block, see mountedTabs) inside this one shared scrollable
+  // container -- so switching tabs never naturally resets scroll the way a
+  // real page navigation would; whatever scrollTop the previous tab was at
+  // carries straight over, landing the new page "mid-scroll" instead of at
+  // its top. navTo (the one place every nav path funnels through) resets it.
+  const mainScrollRef = useRef(null);
 
   // ── Guest Mode auth gate ─────────────────────────────────────────────
   // Guests can browse and use the whole real workflow (nothing they do
@@ -788,6 +795,22 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
+    // Every tab stays mounted (display:none/block, not unmounted) inside
+    // the one shared .pm-main scroll container, so it never gets a fresh
+    // scrollTop of its own the way a real page load would -- without this,
+    // navigating in after scrolling down on the previous tab lands the new
+    // page already scrolled to wherever the old one left off, instead of
+    // its top (see mainScrollRef above).
+    // The actual scrolling element here is <body> itself (utils.jsx's
+    // .pm-shell/global CSS gives html AND body their own independent
+    // overflow-y:auto, with html pinned to the viewport height and body
+    // holding the real scrollable content) -- window.scrollTo/scrollY is a
+    // no-op against it, so body.scrollTop is reset directly. mainScrollRef
+    // is reset too for any layout where .pm-main itself ends up being the
+    // scrollable one instead (e.g. the desktop sidebar layout above, which
+    // constrains its own height).
+    if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
     // Mount tab on first visit
     setMountedTabs(prev => {
       if (prev.has(key)) return prev;
@@ -1587,7 +1610,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
 
         {/* Main */}
-        <div className="pm-main" style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
+        <div className="pm-main" ref={mainScrollRef} style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
