@@ -3,6 +3,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
+import { Bone, HeartPulse, Brain, Footprints } from "lucide-react";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
@@ -139,6 +140,19 @@ const STREAMS = [
   { id:"pedia",     label:"Pedia",            icon:"🧸", color:"#db2777", live:false },
   { id:"cardio",    label:"Cardio",           icon:"❤️", color:"#dc2626", live:false },
 ];
+
+// Real lucide SVG icon + soft tint background per specialty, for the
+// Assessment tab's speciality cards -- same Bone/HeartPulse/Brain/
+// Footprints icon set (and the exact same STREAMS colours above) that
+// PatientDatabase.jsx's "By Speciality" card grid already uses on the
+// Patients tab, so both grids look like the same design language instead
+// of one using flat emoji and the other real icons.
+const STREAM_ICONS = {
+  ortho_new: { Icon: Bone,       bg: "#F3EEFF" },
+  neuro:     { Icon: Brain,      bg: "#E6FBF8" },
+  cardio:    { Icon: HeartPulse, bg: "#FDEAEC" },
+  sports:    { Icon: Footprints, bg: "#FFF1E6" },
+};
 
 function StreamEnginePlaceholder({ stream, setStream, PC }) {
   const st = STREAMS.find(s=>s.id===stream) || {};
@@ -1989,37 +2003,32 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <div style={{padding:"22px 18px 24px"}}>
                       <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
                       <div style={{fontSize:"0.82rem",color:"#6B7280",marginBottom:20}}>Pick a specialty to start a new assessment.</div>
-                      {/* Square speciality cards (2026-08-27, Aditi: "in
-                          assessment tab it should show square cards of
-                          speciality") -- replaces the old vertical row list;
-                          the By Speciality browsing grid that used to live
-                          on the Patients tab moved here instead, now paired
-                          with its actual purpose (starting a new assessment)
-                          rather than mixed into the plain patient list.
+                      {/* Speciality cards, same white-card + tinted-icon-badge
+                          look as the Patients tab's "By Speciality" grid
+                          (PatientDatabase.jsx's SPECIALTY_CARD_META) instead
+                          of a flat emoji glyph on a tinted square.
                           gridTemplateColumns uses minmax/auto-fit rather than
                           a literal "1fr 1fr" -- utils.jsx has a global mobile
                           override that force-collapses any inline grid style
                           containing that exact substring to 1 column below
-                          400px width, which combined with aspect-ratio:1
-                          turned each card into a near full-height square
-                          instead of a compact tile. auto-fit sidesteps that
-                          match entirely while still naturally going to 1
-                          column on genuinely narrow widths where 2×150px
-                          truly doesn't fit. */}
+                          400px width. */}
                       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:18}}>
                         {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
                           const clickable = st.live || st.id === "cardio";
+                          const { Icon, bg } = STREAM_ICONS[st.id];
                           return (
                             <button key={st.id} type="button"
                               onClick={()=>{ if(!clickable) return; startSpecialty(st); }}
-                              style={{position:"relative",aspectRatio:"1",maxWidth:180,display:"flex",flexDirection:"column",
-                                alignItems:"center",justifyContent:"center",gap:8,borderRadius:16,
-                                cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
-                                border:`1.5px solid ${clickable?st.color+"50":"#E5E7EB"}`,
-                                background:clickable?st.color+"10":"#F9FAFB",opacity:clickable?1:0.6}}>
-                              {!clickable && <span style={{position:"absolute",top:8,right:8,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
-                              <span style={{fontSize:"1.8rem"}}>{st.icon}</span>
-                              <span style={{fontWeight:700,fontSize:"0.9rem",color:clickable?st.color:"#9CA3AF"}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
+                              style={{position:"relative",textAlign:"left",display:"flex",flexDirection:"column",
+                                borderRadius:18,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
+                                border:`1.5px solid ${clickable?"#EEEDF5":"#E5E7EB"}`,
+                                background:"#fff",padding:"16px 14px",opacity:clickable?1:0.6}}>
+                              {!clickable && <span style={{position:"absolute",top:12,right:12,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                              <div style={{width:44,height:44,borderRadius:14,background:bg,
+                                display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                <Icon size={22} color={st.color} strokeWidth={1.75}/>
+                              </div>
+                              <span style={{fontWeight:800,fontSize:"0.92rem",color:clickable?"#111827":"#9CA3AF",marginTop:12}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
                             </button>
                           );
                         })}
