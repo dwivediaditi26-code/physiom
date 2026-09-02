@@ -127,60 +127,55 @@ function romCountFor(entry, movements) {
   return n;
 }
 
-/* Collapsed-by-default movement row -- same tap-to-expand pattern as the
-   Ortho Outpatient tool's Suggested Objective step (reuses its .obj-item*
-   CSS, injected once for the whole wizard by orthoStyles.js). Each
-   movement previously rendered its full L/R inputs + pain-quality chips +
-   end-feel chips always expanded, which is what made a region's full ROM
-   list run long. The degree fields are now a Stepper (+/- one degree at a
-   time, same control Treatment Techniques uses for sets/duration/
-   frequency) pre-loaded to the movement's own normal value as a starting
-   point to nudge from, rather than a blank box demanding an exact number
-   be typed from scratch -- typing an exact value directly still works,
-   the Stepper's input is a real number field. */
+/* The movement row itself (name + L/R degree Stepper) stays always visible
+   -- that's the field a therapist fills for every single movement, so
+   hiding it behind a tap would just add a click to the most common case.
+   Only the pain-quality + end-feel chip rows (secondary detail, not
+   filled for every movement) collapse behind their own small toggle,
+   reusing the wizard-wide .obj-item-chevron/.obj-item-row-summary styling
+   from orthoStyles.js so it still reads as the same interaction pattern
+   as Suggested Objective, just scoped to the one sub-section that was
+   actually adding bulk to every row.
+
+   The degree fields are a Stepper (+/- one degree at a time, same control
+   Treatment Techniques uses for sets/duration/frequency) pre-loaded to the
+   movement's own normal value as a starting point to nudge from, rather
+   than a blank box demanding an exact number typed from scratch -- typing
+   the exact value directly still works, the Stepper's box is a real,
+   always-editable number field. */
 function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
-  const [open, setOpen] = useState(false);
-  const answered = !!(val.left || val.right);
-  const summary = [val.left && `L ${val.left}${m.unit || "°"}`, val.right && `R ${val.right}${m.unit || "°"}`].filter(Boolean).join(" / ");
+  const [detailOpen, setDetailOpen] = useState(false);
+  const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
   return (
-    <div className={"obj-item" + (answered ? " obj-item-answered" : "")}>
-      <div className="obj-item-row" onClick={() => setOpen((o) => !o)} role="button">
-        <div className="obj-item-row-label">
-          <span className="obj-item-row-name">{m.mv}</span>
-          {norm && <span className="obj-item-row-sub">{norm}</span>}
-        </div>
-        <div className="obj-item-row-right">
-          {answered && summary && <span className="obj-item-row-summary">{summary}</span>}
+    <div className="rom-row">
+      <div className="rom-row-grid">
+        <div className="rom-row-name">
+          <span className="movement-name">{m.mv}</span>
           <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
-          <span className={"obj-item-chevron" + (open ? " open" : "")}>⌄</span>
+          {norm && <span className="rom-norm">{norm}</span>}
+        </div>
+        <div className="rom-row-cell">
+          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+          {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
+        </div>
+        <div className="rom-row-cell">
+          {m.bilateral !== false && (
+            <>
+              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+              {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
+            </>
+          )}
         </div>
       </div>
-      {open && (
-        <div className="obj-item-body" onClick={(e) => e.stopPropagation()}>
-          <div className="movement-lr">
-            <div className="movement-lr-col-stack">
-              <span className="movement-lr-tag">L</span>
-              <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
-              {gradeL && (
-                <div className="restriction-bar" title={gradeL.label}>
-                  <div className="restriction-bar-fill" style={{ width: Math.min(100, gradeL.pct) + "%", background: gradeL.color }} />
-                </div>
-              )}
-              {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
-            </div>
-            {m.bilateral !== false && (
-              <div className="movement-lr-col-stack">
-                <span className="movement-lr-tag">R</span>
-                <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
-                {gradeR && (
-                  <div className="restriction-bar" title={gradeR.label}>
-                    <div className="restriction-bar-fill" style={{ width: Math.min(100, gradeR.pct) + "%", background: gradeR.color }} />
-                  </div>
-                )}
-                {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
-              </div>
-            )}
-          </div>
+      <div className="obj-item-row rom-detail-toggle" onClick={() => setDetailOpen((o) => !o)} role="button">
+        <span className="obj-item-row-sub">Pain quality &amp; end feel</span>
+        <div className="obj-item-row-right">
+          {!detailOpen && detailSummary && <span className="obj-item-row-summary">{detailSummary}</span>}
+          <span className={"obj-item-chevron" + (detailOpen ? " open" : "")}>⌄</span>
+        </div>
+      </div>
+      {detailOpen && (
+        <>
           <div className="chip-mini-row">
             {ROM_PAIN_OPTIONS.map((o) => (
               <button type="button" key={o} className={"chip-mini" + (pain === o ? " chip-mini-active" : "")} onClick={() => onSetMeta(m.id, "pain", o)}>
@@ -195,7 +190,7 @@ function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal
               </button>
             ))}
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -228,6 +223,12 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
       <div className="rom-card">
         <div className="rom-card-title">{activeKey}</div>
         <Segmented options={["Active", "Passive", "Resisted"]} value={mode === "arom" ? "Active" : mode === "prom" ? "Passive" : "Resisted"} onChange={(v) => set(activeKey, { ...entry, mode: v === "Active" ? "arom" : v === "Passive" ? "prom" : v === "Resisted" ? "resisted" : "arom" })} />
+
+        <div className="rom-row-grid rom-table-head">
+          <span>Movement</span>
+          <span>L</span>
+          <span>R</span>
+        </div>
 
         {allMovements.map((m) => {
           const val = entry[m.id] || {};
