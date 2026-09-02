@@ -192,44 +192,6 @@ function ConditionMatchRow({ conditions, activeId, onSelect }) {
   );
 }
 
-function ConditionDetailPanel({ condition }) {
-  const [open, setOpen] = useState(false);
-  if (!condition) return null;
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <button type="button" className="obj-card-link" onClick={() => setOpen((o) => !o)}>
-        {open ? "Hide match detail" : "Why this match? →"}
-      </button>
-      {open && (
-        <div style={{ marginTop: 8 }}>
-          {condition.note && <div className="obj-card-reason" style={{ marginBottom: 8 }}>{condition.note}</div>}
-          {condition.supportingMatched.length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Supporting findings</div>
-              {condition.supportingMatched.map((f, i) => <div key={i} style={{ fontSize: 12.5, color: "#166534", marginBottom: 2 }}>✓ {f}</div>)}
-            </div>
-          )}
-          {condition.refutingMatched.length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Against</div>
-              {condition.refutingMatched.map((f, i) => <div key={i} style={{ fontSize: 12.5, color: "#991b1b", marginBottom: 2 }}>✗ {f}</div>)}
-            </div>
-          )}
-          {condition.unknownCount > 0 && (
-            <Hint>{condition.unknownCount} item(s) not yet answered in the Lumbar/SI checklist — filling those in will sharpen this match.</Hint>
-          )}
-          {condition.objectiveTests?.required?.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <div className="subheading" style={{ margin: "0 0 4px", fontSize: 11 }}>Recommended objective tests</div>
-              {condition.objectiveTests.required.map((t, i) => <div key={i} style={{ fontSize: 12.5, color: "#1e293b", marginBottom: 2 }}>• {t}</div>)}
-              {condition.objectiveTests.recommended?.map((t, i) => <div key={"r" + i} style={{ fontSize: 12.5, color: "#64748b", marginBottom: 2 }}>• {t}</div>)}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump }) {
   const [infoOpen, setInfoOpen] = useState(false);
@@ -908,15 +870,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
       {topConditions.length > 0 && (
         <>
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
-          {engineResult.redFlagOverride?.triggered && (
-            <div style={{ background: "#fee2e2", border: "1.5px solid #dc2626", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
-              <div style={{ fontWeight: 800, fontSize: 12.5, color: "#991b1b" }}>⚠ {engineResult.redFlagOverride.urgency.replace(/_/g, " ")}</div>
-              <div style={{ fontSize: 12.5, color: "#991b1b", marginTop: 2 }}>{engineResult.redFlagOverride.reason}</div>
-              <div style={{ fontSize: 12, color: "#7f1d1d", marginTop: 4 }}>{engineResult.redFlagOverride.action}</div>
-            </div>
-          )}
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
-          <ConditionDetailPanel condition={activeConditionObj} />
         </>
       )}
 
