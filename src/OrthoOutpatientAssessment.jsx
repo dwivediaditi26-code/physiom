@@ -6,6 +6,7 @@ import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMm
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
+import { HomeProtocolSection, formatHomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
@@ -71,6 +72,7 @@ export const orthoSummaryFormatters = {
   outcomeMeasure: formatOutcomeMeasureSection,
   techniques: formatTreatmentTechniquesSection,
   exercisePrescription: formatExercisePrescriptionSection,
+  homeProtocol: formatHomeProtocolSection,
 };
 
 /* ============================================================
@@ -91,7 +93,7 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "review"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // Suggested Objective (which already inline-covers Observation/Palpation
 // itself), skipping these four as separate steps in between. Condition-
@@ -99,7 +101,7 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -139,6 +141,7 @@ const STEP_META = {
   treatmentPlan: { icon: "📋", label: "Treatment Plan" },
   techniques: { icon: "🤲", label: "Treatment Techniques" },
   exercisePrescription: { icon: "🏋", label: "Exercise Prescription" },
+  homeProtocol: { icon: "🏠", label: "Home Protocol" },
   progress: { icon: "📈", label: "Progress / Follow-up" },
   review: { icon: "✅", label: "Final Review" },
 };
@@ -490,6 +493,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
           {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
+          {current.id === "homeProtocol" && <HomeProtocolSection data={data} setData={setData} patientData={patientData} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>

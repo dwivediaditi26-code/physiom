@@ -2513,7 +2513,7 @@ export default function App() {
       return (
         <ErrorBoundary>
           <AppInner currentUser={null} isGuest={true} onSignOut={() => setGuestMode(false)} />
-          <InstallPrompt />
+          <InstallPrompt currentUser={null} />
         </ErrorBoundary>
       );
     }
@@ -2525,7 +2525,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppInner currentUser={session.user} onSignOut={() => supabase.auth.signOut()} />
-      <InstallPrompt />
+      <InstallPrompt currentUser={session.user} />
     </ErrorBoundary>
   );
 }

@@ -30,10 +30,13 @@ function SimpleRegionTabs({ tabs, activeKey, onSelect, counts, labelFor }) {
 }
 
 /* Picks (and persists) which of the dataset's own regions is active,
-   defaulting to whichever one best matches the case's chosen region. */
+   defaulting to whichever one best matches the case's chosen region.
+   matchRegionKey() returns null rather than guessing when nothing really
+   matches (see its own comment) -- picking a starting tab is fine to fall
+   back on arbitrarily, so that fallback lives here at the call site. */
 function useSimpleRegionTab(data, setData, sectionKey_, tabs, selectedRegions) {
   const [d, set] = useSectionData(data, setData, sectionKey_);
-  const defaultKey = selectedRegions.length ? matchRegionKey(selectedRegions[0].id, tabs) : tabs[0];
+  const defaultKey = (selectedRegions.length && matchRegionKey(selectedRegions[0].id, tabs)) || tabs[0];
   const [activeKey, setActiveKeyState] = useState(d.activeRegion || defaultKey);
   function setActiveKey(k) {
     setActiveKeyState(k);

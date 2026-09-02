@@ -15,13 +15,31 @@
 //     option is a banner that shows the manual steps (Share -> Add to Home
 //     Screen).
 //
-// Dismissal is remembered in localStorage for DISMISS_DAYS so returning
-// users aren't nagged every session.
+// 2026-09-02, Aditi: "can it pop constant till therapist install it... how
+// will we know that they installed it" -- two changes from the original
+// version:
+//   1) Dismissing ("Not now"/"X") used to be remembered in localStorage for
+//      14 days, so a therapist who dismissed it once wouldn't see it again
+//      for two weeks even on a fresh app open. Now dismissal only lasts for
+//      the current page load (component-local state, not persisted) --
+//      still closeable so it never traps someone mid-task, but it comes
+//      back on every fresh visit until the app is actually installed
+//      (isStandalone() true), not just until the dismiss timer expires.
+//   2) There was previously no record anywhere of who actually installed.
+//      Every meaningful step (banner shown, Install tapped, dismissed, and
+//      the real `appinstalled` event) now fires a Vercel Analytics
+//      track() call -- same mechanism AppFull.jsx's navTo already uses for
+//      module-open tracking, so these show up in the same dashboard, no
+//      new backend needed. For a signed-in (non-guest) therapist, a real
+//      `appinstalled` also writes installed_at onto their own Supabase
+//      auth user_metadata, so "did this specific therapist install it" is
+//      answerable by looking up their account (Supabase dashboard ->
+//      Authentication -> Users -> that user's metadata), not just an
+//      aggregate count.
 
 import React, { useState, useEffect } from "react";
-
-const DISMISS_KEY = "pm_install_dismissed_at";
-const DISMISS_DAYS = 14;
+import { track } from "@vercel/analytics";
+import { supabase } from "./supabase.js";
 
 function isStandalone() {
   if (typeof window === "undefined") return true;
@@ -35,25 +53,20 @@ function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 }
 
-function recentlyDismissed() {
-  const ts = localStorage.getItem(DISMISS_KEY);
-  if (!ts) return false;
-  const days = (Date.now() - Number(ts)) / 86400000;
-  return days < DISMISS_DAYS;
-}
-
-export default function InstallPrompt() {
+export default function InstallPrompt({ currentUser }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [visible, setVisible] = useState(false);
   const [platform, setPlatform] = useState(null); // "android" | "ios"
+  const [hiddenThisSession, setHiddenThisSession] = useState(false);
 
   useEffect(() => {
-    if (isStandalone() || recentlyDismissed()) return;
+    if (isStandalone() || hiddenThisSession) return;
 
     if (isIOS()) {
       // iOS never fires beforeinstallprompt — show static instructions right away.
       setPlatform("ios");
       setVisible(true);
+      try { track("pwa_install_shown", { platform: "ios" }); } catch {}
       return;
     }
 
@@ -62,35 +75,49 @@ export default function InstallPrompt() {
       setDeferredPrompt(e);
       setPlatform("android");
       setVisible(true);
+      try { track("pwa_install_shown", { platform: "android" }); } catch {}
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // If the app gets installed some other way (e.g. browser menu), hide the banner.
-    const onInstalled = () => { setVisible(false); localStorage.setItem(DISMISS_KEY, String(Date.now())); };
+    // The one reliable signal that installation actually happened (fires
+    // whether the therapist used our button or the browser's own menu).
+    const onInstalled = () => {
+      setVisible(false);
+      try { track("pwa_installed", { platform: "android" }); } catch {}
+      if (currentUser?.id) {
+        supabase.auth.updateUser({ data: { pwa_installed_at: new Date().toISOString() } }).catch(() => {});
+      }
+    };
     window.addEventListener("appinstalled", onInstalled);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [hiddenThisSession, currentUser?.id]);
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    try { track("pwa_install_dismissed", { platform }); } catch {}
+    setHiddenThisSession(true);
     setVisible(false);
   };
 
   const install = async () => {
     if (!deferredPrompt) return;
+    try { track("pwa_install_clicked", { platform }); } catch {}
     deferredPrompt.prompt();
-    try {
-      await deferredPrompt.userChoice; // resolves regardless of accept/dismiss
-    } catch { /* ignore */ }
-    // Either way, don't show our banner again immediately — if declined, the
-    // user can still use the browser's native install option later.
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    let outcome = "unknown";
+    try { outcome = (await deferredPrompt.userChoice)?.outcome || "unknown"; } catch { /* ignore */ }
+    // `appinstalled` (above) is the real confirmation; this just records
+    // what the browser's own choice dialog reported, which can lag or
+    // (rarely) never fire on some browsers -- belt and suspenders, not a
+    // replacement for the appinstalled tracking.
+    try { track("pwa_install_choice", { platform, outcome }); } catch {}
     setDeferredPrompt(null);
     setVisible(false);
+    // Only hide for this session -- if they declined, it should still
+    // come back next time they open the app rather than going quiet.
+    if (outcome !== "accepted") setHiddenThisSession(true);
   };
 
   if (!visible) return null;
