@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import {
-  Search, Bell, PersonStanding, Eye, Hand, Move,
+  Search, Bell, PersonStanding, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
-  Waves, Pill, HandMetal, GraduationCap, Activity,
+  Waves, GraduationCap, Activity,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import "./physiofeed.css";
@@ -29,7 +29,6 @@ const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinet
 // every card here opens the exact same real screen those did.
 const ASSESSMENT_LIBRARY = [
   { key: "posture", label: "Posture Analysis", desc: "AI posture screening", icon: PersonStanding, tint: "teal" },
-  { key: "observation", label: "Observation", desc: "Visual inspection", icon: Eye, tint: "amber" },
   { key: "palpation", label: "Palpation", desc: "Tissue assessment", icon: Hand, tint: "rose" },
   { key: "rom", label: "ROM", desc: "Range of motion", icon: Move, tint: "violet" },
   { key: "mmt", label: "MMT", desc: "Muscle testing", icon: Dumbbell, tint: "green" },
@@ -53,10 +52,8 @@ const ADVANCED_ASSESSMENT = [
   { key: "fascia", label: "Fascia Integration", desc: "Fascial assessment", icon: Waves, tint: "teal" },
 ];
 
-const TREATMENT_EXERCISE = [
-  { key: "treatment", label: "Treatment", desc: "Techniques & plan", icon: Pill, tint: "green" },
+const EXERCISE = [
   { key: "exercise", label: "Exercise Prescription", desc: "Treatment plan", icon: Dumbbell, tint: "violet" },
-  { key: "tx_techniques", label: "Tx Techniques", desc: "Manual therapy", icon: HandMetal, tint: "rose" },
 ];
 
 const TINTS = {
@@ -117,10 +114,10 @@ export default function LearnTabEntry({ onNav }) {
   const filtered = useMemo(() => ({
     assess: filter(ASSESSMENT_LIBRARY),
     adv: filter(ADVANCED_ASSESSMENT),
-    tx: filter(TREATMENT_EXERCISE),
+    exercise: filter(EXERCISE),
   }), [query]);
 
-  const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.tx.length === 0;
+  const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
 
   if (studyType) {
     return (
@@ -158,7 +155,7 @@ export default function LearnTabEntry({ onNav }) {
         <>
           <Section title="Assessment Library" items={filtered.assess} onNav={onNav} onStudy={setStudyType}/>
           <Section title="Advanced Assessment" items={filtered.adv} onNav={onNav} onStudy={setStudyType}/>
-          <Section title="Treatment & Exercise" items={filtered.tx} onNav={onNav} onStudy={setStudyType}/>
+          <Section title="Exercise Prescription" items={filtered.exercise} onNav={onNav} onStudy={setStudyType}/>
         </>
       )}
     </div>

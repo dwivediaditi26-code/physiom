@@ -40,7 +40,17 @@ describe("Learn tab", () => {
     // header (same dual-render pattern as elsewhere in this app) -- use
     // getAllByText rather than getByText, which throws on multiple matches.
     expect(screen.getAllByText("Advanced Assessment").length).toBeGreaterThan(0);
-    expect(screen.getByText("Treatment & Exercise")).toBeTruthy();
+    // Treatment and Tx Techniques cards (and the "Observation" card) were
+    // removed from Learn (2026-09-02, Aditi: "remove the technique or
+    // treatment section from learn and also observation ... let the
+    // exercise section be there") -- Exercise Prescription now gets its
+    // own section instead of sharing "Treatment & Exercise".
+    expect(screen.queryByText("Treatment & Exercise")).toBeNull();
+    // "Observation" itself also matches the always-present desktop sidebar
+    // (dual-render pattern, same as "Advanced Assessment" above) -- its
+    // Learn card's unique description text is the reliable signal instead.
+    expect(screen.queryByText("Visual inspection")).toBeNull();
+    expect(screen.getAllByText("Exercise Prescription").length).toBeGreaterThan(0);
 
     // Search narrows the grid down to a real match. Note: "Demographics"
     // also exists in the always-present real desktop sidebar (separate
