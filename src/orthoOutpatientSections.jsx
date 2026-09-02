@@ -102,10 +102,8 @@ export function RedFlagScreenSection({ data, setData }) {
 export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
-  // Same old-flow import OrthoAssessment.jsx's AI-intake landing screen
-  // offers (see orthoAiIntake.js) -- surfaced here too since a therapist
-  // who skips that screen (manual/condition-wise/template entry, or just
-  // scrolled past it) never sees that option otherwise. Only fills fields
+  // Three equal, always-visible entry options for this step: say it, write
+  // it, or pull it in from this patient's own history. Only fills fields
   // still blank so it can't silently clobber anything already typed here.
   function loadOldSubjective() {
     const { subjective } = importOldSubjectiveData(patientData);
@@ -117,6 +115,10 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       });
       return { ...prev, subjective: merged };
     });
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function scrollToManualFields() {
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
@@ -145,17 +147,27 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
-      {hasOldSubjectiveData(patientData) && (
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={loadOldSubjective}>
-          📋 Load from this patient's existing Subjective Assessment
-        </button>
-      )}
+
+      {/* Three equal entry options -- say it, write it, or pull it in from
+          this patient's own history -- instead of the AI panel being the
+          only prominent choice with manual entry an implicit fallback
+          further down the page. */}
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
         <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
+      <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
+        ✍️ Write it manually
+      </button>
+      {hasOldSubjectiveData(patientData) && (
+        <button type="button" className="ai-intake-toggle" onClick={loadOldSubjective}>
+          📋 Load from this patient's existing Subjective Assessment
+        </button>
+      )}
+
       {detectedConditionLabel && (
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
       )}
+      <div id="subjective-manual-start" />
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
       {/* Onset is a free-text "type or select" combobox, not a plain input --
           same class of field as Sex/Hand dominance below, which used to be

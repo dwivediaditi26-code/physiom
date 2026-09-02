@@ -59,15 +59,22 @@ const BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" }
 // Cloudinary URLs built from the same base + "f_auto,q_auto/" transform
 // StudyImage.jsx also uses -- StudyImage takes a bare public id and builds
 // its own URL, so this strips that known prefix back off instead of
-// passing the full URL through (which would double it). Falls back to null
-// (→ the lucide icon below) for anything that isn't that exact pattern.
+// passing the full URL through (which would double it). Skips (rather than
+// keeping) anything that isn't that exact pattern.
 const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
-function firstRealImage(d) {
-  const first = Array.isArray(d.perform?.images) && d.perform.images.length
-    ? (typeof d.perform.images[0] === "object" ? d.perform.images[0]?.src : d.perform.images[0])
-    : d.perform?.image;
-  if (!first || typeof first !== "string" || !first.startsWith(CLOUDINARY_PREFIX)) return null;
-  return first.slice(CLOUDINARY_PREFIX.length);
+function stripPrefix(src) {
+  return typeof src === "string" && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
+}
+// 2026-09-02, Aditi: "cardio study mode doesn't show the same three images
+// as the live cardio info cards" -- the live InfoCard.jsx popup pages
+// through up to 3 photos per item (perform.images), but this only ever
+// passed the first one through, so StudyDetail had nothing left to page
+// between. Returns every real (uploaded) photo id, up to 3, in order.
+function realImages(d) {
+  const raw = Array.isArray(d.perform?.images) && d.perform.images.length
+    ? d.perform.images.slice(0, 3).map((it) => (it && typeof it === "object" ? it.src : it))
+    : [d.perform?.image];
+  return raw.map(stripPrefix).filter(Boolean);
 }
 
 function toCard(id, d) {
@@ -77,10 +84,15 @@ function toCard(id, d) {
   // the icon; StudyGrid/StudyDetail try the photo first and only fall
   // back to Icon if it hasn't actually been uploaded yet (404), so this
   // no longer has to guess whether a photo will load before choosing.
+  // 2026-09-02: `images` (all up to 3 real photos) drives StudyDetail's
+  // full gallery; `image` (just the first) still drives StudyGrid's single
+  // list thumbnail, unchanged.
+  const images = realImages(d);
   return {
     id,
     Icon: ICONS[id] || Stethoscope,
-    image: firstRealImage(d),
+    image: images[0] || null,
+    images,
     title: d.title,
     subtitle: d.category.replace("Learn · ", ""),
     sections: (

@@ -92,6 +92,11 @@ export const OUTPATIENT_CONDITIONS = [
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "review"];
+// AI Assisted Assessment entry only -- goes straight from Subjective into
+// Suggested Objective (which already inline-covers Observation/Palpation
+// itself), skipping these four as separate steps in between. Condition-
+// wise/General/Templates entries keep the full BASE_IDS sequence.
+const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
@@ -211,7 +216,12 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode }) {
+  // See AI_ENTRY_SKIP_IDS above -- the one place both the initial stepOrder
+  // and handleConditionDetected's later re-union need to agree on which
+  // base steps are actually in play, so a mid-session condition detection
+  // can never silently re-add a step the AI-entry sequence deliberately skipped.
+  const effectiveBaseIds = entryMode === "ai" ? BASE_IDS.filter((id) => !AI_ENTRY_SKIP_IDS.includes(id)) : BASE_IDS;
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
@@ -229,7 +239,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
     const promoted = initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
-    return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || promoted.includes(id));
+    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id));
   });
   // Only fires from SubjectiveSection's AI intake (orthoOutpatientSections.jsx),
   // and only if condition is still "general" -- never overrides a condition
@@ -246,7 +256,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     setStepOrder((prev) => {
       const activeSet = new Set(prev);
       meta.promote.forEach((id) => activeSet.add(id));
-      return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || activeSet.has(id));
+      return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || activeSet.has(id));
     });
   }
 
