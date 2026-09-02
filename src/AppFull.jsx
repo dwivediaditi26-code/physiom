@@ -846,6 +846,27 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     try { window.history.back(); } catch {}
   }, []);
 
+  // Single choke point for every "open this patient's profile" action.
+  // PatientDatabase.jsx's own patient-row tap already sends anyone with
+  // Cardio/Neuro/any Ortho pathway data to the new SpecialtyPatientProfile
+  // hub instead of the legacy PatientProfileModal, but the other profile
+  // entry points in this file (sidebar "👤 Profile" button, patient bar
+  // name tap, dashboard/treatment-list profile buttons) called
+  // setProfilePatient directly and always opened the old modal, so an
+  // Ortho patient looked "old" from everywhere except the patient list.
+  // Routing all of them through here keeps that one rule in one place.
+  const openPatientProfile = useCallback((p, tab) => {
+    if (!p) return;
+    const d = p.data || {};
+    if (d.cardio || d.neuro || d.ortho_outpatient_assessment || d.ortho_ipd_assessment || d.ortho_postop_assessment) {
+      selectPatient(p);
+      navTo("specialty_profile");
+    } else {
+      setProfilePatient(p);
+      if (tab) setProfileTab(tab);
+    }
+  }, [selectPatient, navTo]);
+
   const Field = useCallback(({t})=>{
     const base = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"8px 10px", fontSize:"0.8rem" };
     const val = data[t.id]||"";
@@ -1055,7 +1076,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Profile / Start Session buttons */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
               <button
-                onClick={()=>setProfilePatient(activePatient)}
+                onClick={()=>openPatientProfile(activePatient)}
                 style={{padding:"7px 6px",background:"linear-gradient(135deg,#1a3a5c,#2563eb)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(37,99,235,0.3)"}}>
                 👤 Profile
               </button>
@@ -1521,7 +1542,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Row 1: dot + name + age/gender */}
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <div style={{width:7,height:7,borderRadius:"50%",background:PC.a3,boxShadow:`0 0 6px ${PC.a3}`,flexShrink:0}}/>
-            <div onClick={()=>setProfilePatient(activePatient)}
+            <div onClick={()=>openPatientProfile(activePatient)}
               style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",minWidth:0,flex:1,overflow:"hidden"}}
               onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
               onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
@@ -1918,11 +1939,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
-                      onProfile={(p)=>{ setProfilePatient(p); setProfileTab("treatment"); }}/>
+                      onProfile={(p)=>openPatientProfile(p, "treatment")}/>
                   ) : clinicalSubTab==="assessment" ? (
                     <div style={{padding:"22px 18px 24px"}}>
                       <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
@@ -1984,7 +2005,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
