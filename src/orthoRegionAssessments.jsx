@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
@@ -146,8 +146,18 @@ function romCountFor(entry, movements) {
 function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
+  // 2026-09-02, Aditi: "when I click on the collapsible button... it is
+  // going away from the screen and only half thing is showing" -- opening
+  // the Pain quality & end feel chips pushes new content in below the
+  // toggle, which can land partly under the bottom nav bar/keyboard with
+  // nothing scrolling it into view on its own. Scrolls the newly-opened
+  // panel fully into view (not just the toggle row) the moment it expands.
+  const rowRef = useRef(null);
+  useEffect(() => {
+    if (detailOpen) rowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [detailOpen]);
   return (
-    <div className="rom-row">
+    <div className="rom-row" ref={rowRef}>
       <div className="rom-row-grid">
         <div className="rom-row-name">
           <span className="movement-name">{m.mv}</span>
