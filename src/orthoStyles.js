@@ -205,8 +205,18 @@ export function orthoStyles() {
            Colour communicates clinical meaning: green = normal, amber =
            mild finding, red = significant finding. Everything else stays
            white/neutral. */
-        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 62px; transition: border-color .15s, background .15s; }
-        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 0; width: 100%; min-width: 0; color: ${BRAND.ink}; }
+        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 68px; transition: border-color .15s, background .15s; }
+        /* 2026-09-02, Aditi: "I'm not able to see the whole number" on ROM's
+           degree Stepper -- this input never suppressed the browser's own
+           native number-input spinner, so on real mobile Chrome/Safari (this
+           only shows up on-device, not in a desktop dev tools emulator) it
+           rendered its OWN spin buttons stacked on top of/beside the custom
+           .stepper-arrows, squeezing the visible digits into a sliver of the
+           already-narrow box. appearance:none removes it; the box is
+           widened slightly too so a 3-digit value (a 180° shoulder flexion
+           norm, say) always has clear room. */
+        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 2px; width: 100%; min-width: 0; color: ${BRAND.ink}; -moz-appearance: textfield; appearance: none; }
+        .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
