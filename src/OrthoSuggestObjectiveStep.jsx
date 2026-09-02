@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { SectionIntro, Hint, Segmented, SelectField, TextArea, useSectionData } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, suggestCpaItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, suggestCpaItems, suggestKineticChainItems, suggestFmaItems, suggestSttItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow, kcWhy, kcHow, fmaWhy, fmaHow, sttWhy, sttHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
@@ -12,6 +12,7 @@ import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionIte
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
 import { OptionChips } from "./orthoAdvancedTools.jsx";
+import { CYRIAX_RESISTED_RESULTS } from "./orthoAdvancedLibrary.js";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
 /* ============================================================
@@ -478,6 +479,60 @@ function CpaItemCard({ item, cpaData, setCpa }) {
   );
 }
 
+/* ---------- Kinetic Chain (Cook & Boyle joint-by-joint screen) --
+   suggested/optional, same real KC_REGIONS tests + colored option chips
+   the full page uses, now inline. ---------- */
+function KineticChainItemCard({ item, kcData, setKc }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = kcData[regionKey] || {};
+  const value = entry[itemId];
+  return (
+    <ItemCardShell label={label} sublabel={meta.joint} answered={!!value} summary={value || ""} whyLines={kcWhy(meta)} howLines={kcHow(meta)} howEyebrow="HOW TO TEST">
+      <OptionChips options={meta.options} value={value} onChange={(v) => setKc(regionKey, { ...entry, [itemId]: v })} />
+    </ItemCardShell>
+  );
+}
+
+/* ---------- FMA (Functional Movement Assessment) -- suggested/optional,
+   graded Normal/Compensated/Abnormal same as the full page. ---------- */
+const FMA_GRADE_LABELS = ["Normal", "Compensated", "Abnormal"];
+const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
+function FmaItemCard({ item, fmaData, setFma }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = fmaData[regionKey] || {};
+  const grade = entry[itemId + "_grade"];
+  return (
+    <ItemCardShell label={`${meta.icon || ""} ${label}`.trim()} sublabel={meta.phase} answered={!!grade} summary={grade || ""} whyLines={fmaWhy(meta)} howLines={fmaHow(meta)}>
+      <div className="chip-mini-row">
+        {(meta.grades || []).map((g, i) => {
+          const selected = grade === g;
+          const color = FMA_GRADE_COLOR[i];
+          const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
+          return (
+            <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => setFma(regionKey, { ...entry, [itemId + "_grade"]: selected ? "" : g })}>
+              {FMA_GRADE_LABELS[i] || g}
+            </button>
+          );
+        })}
+      </div>
+    </ItemCardShell>
+  );
+}
+
+/* ---------- STTT (Cyriax selective tissue tension) -- suggested/optional,
+   scoped to resisted testing (isolates contractile from inert tissue);
+   active/passive ROM and joint play stay on the full STTT page. ---------- */
+function SttItemCard({ item, sttData, setStt }) {
+  const { regionKey, itemId, label, meta } = item;
+  const entry = sttData[regionKey] || {};
+  const value = entry[itemId + "_result"];
+  return (
+    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={sttWhy(meta)} howLines={sttHow(meta)}>
+      <SelectField options={CYRIAX_RESISTED_RESULTS} value={value} onChange={(v) => setStt(regionKey, { ...entry, [itemId + "_result"]: v })} />
+    </ItemCardShell>
+  );
+}
+
 /* ---------- Outcome Measure -- suggested/optional, same as before, but
    now the actual question set fills inline (one collapsible card per
    suggested measure) instead of an "Enter →" jump. Writes to the exact
@@ -488,8 +543,24 @@ function CpaItemCard({ item, cpaData, setCpa }) {
    each answer) because a half-answered scale has no valid score and an
    instrument's history is meant to be a series of complete, timestamped
    administrations, not a rolling draft. ---------- */
+// No per-measure "why/how" reference existed on the old OrthoOutcomeMeasureFlow.jsx
+// page either (MEASURES carries only scoring logic, not prose) -- built
+// from the measure's own real item prompts (not invented) plus the same
+// generic outcome-measure rationale OBJECTIVE_CONTENT already used.
+function outcomeMeasureInfo(measure) {
+  return {
+    why: `${measure.full} gives an objective, comparable score for this region to track progress and justify the treatment plan.`,
+    what: (measure.items || []).map((it) => it.prompt),
+    how: {
+      purpose: `Administer all ${measure.items?.length || 0} items and score per ${measure.label}'s standard key.`,
+      position: "Seated, able to complete a questionnaire or physical performance test.",
+    },
+  };
+}
+
 function OutcomeMeasureInlineCard({ measure, reason, instance, onSave }) {
   const [open, setOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [answers, setAnswers] = useState({});
   const score = measure.score(answers);
   const interp = score != null ? measure.interpret(score) : null;
@@ -510,6 +581,9 @@ function OutcomeMeasureInlineCard({ measure, reason, instance, onSave }) {
           <span className="obj-item-row-name">
             {measure.icon} {measure.label}
           </span>
+          <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoOpen(true); }} aria-label={`About ${measure.label}`}>
+            ⓘ
+          </button>
           <span className="obj-item-row-sub">{measure.full}</span>
         </div>
         <div className="obj-item-row-right">
@@ -549,6 +623,7 @@ function OutcomeMeasureInlineCard({ measure, reason, instance, onSave }) {
           </div>
         </div>
       )}
+      <InfoSheet open={infoOpen} onClose={() => setInfoOpen(false)} label={measure.full} content={outcomeMeasureInfo(measure)} />
     </div>
   );
 }
@@ -565,6 +640,9 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const [obsData, setObsD] = useSectionData(data, setData, "observation");
   const [palpationData, setPalpationD] = useSectionData(data, setData, "palpation");
   const [cpaData, setCpaD] = useSectionData(data, setData, "cpa");
+  const [kcData, setKcD] = useSectionData(data, setData, "kineticChain");
+  const [fmaData, setFmaD] = useSectionData(data, setData, "fma");
+  const [sttData, setSttD] = useSectionData(data, setData, "sttt");
   const [omData, setOmD] = useSectionData(data, setData, "outcomeMeasure");
   // Persists which items have been tapped "+ Select" so the Suggested /
   // Selected / Finding state survives navigating away and back -- an item
@@ -585,6 +663,18 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const setCpa = (k, v) => {
     setCpaD(k, v);
     if (!activeIds.has("cpa")) onToggle("cpa");
+  };
+  const setKc = (k, v) => {
+    setKcD(k, v);
+    if (!activeIds.has("kineticChain")) onToggle("kineticChain");
+  };
+  const setFma = (k, v) => {
+    setFmaD(k, v);
+    if (!activeIds.has("fma")) onToggle("fma");
+  };
+  const setStt = (k, v) => {
+    setSttD(k, v);
+    if (!activeIds.has("sttt")) onToggle("sttt");
   };
   const omInstances = omData.instances || {};
   function saveOutcomeEntry(measureId, answers, score) {
@@ -616,6 +706,21 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const cpaReason = suggestions.find((s) => s.id === "cpa")?.reason;
   const showCpa = !!cpaReason || activeIds.has("cpa");
   const cpaItems = useMemo(() => (showCpa ? suggestCpaItems(selectedRegions) : []), [showCpa, selectedRegions]);
+
+  // Kinetic Chain / FMA / STTT are optional too, same gating pattern as
+  // CPA above -- only fill inline once suggestObjectiveTests actually
+  // suggests them (or they're already added).
+  const kcReason = suggestions.find((s) => s.id === "kineticChain")?.reason;
+  const showKc = !!kcReason || activeIds.has("kineticChain");
+  const kcItems = useMemo(() => (showKc ? suggestKineticChainItems(selectedRegions) : []), [showKc, selectedRegions]);
+
+  const fmaReason = suggestions.find((s) => s.id === "fma")?.reason;
+  const showFma = !!fmaReason || activeIds.has("fma");
+  const fmaItems = useMemo(() => (showFma ? suggestFmaItems(selectedRegions) : []), [showFma, selectedRegions]);
+
+  const sttReason = suggestions.find((s) => s.id === "sttt")?.reason;
+  const showStt = !!sttReason || activeIds.has("sttt");
+  const sttItems = useMemo(() => (showStt ? suggestSttItems(selectedRegions) : []), [showStt, selectedRegions]);
 
   const { recommended: omRecommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion }), [selectedRegions]);
   const omReasonById = Object.fromEntries(omRecommended.map((r) => [r.id, r.reason]));
@@ -664,8 +769,8 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // don't also duplicate as a whole-category "Enter →" card. Kept in
   // `suggestions` itself since cpaReason/omSuggestedFromReasoning above
   // still read their `reason` text off it.
-  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure"].includes(id) && libraryById[id]);
-  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure"].includes(s.id));
+  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(id) && libraryById[id]);
+  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(s.id));
 
   const query = q.trim().toLowerCase();
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
@@ -927,6 +1032,36 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
           {cpaReason && <Hint>{cpaReason}</Hint>}
           {cpaItems.map((item) => (
             <CpaItemCard key={`cpa-${item.regionKey}-${item.itemId}`} item={item} cpaData={cpaData} setCpa={setCpa} />
+          ))}
+        </>
+      )}
+
+      {showKc && kcItems.length > 0 && (
+        <>
+          <div className="subheading">⛓️ Kinetic Chain</div>
+          {kcReason && <Hint>{kcReason}</Hint>}
+          {kcItems.map((item) => (
+            <KineticChainItemCard key={`kc-${item.regionKey}-${item.itemId}`} item={item} kcData={kcData} setKc={setKc} />
+          ))}
+        </>
+      )}
+
+      {showFma && fmaItems.length > 0 && (
+        <>
+          <div className="subheading">🏃 Functional Movement Assessment</div>
+          {fmaReason && <Hint>{fmaReason}</Hint>}
+          {fmaItems.map((item) => (
+            <FmaItemCard key={`fma-${item.regionKey}-${item.itemId}`} item={item} fmaData={fmaData} setFma={setFma} />
+          ))}
+        </>
+      )}
+
+      {showStt && sttItems.length > 0 && (
+        <>
+          <div className="subheading">🦴 STTT — Selective Tissue Tension</div>
+          {sttReason && <Hint>{sttReason}</Hint>}
+          {sttItems.map((item) => (
+            <SttItemCard key={`stt-${item.regionKey}-${item.itemId}`} item={item} sttData={sttData} setStt={setStt} />
           ))}
         </>
       )}

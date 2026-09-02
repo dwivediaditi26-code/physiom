@@ -12,7 +12,7 @@
    ============================================================ */
 import { ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA, matchRegionKey } from "./orthoClinicalData.js";
 import { allPostureFieldsForRegion } from "./orthoObservationData.js";
-import { NKT_REGIONS, NKT_REGION_KEYS } from "./orthoAdvancedLibrary.js";
+import { NKT_REGIONS, NKT_REGION_KEYS, KC_REGIONS, KC_REGION_KEYS, FMA_DATA, FMA_REGION_KEYS, CYRIAX_REGIONS_DATA, CYRIAX_REGION_KEYS } from "./orthoAdvancedLibrary.js";
 
 export function suggestIndividualItems(selectedRegions = []) {
   const rom = [], mmt = [], specialTests = [], observation = [];
@@ -59,10 +59,91 @@ export function suggestCpaItems(selectedRegions = []) {
   });
   return cpa;
 }
+// Same field set as orthoAdvancedTools.jsx's cpaRichItem() -- how to test,
+// common compensators, AND treatment (was missing treatment before).
 export function cpaWhy(t) {
-  return t.compensator ? `Common compensator if inhibited: ${t.compensator}` : "Screens for a facilitated/inhibited motor-control pattern.";
+  return t.compensator ? [`Common compensator if inhibited: ${t.compensator}`] : ["Screens for a facilitated/inhibited motor-control pattern."];
 }
 export function cpaHow(t) {
+  const lines = [];
+  if (t.how) lines.push(t.how);
+  if (t.treatment) lines.push(`Treatment: ${t.treatment}`);
+  return lines;
+}
+
+// Same region-matching KineticChainSection reads -- resolves each selected
+// region onto KC_REGIONS so an inline answer here and a later visit to the
+// full page are the exact same data.kineticChain[regionKey][testId] field.
+export function suggestKineticChainItems(selectedRegions = []) {
+  const kc = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, KC_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (KC_REGIONS[key]?.tests || []).forEach((t) => kc.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return kc;
+}
+// Same field set as orthoAdvancedTools.jsx's kcRichItem() -- how to
+// perform, kinetic chain effect, treatment.
+export function kcWhy(t) {
+  return t.chainEffect ? [`Kinetic chain effect: ${t.chainEffect}`] : ["Screens this segment of the kinetic chain for a mobility/stability deficit that can drive compensation elsewhere."];
+}
+export function kcHow(t) {
+  const lines = [];
+  if (t.how) lines.push(t.how);
+  if (t.treatment) lines.push(`Treatment: ${t.treatment}`);
+  return lines;
+}
+
+// Same region-matching FmaSection reads -- resolves each selected region
+// onto FMA_DATA so an inline answer here and a later visit to the full
+// page are the exact same data.fma[regionKey][testId + "_grade"] field.
+export function suggestFmaItems(selectedRegions = []) {
+  const fma = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, FMA_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (FMA_DATA[key] || []).forEach((t) => fma.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return fma;
+}
+// Same field set as orthoAdvancedTools.jsx's fmaRichItem() -- setup and
+// procedure, normal pattern.
+export function fmaWhy(t) {
+  return t.normalDesc ? [`Normal pattern: ${t.normalDesc}`] : ["Screens a fundamental movement pattern for a compensation strategy, not a pass/fail score."];
+}
+export function fmaHow(t) {
+  return t.setup ? [t.setup] : [];
+}
+
+// Same region-matching SttSection reads (sectionKey "sttt") -- scoped to
+// resistedTests, the actual selective-tension differentiator (isolates the
+// contractile unit from inert structures); active/passive ROM and joint
+// play stay on the full STTT page as before. Resolves onto
+// CYRIAX_REGIONS_DATA so an inline answer here and a later visit to the
+// full page are the exact same data.sttt[regionKey][testId + "_result"].
+export function suggestSttItems(selectedRegions = []) {
+  const stt = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, CYRIAX_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (CYRIAX_REGIONS_DATA[key]?.resistedTests || []).forEach((t) => stt.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return stt;
+}
+export function sttWhy(t) {
+  return t.muscle ? [`Isolates the contractile unit: ${t.muscle}`] : ["Resisted (isometric) testing isolates the contractile unit — muscle/tendon — from inert structures."];
+}
+export function sttHow(t) {
   return t.how ? [t.how] : [];
 }
 
