@@ -6,7 +6,7 @@ import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMm
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
-import { HomeProtocolSection, formatHomeProtocolSection } from "./orthoHomeProtocol.jsx";
+import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
@@ -72,7 +72,6 @@ export const orthoSummaryFormatters = {
   outcomeMeasure: formatOutcomeMeasureSection,
   techniques: formatTreatmentTechniquesSection,
   exercisePrescription: formatExercisePrescriptionSection,
-  homeProtocol: formatHomeProtocolSection,
 };
 
 /* ============================================================
@@ -219,7 +218,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
   // See AI_ENTRY_SKIP_IDS above -- the one place both the initial stepOrder
   // and handleConditionDetected's later re-union need to agree on which
   // base steps are actually in play, so a mid-session condition detection
@@ -263,7 +262,17 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     });
   }
 
-  const [step, setStep] = useState(0);
+  // initialStep (2026-09-02, Aditi: "edit assessment... should take us to
+  // last page of assessment summary and review, not to pathway/region
+  // selection") -- "Edit" from the patient profile resumes straight into
+  // this wizard already on Review with the saved data loaded, instead of
+  // always starting fresh at step 0. Falls back to 0 (the wizard's own
+  // normal start) when there's nothing to resume.
+  const [step, setStep] = useState(() => {
+    if (!initialStep) return 0;
+    const idx = stepOrder.indexOf(initialStep);
+    return idx >= 0 ? idx : 0;
+  });
   // Seeds Subjective/Pain once, up front, from whatever the AI-intake
   // landing screen produced (OrthoAssessment.jsx) -- either an AI parse of
   // the clinician's own words, or an import of this same patient's existing
@@ -271,7 +280,12 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // (not a controlled/live prop) because after this the wizard's own
   // SubjectiveSection AI panel and manual edits are the only things
   // touching data.subjective/data.pain from here on.
+  // initialData (same 2026-09-02 fix) -- the full saved wizard data from a
+  // previous session, restored verbatim when resuming via Edit; takes
+  // priority over the AI-intake seed since a resumed edit already has
+  // real answers, not just an AI-parsed starting point.
   const [data, setData] = useState(() => {
+    if (initialData) return initialData;
     if (!initialAiUpdates) return {};
     return {
       subjective: { ...initialAiUpdates.subjective },
@@ -361,6 +375,16 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
       regions: regionsLabel,
       condition: conditionLabel,
       data,
+      // Raw (not display-formatted) resume fields (2026-09-02, Aditi:
+      // "edit assessment should take us to last page... not to pathway or
+      // region selection") -- regionsLabel/conditionLabel above are
+      // already-joined display strings, not usable to reconstruct the
+      // wizard's actual selectedRegions/condition props on Edit. These
+      // let SpecialtyPatientProfile.jsx's "Edit" button rebuild the exact
+      // original selection and skip straight to Review with this data.
+      selectedRegions,
+      rawCondition: condition,
+      customConditionLabel: condition === "custom" ? customConditionLabel : undefined,
     }));
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
     // top-level field directly (2026-08-31) -- same convention IPD/Post-op
@@ -493,7 +517,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
           {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
-          {current.id === "homeProtocol" && <HomeProtocolSection data={data} setData={setData} patientData={patientData} />}
+          {current.id === "homeProtocol" && <HomeProtocolSection patientData={patientData} onSave={onSave} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>

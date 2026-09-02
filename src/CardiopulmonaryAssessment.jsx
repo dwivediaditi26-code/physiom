@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
+import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import CardioTreatmentAssistant from "./CardioTreatmentAssistant.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
@@ -84,26 +85,21 @@ function Hint({ children }) {
 
 function InfoButton({ text }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
   return (
-    <span className="info-btn-wrap" ref={ref}>
-      <button type="button" className="info-btn" onClick={() => setOpen((o) => !o)}>
+    <span className="info-btn-wrap">
+      <button type="button" className="info-btn" onClick={() => setOpen(true)}>
         ℹ How to
       </button>
-      {open && (
-        <div className="info-popover">
-          <button type="button" className="info-popover-close" onClick={() => setOpen(false)} aria-label="Close">
-            ✕
-          </button>
-          <p>{text}</p>
-        </div>
+      {open && createPortal(
+        <div className="info-popover-backdrop" onClick={() => setOpen(false)}>
+          <div className="info-popover" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="info-popover-close" onClick={() => setOpen(false)} aria-label="Close">
+              ✕
+            </button>
+            <p>{text}</p>
+          </div>
+        </div>,
+        document.body
       )}
     </span>
   );
@@ -1975,9 +1971,10 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .quick-normal-btn { display: block; width: 100%; border: 1.5px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 13.5px; padding: 11px; border-radius: 14px; cursor: pointer; margin-bottom: 14px; }
         .quick-normal-btn:active { transform: scale(0.98); }
 
-        .info-btn-wrap { position: relative; display: inline-flex; }
+        .info-btn-wrap { display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
-        .info-popover { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 260px; max-width: 72vw; background: ${BRAND.ink}; color: #EDEBFB; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 10px 30px rgba(20,10,60,.3); }
+        .info-popover-backdrop { position: fixed; inset: 0; z-index: 1070; background: rgba(20,10,45,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .info-popover { position: relative; z-index: 1071; width: 320px; max-width: 100%; background: ${BRAND.ink}; color: #EDEBFB; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 10px 30px rgba(20,10,60,.3); }
         .info-popover p { margin: 0; padding-right: 14px; }
         .info-popover-close { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: #B8AEEF; font-size: 11px; cursor: pointer; }
 

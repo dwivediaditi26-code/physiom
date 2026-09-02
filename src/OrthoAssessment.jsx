@@ -47,19 +47,30 @@ const OPD_MODES = [
   { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode, patientData } = {}) {
+export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode, patientData, resume } = {}) {
+  // resume (2026-09-02, Aditi: "edit assessment... should take us to last
+  // page of assessment summary and review, not to pathway selection or
+  // region selection") -- SpecialtyPatientProfile.jsx's "Edit" button
+  // passes { pathway, selectedRegions, condition, customConditionLabel,
+  // data } rebuilt from the patient's own saved assessment snapshot, so
+  // this skips straight to step 3 with that exact original selection
+  // instead of making the therapist re-answer pathway/region/condition
+  // for an assessment that's already fully answered. The pathway
+  // Component itself (OrthoOutpatient/IPD/PostOpAssessment) gets
+  // initialData=resume.data and initialStep="review" so it opens already
+  // on the Review screen, not step 0 of its own internal wizard.
   // entryMode ("ai" | "template") comes from the honest "New Assessment"
   // picker (AppFull.jsx) -- Outpatient is the only pathway that picker
   // offers today, so both shortcuts force pathway=outpatient and skip
   // straight past the pathway-type and condition/mode screens (nothing to
   // choose there yet), landing the therapist on region selection -- the one
   // question that genuinely can't be skipped -- then straight into the
-  // wizard. Reached the normal way (no entryMode), nothing changes.
-  const [step, setStep] = useState(entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(entryMode ? "outpatient" : null);
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [condition, setCondition] = useState(entryMode ? "general" : null);
-  const [customConditionLabel, setCustomConditionLabel] = useState("");
+  // wizard. Reached the normal way (no entryMode, no resume), nothing changes.
+  const [step, setStep] = useState(resume ? 3 : entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
+  const [pathway, setPathway] = useState(resume ? resume.pathway : entryMode ? "outpatient" : null);
+  const [selectedRegions, setSelectedRegions] = useState(resume ? resume.selectedRegions || [] : []);
+  const [condition, setCondition] = useState(resume ? resume.condition || "general" : entryMode ? "general" : null);
+  const [customConditionLabel, setCustomConditionLabel] = useState(resume?.customConditionLabel || "");
   const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
@@ -119,6 +130,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         requireAuth={requireAuth}
         initialAiUpdates={pendingAiUpdates}
         entryMode={effectiveEntryMode}
+        initialData={resume?.data}
+        initialStep={resume ? "review" : undefined}
       />
     );
   }
