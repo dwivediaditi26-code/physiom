@@ -510,7 +510,7 @@ const FEED_TABS = [
   { key: "journalclub", label: "Journal Club" },
 ];
 
-function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser }) {
+function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser, onStartAI }) {
   const [feedTab, setFeedTab] = useState("foryou");
   // Home was a fixed 640px mobile column even on laptop/desktop widths,
   // leaving large empty gutters either side of the sidebar-plus-content
@@ -538,7 +538,14 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
     { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio, Pedia, Sports",         action:()=>onNav("subjective") },
-    { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say your assessment in your words and get it filled", action:()=>onNav("subjective", { autoOpenAI: true }) },
+    // 2026-09-02, Aditi: "the AI Assessment tile takes us to the old AI...
+    // put it in a new AI orthopedic button" -- this used to open the old
+    // Subjective step with an auto-open-AI flag; now starts the same real
+    // "Start with AI" entry point the New Assessment picker's own AI card
+    // already uses (OrthoAssessmentNew.jsx's AI intake, entryMode:"ai"),
+    // which also resets any stale patient/data first the way that picker
+    // does -- onNav alone wouldn't do that.
+    { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say your assessment in your words and get it filled", action:()=>onStartAI ? onStartAI() : onNav("subjective", { autoOpenAI: true }) },
     { key:"posture",    icon:"🧍", bg:"#EFF6FF", title:"Posture Analysis",sub:"AI posture assessment",                       action:()=>onNav("posture") },
   ];
 
@@ -981,11 +988,19 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
                 fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
               Sign out
             </button>
+            {/* 2026-09-02, Aditi: "what is DP, what does it do" -- this was
+                a hardcoded "DP" placeholder (not this therapist's actual
+                initials) that opened the old Ortho Subjective assessment
+                on tap, which had nothing to do with what an avatar in a
+                header normally does. Now shows the real signed-in
+                therapist's initials and opens their own Profile tab. */}
             <div style={{width:38,height:38,borderRadius:11,
               background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:13,fontWeight:800,color:"white",cursor:"pointer"}}
-              onClick={()=>onNav("subjective")}>DP</div>
+              onClick={()=>onNav("profile")}>
+              {initialsOf(currentUser?.user_metadata?.full_name) || "Dr"}
+            </div>
           </div>
         </div>
       </div>

@@ -4415,9 +4415,13 @@ const innerBody = (
 // status field the app doesn't have. Session count and pain trend are read
 // straight off tx_sessions (vasStart/vasEnd) rather than inventing a planned
 // session target, since no such field exists anywhere in the data model.
-function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile }) {
+function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile, onDeleteTreatment }) {
   const C = { primary:"#6D28D9", text:"#111827", muted:"#6B7280", border:"#F1F5F9",
     green:"#10B981", red:"#EF4444", orange:"#F59E0B" };
+  // Two-tap delete (2026-09-02) -- one stray tap on a caseload card can't
+  // wipe someone's session history; tapping "Remove" again within the same
+  // render confirms it. Tracks which patient id is mid-confirm.
+  const [confirmId, setConfirmId] = useState(null);
 
   const caseload = patients
     .map(p => {
@@ -4482,6 +4486,20 @@ function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile }) {
                 style={{flex:1,padding:"9px",borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.muted,fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
                 Profile
               </button>
+              {onDeleteTreatment && (
+                confirmId === patient.id ? (
+                  <button onClick={()=>{ onDeleteTreatment(patient); setConfirmId(null); }}
+                    title="Tap again to confirm"
+                    style={{flex:1,padding:"9px",borderRadius:9,border:`1px solid ${C.red}`,background:"#FEF2F2",color:C.red,fontWeight:700,fontSize:"0.78rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    Confirm?
+                  </button>
+                ) : (
+                  <button onClick={()=>setConfirmId(patient.id)} title="Remove this patient's logged treatment sessions"
+                    style={{padding:"9px 10px",borderRadius:9,border:`1px solid ${C.border}`,background:"#fff",color:C.muted,fontWeight:700,fontSize:"0.78rem",cursor:"pointer"}}>
+                    🗑
+                  </button>
+                )
+              )}
             </div>
           </div>
         );

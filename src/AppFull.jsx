@@ -1924,7 +1924,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               )}
 
               {tests==="HOME_MODULE"?(
-                <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser}/>
+                <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
               ):tests==="PHYSIOFEED_MODULE"?(
                 <div style={{margin:"-24px -20px 0"}}>
                   <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
@@ -1966,7 +1966,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
-                      onProfile={(p)=>openPatientProfile(p, "treatment")}/>
+                      onProfile={(p)=>openPatientProfile(p, "treatment")}
+                      // 2026-09-02, Aditi: "in treatment we can remove the
+                      // old treatments... delete if we want to delete" --
+                      // this list had no way to clear a patient's logged
+                      // treatment sessions (only Continue/Profile), so a
+                      // finished/old case just stayed in "Ongoing Treatment"
+                      // forever. Clears tx_sessions only -- the patient
+                      // record itself (demographics, assessment, etc.)
+                      // isn't touched, they just drop off this caseload
+                      // list; deleting the whole patient is a separate,
+                      // already-existing action on the Patients tab.
+                      onDeleteTreatment={(p)=>{
+                        setPatients(prev=>{
+                          const updated = prev.map(x=>x.id===p.id?{...x,data:{...x.data,tx_sessions:[]},updatedAt:new Date().toISOString()}:x);
+                          savePatientDB(updated, currentUser?.id);
+                          return updated;
+                        });
+                        if (p.id===activePatientId) set("tx_sessions", []);
+                      }}/>
                   ) : clinicalSubTab==="assessment" ? (
                     <div style={{padding:"22px 18px 24px"}}>
                       <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
