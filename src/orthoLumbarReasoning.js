@@ -263,47 +263,64 @@ const LUMBAR_ROM_HIGHLIGHTS = ["rom_lflex", "rom_lext", "rom_llfl", "rom_llfr", 
 // than silently carried forward as a dead id.
 const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif", "mmt_ta", "mmt_ql", "mmt_oblique"];
 
-function lumbarTestNav(testStr) {
+// Returns EVERY {nav,ctx} this ONE testStr matches, not just the first.
+// 2026-09-02, Aditi: "why all the ROM/MMT/special test is not in this SI
+// joint dysfunction" -- L05's required test entry is a single string
+// naming a whole cluster of tests at once ("SIJ provocation CLUSTER (not
+// a single test): Compression, Distraction, Sacral Thrust, Gaenslen's,
+// FABERE/Patrick, Gillet's"), unlike every other condition's one-test-
+// per-array-entry strings. The old single-match, early-return version
+// below matched only the first rule that hit (in practice just "faber",
+// since "FABERE" contains it) and silently dropped every other named test
+// in that same string -- so Special Tests for SIJ dysfunction ended up
+// showing just FABER + Active SLR instead of the whole cluster.
+function lumbarTestMatches(testStr) {
   const s = String(testStr || "");
+  const matches = [];
+
+  // The SLR family is mutually exclusive, most-specific-first -- "Active
+  // SLR" contains the bare substring "SLR" too, so if this ran as an
+  // independent rule below alongside the others it would ALSO match the
+  // generic \bslr\b rule and add the unrelated passive/neural SLR test
+  // right alongside the active one. Resolved as its own priority chain
+  // before the independently-collectible rules run.
   if (/active slr|active straight leg|\baslr\b/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_active_slr" } };
-  if (/crossed slr/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" } };
-  if (/slump test/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" } };
-  if (/femoral nerve tension test/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_femoral_nerve_stretch" } };
-  if (/quadrant test|kemp'?s test/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_kemp" } };
-  if (/stork/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stork" } };
-  if (/faber/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "hip", highlightTest: "st_faber_test" } };
-  if (/\bslr\b/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" } };
-  if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
-    return { nav: "mmt", ctx: { mmtRegion: "Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS } };
-  if (/lumbar arom|repeated movement/i.test(s))
-    return { nav: "rom", ctx: { romRegion: "Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS } };
-  if (/passive lumbar extension/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_passive_lumbar_ext" } };
-  if (/pheasant test/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_pheasant" } };
-  if (/farfan torsion/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_farfan_torsion" } };
-  if (/h and i stability|h & i/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_h_and_i" } };
-  if (/bicycle test|van gelderen/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_bicycle_van_gelderen" } };
-  if (/stoop test/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stoop" } };
-  if (/lateral shift/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_lateral_shift" } };
-  if (/prone instability/i.test(s))
-    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_prone_instab" } };
-  if (/observation|posture screen/i.test(s))
-    return { nav: "observation", ctx: {} };
-  return null;
+    matches.push({ nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_active_slr" } });
+  else if (/crossed slr|\bslr\b/i.test(s))
+    matches.push({ nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" } });
+
+  const rules = [
+    [/slump test/i, { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" } }],
+    [/femoral nerve tension test/i, { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_femoral_nerve_stretch" } }],
+    [/quadrant test|kemp'?s test/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_kemp" } }],
+    [/stork/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stork" } }],
+    [/faber/i, { nav: "special", ctx: { specialRegion: "hip", highlightTest: "st_faber_test" } }],
+    // SIJ provocation cluster (L05) -- these live under Special Tests'
+    // "lumbar" region in sharedClinicalData.js (SPECIAL_TESTS_DATA.lumbar)
+    // alongside the other lumbar tests, not a separate SIJ region.
+    [/gaenslen/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_gaenslen" } }],
+    [/\bcompression\b/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_si_compression" } }],
+    [/\bdistraction\b/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_si_distraction" } }],
+    // No separately-named "Sacral Thrust" test exists in the library --
+    // Thigh Thrust provokes the same posterior-SIJ shear and is the
+    // closest real match, not a guess at an unrelated test. Gillet's
+    // (motion palpation, not provocation) has no equivalent at all here
+    // and is intentionally left unmapped rather than mismapped.
+    [/sacral thrust|thigh thrust/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_thigh_thrust" } }],
+    [/core\/?lumbopelvic motor control|core assessment/i, { nav: "mmt", ctx: { mmtRegion: "Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS } }],
+    [/lumbar arom|repeated movement/i, { nav: "rom", ctx: { romRegion: "Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS } }],
+    [/passive lumbar extension/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_passive_lumbar_ext" } }],
+    [/pheasant test/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_pheasant" } }],
+    [/farfan torsion/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_farfan_torsion" } }],
+    [/h and i stability|h & i/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_h_and_i" } }],
+    [/bicycle test|van gelderen/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_bicycle_van_gelderen" } }],
+    [/stoop test/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stoop" } }],
+    [/lateral shift/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_lateral_shift" } }],
+    [/prone instability/i, { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_prone_instab" } }],
+    [/observation|posture screen/i, { nav: "observation", ctx: {} }],
+  ];
+  rules.forEach(([re, target]) => { if (re.test(s)) matches.push(target); });
+  return matches;
 }
 
 /**
@@ -319,12 +336,12 @@ export function lumbarConditionItemIds(condition) {
   const special = new Set();
   let showObservation = false;
   strings.forEach((s) => {
-    const target = lumbarTestNav(s);
-    if (!target) return;
-    if (target.nav === "rom") (target.ctx.romHighlights || []).forEach((id) => rom.add(id));
-    else if (target.nav === "mmt") (target.ctx.mmtHighlights || []).forEach((id) => mmt.add(id));
-    else if (target.nav === "special" && target.ctx.highlightTest) special.add(target.ctx.highlightTest);
-    else if (target.nav === "observation") showObservation = true;
+    lumbarTestMatches(s).forEach((target) => {
+      if (target.nav === "rom") (target.ctx.romHighlights || []).forEach((id) => rom.add(id));
+      else if (target.nav === "mmt") (target.ctx.mmtHighlights || []).forEach((id) => mmt.add(id));
+      else if (target.nav === "special" && target.ctx.highlightTest) special.add(target.ctx.highlightTest);
+      else if (target.nav === "observation") showObservation = true;
+    });
   });
   return { rom, mmt, special, showObservation };
 }

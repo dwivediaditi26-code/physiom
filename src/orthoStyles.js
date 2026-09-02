@@ -205,8 +205,29 @@ export function orthoStyles() {
            Colour communicates clinical meaning: green = normal, amber =
            mild finding, red = significant finding. Everything else stays
            white/neutral. */
-        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 62px; transition: border-color .15s, background .15s; }
-        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 0; width: 100%; min-width: 0; color: ${BRAND.ink}; }
+        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 68px; transition: border-color .15s, background .15s; }
+        /* 2026-09-02, Aditi: "I'm not able to see the whole number" on ROM's
+           degree Stepper -- two compounding causes:
+           1) this input never suppressed the browser's own native
+              number-input spinner, so on real mobile Chrome/Safari it
+              rendered its OWN spin buttons stacked on top of/beside the
+              custom .stepper-arrows, squeezing the digits into a sliver.
+              appearance:none removes it.
+           2) the REAL culprit: utils.jsx's global mobile stylesheet forces
+              min-height:44px, font-size:16px, padding:10px 12px, all
+              !important, onto every plain input element (same rule that
+              already needed a .pm-compact-select escape hatch for MMT's
+              grade dropdowns, see that comment in utils.jsx) -- 24px of forced
+              horizontal padding alone doesn't fit in a 62-68px-wide
+              stepper box, so PART OF THE DIGITS RENDERED OUTSIDE the
+              padding box and got clipped by .stepper's overflow:hidden.
+              A plain (non-!important) rule here can never win against
+              that -- !important beats higher specificity outright -- so
+              every size property below needs its own !important too.
+              The box is widened slightly as well so a 3-digit value (a
+              180° shoulder flexion norm, say) always has clear room. */
+        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px !important; font-weight: 700; padding: 6px 2px !important; min-height: 0 !important; width: 100%; min-width: 0; color: ${BRAND.ink}; -moz-appearance: textfield; appearance: none; }
+        .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
@@ -229,7 +250,7 @@ export function orthoStyles() {
            this doesn't reflow any of those. Height matches the 62px width;
            the arrow column grows to fill it instead of leaving empty space. */
         .stepper-square { width: 62px; height: 62px; }
-        .stepper-square .stepper-input { font-size: 15px; }
+        .stepper-square .stepper-input { font-size: 15px !important; }
         .stepper-square .stepper-arrows { flex: 0 0 22px; }
         .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
 
@@ -243,10 +264,27 @@ export function orthoStyles() {
            long ("External + Internal Obliques", "Transversus Abdominis") --
            .movement-info takes the min-width:0 + flex:1 a flex child needs
            to actually shrink/wrap its text instead of forcing the row wider
-           than its container. */
+           than its container. Still used by MMT (RomSection moved to the
+           .rom-row table layout below). */
         .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
         .movement-info { flex: 1 1 160px; min-width: 0; }
         .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
+           detail collapses, not the whole movement row (degree steppers
+           stay visible since they're filled for every movement). */
+        .rom-detail-toggle { padding: 6px 2px; margin-bottom: 4px; border: none; border-radius: 8px; }
+        .rom-detail-toggle:hover { background: ${BRAND.purpleFaint}; }
+
+        /* ROM as a compact table -- one line per movement (name | L | R),
+           columns aligned across every row via a shared grid template so
+           the degree fields line up regardless of movement-name length. */
+        .rom-row { border-top: 1px solid #F5F3FB; padding: 7px 0; }
+        .rom-row:first-of-type { border-top: none; padding-top: 0; }
+        .rom-row-grid { display: grid; grid-template-columns: 1fr 68px 68px; align-items: center; gap: 8px; }
+        .rom-table-head { padding-bottom: 6px; border-bottom: 1.5px solid ${BRAND.border}; margin-bottom: 2px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.grayLight}; }
+        .rom-table-head span:not(:first-child) { text-align: center; }
+        .rom-row-name { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
+        .rom-row-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }
         .movement-lr { display: flex; gap: 10px; flex-shrink: 0; }
@@ -270,6 +308,17 @@ export function orthoStyles() {
         .chip-mini-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
         .chip-mini { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; padding: 5px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; cursor: pointer; min-height: 28px; }
         .chip-mini-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
+
+        /* Stacked full-width option list -- ROM's Pain quality/End feel
+           (2026-09-02, Aditi: "make the pain end feel in listing format"),
+           tap-to-select/tap-again-to-clear same as chip-mini above, just
+           one option per row instead of wrapped pills. */
+        .mini-list-label { font-size: 10.5px; font-weight: 700; color: ${BRAND.grayLight}; text-transform: uppercase; letter-spacing: .04em; margin: 8px 0 4px; }
+        .mini-list { border: 1px solid ${BRAND.border}; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+        .mini-list-row { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; border: none; border-top: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 9px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; min-height: 38px; }
+        .mini-list-row:first-child { border-top: none; }
+        .mini-list-row-active { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; }
+        .mini-list-check { color: ${BRAND.purple}; font-weight: 800; font-size: 13px; }
         .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pill-tag { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px; }
         .pill-tag-root { background: #F0F0F0; color: ${BRAND.gray}; }
@@ -399,14 +448,19 @@ export function orthoStyles() {
         .rom-card-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; letter-spacing: -.01em; }
         .funky-role-badge { font-size: 9px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }
         .funky-chip { border-width: 1.5px; border-style: solid; background: #fff; }
-        .rom-table { border: 1px solid ${BRAND.border}; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
-        .rom-row { display: flex; border-bottom: 1px solid ${BRAND.border}; align-items: center; }
-        .rom-row:last-child { border-bottom: none; }
-        .rom-head { background: ${BRAND.purpleFaint}; font-weight: 700; font-size: 11px; color: ${BRAND.purpleDark}; text-transform: uppercase; letter-spacing: .03em; }
-        .rom-cell { flex: 1; padding: 8px 10px; font-size: 13px; display: flex; align-items: center; gap: 4px; }
-        .rom-move { flex: 1.3; font-weight: 600; }
-        .rom-input { width: 100%; border: none; outline: none; font-size: 15px; font-weight: 700; background: transparent; color: ${BRAND.purple}; min-width: 0; }
-        .rom-deg { font-size: 11px; color: ${BRAND.grayLight}; }
+        /* 2026-09-02, Aditi: "the ROM button is not fixed" -- a second,
+           dead ".rom-row { display: flex; ... }" rule used to live here,
+           left over from an old table-based ROM layout (.rom-table/
+           .rom-head/.rom-cell/.rom-move/.rom-input/.rom-deg) that no JSX
+           has referenced in a long time. Coming AFTER the real ".rom-row"
+           rule above (orthoRegionAssessments.jsx's actual card layout,
+           block + rom-row-grid), it silently won the cascade and flexed
+           every child of a ROM movement row -- including the expanded
+           "Pain quality & end feel" chip rows -- into a squeezed
+           side-by-side column instead of stacking normally, which is
+           exactly the "collapsible goes off screen, half showing" glitch.
+           Removed the whole dead block rather than only the offending
+           rule, since none of it is reachable from any component anymore. */
         .add-row-btn { width: 100%; border: 1.5px dashed ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; min-height: 40px; }
         .add-row-input { display: flex; gap: 6px; }
         .add-row-confirm { border: none; background: ${BRAND.purple}; color: #fff; padding: 0 14px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
