@@ -3968,6 +3968,13 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
   // this stays backward compatible rather than a hard cutover.
   const closePanel = embedded ? (()=>{}) : onCloseProp;
   const [search, setSearch]       = useState("");
+  // Search starts collapsed to just the header icon (2026-09-02, Aditi:
+  // "constantly showing" the bar was the complaint) -- tapping the icon
+  // reveals the bar and focuses it; the bar itself doesn't auto-hide again
+  // just from losing focus, only from tapping the icon a second time (a
+  // pending search term shouldn't vanish behind a stray tap elsewhere).
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef(null);
   const [sortBy, setSortBy]       = useState("updated");
   const [filterFlag, setFilterFlag] = useState(false);
   const [showTools, setShowTools] = useState(false);
@@ -4133,25 +4140,44 @@ const innerBody = (
               <div style={{fontWeight:900,fontSize:"1.5rem",color:"#111827",letterSpacing:"-0.4px"}}>Patients</div>
               <div style={{fontSize:"0.82rem",color:"#9CA3AF",marginTop:2}}>Organize and manage your patients</div>
             </div>
-            {!embedded && (
-              <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
-                borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700,marginTop:2}}>✕</button>
-            )}
-          </div>
-
-          {/* Search -- real SVG icon (lucide Search) in place of the emoji,
-              same layout fix as before (icon and input are flex siblings so
-              utils.jsx's global forced input padding never crowds it). */}
-          <div style={{padding:"14px 18px 0"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,border:"1px solid #EEEDF5",
-              borderRadius:14,background:"#F8F7FC",paddingLeft:14}}>
-              <SearchIcon size={16} color="#9CA3AF" style={{flexShrink:0}}/>
-              <input value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Search patients…"
-                style={{flex:1,minWidth:0,border:"none",color:"#111827",background:"transparent",
-                  outline:"none",padding:"12px 14px 12px 0",fontSize:"0.85rem",boxSizing:"border-box"}}/>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
+              <button onClick={()=>{
+                  setSearchOpen(o=>{
+                    const next=!o;
+                    if(next) setTimeout(()=>searchInputRef.current?.focus(),0);
+                    else setSearch("");
+                    return next;
+                  });
+                }} title={searchOpen?"Hide search":"Search"}
+                style={{background:searchOpen?"#EDE9FE":"#F3F4F6",border:"none",
+                  borderRadius:8,color:searchOpen?"#7c3aed":"#6B7280",cursor:"pointer",
+                  width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <SearchIcon size={14}/>
+              </button>
+              {!embedded && (
+                <button onClick={closePanel} title="Close" style={{background:"#F3F4F6",border:"none",
+                  borderRadius:8,color:"#6B7280",cursor:"pointer",width:26,height:26,fontSize:"0.75rem",fontWeight:700}}>✕</button>
+              )}
             </div>
           </div>
+
+          {/* Search -- collapsed behind the header magnifying-glass icon by
+              default (2026-09-02, Aditi: the bar was "constantly showing");
+              real SVG icon (lucide Search) in place of the emoji, same
+              layout fix as before (icon and input are flex siblings so
+              utils.jsx's global forced input padding never crowds it). */}
+          {searchOpen && (
+            <div style={{padding:"14px 18px 0"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,border:"1px solid #EEEDF5",
+                borderRadius:14,background:"#F8F7FC",paddingLeft:14}}>
+                <SearchIcon size={16} color="#9CA3AF" style={{flexShrink:0}}/>
+                <input ref={searchInputRef} value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="Search patients…"
+                  style={{flex:1,minWidth:0,border:"none",color:"#111827",background:"transparent",
+                    outline:"none",padding:"12px 14px 12px 0",fontSize:"0.85rem",boxSizing:"border-box"}}/>
+              </div>
+            </div>
+          )}
 
           {/* Care-setting filter pills -- All / Outpatient / IPD / Post-op,
               for which pathway a patient was assessed under. See
