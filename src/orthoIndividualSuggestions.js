@@ -12,7 +12,7 @@
    ============================================================ */
 import { ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA, matchRegionKey } from "./orthoClinicalData.js";
 import { allPostureFieldsForRegion } from "./orthoObservationData.js";
-import { NKT_REGIONS, NKT_REGION_KEYS } from "./orthoAdvancedLibrary.js";
+import { NKT_REGIONS, NKT_REGION_KEYS, KC_REGIONS, KC_REGION_KEYS, FMA_DATA, FMA_REGION_KEYS, CYRIAX_REGIONS_DATA, CYRIAX_REGION_KEYS } from "./orthoAdvancedLibrary.js";
 
 export function suggestIndividualItems(selectedRegions = []) {
   const rom = [], mmt = [], specialTests = [], observation = [];
@@ -59,10 +59,91 @@ export function suggestCpaItems(selectedRegions = []) {
   });
   return cpa;
 }
+// Same field set as orthoAdvancedTools.jsx's cpaRichItem() -- how to test,
+// common compensators, AND treatment (was missing treatment before).
 export function cpaWhy(t) {
-  return t.compensator ? `Common compensator if inhibited: ${t.compensator}` : "Screens for a facilitated/inhibited motor-control pattern.";
+  return t.compensator ? [`Common compensator if inhibited: ${t.compensator}`] : ["Screens for a facilitated/inhibited motor-control pattern."];
 }
 export function cpaHow(t) {
+  const lines = [];
+  if (t.how) lines.push(t.how);
+  if (t.treatment) lines.push(`Treatment: ${t.treatment}`);
+  return lines;
+}
+
+// Same region-matching KineticChainSection reads -- resolves each selected
+// region onto KC_REGIONS so an inline answer here and a later visit to the
+// full page are the exact same data.kineticChain[regionKey][testId] field.
+export function suggestKineticChainItems(selectedRegions = []) {
+  const kc = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, KC_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (KC_REGIONS[key]?.tests || []).forEach((t) => kc.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return kc;
+}
+// Same field set as orthoAdvancedTools.jsx's kcRichItem() -- how to
+// perform, kinetic chain effect, treatment.
+export function kcWhy(t) {
+  return t.chainEffect ? [`Kinetic chain effect: ${t.chainEffect}`] : ["Screens this segment of the kinetic chain for a mobility/stability deficit that can drive compensation elsewhere."];
+}
+export function kcHow(t) {
+  const lines = [];
+  if (t.how) lines.push(t.how);
+  if (t.treatment) lines.push(`Treatment: ${t.treatment}`);
+  return lines;
+}
+
+// Same region-matching FmaSection reads -- resolves each selected region
+// onto FMA_DATA so an inline answer here and a later visit to the full
+// page are the exact same data.fma[regionKey][testId + "_grade"] field.
+export function suggestFmaItems(selectedRegions = []) {
+  const fma = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, FMA_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (FMA_DATA[key] || []).forEach((t) => fma.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return fma;
+}
+// Same field set as orthoAdvancedTools.jsx's fmaRichItem() -- setup and
+// procedure, normal pattern.
+export function fmaWhy(t) {
+  return t.normalDesc ? [`Normal pattern: ${t.normalDesc}`] : ["Screens a fundamental movement pattern for a compensation strategy, not a pass/fail score."];
+}
+export function fmaHow(t) {
+  return t.setup ? [t.setup] : [];
+}
+
+// Same region-matching SttSection reads (sectionKey "sttt") -- scoped to
+// resistedTests, the actual selective-tension differentiator (isolates the
+// contractile unit from inert structures); active/passive ROM and joint
+// play stay on the full STTT page as before. Resolves onto
+// CYRIAX_REGIONS_DATA so an inline answer here and a later visit to the
+// full page are the exact same data.sttt[regionKey][testId + "_result"].
+export function suggestSttItems(selectedRegions = []) {
+  const stt = [];
+  const seen = new Set();
+  selectedRegions.forEach((region) => {
+    const key = matchRegionKey(region.id, CYRIAX_REGION_KEYS);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      (CYRIAX_REGIONS_DATA[key]?.resistedTests || []).forEach((t) => stt.push({ regionKey: key, itemId: t.id, label: t.label, meta: t }));
+    }
+  });
+  return stt;
+}
+export function sttWhy(t) {
+  return t.muscle ? [`Isolates the contractile unit: ${t.muscle}`] : ["Resisted (isometric) testing isolates the contractile unit — muscle/tendon — from inert structures."];
+}
+export function sttHow(t) {
   return t.how ? [t.how] : [];
 }
 
@@ -73,39 +154,70 @@ export function defaultSideFor(regionKey, selectedRegions) {
   return s === "left" ? "left" : s === "bilateral" ? "bilateral" : "right";
 }
 
+// Same field set/order as orthoRegionAssessments.jsx's romInfoText() /
+// romRichItem() (the old flow's single merged (i) sheet for a movement) --
+// Why carries the clinical-significance fields, How carries everything a
+// therapist needs to actually perform and read the test, so between the
+// two nothing that old sheet showed is missing here.
 export function romWhy(m) {
-  return m.pathology || m.redflag || `Establishes available ${m.mv?.toLowerCase() || "movement"} and whether it reproduces the patient's symptoms.`;
+  const parts = [];
+  if (m.pathology) parts.push(`Pathology correlation: ${m.pathology}`);
+  if (m.redflag) parts.push(`⚠ Red flag: ${m.redflag}`);
+  if (!parts.length) parts.push(`Establishes available ${m.mv?.toLowerCase() || "movement"} and whether it reproduces the patient's symptoms.`);
+  return parts;
 }
 export function romHow(m) {
   const lines = [];
   if (m.start) lines.push(`Start: ${m.start}`);
   if (m.gonio) lines.push(`Goniometer: ${m.gonio}`);
+  if (m.muscles) lines.push(`Prime movers: ${m.muscles}`);
   if (m.endfeel?.normal) lines.push(`Normal end-feel: ${m.endfeel.normal}`);
+  if (m.endfeel?.abnormal) lines.push(`Abnormal end-feel: ${m.endfeel.abnormal}`);
+  if (m.compensation) lines.push(`Watch for compensation: ${m.compensation}`);
+  if (m.capsular) lines.push(`Capsular pattern: ${m.capsular}`);
+  if (m.pediatric) lines.push(`Pediatric: ${m.pediatric}`);
+  if (m.geriatric) lines.push(`Geriatric: ${m.geriatric}`);
   return lines;
 }
 
+// Same field set/order as orthoRegionAssessments.jsx's mmtInfoText() /
+// mmtRichItem().
 export function mmtWhy(m) {
-  return m.functional || m.chain || `Grades the strength of ${m.muscle} to identify a deficit contributing to the presentation.`;
+  const parts = [];
+  if (m.functional) parts.push(m.functional);
+  if (m.chain) parts.push(m.chain);
+  if (!parts.length) parts.push(`Grades the strength of ${m.muscle} to identify a deficit contributing to the presentation.`);
+  return parts;
 }
 export function mmtHow(m) {
   const lines = [];
+  if (m.action) lines.push(`Action: ${m.action}`);
   if (m.patient) lines.push(`Patient position: ${m.patient}`);
-  if (m.therapist) lines.push(`Therapist/hand placement: ${m.therapist}`);
+  if (m.therapist) lines.push(`Therapist / hand placement: ${m.therapist}`);
   if (m.resistance) lines.push(`Resistance: ${m.resistance}`);
+  if (m.gravElim) lines.push(`Gravity-eliminated position: ${m.gravElim}`);
+  if (m.palpation) lines.push(`Palpation: ${m.palpation}`);
+  if (m.nerve || m.root) lines.push(`Nerve / Root: ${m.nerve || "—"} / ${m.root || "—"}`);
+  if (m.origin || m.insertion) lines.push(`Origin → Insertion: ${m.origin || "—"} → ${m.insertion || "—"}`);
+  if (m.compensation) lines.push(`Compensation: ${m.compensation}`);
+  if (m.substitution) lines.push(`Substitution: ${m.substitution}`);
   return lines;
 }
 
+// Same field set/order as orthoRegionAssessments.jsx's specialRichItem() --
+// how-to-perform + sensitivity/specificity reference + positive/negative
+// interpretation, the same three tabs the old (i) sheet showed.
 export function specialWhy(t) {
   const parts = [];
   if (t.structure) parts.push(`Stresses: ${t.structure}`);
-  if (t.sensitivity) parts.push(`Sensitivity ${t.sensitivity}, specificity ${t.specificity}`);
+  if (t.sensitivity || t.specificity) parts.push(`Sensitivity ${t.sensitivity || "—"}, specificity ${t.specificity || "—"}`);
   return parts.join(" — ") || "Helps narrow the differential for this region.";
 }
 export function specialHow(t) {
   const lines = [];
   if (t.how) lines.push(t.how);
-  if (t.positive) lines.push(`Positive: ${t.positive}`);
   if (t.negative) lines.push(`Negative: ${t.negative}`);
+  if (t.positive) lines.push(`Positive: ${t.positive}`);
   return lines;
 }
 
