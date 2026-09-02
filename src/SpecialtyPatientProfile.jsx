@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
-import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
+import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters } from "./NeurologicalAssessment.jsx";
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
@@ -405,7 +405,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
-              <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} />
+              <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} formatters={neuroSummaryFormatters} />
             </Card>
           ) : (
             <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>

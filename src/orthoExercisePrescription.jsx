@@ -21,7 +21,12 @@ import { matchRegionKey } from "./orthoClinicalData.js";
 const PHASES = ["All", "Phase 1", "Phase 2", "Phase 3"];
 const FREQ_OPTIONS = ["Hourly", "2×/day", "3×/day", "Daily", "2×/week", "3×/week", "Weekly", "As needed"];
 
-function StepperField({ label, value, onChange, unit, max = 60 }) {
+// Exported (2026-09-02) so neuroExercisePrescription.jsx can reuse the
+// exact same library-card/programme-entry UI instead of duplicating it --
+// same EXERCISE_DB, same field-kit, same "browse → add to programme →
+// customize dosage" pattern, just scoped to the "neurological" region
+// there instead of a body region here.
+export function StepperField({ label, value, onChange, unit, max = 60 }) {
   return (
     <div className="vital-field">
       <div className="vital-label-row">
@@ -33,7 +38,7 @@ function StepperField({ label, value, onChange, unit, max = 60 }) {
   );
 }
 
-function exerciseInfoBody(ex) {
+export function exerciseInfoBody(ex) {
   return (
     <>
       <div style={{ marginBottom: 10 }}>
@@ -65,7 +70,7 @@ function exerciseInfoBody(ex) {
 // asset name -- so a photo just has to be uploaded under an exercise's id
 // (e.g. "lb_glute_bridge") to show up here with no further code change,
 // same as ROM/MMT/Special Tests already work. Matching that convention.
-function exerciseRichItem(ex) {
+export function exerciseRichItem(ex) {
   return {
     image: ex.id,
     title: ex.name,
@@ -74,7 +79,7 @@ function exerciseRichItem(ex) {
   };
 }
 
-function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
+export function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
   return (
     <div className="tech-card">
       <div className="tech-card-head">
@@ -101,7 +106,7 @@ function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
   );
 }
 
-function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
+export function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
   return (
     <div className="tech-card">
       <div className="tech-card-head">

@@ -6,6 +6,16 @@ import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHAB_PHASES, LIMITED_EVIDENCE_NOTICE } from "./neuroTreatmentCatalog.js";
 import { authHeader } from "./supabase.js";
 import { SCALES } from "./sharedClinicalData.js";
+import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { orthoStyles } from "./orthoStyles.js";
+
+// formatters[stepId] contract for SummarySection's rowsForStep -- only
+// exercisePrescription needs one so far (its section holds an array, not
+// flat fields); every other step still uses the generic flattener.
+// Exported so SpecialtyPatientProfile.jsx's own NeuroSummarySection call
+// (Cardio/Neuro/Ortho patient profile) shows the same real exercise
+// programme instead of "[object Object]" there too.
+export const neuroSummaryFormatters = { exercisePrescription: formatNeuroExercisePrescriptionSection };
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -72,6 +82,7 @@ const STEP_META = [
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
   { id: "aiTreatment", icon: "✨", label: "AI Treatment Suggestions" },
+  { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
   { id: "summary", icon: "✅", label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(1); // 16 core steps shown in the step nav
@@ -1727,7 +1738,23 @@ export function SummaryStyles() {
     `}</style>
   );
 }
-export function SummarySection({ setting, data, assessSteps }) {
+// rowsForStep: a step's own formatter (when it needs one -- e.g. a step
+// whose section holds an array like the Exercise Prescription programme,
+// not flat key/value fields) wins; otherwise fall back to the generic
+// Object.entries flattener every other step already used. Same
+// formatters[stepId] contract as orthoSummary.jsx's AssessmentSummary, so
+// exercisePrescription can reuse formatNeuroExercisePrescriptionSection
+// from neuroExercisePrescription.jsx instead of showing "[object Object]".
+function rowsForStep(step, section, formatters) {
+  const formatter = formatters?.[step.id];
+  if (formatter) return formatter(section);
+  return Object.entries(section)
+    .map(([k, v]) => [k, fmtVal(v)])
+    .filter(([, v]) => v)
+    .map(([label, value]) => ({ label, value }));
+}
+
+export function SummarySection({ setting, data, assessSteps, formatters }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
@@ -1735,37 +1762,31 @@ export function SummarySection({ setting, data, assessSteps }) {
   const exportText = useMemo(() => {
     let lines = [`NEUROLOGICAL ASSESSMENT`, `Setting: ${settingLabel}`, ""];
     steps.filter((s) => s.id !== "summary").forEach((step) => {
-      const section = data[step.id] || {};
-      const rows = Object.entries(section)
-        .map(([k, v]) => [k, fmtVal(v)])
-        .filter(([, v]) => v);
+      const rows = rowsForStep(step, data[step.id] || {}, formatters);
       if (rows.length) {
         lines.push(`— ${step.label} —`);
-        rows.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
     return lines.join("\n");
-  }, [data, settingLabel, steps]);
+  }, [data, settingLabel, steps, formatters]);
 
   return (
     <>
       <SectionIntro icon="✅" title="Summary & Review" sub={settingLabel} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
-        const section = data[step.id] || {};
-        const rows = Object.entries(section)
-          .map(([k, v]) => [k, fmtVal(v)])
-          .filter(([, v]) => v);
+        const rows = rowsForStep(step, data[step.id] || {}, formatters);
         if (!rows.length) return null;
         return (
           <div className="summary-card" key={step.id}>
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {rows.map(([k, v]) => (
-              <div className="summary-row" key={k}>
-                <span className="summary-key">{k}</span>
-                <span className="summary-val">{v}</span>
+            {rows.map(({ label, value }) => (
+              <div className="summary-row" key={label}>
+                <span className="summary-key">{label}</span>
+                <span className="summary-val">{value}</span>
               </div>
             ))}
           </div>
@@ -1800,7 +1821,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "aiTreatment", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "aiTreatment", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2512,9 +2533,20 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
               {current.id === "aiTreatment" && <AiTreatmentSuggestionsSection data={data} setData={setData} />}
+              {current.id === "exercisePrescription" && (
+                <>
+                  {/* Reuses Ortho's ExerciseLibraryCard/ProgrammeEntryCard
+                      (.tech-card/.stepper/.template-list/.vital-field etc.),
+                      which Neuro's own stylesheet doesn't define -- scoped
+                      to just this step the same way SpecialtyPatientProfile.jsx
+                      already does when it renders an Ortho summary. */}
+                  <style>{orthoStyles()}</style>
+                  <NeuroExercisePrescriptionSection data={data} setData={setData} />
+                </>
+              )}
               {current.id === "summary" && (
                 <>
-                  <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
+                  <SummarySection setting={setting} data={data} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
                   <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setSaveModalOpen(true)}>
                     ⭐ Save this assessment as a template
                   </button>
@@ -2571,7 +2603,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               </button>
             </div>
             <div className="ct-modal-body">
-              <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
+              <SummarySection setting={setting} data={data} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
             </div>
           </div>
         )}
