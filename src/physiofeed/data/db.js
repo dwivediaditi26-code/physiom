@@ -1216,6 +1216,33 @@ export async function draftEvidenceFromPubMed(result) {
   return json.draft;
 }
 
+// Second live-search source (Evidence tab -> Search Live), alongside
+// PubMed above -- same shape, same defensive readApiJson(). See
+// api/europepmcSearch.js for why: a free public API (europepmc.org) that
+// also reaches PMC full-text, restricted server-side to peer-reviewed
+// sources (MEDLINE/PMC, preprints excluded).
+export async function searchEuropePMCForEvidence(query) {
+  const res = await fetch("/api/europepmcSearch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ query }),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Europe PMC search failed.");
+  return json.results || [];
+}
+
+export async function draftEvidenceFromEuropePMC(result) {
+  const res = await fetch("/api/europepmcDraft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(result),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Couldn't draft a summary.");
+  return json.draft;
+}
+
 // Returns the inserted row in the same shape getEvidence() produces, so the
 // caller can hand it straight to ResearchCard.jsx for a real (not
 // hand-rolled) preview of exactly what just got published.

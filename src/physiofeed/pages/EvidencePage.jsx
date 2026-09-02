@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import ResearchCard from "../components/evidence/ResearchCard.jsx";
-import PubMedSearchPanel from "../components/evidence/PubMedSearchPanel.jsx";
+import LiveSearchPanel from "../components/evidence/LiveSearchPanel.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 const CATEGORIES = ["All", "MSK", "Neuro", "Sports", "Cardio"];
 const SORTS = [{ key: "oldest", label: "Oldest first" }, { key: "newest", label: "Newest first" }];
-const MODES = [{ key: "curated", label: "Curated" }, { key: "live", label: "Search PubMed" }];
+const MODES = [{ key: "curated", label: "Curated" }, { key: "live", label: "Search Live" }];
 
 export default function EvidencePage() {
   const { evidence } = useAppData();
@@ -41,7 +41,7 @@ export default function EvidencePage() {
       </div>
 
       {mode === "live" ? (
-        <PubMedSearchPanel />
+        <LiveSearchPanel />
       ) : (
         <>
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-10 mb-4">
