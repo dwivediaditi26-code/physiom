@@ -243,10 +243,27 @@ export function orthoStyles() {
            long ("External + Internal Obliques", "Transversus Abdominis") --
            .movement-info takes the min-width:0 + flex:1 a flex child needs
            to actually shrink/wrap its text instead of forcing the row wider
-           than its container. */
+           than its container. Still used by MMT (RomSection moved to the
+           .rom-row table layout below). */
         .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
         .movement-info { flex: 1 1 160px; min-width: 0; }
         .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
+           detail collapses, not the whole movement row (degree steppers
+           stay visible since they're filled for every movement). */
+        .rom-detail-toggle { padding: 6px 2px; margin-bottom: 4px; border: none; border-radius: 8px; }
+        .rom-detail-toggle:hover { background: ${BRAND.purpleFaint}; }
+
+        /* ROM as a compact table -- one line per movement (name | L | R),
+           columns aligned across every row via a shared grid template so
+           the degree fields line up regardless of movement-name length. */
+        .rom-row { border-top: 1px solid #F5F3FB; padding: 7px 0; }
+        .rom-row:first-of-type { border-top: none; padding-top: 0; }
+        .rom-row-grid { display: grid; grid-template-columns: 1fr 68px 68px; align-items: center; gap: 8px; }
+        .rom-table-head { padding-bottom: 6px; border-bottom: 1.5px solid ${BRAND.border}; margin-bottom: 2px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.grayLight}; }
+        .rom-table-head span:not(:first-child) { text-align: center; }
+        .rom-row-name { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
+        .rom-row-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }
         .movement-lr { display: flex; gap: 10px; flex-shrink: 0; }
