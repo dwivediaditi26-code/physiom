@@ -12,6 +12,7 @@ import { listGlobalCatalogFields, listRegionCatalogFields } from "./sharedClinic
 import BodyChartPro from "./BodyChartPro.jsx";
 import { LazyTab } from "./utils.jsx";
 import HowToPerformDrawer, { romInfoSections, mmtInfoSections } from "./HowToPerformDrawer.jsx";
+import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 // Dynamic import (not a static one) so each module's code stays in its own
 // lazy chunk instead of bloating the main bundle -- matches how AppFull.jsx
 // already lazy-loads the same files for the full-page nav flow.
@@ -1693,6 +1694,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
     { k:"assessment",  icon:"📋",  label:"Assessment"       },
     { k:"posture",     icon:"🧍",  label:"Posture"          },
     { k:"treatment",   icon:"💊",  label:"Treatment"        },
+    { k:"home",        icon:"🏠",  label:"Home"             },
     { k:"progress",    icon:"📈",  label:"Progress"         },
     { k:"documents",   icon:"📄",  label:"Docs"             },
   ];
@@ -3537,6 +3539,50 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
                     })}
                     {sess.length>8&&<div style={{fontSize:10.5,color:C.muted,padding:"4px 8px"}}>+{sess.length-8} more sessions</div>}
                   </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {tab==="home" && (
+          <div className="tab-content" style={{padding:"16px 16px"}}>
+            {/* Dedicated Home Protocol page (2026-09-02, Aditi) -- this
+                content already existed buried inside the Treatment tab, but
+                Ortho patients had no first-class page for it the way
+                Cardio/Neuro patients do on SpecialtyPatientProfile.jsx's own
+                "Home" tab. Reads the exact same flat hep_programme field
+                orthoHomeProtocol.jsx's wizard step and the old Treatment-tab
+                HEP editor both already read/write, so an exercise assigned
+                from either place shows up here immediately. */}
+            {(()=>{
+              const prog=Array.isArray(d.hep_programme)?d.hep_programme:[];
+              const hepV=parseInt(d.hep_version)||1;
+              const hepDose=e2=>{const st=e2.customSets||e2.sets,rp=e2.customReps||e2.reps,hd=e2.customHold||e2.hold,fq=e2.customFreq||e2.freq;return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`};
+              return(
+                <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:12,boxShadow:"0 1px 6px rgba(0,0,0,0.05)",border:`1px solid ${C.border}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <span style={{fontSize:13.5,fontWeight:800,color:C.text}}>🏠 Home Protocol <span style={{color:C.primary}}>v{hepV} · {prog.length} exercise{prog.length!==1?"s":""}</span></span>
+                  </div>
+                  {prog.length===0?(
+                    <div style={{textAlign:"center",padding:"18px 4px",color:C.muted,fontSize:12.5}}>No protocol yet — build it in Sessions or the Treatment tab's Home Protocol editor.</div>
+                  ):(
+                    <>
+                      {prog.map((e,i2)=>(
+                        <div key={e.id||i2} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:i2%2===0?"#F9FAFB":"#fff",borderRadius:8}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12.5,fontWeight:700,color:C.text}}>{i2+1}. {e.name}</div>
+                            <div style={{fontSize:10.5,color:C.muted}}>{hepDose(e)}</div>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{display:"flex",gap:8,marginTop:12}}>
+                        <button onClick={()=>sendHepWhatsApp(d)} style={{flex:1,padding:"10px 14px",borderRadius:10,border:"none",background:"#ECFDF5",color:"#047857",fontWeight:700,fontSize:12.5,cursor:"pointer"}}>📲 Send to Patient</button>
+                        <button onClick={()=>downloadHepPdf(d)} style={{flex:1,padding:"10px 14px",borderRadius:10,border:`1px solid ${C.border}`,background:"#fff",color:C.text,fontWeight:700,fontSize:12.5,cursor:"pointer"}}>📄 Download PDF</button>
+                      </div>
+                      <div style={{marginTop:10,fontSize:10.5,color:C.muted,textAlign:"center"}}>Edit the protocol in <span onClick={()=>setTab("treatment")} style={{color:C.primary,fontWeight:700,cursor:"pointer"}}>Treatment →</span></div>
+                    </>
+                  )}
                 </div>
               );
             })()}
