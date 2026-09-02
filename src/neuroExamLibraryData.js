@@ -1289,6 +1289,34 @@ export const neuroExamLibraryData = {
     },
   },
 
+  gcsEye: {
+    title: "GCS — Eye Opening (E)",
+    icon: "👁️",
+    category: "Learn · Neuro · Mental Status",
+    perform: {
+      images: [null, null, null],
+      caption: "Best eye-opening response, escalating the stimulus only as needed",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Observe first without any stimulus — check whether the eyes are already open spontaneously before saying or doing anything." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score the best response obtained: 4 = spontaneous (already open before any stimulus), 3 = opens to speech (a normal or loud verbal request/name), 2 = opens only to a painful stimulus, 1 = no eye opening at any stimulus. Escalate speech → pain only if the previous level got no response." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Record 'C' instead of a score if the eyes cannot open due to swelling, ptosis, orbital trauma, or bandaging — never guess or default to 1, since a closed-but-untestable eye is not the same as no response." },
+        { tone: "amber", label: "⚠️ Tip", text: "Eyes open does not mean aware — 'eye opening' scores arousal, not awareness, so a spontaneously-open eye can still accompany a very low verbal or motor score." },
+      ],
+    },
+    scaleLabel: "Eye opening (E) score",
+    scale: { type: "table", rows: [
+      { k: "4", v: "Spontaneous" },
+      { k: "3", v: "To speech" },
+      { k: "2", v: "To pain" },
+      { k: "1", v: "None" },
+    ]},
+    interpret: {
+      normal: ["4 — spontaneous"],
+      abnormal: ["Any score <4 → note the exact stimulus that was needed to elicit opening"],
+      note: "If eyes are closed by swelling or trauma rather than reduced consciousness, document 'C' (not testable) rather than scoring 1 — this changes how the total GCS should be interpreted.",
+    },
+  },
+
   gcsVerbal: {
     title: "GCS — Verbal Response (V)",
     icon: "🗣️",
