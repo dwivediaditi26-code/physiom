@@ -12,10 +12,10 @@ import {
   GaitSection,
   BalanceSection,
   ActivityToleranceSection,
-  OutcomeMeasureSection,
   ImpressionSection,
   NeuroScreenSection,
 } from "./orthoCommonSections.jsx";
+import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
@@ -382,7 +382,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "gait" && <GaitSection data={data} setData={setData} />}
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
-          {current.id === "outcomeMeasure" && <OutcomeMeasureSection data={data} setData={setData} />}
+          {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>
@@ -394,7 +394,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 data={data}
                 onEdit={jumpTo}
                 exportHeaderLines={[`IPD ORTHOPEDIC ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection }}
+                formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
