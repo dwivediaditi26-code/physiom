@@ -1,4 +1,9 @@
 import { useState, useMemo, Fragment } from "react";
+import {
+  Armchair, Move, PersonStanding, Dumbbell, Footprints, MoveUp, Activity,
+  RotateCw, ArrowUp, ArrowUpRight, Hand, HandMetal, Bone, ArrowRightLeft,
+  Zap, Scale, Brain, Eye, Wind, Shield, Volume2, Link2,
+} from "lucide-react";
 import { FUNCTIONAL_SCREEN_DATA } from "../../RegionalFunctionalScreens.jsx";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
@@ -6,6 +11,34 @@ import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
 
 const REGION_KEYS = Object.keys(FUNCTIONAL_SCREEN_DATA);
+
+// Per-test icon, keyed by the same test ids FUNCTIONAL_SCREEN_DATA uses --
+// replaces each entry's emoji with a lucide-react line icon (same icon set
+// as the rest of the app) for Learn's study mode only; the live
+// FunctionalScreenHub clinical screen (RegionalFunctionalScreens.jsx) still
+// shows the original emoji from t.icon, untouched. A test id that recurs
+// across regions (e.g. the FMS battery items reused on Hip/Knee/Ankle) is
+// the same real-world test everywhere, so it keeps the same icon.
+const ICONS = {
+  lfs_sts: Armchair, lfs_fwd: Move, lfs_sls: PersonStanding, lfs_squat: Dumbbell,
+  lfs_step: Footprints, fms_aslr: MoveUp, fms_tspu: Activity, fms_rs: RotateCw,
+  sfs_flex: ArrowUp, sfs_abd: ArrowUpRight, sfs_ir: Hand, sfs_er: HandMetal,
+  sfs_scap: Bone, fms_sm: Move,
+  hfs_sls: PersonStanding, hfs_hinge: Move, hfs_ext: ArrowUp, hfs_rot: RotateCw,
+  hfs_step: Footprints,
+  fms_sq: Dumbbell, fms_hs: Footprints, fms_il: ArrowRightLeft,
+  kfs_squat: Dumbbell, kfs_lunge: ArrowRightLeft, kfs_step: Footprints,
+  kfs_hop: Zap, kfs_tke: Move,
+  afs_hr: ArrowUp, afs_df: Move, afs_bal: Scale, afs_hop: Zap, afs_arch: Footprints,
+  cfs_arom: RotateCw, cfs_dnf: Activity, cfs_post: PersonStanding, cfs_diz: Eye,
+  cfs_ulnt: Zap,
+  tfs_arom: RotateCw, tfs_rib: Wind, tfs_ext: ArrowUp, tfs_t4: Zap, tfs_scap: Bone,
+  efs_arom: RotateCw, efs_lat: Dumbbell, efs_med: Dumbbell, efs_stab: Shield,
+  efs_neural: Zap,
+  wfs_arom: Hand, wfs_cts: Zap, wfs_tfcc: Bone, wfs_scaph: Bone, wfs_fingers: Hand,
+  tmj_arom: RotateCw, tmj_click: Volume2, tmj_muscle: Hand, tmj_cerv: Link2,
+  tmj_head: Brain,
+};
 
 // Real data from FUNCTIONAL_SCREEN_DATA (RegionalFunctionalScreens.jsx) --
 // the exact same LUMBAR_TESTS/SHOULDER_TESTS/etc. arrays the actual
@@ -17,7 +50,7 @@ const REGION_KEYS = Object.keys(FUNCTIONAL_SCREEN_DATA);
 function toCard(t) {
   return {
     id: t.id,
-    emoji: t.icon,
+    Icon: ICONS[t.id] || Activity,
     title: t.label,
     subtitle: t.subtitle,
     tags: [t.phase].filter(Boolean),

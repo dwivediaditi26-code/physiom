@@ -133,7 +133,6 @@ const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} 
 const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, SensoryRegion: SensoryRegionWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
 
 const STREAMS = [
-  { id:"ortho",     label:"Old Ortho",        icon:"🦴", color:"#7c3aed", live:true  },
   { id:"ortho_new", label:"Ortho Assessment", icon:"🦴", color:"#7c3aed", live:true  },
   { id:"neuro",     label:"Neuro",            icon:"🧠", color:"#0d9488", live:true  },
   { id:"sports",    label:"Sports",           icon:"🏃", color:"#ea580c", live:false },
@@ -506,22 +505,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // a specialty does the exact same real thing (blank-slate + navigate to
   // that specialty's real tool) no matter which entry point was used.
   function startSpecialty(st) {
+    // Only blank-slate when there's no patient already open. Wiping
+    // activePatientId unconditionally used to do this every time, even with
+    // a patient already loaded -- so tapping e.g. "Neuro" right after
+    // creating/opening a patient silently started a second, disconnected
+    // blank record instead of continuing that same patient's chart, and
+    // the wizard's own name field being re-typed then auto-created a
+    // duplicate patient (see the "no active patient" auto-create effect
+    // above). Keeping the active patient here lets the wizard seed from
+    // and save back onto the one record instead.
+    const hasActivePatient = !!activePatientId;
     if (st.id === "cardio") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("neuro_assessment");
-    } else if (st.id === "ortho") {
-      setStream("ortho");
-      setData({});
-      setActivePatientId(null);
-      navTo("demographics");
     } else if (st.id === "ortho_new") {
-      setData({});
-      setActivePatientId(null);
+      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
       navTo("ortho_new_assessment");
     } else {
       setStream(st.id);
@@ -602,12 +603,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
   const finaliseNewPatient = (intake) => {
     const name = intake.dem_name || "New Patient";
-    // Stamp which specialty stream this assessment was started under (set by
-    // the New Assessment specialty picker just before createNewPatient()) --
-    // a new, additive field. Patients created before this change simply have
-    // no value here, so they show up under "All" in the Clinical patient
-    // list's specialty filter rather than a guessed/fabricated specialty.
-    const intakeWithSpecialty = { ...intake, assessment_specialty: stream };
+    // Stamp which specialty stream this assessment was started under. The
+    // intake form's own step 2 now asks this outright (2026-08-31), so its
+    // answer wins; the `stream` fallback still covers the older entry points
+    // that set the specialty before calling createNewPatient(). Patients
+    // created before this field existed simply have no value here, so they
+    // show up under "All" in the Clinical patient list's specialty filter
+    // rather than a guessed/fabricated specialty.
+    const chosenSpecialty = intake.assessment_specialty || stream;
+    const intakeWithSpecialty = { ...intake, assessment_specialty: chosenSpecialty };
     const newP = { id: genId(), name, data: intakeWithSpecialty, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
     const updated = [newP, ...patients];
     setPatients(updated);
@@ -615,7 +619,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setData(intakeWithSpecialty);
     setActivePatientId(newP.id);
     setShowIntake(false);
-    navTo("subjective");
+    // Land in the flow the clinician actually picked on step 2, instead of
+    // always dropping into the ortho Subjective wizard. navTo() snaps
+    // `stream` back to "ortho" itself, and both of these are ortho-flow
+    // `active` keys (the same ones startSpecialty() uses), so no extra
+    // setStream() is needed here.
+    navTo(chosenSpecialty === "cardio" ? "cardio_assessment"
+        : chosenSpecialty === "neuro"  ? "neuro_assessment"
+        : "subjective");
     setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };
@@ -1013,7 +1024,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {doctorInitials}
         </div>
         <div>
-          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {currentUser?.user_metadata?.full_name?.split(" ")[0]||currentUser?.email?.split("@")[0]||"Doctor"}</div>
+          <div style={{fontSize:"0.82rem",fontWeight:800,color:PC.text,lineHeight:1.2}}>Hello, Dr {(currentUser?.user_metadata?.full_name||currentUser?.email?.split("@")[0]||"Doctor").replace(/^dr\.?\s+/i,"").split(" ")[0]}</div>
           <div style={{fontSize:"0.78rem",color:PC.muted}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</div>
         </div>
       </div>
@@ -1069,8 +1080,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* 3. Assessment (collapsible) */}
       <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
         <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
-        <SidebarItem navKey="subjective"    icon="📝" label="Subjective Assessment"/>
-        <SidebarItem navKey="subjective_compare" icon="🆚" label="Subjective — New vs Old"/>
         <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
         <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
         <SidebarItem navKey="ortho_new_assessment" icon="🦴" label="Ortho Assessment"/>
@@ -1821,6 +1830,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 onNav={navTo}
                 onBack={()=>navTo("clinical")}
+                onSaveField={(id,newData)=>{
+                  setPatients(prev=>{
+                    const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
+                    savePatientDB(updated, currentUser?.id);
+                    return updated;
+                  });
+                }}
+                onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
             </div>
           )}
@@ -1890,18 +1907,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       patient list should only show patient list"). "Patients"
                       stays the default so tapping the bottom-nav "Clinical"
                       tab still lands exactly where it always has. */}
-                  <div style={{display:"flex",gap:6,padding:"12px 16px 0",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
+                  <div style={{display:"flex",gap:4,padding:"10px 12px",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
                     {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"],["assessment","📋 Assessment"]].map(([k,label])=>(
                       <button key={k} onClick={()=>setClinicalSubTab(k)}
-                        style={{padding:"8px 14px",borderRadius:"10px 10px 0 0",border:"none",borderBottom:clinicalSubTab===k?"2px solid #6D28D9":"2px solid transparent",
-                          background:clinicalSubTab===k?"#F5F3FF":"transparent",color:clinicalSubTab===k?"#6D28D9":"#6B7280",
-                          fontSize:"0.8rem",fontWeight:700,cursor:"pointer"}}>
+                        style={{flex:1,padding:"6px 4px",borderRadius:"999px",border:"none",
+                          background:clinicalSubTab===k?"#6D28D9":"#F3F4F6",color:clinicalSubTab===k?"#fff":"#6B7280",
+                          fontSize:"0.68rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                         {label}
                       </button>
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
@@ -1967,7 +1984,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("subjective"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>setProfilePatient(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
@@ -2330,7 +2347,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
               const handleClick = () => { if (isClinical) navTo("clinical"); else navTo(item.key); };
               return item.center ? (
-                <button key={item.key} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>
                   {/* 3D glossy bubble -- gradient fill + bottom ridge + inset
                       top highlight, same "raised button" formula already used
@@ -2344,7 +2361,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <span className="pm-bnav-tab-label" style={{color:isActive?"#6D28D9":undefined,fontWeight:700}}>{item.label}</span>
                 </button>
               ) : (
-                <button key={item.key} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
+                <button key={item.key} data-testid={`bnav-tab-${item.key}`} className={`pm-bnav-tab${isActive?" active":""}`} onClick={handleClick}>
                   <span className="pm-bnav-tab-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name={item.icon}/></span>
                   <span className="pm-bnav-tab-label">{item.label}</span>
                 </button>

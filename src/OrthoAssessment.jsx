@@ -22,10 +22,11 @@ import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.j
              saved section lists) alongside Condition-wise.
 
    Once all three are picked, the matching pathway module takes
-   over and runs its own condition-driven step list. This file
-   is intentionally NOT wired into App.jsx / AppFull.jsx — it is
-   a standalone module for review, reached only via
-   ortho-preview.html.
+   over and runs its own condition-driven step list. Live in
+   production via OrthoAssessmentNew.jsx's thin wrapper (AppFull.jsx's
+   Clinical > Assessment > Ortho card) — the "standalone, not wired
+   in" claim this comment used to make was stale and wrong; it's also
+   reachable directly via ortho-preview.html for isolated review.
    ============================================================ */
 
 const PATHWAYS = [
@@ -114,8 +115,10 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         onExit={restart}
         onSave={onSave}
         activePatientId={activePatientId}
+        patientData={patientData}
         requireAuth={requireAuth}
         initialAiUpdates={pendingAiUpdates}
+        entryMode={effectiveEntryMode}
       />
     );
   }

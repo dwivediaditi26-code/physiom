@@ -36,11 +36,16 @@ describe("dist2D — Euclidean distance", () => {
 
 describe("classifySeverity — real clinical thresholds from POSTURE_THRESHOLDS", () => {
   it("CVA angle (lower is worse, Yip et al. 2008): normal, mild, moderate, high", () => {
-    const t = POSTURE_THRESHOLDS.cvaAngle; // { mild:55, moderate:49, severe:44 }
-    expect(classifySeverity(60, t, true)).toBeNull();      // well above normal cutoff
-    expect(classifySeverity(55, t, true)).toBe("mild");    // right at the mild boundary
-    expect(classifySeverity(49, t, true)).toBe("moderate");
-    expect(classifySeverity(40, t, true)).toBe("high");    // well below severe cutoff
+    // Boundaries read from the table rather than restated, so this can't drift
+    // out of sync with it again. The literals below were { mild:55, moderate:49,
+    // severe:44 } and were never updated when the table was recalibrated to
+    // { mild:50, moderate:44, severe:39 } — the asymptomatic population mean CVA
+    // is ~49.9°, so a mild cutoff of 55° flagged most normal people with FHP.
+    const t = POSTURE_THRESHOLDS.cvaAngle;
+    expect(classifySeverity(t.mild + 5, t, true)).toBeNull();       // above the cutoff
+    expect(classifySeverity(t.mild,     t, true)).toBe("mild");     // at the mild boundary
+    expect(classifySeverity(t.moderate, t, true)).toBe("moderate");
+    expect(classifySeverity(t.severe - 5, t, true)).toBe("high");   // well below severe
   });
 
   it("shoulder angle (higher is worse, Magee p.597): normal, mild, moderate, high", () => {

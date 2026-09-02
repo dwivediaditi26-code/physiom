@@ -2,6 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
+import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.js";
 
 // Same SVG anatomical hotspot map used by the old Palpation flow
 // (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
@@ -64,11 +65,16 @@ export function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Demographics" />
       <TextField label="Full name" value={d.name} onChange={(v) => set("name", v)} placeholder="Patient's full name" />
-      <div className="row-2">
-        <TextField label="Date of birth" value={d.dob} onChange={(v) => set("dob", v)} placeholder="DD/MM/YYYY" />
-        <SelectField label="Sex" type="single" options={["Male", "Female", "Other", "Prefer not to say"]} value={d.sex} onChange={(v) => set("sex", v)} />
-      </div>
-      <SelectField label="Hand dominance" type="single" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
+      {/* Segmented (full-width pill row), not the SelectField combobox --
+          that combobox was squeezed into a row-2 half-width column here,
+          which truncated its "Type or select..." placeholder on mobile.
+          Same fixed-choice field orthoCommonSections.jsx's IPD/Post-op
+          Demographics already renders as Segmented; Outpatient was the
+          one inconsistent holdout. Matches Cardio's 3-option Gender field. */}
+      <Segmented label="Sex" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
+      <Segmented label="Hand dominance" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <div className="row-2">
         <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />
         <TextField label="Employer / industry" value={d.employer} onChange={(v) => set("employer", v)} />
@@ -78,7 +84,6 @@ export function DemographicsSection({ data, setData }) {
       <TextField label="GP name & practice" value={d.gp} onChange={(v) => set("gp", v)} />
       <Segmented label="Affected side" options={["Right", "Left", "Bilateral"]} value={d.affectedSide} onChange={(v) => set("affectedSide", v)} />
       <TextField label="Provisional diagnosis" value={d.provisionalDiagnosis} onChange={(v) => set("provisionalDiagnosis", v)} placeholder="Working / referral diagnosis" />
-      <SelectField label="Consent" type="single" options={["Yes — verbal", "Yes — written", "Not yet"]} value={d.consent} onChange={(v) => set("consent", v)} />
       <TextArea label="Notes" value={d.notes} onChange={(v) => set("notes", v)} placeholder="Any additional context" />
     </>
   );
@@ -94,8 +99,27 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
+
+  // Three equal, always-visible entry options for this step: say it, write
+  // it, or pull it in from this patient's own history. Only fills fields
+  // still blank so it can't silently clobber anything already typed here.
+  function loadOldSubjective() {
+    const { subjective } = importOldSubjectiveData(patientData);
+    setData((prev) => {
+      const existing = prev.subjective || {};
+      const merged = { ...existing };
+      Object.entries(subjective).forEach(([k, v]) => {
+        if (!String(existing[k] || "").trim()) merged[k] = v;
+      });
+      return { ...prev, subjective: merged };
+    });
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function scrollToManualFields() {
+    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
   // the wizard's top-level setData, not this section's own scoped `set`
@@ -123,17 +147,37 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" />
+
+      {/* Three equal entry options -- say it, write it, or pull it in from
+          this patient's own history -- instead of the AI panel being the
+          only prominent choice with manual entry an implicit fallback
+          further down the page. */}
       <Suspense fallback={<Hint>Loading AI intake…</Hint>}>
         <LazyOrthoAIIntakePanel onApply={applyAiUpdates} requireAuth={requireAuth} defaultOpen={autoOpenAI} />
       </Suspense>
+      <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
+        ✍️ Write it manually
+      </button>
+      {hasOldSubjectiveData(patientData) && (
+        <button type="button" className="ai-intake-toggle" onClick={loadOldSubjective}>
+          📋 Load from this patient's existing Subjective Assessment
+        </button>
+      )}
+
       {detectedConditionLabel && (
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
       )}
+      <div id="subjective-manual-start" />
       <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
-      <div className="row-2">
-        <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
-        <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 3 weeks" />
-      </div>
+      {/* Onset is a free-text "type or select" combobox, not a plain input --
+          same class of field as Sex/Hand dominance below, which used to be
+          squeezed into a row-2 half-width column and had their placeholder
+          clipped to unreadable widths on mobile. Full-width here for the
+          same reason; Duration (a plain TextField with a short placeholder)
+          doesn't have that problem and can stay full-width too rather than
+          orphaned alone in a half-empty row. */}
+      <SelectField label="Onset" type="single" options={["Sudden", "Gradual", "Insidious", "Post-exercise", "Post-injury"]} value={d.onset} onChange={(v) => set("onset", v)} />
+      <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 3 weeks" />
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />
       <TextArea label="Relevant medical history" value={d.medicalHistory} onChange={(v) => set("medicalHistory", v)} />
       <TextField label="Medication" value={d.medication} onChange={(v) => set("medication", v)} />
@@ -311,13 +355,13 @@ const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", g
    week) as tap-to-adjust counters instead of free-typed text (2026-08-26,
    user feedback: wanted these "in a plus/minus format", not typed
    manually). Duration is always in minutes. */
-function StepperField({ label, value, onChange, unit, max = 60 }) {
+function StepperField({ label, value, onChange, unit, max = 60, square }) {
   return (
     <div className="vital-field">
       <div className="vital-label-row">
         <span className="vital-label">{label}</span>
       </div>
-      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} />
+      <Stepper value={value} onChange={onChange} min={0} max={max} step={1} square={square} />
       {unit && <div className="hint" style={{ marginTop: 2 }}>{unit}</div>}
     </div>
   );
@@ -326,9 +370,9 @@ function StepperField({ label, value, onChange, unit, max = 60 }) {
 function DosageSteppers({ form, set }) {
   return (
     <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
-      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} />
-      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} />
-      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} />
+      <StepperField label="Sets" unit="sets" value={form.sets} onChange={(v) => set("sets", v)} max={20} square />
+      <StepperField label="Duration" unit="min" value={form.durationMin} onChange={(v) => set("durationMin", v)} max={60} square />
+      <StepperField label="Frequency" unit="x / week" value={form.frequency} onChange={(v) => set("frequency", v)} max={14} square />
     </div>
   );
 }
@@ -354,10 +398,13 @@ function techniqueEntryForm(type, form, set) {
     case "manual":
       return (
         <>
-          <div className="row-2">
-            <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
-            <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
-          </div>
+          {/* Region/joint is a free-text combobox -- same class of field as
+              Onset (orthoOutpatientSections.jsx's Subjective step) that had
+              its placeholder clipped to "Type" when squeezed into a row-2
+              half-width column next to Laterality. Full-width here for the
+              same reason. */}
+          <SelectField label="Region / joint" type="single" options={BODY_REGIONS_TX} value={form.region} onChange={(v) => set("region", v)} />
+          <Segmented label="Laterality" wrap options={["Left", "Right", "Bilateral", "Central"]} value={form.laterality} onChange={(v) => set("laterality", v)} />
           <SelectField label="Technique" type="single" options={MANUAL_TECHNIQUES} value={form.technique} onChange={(v) => set("technique", v)} />
           <TechniqueGradeField value={form.grade} onChange={(v) => set("grade", v)} />
           <DosageSteppers form={form} set={set} />
@@ -527,7 +574,15 @@ export function TreatmentTechniquesSection({ data, setData }) {
 export function formatTreatmentTechniquesSection(section) {
   const entries = Array.isArray(section.entries) ? section.entries : [];
   if (!entries.length) return [];
-  return entries.map((t, i) => ({ label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${t.dosage ? ` — ${t.dosage}` : ""}` }));
+  // Was only appending t.dosage (free text, only ever set on "st" /
+  // soft-tissue techniques) -- sets/duration/frequency, entered via
+  // DosageSteppers and already shown correctly in the live "Techniques
+  // this session" card via dosageMeta() above, were silently dropped from
+  // Final Review. Reuse that same formatter here so both views agree.
+  return entries.map((t, i) => {
+    const meta = dosageMeta(t);
+    return { label: `Technique ${i + 1}`, value: `${techniqueLabel(t)}${meta ? ` — ${meta}` : ""}` };
+  });
 }
 
 function ProgressRow({ label, prev, curr, onPrev, onCurr, change, onChange }) {

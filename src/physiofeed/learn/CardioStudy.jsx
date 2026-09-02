@@ -54,10 +54,45 @@ const REGIONS = [...new Set(Object.values(ALL).map(regionOf))];
 
 const BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" };
 
+// The live InfoCard.jsx popup (cardiovascularData.js/respiratoryData.js's
+// perform.image/perform.images) already stores real photos, just as full
+// Cloudinary URLs built from the same base + "f_auto,q_auto/" transform
+// StudyImage.jsx also uses -- StudyImage takes a bare public id and builds
+// its own URL, so this strips that known prefix back off instead of
+// passing the full URL through (which would double it). Skips (rather than
+// keeping) anything that isn't that exact pattern.
+const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+function stripPrefix(src) {
+  return typeof src === "string" && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
+}
+// 2026-09-02, Aditi: "cardio study mode doesn't show the same three images
+// as the live cardio info cards" -- the live InfoCard.jsx popup pages
+// through up to 3 photos per item (perform.images), but this only ever
+// passed the first one through, so StudyDetail had nothing left to page
+// between. Returns every real (uploaded) photo id, up to 3, in order.
+function realImages(d) {
+  const raw = Array.isArray(d.perform?.images) && d.perform.images.length
+    ? d.perform.images.slice(0, 3).map((it) => (it && typeof it === "object" ? it.src : it))
+    : [d.perform?.image];
+  return raw.map(stripPrefix).filter(Boolean);
+}
+
 function toCard(id, d) {
+  // 2026-09-01, Aditi: "learn study mode doesn't show the same photos as
+  // the live cardio infocards" -- pass through the real photo (same
+  // Cloudinary asset the live InfoCard.jsx popup already shows) alongside
+  // the icon; StudyGrid/StudyDetail try the photo first and only fall
+  // back to Icon if it hasn't actually been uploaded yet (404), so this
+  // no longer has to guess whether a photo will load before choosing.
+  // 2026-09-02: `images` (all up to 3 real photos) drives StudyDetail's
+  // full gallery; `image` (just the first) still drives StudyGrid's single
+  // list thumbnail, unchanged.
+  const images = realImages(d);
   return {
     id,
     Icon: ICONS[id] || Stethoscope,
+    image: images[0] || null,
+    images,
     title: d.title,
     subtitle: d.category.replace("Learn · ", ""),
     sections: (

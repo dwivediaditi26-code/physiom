@@ -238,3 +238,93 @@ export function runLumbarDifferential(regionData, subjective) {
 }
 
 export { evaluateRedFlagOverride };
+
+/* ══════════════════════════════════════════════════════════════════════════
+   lumbarTestNav() -- ported verbatim from SubjectiveObjective.jsx (the old
+   flow), which uses it to turn each condition's free-text
+   objectiveTests.{required,recommended} strings (e.g. "Lumbar AROM all
+   planes", "SLR (expect negative)") into a real module target. That old
+   flow's romHighlights/mmtHighlights/highlightTest ids are the SAME
+   rom_/mmt_/st_ prefixed ids ROM_DATA, MMT_DATA and SPECIAL_TESTS_DATA use
+   here (both pull from the one real sharedClinicalData.js), so this ports
+   straight across with no id remapping needed.
+
+   lumbarConditionItemIds() (new, not in the old flow) uses it to turn one
+   matched condition into the *set* of item ids that condition's objective
+   tests actually cover -- the "Suggested Objective" screen filters its
+   Observation/ROM/MMT/Special Tests lists down to this set when a
+   condition is selected, instead of always showing the region's entire
+   test library regardless of which condition is suspected.
+   ══════════════════════════════════════════════════════════════════════════ */
+const LUMBAR_ROM_HIGHLIGHTS = ["rom_lflex", "rom_lext", "rom_llfl", "rom_llfr", "rom_lrotl", "rom_lrotr"];
+// "mmt_diaphragm" (present in the old flow's own constant) has no matching
+// entry in MMT_DATA["Spine & Core"] -- sharedClinicalData.js has no
+// diaphragm item under Spine & Core at all -- so it's dropped here rather
+// than silently carried forward as a dead id.
+const LUMBAR_CORE_MMT_HIGHLIGHTS = ["mmt_multif", "mmt_ta", "mmt_ql", "mmt_oblique"];
+
+function lumbarTestNav(testStr) {
+  const s = String(testStr || "");
+  if (/active slr|active straight leg|\baslr\b/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_active_slr" } };
+  if (/crossed slr/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" } };
+  if (/slump test/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_slump_test" } };
+  if (/femoral nerve tension test/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "neural", highlightTest: "st_femoral_nerve_stretch" } };
+  if (/quadrant test|kemp'?s test/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_kemp" } };
+  if (/stork/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stork" } };
+  if (/faber/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "hip", highlightTest: "st_faber_test" } };
+  if (/\bslr\b/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_slr_test" } };
+  if (/core\/?lumbopelvic motor control|core assessment/i.test(s))
+    return { nav: "mmt", ctx: { mmtRegion: "Spine & Core", mmtHighlights: LUMBAR_CORE_MMT_HIGHLIGHTS } };
+  if (/lumbar arom|repeated movement/i.test(s))
+    return { nav: "rom", ctx: { romRegion: "Lumbar", romHighlights: LUMBAR_ROM_HIGHLIGHTS } };
+  if (/passive lumbar extension/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_passive_lumbar_ext" } };
+  if (/pheasant test/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_pheasant" } };
+  if (/farfan torsion/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_farfan_torsion" } };
+  if (/h and i stability|h & i/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_h_and_i" } };
+  if (/bicycle test|van gelderen/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_bicycle_van_gelderen" } };
+  if (/stoop test/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_stoop" } };
+  if (/lateral shift/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_lateral_shift" } };
+  if (/prone instability/i.test(s))
+    return { nav: "special", ctx: { specialRegion: "lumbar", highlightTest: "st_prone_instab" } };
+  if (/observation|posture screen/i.test(s))
+    return { nav: "observation", ctx: {} };
+  return null;
+}
+
+/**
+ * Reduces one Phase 0.5 condition's objectiveTests.{required,recommended}
+ * strings down to the concrete rom_/mmt_/st_ prefixed ids they cover, plus
+ * whether Observation is one of them.
+ * @param {object} condition - one entry from runLumbarDifferential(...).conditions
+ */
+export function lumbarConditionItemIds(condition) {
+  const strings = [...(condition?.objectiveTests?.required || []), ...(condition?.objectiveTests?.recommended || [])];
+  const rom = new Set();
+  const mmt = new Set();
+  const special = new Set();
+  let showObservation = false;
+  strings.forEach((s) => {
+    const target = lumbarTestNav(s);
+    if (!target) return;
+    if (target.nav === "rom") (target.ctx.romHighlights || []).forEach((id) => rom.add(id));
+    else if (target.nav === "mmt") (target.ctx.mmtHighlights || []).forEach((id) => mmt.add(id));
+    else if (target.nav === "special" && target.ctx.highlightTest) special.add(target.ctx.highlightTest);
+    else if (target.nav === "observation") showObservation = true;
+  });
+  return { rom, mmt, special, showObservation };
+}

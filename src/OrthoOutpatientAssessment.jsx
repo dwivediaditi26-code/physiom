@@ -51,6 +51,28 @@ function formatPalpationSection(section) {
   return [...pinRows, ...restRows(rest)];
 }
 
+// Exported alongside buildOrthoAssessSteps (see below) so
+// SpecialtyPatientProfile.jsx's Ortho Assessment tab can render nested,
+// region-driven sections (ROM/MMT/Special Tests/Palpation/...) correctly
+// instead of falling back to the generic Object.entries flattener.
+export const orthoSummaryFormatters = {
+  subjective: formatSubjectiveSection,
+  redFlags: formatRedFlagsSection,
+  pain: formatPainSection,
+  palpation: formatPalpationSection,
+  observation: formatGeneralObservationSection,
+  rom: formatRomSection,
+  mmt: formatMmtSection,
+  specialTests: formatSpecialTestsSection,
+  kineticChain: formatKineticChainSection,
+  cpa: formatCpaSection,
+  sttt: formatSttSection,
+  fma: formatFmaSection,
+  outcomeMeasure: formatOutcomeMeasureSection,
+  techniques: formatTreatmentTechniquesSection,
+  exercisePrescription: formatExercisePrescriptionSection,
+};
+
 /* ============================================================
    CONDITION TEMPLATE ENGINE — Outpatient / Musculoskeletal
    pathway. Region + condition are chosen one screen earlier
@@ -70,9 +92,24 @@ export const OUTPATIENT_CONDITIONS = [
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "review"];
+// AI Assisted Assessment entry only -- goes straight from Subjective into
+// Suggested Objective (which already inline-covers Observation/Palpation
+// itself), skipping these four as separate steps in between. Condition-
+// wise/General/Templates entries keep the full BASE_IDS sequence.
+const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "progress", "review"];
+
+// Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
+// the EXACT same summary the wizard's own Review step uses (same pattern as
+// CardiopulmonaryAssessment's buildCardioAssessSteps/SummarySection) instead
+// of a separately-built generic renderer. The saved snapshot (onSave below)
+// doesn't persist stepOrder, so this always returns the full canonical
+// order -- AssessmentSummary already skips any step with no data.
+export function buildOrthoAssessSteps() {
+  return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
+}
 
 const STEP_META = {
   demographics: { icon: "📋", label: "Demographics" },
@@ -179,7 +216,12 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, requireAuth, autoOpenAI, initialAiUpdates }) {
+export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode }) {
+  // See AI_ENTRY_SKIP_IDS above -- the one place both the initial stepOrder
+  // and handleConditionDetected's later re-union need to agree on which
+  // base steps are actually in play, so a mid-session condition detection
+  // can never silently re-add a step the AI-entry sequence deliberately skipped.
+  const effectiveBaseIds = entryMode === "ai" ? BASE_IDS.filter((id) => !AI_ENTRY_SKIP_IDS.includes(id)) : BASE_IDS;
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
@@ -197,7 +239,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
     const promoted = initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
-    return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || promoted.includes(id));
+    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id));
   });
   // Only fires from SubjectiveSection's AI intake (orthoOutpatientSections.jsx),
   // and only if condition is still "general" -- never overrides a condition
@@ -214,7 +256,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     setStepOrder((prev) => {
       const activeSet = new Set(prev);
       meta.promote.forEach((id) => activeSet.add(id));
-      return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || activeSet.has(id));
+      return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || activeSet.has(id));
     });
   }
 
@@ -303,23 +345,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   }
 
   const regionsLabel = regionLabelList(selectedRegions) || "—";
-  const summaryFormatters = {
-    subjective: formatSubjectiveSection,
-    redFlags: formatRedFlagsSection,
-    pain: formatPainSection,
-    palpation: formatPalpationSection,
-    observation: formatGeneralObservationSection,
-    rom: formatRomSection,
-    mmt: formatMmtSection,
-    specialTests: formatSpecialTestsSection,
-    kineticChain: formatKineticChainSection,
-    cpa: formatCpaSection,
-    sttt: formatSttSection,
-    fma: formatFmaSection,
-    outcomeMeasure: formatOutcomeMeasureSection,
-    techniques: formatTreatmentTechniquesSection,
-    exercisePrescription: formatExercisePrescriptionSection,
-  };
 
   // Persist a snapshot on the active patient record -- same set(key,value)
   // pattern Cardio/Neuro's own Final Review "Save" already uses. Keyed by
@@ -333,6 +358,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
       condition: conditionLabel,
       data,
     }));
+    // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
+    // top-level field directly (2026-08-31) -- same convention IPD/Post-op
+    // now write on their own save.
+    onSave("care_setting", "outpatient");
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
@@ -381,6 +410,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
               autoOpenAI={autoOpenAI}
               onConditionDetected={handleConditionDetected}
               detectedConditionLabel={detectedConditionLabel}
+              patientData={patientData}
             />
           )}
           {current.id === "redFlags" && <RedFlagScreenSection data={data} setData={setData} />}
@@ -431,7 +461,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
-          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} />}
+          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>
@@ -443,7 +473,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 data={data}
                 onEdit={jumpTo}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={summaryFormatters}
+                formatters={orthoSummaryFormatters}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
@@ -505,7 +535,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                   setReviewOpen(false);
                 }}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={summaryFormatters}
+                formatters={orthoSummaryFormatters}
               />
             </div>
           </div>

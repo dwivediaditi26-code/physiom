@@ -160,6 +160,14 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
       onClose();
     }
   }
+  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
+  // the space of screen"): was one full-width lavender pill per option --
+  // on a real phone, 4-8 of those plus the header/Done button pushed well
+  // past the fold, so opening a symptom list buried its own confirm button
+  // off-screen. Now a compact checklist (thin divider rows, a small check/
+  // radio box instead of a full color-fill flip) with its OWN capped,
+  // internally-scrolling list -- the header and Done stay pinned and
+  // visible no matter how many options a field has.
   return (
     <div className="select-popover">
       <div className="popover-head">
@@ -173,15 +181,17 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
           const isSel = multi ? selected.includes(opt) : value === opt;
           return (
             <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span>{opt}</span>
-              {isSel && <span className="popover-check">✓</span>}
+              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
+                {isSel && "✓"}
+              </span>
+              <span className="popover-item-label">{opt}</span>
             </button>
           );
         })}
       </div>
       {multi && (
         <button type="button" className="popover-done" onClick={onClose}>
-          Done
+          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
         </button>
       )}
     </div>
@@ -205,6 +215,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
           className="select-input"
           value={value || ""}
           placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
+          onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
@@ -273,76 +284,6 @@ function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
         onChange={(e) => onChange(e.target.value)}
       />
     </FieldShell>
-  );
-}
-
-/* Collapsed-by-default row -- tap to reveal the real field widget, with a
-   short answered-state summary shown in the collapsed row. Same interaction
-   pattern as Ortho's ItemCardShell; used to wrap SelectField/TextArea/
-   NumberField/TextField only in the heaviest sections (see the .cfield*
-   CSS comment above for why). */
-function CollapsibleField({ label, answered, summary, children }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className={"cfield" + (answered ? " cfield-answered" : "")}>
-      <div className="cfield-row" onClick={() => setOpen((o) => !o)} role="button">
-        <span className="cfield-label">{label}</span>
-        <div className="cfield-right">
-          {answered && summary && <span className="cfield-summary">{summary}</span>}
-          <span className={"cfield-chevron" + (open ? " open" : "")}>⌄</span>
-        </div>
-      </div>
-      {open && (
-        <div className="cfield-body" onClick={(e) => e.stopPropagation()}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function truncate(s, n) {
-  const str = String(s || "");
-  return str.length > n ? str.slice(0, n) + "…" : str;
-}
-
-function CSelectField(props) {
-  const { label, value } = props;
-  const answered = !!String(value || "").trim();
-  return (
-    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
-      <SelectField {...props} label={undefined} />
-    </CollapsibleField>
-  );
-}
-
-function CTextArea(props) {
-  const { label, value } = props;
-  const answered = !!String(value || "").trim();
-  return (
-    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
-      <TextArea {...props} label={undefined} />
-    </CollapsibleField>
-  );
-}
-
-function CTextField(props) {
-  const { label, value } = props;
-  const answered = !!String(value || "").trim();
-  return (
-    <CollapsibleField label={label} answered={answered} summary={truncate(value, 28)}>
-      <TextField {...props} label={undefined} />
-    </CollapsibleField>
-  );
-}
-
-function CNumberField(props) {
-  const { label, value, unit } = props;
-  const answered = value !== undefined && value !== null && value !== "";
-  return (
-    <CollapsibleField label={label} answered={answered} summary={answered ? `${value}${unit ? " " + unit : ""}` : ""}>
-      <NumberField {...props} label={undefined} />
-    </CollapsibleField>
   );
 }
 
@@ -865,12 +806,8 @@ function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
       <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" />
-      <div className="row-2">
-        <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
-        <div style={{ flex: 1 }}>
-          <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
-        </div>
-      </div>
+      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
+      <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
       <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
       <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
@@ -966,7 +903,7 @@ function SubjectiveSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="📝" title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses. Tap any row to fill it in." />
-      <CSelectField
+      <SelectField
         label="Chief complaint"
         type="multi"
         options={CHIEF_COMPLAINTS}
@@ -974,19 +911,19 @@ function SubjectiveSection({ data, setData }) {
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient lead before narrowing to focused follow-ups."
       />
-      <CTextArea
+      <TextArea
         label="History of presenting condition"
         value={d.hpc}
         onChange={(v) => set("hpc", v)}
         placeholder="Onset, triggers, what makes it worse/better, course over time..."
         howTo="Work through OPQRST-style prompts: Onset, Provoking/relieving factors, Quality, Severity (relate to function, not just mild/moderate/severe), Timing/course."
       />
-      <CSelectField label="Onset" type="single" options={ONSETS} value={d.onset} onChange={(v) => set("onset", v)} />
-      <CSelectField label="Aggravating factors" type="multi" options={AGGRAVATING} value={d.aggravating} onChange={(v) => set("aggravating", v)} />
-      <CSelectField label="Relieving factors" type="multi" options={RELIEVING} value={d.relieving} onChange={(v) => set("relieving", v)} />
+      <SelectField label="Onset" type="single" options={ONSETS} value={d.onset} onChange={(v) => set("onset", v)} />
+      <SelectField label="Aggravating factors" type="multi" options={AGGRAVATING} value={d.aggravating} onChange={(v) => set("aggravating", v)} />
+      <SelectField label="Relieving factors" type="multi" options={RELIEVING} value={d.relieving} onChange={(v) => set("relieving", v)} />
 
       <div className="subheading">Cough &amp; sputum</div>
-      <CSelectField
+      <SelectField
         label="Cough"
         type="single"
         options={COUGH_TYPES}
@@ -994,8 +931,8 @@ function SubjectiveSection({ data, setData }) {
         onChange={(v) => set("cough", v)}
         howTo="Cough/sputum questions can feel embarrassing — phrase gently: 'does coughing make you leak urine?', 'does this interfere with your physiotherapy?'"
       />
-      <CSelectField label="Sputum amount" type="single" options={SPUTUM_AMOUNT} value={d.sputumAmount} onChange={(v) => set("sputumAmount", v)} />
-      <CSelectField
+      <SelectField label="Sputum amount" type="single" options={SPUTUM_AMOUNT} value={d.sputumAmount} onChange={(v) => set("sputumAmount", v)} />
+      <SelectField
         label="Sputum colour"
         type="single"
         options={SPUTUM_COLOUR}
@@ -1004,21 +941,21 @@ function SubjectiveSection({ data, setData }) {
         hint={d.sputumColour === "Green" ? "Suggests infection." : d.sputumColour === "Blood-stained" ? "Haemoptysis — ranges from streaks to frank blood; correlate urgently." : undefined}
         howTo="Saliva = clear watery. Mucoid = white/opalescent. Mucopurulent = slightly discoloured. Purulent = thick, yellow/dark green/rusty. Frothy pink/white suggests pulmonary oedema. Black specks suggest smoke/dust exposure."
       />
-      <CSelectField label="Sputum consistency" type="single" options={SPUTUM_CONSISTENCY} value={d.sputumConsistency} onChange={(v) => set("sputumConsistency", v)} />
+      <SelectField label="Sputum consistency" type="single" options={SPUTUM_CONSISTENCY} value={d.sputumConsistency} onChange={(v) => set("sputumConsistency", v)} />
 
       <div className="subheading">History</div>
-      <CTextArea label="Past medical history" value={d.pmh} onChange={(v) => set("pmh", v)} />
-      <CTextArea label="Drug history" value={d.drugHx} onChange={(v) => set("drugHx", v)} />
-      <CTextArea label="Family history" value={d.familyHx} onChange={(v) => set("familyHx", v)} />
-      <CTextArea label="Social history" value={d.socialHx} onChange={(v) => set("socialHx", v)} placeholder="Smoking, alcohol, living situation, support..." />
-      <CTextArea
+      <TextArea label="Past medical history" value={d.pmh} onChange={(v) => set("pmh", v)} />
+      <TextArea label="Drug history" value={d.drugHx} onChange={(v) => set("drugHx", v)} />
+      <TextArea label="Family history" value={d.familyHx} onChange={(v) => set("familyHx", v)} />
+      <TextArea label="Social history" value={d.socialHx} onChange={(v) => set("socialHx", v)} placeholder="Smoking, alcohol, living situation, support..." />
+      <TextArea
         label="Functional ability"
         value={d.functionalAbility}
         onChange={(v) => set("functionalAbility", v)}
         placeholder="e.g. could climb 5 flights 3 years ago, now stops after 1"
         howTo="Always relate breathlessness to functional change — what the patient could do before vs now — rather than accepting 'mild/moderate/severe' alone."
       />
-      <CTextArea label="Disease awareness" value={d.diseaseAwareness} onChange={(v) => set("diseaseAwareness", v)} placeholder="Patient's understanding of their condition & treatment" />
+      <TextArea label="Disease awareness" value={d.diseaseAwareness} onChange={(v) => set("diseaseAwareness", v)} placeholder="Patient's understanding of their condition & treatment" />
     </>
   );
 }
@@ -1158,7 +1095,7 @@ function CardioSection({ data, setData, system }) {
         ✓ Mark all normal
       </button>
 
-      <CSelectField
+      <SelectField
         label="General observation"
         type="multi"
         options={["No distress", "Short of breath", "Sitting on edge of bed", "Visibly distressed", "Cyanosed", "On supplemental oxygen", "Distressed on movement/undressing"]}
@@ -1169,14 +1106,14 @@ function CardioSection({ data, setData, system }) {
 
       {detailed && (
         <>
-          <CSelectField
+          <SelectField
             label="Hands / tremor"
             type="single"
             options={["None", "Fine tremor (bronchodilators)", "Coarse flap (CO2 retention)", "Muscle wasting (Pancoast)", "Nicotine staining"]}
             value={d.hands}
             onChange={(v) => set("hands", v)}
           />
-          <CSelectField
+          <SelectField
             label="Clubbing"
             type="single"
             options={["Absent", "Early — loss of nail-bed angle", "Established — enlarged finger pad", "Spongy nail bed"]}
@@ -1184,7 +1121,7 @@ function CardioSection({ data, setData, system }) {
             onChange={(v) => set("clubbing", v)}
             info={cardiovascularData.clubbing}
           />
-          <CSelectField
+          <SelectField
             label="Cyanosis"
             type="single"
             options={["None", "Peripheral", "Central"]}
@@ -1192,7 +1129,7 @@ function CardioSection({ data, setData, system }) {
             onChange={(v) => set("cyanosis", v)}
             info={respiratoryData.cyanosis}
           />
-          <CNumberField
+          <NumberField
             label="Jugular venous pressure (JVP)"
             value={d.jvp}
             onChange={(v) => set("jvp", v)}
@@ -1203,9 +1140,9 @@ function CardioSection({ data, setData, system }) {
       )}
 
       <div className="subheading">Peripheral perfusion</div>
-      <CSelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
-      <CSelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
-      <CNumberField
+      <SelectField label="Skin colour" type="single" options={["Normal", "Pale", "Cyanotic", "Mottled"]} value={d.skinColour} onChange={(v) => set("skinColour", v)} info={cardiovascularData.skinColour} />
+      <SelectField label="Temperature" type="single" options={["Warm", "Cool", "Unequal"]} value={d.temperature} onChange={(v) => set("temperature", v)} info={cardiovascularData.skinTemperature} />
+      <NumberField
         label="Capillary refill"
         value={d.capRefill}
         onChange={(v) => set("capRefill", v)}
@@ -1222,15 +1159,28 @@ function CardioSection({ data, setData, system }) {
         info={cardiovascularData.pulses}
       />
 
-      <CSelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
+      <SelectField label="Edema" type="single" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)}
         info={cardiovascularData.edema}
       />
-      <CSelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
+      {d.edema && d.edema !== "None" && (
+        <SelectField label="Pitting or non-pitting" type="single" options={["Pitting", "Non-pitting"]} value={d.edemaType} onChange={(v) => set("edemaType", v)} />
+      )}
+      {d.edemaType === "Pitting" && (
+        <SelectField
+          label="Pitting grade"
+          type="single"
+          options={["1+ Trace — barely detectable, resolves almost immediately", "2+ Mild — pit resolves within ~15 seconds", "3+ Moderate — pit resolves within ~30 seconds", "4+ Severe — deep pit lasting >30 seconds"]}
+          value={d.edemaGrade}
+          onChange={(v) => set("edemaGrade", v)}
+          info={cardiovascularData.edema}
+        />
+      )}
+      <SelectField label="Edema location" type="multi" options={["Right ankle", "Left ankle", "Bilateral ankle", "Lower leg", "Generalized", "Sacral"]} value={d.edemaLocation} onChange={(v) => set("edemaLocation", v)} />
 
       {detailed && (
         <>
           <div className="subheading">Auscultation — heart sounds</div>
-          <CSelectField
+          <SelectField
             label="Sounds heard"
             type="multi"
             options={["S1 normal", "S2 normal", "S3 present", "S4 present", "Murmur present"]}
@@ -1239,7 +1189,7 @@ function CardioSection({ data, setData, system }) {
             info={cardiovascularData.cardiacAuscultation}
           />
           {String(d.heartSounds || "").includes("Murmur present") && (
-            <CTextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
+            <TextArea label="Murmur description" value={d.murmurDesc} onChange={(v) => set("murmurDesc", v)} placeholder="Timing, location, character..." info={cardiovascularData.murmurs} />
           )}
         </>
       )}
@@ -1365,23 +1315,23 @@ function ExerciseSection({ data, setData, setting }) {
       {isRehab && (
         <>
           <div className="subheading">Exercise assessment</div>
-          <CSelectField
+          <SelectField
             label="Exercise mode"
             type="single"
             options={["Treadmill", "Cycle ergometer", "Overground walking", "Arm ergometer", "Combined / circuit", "Other"]}
             value={d.mode}
             onChange={(v) => set("mode", v)}
           />
-          <CNumberField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} unit="min" />
-          <CSelectField
+          <NumberField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} unit="min" />
+          <SelectField
             label="Intensity"
             type="single"
             options={["Low", "Moderate", "High", "Target HR zone-based", "RPE-based"]}
             value={d.intensity}
             onChange={(v) => set("intensity", v)}
           />
-          <CTextField label="Frequency" value={d.frequency} onChange={(v) => set("frequency", v)} placeholder="e.g. 3x/week" />
-          <CTextField label="Oxygen requirement" value={d.exO2} onChange={(v) => set("exO2", v)} placeholder="L/min if applicable" />
+          <TextField label="Frequency" value={d.frequency} onChange={(v) => set("frequency", v)} placeholder="e.g. 3x/week" />
+          <TextField label="Oxygen requirement" value={d.exO2} onChange={(v) => set("exO2", v)} placeholder="L/min if applicable" />
         </>
       )}
 
@@ -1407,7 +1357,7 @@ function ExerciseSection({ data, setData, setting }) {
       </div>
       <ScaleField label="Borg RPE (during)" value={d.duringRPE} onChange={(v) => set("duringRPE", v)} info={cardiovascularData.borgRPE} />
       <ScaleField label="Borg dyspnea (during)" value={d.duringDyspnea} onChange={(v) => set("duringDyspnea", v)} info={respiratoryData.borg} />
-      <CSelectField
+      <SelectField
         label="Symptoms during activity"
         type="multi"
         options={["No symptoms", "Chest discomfort", "Dyspnea", "Dizziness", "Palpitations", "Excessive fatigue", "Leg discomfort", "Desaturation", "Other"]}
@@ -1420,11 +1370,11 @@ function ExerciseSection({ data, setData, setting }) {
         <NumberField label="HR" value={d.postHR} onChange={(v) => set("postHR", v)} unit="bpm" width="30%" info={cardiovascularData.hrRecovery} />
         <NumberField label="SpO₂" value={d.postSpO2} onChange={(v) => set("postSpO2", v)} unit="%" width="30%" info={respiratoryData.spo2} />
       </div>
-      <CSelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} info={cardiovascularData.hrRecovery} />
+      <SelectField label="Recovery pattern" type="single" options={["Rapid recovery", "Delayed recovery", "Persistent symptoms"]} value={d.recovery} onChange={(v) => set("recovery", v)} info={cardiovascularData.hrRecovery} />
 
       <div className="subheading">6MWT / exercise test</div>
-      <CNumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" info={cardiovascularData.sixMWT} />
-      <CSelectField
+      <NumberField label="Distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" info={cardiovascularData.sixMWT} />
+      <SelectField
         label="Reason for stopping"
         type="single"
         options={["Completed", "Dyspnea", "Fatigue", "Chest discomfort", "Dizziness", "Desaturation", "Other"]}
@@ -1808,6 +1758,15 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       if (p && p.setting === meta.setting && p.system === meta.system && p.stepOrder === meta.stepOrder && p.customStepsMeta === meta.customStepsMeta) return prev;
       return { ...prev, meta };
     });
+    // Also mirror the chosen setting onto the shared patient record's own
+    // top-level care_setting field (2026-08-31) -- PatientDatabase.jsx's
+    // IPD/Outpatient/Post-op filter pills read that field directly; without
+    // this, picking "Inpatient" here never showed up as IPD in the patient
+    // list at all.
+    if (setting) {
+      const careSetting = setting === "postop" ? "postop" : (setting === "inpatient" || setting === "icu") ? "ipd" : "outpatient";
+      onSave?.("care_setting", careSetting);
+    }
   }, [setting, system, stepOrder, customStepsMeta]);
 
   // One shared patient identity, not two separate ones (Aditi's request:
@@ -2011,24 +1970,6 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
         .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
 
-        /* Collapsible field row -- same collapsed-by-default / tap-to-expand
-           pattern used in the Ortho Outpatient tool's Suggested Objective
-           step (OrthoSuggestObjectiveStep.jsx's ItemCardShell), applied here
-           to the heaviest sections (Subjective, Cardiovascular Examination,
-           Exercise/Activity Response) so a fast run-through only has to
-           scan compact rows instead of every field's full input widget. */
-        .cfield { border: 1.5px solid ${BRAND.border}; border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
-        .cfield-answered { border-color: ${BRAND.purple}; }
-        .cfield-row { display: flex; align-items: center; gap: 10px; padding: 11px 12px; cursor: pointer; }
-        .cfield-label { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
-        .cfield-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .cfield-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 9px; border-radius: 8px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .cfield-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
-        .cfield-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
-        .cfield-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
-        .cfield-body .field-block { margin-bottom: 0; }
-        .cfield-body .vital-field { margin-bottom: 0; }
-
         /* One-tap "fill the normal/negative baseline" button -- see
            CardioSection's markAllNormal() comment for why this exists. */
         .quick-normal-btn { display: block; width: 100%; border: 1.5px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 13.5px; padding: 11px; border-radius: 14px; cursor: pointer; margin-bottom: 14px; }
@@ -2047,14 +1988,18 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 8px 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 10px; max-height: 280px; overflow-y: auto; }
-        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.gray}; margin-bottom: 8px; padding: 0 2px; }
-        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 12px; }
-        .popover-list { display: flex; flex-direction: column; gap: 3px; }
-        .popover-item { display: flex; justify-content: space-between; align-items: center; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.ink}; padding: 9px 10px; border-radius: 9px; font-size: 13px; text-align: left; cursor: pointer; }
-        .popover-item-active { background: ${BRAND.purple}; color: #fff; font-weight: 600; }
-        .popover-check { font-size: 12px; }
-        .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 9px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
+        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
+        .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 9px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; }
+        .popover-item:last-child { border-bottom: none; }
+        .popover-item-label { flex: 1; }
+        .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+        .popover-check-icon-radio { border-radius: 50%; }
+        .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
+        .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
+        .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied
@@ -2076,7 +2021,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-input { border: none; outline: none; font-size: 15px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
 
+        /* min-width: 0 overrides the flex-item default of min-width: auto --
+           without it a wide child (e.g. a text combobox, not just this
+           module's narrow NumberFields) would refuse to shrink and could
+           overflow past the screen edge, same bug confirmed in
+           NeurologicalAssessment.jsx's identical .row-2 definition. */
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
+        .row-2 > * { min-width: 0; }
 
         .textarea { width: 100%; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
 

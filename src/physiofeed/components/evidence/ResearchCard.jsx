@@ -16,11 +16,29 @@ export default function ResearchCard({ article }) {
         </div>
         <h3 className="font-bold text-slate-900 text-sm leading-snug mb-1.5">{article.title}</h3>
         <p className="text-xs text-slate-400 mb-3">{article.journal}</p>
+        {article.summary && (
+          <div className="mb-2.5">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Summary</p>
+            <p className="text-sm text-slate-600">{article.summary}</p>
+          </div>
+        )}
+        {article.conclusion && (
+          <div className="mb-2.5">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Conclusion</p>
+            <p className="text-sm text-slate-600">{article.conclusion}</p>
+          </div>
+        )}
         <div className="flex flex-wrap gap-1.5 mb-3">
           {article.tags.map((t) => <span key={t} className="text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md">#{t}</span>)}
         </div>
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          <button className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700">Read research <ExternalLink size={12} /></button>
+          {article.sourceUrl ? (
+            <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700">
+              Read on {article.sourceName || "source"} <ExternalLink size={12} />
+            </a>
+          ) : (
+            <span className="text-xs font-medium text-slate-300">Source not linked yet</span>
+          )}
           <div className="flex items-center gap-1">
             <button className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><Share2 size={15} /></button>
             <button onClick={() => saveEvidence(article.id)} className="p-1.5 rounded-lg hover:bg-slate-50">

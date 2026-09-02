@@ -221,13 +221,33 @@ export function orthoStyles() {
         .stepper-low .stepper-input { color: #8A5A0A; }
         .stepper-high { border-color: #B8E6CC; background: ${BRAND.greenBg}; }
         .stepper-high .stepper-input { color: #12603A; }
+        /* Square variant (2026-09-01, Aditi: "sets duration frequency ...
+           square button, square section, not rectangle") -- used only by
+           the Technique section's Sets/Duration/Frequency steppers
+           (DosageSteppers in orthoOutpatientSections.jsx), not the base
+           .stepper class every other numeric field in Ortho also uses, so
+           this doesn't reflow any of those. Height matches the 62px width;
+           the arrow column grows to fill it instead of leaving empty space. */
+        .stepper-square { width: 62px; height: 62px; }
+        .stepper-square .stepper-input { font-size: 15px; }
+        .stepper-square .stepper-arrows { flex: 0 0 22px; }
+        .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
 
         /* Movement / muscle card — used by ROM + MMT. Large, scannable,
            tap-first — the therapist reads the name, taps a value or chip,
            and moves on. */
         .movement-card { border-top: 1px solid #F5F3FB; padding: 10px 0; }
         .movement-card:first-of-type { border-top: none; padding-top: 0; }
-        .movement-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+        /* flex-wrap so the L/R grade selects drop to their own line instead
+           of overflowing past the viewport when a muscle/movement name is
+           long ("External + Internal Obliques", "Transversus Abdominis") --
+           .movement-info takes the min-width:0 + flex:1 a flex child needs
+           to actually shrink/wrap its text instead of forcing the row wider
+           than its container. Still used by MMT (RomSection moved to the
+           .rom-row table layout below). */
+        .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+        .movement-info { flex: 1 1 160px; min-width: 0; }
+        .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
            detail collapses, not the whole movement row (degree steppers
            stay visible since they're filled for every movement). */
@@ -244,7 +264,6 @@ export function orthoStyles() {
         .rom-table-head span:not(:first-child) { text-align: center; }
         .rom-row-name { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
         .rom-row-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .movement-name-row { display: flex; align-items: center; gap: 6px; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }
         .movement-lr { display: flex; gap: 10px; flex-shrink: 0; }
@@ -296,14 +315,18 @@ export function orthoStyles() {
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; min-height: 36px; }
 
-        .select-popover { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 10px; max-height: 280px; overflow-y: auto; }
-        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.gray}; margin-bottom: 8px; padding: 0 2px; }
-        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 12px; }
-        .popover-list { display: flex; flex-direction: column; gap: 3px; }
-        .popover-item { display: flex; justify-content: space-between; align-items: center; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.ink}; padding: 11px 10px; border-radius: 9px; font-size: 13px; text-align: left; cursor: pointer; min-height: 44px; }
-        .popover-item-active { background: ${BRAND.purple}; color: #fff; font-weight: 600; }
-        .popover-check { font-size: 12px; }
-        .popover-done { margin-top: 8px; width: 100%; border: none; background: ${BRAND.ink}; color: #fff; padding: 11px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
+        .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
+        .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
+        .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 10px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; min-height: 0; }
+        .popover-item:last-child { border-bottom: none; }
+        .popover-item-label { flex: 1; }
+        .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+        .popover-check-icon-radio { border-radius: 50%; }
+        .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
+        .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
+        .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied
@@ -491,7 +514,12 @@ export function orthoStyles() {
         .obj-card-badge { font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: ${BRAND.gray}; }
         .obj-card-badge-ai { color: ${BRAND.purple}; }
         .obj-card-check { font-size: 10.5px; font-weight: 800; color: ${BRAND.purple}; }
-        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; }
+        .obj-card-title { font-weight: 700; font-size: 14px; color: ${BRAND.ink}; display: flex; align-items: center; gap: 6px; }
+        /* Small (i) variant, sized to sit inline right next to a test/card
+           name -- the full 26px .info-btn reads oversized next to 13-14px
+           text. Replaces the old separate "Why?"/"How?" text links: one
+           icon opens both, right beside the name it explains. */
+        .info-btn-sm { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; line-height: 1; }
         .obj-card-reason { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
         .obj-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
         .obj-card-link { border: none; background: none; padding: 0; color: ${BRAND.purpleDark}; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -508,25 +536,86 @@ export function orthoStyles() {
 
         .obj-item-lr { display: flex; align-items: center; gap: 10px; }
         .obj-item-lr-field { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: ${BRAND.gray}; }
-        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; text-align: center; }
+        .obj-item-lr-field input, .obj-item-lr-field select { width: 64px; border: 1.5px solid ${BRAND.border}; border-radius: 8px; padding: 6px 8px; font-size: 16px; font-family: inherit; text-align: center; }
         .obj-item-unit { font-size: 11px; color: ${BRAND.gray}; }
         .obj-item-side-row { display: flex; gap: 6px; margin-bottom: 8px; }
 
         /* Collapsed-by-default item row (ItemCardShell) -- replaces every
            named ROM/MMT/Special Test/Observation item always rendering its
            full input widget expanded, which is what made a single
-           Suggested Objective step run thousands of px of scroll. */
+           Suggested Objective step run thousands of px of scroll.
+           Three visual states layered on the same shell:
+             plain border   -- Suggested, not yet selected
+             purple border  -- Selected, awaiting a result
+             green border   -- answered AND the result is a finding */
         .obj-item { border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; margin-bottom: 6px; overflow: hidden; }
         .obj-item-answered { border-color: ${BRAND.purple}; }
+        .obj-item-selected { border-color: ${BRAND.purple}; }
+        .obj-item-finding { border-color: ${BRAND.green}; background: ${BRAND.greenBg}; }
         .obj-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
-        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .obj-item-row-label { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .obj-item-row-name { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-item-finding .obj-item-row-name { color: #12603A; }
         .obj-item-row-sub { font-size: 11px; color: ${BRAND.gray}; }
-        .obj-item-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .obj-item-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .obj-item-row-summary { font-size: 12px; font-weight: 700; color: ${BRAND.purpleDark}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+        .obj-item-finding .obj-item-row-summary { color: #12603A; background: #fff; }
         .obj-item-chevron { font-size: 12px; color: ${BRAND.grayLight}; transition: transform .15s; }
         .obj-item-chevron.open { transform: rotate(180deg); color: ${BRAND.purple}; }
         .obj-item-body { padding: 0 12px 12px; border-top: 1px solid ${BRAND.border}; padding-top: 10px; }
+        .obj-item-select-btn { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 11.5px; padding: 7px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+
+        /* Every text/number/select/textarea on this step at >=16px --
+           below that, iOS Safari auto-zooms the whole page on focus
+           regardless of the viewport's user-scalable=no. Scoped to this
+           step (rather than changing .text-input/.textarea globally)
+           since those shared classes are also used by pages that weren't
+           part of this redesign. Specificity (class + tag) beats the
+           shared single-class rules those inputs already carry, so this
+           wins regardless of source order. */
+        .obj-no-zoom input, .obj-no-zoom select, .obj-no-zoom textarea { font-size: 16px; }
+
+        /* Possible Matches -- horizontal condition-pathway cards above the
+           suggested list. Purely informational context (real Phase 0.5
+           numbers, tapping never adds/removes anything); restyled from the
+           old always-expanded LumbarDifferentialCard rows into a compact
+           swipeable row so the reasoning is visible without owning the page. */
+        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; }
+        .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
+        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
+        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
+        .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+
+        /* Findings summary -- collapsible drawer built purely by scanning
+           already-answered rom/mmt/specialTests/observation data for a
+           positive/abnormal/recorded result; no separate state to keep in sync. */
+        .obj-findings-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; background: ${BRAND.greenBg}; color: #12603A; border-radius: 10px; padding: 9px 12px; margin-bottom: 14px; cursor: pointer; font-weight: 700; font-size: 12.5px; font-family: inherit; }
+        .obj-findings-toggle .obj-findings-chev { transition: transform .15s; }
+        .obj-findings-toggle.open .obj-findings-chev { transform: rotate(180deg); }
+        .obj-findings-drawer { display: flex; flex-direction: column; gap: 6px; margin: -8px 0 14px; padding: 0 2px; }
+        .obj-findings-drawer div { font-size: 12.5px; color: ${BRAND.ink}; }
+        .obj-findings-drawer b { color: #12603A; margin-right: 4px; }
+        .obj-findings-empty { font-size: 12px; color: ${BRAND.grayLight}; margin: -8px 0 14px; padding: 0 2px; }
+
+        /* Sticky Selected tray -- appears once anything has been selected on
+           this step; View Assessment swaps the step into review mode inline
+           (same component, no extra wizard step) so only selected items and
+           the findings that came from them are shown. */
+        .obj-tray { position: sticky; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 10px 14px; margin: 16px 0; box-shadow: 0 12px 28px -14px rgba(20,10,45,.28); }
+        .obj-tray-info { flex: 1; min-width: 0; }
+        .obj-tray-count { font-weight: 800; font-size: 13px; color: ${BRAND.ink}; }
+        .obj-tray-chips { display: flex; gap: 5px; margin-top: 4px; overflow: hidden; white-space: nowrap; }
+        .obj-tray-chip { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+        .obj-tray-cta { flex-shrink: 0; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 12.5px; padding: 11px 16px; border-radius: 12px; cursor: pointer; font-family: inherit; }
+
+        .obj-review-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .obj-review-back { border: none; background: none; color: ${BRAND.purple}; font-weight: 700; font-size: 13px; padding: 0; cursor: pointer; font-family: inherit; }
+        .obj-review-findings { background: ${BRAND.greenBg}; border-radius: 12px; padding: 14px 14px 10px; margin: 14px 0 20px; }
+        .obj-review-findings h4 { margin: 0 0 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #12603A; }
+        .obj-review-findings div { font-size: 12.5px; color: ${BRAND.ink}; margin-bottom: 6px; }
+        .obj-review-findings b { color: #12603A; margin-right: 4px; }
+        .obj-review-done { width: 100%; margin: 8px 0 24px; border: none; background: ${BRAND.purple}; color: #fff; font-weight: 800; font-size: 13.5px; padding: 13px; border-radius: 12px; cursor: pointer; font-family: inherit; }
 
         .review-row { width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; border-top: 1px solid #F5F3FB; padding: 10px 2px; cursor: pointer; text-align: left; font-size: 13.5px; color: ${BRAND.ink}; }
         .review-row:first-child { border-top: none; }

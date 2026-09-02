@@ -85,7 +85,7 @@ function useAdvActiveRegion(data, setData, sectionKey_, keys) {
    red = inhibited/severe...), tapped to select, tap again to
    clear.
    ============================================================ */
-function OptionChips({ options, value, onChange }) {
+export function OptionChips({ options, value, onChange }) {
   return (
     <div className="chip-mini-row">
       {options.map((o) => {
