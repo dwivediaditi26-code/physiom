@@ -1834,7 +1834,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               STREAMS, untouched below. */}
           {active==="ortho_new_assessment" && (
             <div style={{margin:"-24px -20px 0"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
             </div>
           )}
 

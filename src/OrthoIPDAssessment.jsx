@@ -223,7 +223,7 @@ function NeurovascularSection({ data, setData }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoIPDAssessment({ selectedRegions, condition, customConditionLabel, onExit, onSave, activePatientId, patientData }) {
+export default function OrthoIPDAssessment({ selectedRegions, condition, customConditionLabel, onExit, onSave, activePatientId, patientData, initialData, initialStep }) {
   const conditionMeta = IPD_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -231,12 +231,22 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     const promoted = conditionMeta ? conditionMeta.optional : FALLBACK_OPTIONAL;
     return ORDERED_ALL.filter((id) => BASE_IDS.includes(id) || promoted.includes(id));
   });
-  const [step, setStep] = useState(0);
+  // initialStep (2026-09-02, Aditi: "edit assessment should take us to
+  // last page... not to pathway or region selection") -- resuming via
+  // Edit lands straight on Review with the saved data, instead of always
+  // starting at step 0.
+  const [step, setStep] = useState(() => {
+    if (!initialStep) return 0;
+    const idx = stepOrder.indexOf(initialStep);
+    return idx >= 0 ? idx : 0;
+  });
   // Seed Case Info's name/age/sex from the patient already open (if any) so
   // this doesn't ask the physio to re-type demographics that already exist
   // on the record, and so Save below writes back onto the same person
-  // instead of an unnamed/mismatched one.
+  // instead of an unnamed/mismatched one. initialData (same 2026-09-02
+  // fix) takes priority -- a resumed Edit already has real saved answers.
   const [data, setData] = useState(() => {
+    if (initialData) return initialData;
     const dem = patientData || {};
     const caseInfo = {};
     if (dem.dem_name) caseInfo.name = dem.dem_name;
@@ -308,6 +318,13 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
       regions: regionsLabel,
       condition: conditionLabel,
       data,
+      // Raw resume fields (2026-09-02, Aditi: "edit assessment should
+      // take us to last page... not to pathway or region selection") --
+      // regions/condition above are already-joined display strings, not
+      // usable to reconstruct selectedRegions/condition props on Edit.
+      selectedRegions,
+      rawCondition: condition,
+      customConditionLabel,
     }));
     if (caseInfo.name) onSave("dem_name", caseInfo.name);
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this

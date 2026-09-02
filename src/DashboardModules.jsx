@@ -440,6 +440,18 @@ function PostureDefectModule() {
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
 // ═══════════════════════════════════════════════════════════════════════════
+// Restored (2026-09-02) -- an unrelated upstream commit removed this
+// alongside the demo PhysioFeed preview that used to be its only caller,
+// not realizing TherapistDashboardModule's own "DP" avatar fix (same day,
+// different commit) had since started calling it too; the two merged
+// cleanly with no conflict marker, silently leaving a dangling reference
+// that crashed the whole Clinical > Today dashboard at render time.
+function initialsOf(fullName) {
+  const clean = (fullName || "").replace(/^Dr\.?\s*/, "").split(",")[0].trim();
+  const parts = clean.split(" ").filter(Boolean);
+  return parts.slice(0, 2).map(w => w[0]).join("").toUpperCase();
+}
+
 const GridIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>

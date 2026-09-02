@@ -227,6 +227,22 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   })();
+  // 2026-09-02, Aditi: "edit assessment... should take us to last page of
+  // assessment summary and review, not to pathway selection or region
+  // selection" -- orthoParsed.selectedRegions/rawCondition/customConditionLabel
+  // are the raw (non-display-formatted) fields the wizard's own save now
+  // persists (see OrthoOutpatient/IPD/PostOpAssessment.jsx's saveAssessment);
+  // an assessment saved before that fix won't have them, so this falls back
+  // to condition:"general"/no regions rather than refusing to resume at
+  // all -- Review still opens with every real saved answer intact, just
+  // without region-specific promotion for that one older record.
+  const orthoResume = orthoPathway && orthoParsed ? {
+    pathway: orthoPathway,
+    selectedRegions: orthoParsed.selectedRegions || [],
+    condition: orthoParsed.rawCondition || "general",
+    customConditionLabel: orthoParsed.customConditionLabel,
+    data: orthoParsed.data || {},
+  } : null;
   const orthoSteps = orthoPathway === "ipd" ? buildOrthoIPDAssessSteps() : orthoPathway === "postop" ? buildOrthoPostOpAssessSteps() : orthoPathway === "outpatient" ? buildOrthoAssessSteps() : null;
   const orthoFormatters = orthoPathway === "ipd" ? orthoIPDSummaryFormatters : orthoPathway === "postop" ? orthoPostOpSummaryFormatters : orthoPathway === "outpatient" ? orthoSummaryFormatters : null;
   const orthoTitle = orthoPathway === "ipd" ? "IPD Orthopedic Assessment" : orthoPathway === "postop" ? "Post-operative Rehab Assessment" : "Outpatient Musculoskeletal Assessment";
@@ -400,7 +416,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                   <span style={{ fontSize: 24 }}>🦴</span>
                   <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
-                  <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
+                  <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
                 </div>
                 <OrthoAssessmentSummary
                   icon="🦴"
@@ -408,7 +424,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                   sub={[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}
                   steps={orthoSteps}
                   data={orthoParsed.data || {}}
-                  onEdit={() => onNav?.("ortho_new_assessment")}
+                  onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}
                   exportHeaderLines={[orthoTitle.toUpperCase()]}
                   formatters={orthoFormatters}
                 />
