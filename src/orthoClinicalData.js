@@ -65,8 +65,24 @@ const REGION_KEY_SYNONYMS = {
    uses its own canonical id scheme. Each real clinical dataset keys its
    regions slightly differently (ROM: "Shoulder", MMT: "Shoulder & Scapula",
    Special Tests: "shoulder"), so this picks the closest match by first
-   word — used only to choose which tab opens by default; every other tab
-   stays one tap away regardless. */
+   word, then by REGION_KEY_SYNONYMS's clinically-adjacent second try.
+
+   Returns null when NEITHER finds anything -- e.g. Kinetic Chain's own
+   dataset only has 7 buckets (no per-limb-segment breakdown), so "wrist"
+   genuinely has no Kinetic Chain content and null is the honest answer,
+   not a bug to paper over. Every caller in orthoIndividualSuggestions.js
+   already treats a falsy key as "skip this category for this region" --
+   confirmed by reading each one, not assumed. A caller that instead just
+   wants *some* tab open by default (orthoExercisePrescription.jsx,
+   orthoRegionAssessments.jsx -- picking an arbitrary starting tab is
+   harmless since every other tab is one tap away) supplies its own
+   `|| keys[0]` at the call site; this function itself no longer guesses
+   on their behalf, which is what let a genuinely uncovered clinical
+   region (Forearm, Sacrum, Thigh, Leg, Pelvis, Upper Arm, and several
+   more once CPA/Kinetic Chain/FMA/Cyriax were added) silently inherit
+   keys[0]'s real content instead -- Cervical ROM/special tests shown for
+   a Forearm case, "foot_ankle" Kinetic Chain shown for a Shoulder case,
+   etc, all silently, all wrong, none of them a defaulted-tab situation. */
 export function matchRegionKey(regionId, keys) {
   const label = (REGION_LABEL[regionId] || regionId || "").toLowerCase();
   const firstWord = label.split(/[\s/]+/)[0];
@@ -76,7 +92,7 @@ export function matchRegionKey(regionId, keys) {
     const synHit = keys.find((k) => k.toLowerCase().includes(syn));
     if (synHit) return synHit;
   }
-  return keys[0];
+  return null;
 }
 
 export function gradeColor(g) {
