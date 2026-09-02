@@ -6,7 +6,7 @@ import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMm
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
-import { HomeProtocolSection, formatHomeProtocolSection } from "./orthoHomeProtocol.jsx";
+import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
@@ -72,7 +72,6 @@ export const orthoSummaryFormatters = {
   outcomeMeasure: formatOutcomeMeasureSection,
   techniques: formatTreatmentTechniquesSection,
   exercisePrescription: formatExercisePrescriptionSection,
-  homeProtocol: formatHomeProtocolSection,
 };
 
 /* ============================================================
@@ -493,7 +492,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
           {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
-          {current.id === "homeProtocol" && <HomeProtocolSection data={data} setData={setData} patientData={patientData} />}
+          {current.id === "homeProtocol" && <HomeProtocolSection patientData={patientData} onSave={onSave} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>
