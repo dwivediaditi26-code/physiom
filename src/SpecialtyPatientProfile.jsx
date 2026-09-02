@@ -10,14 +10,12 @@ import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
 
-// Simple, separate profile for Cardio/Neuro (+ new Ortho Assessment)
-// patients (2026-08-20, Aditi's request) -- deliberately NOT the existing
-// Ortho PatientProfileModal (PatientDatabase.jsx), which is full of
-// Ortho-specific sections (ROM/MMT/Special Tests/Kinetic Chain/Fascia/...)
-// that don't apply here. Lives only in Clinical, opened by the same
-// "👤 Profile" button every patient already has -- PatientDatabase.jsx's
-// onProfile routes here for Cardio/Neuro patients and to the Ortho modal
-// for everyone else.
+// The one patient profile screen in the app (2026-08-20, Aditi's request,
+// originally Cardio/Neuro-only; the legacy Ortho-specific PatientProfileModal
+// it lived alongside -- full of ROM/MMT/Special Tests/Kinetic Chain/Fascia
+// sections -- was removed entirely on 2026-09-02, Aditi: "remove old ortho
+// patient profile totally"). Lives only in Clinical, opened by the same
+// "👤 Profile" button every patient already has.
 //
 // 2026-08-22: redesigned to a 5-tab Overview/Assessment/Progress/Treatment/
 // Home structure (Aditi, "make it basic, clean, fast ... understand within
@@ -198,8 +196,13 @@ const hepDose = (e) => {
   return `${st}×${rp}${hd ? ` · hold ${hd}s` : ""}${fq ? ` · ${fq}` : ""}`;
 };
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture }) {
-  const [tab, setTab] = useState("overview");
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
+  // initialTab (2026-09-02): lets a caller open straight onto a specific
+  // tab (e.g. the Treatment caseload list's own "Profile" button used to
+  // jump straight to Treatment via the now-removed legacy
+  // PatientProfileModal's initialTab) instead of always landing on
+  // Overview.
+  const [tab, setTab] = useState(initialTab || "overview");
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [expandedSession, setExpandedSession] = useState(0);
   const d = patient?.data || {};
