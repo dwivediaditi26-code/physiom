@@ -317,6 +317,23 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     setTimeout(() => setSavedFlash(false), 1800);
   }
 
+  // Auto-save (2026-09-02, Aditi: "not saving patient and assessment
+  // automatically... nothing saving") -- this wizard keeps its own local
+  // `data` state (see the useState above), separate from the app-wide
+  // data/set pair AppFull.jsx's real autosave (2s-debounced local draft +
+  // Supabase) actually watches. Previously nothing here reached that
+  // pipeline until the therapist manually reached Review and tapped
+  // Save -- leaving mid-assessment lost everything, patient record
+  // included (see saveAssessment's dem_name mirror above). Debounced
+  // auto-save calls the same saveAssessment() automatically, ~2s after
+  // the last edit, same as every other module's autosave.
+  useEffect(() => {
+    if (Object.keys(data).length === 0) return;
+    const t = setTimeout(() => saveAssessment(), 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   return (
     <div className="app-shell">
       <style>{orthoStyles()}</style>
