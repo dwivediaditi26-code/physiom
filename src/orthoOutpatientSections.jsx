@@ -2,7 +2,8 @@ import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
-import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.js";
+import { listOldPatientRecords } from "./orthoAiIntake.js";
+import OrthoOldDataPicker, { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
 
 // Same SVG anatomical hotspot map used by the old Palpation flow
 // (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
@@ -103,33 +104,71 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // Three equal, always-visible entry options for this step: say it, write
-  // it, or pull it in from this patient's own history. Only fills fields
-  // still blank so it can't silently clobber anything already typed here.
-  function loadOldSubjective() {
-    const { subjective } = importOldSubjectiveData(patientData);
+  // it, or pull it in from this patient's own history. The third one now
+  // opens the real list of records on file (2026-09-03, Aditi: "when I
+  // click on select from old patient data, it is not giving me the list of
+  // old patient data to select from") instead of blind-importing a single
+  // hardcoded source. Only fills fields still blank either way, so it can't
+  // silently clobber anything already typed here.
+  const [oldDataOpen, setOldDataOpen] = useState(false);
+  const oldRecords = listOldPatientRecords(patientData);
+  function loadOldRecord(updates) {
     setData((prev) => {
       const existing = prev.subjective || {};
       const merged = { ...existing };
-      Object.entries(subjective).forEach(([k, v]) => {
+      Object.entries(updates.subjective || {}).forEach(([k, v]) => {
+        if (k === "regions") {
+          merged.regions = { ...(v || {}), ...(existing.regions || {}) };
+          return;
+        }
         if (!String(existing[k] || "").trim()) merged[k] = v;
       });
-      return { ...prev, subjective: merged };
+      const existingPain = prev.pain || {};
+      const mergedPain = { ...existingPain };
+      Object.entries(updates.pain || {}).forEach(([k, v]) => {
+        if (!String(existingPain[k] || "").trim()) mergedPain[k] = v;
+      });
+      return { ...prev, subjective: merged, pain: mergedPain };
     });
-    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOldDataOpen(false);
+    scrollToManualFields();
   }
   function scrollToManualFields() {
-    document.getElementById("subjective-manual-start")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = document.getElementById("subjective-manual-start");
+    // scrollIntoView is missing in some embedded/webview and test DOMs --
+    // scrolling is a nicety here, never a reason to throw mid-import.
+    if (typeof el?.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   // AI intake writes into both Subjective and Pain in one go -- it needs
   // the wizard's top-level setData, not this section's own scoped `set`
   // (which can only ever touch data.subjective).
+  // Demographics and Red Flags are merged too (2026-09-03, Aditi: "the
+  // extracted AI subjective assessment is not fully filled in the
+  // subjective assessment form") -- /api/parse extracts age/sex/occupation/
+  // affected side and any red flag the narrative mentions, and this used to
+  // drop all of it on the floor because only subjective/pain were merged.
+  // Existing typed answers always win; the AI only fills what's still blank.
+  // updates.extracted is kept on the section itself so the read-only "as
+  // extracted" panel can show the AI's own output verbatim, including
+  // fields this wizard has no dedicated home for.
   function applyAiUpdates(updates) {
-    setData((prev) => ({
-      ...prev,
-      subjective: { ...prev.subjective, ...updates.subjective },
-      pain: { ...prev.pain, ...updates.pain },
-    }));
+    setData((prev) => {
+      const fillBlank = (existing = {}, incoming = {}) => {
+        const out = { ...existing };
+        Object.entries(incoming).forEach(([k, v]) => {
+          if (v && !String(existing[k] || "").trim()) out[k] = v;
+        });
+        return out;
+      };
+      return {
+        ...prev,
+        subjective: { ...prev.subjective, ...updates.subjective, __aiExtracted: updates.extracted || prev.subjective?.__aiExtracted },
+        pain: { ...prev.pain, ...updates.pain },
+        demographics: fillBlank(prev.demographics, updates.demographics),
+        redFlags: fillBlank(prev.redFlags, updates.redFlags),
+      };
+    });
     // Real fix for "AI Assisted Assessment always suggests generic Objective
     // tests" -- the wizard was hardcoding condition="general" for the whole
     // session regardless of what the patient's own narrative describes.
@@ -158,11 +197,11 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
         ✍️ Write it manually
       </button>
-      {hasOldSubjectiveData(patientData) && (
-        <button type="button" className="ai-intake-toggle" onClick={loadOldSubjective}>
-          📋 Load from this patient's existing Subjective Assessment
-        </button>
-      )}
+      <button type="button" className="ai-intake-toggle" onClick={() => setOldDataOpen((o) => !o)}>
+        📋 Select from old patient data{oldRecords.length ? ` (${oldRecords.length})` : ""}
+      </button>
+      {oldDataOpen && <OrthoOldDataPicker patientData={patientData} onClose={() => setOldDataOpen(false)} onApply={loadOldRecord} />}
+      <AiExtractedPanel rows={d.__aiExtracted || []} />
 
       {detectedConditionLabel && (
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>

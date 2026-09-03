@@ -233,15 +233,33 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // the patient's own narrative, handleConditionDetected below promotes it
   // exactly as if the clinician had picked it manually on the
   // Condition-wise screen.
-  const [condition, setCondition] = useState(initialCondition);
-  const [detectedConditionLabel, setDetectedConditionLabel] = useState(null);
+  // A condition the landing-screen extraction already classified (the AI
+  // entry always arrives with condition="general") is promoted at mount,
+  // exactly as handleConditionDetected does for an in-wizard extraction --
+  // otherwise Suggested Objective spent the whole session on the generic
+  // baseline even though the narrative had already been classified.
+  const aiDetectedCondition =
+    initialCondition === "general" && initialAiUpdates?.conditionCategory && initialAiUpdates.conditionCategory !== "other"
+      ? OUTPATIENT_CONDITIONS.find((c) => c.id === initialAiUpdates.conditionCategory) || null
+      : null;
+  const [condition, setCondition] = useState(aiDetectedCondition ? aiDetectedCondition.id : initialCondition);
+  const [detectedConditionLabel, setDetectedConditionLabel] = useState(aiDetectedCondition ? aiDetectedCondition.label : null);
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
-    const promoted = initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
-    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id));
+    const promoted = aiDetectedCondition ? aiDetectedCondition.promote : initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
+    // AI entry normally skips Red Flags and Pain as separate steps
+    // (AI_ENTRY_SKIP_IDS) -- but not when the intake itself produced answers
+    // for them: an extraction that recorded an NRS score or a red flag the
+    // patient actually mentioned would otherwise fill a step the therapist
+    // is never shown, which is exactly the "extracted but not in the form"
+    // problem (2026-09-03, Aditi).
+    const seeded = [];
+    if (initialAiUpdates?.pain && Object.keys(initialAiUpdates.pain).length) seeded.push("pain");
+    if (initialAiUpdates?.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.push("redFlags");
+    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id) || seeded.includes(id));
   });
   // Only fires from SubjectiveSection's AI intake (orthoOutpatientSections.jsx),
   // and only if condition is still "general" -- never overrides a condition
@@ -284,13 +302,24 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // previous session, restored verbatim when resuming via Edit; takes
   // priority over the AI-intake seed since a resumed edit already has
   // real answers, not just an AI-parsed starting point.
+  // 2026-09-03, Aditi: "the extracted AI subjective assessment is not fully
+  // filled in the subjective assessment form" -- the seed used to be
+  // subjective+pain only, so the age/sex/occupation/affected side and any
+  // red flag the same extraction produced never reached Demographics or the
+  // Red Flag Screen. `extracted` rides along on data.subjective.__aiExtracted
+  // (a "__" key, so every summary formatter already skips it) to render the
+  // read-only "as extracted" panel on the Subjective step.
   const [data, setData] = useState(() => {
     if (initialData) return initialData;
     if (!initialAiUpdates) return {};
-    return {
+    const seeded = {
       subjective: { ...initialAiUpdates.subjective },
       pain: { ...initialAiUpdates.pain },
     };
+    if (initialAiUpdates.extracted?.length) seeded.subjective.__aiExtracted = initialAiUpdates.extracted;
+    if (initialAiUpdates.demographics && Object.keys(initialAiUpdates.demographics).length) seeded.demographics = { ...initialAiUpdates.demographics };
+    if (initialAiUpdates.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.redFlags = { ...initialAiUpdates.redFlags };
+    return seeded;
   });
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);

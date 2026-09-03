@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SectionIntro } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
 import { PickerList, ConditionPicker, RegionPicker, regionLabelList } from "./orthoSetupKit.jsx";
 import { getTemplates } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
@@ -7,7 +7,8 @@ import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
 import OrthoPostOpAssessment, { POSTOP_CONDITIONS } from "./OrthoPostOpAssessment.jsx";
 import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS } from "./OrthoOutpatientAssessment.jsx";
 import OrthoAIIntakePanel from "./OrthoAIIntakePanel.jsx";
-import { hasOldSubjectiveData, importOldSubjectiveData } from "./orthoAiIntake.js";
+import OrthoOldDataPicker from "./OrthoOldDataPicker.jsx";
+import { listOldPatientRecords } from "./orthoAiIntake.js";
 
 /* ============================================================
    ORTHO ASSESSMENT — standalone entry point.
@@ -88,6 +89,32 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   // both sub-screens keeps the rest of the step machine unchanged.
   const [aiIntakeDone, setAiIntakeDone] = useState(false);
   const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
+  const [oldDataOpen, setOldDataOpen] = useState(false);
+  const [aiSuggestedRegions, setAiSuggestedRegions] = useState([]);
+  const oldRecords = listOldPatientRecords(patientData);
+
+  // One path for both AI-intake sources (a parsed narrative and an imported
+  // old record): seed Subjective/Pain, and pre-tick whatever region(s) that
+  // source already names (2026-09-03, Aditi: "I already told about the
+  // region... when we go to the next page we should be able to see that this
+  // region is selected"). Nothing is locked -- the next screen is the same
+  // RegionPicker as always, so an AI-suggested region can be unticked, given
+  // a different side, or joined by any other region.
+  function applyIntakeUpdates(updates) {
+    setPendingAiUpdates(updates);
+    const suggested = (updates?.regions || []).filter((r) => r && r.id);
+    if (suggested.length) {
+      setAiSuggestedRegions(suggested);
+      setSelectedRegions((prev) => {
+        const next = [...prev];
+        suggested.forEach((r) => {
+          if (!next.some((x) => x.id === r.id)) next.push({ id: r.id, side: r.side || "" });
+        });
+        return next;
+      });
+    }
+    setAiIntakeDone(true);
+  }
 
   function restart() {
     setStep(entryMode ? 1 : 0);
@@ -100,6 +127,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setPickedAi(false);
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
+    setOldDataOpen(false);
+    setAiSuggestedRegions([]);
   }
 
   function selectAiAssisted() {
@@ -109,6 +138,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setPickedAi(true);
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
+    setOldDataOpen(false);
+    setAiSuggestedRegions([]);
     setStep(1);
   }
 
@@ -208,17 +239,34 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
               <OrthoAIIntakePanel
                 defaultOpen
                 requireAuth={requireAuth}
-                onApply={(updates) => { setPendingAiUpdates(updates); setAiIntakeDone(true); }}
+                onApply={(updates) => { applyIntakeUpdates(updates); }}
               />
-              {hasOldSubjectiveData(patientData) && (
-                <button type="button" className="picker-card" style={{ width: "100%", marginTop: 10 }}
-                  onClick={() => { setPendingAiUpdates(importOldSubjectiveData(patientData)); setAiIntakeDone(true); }}>
-                  <div className="picker-icon">📋</div>
-                  <div>
-                    <div className="picker-label">Load this patient's existing Subjective Assessment</div>
-                    <div className="picker-desc">Pull forward the chief complaint, history and goals already on file for this patient.</div>
+              {/* 2026-09-03, Aditi: "when I click on select from old patient
+                  data, it is not giving me the list of old patient data to
+                  select from" -- this used to import one hardcoded source
+                  immediately on tap. Now it opens the real list of every
+                  prior record on this patient, each previewable before it's
+                  applied (see OrthoOldDataPicker.jsx). Still offered even
+                  when there's nothing on file, so the option answers for
+                  itself instead of silently not being there. */}
+              <button type="button" className={"picker-card" + (oldDataOpen ? " selected" : "")} style={{ width: "100%", marginTop: 10 }}
+                onClick={() => setOldDataOpen((o) => !o)}>
+                <div className="picker-icon">📋</div>
+                <div>
+                  <div className="picker-label">Select from old patient data</div>
+                  <div className="picker-desc">
+                    {oldRecords.length
+                      ? `${oldRecords.length} earlier record${oldRecords.length > 1 ? "s" : ""} on file — pick one to pull forward.`
+                      : "Pull forward an earlier assessment already on file for this patient."}
                   </div>
-                </button>
+                </div>
+              </button>
+              {oldDataOpen && (
+                <OrthoOldDataPicker
+                  patientData={patientData}
+                  onClose={() => setOldDataOpen(false)}
+                  onApply={(updates) => { setOldDataOpen(false); applyIntakeUpdates(updates); }}
+                />
               )}
               <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }}
                 onClick={() => setAiIntakeDone(true)}>
@@ -230,6 +278,11 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
           {step === 1 && !(effectiveEntryMode === "ai" && !aiIntakeDone) && (
             <>
               <SectionIntro icon="🧭" title="Which region(s) are involved?" sub="Select every region you plan to examine — you can always pull in another region later from within ROM, MMT, or Special Tests." />
+              {aiSuggestedRegions.length > 0 && (
+                <Hint>
+                  ✨ Pre-selected from what you already told us: <b>{regionLabelList(aiSuggestedRegions)}</b> — check it's right, then add, remove, or change the side below.
+                </Hint>
+              )}
               <RegionPicker selectedRegions={selectedRegions} setSelectedRegions={setSelectedRegions} />
             </>
           )}
