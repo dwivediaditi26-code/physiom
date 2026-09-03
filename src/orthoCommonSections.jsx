@@ -1,5 +1,14 @@
-import React, { useState, lazy, Suspense } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, useSectionData } from "./orthoFieldKit.jsx";
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData } from "./orthoFieldKit.jsx";
+
+// Typical resting adult values -- Vitals now opens already filled with
+// these instead of blank, since most patients most of the time are within
+// normal range; the clinician expands (+) whichever one isn't and changes
+// it, rather than typing all seven from scratch every time (2026-09-03,
+// Aditi: "already built normal vital signs, and we can change it by
+// minimize and maximize button"). Only seeds when the section is still
+// completely untouched, so it never overwrites a real entry.
+const NORMAL_VITALS = { bpSys: "120", bpDia: "80", hr: "72", rr: "16", spo2: "98", temp: "37.0", pain: "0" };
 
 // Same interactive pain/symptom body chart used by the old Subjective flow
 // (SubjectiveObjective.jsx) -- lazy-loaded since it's a large, self-contained
@@ -38,17 +47,21 @@ export function CaseInfoSection({ data, setData }) {
 
 export function VitalsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "vitals");
+  useEffect(() => {
+    setData((prev) => (prev.vitals && Object.keys(prev.vitals).length > 0 ? prev : { ...prev, vitals: { ...NORMAL_VITALS } }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <>
-      <SectionIntro icon="❤️" title="Vital Signs" />
+      <SectionIntro icon="❤️" title="Vital Signs" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
-        <NumberField label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" width="45%" />
-        <NumberField label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" width="45%" />
-        <NumberField label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" />
-        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" />
-        <NumberField label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" />
-        <NumberField label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
-        <NumberField label="Pain (NRS)" value={d.pain} onChange={(v) => set("pain", v)} unit="/10" />
+        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" />
+        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" />
+        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" />
+        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" />
+        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" />
+        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
+        <VitalRow label="Pain (NRS)" value={d.pain} onChange={(v) => set("pain", v)} slider max={10} />
       </div>
     </>
   );

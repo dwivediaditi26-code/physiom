@@ -171,14 +171,33 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
 // Perform/Reference/Interpret tabs. No NKT photos on Cloudinary yet --
 // image stays unset, falling back to InfoButton's own placeholder, same
 // honest-empty-state pattern used everywhere else in this system.
+// t.options already carries this exact clinical detail (Facilitated/
+// Inhibited/Overactive, each with a real `meaning`) but it only ever
+// surfaced as bare option-chip labels in the test row itself -- a student
+// picking a chip had no way to see what that finding actually means before
+// deciding whether to test it. Surface the Inhibited/Overactive meanings on
+// the Interpret tab (2026-09-03, Aditi: "if this muscle is inhibited, then
+// what it causes, if overactive what it causes... a student should know if
+// he wants to assess it or not") so it's read before the exam, not just
+// after picking a result.
 export function cpaRichItem(t) {
+  const consequences = (t.options || []).filter((o) => /inhibit|overactive/i.test(o.val));
   return {
     image: t.id,
     title: t.label,
     subtitle: t.muscle,
     perform: <InfoCard icon="👐" label="How to test" tint="violet">{t.how}</InfoCard>,
     reference: <InfoCard icon="🔀" label="Common compensators" tint="amber">{t.compensator}</InfoCard>,
-    interpret: <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+    interpret: (
+      <>
+        {consequences.map((o, i) => (
+          <InfoCard key={i} icon={/inhibit/i.test(o.val) ? "🔻" : "🔺"} label={`If ${o.val}`} tint={/inhibit/i.test(o.val) ? "red" : "amber"}>
+            {o.meaning}
+          </InfoCard>
+        ))}
+        <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>
+      </>
+    ),
   };
 }
 
@@ -628,6 +647,14 @@ export function formatSttSection(sectionData) {
   return rows;
 }
 
+// Was: only the bare top-level grade (Normal/Compensated/Abnormal) made it
+// into the Summary/Review and any exported report -- the per-observation
+// answer and its clinical clue (e.g. "⚠ Pain at initiation — Discogenic /
+// SIJ loading — centralisation test"), visible while filling the form,
+// never carried through (2026-09-03, Aditi: "previously it shows what it
+// means if anything in the four options we selected... give me back the
+// interpretation"). Now every answered observation gets its own row with
+// the selected finding and its clue, not just the summary grade.
 export function formatFmaSection(sectionData) {
   const rows = [];
   FMA_REGION_KEYS.forEach((k) => {
@@ -636,6 +663,13 @@ export function formatFmaSection(sectionData) {
     (FMA_DATA[k] || []).forEach((t) => {
       const grade = entry[t.id + "_grade"];
       if (grade) rows.push({ label: `${k} — ${t.label}`, value: grade });
+      (t.observations || []).forEach((obs) => {
+        const val = entry[t.id + "_" + obs.id];
+        if (!val) return;
+        const idx = obs.opts.indexOf(val);
+        const clue = idx > 0 ? obs.clues[idx] : "";
+        rows.push({ label: `${k} — ${t.label} — ${obs.q}`, value: clue ? `${val} — ${clue}` : val });
+      });
     });
   });
   return rows;

@@ -183,6 +183,20 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
           )}
         </div>
       </div>
+      {/* Quick "Is it normal?" fill -- Aditi: "if we want the normal value in
+          the ROM section, then it should ask is it normal, we document it,
+          or you want to change it" -- the Stepper above already starts
+          showing the normal value, but nothing is actually saved until the
+          therapist touches it; this is the one-tap "yes, document that"
+          confirm, still fully editable via the Stepper afterward if it isn't
+          actually normal for this patient. */}
+      {m.normal != null && (
+        <div className="chip-mini-row">
+          <button type="button" className="rom-normal-btn" onClick={() => { const sides = m.bilateral !== false ? ["left", "right"] : ["left"]; sides.forEach((s) => onSetVal(m.id, s, m.normal)); }}>
+            ✓ Normal — document N={m.normal}{m.unit}
+          </button>
+        </div>
+      )}
       <div className="obj-item-row rom-detail-toggle" onClick={() => setDetailOpen((o) => !o)} role="button">
         <span className="obj-item-row-sub">Pain quality &amp; end feel</span>
         <div className="obj-item-row-right">
