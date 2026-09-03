@@ -7,6 +7,7 @@ import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHA
 import { authHeader } from "./supabase.js";
 import { SCALES } from "./sharedClinicalData.js";
 import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 
 // formatters[stepId] contract for SummarySection's rowsForStep -- only
@@ -15,7 +16,10 @@ import { orthoStyles } from "./orthoStyles.js";
 // Exported so SpecialtyPatientProfile.jsx's own NeuroSummarySection call
 // (Cardio/Neuro/Ortho patient profile) shows the same real exercise
 // programme instead of "[object Object]" there too.
-export const neuroSummaryFormatters = { exercisePrescription: formatNeuroExercisePrescriptionSection };
+export const neuroSummaryFormatters = {
+  exercisePrescription: formatNeuroExercisePrescriptionSection,
+  carePlan: formatNeuroCarePlanSection,
+};
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -80,6 +84,7 @@ const STEP_META = [
   { id: "functional", icon: "🛏️", label: "Functional Assessment" },
   { id: "outcomes", icon: "📊", label: "Outcome Measures" },
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
+  { id: "carePlan", icon: "🎯", label: "Problems, Goals & Plan" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
   { id: "aiTreatment", icon: "✨", label: "AI Treatment Suggestions" },
   { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
@@ -1314,6 +1319,12 @@ function GaitSection({ data, setData }) {
       <SelectField label="Tandem gait (heel-to-toe)" type="single" options={["Normal", "Impaired", "Unable", "Not tested"]} value={d.tandemGait} onChange={(v) => set("tandemGait", v)} info={neuroExamLibraryData.tandemGait} />
       <SelectField label="Level of assistance" type="single" options={["Independent", "Supervision", "Contact guard", "Minimal assist", "Moderate assist", "Maximal assist", "Unable to ambulate"]} value={d.assistanceLevel} onChange={(v) => set("assistanceLevel", v)} />
       <div className="vitals-grid">
+        {/* Walking distance (2026-09-02) -- the single most-used baseline in
+            a neuro walking goal ("40 m with Min A -> 100 m with
+            supervision"). It had no field here at all, so that goal could
+            never be pre-filled; neuroClinicalKnowledge.js's
+            walking_limitation rule reads this. */}
+        <NumberField label="Walking distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" width="45%" />
         <NumberField label="Gait speed" value={d.gaitSpeed} onChange={(v) => set("gaitSpeed", v)} unit="m/s" width="45%" />
         <NumberField label="10-metre walk time" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" width="45%" />
       </div>
@@ -1821,7 +1832,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "aiTreatment", "exercisePrescription", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "carePlan", "precautions", "aiTreatment", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2533,6 +2544,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
               {current.id === "aiTreatment" && <AiTreatmentSuggestionsSection data={data} setData={setData} />}
+              {current.id === "carePlan" && (
+                <>
+                  {/* Same scoped-stylesheet reason as the Exercise
+                      Prescription step below -- NeuroCarePlan.jsx is built
+                      on the Ortho field kit's classes. */}
+                  <style>{orthoStyles()}</style>
+                  <NeuroCarePlanSection data={data} setData={setData} />
+                </>
+              )}
               {current.id === "exercisePrescription" && (
                 <>
                   {/* Reuses Ortho's ExerciseLibraryCard/ProgrammeEntryCard
