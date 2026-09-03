@@ -1938,6 +1938,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const hasExistingNeuro = Object.keys(neuroSeed).length > 0;
   const [step, setStep] = useState(() => (hasExistingNeuro ? 1 : 0));
   const [setting, setSetting] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.setting || "outpatient" : null));
+  const [condition, setCondition] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.condition || null : null));
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
@@ -1962,6 +1963,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setData(s);
     setStep(existing ? 1 : 0);
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
+    setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
     setStepOrder(existing ? s.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id));
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
@@ -1983,8 +1985,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   useEffect(() => {
     if (phase !== "assess") return;
     setData((prev) => {
-      const meta = { setting, stepOrder, customStepsMeta };
-      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
+      const meta = { setting, condition, stepOrder, customStepsMeta };
+      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
       return { ...prev, meta };
     });
     // Also mirror the chosen setting onto the shared patient record's own
@@ -2092,6 +2094,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       const g = NEURO_LIBRARY.find((x) => x.cat === cat);
       customMeta[neuroId(cat, label)] = { icon: g?.icon || "🧠", label };
     });
+    setCondition(t.id);
     startAssessment(t.domainSteps, customIds, customMeta);
   }
   function toggleRegion(id) {

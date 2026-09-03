@@ -4,6 +4,8 @@ import { EXERCISE_DB } from "./sharedClinicalData.js";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
   REFERENCES, ASSIST_LADDER, problemById,
+  conditionLabel, settingLabel, conditionSettingPrecautions,
+  recommendInterventions,
 } from "./neuroClinicalKnowledge.js";
 
 /* ============================================================
@@ -62,7 +64,26 @@ function PhaseNav({ phase, setPhase, counts }) {
 }
 
 /* ─── 1. PROBLEMS ─────────────────────────────────────────── */
-function ProblemsPhase({ suggested, problems, setProblems, onNext }) {
+function PrecautionsBanner({ condition, setting }) {
+  const items = conditionSettingPrecautions(condition, setting);
+  if (!items.length) return null;
+  const cLabel = conditionLabel(condition);
+  const sLabel = settingLabel(setting);
+  return (
+    <div className="tech-card" style={{ borderColor: "#f59e0b", background: "#fffbeb", marginBottom: 12 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>
+        ⚠️ {[cLabel, sLabel].filter(Boolean).join(" · ")} precautions
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {items.map((t, i) => (
+          <div key={i} style={{ fontSize: 11.5, color: "#92400e" }}>• {t}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [mCat, setMCat] = useState("");
   const [mName, setMName] = useState("");
@@ -81,6 +102,7 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext }) {
   return (
     <>
       <SectionIntro icon="🧩" title="Problem list" sub="Suggested from the findings you already recorded — select the ones you want to treat." />
+      <PrecautionsBanner condition={condition} setting={setting} />
 
       {suggested.length === 0 && (
         <div className="summary-empty">No problems could be suggested yet — record findings in the assessment steps (motor, tone, balance, gait, functional) and they'll appear here. You can still add problems manually below.</div>
@@ -97,6 +119,7 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext }) {
                   <span className="tech-card-title" style={{ fontSize: 13.5 }}>{s.name}</span>
                   <span style={chip(BRAND.purpleFaint, BRAND.purpleDark)}>{categoryLabel(s.category)}</span>
                   {s.evidence && <span style={chip("#ecfdf5", "#047857")}>Evidence {s.evidence}</span>}
+                  {s.conditionSpecific && <span style={chip("#fef3c7", "#92400e")}>{conditionLabel(condition)}</span>}
                 </div>
                 {/* The "why" trail -- the exact recorded values that triggered
                     this suggestion, so the therapist can judge it rather than
@@ -172,7 +195,7 @@ function GoalEditor({ goal, onChange, onRemove }) {
   );
 }
 
-function GoalsPhase({ problems, goals, setGoals, onNext }) {
+function GoalsPhase({ problems, goals, setGoals, onNext, setting }) {
   return (
     <>
       <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal." />
@@ -181,7 +204,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext }) {
       {problems.map((p) => {
         const mine = goals.filter((g) => g.problemId === p.id);
         const chosenTemplates = new Set(mine.map((g) => g.templateId).filter(Boolean));
-        const suggestions = p.sourceId ? buildGoalsForProblem(p.sourceId, p.baseline).filter((s) => !chosenTemplates.has(s.templateId)) : [];
+        const suggestions = p.sourceId ? buildGoalsForProblem(p.sourceId, p.baseline, setting).filter((s) => !chosenTemplates.has(s.templateId)) : [];
         return (
           <div key={p.id} style={{ marginBottom: 18 }}>
             <div className="subheading" style={{ marginTop: 10 }}>{p.name}</div>
@@ -233,7 +256,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext }) {
 /* ─── 3. TREATMENT (goal-wise) ────────────────────────────── */
 const NEURO_CATS = Object.keys(EXERCISE_DB.neurological.categories);
 
-function AddTreatmentSheet({ goal, allGoals, relevantCats, existing, onAdd, onClose }) {
+function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose }) {
   const [cat, setCat] = useState(null);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(null);
@@ -241,6 +264,16 @@ function AddTreatmentSheet({ goal, allGoals, relevantCats, existing, onAdd, onCl
   const [linked, setLinked] = useState([goal.id]);
 
   const all = useMemo(() => Object.entries(EXERCISE_DB.neurological.categories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), []);
+
+  // Ranked, book-referenced suggestions for the problem behind this goal.
+  // Each recommendation's exId is resolved to the real exercise here; the
+  // note/source come from the knowledge base. Suggestions are shown first
+  // but the therapist still opens each to confirm dose -- never auto-added.
+  const suggestions = useMemo(() => {
+    return recommendInterventions(problemId)
+      .map((r) => ({ ...r, ex: all.find((e) => e.id === r.exId) }))
+      .filter((r) => r.ex);
+  }, [problemId, all]);
   const results = search.trim()
     ? all.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
     : cat ? all.filter((e) => e._cat === cat) : [];
@@ -268,9 +301,32 @@ function AddTreatmentSheet({ goal, allGoals, relevantCats, existing, onAdd, onCl
             <input className="ct-search" placeholder="🔍 Search treatment..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="ct-modal-body">
+            {!search.trim() && !cat && suggestions.length > 0 && (
+              <div className="ct-group">
+                <div className="ct-group-title" style={{ color: BRAND.purpleDark }}>⭐ SUGGESTED FOR THIS GOAL</div>
+                {suggestions.map((r, i) => {
+                  const already = existing.has(r.ex.id);
+                  return (
+                    <button key={r.ex.id} type="button" className="ct-item" onClick={() => (already ? null : startDose(r.ex))} disabled={already}
+                      style={{ alignItems: "flex-start", borderLeft: `3px solid ${BRAND.purple}` }}>
+                      <span style={{ flex: 1, textAlign: "left" }}>
+                        <span style={{ fontWeight: 600 }}>
+                          <span style={{ color: BRAND.purple, marginRight: 5 }}>{i + 1}.</span>{r.ex.name}
+                          {r.ex.evidence && <span style={{ ...chip("#ecfdf5", "#047857"), marginLeft: 6 }}>{r.ex.evidence}</span>}
+                        </span>
+                        <span style={{ display: "block", fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{r.note}</span>
+                        <span style={{ display: "block", fontSize: 10, color: BRAND.gray, marginTop: 2, fontStyle: "italic" }}>📖 {r.source}</span>
+                      </span>
+                      <span style={{ color: already ? BRAND.gray : BRAND.purple, fontWeight: 700, fontSize: 12 }}>{already ? "Added" : "＋ Add"}</span>
+                    </button>
+                  );
+                })}
+                <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>Suggestions only — ranked by evidence. Browse all treatment types below, or search.</div>
+              </div>
+            )}
             {!search.trim() && !cat && (
               <div className="ct-group">
-                <div className="ct-group-title">TREATMENT TYPE</div>
+                <div className="ct-group-title">ALL TREATMENT TYPES</div>
                 {ordered.map((c) => (
                   <button key={c} type="button" className="ct-item" onClick={() => setCat(c)}>
                     <span>{c}</span>
@@ -408,6 +464,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext }) 
         <AddTreatmentSheet
           goal={sheetGoal}
           allGoals={goals}
+          problemId={(problems.find((p) => p.id === sheetGoal.problemId) || {}).sourceId || null}
           relevantCats={(problems.find((p) => p.id === sheetGoal.problemId) || {}).treatmentCategories || []}
           existing={new Set(treatments.filter((t) => t.goalIds.includes(sheetGoal.id)).map((t) => t.exerciseId))}
           onAdd={(t) => {
@@ -487,6 +544,8 @@ export function NeuroCarePlanSection({ data, setData }) {
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
   const suggested = useMemo(() => deriveNeuroProblems(data), [data]);
+  const condition = data.meta?.condition || null;
+  const setting = data.meta?.setting || null;
 
   // Keep an already-selected (auto-derived) problem's findings/baseline in
   // step with the assessment. Without this, selecting a problem froze its
@@ -512,8 +571,8 @@ export function NeuroCarePlanSection({ data, setData }) {
   return (
     <>
       <PhaseNav phase={phase} setPhase={setPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0 }} />
-      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => setPhase("goals")} />}
-      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} />}
+      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => setPhase("goals")} condition={condition} setting={setting} />}
+      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} setting={setting} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => setPhase("plan")} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
     </>
