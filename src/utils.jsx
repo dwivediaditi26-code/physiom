@@ -507,7 +507,7 @@ const MOBILE_CSS = `
 
   /* Touch targets */
   @media (max-width: 767px) {
-    button:not(.pm-rom-qual-btn):not(.info-btn-sm) { min-height: 40px !important; }
+    button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close) { min-height: 40px !important; }
   }
 
   /* ── Show/hide helpers ── */
