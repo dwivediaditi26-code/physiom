@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, SelectField, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, suggestCpaItems, suggestKineticChainItems, suggestFmaItems, suggestSttItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow, kcWhy, kcHow, fmaWhy, fmaHow, sttWhy, sttHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { RESTRICTION_GRADE, MMT_GRADES } from "./orthoClinicalData.js";
 // The Objective item cards below render the EXACT same controls and info
@@ -15,14 +15,14 @@ import { RESTRICTION_GRADE, MMT_GRADES } from "./orthoClinicalData.js";
 // cannot drift apart again.
 import { RomMovementCard, GradeSelect, romInfoText, romRichItem, mmtInfoText, mmtRichItem, specialRichItem, isPositiveResult } from "./orthoRegionAssessments.jsx";
 import { PalpationSection } from "./orthoOutpatientSections.jsx";
+import { palpationFocusZoneIds, palpationZonesForRegions } from "./orthoPalpationData.js";
 import { InfoButton } from "./orthoFieldKit.jsx";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
-import { OptionChips } from "./orthoAdvancedTools.jsx";
-import { CYRIAX_RESISTED_RESULTS } from "./orthoAdvancedLibrary.js";
+import { CpaSection, KineticChainSection, FmaSection, SttSection, FasciaSection } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
 /* ============================================================
@@ -471,88 +471,27 @@ function ObservationItemCard({ item, obsData, setPostureRegion, selectionData, o
    the AI-assisted route looked nothing like the normal one. Writes to the
    same data.palpation either way. ---------- */
 
-/* ---------- CPA (Compensation Pattern Analysis / NKT) -- suggested/
-   optional, same as before, but now an inline per-test item list (colored
-   Facilitated/Inhibited/Overactive chips) instead of an "Enter →" jump. ---------- */
-function CpaItemCard({ item, cpaData, setCpa }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = cpaData[regionKey] || {};
-  const value = entry[itemId];
-  return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={cpaWhy(meta)} howLines={cpaHow(meta)} howEyebrow="HOW TO TEST">
-      <OptionChips options={meta.options} value={value} onChange={(v) => setCpa(regionKey, { ...entry, [itemId]: v })} />
-    </ItemCardShell>
-  );
-}
+/* ---------- CPA / Kinetic Chain / Functional Movement / STTT / Fascia ----------
+   Rendered by the REAL sections (orthoAdvancedTools.jsx) -- the same
+   colour-coded option chips carrying each option's own clinical meaning,
+   the same region tabs, and the same (i) sheets with how-to-test /
+   compensator / kinetic-chain-effect / treatment content the standalone
+   pages and the old Phase 0.5 modules show (2026-09-03, Aditi: "cpa,
+   kinetic chain, functional screen, sttt, fascia like in old 0.5 phase
+   does"). These used to be four bespoke one-line item cards here, which is
+   why the AI-assisted route looked nothing like the rest of the app.
+   Fascia had no Ortho screen at all before this. ---------- */
 
-/* ---------- Kinetic Chain (Cook & Boyle joint-by-joint screen) --
-   suggested/optional, same real KC_REGIONS tests + colored option chips
-   the full page uses, now inline. ---------- */
-function KineticChainItemCard({ item, kcData, setKc }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = kcData[regionKey] || {};
-  const value = entry[itemId];
-  return (
-    <ItemCardShell label={label} sublabel={meta.joint} answered={!!value} summary={value || ""} whyLines={kcWhy(meta)} howLines={kcHow(meta)} howEyebrow="HOW TO TEST">
-      <OptionChips options={meta.options} value={value} onChange={(v) => setKc(regionKey, { ...entry, [itemId]: v })} />
-    </ItemCardShell>
-  );
-}
-
-/* ---------- FMA (Functional Movement Assessment) -- suggested/optional,
-   graded Normal/Compensated/Abnormal same as the full page. ---------- */
-const FMA_GRADE_LABELS = ["Normal", "Compensated", "Abnormal"];
-const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
-function FmaItemCard({ item, fmaData, setFma }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = fmaData[regionKey] || {};
-  const grade = entry[itemId + "_grade"];
-  return (
-    <ItemCardShell label={`${meta.icon || ""} ${label}`.trim()} sublabel={meta.phase} answered={!!grade} summary={grade || ""} whyLines={fmaWhy(meta)} howLines={fmaHow(meta)}>
-      <div className="chip-mini-row">
-        {(meta.grades || []).map((g, i) => {
-          const selected = grade === g;
-          const color = FMA_GRADE_COLOR[i];
-          const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
-          return (
-            <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => setFma(regionKey, { ...entry, [itemId + "_grade"]: selected ? "" : g })}>
-              {FMA_GRADE_LABELS[i] || g}
-            </button>
-          );
-        })}
-      </div>
-    </ItemCardShell>
-  );
-}
-
-/* ---------- STTT (Cyriax selective tissue tension) -- suggested/optional,
-   scoped to resisted testing (isolates contractile from inert tissue);
-   active/passive ROM and joint play stay on the full STTT page. ---------- */
-function SttItemCard({ item, sttData, setStt }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = sttData[regionKey] || {};
-  const value = entry[itemId + "_result"];
-  return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={sttWhy(meta)} howLines={sttHow(meta)}>
-      <SelectField options={CYRIAX_RESISTED_RESULTS} value={value} onChange={(v) => setStt(regionKey, { ...entry, [itemId + "_result"]: v })} />
-    </ItemCardShell>
-  );
-}
-
-/* ---------- Outcome Measure -- suggested/optional, same as before, but
-   now the actual question set fills inline (one collapsible card per
-   suggested measure) instead of an "Enter →" jump. Writes to the exact
-   same data.outcomeMeasure.instances[measureId].history shape
-   OrthoOutcomeMeasureFlow.jsx's own saveEntry() produces, so a "Reassess"
-   later on the full page sees this entry as real history, not a
-   duplicate. A discrete "Save entry" action (rather than live-writing
-   each answer) because a half-answered scale has no valid score and an
-   instrument's history is meant to be a series of complete, timestamped
-   administrations, not a rolling draft. ---------- */
-// No per-measure "why/how" reference existed on the old OrthoOutcomeMeasureFlow.jsx
-// page either (MEASURES carries only scoring logic, not prose) -- built
-// from the measure's own real item prompts (not invented) plus the same
-// generic outcome-measure rationale OBJECTIVE_CONTENT already used.
+/* ---------- Outcome measure (inline) ----------
+   Saves into the same data.outcomeMeasure.instances[measureId].history
+   shape OrthoOutcomeMeasureFlow.jsx's own saveEntry() produces, so a
+   "Reassess" later on the full page sees this entry as real history, not
+   a duplicate. ---------- */
+// No per-measure "why/how" reference existed on the old
+// OrthoOutcomeMeasureFlow.jsx page either (MEASURES carries only scoring
+// logic, not prose) -- built from the measure's own real item prompts (not
+// invented) plus the same generic outcome-measure rationale
+// OBJECTIVE_CONTENT already used.
 function outcomeMeasureInfo(measure) {
   return {
     why: `${measure.full} gives an objective, comparable score for this region to track progress and justify the treatment plan.`,
@@ -644,10 +583,6 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const [mmtData, setMmtD] = useSectionData(data, setData, "mmt");
   const [specialData, setSpecialD] = useSectionData(data, setData, "specialTests");
   const [obsData, setObsD] = useSectionData(data, setData, "observation");
-  const [cpaData, setCpaD] = useSectionData(data, setData, "cpa");
-  const [kcData, setKcD] = useSectionData(data, setData, "kineticChain");
-  const [fmaData, setFmaD] = useSectionData(data, setData, "fma");
-  const [sttData, setSttD] = useSectionData(data, setData, "sttt");
   const [omData, setOmD] = useSectionData(data, setData, "outcomeMeasure");
   // Persists which items have been tapped "+ Select" so the Suggested /
   // Selected / Finding state survives navigating away and back -- an item
@@ -663,22 +598,6 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const setSpecial = (k, v) => {
     setSpecialD(k, v);
     if (!activeIds.has("specialTests")) onToggle("specialTests");
-  };
-  const setCpa = (k, v) => {
-    setCpaD(k, v);
-    if (!activeIds.has("cpa")) onToggle("cpa");
-  };
-  const setKc = (k, v) => {
-    setKcD(k, v);
-    if (!activeIds.has("kineticChain")) onToggle("kineticChain");
-  };
-  const setFma = (k, v) => {
-    setFmaD(k, v);
-    if (!activeIds.has("fma")) onToggle("fma");
-  };
-  const setStt = (k, v) => {
-    setSttD(k, v);
-    if (!activeIds.has("sttt")) onToggle("sttt");
   };
   const omInstances = omData.instances || {};
   function saveOutcomeEntry(measureId, answers, score) {
@@ -709,22 +628,23 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // same gating the old whole-category "Enter →" card used.
   const cpaReason = suggestions.find((s) => s.id === "cpa")?.reason;
   const showCpa = !!cpaReason || activeIds.has("cpa");
-  const cpaItems = useMemo(() => (showCpa ? suggestCpaItems(selectedRegions) : []), [showCpa, selectedRegions]);
 
-  // Kinetic Chain / FMA / STTT are optional too, same gating pattern as
-  // CPA above -- only fill inline once suggestObjectiveTests actually
-  // suggests them (or they're already added).
+  // Kinetic Chain / FMA / STTT / Fascia are optional too, same gating pattern
+  // as CPA above -- only shown inline once suggestObjectiveTests actually
+  // suggests them (or they're already added). Each renders its own real
+  // section, which brings its own region tabs, so there is nothing to
+  // pre-resolve per region here any more.
   const kcReason = suggestions.find((s) => s.id === "kineticChain")?.reason;
   const showKc = !!kcReason || activeIds.has("kineticChain");
-  const kcItems = useMemo(() => (showKc ? suggestKineticChainItems(selectedRegions) : []), [showKc, selectedRegions]);
 
   const fmaReason = suggestions.find((s) => s.id === "fma")?.reason;
   const showFma = !!fmaReason || activeIds.has("fma");
-  const fmaItems = useMemo(() => (showFma ? suggestFmaItems(selectedRegions) : []), [showFma, selectedRegions]);
 
   const sttReason = suggestions.find((s) => s.id === "sttt")?.reason;
   const showStt = !!sttReason || activeIds.has("sttt");
-  const sttItems = useMemo(() => (showStt ? suggestSttItems(selectedRegions) : []), [showStt, selectedRegions]);
+
+  const fasciaReason = suggestions.find((s) => s.id === "fascia")?.reason;
+  const showFascia = !!fasciaReason || activeIds.has("fascia");
 
   const { recommended: omRecommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion }), [selectedRegions]);
   const omReasonById = Object.fromEntries(omRecommended.map((r) => [r.id, r.reason]));
@@ -773,8 +693,8 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // don't also duplicate as a whole-category "Enter →" card. Kept in
   // `suggestions` itself since cpaReason/omSuggestedFromReasoning above
   // still read their `reason` text off it.
-  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(id) && libraryById[id]);
-  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(s.id));
+  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt", "fascia"].includes(id) && libraryById[id]);
+  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt", "fascia"].includes(s.id));
 
   const query = q.trim().toLowerCase();
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
@@ -792,6 +712,18 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // region without a ported Phase 0.5 engine) means "show everything",
   // same as before this existed.
   const conditionFilter = useMemo(() => (activeConditionObj && engineMatch ? engineMatch.engine.itemIds(activeConditionObj) : null), [activeConditionObj, engineMatch]);
+
+  // Condition-wise palpation (2026-09-03, Aditi: "palpation condition wise")
+  // -- each engine condition lists its own objective tests, some of which are
+  // palpation targets ("Palpation -- Greater Tuberosity", "Joint line
+  // palpation"). palpationFocusZoneIds matches those against the zones this
+  // case's regions actually put on screen, so Palpation leads with the areas
+  // the suspected condition calls for. Empty = show every zone, unchanged.
+  const palpationFocusIds = useMemo(() => {
+    const tests = [...(activeConditionObj?.objectiveTests?.required || []), ...(activeConditionObj?.objectiveTests?.recommended || [])];
+    if (!tests.length) return null;
+    return palpationFocusZoneIds(tests, palpationZonesForRegions(selectedRegions));
+  }, [activeConditionObj, selectedRegions]);
 
   // Scans the exact same rom/mmt/specialTests/observation data the item
   // cards above write into, and derives (a) which named items are
@@ -1053,45 +985,46 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         </>
       )}
 
-      <PalpationSection data={data} setData={setData} />
+      <PalpationSection
+        data={data}
+        setData={setData}
+        selectedRegions={selectedRegions}
+        focusZoneIds={palpationFocusIds}
+        conditionLabel={activeConditionObj?.name || ""}
+      />
 
-      {showCpa && cpaItems.length > 0 && (
+      {showCpa && (
         <>
-          <div className="subheading">🧠 CPA — Compensation Pattern Analysis</div>
           {cpaReason && <Hint>{cpaReason}</Hint>}
-          {cpaItems.map((item) => (
-            <CpaItemCard key={`cpa-${item.regionKey}-${item.itemId}`} item={item} cpaData={cpaData} setCpa={setCpa} />
-          ))}
+          <CpaSection data={data} setData={setData} />
         </>
       )}
 
-      {showKc && kcItems.length > 0 && (
+      {showKc && (
         <>
-          <div className="subheading">⛓️ Kinetic Chain</div>
           {kcReason && <Hint>{kcReason}</Hint>}
-          {kcItems.map((item) => (
-            <KineticChainItemCard key={`kc-${item.regionKey}-${item.itemId}`} item={item} kcData={kcData} setKc={setKc} />
-          ))}
+          <KineticChainSection data={data} setData={setData} />
         </>
       )}
 
-      {showFma && fmaItems.length > 0 && (
+      {showFma && (
         <>
-          <div className="subheading">🏃 Functional Movement Assessment</div>
           {fmaReason && <Hint>{fmaReason}</Hint>}
-          {fmaItems.map((item) => (
-            <FmaItemCard key={`fma-${item.regionKey}-${item.itemId}`} item={item} fmaData={fmaData} setFma={setFma} />
-          ))}
+          <FmaSection data={data} setData={setData} />
         </>
       )}
 
-      {showStt && sttItems.length > 0 && (
+      {showStt && (
         <>
-          <div className="subheading">🦴 STTT — Selective Tissue Tension</div>
           {sttReason && <Hint>{sttReason}</Hint>}
-          {sttItems.map((item) => (
-            <SttItemCard key={`stt-${item.regionKey}-${item.itemId}`} item={item} sttData={sttData} setStt={setStt} />
-          ))}
+          <SttSection data={data} setData={setData} />
+        </>
+      )}
+
+      {showFascia && (
+        <>
+          {fasciaReason && <Hint>{fasciaReason}</Hint>}
+          <FasciaSection data={data} setData={setData} />
         </>
       )}
 

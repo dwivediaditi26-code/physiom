@@ -5,11 +5,6 @@ import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
 import { listOldPatientRecords } from "./orthoAiIntake.js";
 import OrthoOldDataPicker, { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
 
-// Same SVG anatomical hotspot map used by the old Palpation flow
-// (ClinicalModules.jsx's PalpationModule) -- lazy-loaded for the same reason
-// as Pain's body chart: large, self-contained, only needed once opened.
-const LazyPalpationModule = lazy(() => import("./lazy_palpation.jsx"));
-
 // AI text/voice intake for Subjective -- lazy-loaded since most sessions
 // won't open it, and it pulls in its own fetch/speech-recognition logic.
 const LazyOrthoAIIntakePanel = lazy(() => import("./OrthoAIIntakePanel.jsx"));
@@ -249,29 +244,12 @@ export function formatSubjectiveSection(section) {
   return rows;
 }
 
-export function PalpationSection({ data, setData, selectedRegions = [], regionLabelOf }) {
-  const [d, set] = useSectionData(data, setData, "palpation");
-  const [mapOpen, setMapOpen] = useState(true);
-  return (
-    <>
-      <SectionIntro icon="🖐️" title="Palpation" />
-      <button type="button" className="collapsible-head" onClick={() => setMapOpen((o) => !o)}>
-        <span>Body Map</span>
-        <span className={"collapsible-chevron" + (mapOpen ? " open" : "")}>⌄</span>
-      </button>
-      {mapOpen && (
-        <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
-          <LazyPalpationModule data={d} set={set} />
-        </Suspense>
-      )}
-      <div className="subheading">Findings</div>
-      <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => set("swelling", v)} />
-      <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => set("muscleTone", v)} />
-      <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => set("triggerPoints", v)} placeholder="Location and referral pattern..." />
-      <SelectField label="Scar / tissue mobility" type="multi" options={["N/A", "Normal", "Adherent", "Restricted", "Hypersensitive"]} value={d.scarMobility} onChange={(v) => set("scarMobility", v)} />
-    </>
-  );
-}
+/* PalpationSection moved to orthoPalpationSection.jsx (2026-09-03) --
+   it is now region-wise and structure-by-structure rather than a body map
+   plus four whole-patient fields. Re-exported from here so every existing
+   importer (OrthoOutpatientAssessment.jsx's Palpation step, the Suggested
+   Objective screen) keeps its current import path. */
+export { PalpationSection } from "./orthoPalpationSection.jsx";
 
 const TASK_OPTIONS = ["Normal", "Modified", "Limited", "Unable", "Not assessed"];
 function TaskField({ label, value, onChange }) {

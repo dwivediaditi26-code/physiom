@@ -14,7 +14,9 @@ function FMASection({ navContext={}, data={}, set=()=>{}, navTo=()=>{} }){
   );
 }
 // ─── FASCIA LINE DATA ─────────────────────────────────────────────────────────
-const FASCIA_LINES_DATA = {
+// Exported (2026-09-03) so the Ortho Outpatient wizard can render the same
+// fascia content Phase 0.5 does, from this one source, instead of a copy.
+export const FASCIA_LINES_DATA = {
   sbl:{ label:"Superficial Back Line", color:"#ff6b35", route:"Plantar fascia → Gastrocnemius → Hamstrings → Sacrotuberous lig → Erector spinae → Suboccipitals → Scalp", restrictions:"Plantar fasciitis, hamstring tightness, thoracolumbar restriction, suboccipital tension, forward head, limited forward bend", compensation:"Plantar restriction pulls entire posterior chain → suboccipital compression → forward head posture" },
   sfl:{ label:"Superficial Front Line", color:"#00d4ff", route:"Dorsum foot → Tibialis anterior → Quadriceps → Rectus abdominis → SCM → Scalp", restrictions:"Anterior ankle restriction, quad tightness, abdominal restriction, chest tightness, SCM overactivity", compensation:"SFL short = SBL stretched and overloaded → kyphosis + forward head" },
   ll:{ label:"Lateral Line", color:"#a8ff3e", route:"Peroneals → IT band → TFL/Glute max → Ext oblique → Intercostals → SCM/Splenius", restrictions:"Lateral ankle pain, IT band syndrome, lateral knee, lateral hip, lateral trunk tightness, scoliosis", compensation:"LL restriction → scoliotic lean → contralateral lateral trunk shift → knee valgus contralaterally" },
@@ -25,7 +27,7 @@ const FASCIA_LINES_DATA = {
   fl:{ label:"Functional Lines", color:"#b0f2b6", route:"Back FL: Lat dorsi → Sacral fascia → Opposite glute max → Lateral femur. Front FL: Pec major → Opp rectus abdominis → Opp adductors", restrictions:"Inability to transfer force across midline, throwing dysfunction, gait asymmetry, contralateral limb pain", compensation:"FL disruption → cannot load contralateral diagonal → compensatory spinal loading" },
 };
 
-const FASCIA_REGIONS_DATA = {
+export const FASCIA_REGIONS_DATA = {
   screening:{
     label:"Global Screening", color:"#00d4ff",
     intro:"Start every fascial assessment with global screening tests to identify which fascial lines are restricted and whether dysfunction is local or chain-driven. Fascia responds to slow sustained pressure — always hold 90+ seconds.",

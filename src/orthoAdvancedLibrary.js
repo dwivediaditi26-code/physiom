@@ -8,8 +8,16 @@
    ============================================================ */
 import { KC_REGIONS, NKT_REGIONS, CYRIAX_REGIONS_DATA } from "./sharedClinicalData.js";
 import { FUNCTIONAL_SCREEN_DATA } from "./RegionalFunctionalScreens.jsx";
+// Myofascial lines + the region-grouped fascia tests, straight from the same
+// Phase 0.5 module the old flow renders (2026-09-03, Aditi: "fascia ... like
+// in old 0.5 phase does") -- imported, never hand-copied, same rule as every
+// other dataset in this file.
+import { FASCIA_LINES_DATA, FASCIA_REGIONS_DATA } from "./FasciaNKT.jsx";
 
-export { KC_REGIONS, NKT_REGIONS, CYRIAX_REGIONS_DATA };
+export { KC_REGIONS, NKT_REGIONS, CYRIAX_REGIONS_DATA, FASCIA_LINES_DATA, FASCIA_REGIONS_DATA };
+
+export const FASCIA_REGION_KEYS = Object.keys(FASCIA_REGIONS_DATA);
+export const FASCIA_LINE_KEYS = Object.keys(FASCIA_LINES_DATA);
 
 export const KC_REGION_KEYS = Object.keys(KC_REGIONS);
 export const NKT_REGION_KEYS = Object.keys(NKT_REGIONS);

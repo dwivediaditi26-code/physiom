@@ -9,7 +9,8 @@ import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "
 import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
-import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
+import { palpationStructureRows } from "./orthoPalpationData.js";
+import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
@@ -36,7 +37,12 @@ function formatPainSection(section) {
   return [...formatBodyChartSummary(body_chart_pro), ...restRows(rest)];
 }
 function formatPalpationSection(section) {
-  const { palp_pins, ...rest } = section;
+  // structures = the region-wise, structure-by-structure findings the
+  // Palpation screen now records (orthoPalpationData.js); palp_pins = the
+  // body map's own pins. Both are objects, so without these two the generic
+  // Object.entries fallback would print them as unreadable blobs.
+  const { palp_pins, structures, ...rest } = section;
+  const structureRows = palpationStructureRows(structures || {});
   let pins = [];
   try { pins = JSON.parse(palp_pins || "[]"); } catch {}
   const pinRows = pins.map((p) => ({
@@ -49,7 +55,7 @@ function formatPalpationSection(section) {
       p.notes,
     ].filter(Boolean).join(", ") || "marked, no detail",
   }));
-  return [...pinRows, ...restRows(rest)];
+  return [...structureRows, ...pinRows, ...restRows(rest)];
 }
 
 // Exported alongside buildOrthoAssessSteps (see below) so
@@ -69,6 +75,7 @@ export const orthoSummaryFormatters = {
   cpa: formatCpaSection,
   sttt: formatSttSection,
   fma: formatFmaSection,
+  fascia: formatFasciaSection,
   outcomeMeasure: formatOutcomeMeasureSection,
   techniques: formatTreatmentTechniquesSection,
   exercisePrescription: formatExercisePrescriptionSection,
@@ -98,9 +105,9 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // itself), skipping these four as separate steps in between. Condition-
 // wise/General/Templates entries keep the full BASE_IDS sequence.
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -130,6 +137,7 @@ const STEP_META = {
   cpa: { icon: "🧠", label: "CPA (NKT)" },
   sttt: { icon: "🦴", label: "STTT (Cyriax)" },
   fma: { icon: "🏃", label: "Functional Movement" },
+  fascia: { icon: "🧵", label: "Fascia" },
   gait: { icon: "🚶", label: "Gait / Movement" },
   balance: { icon: "⚖️", label: "Balance" },
   functionalAssessment: { icon: "🏃", label: "Functional Assessment" },
@@ -536,6 +544,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "cpa" && <CpaSection data={data} setData={setData} />}
           {current.id === "sttt" && <SttSection data={data} setData={setData} />}
           {current.id === "fma" && <FmaSection data={data} setData={setData} />}
+          {current.id === "fascia" && <FasciaSection data={data} setData={setData} />}
           {current.id === "gait" && <GaitSection data={data} setData={setData} />}
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "functionalAssessment" && <FunctionalAssessmentSection data={data} setData={setData} />}

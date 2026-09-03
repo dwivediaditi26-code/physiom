@@ -15,6 +15,9 @@ import {
   CYRIAX_LIMITED_OPTIONS,
   CYRIAX_DEFAULT_ENDFEEL,
   KALTENBORN_GRADES,
+  FASCIA_REGIONS_DATA,
+  FASCIA_REGION_KEYS,
+  FASCIA_LINES_DATA,
 } from "./orthoAdvancedLibrary.js";
 
 /* The real app's KC_REGIONS / NKT_REGIONS / CYRIAX_REGIONS_DATA colors are
@@ -504,6 +507,83 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
 /* ============================================================
    SUMMARY FORMATTERS
    ============================================================ */
+
+/* ============================================================
+   FASCIA — myofascial line assessment, straight from the same
+   FASCIA_REGIONS_DATA / FASCIA_LINES_DATA the old Phase 0.5
+   Fascia module renders (2026-09-03, Aditi: "cpa, kinetic chain,
+   functional screen, sttt, fascia like in old 0.5 phase does").
+   Ortho had no Fascia screen at all before this. Same structure
+   as CPA/Kinetic Chain above: coloured region tabs, one card per
+   test with its real how-to/treatment in the (i) sheet, and the
+   test's own colour-coded options — each option carrying the
+   clinical meaning the data itself defines.
+   ============================================================ */
+function fasciaRichItem(t) {
+  const line = FASCIA_LINES_DATA[String(t.line || "").toLowerCase()];
+  return {
+    title: t.label,
+    subtitle: [t.line, t.type].filter(Boolean).join(" · "),
+    perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
+    reference: line && (
+      <>
+        <InfoCard icon="🧵" label={`${line.label} — route`} tint="blue">{line.route}</InfoCard>
+        {line.restrictions && <InfoCard icon="⚠️" label="Common restrictions" tint="amber">{line.restrictions}</InfoCard>}
+        {line.compensation && <InfoCard icon="⛓️" label="Compensation pattern" tint="gray">{line.compensation}</InfoCard>}
+      </>
+    ),
+    interpret: t.treatment && <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+  };
+}
+
+function fasciaCount(entry, tests) {
+  if (!entry) return 0;
+  return (tests || []).filter((t) => entry[t.id]).length;
+}
+
+export function FasciaSection({ data, setData, sectionKey = "fascia" }) {
+  const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, FASCIA_REGION_KEYS);
+  const region = FASCIA_REGIONS_DATA[activeKey];
+  const entry = d[activeKey] || {};
+  const counts = {};
+  FASCIA_REGION_KEYS.forEach((k) => (counts[k] = fasciaCount(d[k], FASCIA_REGIONS_DATA[k]?.tests)));
+  const selectedMeaning = (t) => (t.options || []).find((o) => o.val === entry[t.id])?.meaning;
+
+  return (
+    <>
+      <SectionIntro icon="🧵" title="Fascia" info="Myofascial line assessment: fascia transmits force along continuous lines, so a restriction in one segment shows up as symptoms further along the chain. Screen globally first, then test the line the pattern points to." />
+      <ColorRegionTabs tabs={FASCIA_REGION_KEYS} activeKey={activeKey} onSelect={setActiveKey} regionsData={FASCIA_REGIONS_DATA} counts={counts} />
+      {region?.intro && <Hint>{region.intro}</Hint>}
+      <div className="rom-card">
+        <div className="rom-card-title">{region?.label || activeKey}</div>
+        {(region?.tests || []).map((t) => (
+          <div className="movement-card" key={t.id}>
+            <div className="movement-name-row">
+              <span className="movement-name">{t.label}</span>
+              <InfoButton title={t.label} richItem={fasciaRichItem(t)} />
+            </div>
+            <div className="muscle-subtitle">{[t.line, t.type].filter(Boolean).join(" · ")}</div>
+            <OptionChips options={t.options || []} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
+            {selectedMeaning(t) && <div className="obj-card-reason">{selectedMeaning(t)}</div>}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function formatFasciaSection(sectionData) {
+  const rows = [];
+  FASCIA_REGION_KEYS.forEach((k) => {
+    const entry = sectionData?.[k];
+    if (!entry) return;
+    (FASCIA_REGIONS_DATA[k]?.tests || []).forEach((t) => {
+      if (entry[t.id]) rows.push({ label: `${FASCIA_REGIONS_DATA[k].label} — ${t.label}`, value: entry[t.id] });
+    });
+  });
+  return rows;
+}
+
 export function formatKineticChainSection(sectionData) {
   const rows = [];
   KC_REGION_KEYS.forEach((k) => {

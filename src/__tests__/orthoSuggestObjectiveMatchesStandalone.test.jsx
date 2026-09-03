@@ -71,11 +71,13 @@ describe("Suggested Objective renders the standalone ROM/MMT presentation", () =
     expect(within(sheet).getAllByText(/Interpret/i).length).toBeGreaterThan(0);
   });
 
-  it("renders the real Palpation section (body map + findings), not a 4-field lookalike", () => {
+  it("renders the real Palpation section (region-wise structures + body map), not a 4-field lookalike", () => {
     renderSuggestStep();
     expect(screen.getByText("Palpation")).toBeTruthy();
-    expect(screen.getByText("Body Map")).toBeTruthy();
-    expect(screen.getByText("Findings")).toBeTruthy();
+    // Region-wise structures, the body map, and the whole-region fields --
+    // the bespoke "Palpation findings" inline card is gone.
+    expect(screen.getByText(/Body Map/)).toBeTruthy();
+    expect(screen.getByText(/General findings/)).toBeTruthy();
     expect(screen.queryByText("Palpation findings")).toBeNull();
   });
 
