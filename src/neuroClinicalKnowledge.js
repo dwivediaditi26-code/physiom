@@ -658,12 +658,27 @@ export function categoryLabel(id) { return (PROBLEM_CATEGORIES.find((c) => c.id 
    the UI resolves them.
 
    SOURCING. Page anchors below are from O'Sullivan SB, Schmitz TJ, Fulk
-   GD. Physical Rehabilitation. 6th ed. F.A. Davis; 2014 (chapter/section
-   start pages read from the text). The Parkinson's intervention ranking
-   was grounded in the chapter's intervention section in detail (cueing
-   pp.829-833; amplitude/LSVT BIG p.833; PNF/flexibility pp.834-835;
-   resistance pp.835-836; functional training/STS pp.836-837). Other
-   chapters are cited at their section start page.
+   GD. Physical Rehabilitation. 6th ed. F.A. Davis; 2014. Each condition's
+   intervention section was read in detail and cited to the specific pages
+   that describe the intervention, not just the chapter start:
+     - Parkinson's Ch.18: cueing pp.829-833; amplitude/LSVT BIG p.833;
+       PNF/flexibility pp.834-835; resistance pp.835-836; functional
+       training/STS pp.836-837; balance training p.837.
+     - Stroke Ch.15: strengthening/task-oriented p.684; spasticity
+       management pp.684-685; movement control (selective/out-of-synergy)
+       pp.685-686; UE reach & CIMT pp.686-688; shoulder pain/subluxation
+       p.689; LE synergy breakup/PNF p.690.
+     - MS Ch.16: fatigue/energy conservation pp.745-746; spasticity/LTR
+       pp.746-747; coordination & balance/PNF pp.747-750; locomotor
+       training & AFO pp.750-751.
+     - TBI Ch.19: early mobility/sensory stimulation pp.869-870; motor
+       (re)learning (distributed practice, feedback) p.873; task-oriented
+       approach & neuroplasticity p.874.
+     - SCI Ch.20: pressure relief & functional expectations by level
+       pp.915-922 (Table 20.5).
+     - Vestibular Ch.21: gaze-stability VOR×1/×2 p.985; balance exercise
+       progressions Table 21.8 p.985; habituation HEP p.986; central
+       vestibular pp.987; adaptation-exercise evidence Box 21.1 pp.988-991.
    ============================================================ */
 export const REF_SECTIONS = {
   motorFunction: "O'Sullivan Ch.10 — Strategies to Improve Motor Function (p.393)",
@@ -671,16 +686,27 @@ export const REF_SECTIONS = {
   balance: "O'Sullivan Ch.6 — Examination of Coordination and Balance (p.206)",
   gait: "O'Sullivan Ch.7 — Examination of Gait (p.251)",
   sensory: "O'Sullivan Ch.3 — Examination of Sensory Function (p.87)",
-  stroke: "O'Sullivan Ch.15 — Stroke (p.645)",
-  ms: "O'Sullivan Ch.16 — Multiple Sclerosis (p.721)",
+  strokeStrength: "O'Sullivan Ch.15 — Stroke, strengthening & task-oriented training (p.684)",
+  strokeSpasticity: "O'Sullivan Ch.15 — Stroke, spasticity management (pp.684-685)",
+  strokeMovement: "O'Sullivan Ch.15 — Stroke, movement control / selective out-of-synergy (pp.685-686)",
+  strokeUE: "O'Sullivan Ch.15 — Stroke, UE reach & CIMT (pp.686-688)",
+  strokeShoulder: "O'Sullivan Ch.15 — Stroke, hemiplegic shoulder / subluxation (p.689)",
+  strokeLE: "O'Sullivan Ch.15 — Stroke, LE synergy breakup & PNF (p.690)",
+  msFatigue: "O'Sullivan Ch.16 — MS, fatigue & energy conservation (pp.745-746)",
+  msSpasticity: "O'Sullivan Ch.16 — MS, spasticity / lower-trunk rotation (pp.746-747)",
+  msBalance: "O'Sullivan Ch.16 — MS, coordination & balance / PNF (pp.747-750)",
+  msLocomotor: "O'Sullivan Ch.16 — MS, locomotor training & AFO (pp.750-751)",
   pdCueing: "O'Sullivan Ch.18 — Parkinson's Disease, cueing for gait/freezing (pp.829-833)",
   pdAmplitude: "O'Sullivan Ch.18 — Parkinson's Disease, amplitude/LSVT BIG (p.833)",
   pdFlexibility: "O'Sullivan Ch.18 — Parkinson's Disease, flexibility/PNF (pp.834-835)",
   pdBalance: "O'Sullivan Ch.18 — Parkinson's Disease, balance training (p.837)",
   pdFunctional: "O'Sullivan Ch.18 — Parkinson's Disease, functional training (pp.836-837)",
-  tbi: "O'Sullivan Ch.19 — Traumatic Brain Injury (p.859)",
-  sci: "O'Sullivan Ch.20 — Traumatic Spinal Cord Injury (p.889)",
-  vestibular: "Umphred's Neurological Rehabilitation, 6th ed. — vestibular rehabilitation",
+  tbiMotor: "O'Sullivan Ch.19 — TBI, motor (re)learning strategies (p.873)",
+  tbiTaskOriented: "O'Sullivan Ch.19 — TBI, task-oriented approach & neuroplasticity (p.874)",
+  sci: "O'Sullivan Ch.20 — SCI, pressure relief & functional expectations (pp.915-922)",
+  vestibGaze: "O'Sullivan Ch.21 — Vestibular, gaze-stability VOR×1/×2 (p.985)",
+  vestibHabit: "O'Sullivan Ch.21 — Vestibular, habituation HEP (p.986)",
+  vestibBalance: "O'Sullivan Ch.21 — Vestibular, balance progressions (Table 21.8, p.985)",
 };
 
 // problemId -> ordered list of { exId, note, source }. Highest-priority
@@ -761,31 +787,32 @@ export const INTERVENTION_MAP = {
     { exId: "neuro_single_leg", note: "Progress standing balance under varied demands", source: REF_SECTIONS.pdBalance },
   ],
   stroke_neglect: [
-    { exId: "neuro_reach_grasp", note: "Task practice oriented into the neglected hemispace", source: REF_SECTIONS.stroke },
-    { exId: "neuro_task_practice", note: "Functional tasks cueing attention to the affected side", source: REF_SECTIONS.stroke },
+    { exId: "neuro_reach_grasp", note: "Task-oriented reach/manipulation directed into the neglected hemispace", source: REF_SECTIONS.strokeUE },
+    { exId: "neuro_mirror", note: "Mirror therapy recruits attention/motor cortex for the affected side", source: REF_SECTIONS.strokeUE },
+    { exId: "neuro_task_practice", note: "Functional tasks that cue attention to the affected side (CIMT principles)", source: REF_SECTIONS.strokeUE },
   ],
   stroke_shoulder: [
-    { exId: "neuro_prom_affected", note: "Protected passive range to prevent pain/contracture", source: REF_SECTIONS.stroke },
-    { exId: "neuro_pnf_d2", note: "Scapular/shoulder facilitation as control returns", source: REF_SECTIONS.stroke },
-    { exId: "neuro_positioning", note: "Supportive positioning to reduce subluxation stress", source: REF_SECTIONS.stroke },
+    { exId: "neuro_prom_affected", note: "PROM with scapular mobilization; do not exceed 90° or pain (subluxation risk)", source: REF_SECTIONS.strokeShoulder },
+    { exId: "neuro_positioning", note: "Supportive positioning of the flaccid arm to reduce traction/subluxation", source: REF_SECTIONS.strokeShoulder },
+    { exId: "neuro_pnf_d2", note: "Scapular/shoulder facilitation once scapulohumeral control returns", source: REF_SECTIONS.strokeShoulder },
   ],
   sci_skin: [
-    { exId: "neuro_positioning", note: "Pressure-relief positioning schedule for insensate skin", source: REF_SECTIONS.sci },
-    { exId: "neuro_bed_chair_transfer", note: "Transfer technique that protects skin over bony prominences", source: REF_SECTIONS.sci },
+    { exId: "neuro_positioning", note: "2-hourly pressure-relief/positioning schedule for insensate skin", source: REF_SECTIONS.sci },
+    { exId: "neuro_bed_chair_transfer", note: "Transfer technique protecting skin over bony prominences (weight relief from buttocks)", source: REF_SECTIONS.sci },
   ],
   ms_fatigue: [
-    { exId: "neuro_task_practice", note: "Paced task practice with built-in rest (fatigue is primary)", source: REF_SECTIONS.ms },
-    { exId: "neuro_overground", note: "Graded walking within fatigue/heat tolerance", source: REF_SECTIONS.ms },
+    { exId: "neuro_task_practice", note: "Paced task practice with planned rest-activity ratios (fatigue is a primary impairment)", source: REF_SECTIONS.msFatigue },
+    { exId: "neuro_overground", note: "Graded walking within fatigue/heat tolerance; precool if needed", source: REF_SECTIONS.msLocomotor },
   ],
   tbi_cognitive_behaviour: [
-    { exId: "neuro_task_practice", note: "Structured, repetitive tasks graded to Rancho level", source: REF_SECTIONS.tbi },
-    { exId: "neuro_dual_task", note: "Add cognitive-motor demand as participation improves", source: REF_SECTIONS.tbi },
+    { exId: "neuro_task_practice", note: "Distributed, structured task practice with rest breaks, graded to Rancho level", source: REF_SECTIONS.tbiMotor },
+    { exId: "neuro_dual_task", note: "Add cognitive-motor (dual-task) demand as participation improves", source: REF_SECTIONS.tbiTaskOriented },
   ],
   vestibular_symptom: [
-    { exId: "neuro_vor_x1", note: "Gaze-stabilisation (VOR×1) for dynamic visual acuity", source: REF_SECTIONS.vestibular },
-    { exId: "neuro_habituation", note: "Graded habituation to provoking positions/movements", source: REF_SECTIONS.vestibular },
-    { exId: "neuro_optokinetic", note: "Head movement during gait for gait-gaze integration", source: REF_SECTIONS.vestibular },
-    { exId: "neuro_visual_conflict", note: "Balance under visual conflict for sensory reweighting", source: REF_SECTIONS.vestibular },
+    { exId: "neuro_vor_x1", note: "Gaze-stability VOR×1/×2, 1-2 min ×5/day, for dynamic visual acuity", source: REF_SECTIONS.vestibGaze },
+    { exId: "neuro_habituation", note: "Graded habituation into the provoking position (10s wait, hold to symptom abates)", source: REF_SECTIONS.vestibHabit },
+    { exId: "neuro_optokinetic", note: "Head movement during gait for gaze-gait integration", source: REF_SECTIONS.vestibGaze },
+    { exId: "neuro_visual_conflict", note: "Balance progression: reduce BOS, eyes closed, foam/carpet, add head/cognitive load", source: REF_SECTIONS.vestibBalance },
   ],
 };
 
