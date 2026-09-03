@@ -1592,6 +1592,30 @@ function buildStepOrder(domainStepIds, customIds) {
   return next;
 }
 
+// Migration for patients assessed before a mandatory step existed (e.g.
+// "carePlan", added 2026-09-02). Their saved meta.stepOrder is missing that
+// step, so reopening them wouldn't show it. This injects any ALWAYS_STEP_IDS
+// absent from a saved order at their canonical FULL_STEP_ORDER position,
+// preserving the therapist's own custom step ordering otherwise.
+function ensureAlwaysSteps(savedOrder) {
+  if (!Array.isArray(savedOrder) || !savedOrder.length) return savedOrder;
+  const present = new Set(savedOrder);
+  const missing = ALWAYS_STEP_IDS.filter((id) => !present.has(id));
+  if (!missing.length) return savedOrder;
+  const out = [...savedOrder];
+  for (const id of missing) {
+    const canonicalIdx = FULL_STEP_ORDER.indexOf(id);
+    // Insert before the first already-present step that comes after `id`
+    // in the canonical order; fall back to appending before "summary".
+    let insertAt = out.length;
+    for (let i = 0; i < out.length; i++) {
+      if (FULL_STEP_ORDER.indexOf(out[i]) > canonicalIdx) { insertAt = i; break; }
+    }
+    out.splice(insertAt, 0, id);
+  }
+  return out;
+}
+
 const REGIONS = [
   { id: "brain", icon: "🧠", label: "Brain / CNS", domainSteps: ["cognition", "cranial", "motor", "tone", "coordination"], libraryCats: [] },
   { id: "spinalcord", icon: "🦴", label: "Spinal Cord", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryCats: ["Spinal Cord Injury"] },
@@ -1680,7 +1704,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [condition, setCondition] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.condition || null : null));
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
+  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1704,7 +1728,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
-    setStepOrder(existing ? s.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id));
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);

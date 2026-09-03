@@ -271,15 +271,19 @@ export const NEURO_PROBLEMS = [
     treatmentCategories: ["Range of Motion & Spasticity Management", "Motor Relearning"],
     detect: (d) => {
       const t = d.tone || {};
+      // toneType is a string in current data, but older records stored it as
+      // a per-limb object ({LE__Left:"Normal",...}); guard so a finding value
+      // is never a raw object (which would crash the React render).
+      const toneStr = typeof t.toneType === "string" ? t.toneType : null;
       const mas = t.mas && typeof t.mas === "object" ? Object.entries(t.mas).filter(([, v]) => v && v !== "0") : [];
-      const hyper = t.toneType && /spastic|rigid|hyperton/i.test(t.toneType);
+      const hyper = toneStr && /spastic|rigid|hyperton/i.test(toneStr);
       const clonus = t.clonus && t.clonus !== "Absent";
       if (!mas.length && !hyper && !clonus) return null;
       const findings = [];
-      if (t.toneType) findings.push({ label: "Tone", value: t.toneType });
+      if (toneStr) findings.push({ label: "Tone", value: toneStr });
       mas.slice(0, 4).forEach(([k, v]) => findings.push({ label: `MAS — ${prettyMuscle(k)}`, value: String(v) }));
-      if (clonus) findings.push({ label: "Clonus", value: t.clonus });
-      return { findings, baseline: { mas, toneType: t.toneType, clonus: t.clonus } };
+      if (clonus) findings.push({ label: "Clonus", value: String(t.clonus) });
+      return { findings, baseline: { mas, toneType: toneStr, clonus: t.clonus } };
     },
     goals: [
       {
