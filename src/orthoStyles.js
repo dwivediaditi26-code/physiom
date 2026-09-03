@@ -675,7 +675,7 @@ export function orthoStyles() {
         .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-        .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+        .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
         .summary-empty { font-size: 12.5px; color: ${BRAND.grayLight}; font-style: italic; padding: 3px 0; }
 
         /* fixed (not sticky) for the same reason as Cardio's identical rule:

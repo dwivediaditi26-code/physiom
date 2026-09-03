@@ -1734,10 +1734,10 @@ export function SummaryStyles() {
       .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
       .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
       .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-      .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
+      .summary-row { display: flex; gap: 8px; font-size: 13.5px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
       .summary-row:first-child { border-top: none; }
-      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-      .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: 600; }
+      .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
       .primary-btn {
         flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
         padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
@@ -1748,6 +1748,14 @@ export function SummaryStyles() {
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
     `}</style>
   );
+}
+// "chiefComplaint" -> "Chief Complaint" -- the raw field key was showing
+// verbatim (e.g. "BedMobility", "PriorFunction") with only the CSS
+// text-transform:capitalize applied, which capitalizes just the first
+// letter since there's no whitespace to find word boundaries at. Same
+// approach AssessmentReportView.jsx's humanize() already uses.
+function humanizeKey(k) {
+  return String(k).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 // rowsForStep: a step's own formatter (when it needs one -- e.g. a step
 // whose section holds an array like the Exercise Prescription programme,
@@ -1762,7 +1770,7 @@ function rowsForStep(step, section, formatters) {
   return Object.entries(section)
     .map(([k, v]) => [k, fmtVal(v)])
     .filter(([, v]) => v)
-    .map(([label, value]) => ({ label, value }));
+    .map(([label, value]) => ({ label: humanizeKey(label), value }));
 }
 
 export function SummarySection({ setting, data, assessSteps, formatters }) {
