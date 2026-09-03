@@ -589,6 +589,120 @@ export const CONDITION_PROBLEMS = [
 ];
 
 /* ============================================================
+   SETTING-SPECIFIC PROBLEMS
+   Same shape as CONDITION_PROBLEMS, gated by `settings` (a list of
+   SETTINGS ids: icu / inpatient / postop / outpatient / rehab). These are
+   the CARE PRIORITIES a given level of care needs on the problem list even
+   before detailed impairment testing -- so an ICU patient's Care Plan is
+   populated with ICU-appropriate problems rather than looking empty, and
+   an outpatient's list reads differently from a neuro-rehab one (2026-09-03,
+   Aditi: "outpatient have different problem list ... neurorehab different ...
+   postoperative have different list ... it should be specific to their
+   needs"). Still SUGGESTIONS, never auto-applied; they stack on top of the
+   impairment- and condition-derived problems. Baselines stay generic ("to
+   be recorded") rather than inventing a number. Grounded in O'Sullivan's
+   acute-care intervention guidance (e.g. TBI/ICU early mobility, positioning
+   and prevention of secondary impairments, pp.867-870).
+   ============================================================ */
+export const SETTING_PROBLEMS = [
+  // ---------- ICU ----------
+  {
+    id: "icu_early_mob", name: "Reduced activity tolerance / early mobilization need", category: "functional", settings: ["icu"],
+    refs: ["osullivan", "umphred"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers", "Motor Relearning"],
+    detect: () => ({ findings: [{ label: "ICU priority", value: "Progressive out-of-bed mobilization as soon as medically stable, with close monitoring" }], baseline: {} }),
+    goals: [{ id: "icu_oob", label: "Progress out-of-bed activity tolerance", term: "short", weeks: 2, applies: () => true, build: () => ({ measure: "Out-of-bed / upright tolerance", unit: "level", baseline: "Bed-bound / minimal tolerance", target: "Tolerates sitting out of bed / supported standing within limits", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "icu_respiratory", name: "Respiratory function / airway clearance", category: "other", settings: ["icu", "inpatient"],
+    refs: ["umphred", "osullivan"], evidence: "B", treatmentCategories: ["Motor Relearning"],
+    detect: () => ({ findings: [{ label: "ICU priority", value: "Monitor ventilation/cough effectiveness; positioning and airway clearance as indicated" }], baseline: {} }),
+    goals: [{ id: "icu_resp", label: "Maintain airway clearance / respiratory status", term: "short", weeks: 2, applies: () => true, build: () => ({ measure: "Respiratory status / cough effectiveness", unit: "level", baseline: "At risk / assisted", target: "Effective clearance; no avoidable respiratory complication", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "prevent_secondary", name: "Risk of secondary impairments (contracture / pressure / positioning)", category: "other", settings: ["icu", "inpatient"],
+    refs: ["osullivan"], evidence: "A", treatmentCategories: ["Range of Motion & Spasticity Management", "Functional Mobility & Transfers"],
+    detect: () => ({ findings: [{ label: "Acute priority", value: "Positioning schedule (q2h), PROM and splinting to prevent contracture, pressure injury and DVT" }], baseline: {} }),
+    goals: [{ id: "sec_prevent", label: "Prevent secondary impairments", term: "short", weeks: 3, applies: () => true, build: () => ({ measure: "Secondary impairments (contracture / skin / range)", unit: "status", baseline: "At risk", target: "No new contracture, pressure injury or avoidable range loss", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "icu_arousal", name: "Impaired arousal / responsiveness", category: "cognition", settings: ["icu"],
+    refs: ["osullivan", "umphred"], evidence: "C", treatmentCategories: ["Motor Relearning"],
+    detect: () => ({ findings: [{ label: "ICU priority", value: "Low-arousal state — structured multisensory stimulation, monitor response" }], baseline: {} }),
+    goals: [{ id: "icu_arouse", label: "Improve arousal / consistent response to stimulation", term: "short", weeks: 4, applies: () => true, build: () => ({ measure: "Arousal / responsiveness", unit: "level", baseline: "Low arousal", target: "More consistent, purposeful responses to stimulation", baselineValue: null, targetValue: null }) }],
+  },
+  // ---------- Inpatient (acute ward) ----------
+  {
+    id: "ipd_medical_stability", name: "Medical stability for participation", category: "other", settings: ["inpatient"],
+    refs: ["osullivan"], evidence: "B", treatmentCategories: [],
+    detect: () => ({ findings: [{ label: "Acute-ward priority", value: "Re-check medical stability/orders before each session; grade activity to current status" }], baseline: {} }),
+    goals: [{ id: "ipd_stable", label: "Safely participate within current medical status", term: "short", weeks: 2, applies: () => true, build: () => ({ measure: "Session participation within medical limits", unit: "status", baseline: "Variable / guarded", target: "Consistent safe participation as status allows", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "ipd_early_mob", name: "Early mobilization / out-of-bed tolerance", category: "functional", settings: ["inpatient"],
+    refs: ["osullivan", "umphred"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers", "Gait Training"],
+    detect: () => ({ findings: [{ label: "Acute-ward priority", value: "Progress from bed to sitting, standing and early gait as tolerated" }], baseline: {} }),
+    goals: [{ id: "ipd_oob", label: "Progress early mobility (bed → sit → stand → step)", term: "short", weeks: 2, applies: () => true, build: () => ({ measure: "Early mobility level", unit: "level", baseline: "Bed / dependent", target: "Sitting out of bed and supported standing/stepping", baselineValue: null, targetValue: null }) }],
+  },
+  // ---------- Post-operative ----------
+  {
+    id: "postop_precautions", name: "Respect surgical / weight-bearing precautions", category: "other", settings: ["postop"],
+    refs: ["osullivan"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers"],
+    detect: () => ({ findings: [{ label: "Post-op priority", value: "Confirm and respect this patient's surgical movement / weight-bearing / orthosis precautions before any treatment" }], baseline: {} }),
+    goals: [{ id: "postop_precaution", label: "Mobilize safely within surgical precautions", term: "short", weeks: 2, applies: () => true, build: () => ({ measure: "Adherence to surgical precautions", unit: "status", baseline: "Precautions in force", target: "Progresses activity without breaching precautions", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "postop_protected_mob", name: "Protected early mobilization", category: "functional", settings: ["postop"],
+    refs: ["osullivan", "umphred"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers", "Gait Training"],
+    detect: () => ({ findings: [{ label: "Post-op priority", value: "Early mobilization within precautions; protect the surgical site as activity increases" }], baseline: {} }),
+    goals: [{ id: "postop_mob", label: "Progress protected mobility", term: "short", weeks: 3, applies: () => true, build: () => ({ measure: "Protected mobility level", unit: "level", baseline: "Restricted / assisted", target: "Increased mobility within precautions, site protected", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "postop_pain_tolerance", name: "Pain-limited activity tolerance", category: "other", settings: ["postop"],
+    refs: ["osullivan"], evidence: "C", treatmentCategories: ["Motor Relearning", "Functional Mobility & Transfers"],
+    detect: () => ({ findings: [{ label: "Post-op priority", value: "Grade activity to post-operative pain; coordinate timing with analgesia" }], baseline: {} }),
+    goals: [{ id: "postop_pain", label: "Increase activity within pain tolerance", term: "short", weeks: 3, applies: () => true, build: () => ({ measure: "Pain-limited activity tolerance", unit: "level", baseline: "Markedly pain-limited", target: "Completes planned activity with acceptable pain", baselineValue: null, targetValue: null }) }],
+  },
+  // ---------- Outpatient ----------
+  {
+    id: "opd_community_ambulation", name: "Community ambulation & endurance", category: "gait", settings: ["outpatient"],
+    refs: ["osullivan"], evidence: "A", treatmentCategories: ["Gait Training", "Balance & Proprioception"],
+    detect: () => ({ findings: [{ label: "Outpatient priority", value: "Progress toward community-level walking distance, speed and endurance" }], baseline: {} }),
+    goals: [{ id: "opd_community", label: "Achieve community ambulation", term: "long", weeks: 8, applies: () => true, build: () => ({ measure: "Community walking (distance/endurance)", unit: "level", baseline: "Household / limited", target: "Community distances on varied surfaces", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "opd_community_balance", name: "Higher-level balance / community falls prevention", category: "balance", settings: ["outpatient"],
+    refs: ["osullivan"], evidence: "A", treatmentCategories: ["Balance & Proprioception", "Gait Training"],
+    detect: () => ({ findings: [{ label: "Outpatient priority", value: "Higher-level and dual-task balance for safe community function" }], baseline: {} }),
+    goals: [{ id: "opd_balance", label: "Improve higher-level / dual-task balance", term: "long", weeks: 6, applies: () => true, build: () => ({ measure: "Higher-level / dual-task balance", unit: "level", baseline: "Limited in community demands", target: "Safe with community and dual-task demands", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "opd_participation", name: "Return to work / role / ADL participation", category: "adl", settings: ["outpatient"],
+    refs: ["osullivan", "umphred"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers", "Motor Relearning"],
+    detect: () => ({ findings: [{ label: "Outpatient priority", value: "Return to work, home and community roles / participation" }], baseline: {} }),
+    goals: [{ id: "opd_role", label: "Resume target role / participation", term: "long", weeks: 8, applies: () => true, build: () => ({ measure: "Role / participation", unit: "level", baseline: "Restricted participation", target: "Resumes target work/home/community role", baselineValue: null, targetValue: null }) }],
+  },
+  // ---------- Neuro rehabilitation ----------
+  {
+    id: "rehab_task_specific", name: "Intensive task-specific functional retraining", category: "functional", settings: ["rehab"],
+    refs: ["osullivan", "umphred"], evidence: "A", treatmentCategories: ["Motor Relearning", "Functional Mobility & Transfers", "Gait Training"],
+    detect: () => ({ findings: [{ label: "Rehab priority", value: "High-repetition, task-specific retraining of the patient's priority functional tasks" }], baseline: {} }),
+    goals: [{ id: "rehab_task", label: "Improve a priority functional task through intensive practice", term: "long", weeks: 6, applies: () => true, build: () => ({ measure: "Priority functional task", unit: "level", baseline: "To be set with patient", target: "Improved performance with reduced assistance", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "rehab_independence", name: "Maximise mobility & ADL independence", category: "adl", settings: ["rehab"],
+    refs: ["osullivan"], evidence: "A", treatmentCategories: ["Functional Mobility & Transfers", "Motor Relearning"],
+    detect: () => ({ findings: [{ label: "Rehab priority", value: "Maximise independence in mobility and ADL toward discharge" }], baseline: {} }),
+    goals: [{ id: "rehab_indep", label: "Increase independence in mobility / ADL", term: "long", weeks: 8, applies: () => true, build: () => ({ measure: "Mobility / ADL independence", unit: "level", baseline: "Assisted", target: "Maximal independence achievable for this patient", baselineValue: null, targetValue: null }) }],
+  },
+  {
+    id: "rehab_discharge_readiness", name: "Discharge readiness / caregiver training", category: "other", settings: ["rehab"],
+    refs: ["osullivan", "umphred"], evidence: "B", treatmentCategories: ["Functional Mobility & Transfers"],
+    detect: () => ({ findings: [{ label: "Rehab priority", value: "Prepare patient/caregiver for safe discharge (home tasks, transfers, HEP, equipment)" }], baseline: {} }),
+    goals: [{ id: "rehab_discharge", label: "Achieve safe discharge readiness", term: "long", weeks: 8, applies: () => true, build: () => ({ measure: "Discharge readiness", unit: "status", baseline: "Not yet ready", target: "Patient/caregiver safe with discharge plan and HEP", baselineValue: null, targetValue: null }) }],
+  },
+];
+
+/* ============================================================
    RULES ENGINE
    ============================================================ */
 
@@ -600,6 +714,7 @@ export const CONDITION_PROBLEMS = [
 export function deriveNeuroProblems(neuroData) {
   const d = neuroData || {};
   const condition = d.meta?.condition || null;
+  const setting = d.meta?.setting || null;
   const out = [];
   for (const p of NEURO_PROBLEMS) {
     let hit = null;
@@ -618,6 +733,18 @@ export function deriveNeuroProblems(neuroData) {
       }
     }
   }
+  // Setting-specific care priorities -- appear from the chosen setting alone
+  // (data.meta.setting), so every setting has a populated, relevant list.
+  if (setting) {
+    for (const p of SETTING_PROBLEMS) {
+      if (!p.settings.includes(setting)) continue;
+      let hit = null;
+      try { hit = p.detect(d); } catch { hit = null; }
+      if (hit && hit.findings && hit.findings.length) {
+        out.push({ id: p.id, name: p.name, category: p.category, refs: p.refs, evidence: p.evidence, treatmentCategories: p.treatmentCategories, findings: hit.findings, baseline: hit.baseline, settingSpecific: true });
+      }
+    }
+  }
   return out;
 }
 
@@ -628,7 +755,7 @@ export function deriveNeuroProblems(neuroData) {
 // (optional) scales the suggested timeframe -- ICU/post-op goals default
 // shorter than outpatient/rehab goals for the same problem.
 export function buildGoalsForProblem(problemId, baseline, setting) {
-  const p = NEURO_PROBLEMS.find((x) => x.id === problemId) || CONDITION_PROBLEMS.find((x) => x.id === problemId);
+  const p = NEURO_PROBLEMS.find((x) => x.id === problemId) || CONDITION_PROBLEMS.find((x) => x.id === problemId) || SETTING_PROBLEMS.find((x) => x.id === problemId);
   if (!p) return [];
   const scale = SETTING_PROFILES[setting]?.timeframeScale ?? 1;
   return p.goals
@@ -640,7 +767,7 @@ export function buildGoalsForProblem(problemId, baseline, setting) {
     });
 }
 
-export function problemById(id) { return NEURO_PROBLEMS.find((p) => p.id === id) || CONDITION_PROBLEMS.find((p) => p.id === id) || null; }
+export function problemById(id) { return NEURO_PROBLEMS.find((p) => p.id === id) || CONDITION_PROBLEMS.find((p) => p.id === id) || SETTING_PROBLEMS.find((p) => p.id === id) || null; }
 export function categoryLabel(id) { return (PROBLEM_CATEGORIES.find((c) => c.id === id) || {}).label || "Other"; }
 
 /* ============================================================
@@ -707,6 +834,7 @@ export const REF_SECTIONS = {
   vestibGaze: "O'Sullivan Ch.21 — Vestibular, gaze-stability VOR×1/×2 (p.985)",
   vestibHabit: "O'Sullivan Ch.21 — Vestibular, habituation HEP (p.986)",
   vestibBalance: "O'Sullivan Ch.21 — Vestibular, balance progressions (Table 21.8, p.985)",
+  acuteEarlyMob: "O'Sullivan Ch.19 — TBI/acute, early mobility & prevention of secondary impairments (pp.867-870)",
 };
 
 // problemId -> ordered list of { exId, note, source }. Highest-priority
@@ -813,6 +941,58 @@ export const INTERVENTION_MAP = {
     { exId: "neuro_habituation", note: "Graded habituation into the provoking position (10s wait, hold to symptom abates)", source: REF_SECTIONS.vestibHabit },
     { exId: "neuro_optokinetic", note: "Head movement during gait for gaze-gait integration", source: REF_SECTIONS.vestibGaze },
     { exId: "neuro_visual_conflict", note: "Balance progression: reduce BOS, eyes closed, foam/carpet, add head/cognitive load", source: REF_SECTIONS.vestibBalance },
+  ],
+  // --- setting-specific care priorities ---
+  icu_early_mob: [
+    { exId: "neuro_bed_mobility", note: "Begin with in-bed mobility as soon as medically stable", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_supine_to_sit", note: "Progress to supine-to-sit / sitting out of bed", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_sts_transfer", note: "Supported sit-to-stand as tolerance builds", source: REF_SECTIONS.acuteEarlyMob },
+  ],
+  prevent_secondary: [
+    { exId: "neuro_positioning", note: "q2h anti-contracture / pressure-relief positioning schedule", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_prom_affected", note: "Daily PROM to preserve range and prevent contracture", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_pf_stretch", note: "Prolonged plantarflexor stretch / splinting against equinus", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_wrist_stretch", note: "Sustained wrist/finger stretch against flexor contracture", source: REF_SECTIONS.motorFunction },
+  ],
+  ipd_early_mob: [
+    { exId: "neuro_supine_to_sit", note: "Bed → sitting-out-of-bed transitions", source: REF_SECTIONS.acuteEarlyMob },
+    { exId: "neuro_sts_transfer", note: "Sit-to-stand practice as tolerance improves", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_overground", note: "Early supervised overground steps with a device", source: REF_SECTIONS.locomotor },
+  ],
+  postop_protected_mob: [
+    { exId: "neuro_bed_chair_transfer", note: "Protected bed↔chair transfer within precautions", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_sts_transfer", note: "Sit-to-stand within weight-bearing/movement precautions", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_overground", note: "Protected early gait within precautions", source: REF_SECTIONS.locomotor },
+  ],
+  opd_community_ambulation: [
+    { exId: "neuro_overground", note: "Progress distance/speed toward community ambulation", source: REF_SECTIONS.locomotor },
+    { exId: "neuro_treadmill_bw", note: "Repetitive locomotor practice to build capacity", source: REF_SECTIONS.locomotor },
+    { exId: "neuro_stair_practice", note: "Stairs/obstacles for community terrain", source: REF_SECTIONS.locomotor },
+    { exId: "neuro_dual_task", note: "Dual-task walking for real-world community demands", source: REF_SECTIONS.balance },
+  ],
+  opd_community_balance: [
+    { exId: "neuro_dual_task", note: "Dual-task balance for community safety", source: REF_SECTIONS.balance },
+    { exId: "neuro_reactive_step", note: "Reactive stepping for fall recovery", source: REF_SECTIONS.balance },
+    { exId: "neuro_func_reach", note: "Extend limits of stability", source: REF_SECTIONS.balance },
+    { exId: "neuro_single_leg", note: "Single-leg control for higher-level demands", source: REF_SECTIONS.balance },
+  ],
+  opd_participation: [
+    { exId: "neuro_task_practice", note: "Task-specific practice of the patient's target roles/ADLs", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_sts_transfer", note: "Functional transfers underpinning ADL independence", source: REF_SECTIONS.motorFunction },
+  ],
+  rehab_task_specific: [
+    { exId: "neuro_task_practice", note: "High-repetition, task-specific practice of a priority task", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_sts_transfer", note: "Sit-to-stand as a high-frequency functional task", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_overground", note: "Task-specific gait practice", source: REF_SECTIONS.locomotor },
+  ],
+  rehab_independence: [
+    { exId: "neuro_task_practice", note: "Repetitive functional-task practice toward independence", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_bed_chair_transfer", note: "Independent transfer training", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_sts_transfer", note: "Independent sit-to-stand", source: REF_SECTIONS.motorFunction },
+  ],
+  rehab_discharge_readiness: [
+    { exId: "neuro_bed_chair_transfer", note: "Transfers the patient/caregiver must manage at home", source: REF_SECTIONS.motorFunction },
+    { exId: "neuro_sts_transfer", note: "Home sit-to-stand for the discharge environment", source: REF_SECTIONS.motorFunction },
   ],
 };
 

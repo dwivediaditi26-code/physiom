@@ -125,6 +125,7 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
                   <span style={chip(BRAND.purpleFaint, BRAND.purpleDark)}>{categoryLabel(s.category)}</span>
                   {s.evidence && <span style={chip("#ecfdf5", "#047857")}>Evidence {s.evidence}</span>}
                   {s.conditionSpecific && <span style={chip("#fef3c7", "#92400e")}>{conditionLabel(condition)}</span>}
+                  {s.settingSpecific && <span style={chip("#e0f2fe", "#075985")}>{settingLabel(setting)}</span>}
                 </div>
                 {/* The "why" trail -- the exact recorded values that triggered
                     this suggestion, so the therapist can judge it rather than
