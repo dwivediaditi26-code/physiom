@@ -52,6 +52,27 @@ export const POSTOP_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = [];
 
+// Typical incision/portal approaches per operation type (2026-09-03, Aditi:
+// "the surgical site list should be made according to that [region +
+// operation] so that we can select from it for time saving, same for the
+// incision type") -- SelectField still lets the clinician type their own
+// text over these, so an unusual approach is never blocked, just not the
+// default typing burden for the common ones.
+const INCISION_TYPES_BY_CONDITION = {
+  jointReplacement: ["Anterior (direct anterior)", "Anterolateral", "Posterolateral / Posterior", "Lateral", "Medial parapatellar", "Subvastus", "Midvastus"],
+  fractureORIF: ["Lateral", "Medial", "Anterior", "Posterior", "Percutaneous / minimally invasive"],
+  ligamentReconstruction: ["Anteromedial portal", "Anterolateral portal", "Medial parapatellar", "Graft harvest incision (hamstring)", "Graft harvest incision (patellar tendon)"],
+  tendonRepair: ["Longitudinal", "Curvilinear", "Percutaneous", "Deltopectoral", "Kocher"],
+  arthroscopy: ["Anterior portal", "Posterior portal", "Anterolateral portal", "Anteromedial portal", "Accessory portal"],
+  spineSurgery: ["Posterior midline", "Posterolateral", "Anterior (ALIF)", "Lateral (XLIF/DLIF)", "Minimally invasive / tubular"],
+  jointStabilization: ["Deltopectoral (anterior shoulder)", "Posterior shoulder", "Arthroscopic portals", "Lateral"],
+  softTissueMuscle: ["Longitudinal", "Transverse", "Curvilinear", "Percutaneous"],
+  amputation: ["Long posterior flap", "Skew flap", "Fish-mouth (equal anteroposterior)", "Guillotine (to be revised)"],
+  tendonTransfer: ["Dorsal", "Volar", "Longitudinal", "Curvilinear"],
+  deformityCorrection: ["Medial", "Lateral", "Anterior", "Percutaneous osteotomy", "Minimally invasive"],
+};
+const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "Anterolateral", "Posterolateral", "Percutaneous / minimally invasive", "Arthroscopic portal(s)"];
+
 /* Always present for every post-op patient, regardless of surgery type. */
 const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
@@ -124,11 +145,15 @@ function SurgicalReviewSection({ data, setData, condition, selectedRegions }) {
   );
 }
 
-function SurgicalSiteSection({ data, setData }) {
+function SurgicalSiteSection({ data, setData, condition, selectedRegions }) {
   const [d, set] = useSectionData(data, setData, "surgicalSite");
+  const siteOptions = selectedRegions?.length ? selectedRegions.map((r) => regionLabelOf(r)) : ["Not specified"];
+  const incisionOptions = INCISION_TYPES_BY_CONDITION[condition] || GENERIC_INCISION_TYPES;
   return (
     <>
       <SectionIntro icon="🩹" title="Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
+      <SelectField label="Surgical site" type="multi" options={siteOptions} value={d.site} onChange={(v) => set("site", v)} />
+      <SelectField label="Incision type" type="single" options={incisionOptions} value={d.incisionType} onChange={(v) => set("incisionType", v)} />
       <div className="subheading">Incision / wound</div>
       <SelectField label="Appearance" type="multi" options={["Clean", "Redness", "Swelling", "Drainage", "Gaping", "Other"]} value={d.appearance} onChange={(v) => set("appearance", v)} />
       <Segmented label="Dressing" options={["Intact", "Changed", "Other"]} value={d.dressing} onChange={(v) => set("dressing", v)} />
@@ -334,7 +359,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "observation" && <ObservationSection data={data} setData={setData} showResponseToActivity />}
-          {current.id === "surgicalSite" && <SurgicalSiteSection data={data} setData={setData} />}
+          {current.id === "surgicalSite" && <SurgicalSiteSection data={data} setData={setData} condition={condition} selectedRegions={selectedRegions} />}
           {current.id === "residualLimb" && <ResidualLimbSection data={data} setData={setData} />}
           {current.id === "prosthesis" && <ProsthesisSection data={data} setData={setData} />}
           {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}

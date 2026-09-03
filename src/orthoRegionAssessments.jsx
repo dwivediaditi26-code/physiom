@@ -197,6 +197,18 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
                   )}
                 </div>
               </div>
+              {/* Quick "Is it normal?" fill -- Aditi: "if we want the normal
+                  value in the ROM section, then it should ask is it normal,
+                  we document it, or you want to change it" -- one tap fills
+                  N=normal into every applicable side instead of typing the
+                  same textbook number by hand; still fully editable after. */}
+              {m.normal != null && (
+                <div className="chip-mini-row">
+                  <button type="button" className="rom-normal-btn" onClick={() => { const sides = m.bilateral !== false ? ["left", "right"] : ["left"]; sides.forEach((s) => setVal(m.id, s, m.normal)); }}>
+                    ✓ Normal — document N={m.normal}{m.unit}
+                  </button>
+                </div>
+              )}
               <div className="chip-mini-row">
                 {ROM_PAIN_OPTIONS.map((o) => (
                   <button type="button" key={o} className={"chip-mini" + (pain === o ? " chip-mini-active" : "")} onClick={() => setMeta(m.id, "pain", o)}>

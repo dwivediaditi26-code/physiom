@@ -448,6 +448,57 @@ export function NumberField({ label, value, onChange, unit, placeholder, hint, h
   );
 }
 
+// Collapsed-by-default vital sign row -- shows the (usually already-normal)
+// value directly in the row with a maximize (+) button; tapping it opens
+// the real input to change the value. Distinct from the old CSelectField/
+// CollapsibleField pattern (removed from Cardio) which collapsed *empty*
+// fields and hid their info button -- here the field already has a value
+// before it's ever opened, and the ⓘ/howTo button always stays visible in
+// the collapsed row, not swallowed by the toggle.
+export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider, max = 10 }) {
+  const [open, setOpen] = useState(false);
+  const hasValue = value !== undefined && value !== null && value !== "";
+  return (
+    <div className={"vital-chip" + (open ? " vital-chip-open" : "")}>
+      <div className="vital-chip-head" onClick={() => setOpen((o) => !o)} role="button">
+        <span className="vital-chip-label">{label}</span>
+        {(howTo || richItem) && (
+          <span onClick={(e) => e.stopPropagation()}>
+            <InfoButton text={howTo} title={label} richItem={richItem} />
+          </span>
+        )}
+        <span className="vital-chip-value">{hasValue ? `${value}${unit ? " " + unit : ""}` : "—"}</span>
+        <button
+          type="button"
+          className="vital-chip-toggle"
+          onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+          aria-label={open ? "Minimize" : "Maximize"}
+        >
+          {open ? "−" : "+"}
+        </button>
+      </div>
+      {open && (
+        <div className="vital-chip-body" onClick={(e) => e.stopPropagation()}>
+          {slider ? (
+            <div className="scale-wrap">
+              <input type="range" min={0} max={max} step={1} value={hasValue ? Number(value) : 0} onChange={(e) => onChange(e.target.value)} className="scale-range" />
+              <span className="scale-readout">
+                {hasValue ? value : 0}
+                <span className="scale-max">/{max}</span>
+              </span>
+            </div>
+          ) : (
+            <div className="vital-input-wrap">
+              <input type="number" inputMode="decimal" className="vital-input" autoFocus value={value || ""} onChange={(e) => onChange(e.target.value)} />
+              {unit && <span className="vital-unit">{unit}</span>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>

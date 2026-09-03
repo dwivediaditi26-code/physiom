@@ -259,6 +259,7 @@ export function orthoStyles() {
         .chip-mini-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
         .chip-mini { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; padding: 5px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; cursor: pointer; min-height: 28px; }
         .chip-mini-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
+        .rom-normal-btn { border: 1px solid ${BRAND.green}50; background: ${BRAND.greenBg}; color: ${BRAND.green}; padding: 5px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; cursor: pointer; min-height: 28px; }
         .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pill-tag { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px; }
         .pill-tag-root { background: #F0F0F0; color: ${BRAND.gray}; }
@@ -350,6 +351,14 @@ export function orthoStyles() {
         .vital-input-wrap { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 12px; padding: 8px 10px; background: #fff; min-height: 44px; }
         .vital-input { border: none; outline: none; font-size: 16px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
+
+        .vital-chip { flex: 1 1 45%; min-width: 140px; border: 1.5px solid ${BRAND.border}; border-radius: 12px; background: #fff; }
+        .vital-chip-open { border-color: ${BRAND.purple}; }
+        .vital-chip-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px; min-height: 44px; cursor: pointer; }
+        .vital-chip-label { font-size: 12px; color: ${BRAND.gray}; font-weight: 600; }
+        .vital-chip-value { flex: 1; text-align: right; font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
+        .vital-chip-toggle { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .vital-chip-body { padding: 0 10px 10px; }
 
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
         .row-2 > * { flex: 1; min-width: 0; }
