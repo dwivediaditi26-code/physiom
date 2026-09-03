@@ -47,6 +47,11 @@ const TERMS = ["Short term", "Long term"];
 const EQUIPMENT = ["None", "Chair", "Plinth", "Parallel bars", "Walker/frame", "Cane", "Quad cane", "AFO", "Therapy ball", "Foam pad", "Treadmill", "Other"];
 const uid = () => Math.random().toString(36).slice(2, 9);
 
+// Defensive: a finding value must render as text. Current data stores
+// strings, but legacy records can carry an object (e.g. per-limb tone maps);
+// coerce anything non-scalar so a stray shape can never crash the Care Plan.
+const renderVal = (v) => (v == null ? "" : typeof v === "object" ? Object.values(v).filter(Boolean).join(", ") : String(v));
+
 const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: bg, color });
 
 function PhaseNav({ phase, setPhase, counts }) {
@@ -133,7 +138,7 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
                 <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 2 }}>
                   {s.findings.map((f, i) => (
                     <div key={i} style={{ fontSize: 11.5, color: BRAND.gray }}>
-                      <span style={{ fontWeight: 600 }}>{f.label}:</span> {f.value}
+                      <span style={{ fontWeight: 600 }}>{f.label}:</span> {renderVal(f.value)}
                     </div>
                   ))}
                 </div>
@@ -216,7 +221,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting }) {
             <div className="subheading" style={{ marginTop: 10 }}>{p.name}</div>
             {p.findings.length > 0 && (
               <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 8 }}>
-                Current: {p.findings.map((f) => `${f.label} ${f.value}`).join(" · ")}
+                Current: {p.findings.map((f) => `${f.label} ${renderVal(f.value)}`).join(" · ")}
               </div>
             )}
 
