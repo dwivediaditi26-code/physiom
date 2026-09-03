@@ -146,7 +146,7 @@ const SHEET_TABS = [
    many other field hints in this file that aren't ROM/MMT/Special Test
    items. */
 export function InfoButton(props) {
-  const { text, title, eyebrow = "HOW TO PERFORM", richItem } = props;
+  const { text, title, eyebrow = "HOW TO PERFORM", richItem, small } = props;
   const [open, setOpen] = useState(false);
   const availableTabs = richItem ? SHEET_TABS.filter((t) => richItem[t.key]) : [];
   const [tab, setTab] = useState(availableTabs[0]?.key);
@@ -155,7 +155,7 @@ export function InfoButton(props) {
   const openSheet = () => { setTab(availableTabs[0]?.key); setOpen(true); };
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
-      <button type="button" className={props.label ? "info-btn-full" : "info-btn"} onClick={openSheet}>
+      <button type="button" className={props.label ? "info-btn-full" : small ? "info-btn-sm" : "info-btn"} onClick={openSheet}>
         ⓘ {props.label || ""}
       </button>
       {open && createPortal(

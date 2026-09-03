@@ -71,7 +71,7 @@ function romInfoText(m) {
 // Same field set as physiofeed/learn/RomStudy.jsx's toCard(), split across
 // Perform/Reference/Interpret tabs (same pattern Cardio/Neuro's Learn panel
 // uses) so each tab fits on screen instead of one long scroll.
-function romRichItem(m) {
+export function romRichItem(m) {
   return {
     image: m.id,
     title: m.mv,
@@ -303,7 +303,7 @@ function mmtInfoText(m) {
 
 // Same field set/order as physiofeed/learn/MmtStudy.jsx's toCard() -- the
 // rich "How to perform" sheet content for an MMT muscle.
-function mmtRichItem(m) {
+export function mmtRichItem(m) {
   return {
     image: m.id,
     title: m.muscle,
@@ -583,7 +583,7 @@ function categoryFor(test) {
 
 // Same field set/order as physiofeed/learn/SpecialStudy.jsx's toCard() --
 // the rich "How to perform" sheet content for a special test.
-function specialRichItem(t) {
+export function specialRichItem(t) {
   return {
     image: t.id,
     title: t.label,

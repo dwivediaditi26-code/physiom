@@ -116,7 +116,7 @@ function kcCount(entry, tests) {
 // Special Tests. image uses the test's own real id -- present on
 // Cloudinary for the foot/ankle and hip regions today; falls back to
 // InfoButton's own placeholder for regions not yet photographed.
-function kcRichItem(t) {
+export function kcRichItem(t) {
   return {
     image: t.id,
     title: t.label,
@@ -168,7 +168,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
 // Perform/Reference/Interpret tabs. No NKT photos on Cloudinary yet --
 // image stays unset, falling back to InfoButton's own placeholder, same
 // honest-empty-state pattern used everywhere else in this system.
-function cpaRichItem(t) {
+export function cpaRichItem(t) {
   return {
     image: t.id,
     title: t.label,
@@ -239,7 +239,7 @@ function cyriaxRegionRichItem(region) {
 // Individual Cyriax test (t.how only, no id-based photos) -- always
 // Perform-only; the InfoButton sheet hides tabs with no content, so this
 // renders as a single-pane sheet without a tab strip.
-function cyriaxTestRichItem(t) {
+export function cyriaxTestRichItem(t) {
   return {
     title: t.label,
     perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
@@ -413,7 +413,7 @@ const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 // (t.svgNormal, from RegionalFunctionalScreens.jsx) -- no Cloudinary photo
 // id to hook into the usual SheetHero image slot, so the real illustration
 // renders inline in the Perform tab instead of being dropped.
-function fmaRichItem(t) {
+export function fmaRichItem(t) {
   return {
     title: t.label,
     subtitle: t.phase,

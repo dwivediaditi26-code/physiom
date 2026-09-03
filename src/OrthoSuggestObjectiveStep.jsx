@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, Segmented, SelectField, TextArea, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, Segmented, SelectField, TextArea, useSectionData, InfoButton } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, suggestCpaItems, suggestKineticChainItems, suggestFmaItems, suggestSttItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow, kcWhy, kcHow, fmaWhy, fmaHow, sttWhy, sttHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, suggestCpaItems, suggestKineticChainItems, suggestFmaItems, suggestSttItems, defaultSideFor, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
@@ -11,7 +11,8 @@ import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds }
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
-import { OptionChips } from "./orthoAdvancedTools.jsx";
+import { romRichItem, mmtRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
+import { OptionChips, kcRichItem, cpaRichItem, fmaRichItem, cyriaxTestRichItem } from "./orthoAdvancedTools.jsx";
 import { CYRIAX_RESISTED_RESULTS } from "./orthoAdvancedLibrary.js";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -249,7 +250,7 @@ function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump 
 // pass selected/onSelect (Rom/Mmt/SpecialTest/Observation) get the three-state
 // row: plain "+ Select" button -> tap opens the real input -> an answer that
 // is itself a positive/abnormal/recorded result turns the row green (finding).
-function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "How to perform", selected = true, onSelect, finding = false, children }) {
+function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines, howEyebrow = "How to perform", richItem, selected = true, onSelect, finding = false, children }) {
   const [open, setOpen] = useState(selected && !answered);
   const [infoOpen, setInfoOpen] = useState(false);
   function handleRowClick() {
@@ -262,9 +263,19 @@ function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines,
       <div className="obj-item-row" onClick={handleRowClick} role="button">
         <div className="obj-item-row-label">
           <span className="obj-item-row-name">{label}</span>
-          <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoOpen(true); }} aria-label={`About ${label}`}>
-            ⓘ
-          </button>
+          {richItem ? (
+            // Same Perform/Reference/Interpret tabbed sheet as the dedicated
+            // ROM/MMT/Special Tests/CPA/Kinetic Chain pages (orthoRegionAssessments.jsx,
+            // orthoAdvancedTools.jsx) -- reuses their own richItem builder so an
+            // item looks identical whether opened from here or from its full page.
+            <span onClick={(e) => e.stopPropagation()}>
+              <InfoButton small title={label} richItem={richItem} />
+            </span>
+          ) : (
+            <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoOpen(true); }} aria-label={`About ${label}`}>
+              ⓘ
+            </button>
+          )}
           {sublabel && <span className="obj-item-row-sub">{sublabel}</span>}
         </div>
         <div className="obj-item-row-right">
@@ -283,7 +294,7 @@ function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines,
           {children}
         </div>
       )}
-      <LineInfoSheet open={infoOpen} onClose={() => setInfoOpen(false)} label={label} whyLines={whyLines} howLines={howLines} howEyebrow={howEyebrow} />
+      {!richItem && <LineInfoSheet open={infoOpen} onClose={() => setInfoOpen(false)} label={label} whyLines={whyLines} howLines={howLines} howEyebrow={howEyebrow} />}
     </div>
   );
 }
@@ -303,7 +314,7 @@ function RomItemCard({ item, romData, setRom, selectionData, onSelectItem }) {
   const unit = meta.unit || "°";
   const summary = [val.left && `L ${val.left}${unit}`, val.right && `R ${val.right}${unit}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={romWhy(meta)} howLines={romHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered}>
+    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} richItem={romRichItem(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -335,7 +346,7 @@ function MmtItemCard({ item, mmtData, setMmt, selectionData, onSelectItem }) {
   const weak = (val.left && val.left !== "5") || (val.right && val.right !== "5");
   const summary = [val.left && `L ${val.left}`, val.right && `R ${val.right}`].filter(Boolean).join(" / ");
   return (
-    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered && !!weak}>
+    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} richItem={mmtRichItem(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered && !!weak}>
       <div className="obj-item-lr">
         <label className="obj-item-lr-field">
           <span>L</span>
@@ -389,7 +400,7 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
   const selected = !!selectionData[key] || answered;
   const summary = answered ? [currentSide && !isSideless ? currentSide[0].toUpperCase() + currentSide.slice(1) : null, currentValue].filter(Boolean).join(" — ") : "";
   return (
-    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} summary={summary} whyLines={specialWhy(meta)} howLines={specialHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={answered && currentValue !== baseline}>
+    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} summary={summary} richItem={specialRichItem(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={answered && currentValue !== baseline}>
       {!isSideless && (
         <div className="obj-item-side-row">
           {["Right", "Left", "Bilateral"].map((s) => (
@@ -473,7 +484,7 @@ function CpaItemCard({ item, cpaData, setCpa }) {
   const entry = cpaData[regionKey] || {};
   const value = entry[itemId];
   return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={cpaWhy(meta)} howLines={cpaHow(meta)} howEyebrow="HOW TO TEST">
+    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} richItem={cpaRichItem(meta)}>
       <OptionChips options={meta.options} value={value} onChange={(v) => setCpa(regionKey, { ...entry, [itemId]: v })} />
     </ItemCardShell>
   );
@@ -487,7 +498,7 @@ function KineticChainItemCard({ item, kcData, setKc }) {
   const entry = kcData[regionKey] || {};
   const value = entry[itemId];
   return (
-    <ItemCardShell label={label} sublabel={meta.joint} answered={!!value} summary={value || ""} whyLines={kcWhy(meta)} howLines={kcHow(meta)} howEyebrow="HOW TO TEST">
+    <ItemCardShell label={label} sublabel={meta.joint} answered={!!value} summary={value || ""} richItem={kcRichItem(meta)}>
       <OptionChips options={meta.options} value={value} onChange={(v) => setKc(regionKey, { ...entry, [itemId]: v })} />
     </ItemCardShell>
   );
@@ -502,7 +513,7 @@ function FmaItemCard({ item, fmaData, setFma }) {
   const entry = fmaData[regionKey] || {};
   const grade = entry[itemId + "_grade"];
   return (
-    <ItemCardShell label={`${meta.icon || ""} ${label}`.trim()} sublabel={meta.phase} answered={!!grade} summary={grade || ""} whyLines={fmaWhy(meta)} howLines={fmaHow(meta)}>
+    <ItemCardShell label={`${meta.icon || ""} ${label}`.trim()} sublabel={meta.phase} answered={!!grade} summary={grade || ""} richItem={fmaRichItem(meta)}>
       <div className="chip-mini-row">
         {(meta.grades || []).map((g, i) => {
           const selected = grade === g;
@@ -527,7 +538,7 @@ function SttItemCard({ item, sttData, setStt }) {
   const entry = sttData[regionKey] || {};
   const value = entry[itemId + "_result"];
   return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={sttWhy(meta)} howLines={sttHow(meta)}>
+    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} richItem={cyriaxTestRichItem(meta)}>
       <SelectField options={CYRIAX_RESISTED_RESULTS} value={value} onChange={(v) => setStt(regionKey, { ...entry, [itemId + "_result"]: v })} />
     </ItemCardShell>
   );
