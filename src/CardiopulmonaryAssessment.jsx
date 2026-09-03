@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import InfoCard from "./InfoCard.jsx";
-import CardioTreatmentAssistant from "./CardioTreatmentAssistant.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 
@@ -1628,9 +1627,6 @@ export function SummaryStyles() {
       }
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
-      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
-      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
-      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
     `}</style>
   );
 }
@@ -1638,11 +1634,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
-  // Treatment Assistant only makes sense once setData is actually wired in
-  // (the real final Summary step) -- the mid-assessment "Review So Far"
-  // modal reuses this same component read-only and doesn't pass setData,
-  // so it never shows the button.
-  const [showTreatment, setShowTreatment] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
 
   // exportText must be computed unconditionally -- every hook in this
@@ -1664,10 +1655,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
     });
     return lines.join("\n");
   }, [data, settingLabel, systemLabel, steps]);
-
-  if (showTreatment) {
-    return <CardioTreatmentAssistant data={data} setData={setData} setting={setting} onClose={() => setShowTreatment(false)} />;
-  }
 
   return (
     <>
@@ -1692,16 +1679,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
           </div>
         );
       })}
-      {setData && (
-        <button
-          type="button"
-          className="ai-treatment-cta"
-          onClick={() => setShowTreatment(true)}
-        >
-          <span className="ai-treatment-cta-title">✨ AI Treatment Assistant</span>
-          <span className="ai-treatment-cta-sub">Based on your documented findings</span>
-        </button>
-      )}
       <button
         type="button"
         className="primary-btn"
@@ -2034,7 +2011,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .info-popover p { margin: 0; padding-right: 14px; }
         .info-popover-close { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: #B8AEEF; font-size: 11px; cursor: pointer; }
 
-        .info-card-btn { width: 20px; height: 20px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; border-radius: 50%; font-size: 12px; line-height: 1; cursor: pointer; padding: 0; }
+        /* Raised "3D" pill -- solid gradient fill + hard bottom edge (button
+           side) + soft drop shadow (elevation) + inset top highlight (glossy
+           top face), pressing down flat on :active. Was a pale, flat, barely-
+           visible 20px outline circle (2026-09-03, Aditi: "it is so much
+           boring, and we cannot see it or use it"). White glyph on saturated
+           purple reads at a glance instead of purple-on-near-white. */
+        .info-card-btn { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-card-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
 
         .text-input-wrap, .select-wrap { position: relative; display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; }
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
@@ -2147,9 +2131,6 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       }
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
-      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
-      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
-      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
       `}</style>
 

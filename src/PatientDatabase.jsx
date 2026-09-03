@@ -1567,7 +1567,6 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
 
   const d   = patient?.data || {};
   const name = d.dem_name || patient?.name || "";
-  const pid  = patient?.id ? "PT-" + patient.id.slice(0,10).toUpperCase() : "";
   const age  = d.dem_age || "";
   const sex  = d.dem_sex || "";
   const phone= d.dem_phone || "";
@@ -1851,7 +1850,7 @@ function PatientProfileModal({ patient, onClose, onLoadAssessment, onSaveField, 
               <span style={{fontSize:13,marginLeft:6,fontWeight:400}}>{sex==="Male"||sex==="M"?"♂":sex==="Female"||sex==="F"?"♀":"⚧"}</span>
             </div>
             <div style={{fontSize:12,color:"#94a3b8"}}>
-              PID: {pid}{age && ` · ${age} yrs`}{d.dem_occupation && ` · ${d.dem_occupation}`}
+              {[age && `${age} yrs`, d.dem_occupation].filter(Boolean).join(" · ")}
             </div>
           </div>
         </div>
