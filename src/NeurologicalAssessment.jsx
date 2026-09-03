@@ -1846,8 +1846,8 @@ const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 function buildStepOrder(domainStepIds, customIds) {
   const domainSet = new Set(domainStepIds);
   const core = FULL_STEP_ORDER.filter((id) => ALWAYS_STEP_IDS.includes(id) || domainSet.has(id));
-  const summaryIdx = core.indexOf("summary");
-  const insertAt = summaryIdx === -1 ? core.length : summaryIdx;
+  const interpIdx = core.indexOf("interpretation");
+  const insertAt = interpIdx === -1 ? core.length : interpIdx;
   const next = [...core];
   next.splice(insertAt, 0, ...customIds);
   return next;
@@ -2167,8 +2167,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     } else {
       setCustomStepsMeta((m) => ({ ...m, [id]: { icon, label } }));
       setStepOrder((prev) => {
-        const summaryIdx = prev.indexOf("summary");
-        const insertAt = summaryIdx === -1 ? prev.length : summaryIdx;
+        const interpIdx = prev.indexOf("interpretation");
+        const insertAt = interpIdx === -1 ? prev.length : interpIdx;
         const next = [...prev];
         next.splice(insertAt, 0, id);
         return next;

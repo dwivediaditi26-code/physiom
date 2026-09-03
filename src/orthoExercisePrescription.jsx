@@ -147,6 +147,8 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templateMsg, setTemplateMsg] = useState("");
+  const progRef = React.useRef(null);
 
   const setProgramme = (next) => set("programme", next);
   const addEx = (ex) => {
@@ -159,8 +161,15 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
     const t = PROGRAMME_TEMPLATES[key];
     if (!t) return;
     const exs = t.exercises.map((id) => ALL_EXERCISES.find((e) => e.id === id)).filter((e) => e && !programme.find((p) => p.id === e.id));
-    if (!exs.length) return;
+    if (!exs.length) {
+      setTemplateMsg("All exercises from this protocol are already in the programme.");
+      setTimeout(() => setTemplateMsg(""), 3000);
+      return;
+    }
     setProgramme([...programme, ...exs.map((ex) => ({ ...ex, customSets: ex.sets, customReps: ex.reps, customHold: ex.hold, customFreq: ex.freq, notes: "" }))]);
+    setTemplateMsg(`Added ${exs.length} exercise${exs.length > 1 ? "s" : ""} from "${t.label}".`);
+    setTimeout(() => setTemplateMsg(""), 3000);
+    setTimeout(() => progRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const region = EXERCISE_DB[activeRegion];
@@ -216,7 +225,8 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
       ))}
       {Object.keys(filteredCategories).length === 0 && <div className="summary-empty">No exercises match this filter.</div>}
 
-      <div className="subheading" style={{ marginTop: 18 }}>This patient's programme ({programme.length})</div>
+      {templateMsg && <div className="hint" style={{ color: "#059669", fontWeight: 600, marginTop: 8 }}>{templateMsg}</div>}
+      <div className="subheading" ref={progRef} style={{ marginTop: 18 }}>This patient's programme ({programme.length})</div>
       {programme.length === 0 && <div className="summary-empty">No exercises added yet — add some from the library above.</div>}
       {programme.map((ex) => (
         <ProgrammeEntryCard key={ex.id} ex={ex} onUpdate={(field, val) => updateEx(ex.id, field, val)} onRemove={() => removeEx(ex.id)} />

@@ -6,6 +6,21 @@ import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
 import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { RESTRICTION_GRADE, MMT_GRADES } from "./orthoClinicalData.js";
+
+function groupByRegion(items, selectedRegions) {
+  if (selectedRegions.length <= 1) return null;
+  const groups = new Map();
+  items.forEach((item) => {
+    const key = item.regionKey;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+  const regionLabel = (key) => {
+    const r = selectedRegions.find((r) => r.id === key) || ALL_REGIONS.find((r) => r.id === key);
+    return r ? r.label : key;
+  };
+  return [...groups.entries()].map(([key, items]) => ({ key, label: regionLabel(key), items }));
+}
 // The Objective item cards below render the EXACT same controls and info
 // sheets the full ROM/MMT/Special Tests pages do (2026-09-03, Aditi:
 // "objective assessment info cards are not showing the way it normally does
@@ -917,12 +932,14 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     <div className="obj-no-zoom">
       <SectionIntro icon="🧠" title="Objective Assessment" info="Individual items below come from the region(s) you picked; the categories at the bottom come from what you documented in Subjective and Pain — none of this is a live AI/diagnosis call." />
 
-      {topConditions.length > 0 && (
+      {topConditions.length > 0 ? (
         <>
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
         </>
-      )}
+      ) : selectedRegions.length > 0 && !engineMatch ? (
+        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, and Shoulder regions. Other regions show the full test library.</Hint>
+      ) : null}
 
       {findingsBlock}
 
@@ -941,49 +958,75 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         </>
       )}
 
-      {visibleRom.length > 0 && (
-        <>
-          <div className="subheading">📐 Range of Motion</div>
-          {/* Same .rom-card table the full ROM page renders -- header row
-              included -- so the movement rows read identically here. */}
+      {visibleRom.length > 0 && (() => {
+        const groups = groupByRegion(visibleRom, selectedRegions);
+        const renderRomGroup = (items) => (
           <div className="rom-card">
             <div className="rom-row-grid rom-table-head">
-              <span>Movement</span>
-              <span>L</span>
-              <span>R</span>
+              <span>Movement</span><span>L</span><span>R</span>
             </div>
-            {visibleRom.map((item) => (
+            {items.map((item) => (
               <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
             ))}
           </div>
-        </>
-      )}
+        );
+        return (
+          <>
+            <div className="subheading">📐 Range of Motion</div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderRomGroup(g.items)}
+              </React.Fragment>
+            )) : renderRomGroup(visibleRom)}
+          </>
+        );
+      })()}
 
-      {visibleMmt.length > 0 && (
-        <>
-          <div className="subheading">💪 Muscle Strength (MMT)</div>
-          {/* Same MMT scale bar + .rom-card grouping as the full MMT page. */}
-          <div className="mmt-scale-bar">
-            <span className="mmt-scale-label">MMT SCALE</span>
-            <span>5 Normal → 0 Zero</span>
-            <InfoButton title="MMT Grading Scale" text={MMT_GRADES.map((g) => `${g.g} — ${g.label}: ${g.desc}`).join("\n")} />
-          </div>
+      {visibleMmt.length > 0 && (() => {
+        const groups = groupByRegion(visibleMmt, selectedRegions);
+        const renderMmtGroup = (items) => (
           <div className="rom-card">
-            {visibleMmt.map((item) => (
+            {items.map((item) => (
               <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
             ))}
           </div>
-        </>
-      )}
+        );
+        return (
+          <>
+            <div className="subheading">💪 Muscle Strength (MMT)</div>
+            <div className="mmt-scale-bar">
+              <span className="mmt-scale-label">MMT SCALE</span>
+              <span>5 Normal → 0 Zero</span>
+              <InfoButton title="MMT Grading Scale" text={MMT_GRADES.map((g) => `${g.g} — ${g.label}: ${g.desc}`).join("\n")} />
+            </div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderMmtGroup(g.items)}
+              </React.Fragment>
+            )) : renderMmtGroup(visibleMmt)}
+          </>
+        );
+      })()}
 
-      {visibleSpecial.length > 0 && (
-        <>
-          <div className="subheading">🔬 Special Tests</div>
-          {visibleSpecial.map((item) => (
-            <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} selectionData={selectionData} onSelectItem={onSelectItem} />
-          ))}
-        </>
-      )}
+      {visibleSpecial.length > 0 && (() => {
+        const groups = groupByRegion(visibleSpecial, selectedRegions);
+        const renderSpecialGroup = (items) => items.map((item) => (
+          <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} selectionData={selectionData} onSelectItem={onSelectItem} />
+        ));
+        return (
+          <>
+            <div className="subheading">🔬 Special Tests</div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderSpecialGroup(g.items)}
+              </React.Fragment>
+            )) : renderSpecialGroup(visibleSpecial)}
+          </>
+        );
+      })()}
 
       <PalpationSection
         data={data}
