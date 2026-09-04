@@ -333,6 +333,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   const [picked, setPicked] = useState(null);
   const [dose, setDose] = useState(null);
   const [linked, setLinked] = useState([goal.id]);
+  const [manualName, setManualName] = useState("");
 
   const all = useMemo(() => Object.entries(exerciseCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [exerciseCategories]);
 
@@ -404,6 +405,23 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
                     {relevantCats.includes(c) && <span style={{ ...chip(BRAND.purpleFaint, BRAND.purpleDark), marginLeft: "auto" }}>Suggested</span>}
                   </button>
                 ))}
+              </div>
+            )}
+            {/* Manual entry — for modalities/techniques not in the exercise
+                library (SWD, ultrasound, dry needling, manual therapy, taping…)
+                so the therapist can add anything and still attach it to a goal
+                (2026-09-05, Aditi: technique section "should have the freedom
+                to put by the therapist"). Flows into the same dose screen and
+                Sessions/Progress as library treatments. */}
+            {!search.trim() && !cat && (
+              <div className="ct-group">
+                <div className="ct-group-title">ADD MANUALLY</div>
+                <div style={{ display: "flex", gap: 8, padding: "4px 2px" }}>
+                  <input className="ct-search" style={{ flex: 1 }} placeholder="e.g. Ultrasound, SWD, dry needling, manual therapy…" value={manualName} onChange={(e) => setManualName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && manualName.trim()) startDose({ id: "manual_" + uid(), name: manualName.trim(), target: "Manual treatment / modality", _cat: "Manual", sets: "", reps: "", hold: "", freq: "" }); }} />
+                  <button type="button" className="primary-btn" style={{ flexShrink: 0, padding: "0 14px" }} disabled={!manualName.trim()}
+                    onClick={() => startDose({ id: "manual_" + uid(), name: manualName.trim(), target: "Manual treatment / modality", _cat: "Manual", sets: "", reps: "", hold: "", freq: "" })}>Next</button>
+                </div>
+                <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "4px 4px 0" }}>Any modality/technique — set dose (e.g. duration/frequency) on the next screen.</div>
               </div>
             )}
             {(search.trim() || cat) && (
