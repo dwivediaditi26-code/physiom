@@ -328,6 +328,93 @@ export function SelectField({ label, type = "single", options, value, onChange, 
   );
 }
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function DateWheelColumn({ items, selected, onSelect }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const active = el.querySelector(".date-wheel-item-active");
+    if (active) active.scrollIntoView({ block: "center" });
+  }, []);
+  return (
+    <div className="date-wheel-col" ref={ref}>
+      {items.map((it) => (
+        <button
+          type="button"
+          key={it.value}
+          className={"date-wheel-item" + (String(selected) === String(it.value) ? " date-wheel-item-active" : "")}
+          onClick={() => onSelect(it.value)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* Fast "scroll and tap" Day / Month / Year picker for surgery/injury dates
+   -- Aditi: "I want to select from the list date, year, month ... like a
+   scrolling thing and select from it" instead of typing DD/MM/YYYY by hand.
+   Stores the same "DD/MM/YYYY" string TextField used, so it's a drop-in
+   replacement everywhere a surgery/onset date is captured. */
+export function DateField({ label, value, onChange, hint, howTo }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const parts = (value || "").split("/");
+  const day = parts[0] || "";
+  const month = parts[1] || "";
+  const year = parts[2] || "";
+
+  useEffect(() => {
+    function onDoc(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  function setPart(which, v) {
+    const d = which === "day" ? v : day;
+    const m = which === "month" ? v : month;
+    const y = which === "year" ? v : year;
+    onChange([d, m, y].filter(Boolean).length ? `${d || "--"}/${m || "--"}/${y || "----"}` : "");
+  }
+
+  const days = Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1).padStart(2, "0"), label: String(i + 1) }));
+  const months = MONTH_NAMES.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 101 }, (_, i) => thisYear - 100 + i).reverse().map((y) => ({ value: String(y), label: String(y) }));
+
+  const display = day && month && year ? `${day}/${month}/${year}` : "";
+
+  return (
+    <FieldShell label={label} hint={hint} howTo={howTo}>
+      <div className="select-wrap" ref={ref}>
+        <input className="select-input" readOnly value={display} placeholder="DD/MM/YYYY" onFocus={() => setOpen(true)} />
+        <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
+          📅 Pick
+        </button>
+        {open && (
+          <div className="select-popover date-wheel-popover">
+            <div className="popover-head">
+              <span>Select date</span>
+              <button type="button" className="popover-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
+            </div>
+            <div className="date-wheel-row">
+              <DateWheelColumn items={days} selected={day} onSelect={(v) => setPart("day", v)} />
+              <DateWheelColumn items={months} selected={month} onSelect={(v) => setPart("month", v)} />
+              <DateWheelColumn items={years} selected={year} onSelect={(v) => setPart("year", v)} />
+            </div>
+            <button type="button" className="popover-done" onClick={() => setOpen(false)}>Done</button>
+          </div>
+        )}
+      </div>
+    </FieldShell>
+  );
+}
+
 /* Compact tap-to-open picker — a small pill trigger that opens a short
    popover list, instead of a full row of always-visible chips. Used for
    ROM pain/end-feel and MMT grade, where a wall of chip buttons would eat
@@ -455,7 +542,7 @@ export function NumberField({ label, value, onChange, unit, placeholder, hint, h
 // fields and hid their info button -- here the field already has a value
 // before it's ever opened, and the ⓘ/howTo button always stays visible in
 // the collapsed row, not swallowed by the toggle.
-export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider, max = 10 }) {
+export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider, max = 10, step = 1 }) {
   const [open, setOpen] = useState(false);
   const hasValue = value !== undefined && value !== null && value !== "";
   return (
@@ -489,7 +576,7 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
             </div>
           ) : (
             <div className="vital-input-wrap">
-              <input type="number" inputMode="decimal" className="vital-input" autoFocus value={value || ""} onChange={(e) => onChange(e.target.value)} />
+              <Stepper value={value} onChange={onChange} min={0} max={max} step={step} />
               {unit && <span className="vital-unit">{unit}</span>}
             </div>
           )}

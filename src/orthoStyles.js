@@ -368,6 +368,11 @@ export function orthoStyles() {
         .popover-check-icon-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
         .popover-item-active { color: ${BRAND.purpleDark}; font-weight: 600; }
         .popover-done { margin-top: 8px; flex-shrink: 0; width: 100%; border: none; background: ${BRAND.purple}; color: #fff; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+        .date-wheel-popover { width: min(90%, 300px); }
+        .date-wheel-row { display: flex; gap: 6px; }
+        .date-wheel-col { flex: 1; max-height: 180px; overflow-y: auto; scroll-snap-type: y proximity; border: 1px solid ${BRAND.border}; border-radius: 10px; background: ${BRAND.purpleFaint}; display: flex; flex-direction: column; }
+        .date-wheel-item { border: none; background: transparent; padding: 9px 4px; font-size: 13px; font-weight: 600; color: ${BRAND.ink}; cursor: pointer; scroll-snap-align: center; text-align: center; }
+        .date-wheel-item-active { background: ${BRAND.purple}; color: #fff; border-radius: 8px; }
 
         /* Refined-chip look (2026-08-27, user request) -- individually
            bordered pills instead of the old shared lavender tray, applied
