@@ -641,6 +641,18 @@ export function orthoStyles() {
         .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
 
+        /* Condition-specific assessment module guidance cards (Option B) */
+        .cmod-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+        .cmod-card { border: 1.5px solid ${BRAND.border}; border-radius: 10px; background: #fff; overflow: hidden; }
+        .cmod-card-open { border-color: ${BRAND.purple}; }
+        .cmod-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; width: 100%; border: none; background: none; cursor: pointer; font-family: inherit; text-align: left; }
+        .cmod-icon { font-size: 14px; flex-shrink: 0; }
+        .cmod-label { flex: 1; font-size: 13px; font-weight: 600; color: ${BRAND.ink}; }
+        .cmod-chev { font-size: 16px; color: ${BRAND.grayLight}; transition: transform .15s; }
+        .cmod-chev.open { transform: rotate(180deg); }
+        .cmod-body { padding: 0 12px 12px; }
+        .cmod-detail { font-size: 12.5px; line-height: 1.55; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; border-left: 3px solid ${BRAND.purple}; border-radius: 6px; padding: 10px 12px; }
+
         /* Findings summary -- collapsible drawer built purely by scanning
            already-answered rom/mmt/specialTests/observation data for a
            positive/abnormal/recorded result; no separate state to keep in sync. */
