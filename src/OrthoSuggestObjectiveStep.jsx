@@ -37,6 +37,10 @@ import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds }
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
+import { runHipDifferential, hasHipChecklistData, hipConditionItemIds } from "./orthoHipReasoning.js";
+import { runKneeDifferential, hasKneeChecklistData, kneeConditionItemIds } from "./orthoKneeReasoning.js";
+import { runAnkleFootDifferential, hasAnkleFootChecklistData, ankleFootConditionItemIds } from "./orthoAnkleFootReasoning.js";
+import { runElbowWristHandDifferential, hasElbowWristHandChecklistData, elbowWristHandConditionItemIds } from "./orthoElbowWristHandReasoning.js";
 import { CpaSection, KineticChainSection, FmaSection, SttSection, FasciaSection } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -667,11 +671,10 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const showOutcomeMeasure = omRecommended.length > 0 || !!omSuggestedFromReasoning || activeIds.has("outcomeMeasure");
   const outcomeMeasureIds = showOutcomeMeasure ? [...new Set([...omRecommended.map((r) => r.id), ...(activeIds.has("outcomeMeasure") ? Object.keys(omInstances) : [])])] : [];
   // Every region with a ported Phase 0.5 engine for THIS tool's data shape
-  // (today: Lumbar/SI, Cervical, Thoracic, Shoulder) -- add a region here
-  // once its own orthoXReasoning.js adapter exists. Elbow/Wrist/Hand, Hip,
-  // Knee, Ankle/Foot simply aren't in this map yet, so engineMatch stays
-  // null for them and Suggested Objective falls back to the unfiltered
-  // full library, same as before any of this existed.
+  // All regions with a reasoning engine adapter. Each adapter flattens the
+  // wizard's nested data into the old flow's flat format, runs the existing
+  // reasoning engine(s), and maps differentials to the conditions shape
+  // this UI reads (id, name, matchTier, objectiveTests, etc.).
   //
   // hasData/run take the full `data` object (not a narrower regionData
   // slice) so every engine can read whatever it actually needs -- Lumbar/
@@ -685,6 +688,10 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runCervicalDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: cervicalConditionItemIds, label: "Cervical" },
     thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runThoracicDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: thoracicConditionItemIds, label: "Thoracic" },
     shoulder: { hasData: (d) => hasShoulderChecklistData(d), run: (d) => runShoulderDifferential(d), itemIds: shoulderConditionItemIds, label: "Shoulder" },
+    hip: { hasData: (d) => hasHipChecklistData(d), run: (d) => runHipDifferential(d), itemIds: hipConditionItemIds, label: "Hip" },
+    knee: { hasData: (d) => hasKneeChecklistData(d), run: (d) => runKneeDifferential(d), itemIds: kneeConditionItemIds, label: "Knee" },
+    ankleFoot: { hasData: (d) => hasAnkleFootChecklistData(d), run: (d) => runAnkleFootDifferential(d), itemIds: ankleFootConditionItemIds, label: "Ankle/Foot" },
+    elbowWristHand: { hasData: (d) => hasElbowWristHandChecklistData(d), run: (d) => runElbowWristHandDifferential(d), itemIds: elbowWristHandConditionItemIds, label: "Elbow/Wrist/Hand" },
   };
   const engineMatch = useMemo(() => {
     for (const region of selectedRegions) {
@@ -938,7 +945,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
         </>
       ) : selectedRegions.length > 0 && !engineMatch ? (
-        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, and Shoulder regions. Other regions show the full test library.</Hint>
+        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, Shoulder, Hip, Knee, Ankle/Foot, and Elbow/Wrist/Hand regions.</Hint>
       ) : null}
 
       {findingsBlock}
