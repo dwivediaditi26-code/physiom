@@ -1126,6 +1126,22 @@ function CognitionSection({ data, setData }) {
       <SelectField label="Memory" type="multi" options={["Short-term intact", "Short-term impaired", "Long-term intact", "Long-term impaired", "Confabulation noted"]} value={d.memory} onChange={(v) => set("memory", v)} />
       <SelectField label="Language" type="multi" options={["Comprehension intact", "Comprehension impaired", "Expression intact", "Expression impaired (expressive aphasia)", "Naming difficulty", "Repetition impaired", "Dysarthria"]} value={d.language} onChange={(v) => set("language", v)} howTo="Expressive (Broca's) aphasia: non-fluent, effortful speech with relatively preserved comprehension. Receptive (Wernicke's) aphasia: fluent but meaningless speech with impaired comprehension." />
       <SelectField label="Praxis" type="single" options={["Normal", "Apraxia suspected — motor planning difficulty despite adequate strength/sensation"]} value={d.praxis} onChange={(v) => set("praxis", v)} />
+      <SelectField
+        label="Visuospatial function"
+        type="single"
+        options={["Intact", "Impaired - clock drawing", "Impaired - copying a figure (e.g. cube/pentagons)", "Impaired - spatial neglect suspected", "Not tested"]}
+        value={d.visuospatial}
+        onChange={(v) => set("visuospatial", v)}
+        howTo="Its own domain in MoCA (distinct from memory/language/attention) -- clock drawing (draw a clock face, set hands to a given time) and copying a cube or intersecting pentagons are the standard quick bedside tasks. If spatial neglect is suspected, screen it properly via the Stroke condition library's Neglect / inattention item rather than relying on this field alone."
+      />
+      <SelectField
+        label="Executive function"
+        type="multi"
+        options={["Intact", "Impaired planning/sequencing", "Impaired problem-solving", "Impaired judgement/insight", "Perseveration noted", "Not tested"]}
+        value={d.executiveFunction}
+        onChange={(v) => set("executiveFunction", v)}
+        howTo="A distinct cognitive domain from memory/language -- screen with a task like Trail Making, or simply asking the patient to describe how they'd respond to a hypothetical everyday problem and judging the plan's coherence."
+      />
       <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" info={neuroExamLibraryData.mocaMmse} />
       <TextArea label="Additional cognitive observations" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
@@ -1143,11 +1159,13 @@ function CranialNervesSection({ data, setData }) {
       <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} info={neuroExamLibraryData.cn2} />
       <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
       <SelectField label="Pupillary light reflex" type="single" options={["Normal", "Sluggish", "Fixed", "Anisocoria", "Not tested"]} value={d.pupillaryLight} onChange={(v) => set("pupillaryLight", v)} info={neuroExamLibraryData.pupillaryLight} />
+      <SelectField label="Pupillary accommodation" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.pupillaryAccommodation} onChange={(v) => set("pupillaryAccommodation", v)} howTo="Ask the patient to focus on a distant object then a near one (e.g. your finger) -- normally pupils constrict and eyes converge. Tested separately from the light reflex above; together they make up 'PERRLA' (Pupils Equal, Round, Reactive to Light and Accommodation)." />
       <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} info={neuroExamLibraryData.cn5} />
       <SelectField label="Corneal reflex" type="single" options={["Present", "Reduced", "Absent", "Not tested"]} value={d.cornealReflex} onChange={(v) => set("cornealReflex", v)} info={neuroExamLibraryData.cornealReflex} />
       <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} info={neuroExamLibraryData.cn7} />
       <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} info={neuroExamLibraryData.cn8} />
       <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} info={neuroExamLibraryData.cn910} />
+      <SelectField label="Gag reflex" type="single" options={["Present bilaterally", "Reduced/absent - Right", "Reduced/absent - Left", "Reduced/absent - Bilateral", "Not tested"]} value={d.gagReflex} onChange={(v) => set("gagReflex", v)} howTo="Touch the posterior pharyngeal wall on each side with a tongue depressor; a normal response is symmetric elevation of the palate/gag. Low sensitivity and uncomfortable for the patient, so reserve for suspected bulbar involvement (e.g. dysphagia already noted above) rather than routine screening." />
       <SelectField label="CN XI - Accessory (shoulder shrug / head turn)" type="single" options={CN_OPTS} value={d.cn11} onChange={(v) => set("cn11", v)} info={neuroExamLibraryData.cn11} />
       <SelectField label="CN XII - Hypoglossal (tongue)" type="single" options={[...CN_OPTS, "Deviates on protrusion"]} value={d.cn12} onChange={(v) => set("cn12", v)} info={neuroExamLibraryData.cn12} />
     </>
@@ -1292,17 +1310,19 @@ function ToneReflexSection({ data, setData }) {
       <div className="subheading">Deep tendon reflexes</div>
       <LRGrid
         label="DTRs"
-        rows={["Biceps (C5-6)", "Brachioradialis (C5-6)", "Triceps (C7-8)", "Patellar (L3-4)", "Achilles (S1-2)"]}
+        rows={["Jaw jerk (CN V)", "Biceps (C5-6)", "Brachioradialis (C5-6)", "Triceps (C7-8)", "Patellar (L3-4)", "Achilles (S1-2)"]}
         options={DTR_GRADES.map((g) => g.split(" - ")[0])}
         value={d.dtr || {}}
         onChange={(v) => set("dtr", v)}
         rowInfo={{
+          "Jaw jerk (CN V)": neuroExamLibraryData.reflexJawJerk,
           "Biceps (C5-6)": neuroExamLibraryData.reflexBiceps,
           "Brachioradialis (C5-6)": neuroExamLibraryData.reflexBrachioradialis,
           "Triceps (C7-8)": neuroExamLibraryData.reflexTriceps,
           "Patellar (L3-4)": neuroExamLibraryData.reflexPatellar,
           "Achilles (S1-2)": neuroExamLibraryData.reflexAchilles,
         }}
+        howTo="Jaw jerk is normally absent or minimal -- an unusually brisk jaw jerk suggests a bilateral corticobulbar (UMN) lesion above the mid-pons (e.g. pseudobulbar palsy), which the limb DTRs below can't distinguish on their own."
       />
       <div className="subheading">Pathological reflexes</div>
       <SelectField
@@ -1451,6 +1471,7 @@ function GaitSection({ data, setData }) {
         <NumberField label="Gait speed" value={d.gaitSpeed} onChange={(v) => set("gaitSpeed", v)} unit="m/s" width="45%" />
         <NumberField label="10-metre walk time" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" width="45%" />
       </div>
+      <NumberField label="Functional Gait Assessment (FGA)" value={d.fga} onChange={(v) => set("fga", v)} unit="/30" howTo="10-item validated gait-specific outcome measure (level-surface gait, change of speed, gait with horizontal head turns, gait with vertical head turns, gait with pivot turn, step over an obstacle, gait with narrow base of support, gait with eyes closed, ambulating backwards, and steps/stairs), each scored 0-3. A total score ≤22/30 is a commonly used fall-risk cutoff in community-dwelling older adults -- lower cutoffs (e.g. ≤15 in Parkinson's, <18 as an inpatient) apply in other populations." />
       <TextArea label="Gait observations" value={d.observations} onChange={(v) => set("observations", v)} placeholder="Step length, cadence, base of support, foot clearance, trunk/pelvic movement, symmetry, use of assistive device..." />
     </>
   );
