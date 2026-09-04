@@ -52,6 +52,44 @@ const BRAND = {
   white: "#FFFFFF",
 };
 
+// True if patient name/age are missing from the Demographics section.
+function missingDemographicsFields(dem) {
+  const missing = [];
+  if (!String(dem?.name || "").trim()) missing.push("name");
+  if (!String(dem?.age || "").trim()) missing.push("age");
+  return missing;
+}
+
+// Blocks the explicit "Save Assessment" tap (not the continuous background
+// autosave -- that keeps running regardless, so in-progress work still
+// survives a crash/tab-close) when Patient Name and/or Age are still
+// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
+// appears" effect never fires, so the whole assessment silently has
+// nowhere to be filed under -- this stops that at the one moment the
+// therapist actually intends to finish, rather than nagging on every
+// keystroke. Same component/copy as orthoFieldKit.jsx's
+// MissingDemographicsModal, duplicated rather than cross-imported since
+// this module doesn't otherwise share components with the Ortho files.
+function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
+  const label = missing.length > 1 ? "name and age" : missing[0];
+  return createPortal(
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="missing-dem-icon">📋</div>
+        <div className="missing-dem-title">Patient {label} needed</div>
+        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
+        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
+          Go to Patient Info
+        </button>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ============================================================
    STATIC DATA — Step 1 selector (setting only — Neuro is a
    single system, per O'Sullivan: setting drives the core exam,
@@ -1788,6 +1826,19 @@ const NEURO_TEMPLATES = [
   { id: "general", icon: "🧠", label: "General Neurological", domainSteps: DOMAIN_STEP_IDS, libraryItems: [] },
 ];
 
+// Setting + region(s) + condition, joined for display -- e.g. "Inpatient ·
+// Spinal Cord · Stroke". Exported so SpecialtyPatientProfile.jsx can show
+// it right in the Assessment card's header, the same way Ortho's own
+// [orthoParsed.regions, orthoParsed.condition] subtitle already works,
+// instead of only surfacing setting (and nothing for region/condition)
+// buried inside SummarySection's own internal heading.
+export function neuroAssessmentSubtitle(meta = {}) {
+  const settingLabel = SETTINGS.find((s) => s.id === meta.setting)?.label;
+  const regionLabel = (meta.selectedRegions || []).map((id) => REGIONS.find((r) => r.id === id)?.label).filter(Boolean).join(", ");
+  const conditionLabel = NEURO_TEMPLATES.find((t) => t.id === meta.condition)?.label;
+  return [settingLabel, regionLabel, conditionLabel].filter(Boolean).join(" · ");
+}
+
 const MY_TEMPLATES_KEY = "physiomind_neuro_my_templates";
 function loadMyTemplatesFromStorage() {
   if (typeof window === "undefined") return [];
@@ -1862,6 +1913,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   // Re-hydrate when switching to a different patient -- mirrors
   // CardiopulmonaryAssessment.jsx's own re-hydration effect. Keyed only on
@@ -1892,11 +1944,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // Remember the chosen setting/stepOrder/customStepsMeta on the record
   // itself so re-opening this patient later (see hasExistingNeuro above)
   // can skip straight back into the same template instead of asking again.
+  // selectedRegions is included too (2026-09) so SpecialtyPatientProfile.jsx
+  // can show which region(s) were picked -- previously only meaningful for
+  // the "Build by Region" entry mode, it was transient local state that
+  // never made it into the saved record at all.
   useEffect(() => {
     if (phase !== "assess") return;
     setData((prev) => {
-      const meta = { setting, condition, stepOrder, customStepsMeta };
-      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
+      const meta = { setting, condition, stepOrder, customStepsMeta, selectedRegions };
+      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta && prev.meta.selectedRegions === meta.selectedRegions) return prev;
       return { ...prev, meta };
     });
     // Also mirror the chosen setting onto the shared patient record's own
@@ -2298,6 +2354,12 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 1070; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .missing-dem-panel { position: relative; z-index: 1071; background: #fff; border-radius: 20px; padding: 24px 22px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 24px 60px rgba(40,10,90,.35); }
+        .missing-dem-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .missing-dem-title { font-weight: 800; font-size: 17px; color: ${BRAND.ink}; margin-bottom: 8px; text-transform: capitalize; }
+        .missing-dem-body { font-size: 13px; color: ${BRAND.gray}; line-height: 1.5; margin-bottom: 18px; }
       `}</style>
 
       <div className="app-inner">
@@ -2528,7 +2590,14 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                 <button className="ghost-btn" onClick={() => setStep(1)}>
                   ✏️ Edit More
                 </button>
-                <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+                <button
+                  className="primary-btn"
+                  onClick={() => {
+                    const missing = missingDemographicsFields(data.demographics);
+                    if (missing.length) { setMissingDemFields(missing); return; }
+                    onNav?.("clinical");
+                  }}
+                >
                   ✅ Save Assessment
                 </button>
               </>
@@ -2545,6 +2614,13 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); setStep(1); }}
+          />
+        )}
         {reviewOpen && (
           <div className="ct-modal">
             <div className="ct-modal-header">

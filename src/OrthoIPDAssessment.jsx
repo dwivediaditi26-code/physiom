@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -257,6 +257,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -332,6 +333,16 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     onSave("care_setting", "ipd");
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
+  }
+
+  // The explicit "Save Assessment" tap, gated on name+age -- silent 2s
+  // auto-save above still runs regardless so in-progress work always
+  // survives a crash/tab-close, this just stops the therapist from
+  // believing a *named, findable* record was saved when it wasn't.
+  function handleSaveClick() {
+    const missing = missingDemographicsFields(caseInfo);
+    if (missing.length) { setMissingDemFields(missing); return; }
+    saveAssessment();
   }
 
   // Auto-save (2026-09-02, Aditi: "not saving patient and assessment
@@ -414,7 +425,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
-                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
                   {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
                 </button>
               )}
@@ -438,6 +449,13 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
         </div>
 
         {addOpen && <AddAssessmentModal activeIds={new Set(stepOrder)} onToggle={toggleAssessment} onClose={() => setAddOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); jumpTo("caseInfo"); }}
+          />
+        )}
       </div>
     </div>
   );
