@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { TextField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -125,7 +125,7 @@ function MedicalReviewSection({ data, setData, condition, selectedRegions }) {
       <SectionIntro icon="🗂️" title="Medical / Chart Review" />
       <TextArea label="Medical record review" value={d.recordReview} onChange={(v) => set("recordReview", v)} placeholder="Relevant history, comorbidities, prior functional level..." />
       <TextField label="Mechanism of injury / onset" value={d.mechanism} onChange={(v) => set("mechanism", v)} />
-      <TextField label="Date of injury / surgery" value={d.eventDate} onChange={(v) => set("eventDate", v)} placeholder="DD/MM/YYYY" />
+      <DateField label="Date of injury / surgery" value={d.eventDate} onChange={(v) => set("eventDate", v)} />
       <TextArea label="Physician restrictions" value={d.restrictions} onChange={(v) => set("restrictions", v)} placeholder="e.g. no active SLR, no resisted knee extension..." />
 
       {showReduction && (

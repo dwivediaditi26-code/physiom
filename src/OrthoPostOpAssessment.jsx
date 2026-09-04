@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Hint, TextField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData } from "./orthoFieldKit.jsx";
+import { Hint, TextField, DateField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData } from "./orthoFieldKit.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
@@ -135,7 +135,7 @@ function SurgicalReviewSection({ data, setData, condition, selectedRegions }) {
     <>
       <SectionIntro icon="🩺" title="Surgical Review" />
       <Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>
-      <TextField label="Date of surgery" value={d.surgeryDate} onChange={(v) => set("surgeryDate", v)} placeholder="DD/MM/YYYY" />
+      <DateField label="Date of surgery" value={d.surgeryDate} onChange={(v) => set("surgeryDate", v)} />
       <NumberField label="Post-operative day / week" value={d.postOpDay} onChange={(v) => set("postOpDay", v)} unit="POD" />
       <TextArea label="Surgeon instructions" value={d.surgeonInstructions} onChange={(v) => set("surgeonInstructions", v)} placeholder="Copy the documented protocol — do not paraphrase into a new plan" />
       <Segmented label="Drain" options={["None", "Present"]} value={d.drain} onChange={(v) => set("drain", v)} />

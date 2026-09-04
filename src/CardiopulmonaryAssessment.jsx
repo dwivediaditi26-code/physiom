@@ -279,7 +279,28 @@ function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, i
 // dropped their info button) -- here the row already has a value before
 // it's ever opened, and its ⓘ/howTo button stays visible in the collapsed
 // state via its own stopPropagation wrapper, not swallowed by the toggle.
-function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10 }) {
+/* Same tap-to-bump control as Ortho's Stepper (orthoFieldKit.jsx) --
+   Aditi asked for the vital fields to work "like the ROM plus and minus"
+   instead of typing a bare number, so this mirrors that +/- pattern. */
+function CardioStepper({ value, onChange, min = 0, max = 99, step = 1 }) {
+  const num = value === undefined || value === "" ? null : Number(value);
+  function bump(delta) {
+    const base = num === null ? (min > 0 ? min : 0) : num;
+    const next = Math.min(max, Math.max(min, +(base + delta).toFixed(2)));
+    onChange(String(next));
+  }
+  return (
+    <div className="stepper">
+      <input className="stepper-input" type="number" inputMode="decimal" value={value ?? ""} placeholder="--" onChange={(e) => onChange(e.target.value)} />
+      <div className="stepper-arrows">
+        <button type="button" className="stepper-arrow" onClick={() => bump(step)} aria-label="Increase">▲</button>
+        <button type="button" className="stepper-arrow" onClick={() => bump(-step)} aria-label="Decrease">▼</button>
+      </div>
+    </div>
+  );
+}
+
+function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10, step = 1 }) {
   const [open, setOpen] = useState(false);
   const hasValue = value !== undefined && value !== null && value !== "";
   return (
@@ -313,7 +334,7 @@ function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10 
             </div>
           ) : (
             <div className="vital-input-wrap">
-              <input type="number" inputMode="decimal" className="vital-input" autoFocus value={value || ""} onChange={(e) => onChange(e.target.value)} />
+              <CardioStepper value={value} onChange={onChange} min={0} max={max} step={step} />
               {unit && <span className="vital-unit">{unit}</span>}
             </div>
           )}
@@ -1110,14 +1131,14 @@ function VitalsSection({ data, setData, system }) {
     <>
       <SectionIntro icon="❤️" title="Baseline Physiological Parameters" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
-        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} />
-        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
-        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} />
-        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
-        {respDetail && <VitalRow label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" />}
-        {respDetail && <VitalRow label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" />}
+        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} max={220} />
+        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} max={250} />
+        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} max={150} />
+        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} max={60} />
+        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} max={100} />
+        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" max={42} step={0.1} />
+        {respDetail && <VitalRow label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" max={15} />}
+        {respDetail && <VitalRow label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" max={100} />}
       </div>
       <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} info={cardiovascularData.pulseRhythm} />
       <Segmented label="Position during measurement" options={["Supine", "Sitting", "Standing"]} value={d.position} onChange={(v) => set("position", v)} />
@@ -2065,6 +2086,11 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-chip-value { flex: 1; text-align: right; font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
         .vital-chip-toggle { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .vital-chip-body { padding: 0 10px 10px; }
+        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 62px; }
+        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 0; width: 100%; min-width: 0; color: ${BRAND.ink}; }
+        .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
+        .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
 
         /* min-width: 0 overrides the flex-item default of min-width: auto --
            without it a wide child (e.g. a text combobox, not just this

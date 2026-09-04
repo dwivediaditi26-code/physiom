@@ -205,6 +205,23 @@ const INFECTION_BUCKET = {
   woundOptions: ["Open", "Closed", "Drain", "Dressing", "Negative-pressure wound therapy"],
 };
 
+/* Region-agnostic buckets for the two condition ids that previously
+   resolved to `null` (no curated options -- manual entry only). Both
+   procedures span every region rather than one joint, so they don't fit
+   the per-region SURGICAL_BUCKETS shape above. */
+const SOFT_TISSUE_MUSCLE_BUCKET = {
+  procedures: ["Muscle/tendon debridement", "Muscle repair (laceration/rupture)", "Fasciotomy", "Fascia release", "Soft-tissue mass excision", "Muscle flap / transfer", "Compartment release"],
+  approaches: ["Longitudinal", "Transverse", "Curvilinear", "Percutaneous"],
+  immobilization: ["Splint", "Brace", "None"],
+};
+
+const DEFORMITY_CORRECTION_BUCKET = {
+  procedures: ["Corrective osteotomy", "Limb lengthening", "External fixator-assisted correction", "Guided growth (hemiepiphysiodesis)", "Angular correction with plate fixation"],
+  approaches: ["Medial", "Lateral", "Anterior", "Percutaneous / minimally invasive"],
+  fixation: ["Plate + screws", "Intramedullary nail", "External fixator (monolateral)", "External fixator (circular/Ilizarov)"],
+  immobilization: ["Cast", "Brace", "None"],
+};
+
 /* Some conditions mean something different depending on the region — e.g.
    "Ligament Reconstruction" is ACL work at the knee but a Broström at the
    ankle. This maps a condition id to the region-appropriate bucket key. */
@@ -249,6 +266,8 @@ const CONDITION_BUCKET = {
 function bucketFor(regionId, conditionId) {
   if (conditionId === "infection") return INFECTION_BUCKET;
   if (conditionId === "amputation") return AMPUTATION_BUCKET;
+  if (conditionId === "softTissueMuscle") return SOFT_TISSUE_MUSCLE_BUCKET;
+  if (conditionId === "deformityCorrection") return DEFORMITY_CORRECTION_BUCKET;
   const override = REGION_OVERRIDE[conditionId];
   if (override && override[regionId]) return (SURGICAL_BUCKETS[regionId] || {})[override[regionId]] || {};
   const key = CONDITION_BUCKET[conditionId];
