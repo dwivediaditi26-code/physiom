@@ -54,9 +54,21 @@ const renderVal = (v) => (v == null ? "" : typeof v === "object" ? Object.values
 
 const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: bg, color });
 
+// Bottom CTA so "Continue"/"Review" is always reachable without scrolling to
+// the end of a long list (2026-09-03, Aditi: "make it like static in screen").
+// When the Care Plan is embedded in the patient profile (floatingCTA), the CTA
+// is a FIXED bar floating above the app's ~64px bottom nav — sticky can't do
+// this for a last-child element (nothing below it to stick against). In the
+// assessment wizard (no floatingCTA) it stays in normal flow so it never
+// overlaps the wizard's own Back/Next footer.
+const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 74, width: "min(680px, calc(100vw - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
+const ctaStyle = (floating, base) => (floating ? { ...base, ...FLOATING_CTA } : base);
+// Extra bottom padding so the last card isn't hidden behind the fixed bar.
+const FLOATING_PAD = { paddingBottom: 84 };
+
 function PhaseNav({ phase, setPhase, counts }) {
   return (
-    <div style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto" }}>
+    <div className="cp-scroll-x" style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
       {PHASES.map((p) => {
         const active = phase === p.id;
         const c = counts[p.id];
@@ -93,7 +105,7 @@ function PrecautionsBanner({ condition, setting }) {
   );
 }
 
-function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting }) {
+function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting, floatingCTA }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [mCat, setMCat] = useState("");
   const [mName, setMName] = useState("");
@@ -175,7 +187,7 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
       )}
 
       {problems.length > 0 && (
-        <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 16 }} onClick={onNext}>
+        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={onNext}>
           Continue to Goals ({problems.length}) →
         </button>
       )}
@@ -206,7 +218,7 @@ function GoalEditor({ goal, onChange, onRemove }) {
   );
 }
 
-function GoalsPhase({ problems, goals, setGoals, onNext, setting }) {
+function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA }) {
   return (
     <>
       <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal." />
@@ -256,7 +268,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting }) {
       })}
 
       {goals.length > 0 && (
-        <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 8 }} onClick={onNext}>
+        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
           Continue to Treatment ({goals.length}) →
         </button>
       )}
@@ -424,7 +436,7 @@ function doseLine(t) {
   return parts.join(" • ");
 }
 
-function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext }) {
+function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, floatingCTA }) {
   const [sheetGoal, setSheetGoal] = useState(null);
   if (!goals.length) return <><SectionIntro icon="🏋" title="Treatment" /><div className="summary-empty">Add at least one goal first.</div></>;
 
@@ -468,7 +480,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext }) 
       })}
 
       {treatments.length > 0 && (
-        <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 8 }} onClick={onNext}>Review treatment plan →</button>
+        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>Review treatment plan →</button>
       )}
 
       {sheetGoal && (
@@ -713,13 +725,13 @@ function ProgressPhase({ goals, sessions }) {
 }
 
 /* ─── ROOT ────────────────────────────────────────────────── */
-export function NeuroCarePlanSection({ data, setData }) {
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA }) {
   const [d, set] = useSectionData(data, setData, "neuroCarePlan");
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
   const treatments = Array.isArray(d.treatments) ? d.treatments : [];
   const sessions = Array.isArray(d.sessions) ? d.sessions : [];
-  const [phase, setPhase] = useState("problems");
+  const [phase, setPhase] = useState(initialPhase || "problems");
 
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
@@ -750,10 +762,13 @@ export function NeuroCarePlanSection({ data, setData }) {
 
   return (
     <>
+      {/* Hide the horizontal scrollbar on scrollable rows — cleaner look
+          (2026-09-03, Aditi: "this grey sliding thing i dont like"). */}
+      <style>{`.cp-scroll-x::-webkit-scrollbar{display:none}`}</style>
       <PhaseNav phase={phase} setPhase={setPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />
-      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => setPhase("goals")} condition={condition} setting={setting} />}
-      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} setting={setting} />}
-      {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => setPhase("plan")} />}
+      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => setPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
+      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
+      {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => setPhase("plan")} floatingCTA={floatingCTA} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
       {phase === "sessions" && <SessionsPhase treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
