@@ -347,6 +347,31 @@ export const neuroExamLibraryData = {
 
   /* ===================== REFLEXES ===================== */
 
+  reflexJawJerk: {
+    title: "Jaw Jerk Reflex (CN V)",
+    icon: "🦷",
+    category: "Learn · Neuro · Reflexes",
+    perform: {
+      images: [null, null, null],
+      caption: "Place a finger across the relaxed, slightly open jaw, tap the finger",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Ask the patient to let their jaw hang open and relaxed, lips slightly parted." },
+        { tone: "blue", label: "🖐️ Technique", text: "Lay your index finger horizontally across the patient's chin, then tap your finger downward with the reflex hammer. Observe for a brief upward jaw closure." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Unlike the limb DTRs, this reflex is normally absent or barely perceptible -- an unusually brisk response indicates a bilateral corticobulbar (UMN) lesion above the mid-pons (e.g. pseudobulbar palsy), which limb reflexes alone can't localise that high." },
+      ],
+    },
+    scaleLabel: "Present/absent grading",
+    scale: { type: "table", rows: [
+      { k: "Absent/minimal", v: "Normal" },
+      { k: "Brisk", v: "Suggests bilateral UMN (corticobulbar) lesion above mid-pons" },
+    ]},
+    interpret: {
+      normal: ["Absent or barely perceptible"],
+      abnormal: ["Clearly brisk jaw closure → suspect pseudobulbar palsy or another bilateral corticobulbar lesion"],
+      note: "Interpret alongside the rest of the cranial nerve and limb DTR findings, not in isolation -- a brisk jaw jerk with brisk limb reflexes and dysarthria/dysphagia is a classic pseudobulbar picture.",
+    },
+  },
+
   reflexBiceps: {
     title: "Biceps Reflex (C5–C6)",
     icon: "💪",
