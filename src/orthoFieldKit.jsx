@@ -188,6 +188,44 @@ export function InfoButton(props) {
   );
 }
 
+// Blocks the explicit "Save Assessment" tap (not the silent 2s auto-save --
+// that keeps running regardless, so in-progress work still survives a
+// crash/tab-close) when Patient Name and/or Age are still blank. Without a
+// name, AppFull.jsx's "create a patient row once dem_name appears" effect
+// never fires, so the whole assessment silently has nowhere to be filed
+// under -- this stops that at the one moment the therapist actually
+// intends to finish, rather than nagging on every keystroke.
+export function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
+  const label = missing.length > 1 ? "name and age" : missing[0];
+  return createPortal(
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="missing-dem-icon">📋</div>
+        <div className="missing-dem-title">Patient {label} needed</div>
+        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
+        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
+          Go to Patient Info
+        </button>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// True if patient name/age are missing from the given demographics-shaped
+// object (accepts either {name,age,...} (IPD/Post-op's caseInfo) or the
+// same shape under a different section key (Outpatient's demographics) --
+// callers just pass whichever section object they already have).
+export function missingDemographicsFields(dem) {
+  const missing = [];
+  if (!String(dem?.name || "").trim()) missing.push("name");
+  if (!String(dem?.age || "").trim()) missing.push("age");
+  return missing;
+}
+
 export function FieldShell({ label, hint, howTo, children }) {
   return (
     <div className="field-block">

@@ -255,9 +255,53 @@ function splitDetailToChecks(detail) {
   return detail.split(/[;,]/).map((s) => s.trim()).filter((s) => s.length > 2);
 }
 
+const MODULE_INFO = {
+  observation: { why: "Systematic visual scan before hands-on assessment to identify posture deviations, swelling, muscle wasting, skin changes, and movement patterns that point toward the suspected condition.", what: ["Muscle guarding or spasm patterns", "Swelling, bruising, or skin changes", "Resting limb posture and alignment", "Willingness to move / antalgic behaviour"] },
+  posture: { why: "Sustained postural faults load specific structures and maintain pain cycles. Identifying them guides corrective exercise and ergonomic advice.", what: ["Static alignment in standing and sitting", "Regional vs global postural deviation", "Load-transfer patterns through the kinetic chain"] },
+  fma: { why: "Functional movement screening identifies movement-system impairments that standard ROM/MMT may miss — compensations, motor-control deficits, and movement-pattern faults.", what: ["Quality of movement patterns under load", "Asymmetries between sides", "Compensatory strategies during functional tasks", "Motor-control deficits vs mobility deficits"] },
+  cyriax_full: { why: "Cyriax selective-tissue-tension testing systematically differentiates contractile from non-contractile structures by comparing active, passive, and resisted movements.", what: ["Capsular vs non-capsular restriction patterns", "Contractile vs inert tissue involvement", "End-feel classification for each movement", "Pain-resistance sequence"] },
+  nkt: { why: "Clinical Prediction Analysis identifies neuromuscular compensation patterns — which muscles are facilitated (overactive) vs inhibited (underactive) — to guide corrective activation.", what: ["Facilitated vs inhibited muscle pairs", "Compensation patterns across regions", "Motor-control retraining priorities"] },
+  kinetic: { why: "The kinetic chain screen assesses mobility and stability at each joint in the movement chain, identifying the source of dysfunction that may be remote from the site of symptoms.", what: ["Joint-by-joint mobility/stability balance", "Regional interdependence patterns", "Proximal-to-distal force-transfer efficiency"] },
+  fascia: { why: "Fascial-line assessment identifies myofascial continuity restrictions that may refer symptoms or limit movement along anatomical trains.", what: ["Superficial vs deep fascial restrictions", "Myofascial line involvement (e.g. superficial back line, lateral line)", "Fascial glide and extensibility"] },
+  outcome: { why: "Standardised outcome measures track patient progress objectively and support evidence-based clinical decision-making.", what: ["Baseline severity scoring", "Minimal clinically important difference (MCID) targets", "Patient-reported vs clinician-measured outcomes"] },
+  palpation: { why: "Targeted palpation confirms tissue-level pathology suggested by the movement exam — tenderness, texture changes, temperature, and structural integrity.", what: ["Point tenderness localisation", "Tissue texture and tone abnormalities", "Temperature and swelling assessment", "Structural integrity and crepitus"] },
+  special: { why: "Specific orthopaedic tests confirm or rule out the suspected diagnosis with known sensitivity and specificity values.", what: ["Diagnostic accuracy (sensitivity/specificity)", "Cluster testing for improved confidence", "Positive vs negative likelihood ratios"] },
+  rom: { why: "Range-of-motion assessment quantifies movement restriction and identifies the pattern of limitation to guide treatment.", what: ["Active vs passive ROM comparison", "Painful arc identification", "Capsular vs non-capsular patterns", "End-feel classification"] },
+};
+
+function ModuleInfoSheet({ open, onClose, moduleKey, label, detail }) {
+  const info = MODULE_INFO[moduleKey];
+  return (
+    <Sheet open={open} onClose={onClose} eyebrow="ABOUT THIS ASSESSMENT" title={label}>
+      {info ? (
+        <>
+          <p className="obj-why-text">{info.why}</p>
+          {info.what?.length > 0 && (
+            <>
+              <div className="subheading" style={{ marginTop: 4 }}>What it tells you</div>
+              <ul className="obj-what-list">
+                {info.what.map((w, i) => <li key={i}>{w}</li>)}
+              </ul>
+            </>
+          )}
+          {detail && (
+            <>
+              <div className="subheading">Condition-specific focus</div>
+              <p className="obj-why-text">{detail}</p>
+            </>
+          )}
+        </>
+      ) : (
+        <Hint>No additional reference notes for this one yet.</Hint>
+      )}
+    </Sheet>
+  );
+}
+
 function ConditionModuleCards({ modules, conditionId, data, setData }) {
   const [modChecks, setModCheck] = useSectionData(data, setData, "moduleChecks");
   const [closedKeys, setClosedKeys] = useState({});
+  const [infoKey, setInfoKey] = useState(null);
   if (!modules || modules.length === 0) return null;
   const cid = conditionId || "default";
 
@@ -272,6 +316,8 @@ function ConditionModuleCards({ modules, conditionId, data, setData }) {
     setModCheck(k, !modChecks[k]);
   }
 
+  const infoModule = infoKey ? modules.find((m) => m.key === infoKey) : null;
+
   return (
     <div className="cmod-list">
       {modules.map((m) => {
@@ -284,6 +330,7 @@ function ConditionModuleCards({ modules, conditionId, data, setData }) {
             <button type="button" className="cmod-header" onClick={() => toggleOpen(m.key)}>
               <span className="cmod-dot" style={{ background: dotColor }} />
               <span className="cmod-label">{m.label}</span>
+              <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoKey(m.key); }} aria-label={`About ${m.label}`}>ⓘ</button>
               <span className={"cmod-chev" + (isOpen ? " open" : "")}>⌄</span>
             </button>
             {isOpen && (
@@ -307,6 +354,7 @@ function ConditionModuleCards({ modules, conditionId, data, setData }) {
           </div>
         );
       })}
+      <ModuleInfoSheet open={!!infoKey} onClose={() => setInfoKey(null)} moduleKey={infoKey} label={infoModule?.label || ""} detail={infoModule?.detail || ""} />
     </div>
   );
 }

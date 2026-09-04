@@ -30,6 +30,45 @@ const BRAND = {
   white: "#FFFFFF",
 };
 
+// True if patient name/age are missing from the Demographics section.
+function missingDemographicsFields(dem) {
+  const missing = [];
+  if (!String(dem?.name || "").trim()) missing.push("name");
+  if (!String(dem?.age || "").trim()) missing.push("age");
+  return missing;
+}
+
+// Blocks the explicit "Save Assessment" tap (not the continuous background
+// autosave -- that keeps running regardless, so in-progress work still
+// survives a crash/tab-close) when Patient Name and/or Age are still
+// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
+// appears" effect never fires, so the whole assessment silently has
+// nowhere to be filed under -- this stops that at the one moment the
+// therapist actually intends to finish, rather than nagging on every
+// keystroke. Same component/copy as orthoFieldKit.jsx's/
+// NeurologicalAssessment.jsx's MissingDemographicsModal, duplicated
+// rather than cross-imported since this module doesn't otherwise share
+// components with those files.
+function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
+  const label = missing.length > 1 ? "name and age" : missing[0];
+  return createPortal(
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="missing-dem-icon">📋</div>
+        <div className="missing-dem-title">Patient {label} needed</div>
+        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
+        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
+          Go to Patient Info
+        </button>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ============================================================
    STATIC DATA — Step 1 / Step 2 selectors
    5 settings × 3 systems = 15 pathway templates
@@ -53,6 +92,18 @@ function rehabSubLabel(system) {
   if (system === "resp") return "Pulmonary Rehabilitation";
   if (system === "combined") return "Cardiopulmonary Rehabilitation";
   return "";
+}
+
+// Setting + system, joined for display -- e.g. "Inpatient · Cardiovascular".
+// Exported so SpecialtyPatientProfile.jsx can show it right in the
+// Assessment card's header, the same way Ortho's own
+// [orthoParsed.regions, orthoParsed.condition] subtitle already works,
+// instead of only surfacing this buried inside SummarySection's own
+// internal heading.
+export function cardioAssessmentSubtitle(meta = {}) {
+  const settingLabel = SETTINGS.find((s) => s.id === meta.setting)?.label;
+  const systemLabel = meta.setting === "rehab" && meta.system ? rehabSubLabel(meta.system) : SYSTEMS.find((s) => s.id === meta.system)?.label;
+  return [settingLabel, systemLabel].filter(Boolean).join(" · ");
 }
 
 const STEP_META = [
@@ -1757,6 +1808,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   // Re-hydrate when switching to a different patient -- deliberately keyed
   // on activePatientId only (not on every patientData change), otherwise
@@ -2138,6 +2190,12 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 1070; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .missing-dem-panel { position: relative; z-index: 1071; background: #fff; border-radius: 20px; padding: 24px 22px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 24px 60px rgba(40,10,90,.35); }
+        .missing-dem-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .missing-dem-title { font-weight: 800; font-size: 17px; color: ${BRAND.ink}; margin-bottom: 8px; text-transform: capitalize; }
+        .missing-dem-body { font-size: 13px; color: ${BRAND.gray}; line-height: 1.5; margin-bottom: 18px; }
       `}</style>
 
       <div className="app-inner">
@@ -2257,7 +2315,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
               <button className="ghost-btn" onClick={() => setStep(2)}>
                 ✏️ Edit More
               </button>
-              <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  const missing = missingDemographicsFields(data.demographics);
+                  if (missing.length) { setMissingDemFields(missing); return; }
+                  onNav?.("clinical");
+                }}
+              >
                 ✅ Save Assessment
               </button>
             </>
@@ -2269,6 +2334,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); setStep(2); }}
+          />
+        )}
         {reviewOpen && (
           <div className="ct-modal">
             <div className="ct-modal-header">

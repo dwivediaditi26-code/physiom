@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB } from "./sharedClinicalData.js";
 import {
@@ -7,6 +7,36 @@ import {
   conditionLabel, settingLabel, conditionSettingPrecautions,
   recommendInterventions, goalProgress,
 } from "./neuroClinicalKnowledge.js";
+
+/* ============================================================
+   KNOWLEDGE INJECTION (2026-09-04) — the Care Plan UI is shared
+   between specialties; only the clinical knowledge changes (Aditi:
+   "ui will be same as neuro but main knowledge is changed"). The root
+   CarePlanSection takes a `knowledge` module and provides it through
+   context so every phase uses the right specialty's rules engine,
+   references, categories and exercise library. NeuroCarePlanSection is
+   a thin wrapper supplying the neuro knowledge; OrthoCarePlanSection
+   (orthoClinicalKnowledge.js) supplies ortho's — identical UX.
+
+   A `knowledge` object provides:
+     deriveProblems(data) buildGoalsForProblem(id,baseline,setting)
+     recommendInterventions(problemId) problemById(id) categoryLabel(id)
+     PROBLEM_CATEGORIES REFERENCES ASSIST_LADDER goalProgress(goal,entries)
+     conditionLabel(id) settingLabel(id) conditionSettingPrecautions(c,s)
+     exerciseCategories  // { [categoryName]: [exercise,...] }
+   ============================================================ */
+const KBContext = createContext(null);
+const useKB = () => useContext(KBContext);
+
+// The neuro knowledge module, packaged for injection. Ortho supplies its
+// own object of the same shape.
+export const NEURO_KNOWLEDGE = {
+  deriveProblems: deriveNeuroProblems,
+  buildGoalsForProblem, recommendInterventions, problemById, categoryLabel,
+  PROBLEM_CATEGORIES, REFERENCES, ASSIST_LADDER, goalProgress,
+  conditionLabel, settingLabel, conditionSettingPrecautions,
+  exerciseCategories: EXERCISE_DB.neurological.categories,
+};
 
 /* ============================================================
    NEURO CARE PLAN (2026-09-02) — the clinical spine of the Neuro
@@ -87,10 +117,11 @@ function PhaseNav({ phase, setPhase, counts }) {
 
 /* ─── 1. PROBLEMS ─────────────────────────────────────────── */
 function PrecautionsBanner({ condition, setting }) {
-  const items = conditionSettingPrecautions(condition, setting);
+  const kb = useKB();
+  const items = kb.conditionSettingPrecautions(condition, setting);
   if (!items.length) return null;
-  const cLabel = conditionLabel(condition);
-  const sLabel = settingLabel(setting);
+  const cLabel = kb.conditionLabel(condition);
+  const sLabel = kb.settingLabel(setting);
   return (
     <div className="tech-card" style={{ borderColor: "#f59e0b", background: "#fffbeb", marginBottom: 12 }}>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>
@@ -106,6 +137,8 @@ function PrecautionsBanner({ condition, setting }) {
 }
 
 function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting, floatingCTA }) {
+  const kb = useKB();
+  const { categoryLabel, conditionLabel, settingLabel, PROBLEM_CATEGORIES } = kb;
   const [manualOpen, setManualOpen] = useState(false);
   const [mCat, setMCat] = useState("");
   const [mName, setMName] = useState("");
@@ -232,6 +265,7 @@ function GoalEditor({ goal, onChange, onRemove }) {
 }
 
 function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA }) {
+  const { buildGoalsForProblem } = useKB();
   return (
     <>
       <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal." />
@@ -290,16 +324,17 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
 }
 
 /* ─── 3. TREATMENT (goal-wise) ────────────────────────────── */
-const NEURO_CATS = Object.keys(EXERCISE_DB.neurological.categories);
-
 function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose, fullScreen }) {
+  const kb = useKB();
+  const { ASSIST_LADDER, recommendInterventions, exerciseCategories } = kb;
+  const cats = useMemo(() => Object.keys(exerciseCategories), [exerciseCategories]);
   const [cat, setCat] = useState(null);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(null);
   const [dose, setDose] = useState(null);
   const [linked, setLinked] = useState([goal.id]);
 
-  const all = useMemo(() => Object.entries(EXERCISE_DB.neurological.categories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), []);
+  const all = useMemo(() => Object.entries(exerciseCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [exerciseCategories]);
 
   // Ranked, book-referenced suggestions for the problem behind this goal.
   // Each recommendation's exId is resolved to the real exercise here; the
@@ -309,14 +344,14 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
     return recommendInterventions(problemId)
       .map((r) => ({ ...r, ex: all.find((e) => e.id === r.exId) }))
       .filter((r) => r.ex);
-  }, [problemId, all]);
+  }, [problemId, all, recommendInterventions]);
   const results = search.trim()
     ? all.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
     : cat ? all.filter((e) => e._cat === cat) : [];
 
   // Categories the problem behind this goal declares as clinically
   // relevant come first; the rest stay available but below.
-  const ordered = [...relevantCats.filter((c) => NEURO_CATS.includes(c)), ...NEURO_CATS.filter((c) => !relevantCats.includes(c))];
+  const ordered = [...relevantCats.filter((c) => cats.includes(c)), ...cats.filter((c) => !relevantCats.includes(c))];
 
   const startDose = (ex) => {
     setPicked(ex);
@@ -521,6 +556,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
 
 /* ─── 4. PLAN OVERVIEW ────────────────────────────────────── */
 function PlanPhase({ problems, goals, treatments }) {
+  const { REFERENCES } = useKB();
   const usedRefs = [...new Set(problems.flatMap((p) => p.refs || []))];
   return (
     <>
@@ -699,6 +735,7 @@ function entriesForGoal(sessions, goalId) {
 }
 
 function ProgressPhase({ goals, sessions }) {
+  const { goalProgress } = useKB();
   return (
     <>
       <SectionIntro icon="📈" title="Progress" sub="Derived automatically from your session data — no separate progress notes needed." />
@@ -738,9 +775,12 @@ function ProgressPhase({ goals, sessions }) {
   );
 }
 
-/* ─── ROOT ────────────────────────────────────────────────── */
-export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA }) {
-  const [d, set] = useSectionData(data, setData, "neuroCarePlan");
+/* ─── ROOT (generic, knowledge-injected) ──────────────────── */
+// `knowledge` is the specialty's rules engine (NEURO_KNOWLEDGE or ortho's);
+// `sectionKey` is where the care plan lives on the data object
+// ("neuroCarePlan" / "orthoCarePlan"). Everything else is identical UX.
+export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA }) {
+  const [d, set] = useSectionData(data, setData, sectionKey);
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
   const treatments = Array.isArray(d.treatments) ? d.treatments : [];
@@ -749,7 +789,7 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
 
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
-  const suggested = useMemo(() => deriveNeuroProblems(data), [data]);
+  const suggested = useMemo(() => knowledge.deriveProblems(data), [data, knowledge]);
   const condition = data.meta?.condition || null;
   const setting = data.meta?.setting || null;
 
@@ -775,7 +815,7 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
   }, [suggested]);
 
   return (
-    <>
+    <KBContext.Provider value={knowledge}>
       {/* Hide the horizontal scrollbar on scrollable rows — cleaner look
           (2026-09-03, Aditi: "this grey sliding thing i dont like"). */}
       <style>{`.cp-scroll-x::-webkit-scrollbar{display:none}`}</style>
@@ -786,8 +826,13 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
       {phase === "sessions" && <SessionsPhase treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
-    </>
+    </KBContext.Provider>
   );
+}
+
+// Thin wrapper: the Neuro Care Plan is CarePlanSection + neuro knowledge.
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA }) {
+  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} />;
 }
 
 /* formatters[stepId] contract for NeurologicalAssessment.jsx's
