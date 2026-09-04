@@ -222,6 +222,46 @@ function ConditionMatchRow({ conditions, activeId, onSelect }) {
   );
 }
 
+const MODULE_ICON = {
+  observation: "👁️",
+  posture: "🧍",
+  fma: "🏃",
+  special: "🔬",
+  cyriax_full: "🎯",
+  nkt: "🧠",
+  kinetic: "🔗",
+  rom: "📐",
+  palpation: "🤲",
+  fascia: "🧬",
+  outcome: "📊",
+};
+
+function ConditionModuleCards({ modules }) {
+  const [openKey, setOpenKey] = useState(null);
+  if (!modules || modules.length === 0) return null;
+  return (
+    <div className="cmod-list">
+      {modules.map((m) => {
+        const isOpen = openKey === m.key;
+        return (
+          <div key={m.key} className={"cmod-card" + (isOpen ? " cmod-card-open" : "")}>
+            <button type="button" className="cmod-header" onClick={() => setOpenKey(isOpen ? null : m.key)}>
+              <span className="cmod-icon">{MODULE_ICON[m.key] || "📋"}</span>
+              <span className="cmod-label">{m.label}</span>
+              <span className={"cmod-chev" + (isOpen ? " open" : "")}>⌄</span>
+            </button>
+            {isOpen && (
+              <div className="cmod-body">
+                <div className="cmod-detail">{m.detail}</div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 
 function ObjectiveCard({ id, label, reason, suggested, active, onToggle, onJump }) {
   const [infoOpen, setInfoOpen] = useState(false);
@@ -943,6 +983,9 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         <>
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
+          {activeConditionObj?.assessmentModules?.length > 0 && (
+            <ConditionModuleCards modules={activeConditionObj.assessmentModules} />
+          )}
         </>
       ) : selectedRegions.length > 0 && !engineMatch ? (
         <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, Shoulder, Hip, Knee, Ankle/Foot, and Elbow/Wrist/Hand regions.</Hint>
