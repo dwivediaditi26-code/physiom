@@ -641,17 +641,22 @@ export function orthoStyles() {
         .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
 
-        /* Condition-specific assessment module guidance cards (Option B) */
-        .cmod-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+        /* Condition-specific assessment module cards — interactive checkboxes */
+        .cmod-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
         .cmod-card { border: 1.5px solid ${BRAND.border}; border-radius: 10px; background: #fff; overflow: hidden; }
         .cmod-card-open { border-color: ${BRAND.purple}; }
         .cmod-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; width: 100%; border: none; background: none; cursor: pointer; font-family: inherit; text-align: left; }
-        .cmod-icon { font-size: 14px; flex-shrink: 0; }
+        .cmod-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .cmod-label { flex: 1; font-size: 13px; font-weight: 600; color: ${BRAND.ink}; }
         .cmod-chev { font-size: 16px; color: ${BRAND.grayLight}; transition: transform .15s; }
         .cmod-chev.open { transform: rotate(180deg); }
         .cmod-body { padding: 0 12px 12px; }
-        .cmod-detail { font-size: 12.5px; line-height: 1.55; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; border-left: 3px solid ${BRAND.purple}; border-radius: 6px; padding: 10px 12px; }
+        .cmod-detail { font-size: 12.5px; line-height: 1.55; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; border-left: 3px solid ${BRAND.purple}; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+        .cmod-detail-title { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: ${BRAND.purple}; text-transform: uppercase; margin-bottom: 4px; }
+        .cmod-checks { display: flex; flex-direction: column; gap: 6px; }
+        .cmod-check-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 13px; color: ${BRAND.ink}; line-height: 1.4; padding: 2px 0; }
+        .cmod-checkbox { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: ${BRAND.purple}; cursor: pointer; border-radius: 3px; }
+        .cmod-check-text { flex: 1; padding-top: 1px; }
 
         /* Findings summary -- collapsible drawer built purely by scanning
            already-answered rom/mmt/specialTests/observation data for a

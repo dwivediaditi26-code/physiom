@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
 import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
@@ -222,37 +222,86 @@ function ConditionMatchRow({ conditions, activeId, onSelect }) {
   );
 }
 
-const MODULE_ICON = {
-  observation: "👁️",
-  posture: "🧍",
-  fma: "🏃",
-  special: "🔬",
-  cyriax_full: "🎯",
-  nkt: "🧠",
-  kinetic: "🔗",
-  rom: "📐",
-  palpation: "🤲",
-  fascia: "🧬",
-  outcome: "📊",
+const MODULE_DOT = {
+  observation: "#7C3AED",
+  posture: "#3B82F6",
+  fma: "#16A34A",
+  cyriax_full: "#0D9488",
+  nkt: "#D97706",
+  kinetic: "#4F46E5",
+  fascia: "#EC4899",
+  outcome: "#6B7280",
+  palpation: "#DC2626",
+  special: "#8B5CF6",
+  rom: "#059669",
 };
 
-function ConditionModuleCards({ modules }) {
-  const [openKey, setOpenKey] = useState(null);
+const MODULE_TITLE = {
+  observation: "WHAT TO LOOK FOR",
+  posture: "POSTURE FOCUS",
+  fma: "FUNCTIONAL SCREEN",
+  cyriax_full: "SELECTIVE TENSION",
+  nkt: "NEUROMUSCULAR TESTS",
+  kinetic: "CHAIN LINKS",
+  fascia: "FASCIAL LINES",
+  outcome: "OUTCOME MEASURES",
+  palpation: "FOCUS ZONES",
+  special: "KEY TESTS",
+  rom: "ROM FOCUS",
+};
+
+function splitDetailToChecks(detail) {
+  if (!detail) return [];
+  return detail.split(/[;,]/).map((s) => s.trim()).filter((s) => s.length > 2);
+}
+
+function ConditionModuleCards({ modules, conditionId, data, setData }) {
+  const [modChecks, setModCheck] = useSectionData(data, setData, "moduleChecks");
+  const [closedKeys, setClosedKeys] = useState({});
   if (!modules || modules.length === 0) return null;
+  const cid = conditionId || "default";
+
+  function toggleOpen(key) {
+    setClosedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+  function isChecked(modKey, idx) {
+    return !!modChecks[`${cid}_${modKey}_${idx}`];
+  }
+  function toggleCheck(modKey, idx) {
+    const k = `${cid}_${modKey}_${idx}`;
+    setModCheck(k, !modChecks[k]);
+  }
+
   return (
     <div className="cmod-list">
       {modules.map((m) => {
-        const isOpen = openKey === m.key;
+        const isOpen = !closedKeys[m.key];
+        const checks = splitDetailToChecks(m.detail);
+        const dotColor = MODULE_DOT[m.key] || BRAND.purple;
+        const title = MODULE_TITLE[m.key] || m.label.toUpperCase();
         return (
           <div key={m.key} className={"cmod-card" + (isOpen ? " cmod-card-open" : "")}>
-            <button type="button" className="cmod-header" onClick={() => setOpenKey(isOpen ? null : m.key)}>
-              <span className="cmod-icon">{MODULE_ICON[m.key] || "📋"}</span>
+            <button type="button" className="cmod-header" onClick={() => toggleOpen(m.key)}>
+              <span className="cmod-dot" style={{ background: dotColor }} />
               <span className="cmod-label">{m.label}</span>
               <span className={"cmod-chev" + (isOpen ? " open" : "")}>⌄</span>
             </button>
             {isOpen && (
               <div className="cmod-body">
-                <div className="cmod-detail">{m.detail}</div>
+                <div className="cmod-detail">
+                  <div className="cmod-detail-title">{title}</div>
+                  {m.detail}
+                </div>
+                {checks.length > 0 && (
+                  <div className="cmod-checks">
+                    {checks.map((item, idx) => (
+                      <label key={idx} className="cmod-check-row">
+                        <input type="checkbox" checked={isChecked(m.key, idx)} onChange={() => toggleCheck(m.key, idx)} className="cmod-checkbox" />
+                        <span className="cmod-check-text">{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -984,7 +1033,7 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
           {activeConditionObj?.assessmentModules?.length > 0 && (
-            <ConditionModuleCards modules={activeConditionObj.assessmentModules} />
+            <ConditionModuleCards modules={activeConditionObj.assessmentModules} conditionId={activeConditionIdOrDefault} data={data} setData={setData} />
           )}
         </>
       ) : selectedRegions.length > 0 && !engineMatch ? (
