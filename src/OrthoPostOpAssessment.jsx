@@ -17,6 +17,7 @@ import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOut
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
+import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -74,7 +75,7 @@ const INCISION_TYPES_BY_CONDITION = {
 const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "Anterolateral", "Posterolateral", "Percutaneous / minimally invasive", "Arthroscopic portal(s)"];
 
 /* Always present for every post-op patient, regardless of surgery type. */
-const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", "review"];
+const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", "carePlan", "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
 const OPTIONAL_IDS = ["jointMobility", "specialTests", "neuroScreen", "residualLimb", "prosthesis"];
 
@@ -98,6 +99,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
+  "carePlan",
   "review",
 ];
 
@@ -121,6 +123,7 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
+  carePlan: { icon: "🎯", label: "Problems, Goals & Plan" },
   review: { icon: "✅", label: "Final Review" },
 };
 
@@ -460,6 +463,12 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "carePlan" && (
+            <>
+              <style>{orthoStyles()}</style>
+              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="postop" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+            </>
+          )}
           {current.id === "review" && (
             <>
               <AssessmentSummary

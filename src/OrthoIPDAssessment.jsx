@@ -19,6 +19,7 @@ import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOut
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
+import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -58,7 +59,7 @@ export const IPD_CONDITIONS = [
 ];
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
-const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "review"];
+const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "carePlan", "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
@@ -83,6 +84,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
+  "carePlan",
   "review",
 ];
 
@@ -108,6 +110,7 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
+  carePlan: { icon: "🎯", label: "Problems, Goals & Plan" },
   review: { icon: "✅", label: "Final Review" },
 };
 
@@ -412,6 +415,12 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "carePlan" && (
+            <>
+              <style>{orthoStyles()}</style>
+              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="ipd" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+            </>
+          )}
           {current.id === "review" && (
             <>
               <AssessmentSummary
