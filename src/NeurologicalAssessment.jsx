@@ -455,6 +455,13 @@ const SENSORY_GRADES = ["Intact", "Impaired", "Absent", "Hyperesthesia", "Parest
 const BALANCE_GRADES = ["Normal", "Good", "Fair", "Poor", "Absent"];
 const TONE_TYPES = ["Normal", "Hypotonia", "Flaccidity", "Hypertonia", "Spasticity", "Rigidity (cogwheel)", "Rigidity (lead-pipe)", "Variable / fluctuating"];
 
+// The 10 ISNCSCI/ASIA key muscle functions -- shared by the generic Motor
+// Examination step's own Myotomal Strength Screen (any suspected
+// radiculopathy) and the Spinal Cord Injury condition library's full
+// ASIA exam below, so the two don't drift out of sync with each other.
+const MYOTOME_ROWS = ["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"];
+const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExamLibraryData["myo" + r]]));
+
 /* ============================================================
    ADD-ON LIBRARY — condition-specific items applied ON TOP of
    the core exam, matching O'Sullivan's "core exam + condition
@@ -685,23 +692,12 @@ const NEURO_RENDERERS = {
   [neuroId("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")]: (d, set) => (
     <LRGrid
       label="Key myotomes (MMT 0-5)"
-      rows={["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"]}
+      rows={MYOTOME_ROWS}
       options={["5", "4", "3", "2", "1", "0"]}
       value={d.myotomes || {}}
       onChange={(v) => set("myotomes", v)}
       info={condInfo("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")}
-      rowInfo={{
-        "C5 Elbow flexors": neuroExamLibraryData["myoC5 Elbow flexors"],
-        "C6 Wrist extensors": neuroExamLibraryData["myoC6 Wrist extensors"],
-        "C7 Elbow extensors": neuroExamLibraryData["myoC7 Elbow extensors"],
-        "C8 Finger flexors": neuroExamLibraryData["myoC8 Finger flexors"],
-        "T1 Finger abductors": neuroExamLibraryData["myoT1 Finger abductors"],
-        "L2 Hip flexors": neuroExamLibraryData["myoL2 Hip flexors"],
-        "L3 Knee extensors": neuroExamLibraryData["myoL3 Knee extensors"],
-        "L4 Ankle dorsiflexors": neuroExamLibraryData["myoL4 Ankle dorsiflexors"],
-        "L5 Great toe extensors": neuroExamLibraryData["myoL5 Great toe extensors"],
-        "S1 Ankle plantarflexors": neuroExamLibraryData["myoS1 Ankle plantarflexors"],
-      }}
+      rowInfo={MYOTOME_ROW_INFO}
     />
   ),
   [neuroId("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")]: (d, set) => (
@@ -1184,24 +1180,67 @@ function SensorySection({ data, setData }) {
   );
 }
 
-/* ---------- Motor Examination ---------- */
+/* ---------- Motor Examination ----------
+   Restructured (2026-09-02, Aditi -- "don't treat MMT as the neurological
+   motor examination") from one flat, unlabelled MMT list mixing cervical/
+   shoulder/hip/knee rows together, into the components a real neuro motor
+   exam actually separates: muscle bulk (trophic status, not strength),
+   anatomical Strength/MMT grouped by region, a general Myotomal Strength
+   Screen (nerve-root level, not muscle strength -- distinct question from
+   MMT above, useful for any suspected radiculopathy, not just confirmed
+   SCI), and a properly-detailed Involuntary Movements block. Synergy
+   pattern and Selective Motor Control already exist as their own
+   Stroke-condition library items (see NEURO_RENDERERS above) rather than
+   being duplicated here -- they're condition-specific, unlike everything
+   in this generic step which every neuro patient gets regardless of
+   diagnosis. Tone stays its own step (ToneReflexSection) since it already
+   travels everywhere Motor does (see DOMAIN_STEP libraryItems grouping). */
+const MMT_OPTIONS = MMT_GRADES.map((g) => g.split(" - ")[0]);
+
 function MotorSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "motor");
   return (
     <>
       <SectionIntro icon="💪" title="Motor Examination" />
+
+      <div className="subheading">Muscle bulk</div>
       <LRGrid
-        label="Manual muscle testing (MMT)"
-        rows={["Shoulder flexion", "Elbow flexion", "Elbow extension", "Wrist extension", "Grip strength", "Hip flexion", "Knee extension", "Knee flexion", "Ankle dorsiflexion", "Ankle plantarflexion"]}
-        options={MMT_GRADES.map((g) => g.split(" - ")[0])}
-        value={d.mmt || {}}
-        onChange={(v) => set("mmt", v)}
-        howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction."
+        label="Bulk by region"
+        rows={["Shoulder girdle", "Arm", "Forearm", "Hand", "Thigh", "Leg", "Foot"]}
+        options={["Normal", "Reduced", "Increased"]}
+        value={d.bulk || {}}
+        onChange={(v) => set("bulk", v)}
+        howTo="Trophic status of the muscle, not strength -- look for atrophy, hypertrophy, wasting or asymmetry between the two sides."
       />
-      <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
-      <SelectField label="Muscle bulk" type="single" options={["Normal", "Atrophy present", "Hypertrophy present", "Asymmetrical"]} value={d.bulk} onChange={(v) => set("bulk", v)} />
+      <SelectField label="Asymmetry" type="single" options={["No", "Yes"]} value={d.bulkAsymmetry} onChange={(v) => set("bulkAsymmetry", v)} />
       <SelectField label="Fasciculations" type="single" options={["None", "Present"]} value={d.fasciculations} onChange={(v) => set("fasciculations", v)} />
-      <SelectField label="Involuntary movements" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
+
+      <div className="subheading">Strength / MMT</div>
+      <LRGrid label="Neck" rows={["Neck flexion", "Neck extension", "Neck rotation", "Neck lateral flexion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction." />
+      <LRGrid label="Shoulder" rows={["Shoulder flexion", "Shoulder extension", "Shoulder abduction", "Shoulder adduction", "Shoulder internal rotation", "Shoulder external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Elbow / forearm" rows={["Elbow flexion", "Elbow extension", "Forearm pronation", "Forearm supination"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Wrist / hand" rows={["Wrist flexion", "Wrist extension", "Finger flexion", "Finger extension", "Finger abduction", "Grip strength"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Hip" rows={["Hip flexion", "Hip extension", "Hip abduction", "Hip adduction", "Hip internal rotation", "Hip external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Knee / ankle" rows={["Knee flexion", "Knee extension", "Ankle dorsiflexion", "Ankle plantarflexion", "Ankle inversion", "Ankle eversion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
+
+      <div className="subheading">Myotomal strength screen</div>
+      <LRGrid
+        label="Key nerve-root muscles (0-5)"
+        rows={MYOTOME_ROWS}
+        options={["5", "4", "3", "2", "1", "0"]}
+        value={d.myotomalScreen || {}}
+        onChange={(v) => set("myotomalScreen", v)}
+        howTo="A different question from the anatomical MMT above: is there weakness at a single spinal nerve-root level? Useful for any suspected cervical/lumbar radiculopathy. For a confirmed spinal cord injury, add the full ISNCSCI/ASIA exam from the Spinal Cord Injury condition library instead -- it also grades sensory key points and derives the AIS classification."
+        rowInfo={MYOTOME_ROW_INFO}
+      />
+
+      <div className="subheading">Involuntary movements</div>
+      <SelectField label="Type" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics", "Other"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
+      <SelectField label="Location" type="multi" options={["Face", "Upper limb", "Lower limb", "Trunk", "Generalized"]} value={d.involuntaryLocation} onChange={(v) => set("involuntaryLocation", v)} />
+      <SelectField label="Side" type="single" options={["Right", "Left", "Bilateral"]} value={d.involuntarySide} onChange={(v) => set("involuntarySide", v)} />
+      <SelectField label="Context" type="single" options={["At rest", "With movement", "Both"]} value={d.involuntaryContext} onChange={(v) => set("involuntaryContext", v)} />
+
       <TextArea label="Additional motor notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
