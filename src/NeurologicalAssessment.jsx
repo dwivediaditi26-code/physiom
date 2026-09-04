@@ -1294,15 +1294,30 @@ function ToneReflexSection({ data, setData }) {
   );
 }
 
-/* ---------- Coordination ---------- */
+/* ---------- Coordination ----------
+   Non-equilibrium tests (O'Sullivan's Physical Rehabilitation framework:
+   sitting-based fine/gross motor tests, distinct from the standing
+   equilibrium tests that live in BalanceSection below). Added the Rebound
+   (Holmes-Stewart) test, which was missing entirely -- a standard
+   cerebellar-vs-spasticity sign alongside finger-to-nose/heel-to-shin/RAM,
+   not something to fold into "additional notes". */
 function CoordinationSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "coordination");
   return (
     <>
-      <SectionIntro icon="🎯" title="Coordination" />
+      <SectionIntro icon="🎯" title="Coordination" sub="Non-equilibrium (sitting) tests" />
       <LRGrid label="Finger-to-nose" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysmetria (past-pointing)", "Intention tremor", "Unable to perform"]} value={d.fingerNose || {}} onChange={(v) => set("fingerNose", v)} info={neuroExamLibraryData.fingerNose} />
       <LRGrid label="Heel-to-shin" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Ataxic/uncoordinated", "Unable to perform"]} value={d.heelShin || {}} onChange={(v) => set("heelShin", v)} info={neuroExamLibraryData.heelShin} />
       <LRGrid label="Rapid alternating movements" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysdiadochokinesia (slow/irregular)", "Unable to perform"]} value={d.ram || {}} onChange={(v) => set("ram", v)} info={neuroExamLibraryData.ram} />
+      <LRGrid
+        label="Rebound test (Holmes-Stewart)"
+        rows={["Right", "Left"]}
+        columns={["Result"]}
+        options={["Normal - opposing muscle checks the movement", "Positive - limb rebounds, unable to check movement", "Not tested"]}
+        value={d.rebound || {}}
+        onChange={(v) => set("rebound", v)}
+        howTo="Resist elbow flexion isometrically, then release suddenly. Normally the triceps 'checks' the limb before it hits the patient -- a positive rebound (limb flies toward the face/body uncontrolled) suggests cerebellar dysfunction; interpret cautiously if spasticity is also present."
+      />
       <SelectField label="Dysmetria" type="single" options={["None", "Present - overshoots target", "Present - undershoots target"]} value={d.dysmetria} onChange={(v) => set("dysmetria", v)} />
       <SelectField label="Tremor with movement" type="single" options={["None", "Intention tremor (worsens near target)", "Postural tremor", "Action tremor"]} value={d.movementTremor} onChange={(v) => set("movementTremor", v)} />
       <TextArea label="Additional coordination notes" value={d.notes} onChange={(v) => set("notes", v)} />
@@ -1310,12 +1325,35 @@ function CoordinationSection({ data, setData }) {
   );
 }
 
-/* ---------- Balance ---------- */
+/* ---------- Balance ----------
+   Restructured (2026-09-04, per O'Sullivan's equilibrium-coordination
+   framework and the current Mini-BESTest domains -- anticipatory,
+   reactive, sensory orientation, dynamic gait) to add what a modern
+   balance exam actually screens that this step previously had no field
+   for at all: sensory organization (which sensory system the patient
+   relies on -- vision/somatosensory/vestibular), reactive postural
+   control (protective stepping), anticipatory postural control, and the
+   two most ubiquitous functional fall-risk timed tests (TUG, 5xSTS) --
+   Berg and Functional Reach alone don't cover any of those. Dynamic gait
+   itself stays in the separate GaitSection below, same as before. */
 function BalanceSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "balance");
   return (
     <>
       <SectionIntro icon="⚖️" title="Balance" />
+
+      <div className="subheading">Sensory orientation</div>
+      <LRGrid
+        label="Standing balance by sensory condition (mCTSIB)"
+        rows={["Eyes open - firm surface", "Eyes closed - firm surface", "Eyes open - foam surface", "Eyes closed - foam surface"]}
+        columns={["Result"]}
+        options={["Normal", "Increased sway", "Loss of balance / step needed", "Unable to test"]}
+        value={d.sensoryOrg || {}}
+        onChange={(v) => set("sensoryOrg", v)}
+        howTo="Modified Clinical Test of Sensory Interaction on Balance (mCTSIB): removing vision and/or a firm support surface in turn identifies which sensory system (visual, somatosensory, vestibular) the patient relies on most -- a much bigger drop in stability with eyes closed on foam points toward vestibular dependence/dysfunction."
+      />
+
+      <div className="subheading">Static &amp; dynamic balance</div>
       <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} info={neuroExamLibraryData.balance} />
       <SelectField label="Dynamic sitting balance" type="single" options={BALANCE_GRADES} value={d.sitDynamic} onChange={(v) => set("sitDynamic", v)} />
       <SelectField label="Static standing balance" type="single" options={BALANCE_GRADES} value={d.standStatic} onChange={(v) => set("standStatic", v)} />
@@ -1328,8 +1366,30 @@ function BalanceSection({ data, setData }) {
         onChange={(v) => set("romberg", v)}
         info={neuroExamLibraryData.romberg}
       />
+
+      <div className="subheading">Anticipatory &amp; reactive postural control</div>
+      <SelectField
+        label="Anticipatory postural adjustments"
+        type="single"
+        options={["Normal (stable before/during a self-initiated reach or step)", "Delayed / reduced adjustment", "Absent", "Not tested"]}
+        value={d.anticipatory}
+        onChange={(v) => set("anticipatory", v)}
+        howTo="Observe postural muscle activity that should occur just before a voluntary movement (e.g. reaching overhead, rising onto toes) to prepare for the resulting shift in centre of mass -- a Mini-BESTest domain distinct from the reactive response below."
+      />
+      <SelectField
+        label="Reactive postural control (protective stepping)"
+        type="single"
+        options={["Normal - single step recovers", "Multiple / staggering steps needed", "Absent - requires assistance to prevent a fall", "Not tested"]}
+        value={d.reactive}
+        onChange={(v) => set("reactive", v)}
+        howTo="Response to an external, unexpected perturbation (a light nudge/release test with guarding) -- tests the automatic postural response, not the anticipatory one above. Always guard/spot this test."
+      />
+
+      <div className="subheading">Functional balance &amp; fall-risk measures</div>
       <NumberField label="Functional Reach" value={d.functionalReach} onChange={(v) => set("functionalReach", v)} unit="cm" howTo="Distance reached forward with arm at 90° shoulder flexion without stepping or losing balance, from a fixed standing position." />
       <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" howTo="14-item functional balance battery; a total score ≤45/56 is associated with increased fall risk." />
+      <NumberField label="Timed Up and Go (TUG)" value={d.tug} onChange={(v) => set("tug", v)} unit="sec" howTo="Time to rise from a standard armchair, walk 3m, turn, walk back, and sit down. ≥12 seconds is a commonly used fall-risk cutoff in community-dwelling older adults -- interpret against norms for the specific population, and note that TUG turn duration specifically has been shown to predict falls in neurological populations." />
+      <NumberField label="Five Times Sit-to-Stand" value={d.fiveTSTS} onChange={(v) => set("fiveTSTS", v)} unit="sec" howTo="Time to stand fully and sit back down five times as fast as possible from a standard chair, arms folded (not pushing off). Slower times are associated with reduced lower-limb power and increased fall risk." />
       <TextArea label="Additional balance notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
