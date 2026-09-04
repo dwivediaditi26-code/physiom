@@ -462,6 +462,13 @@ const TONE_TYPES = ["Normal", "Hypotonia", "Flaccidity", "Hypertonia", "Spastici
 const MYOTOME_ROWS = ["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"];
 const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExamLibraryData["myo" + r]]));
 
+// Same reasoning as MYOTOME_ROWS above, for the ASIA/ISNCSCI key sensory
+// points -- shared by the generic Sensory Examination step's own
+// Dermatomal Sensory Screen and the Spinal Cord Injury condition
+// library's full ASIA exam.
+const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"];
+const DERMATOME_ROW_INFO = Object.fromEntries(DERMATOME_ROWS.map((r) => [r, neuroExamLibraryData["derm" + r]]));
+
 /* ============================================================
    ADD-ON LIBRARY — condition-specific items applied ON TOP of
    the core exam, matching O'Sullivan's "core exam + condition
@@ -703,25 +710,12 @@ const NEURO_RENDERERS = {
   [neuroId("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")]: (d, set) => (
     <LRGrid
       label="Key sensory points (0-2)"
-      rows={["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"]}
+      rows={DERMATOME_ROWS}
       options={["2 - Normal", "1 - Altered", "0 - Absent"]}
       value={d.dermatomes || {}}
       onChange={(v) => set("dermatomes", v)}
       info={condInfo("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")}
-      rowInfo={{
-        "C5": neuroExamLibraryData.dermC5,
-        "C6": neuroExamLibraryData.dermC6,
-        "C7": neuroExamLibraryData.dermC7,
-        "C8": neuroExamLibraryData.dermC8,
-        "T1": neuroExamLibraryData.dermT1,
-        "T4 (nipple)": neuroExamLibraryData["dermT4 (nipple)"],
-        "T10 (umbilicus)": neuroExamLibraryData["dermT10 (umbilicus)"],
-        "L3": neuroExamLibraryData.dermL3,
-        "L4": neuroExamLibraryData.dermL4,
-        "L5": neuroExamLibraryData.dermL5,
-        "S1": neuroExamLibraryData.dermS1,
-        "S4-5 (perianal)": neuroExamLibraryData["dermS4-5 (perianal)"],
-      }}
+      rowInfo={DERMATOME_ROW_INFO}
     />
   ),
   [neuroId("Spinal Cord Injury", "ASIA Impairment Scale (AIS)")]: (d, set) => (
@@ -1160,7 +1154,19 @@ function CranialNervesSection({ data, setData }) {
   );
 }
 
-/* ---------- Sensory Examination ---------- */
+/* ---------- Sensory Examination ----------
+   Added (2026-09-04, same treatment as Motor's Myotomal Screen -- checked
+   against current standard neuro-exam sources): a Dermatomal Sensory
+   Screen using the same ASIA/ISNCSCI key sensory points as the Spinal
+   Cord Injury condition item, now available to any patient with
+   suspected radiculopathy rather than gated behind selecting SCI as the
+   condition (shares DERMATOME_ROWS/DERMATOME_ROW_INFO with that item so
+   the two never drift apart). Also added the two standard cortical/
+   discriminative tests that were missing entirely -- point localization
+   and extinction to double simultaneous stimulation (a classic parietal/
+   neglect sign, distinct from and complementary to the Stroke condition
+   library's separate visual/personal neglect screen) -- alongside the
+   existing stereognosis/graphesthesia/two-point discrimination. */
 function SensorySection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "sensory");
   return (
@@ -1171,10 +1177,31 @@ function SensorySection({ data, setData }) {
       <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
       <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} />
       <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
+
+      <div className="subheading">Dermatomal sensory screen</div>
+      <LRGrid
+        label="Key sensory points (0-2)"
+        rows={DERMATOME_ROWS}
+        options={["2 - Normal", "1 - Altered", "0 - Absent"]}
+        value={d.dermatomalScreen || {}}
+        onChange={(v) => set("dermatomalScreen", v)}
+        howTo="Screens for a sensory deficit at a single spinal nerve-root level -- useful for any suspected cervical/lumbar radiculopathy, same key points ISNCSCI/ASIA uses. For a confirmed spinal cord injury, add the full ISNCSCI/ASIA exam from the Spinal Cord Injury condition library instead -- it also grades motor key muscles and derives the AIS classification."
+        rowInfo={DERMATOME_ROW_INFO}
+      />
+
       <div className="subheading">Cortical sensation</div>
       <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
       <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} info={neuroExamLibraryData.graphesthesia} />
       <SelectField label="Two-point discrimination" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.twoPoint} onChange={(v) => set("twoPoint", v)} info={neuroExamLibraryData.twoPoint} />
+      <SelectField label="Point localization" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.pointLocalization} onChange={(v) => set("pointLocalization", v)} howTo="With eyes closed, touch a point on the skin then ask the patient to open their eyes and point to exactly where they were touched -- distinct from simply detecting the touch (tested above), this checks localization ability specifically." />
+      <SelectField
+        label="Extinction (double simultaneous stimulation)"
+        type="single"
+        options={["Intact - detects both sides", "Extinction present - Right", "Extinction present - Left", "Not testable"]}
+        value={d.extinction}
+        onChange={(v) => set("extinction", v)}
+        howTo="Touch both sides of the body simultaneously with identical stimuli after confirming the patient can detect each side individually. Failure to report one side despite intact single-sided sensation (extinction) is a classic sign of contralateral parietal lobe dysfunction/sensory neglect -- most relevant in Stroke, complementary to (not a replacement for) the Stroke condition library's visual/personal neglect screen."
+      />
       <TextArea label="Additional sensory notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
