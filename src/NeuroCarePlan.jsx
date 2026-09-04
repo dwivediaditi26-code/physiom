@@ -197,23 +197,36 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
 
 /* ─── 2. GOALS ────────────────────────────────────────────── */
 function GoalEditor({ goal, onChange, onRemove }) {
+  // Compact by default: a one-line summary row; tap Edit to expand the fields
+  // (2026-09-03, Aditi: "make it small and compact ... more small goal").
+  const [open, setOpen] = useState(false);
   return (
-    <div className="tech-card" style={{ borderColor: BRAND.purple }}>
-      <div className="tech-card-head">
-        <div className="tech-card-title" style={{ fontSize: 13 }}>{goal.measure}</div>
-        <div className="tech-card-actions">
-          <button type="button" className="tech-card-del" onClick={onRemove} aria-label="Remove goal">✕</button>
+    <div className="tech-card" style={{ borderColor: BRAND.purple, padding: "8px 10px", marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: BRAND.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{goal.measure}</div>
+          <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 1 }}>{goal.baseline} → {goal.target} · {goal.term === "short" ? "STG" : "LTG"} · {goal.weeks}w</div>
         </div>
+        <button type="button" className="ghost-btn" style={{ padding: "4px 10px", fontSize: 11, flexShrink: 0 }} onClick={() => setOpen((o) => !o)}>{open ? "Done" : "Edit"}</button>
+        <button type="button" className="tech-card-del" onClick={onRemove} aria-label="Remove goal" style={{ flexShrink: 0 }}>✕</button>
       </div>
-      <div className="row-2" style={{ gap: 10, marginTop: 6 }}>
-        <TextField label="Current" value={goal.baseline} onChange={(v) => onChange({ ...goal, baseline: v })} />
-        <TextField label="Target" value={goal.target} onChange={(v) => onChange({ ...goal, target: v })} />
-      </div>
-      <Segmented label="Term" options={TERMS} value={goal.term === "short" ? "Short term" : "Long term"} onChange={(v) => onChange({ ...goal, term: v === "Short term" ? "short" : "long" })} />
-      <div style={{ marginTop: 6 }}>
-        <div className="vital-label-row"><span className="vital-label">Timeframe (weeks)</span></div>
-        <Stepper value={String(goal.weeks)} onChange={(v) => onChange({ ...goal, weeks: parseInt(v) || 0 })} min={1} max={52} step={1} square />
-      </div>
+      {open && (
+        <>
+          <div className="row-2" style={{ gap: 8, marginTop: 8 }}>
+            <TextField label="Current" value={goal.baseline} onChange={(v) => onChange({ ...goal, baseline: v })} />
+            <TextField label="Target" value={goal.target} onChange={(v) => onChange({ ...goal, target: v })} />
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginTop: 6, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 150px", minWidth: 0 }}>
+              <Segmented label="Term" options={TERMS} value={goal.term === "short" ? "Short term" : "Long term"} onChange={(v) => onChange({ ...goal, term: v === "Short term" ? "short" : "long" })} />
+            </div>
+            <div style={{ flex: "0 0 auto" }}>
+              <div className="vital-label-row"><span className="vital-label">Weeks</span></div>
+              <Stepper value={String(goal.weeks)} onChange={(v) => onChange({ ...goal, weeks: parseInt(v) || 0 })} min={1} max={52} step={1} square />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -279,7 +292,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
 /* ─── 3. TREATMENT (goal-wise) ────────────────────────────── */
 const NEURO_CATS = Object.keys(EXERCISE_DB.neurological.categories);
 
-function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose }) {
+function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose, fullScreen }) {
   const [cat, setCat] = useState(null);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(null);
@@ -311,7 +324,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   };
 
   return (
-    <div className="ct-modal">
+    <div className="ct-modal" style={fullScreen ? { position: "fixed", inset: 0, zIndex: 3000 } : undefined}>
       <div className="ct-modal-header">
         <div className="ct-modal-title">{picked ? picked.name : "Add treatment"}</div>
         <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">✕</button>
@@ -499,6 +512,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
             setSheetGoal(null);
           }}
           onClose={() => setSheetGoal(null)}
+          fullScreen={floatingCTA}
         />
       )}
     </>
