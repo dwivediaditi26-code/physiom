@@ -385,7 +385,7 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
           return(
             <div key={m.id} ref={el=>{ if(el) hlRef.current[m.id]=el; }} style={{background:C.surface,border:`1px solid ${hasAnyVal?C.accent+"30":C.border}`,borderRadius:10,overflow:"hidden"}}>
               {/* Card Header */}
-              <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"10px 12px",cursor:"pointer"}}>
+              <div onClick={()=>{ navigator.vibrate?.(10); setSelected(isOpen?null:m.id); }} style={{padding:"10px 12px",cursor:"pointer"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                   <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
                     <ClinicalImage name={m.id} title={`${m.mv} — ${region}`} size={44}/>
@@ -422,6 +422,22 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
                     <span style={{color:C.muted,fontSize:"0.7rem"}}>{isOpen?"▲":"▼"}</span>
                   </div>
                 </div>
+
+                {/* Quick "Is it normal?" fill -- Aditi: "if we want the normal
+                    value in the ROM section, then it should ask is it normal,
+                    we document it, or you want to change it" -- one tap fills
+                    N=normal into every applicable side for this movement
+                    instead of typing the same textbook number by hand every
+                    time; still fully editable afterward if it isn't. */}
+                {m.normal!=null&&(
+                  <div style={{marginTop:7}} onClick={e=>e.stopPropagation()}>
+                    <button type="button" className="pm-rom-qual-btn"
+                      onClick={()=>{ navigator.vibrate?.(10); sides.forEach(s=>setVal(m.id,s,m.normal)); }}
+                      style={{fontSize:"0.62rem",fontWeight:700,padding:"3px 8px",borderRadius:5,border:`1px solid ${C.green}50`,background:`${C.green}15`,color:C.green,cursor:"pointer"}}>
+                      ✓ Normal — document N={m.normal}{m.unit}
+                    </button>
+                  </div>
+                )}
 
                 {/* Pain arc toggle */}
                 <div style={{display:"flex",gap:6,marginTop:7,flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>

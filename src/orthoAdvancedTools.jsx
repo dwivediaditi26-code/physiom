@@ -15,6 +15,9 @@ import {
   CYRIAX_LIMITED_OPTIONS,
   CYRIAX_DEFAULT_ENDFEEL,
   KALTENBORN_GRADES,
+  FASCIA_REGIONS_DATA,
+  FASCIA_REGION_KEYS,
+  FASCIA_LINES_DATA,
 } from "./orthoAdvancedLibrary.js";
 
 /* The real app's KC_REGIONS / NKT_REGIONS / CYRIAX_REGIONS_DATA colors are
@@ -116,7 +119,7 @@ function kcCount(entry, tests) {
 // Special Tests. image uses the test's own real id -- present on
 // Cloudinary for the foot/ankle and hip regions today; falls back to
 // InfoButton's own placeholder for regions not yet photographed.
-function kcRichItem(t) {
+export function kcRichItem(t) {
   return {
     image: t.id,
     title: t.label,
@@ -168,14 +171,33 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
 // Perform/Reference/Interpret tabs. No NKT photos on Cloudinary yet --
 // image stays unset, falling back to InfoButton's own placeholder, same
 // honest-empty-state pattern used everywhere else in this system.
-function cpaRichItem(t) {
+// t.options already carries this exact clinical detail (Facilitated/
+// Inhibited/Overactive, each with a real `meaning`) but it only ever
+// surfaced as bare option-chip labels in the test row itself -- a student
+// picking a chip had no way to see what that finding actually means before
+// deciding whether to test it. Surface the Inhibited/Overactive meanings on
+// the Interpret tab (2026-09-03, Aditi: "if this muscle is inhibited, then
+// what it causes, if overactive what it causes... a student should know if
+// he wants to assess it or not") so it's read before the exam, not just
+// after picking a result.
+export function cpaRichItem(t) {
+  const consequences = (t.options || []).filter((o) => /inhibit|overactive/i.test(o.val));
   return {
     image: t.id,
     title: t.label,
     subtitle: t.muscle,
     perform: <InfoCard icon="👐" label="How to test" tint="violet">{t.how}</InfoCard>,
     reference: <InfoCard icon="🔀" label="Common compensators" tint="amber">{t.compensator}</InfoCard>,
-    interpret: <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+    interpret: (
+      <>
+        {consequences.map((o, i) => (
+          <InfoCard key={i} icon={/inhibit/i.test(o.val) ? "🔻" : "🔺"} label={`If ${o.val}`} tint={/inhibit/i.test(o.val) ? "red" : "amber"}>
+            {o.meaning}
+          </InfoCard>
+        ))}
+        <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>
+      </>
+    ),
   };
 }
 
@@ -239,7 +261,7 @@ function cyriaxRegionRichItem(region) {
 // Individual Cyriax test (t.how only, no id-based photos) -- always
 // Perform-only; the InfoButton sheet hides tabs with no content, so this
 // renders as a single-pane sheet without a tab strip.
-function cyriaxTestRichItem(t) {
+export function cyriaxTestRichItem(t) {
   return {
     title: t.label,
     perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
@@ -413,7 +435,7 @@ const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 // (t.svgNormal, from RegionalFunctionalScreens.jsx) -- no Cloudinary photo
 // id to hook into the usual SheetHero image slot, so the real illustration
 // renders inline in the Perform tab instead of being dropped.
-function fmaRichItem(t) {
+export function fmaRichItem(t) {
   return {
     title: t.label,
     subtitle: t.phase,
@@ -504,6 +526,83 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
 /* ============================================================
    SUMMARY FORMATTERS
    ============================================================ */
+
+/* ============================================================
+   FASCIA — myofascial line assessment, straight from the same
+   FASCIA_REGIONS_DATA / FASCIA_LINES_DATA the old Phase 0.5
+   Fascia module renders (2026-09-03, Aditi: "cpa, kinetic chain,
+   functional screen, sttt, fascia like in old 0.5 phase does").
+   Ortho had no Fascia screen at all before this. Same structure
+   as CPA/Kinetic Chain above: coloured region tabs, one card per
+   test with its real how-to/treatment in the (i) sheet, and the
+   test's own colour-coded options — each option carrying the
+   clinical meaning the data itself defines.
+   ============================================================ */
+function fasciaRichItem(t) {
+  const line = FASCIA_LINES_DATA[String(t.line || "").toLowerCase()];
+  return {
+    title: t.label,
+    subtitle: [t.line, t.type].filter(Boolean).join(" · "),
+    perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
+    reference: line && (
+      <>
+        <InfoCard icon="🧵" label={`${line.label} — route`} tint="blue">{line.route}</InfoCard>
+        {line.restrictions && <InfoCard icon="⚠️" label="Common restrictions" tint="amber">{line.restrictions}</InfoCard>}
+        {line.compensation && <InfoCard icon="⛓️" label="Compensation pattern" tint="gray">{line.compensation}</InfoCard>}
+      </>
+    ),
+    interpret: t.treatment && <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+  };
+}
+
+function fasciaCount(entry, tests) {
+  if (!entry) return 0;
+  return (tests || []).filter((t) => entry[t.id]).length;
+}
+
+export function FasciaSection({ data, setData, sectionKey = "fascia" }) {
+  const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, FASCIA_REGION_KEYS);
+  const region = FASCIA_REGIONS_DATA[activeKey];
+  const entry = d[activeKey] || {};
+  const counts = {};
+  FASCIA_REGION_KEYS.forEach((k) => (counts[k] = fasciaCount(d[k], FASCIA_REGIONS_DATA[k]?.tests)));
+  const selectedMeaning = (t) => (t.options || []).find((o) => o.val === entry[t.id])?.meaning;
+
+  return (
+    <>
+      <SectionIntro icon="🧵" title="Fascia" info="Myofascial line assessment: fascia transmits force along continuous lines, so a restriction in one segment shows up as symptoms further along the chain. Screen globally first, then test the line the pattern points to." />
+      <ColorRegionTabs tabs={FASCIA_REGION_KEYS} activeKey={activeKey} onSelect={setActiveKey} regionsData={FASCIA_REGIONS_DATA} counts={counts} />
+      {region?.intro && <Hint>{region.intro}</Hint>}
+      <div className="rom-card">
+        <div className="rom-card-title">{region?.label || activeKey}</div>
+        {(region?.tests || []).map((t) => (
+          <div className="movement-card" key={t.id}>
+            <div className="movement-name-row">
+              <span className="movement-name">{t.label}</span>
+              <InfoButton title={t.label} richItem={fasciaRichItem(t)} />
+            </div>
+            <div className="muscle-subtitle">{[t.line, t.type].filter(Boolean).join(" · ")}</div>
+            <OptionChips options={t.options || []} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
+            {selectedMeaning(t) && <div className="obj-card-reason">{selectedMeaning(t)}</div>}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function formatFasciaSection(sectionData) {
+  const rows = [];
+  FASCIA_REGION_KEYS.forEach((k) => {
+    const entry = sectionData?.[k];
+    if (!entry) return;
+    (FASCIA_REGIONS_DATA[k]?.tests || []).forEach((t) => {
+      if (entry[t.id]) rows.push({ label: `${FASCIA_REGIONS_DATA[k].label} — ${t.label}`, value: entry[t.id] });
+    });
+  });
+  return rows;
+}
+
 export function formatKineticChainSection(sectionData) {
   const rows = [];
   KC_REGION_KEYS.forEach((k) => {
@@ -548,6 +647,14 @@ export function formatSttSection(sectionData) {
   return rows;
 }
 
+// Was: only the bare top-level grade (Normal/Compensated/Abnormal) made it
+// into the Summary/Review and any exported report -- the per-observation
+// answer and its clinical clue (e.g. "⚠ Pain at initiation — Discogenic /
+// SIJ loading — centralisation test"), visible while filling the form,
+// never carried through (2026-09-03, Aditi: "previously it shows what it
+// means if anything in the four options we selected... give me back the
+// interpretation"). Now every answered observation gets its own row with
+// the selected finding and its clue, not just the summary grade.
 export function formatFmaSection(sectionData) {
   const rows = [];
   FMA_REGION_KEYS.forEach((k) => {
@@ -556,6 +663,13 @@ export function formatFmaSection(sectionData) {
     (FMA_DATA[k] || []).forEach((t) => {
       const grade = entry[t.id + "_grade"];
       if (grade) rows.push({ label: `${k} — ${t.label}`, value: grade });
+      (t.observations || []).forEach((obs) => {
+        const val = entry[t.id + "_" + obs.id];
+        if (!val) return;
+        const idx = obs.opts.indexOf(val);
+        const clue = idx > 0 ? obs.clues[idx] : "";
+        rows.push({ label: `${k} — ${t.label} — ${obs.q}`, value: clue ? `${val} — ${clue}` : val });
+      });
     });
   });
   return rows;

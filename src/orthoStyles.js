@@ -132,7 +132,15 @@ export function orthoStyles() {
         .ai-intake-flag { color: #B91C1C; }
 
         .info-btn-wrap { position: relative; display: inline-flex; }
-        .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        /* Raised "3D" pill -- solid gradient fill + hard bottom edge (button
+           side) + soft drop shadow (elevation) + inset top highlight (glossy
+           top face), pressing down flat on :active. Was a pale, flat, barely-
+           visible outline circle (2026-09-03, Aditi: "it is so much boring,
+           and we cannot see it or use it" -- also genuinely hard to tap at
+           26px with a 1px border for contrast). White glyph on saturated
+           purple reads at a glance instead of purple-on-near-white. */
+        .info-btn { border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; font-size: 14px; font-weight: 800; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
         .info-btn-full { width: 100%; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.purple}; font-weight: 700; font-size: 12px; padding: 9px; border-radius: 10px; cursor: pointer; min-height: 36px; }
 
@@ -319,6 +327,7 @@ export function orthoStyles() {
         .mini-list-row:first-child { border-top: none; }
         .mini-list-row-active { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-weight: 700; }
         .mini-list-check { color: ${BRAND.purple}; font-weight: 800; font-size: 13px; }
+        .rom-normal-btn { border: 1px solid ${BRAND.green}50; background: ${BRAND.greenBg}; color: ${BRAND.green}; padding: 5px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; cursor: pointer; min-height: 28px; }
         .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pill-tag { background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px; }
         .pill-tag-root { background: #F0F0F0; color: ${BRAND.gray}; }
@@ -410,6 +419,14 @@ export function orthoStyles() {
         .vital-input-wrap { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 12px; padding: 8px 10px; background: #fff; min-height: 44px; }
         .vital-input { border: none; outline: none; font-size: 16px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
+
+        .vital-chip { flex: 1 1 45%; min-width: 140px; border: 1.5px solid ${BRAND.border}; border-radius: 12px; background: #fff; }
+        .vital-chip-open { border-color: ${BRAND.purple}; }
+        .vital-chip-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px; min-height: 44px; cursor: pointer; }
+        .vital-chip-label { font-size: 12px; color: ${BRAND.gray}; font-weight: 600; }
+        .vital-chip-value { flex: 1; text-align: right; font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
+        .vital-chip-toggle { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .vital-chip-body { padding: 0 10px 10px; }
 
         .row-2 { display: flex; gap: 12px; align-items: flex-end; }
         .row-2 > * { flex: 1; min-width: 0; }
@@ -675,7 +692,7 @@ export function orthoStyles() {
         .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-        .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+        .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
         .summary-empty { font-size: 12.5px; color: ${BRAND.grayLight}; font-style: italic; padding: 3px 0; }
 
         /* fixed (not sticky) for the same reason as Cardio's identical rule:

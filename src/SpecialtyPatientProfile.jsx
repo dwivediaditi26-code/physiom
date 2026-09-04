@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
-import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps } from "./NeurologicalAssessment.jsx";
+import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters } from "./NeurologicalAssessment.jsx";
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
@@ -10,14 +10,12 @@ import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
 
-// Simple, separate profile for Cardio/Neuro (+ new Ortho Assessment)
-// patients (2026-08-20, Aditi's request) -- deliberately NOT the existing
-// Ortho PatientProfileModal (PatientDatabase.jsx), which is full of
-// Ortho-specific sections (ROM/MMT/Special Tests/Kinetic Chain/Fascia/...)
-// that don't apply here. Lives only in Clinical, opened by the same
-// "👤 Profile" button every patient already has -- PatientDatabase.jsx's
-// onProfile routes here for Cardio/Neuro patients and to the Ortho modal
-// for everyone else.
+// The one patient profile screen in the app (2026-08-20, Aditi's request,
+// originally Cardio/Neuro-only; the legacy Ortho-specific PatientProfileModal
+// it lived alongside -- full of ROM/MMT/Special Tests/Kinetic Chain/Fascia
+// sections -- was removed entirely on 2026-09-02, Aditi: "remove old ortho
+// patient profile totally"). Lives only in Clinical, opened by the same
+// "👤 Profile" button every patient already has.
 //
 // 2026-08-22: redesigned to a 5-tab Overview/Assessment/Progress/Treatment/
 // Home structure (Aditi, "make it basic, clean, fast ... understand within
@@ -198,17 +196,29 @@ const hepDose = (e) => {
   return `${st}×${rp}${hd ? ` · hold ${hd}s` : ""}${fq ? ` · ${fq}` : ""}`;
 };
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture }) {
-  const [tab, setTab] = useState("overview");
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
+  // initialTab (2026-09-02): lets a caller open straight onto a specific
+  // tab (e.g. the Treatment caseload list's own "Profile" button used to
+  // jump straight to Treatment via the now-removed legacy
+  // PatientProfileModal's initialTab) instead of always landing on
+  // Overview.
+  const [tab, setTab] = useState(initialTab || "overview");
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [expandedSession, setExpandedSession] = useState(0);
+  const [editingDiagnosis, setEditingDiagnosis] = useState(false);
+  const [diagnosisDraft, setDiagnosisDraft] = useState("");
   const d = patient?.data || {};
   const hasCardio = d.cardio && Object.keys(d.cardio).length > 0;
   const hasNeuro = d.neuro && Object.keys(d.neuro).length > 0;
   const cardioDem = d.cardio?.demographics || {};
   const neuroDem = d.neuro?.demographics || {};
   const activeDem = cardioDem.diagnosis ? cardioDem : neuroDem;
-  const primaryDiagnosis = cardioDem.diagnosis || neuroDem.diagnosis || "No diagnosis recorded yet";
+  // cc_dx is the same specialty-agnostic diagnosis field the Ortho
+  // PatientProfileModal already falls back to (PatientDatabase.jsx) --
+  // editing it here (rather than each specialty's own nested demographics
+  // field) means one edit works regardless of which specialty's assessment
+  // this patient has, or none yet.
+  const primaryDiagnosis = d.cc_dx || cardioDem.diagnosis || neuroDem.diagnosis || "No diagnosis recorded yet";
 
   // Ortho (2026-09-01, Aditi: "ortho patient profile should be same as
   // cardio/neuro, don't build a separate one") -- IPD/Post-op/Outpatient
@@ -247,7 +257,6 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   const orthoFormatters = orthoPathway === "ipd" ? orthoIPDSummaryFormatters : orthoPathway === "postop" ? orthoPostOpSummaryFormatters : orthoPathway === "outpatient" ? orthoSummaryFormatters : null;
   const orthoTitle = orthoPathway === "ipd" ? "IPD Orthopedic Assessment" : orthoPathway === "postop" ? "Post-operative Rehab Assessment" : "Outpatient Musculoskeletal Assessment";
   const hasOrtho = !!(orthoParsed && orthoSteps);
-  const pid = patient?.id ? "PM-" + patient.id.slice(0, 6).toUpperCase() : "";
   const name = d.dem_name || patient?.name || "";
   const initials = (name || "?").split(" ").map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
@@ -285,7 +294,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name || "Patient"}</div>
           <div style={{ fontSize: 12, color: C.faint }}>
-            {pid}{(d.dem_age || cardioDem.age) && ` · ${d.dem_age || cardioDem.age} yrs`}{(d.dem_sex || d.dem_gender) && ` · ${d.dem_sex || d.dem_gender}`}
+            {[(d.dem_age || cardioDem.age) && `${d.dem_age || cardioDem.age} yrs`, (d.dem_sex || d.dem_gender)].filter(Boolean).join(" · ")}
           </div>
         </div>
       </div>
@@ -313,8 +322,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               ["Gender", d.dem_sex || d.dem_gender],
               ["Phone", d.dem_phone],
               ["Date of birth", d.dem_dob],
-              ["Patient ID", pid],
-            ].filter(([, v]) => v).slice(0, showFullProfile ? 5 : 3).map(([label, val]) => (
+            ].filter(([, v]) => v).slice(0, showFullProfile ? 4 : 3).map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
                 <span style={{ color: C.muted }}>{label}</span>
                 <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
@@ -325,8 +333,38 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
           <Card>
             <CardTitle>Current Clinical Status</CardTitle>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5, gap: 8 }}>
+              <span style={{ color: C.muted, flexShrink: 0 }}>Condition</span>
+              {editingDiagnosis ? (
+                <div style={{ display: "flex", gap: 6, flex: 1, justifyContent: "flex-end" }}>
+                  <input
+                    autoFocus
+                    value={diagnosisDraft}
+                    onChange={(e) => setDiagnosisDraft(e.target.value)}
+                    placeholder="e.g. Post-op TKR, right knee"
+                    style={{ flex: 1, minWidth: 0, padding: "6px 8px", borderRadius: 8, border: `1px solid ${C.primary}`, fontSize: 13, color: C.text }}
+                  />
+                  <button
+                    onClick={() => { onSaveField?.(patient.id, { cc_dx: diagnosisDraft.trim() }); setEditingDiagnosis(false); }}
+                    style={{ padding: "6px 10px", borderRadius: 8, border: "none", background: C.primary, color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                  <span style={{ color: C.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{primaryDiagnosis}</span>
+                  <button
+                    onClick={() => { setDiagnosisDraft(d.cc_dx || ""); setEditingDiagnosis(true); }}
+                    aria-label="Edit condition"
+                    style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 7, border: `1px solid ${C.border}`, background: "#fff", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    ✏️
+                  </button>
+                </span>
+              )}
+            </div>
             {[
-              ["Condition", primaryDiagnosis],
               ["Status", sessions.length > 0 ? "Ongoing treatment" : (hasCardio || hasNeuro) ? "Assessment recorded" : "New patient"],
               ["First visit", activeDem.onsetDate || sessionsDesc[sessionsDesc.length - 1]?.date],
               ["Current session", plannedSessions > 0 ? `${sessions.length} / ${plannedSessions}` : sessions.length > 0 ? `${sessions.length}` : null],
@@ -405,7 +443,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
-              <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} />
+              <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} formatters={neuroSummaryFormatters} />
             </Card>
           ) : (
             <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
-import CardioTreatmentAssistant from "./CardioTreatmentAssistant.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 
@@ -265,6 +264,57 @@ function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, i
         {unit && <span className="vital-unit">{unit}</span>}
       </div>
       <Hint>{hint}</Hint>
+    </div>
+  );
+}
+
+// Collapsed-by-default vital sign row -- opens already showing the value
+// (normally a pre-filled normal default) with a maximize (+) button to
+// change it. Not the old CSelectField/CollapsibleField pattern removed
+// elsewhere in this file (that collapsed *empty* fields and silently
+// dropped their info button) -- here the row already has a value before
+// it's ever opened, and its ⓘ/howTo button stays visible in the collapsed
+// state via its own stopPropagation wrapper, not swallowed by the toggle.
+function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10 }) {
+  const [open, setOpen] = useState(false);
+  const hasValue = value !== undefined && value !== null && value !== "";
+  return (
+    <div className={"vital-chip" + (open ? " vital-chip-open" : "")}>
+      <div className="vital-chip-head" onClick={() => setOpen((o) => !o)} role="button">
+        <span className="vital-chip-label">{label}</span>
+        {(info || howTo) && (
+          <span onClick={(e) => e.stopPropagation()}>
+            {info ? <InfoCardButton data={info} /> : <InfoButton text={howTo} />}
+          </span>
+        )}
+        <span className="vital-chip-value">{hasValue ? `${value}${unit ? " " + unit : ""}` : "—"}</span>
+        <button
+          type="button"
+          className="vital-chip-toggle"
+          onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+          aria-label={open ? "Minimize" : "Maximize"}
+        >
+          {open ? "−" : "+"}
+        </button>
+      </div>
+      {open && (
+        <div className="vital-chip-body" onClick={(e) => e.stopPropagation()}>
+          {slider ? (
+            <div className="scale-wrap">
+              <input type="range" min={0} max={max} step={0.5} value={hasValue ? Number(value) : 0} onChange={(e) => onChange(e.target.value)} className="scale-range" />
+              <span className="scale-readout">
+                {hasValue ? value : 0}
+                <span className="scale-max">/{max}</span>
+              </span>
+            </div>
+          ) : (
+            <div className="vital-input-wrap">
+              <input type="number" inputMode="decimal" className="vital-input" autoFocus value={value || ""} onChange={(e) => onChange(e.target.value)} />
+              {unit && <span className="vital-unit">{unit}</span>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1038,21 +1088,32 @@ function ChartSection({ data, setData, setting, system }) {
 }
 
 /* ---------- Vitals ---------- */
+// Typical resting adult values -- Vitals now opens already filled with
+// these instead of blank (2026-09-03, Aditi: "already built normal vital
+// signs, and we can change it by minimize and maximize button"). Only
+// seeds when the section is still completely untouched, so it never
+// overwrites a real entry.
+const NORMAL_CARDIO_VITALS = { hr: "72", bpSys: "120", bpDia: "80", rr: "16", spo2: "98", temp: "37.0" };
+
 function VitalsSection({ data, setData, system }) {
   const [d, set] = useSectionData(data, setData, "vitals");
   const respDetail = system === "resp" || system === "combined";
+  useEffect(() => {
+    setData((prev) => (prev.vitals && Object.keys(prev.vitals).length > 0 ? prev : { ...prev, vitals: { ...NORMAL_CARDIO_VITALS } }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <>
-      <SectionIntro icon="❤️" title="Baseline Physiological Parameters" />
+      <SectionIntro icon="❤️" title="Baseline Physiological Parameters" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
-        <NumberField label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} />
-        <NumberField label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <NumberField label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <NumberField label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
-        <NumberField label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} />
-        <NumberField label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
-        {respDetail && <NumberField label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" />}
-        {respDetail && <NumberField label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" />}
+        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} />
+        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
+        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
+        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
+        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} />
+        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
+        {respDetail && <VitalRow label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" />}
+        {respDetail && <VitalRow label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" />}
       </div>
       <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} info={cardiovascularData.pulseRhythm} />
       <Segmented label="Position during measurement" options={["Supine", "Sitting", "Standing"]} value={d.position} onChange={(v) => set("position", v)} />
@@ -1562,9 +1623,6 @@ export function SummaryStyles() {
       }
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
-      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
-      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
-      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
     `}</style>
   );
 }
@@ -1572,11 +1630,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
-  // Treatment Assistant only makes sense once setData is actually wired in
-  // (the real final Summary step) -- the mid-assessment "Review So Far"
-  // modal reuses this same component read-only and doesn't pass setData,
-  // so it never shows the button.
-  const [showTreatment, setShowTreatment] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
 
   // exportText must be computed unconditionally -- every hook in this
@@ -1598,10 +1651,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
     });
     return lines.join("\n");
   }, [data, settingLabel, systemLabel, steps]);
-
-  if (showTreatment) {
-    return <CardioTreatmentAssistant data={data} setData={setData} setting={setting} onClose={() => setShowTreatment(false)} />;
-  }
 
   return (
     <>
@@ -1626,16 +1675,6 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
           </div>
         );
       })}
-      {setData && (
-        <button
-          type="button"
-          className="ai-treatment-cta"
-          onClick={() => setShowTreatment(true)}
-        >
-          <span className="ai-treatment-cta-title">✨ AI Treatment Assistant</span>
-          <span className="ai-treatment-cta-sub">Based on your documented findings</span>
-        </button>
-      )}
       <button
         type="button"
         className="primary-btn"
@@ -1978,7 +2017,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .info-popover p { margin: 0; padding-right: 14px; }
         .info-popover-close { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: #B8AEEF; font-size: 11px; cursor: pointer; }
 
-        .info-card-btn { width: 20px; height: 20px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; border-radius: 50%; font-size: 12px; line-height: 1; cursor: pointer; padding: 0; }
+        /* Raised "3D" pill -- solid gradient fill + hard bottom edge (button
+           side) + soft drop shadow (elevation) + inset top highlight (glossy
+           top face), pressing down flat on :active. Was a pale, flat, barely-
+           visible 20px outline circle (2026-09-03, Aditi: "it is so much
+           boring, and we cannot see it or use it"). White glyph on saturated
+           purple reads at a glance instead of purple-on-near-white. */
+        .info-card-btn { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-card-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
 
         .text-input-wrap, .select-wrap { position: relative; display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; }
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
@@ -2017,6 +2063,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-input-wrap { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 12px; padding: 6px 10px; background: #fff; }
         .vital-input { border: none; outline: none; font-size: 15px; width: 100%; font-weight: 600; background: transparent; }
         .vital-unit { font-size: 11px; color: ${BRAND.grayLight}; white-space: nowrap; }
+
+        .vital-chip { flex: 1 1 45%; min-width: 140px; border: 1.5px solid ${BRAND.border}; border-radius: 12px; background: #fff; }
+        .vital-chip-open { border-color: ${BRAND.purple}; }
+        .vital-chip-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px; min-height: 44px; cursor: pointer; }
+        .vital-chip-label { font-size: 12px; color: ${BRAND.gray}; font-weight: 600; }
+        .vital-chip-value { flex: 1; text-align: right; font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
+        .vital-chip-toggle { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .vital-chip-body { padding: 0 10px 10px; }
 
         /* min-width: 0 overrides the flex-item default of min-width: auto --
            without it a wide child (e.g. a text combobox, not just this
@@ -2083,9 +2137,6 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       }
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
-      .ai-treatment-cta { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid ${BRAND.purple}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); cursor: pointer; text-align: left; font-family: inherit; }
-      .ai-treatment-cta-title { font-weight: 800; font-size: 14px; color: ${BRAND.purpleDark}; }
-      .ai-treatment-cta-sub { font-size: 11.5px; color: ${BRAND.gray}; }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
       `}</style>
 

@@ -78,6 +78,10 @@ export function suggestObjectiveTests({ subjective = {}, pain = {}, condition, s
     add("edema", "Soft-tissue injuries commonly present with localized swelling");
     add("jointMobility", "Check adjacent joint mobility for compensatory restriction");
     add("cpa", "Central/peripheral sensitization screen (NKT) can be relevant in soft-tissue pain");
+    // Fascia (2026-09-03) -- the myofascial line screen the old Phase 0.5
+    // flow runs; soft-tissue and chronic/multi-site presentations are where
+    // a line restriction most often explains symptoms away from the injury.
+    add("fascia", "Soft-tissue injury — screen the myofascial line for a restriction driving symptoms away from the injury site");
   }
   if (condition === "spine") {
     add("specialTests", "Spine conditions need a radiculopathy/dural-tension screen");
@@ -87,6 +91,9 @@ export function suggestObjectiveTests({ subjective = {}, pain = {}, condition, s
 
   if (includesAny(aggravating, ["stairs", "sport-specific movement", "overhead activity"])) {
     add("kineticChain", "Aggravating activity is a compound/loaded movement — kinetic chain worth screening");
+  }
+  if (condition === "sportsOveruse" || includesAny(complaint, ["tightness", "restriction", "scar", "post-surgical", "post surgical"])) {
+    add("fascia", "Reported tightness/restriction (or a scar) — a fascial line screen shows whether the restriction is local or chain-driven");
   }
 
   return out;

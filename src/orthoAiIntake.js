@@ -31,6 +31,70 @@ const SYMPTOM_PATTERN_MAP = {
 // -- subjective/pain are ready to merge straight into data.subjective /
 // data.pain; nothing here is written automatically, the caller always
 // shows this for review first.
+// Every field /api/parse can return, in the order a physiotherapist reads
+// a subjective history, with the label it should carry when shown back.
+// Used only for the read-only "as extracted" panel -- the structured
+// per-field mapping below is what actually fills the form.
+const EXTRACTED_FIELD_LABELS = [
+  ["chiefComplaint", "Chief complaint"],
+  ["age", "Age"],
+  ["sex", "Sex"],
+  ["occupation", "Occupation"],
+  ["region", "Region"],
+  ["additionalRegions", "Other regions"],
+  ["laterality", "Side"],
+  ["conditionCategory", "Clinical context"],
+  ["locationDescription", "Location (patient's words)"],
+  ["duration", "Duration"],
+  ["onset", "Onset"],
+  ["onsetContext", "Onset context"],
+  ["nrsNow", "Pain now (NRS)"],
+  ["nrsWorst", "Pain at worst (NRS)"],
+  ["nrsBest", "Pain at best (NRS)"],
+  ["painQuality", "Pain quality"],
+  ["symptomPattern", "Symptom pattern"],
+  ["diurnalPattern", "24-hour pattern"],
+  ["morningSymptoms", "Morning symptoms"],
+  ["nightSymptoms", "Night symptoms"],
+  ["aggMovements", "Aggravating movements"],
+  ["aggActivities", "Aggravating activities"],
+  ["relMovements", "Relieving factors"],
+  ["hasRadiation", "Radiation"],
+  ["radiationArea", "Radiation area"],
+  ["radiationSide", "Radiation side"],
+  ["neuroSymptoms", "Neurological symptoms"],
+  ["hasBladderBowelSymptoms", "Bladder / bowel change"],
+  ["priorEpisodeCount", "Previous episodes"],
+  ["priorEpisodeOutcome", "Previous episode outcome"],
+  ["priorTreatmentTried", "Treatment already tried"],
+  ["medicalHistory", "Medical history"],
+  ["medications", "Medications"],
+  ["functionalLimitations", "Functional limitations"],
+  ["patientGoals", "Patient goals"],
+  ["patientConcern", "Patient's main concern"],
+  ["patientBelief", "Patient's own theory"],
+  ["flags", "Red flags mentioned"],
+];
+
+export function extractedRows(result = {}) {
+  const rows = [];
+  EXTRACTED_FIELD_LABELS.forEach(([key, label]) => {
+    const v = result[key];
+    if (v == null || v === "") return;
+    if (Array.isArray(v)) {
+      if (!v.length) return;
+      rows.push({ key, label, value: v.join(", ") });
+      return;
+    }
+    if (typeof v === "boolean") {
+      rows.push({ key, label, value: v ? "Yes" : "No" });
+      return;
+    }
+    rows.push({ key, label, value: String(v) });
+  });
+  return rows;
+}
+
 export function mapParseResultToOrthoUpdates(result = {}) {
   const asArray = (v) => (Array.isArray(v) ? v : []);
   const painQuality = asArray(result.painQuality);
@@ -131,10 +195,51 @@ export function mapParseResultToOrthoUpdates(result = {}) {
 
   const conditionCategory = VALID_CONDITION_CATEGORIES.includes(result.conditionCategory) ? result.conditionCategory : null;
 
+  // Demographics (2026-09-03, Aditi: "the extracted AI subjective
+  // assessment is not fully filled in the subjective assessment form") --
+  // age/sex/occupation and the affected side were extracted by /api/parse
+  // all along and then thrown away here, because this mapper only ever
+  // returned subjective+pain. They belong on the wizard's own Demographics
+  // step (orthoOutpatientSections.jsx's DemographicsSection reads exactly
+  // these keys), so they're returned as their own section for the caller to
+  // merge the same way it already merges subjective/pain.
+  const demographics = {};
+  if (result.age != null && result.age !== "") demographics.age = String(result.age);
+  if (["Male", "Female", "Other"].includes(result.sex)) demographics.sex = result.sex;
+  if (result.occupation) demographics.occupation = result.occupation;
+  if (["Left", "Right", "Bilateral"].includes(result.laterality)) demographics.affectedSide = result.laterality;
+
+  // Red flags -- the narrative's own red-flag mentions written into the
+  // Red Flag Screen's free-text notes, never into its structured
+  // checklists: those are fixed clinical enums and a wrong tick there is
+  // exactly the "incorrect clinical data" this pipeline refuses to guess
+  // at. The action field is deliberately left for the clinician too --
+  // this only surfaces what was said so the screen opens with the
+  // narrative's own flags in front of them instead of blank.
+  const redFlagNotes = [];
+  const flags = Array.isArray(result.flags) ? result.flags.filter(Boolean) : [];
+  if (flags.length) redFlagNotes.push(`From the patient's narrative: ${flags.join("; ")}`);
+  if (result.hasBladderBowelSymptoms === true) redFlagNotes.push("Patient reports new bladder/bowel change — screen for cauda equina.");
+  const redFlags = redFlagNotes.length ? { grf_notes: redFlagNotes.join(" ") } : {};
+
+  // The regions the narrative itself named (see regionsFromParseResult) --
+  // a suggestion for the region picker, which stays fully editable.
+  const regions = regionsFromParseResult(result);
+
+  // Everything the extraction produced, kept verbatim as label/value rows
+  // so the Subjective step can show the AI's own output exactly as
+  // extracted alongside the fields it filled -- nothing extracted is
+  // silently dropped just because this wizard has no dedicated field for it.
+  const extracted = extractedRows(result);
+
   return {
     subjective,
     pain,
-    flags: result.flags || [],
+    demographics,
+    redFlags,
+    regions,
+    extracted,
+    flags,
     missingInfo: [],
     confidence: result._confidence || {},
     sourceQuotes: result._sourceQuotes || {},
@@ -191,4 +296,175 @@ export function importOldSubjectiveData(patientData) {
     });
   }
   return { subjective, pain: {} };
+}
+
+/* ============================================================
+   REGION RESOLUTION — /api/parse already returns the body area it
+   heard ("region" + up to 2 "additionalRegions", from its own fixed
+   10-option enum, plus "laterality"). Nothing used to read them here,
+   so an AI-assisted session always landed on a completely empty
+   region picker even when the narrative said "right shoulder" in the
+   first sentence (2026-09-03, Aditi: "I already told about the
+   region... when we go to the next page we should be able to see that
+   this region is selected"). This maps that enum onto THIS wizard's
+   own {id, side} region objects (orthoRegionLibrary.js) so the region
+   screen can open pre-ticked -- suggested, never locked: the picker
+   is the same one as always, so the therapist adds/removes/changes
+   side exactly as before.
+
+   Elbow/Wrist/Hand is one bucket in the parse enum but four separate
+   regions here, so that single case looks at the narrative's own
+   wording (chief complaint / location description) to pick the right
+   one, falling back to Wrist -- the most common of the four in OPD --
+   rather than guessing silently at a joint that was never mentioned.
+   ============================================================ */
+const PARSE_REGION_MAP = {
+  "Lumbar / SI": { id: "lumbar", sideless: true },
+  "Cervical spine": { id: "cervical", sideless: true },
+  "Thoracic spine": { id: "thoracic", sideless: true },
+  "Shoulder (L)": { id: "shoulder", side: "Left" },
+  "Shoulder (R)": { id: "shoulder", side: "Right" },
+  "Knee (L)": { id: "knee", side: "Left" },
+  "Knee (R)": { id: "knee", side: "Right" },
+  "Hip / Groin": { id: "hip" },
+  "Ankle / Foot": { id: "ankle" },
+  "Elbow/Wrist/Hand": { id: "__upperLimbDistal" },
+};
+
+function distalUpperLimbId(text) {
+  const hay = String(text || "").toLowerCase();
+  if (/finger|thumb|hand|grip/.test(hay)) return "hand";
+  if (/elbow|tennis elbow|golfer/.test(hay)) return "elbow";
+  if (/forearm/.test(hay)) return "forearm";
+  return "wrist";
+}
+
+// laterality is the narrative's own side ("Left"/"Right"/"Bilateral") --
+// only applied to a region that actually has sides, and never overriding
+// a side already carried by the enum value itself (Shoulder (L), Knee (R)).
+export function regionsFromParseResult(result = {}) {
+  const names = [result.region, ...(Array.isArray(result.additionalRegions) ? result.additionalRegions : [])].filter(Boolean);
+  const laterality = ["Left", "Right", "Bilateral"].includes(result.laterality) ? result.laterality : "";
+  const hint = [result.chiefComplaint, result.locationDescription].filter(Boolean).join(" ");
+  const out = [];
+  names.forEach((name) => {
+    const mapped = PARSE_REGION_MAP[name];
+    if (!mapped) return;
+    const id = mapped.id === "__upperLimbDistal" ? distalUpperLimbId(hint) : mapped.id;
+    if (out.some((r) => r.id === id)) return;
+    out.push({ id, side: mapped.sideless ? "" : mapped.side || laterality || "" });
+  });
+  return out;
+}
+
+/* ============================================================
+   OLD PATIENT DATA — every prior record on this patient that can
+   seed a new Subjective, as a real selectable list (2026-09-03,
+   Aditi: "when I click on select from old patient data it is not
+   giving me the list of old patient data to select from"). Before
+   this, the one "Load existing Subjective" button imported the
+   old-flow fields blindly with no list, no preview, and no way to
+   pick a different (e.g. more recent) record.
+
+   Sources, newest first:
+     - each saved Ortho assessment snapshot on this patient
+       (data.ortho_outpatient_assessment / _ipd_ / _postop_, the same
+       JSON-stringified snapshots SpecialtyPatientProfile.jsx reads)
+     - the old-flow Subjective Assessment (cc_main/cc_onset/... flat
+       fields), when it has anything in it
+   Each record carries its own ready-to-apply { subjective, pain }
+   payload plus preview rows, so the picker never has to know how any
+   one source is shaped.
+   ============================================================ */
+const SNAPSHOT_SOURCES = [
+  { key: "ortho_outpatient_assessment", label: "Outpatient / Musculoskeletal assessment", icon: "🚶" },
+  { key: "ortho_ipd_assessment", label: "IPD assessment", icon: "🏥" },
+  { key: "ortho_postop_assessment", label: "Post-operative Rehab assessment", icon: "🛏️" },
+];
+
+const SUBJECTIVE_PREVIEW_LABELS = {
+  chiefComplaint: "Chief complaint",
+  onset: "Onset",
+  duration: "Duration",
+  previousTreatment: "Previous treatment",
+  medicalHistory: "Medical history",
+  medication: "Medication",
+  functionalLimitations: "Functional limitations",
+  patientGoals: "Patient goals",
+};
+
+function previewRows(subjective = {}, pain = {}) {
+  const rows = Object.entries(SUBJECTIVE_PREVIEW_LABELS)
+    .filter(([k]) => String(subjective[k] || "").trim())
+    .map(([k, label]) => ({ label, value: String(subjective[k]) }));
+  if (pain.current) rows.push({ label: "Pain (NRS now)", value: String(pain.current) });
+  return rows;
+}
+
+function formatSavedAt(raw) {
+  if (!raw) return "";
+  const dt = new Date(raw);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+export function listOldPatientRecords(patientData) {
+  if (!patientData) return [];
+  const records = [];
+
+  SNAPSHOT_SOURCES.forEach((src) => {
+    let parsed = null;
+    try { parsed = patientData[src.key] ? JSON.parse(patientData[src.key]) : null; } catch { parsed = null; }
+    const subjective = parsed?.data?.subjective || null;
+    const pain = parsed?.data?.pain || {};
+    if (!subjective) return;
+    // Region-specific checklist answers travel with the record too, but
+    // only as part of a whole-record import -- never re-keyed onto a
+    // different region (same reason the old-flow import below stays
+    // limited to the shared, unambiguous fields).
+    const flat = Object.fromEntries(Object.entries(subjective).filter(([k, v]) => k !== "regions" && !k.startsWith("__") && typeof v === "string" && v.trim()));
+    if (!Object.keys(flat).length && !Object.keys(pain).length) return;
+    const savedAt = formatSavedAt(parsed?.savedAt || parsed?.date || parsed?.updatedAt);
+    records.push({
+      id: src.key,
+      icon: src.icon,
+      label: src.label,
+      sublabel: [savedAt && `Saved ${savedAt}`, parsed?.regions, parsed?.condition].filter(Boolean).join(" · "),
+      subjective: flat,
+      pain: typeof pain === "object" ? pain : {},
+      regionChecklist: subjective.regions && typeof subjective.regions === "object" ? subjective.regions : null,
+      // The case-level region selection this assessment was run with --
+      // saved verbatim by each pathway's saveAssessment, so importing an
+      // old record can pre-tick the same regions instead of asking again.
+      caseRegions: Array.isArray(parsed?.selectedRegions) ? parsed.selectedRegions : [],
+      rows: previewRows(flat, pain),
+    });
+  });
+
+  if (hasOldSubjectiveData(patientData)) {
+    const { subjective } = importOldSubjectiveData(patientData);
+    records.push({
+      id: "old_flow_subjective",
+      icon: "📋",
+      label: "Subjective Assessment (earlier flow)",
+      sublabel: "Chief complaint, history, medication and goals already on file",
+      subjective,
+      pain: {},
+      regionChecklist: null,
+      caseRegions: [],
+      rows: previewRows(subjective),
+    });
+  }
+
+  return records.filter((r) => r.rows.length > 0);
+}
+
+// The { subjective, pain } payload for one record from listOldPatientRecords
+// -- same shape mapParseResultToOrthoUpdates returns, so both paths merge
+// through the exact same caller-side code.
+export function updatesFromOldRecord(record) {
+  if (!record) return { subjective: {}, pain: {}, regions: [] };
+  const subjective = { ...record.subjective };
+  if (record.regionChecklist) subjective.regions = record.regionChecklist;
+  return { subjective, pain: { ...record.pain }, regions: record.caseRegions || [] };
 }

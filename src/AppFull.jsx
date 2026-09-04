@@ -58,7 +58,7 @@ import {
   loadPatientDB, savePatientDB,
   loadTaskDB, saveTaskDB,
   genId,
-  PatientDatabasePanel, PatientProfileModal, TreatmentCaseloadPanel,
+  PatientDatabasePanel, TreatmentCaseloadPanel,
 } from "./PatientDatabase.jsx";
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import AssessmentReportView from "./AssessmentReportView.jsx";
@@ -507,7 +507,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   });
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showPdfReports, setShowPdfReports] = useState(false);
-  const [profilePatient, setProfilePatient] = useState(null);
   const [profileTab, setProfileTab] = useState(null);
   // Clinical tab's own sub-navigation (2026-08-22): "Patients" is the
   // existing default (must stay first/default so clinicalTabRedesign.test.jsx
@@ -526,24 +525,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // a specialty does the exact same real thing (blank-slate + navigate to
   // that specialty's real tool) no matter which entry point was used.
   function startSpecialty(st) {
-    // Only blank-slate when there's no patient already open. Wiping
-    // activePatientId unconditionally used to do this every time, even with
-    // a patient already loaded -- so tapping e.g. "Neuro" right after
-    // creating/opening a patient silently started a second, disconnected
-    // blank record instead of continuing that same patient's chart, and
-    // the wizard's own name field being re-typed then auto-created a
-    // duplicate patient (see the "no active patient" auto-create effect
-    // above). Keeping the active patient here lets the wizard seed from
-    // and save back onto the one record instead.
-    const hasActivePatient = !!activePatientId;
     if (st.id === "cardio") {
-      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
+      setData({}); setActivePatientId(null);
       navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
+      setData({}); setActivePatientId(null);
       navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
-      if (!hasActivePatient) { setData({}); setActivePatientId(null); }
+      setData({}); setActivePatientId(null);
       navTo("ortho_new_assessment");
     } else {
       setStream(st.id);
@@ -883,25 +872,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     try { window.history.back(); } catch {}
   }, []);
 
-  // Single choke point for every "open this patient's profile" action.
-  // PatientDatabase.jsx's own patient-row tap already sends anyone with
-  // Cardio/Neuro/any Ortho pathway data to the new SpecialtyPatientProfile
-  // hub instead of the legacy PatientProfileModal, but the other profile
-  // entry points in this file (sidebar "👤 Profile" button, patient bar
-  // name tap, dashboard/treatment-list profile buttons) called
-  // setProfilePatient directly and always opened the old modal, so an
-  // Ortho patient looked "old" from everywhere except the patient list.
-  // Routing all of them through here keeps that one rule in one place.
+  // Single choke point for every "open this patient's profile" action
+  // (sidebar "👤 Profile" button, patient bar name tap, dashboard/
+  // treatment-list profile buttons). Every patient now opens the same
+  // SpecialtyPatientProfile hub -- the legacy PatientProfileModal this
+  // used to fall back to for patients with no Cardio/Neuro/Ortho data has
+  // been removed entirely (2026-09-02, Aditi: "remove old ortho patient
+  // profile totally").
   const openPatientProfile = useCallback((p, tab) => {
     if (!p) return;
-    const d = p.data || {};
-    if (d.cardio || d.neuro || d.ortho_outpatient_assessment || d.ortho_ipd_assessment || d.ortho_postop_assessment) {
-      selectPatient(p);
-      navTo("specialty_profile");
-    } else {
-      setProfilePatient(p);
-      if (tab) setProfileTab(tab);
-    }
+    selectPatient(p);
+    if (tab) setProfileTab(tab);
+    navTo("specialty_profile");
   }, [selectPatient, navTo]);
 
   const Field = useCallback(({t})=>{
@@ -1227,35 +1209,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           onImport={importPatientFromJSON}
           onNav={(key)=>{ setShowPatientDb(false); navTo(key); }}
           liveData={data}
-        />
-      )}
-
-      {/* ── PATIENT PROFILE MODAL (from bar or dashboard) ── */}
-      {profilePatient && !showPatientDb && (
-        <PatientProfileModal
-          patient={(()=>{
-            const fresh = patients.find(p=>p.id===profilePatient.id) || profilePatient;
-            return fresh.id===activePatientId
-              ? {...fresh, data:{...fresh.data,...data}}
-              : fresh;
-          })()}
-          onClose={()=>{ setProfilePatient(null); setProfileTab(null); }}
-          onLoadAssessment={(p)=>{ selectPatient(p); setProfilePatient(null); }}
-          onSaveField={(id,newData)=>{
-            // BUG FIX: this used to only update in-memory `patients` state and
-            // never actually persisted — Quick Notes / Clinical Impression
-            // entries saved from the Patient Profile modal could silently be
-            // lost on refresh, since neither localStorage nor Supabase ever
-            // saw them. Now routed through the same savePatientDB() path
-            // (local cache + cloud) everything else uses.
-            setPatients(prev=>{
-              const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);
-              savePatientDB(updated, currentUser?.id);
-              return updated;
-            });
-          }}
-          onNav={(key)=>{ if(key==="demographics"){ setProfileTab("demographics"); } else { setProfilePatient(null); setProfileTab(null); navTo(key); } }}
-          initialTab={profileTab||undefined}
         />
       )}
 
@@ -1860,7 +1813,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               for whichever of Cardio/Neuro that patient has recorded --
               see AssessmentReportView.jsx.
               Merges live in-session `data` over the flushed patient record
-              the same way PatientProfileModal already does just below, so
+              the same way SpecialtyPatientProfile does just below, so
               edits made in THIS session show up here immediately instead
               of only after the next autosave flush. */}
           {active==="assessment_report" && (
@@ -1873,21 +1826,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             </div>
           )}
 
-          {/* Separate, simple Cardio/Neuro patient hub -- lives ONLY in
-              Clinical (reached via "🫀🧠 Specialty Profile" on a patient
-              row), deliberately NOT merged into the Ortho PatientProfileModal
-              a few hundred lines below (Aditi: "donot mix the ortho[']s
-              patient profile ... make new patient profile for cardio
-              neuro"). See SpecialtyPatientProfile.jsx's header comment for
-              why it's Overview+Assessments only, no Progress/Treatment/
-              Documents tabs yet. Same live-data merge as the report view
-              above. */}
+          {/* The one patient profile screen in the app (2026-09-02, Aditi:
+              "remove old ortho patient profile totally") -- every patient
+              (Cardio/Neuro/any Ortho pathway, or none) now opens here.
+              Same live-data merge as the report view above. */}
           {active==="specialty_profile" && (
             <div style={{margin:"-24px -20px 0",background:"#f8fafc",minHeight:"100vh"}}>
               <SpecialtyPatientProfile
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
+                initialTab={profileTab||undefined}
                 onNav={navTo}
-                onBack={()=>navTo("clinical")}
+                onBack={()=>{ setProfileTab(null); navTo("clinical"); }}
                 onSaveField={(id,newData)=>{
                   setPatients(prev=>{
                     const updated = prev.map(p=>p.id===id?{...p,data:{...p.data,...newData},name:newData.dem_name||p.name,updatedAt:new Date().toISOString()}:p);

@@ -9,7 +9,8 @@ import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "
 import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
-import { KineticChainSection, CpaSection, SttSection, FmaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection } from "./orthoAdvancedTools.jsx";
+import { palpationStructureRows } from "./orthoPalpationData.js";
+import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
@@ -36,7 +37,12 @@ function formatPainSection(section) {
   return [...formatBodyChartSummary(body_chart_pro), ...restRows(rest)];
 }
 function formatPalpationSection(section) {
-  const { palp_pins, ...rest } = section;
+  // structures = the region-wise, structure-by-structure findings the
+  // Palpation screen now records (orthoPalpationData.js); palp_pins = the
+  // body map's own pins. Both are objects, so without these two the generic
+  // Object.entries fallback would print them as unreadable blobs.
+  const { palp_pins, structures, ...rest } = section;
+  const structureRows = palpationStructureRows(structures || {});
   let pins = [];
   try { pins = JSON.parse(palp_pins || "[]"); } catch {}
   const pinRows = pins.map((p) => ({
@@ -49,7 +55,7 @@ function formatPalpationSection(section) {
       p.notes,
     ].filter(Boolean).join(", ") || "marked, no detail",
   }));
-  return [...pinRows, ...restRows(rest)];
+  return [...structureRows, ...pinRows, ...restRows(rest)];
 }
 
 // Exported alongside buildOrthoAssessSteps (see below) so
@@ -69,6 +75,7 @@ export const orthoSummaryFormatters = {
   cpa: formatCpaSection,
   sttt: formatSttSection,
   fma: formatFmaSection,
+  fascia: formatFasciaSection,
   outcomeMeasure: formatOutcomeMeasureSection,
   techniques: formatTreatmentTechniquesSection,
   exercisePrescription: formatExercisePrescriptionSection,
@@ -98,9 +105,9 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // itself), skipping these four as separate steps in between. Condition-
 // wise/General/Templates entries keep the full BASE_IDS sequence.
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -130,6 +137,7 @@ const STEP_META = {
   cpa: { icon: "🧠", label: "CPA (NKT)" },
   sttt: { icon: "🦴", label: "STTT (Cyriax)" },
   fma: { icon: "🏃", label: "Functional Movement" },
+  fascia: { icon: "🧵", label: "Fascia" },
   gait: { icon: "🚶", label: "Gait / Movement" },
   balance: { icon: "⚖️", label: "Balance" },
   functionalAssessment: { icon: "🏃", label: "Functional Assessment" },
@@ -233,15 +241,33 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // the patient's own narrative, handleConditionDetected below promotes it
   // exactly as if the clinician had picked it manually on the
   // Condition-wise screen.
-  const [condition, setCondition] = useState(initialCondition);
-  const [detectedConditionLabel, setDetectedConditionLabel] = useState(null);
+  // A condition the landing-screen extraction already classified (the AI
+  // entry always arrives with condition="general") is promoted at mount,
+  // exactly as handleConditionDetected does for an in-wizard extraction --
+  // otherwise Suggested Objective spent the whole session on the generic
+  // baseline even though the narrative had already been classified.
+  const aiDetectedCondition =
+    initialCondition === "general" && initialAiUpdates?.conditionCategory && initialAiUpdates.conditionCategory !== "other"
+      ? OUTPATIENT_CONDITIONS.find((c) => c.id === initialAiUpdates.conditionCategory) || null
+      : null;
+  const [condition, setCondition] = useState(aiDetectedCondition ? aiDetectedCondition.id : initialCondition);
+  const [detectedConditionLabel, setDetectedConditionLabel] = useState(aiDetectedCondition ? aiDetectedCondition.label : null);
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
-    const promoted = initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
-    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id));
+    const promoted = aiDetectedCondition ? aiDetectedCondition.promote : initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
+    // AI entry normally skips Red Flags and Pain as separate steps
+    // (AI_ENTRY_SKIP_IDS) -- but not when the intake itself produced answers
+    // for them: an extraction that recorded an NRS score or a red flag the
+    // patient actually mentioned would otherwise fill a step the therapist
+    // is never shown, which is exactly the "extracted but not in the form"
+    // problem (2026-09-03, Aditi).
+    const seeded = [];
+    if (initialAiUpdates?.pain && Object.keys(initialAiUpdates.pain).length) seeded.push("pain");
+    if (initialAiUpdates?.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.push("redFlags");
+    return ORDERED_ALL.filter((id) => effectiveBaseIds.includes(id) || promoted.includes(id) || seeded.includes(id));
   });
   // Only fires from SubjectiveSection's AI intake (orthoOutpatientSections.jsx),
   // and only if condition is still "general" -- never overrides a condition
@@ -284,13 +310,24 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // previous session, restored verbatim when resuming via Edit; takes
   // priority over the AI-intake seed since a resumed edit already has
   // real answers, not just an AI-parsed starting point.
+  // 2026-09-03, Aditi: "the extracted AI subjective assessment is not fully
+  // filled in the subjective assessment form" -- the seed used to be
+  // subjective+pain only, so the age/sex/occupation/affected side and any
+  // red flag the same extraction produced never reached Demographics or the
+  // Red Flag Screen. `extracted` rides along on data.subjective.__aiExtracted
+  // (a "__" key, so every summary formatter already skips it) to render the
+  // read-only "as extracted" panel on the Subjective step.
   const [data, setData] = useState(() => {
     if (initialData) return initialData;
     if (!initialAiUpdates) return {};
-    return {
+    const seeded = {
       subjective: { ...initialAiUpdates.subjective },
       pain: { ...initialAiUpdates.pain },
     };
+    if (initialAiUpdates.extracted?.length) seeded.subjective.__aiExtracted = initialAiUpdates.extracted;
+    if (initialAiUpdates.demographics && Object.keys(initialAiUpdates.demographics).length) seeded.demographics = { ...initialAiUpdates.demographics };
+    if (initialAiUpdates.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.redFlags = { ...initialAiUpdates.redFlags };
+    return seeded;
   });
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
@@ -507,6 +544,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "cpa" && <CpaSection data={data} setData={setData} />}
           {current.id === "sttt" && <SttSection data={data} setData={setData} />}
           {current.id === "fma" && <FmaSection data={data} setData={setData} />}
+          {current.id === "fascia" && <FasciaSection data={data} setData={setData} />}
           {current.id === "gait" && <GaitSection data={data} setData={setData} />}
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "functionalAssessment" && <FunctionalAssessmentSection data={data} setData={setData} />}

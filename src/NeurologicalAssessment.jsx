@@ -3,9 +3,21 @@ import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
-import { NEURO_TREATMENT_CATALOG, EVIDENCE_SOURCES, PROBLEM_PRIORITY_ORDER, REHAB_PHASES, LIMITED_EVIDENCE_NOTICE } from "./neuroTreatmentCatalog.js";
-import { authHeader } from "./supabase.js";
 import { SCALES } from "./sharedClinicalData.js";
+import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
+import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
+import { orthoStyles } from "./orthoStyles.js";
+
+// formatters[stepId] contract for SummarySection's rowsForStep -- only
+// exercisePrescription needs one so far (its section holds an array, not
+// flat fields); every other step still uses the generic flattener.
+// Exported so SpecialtyPatientProfile.jsx's own NeuroSummarySection call
+// (Cardio/Neuro/Ortho patient profile) shows the same real exercise
+// programme instead of "[object Object]" there too.
+export const neuroSummaryFormatters = {
+  exercisePrescription: formatNeuroExercisePrescriptionSection,
+  carePlan: formatNeuroCarePlanSection,
+};
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
 // component Cardiopulmonary Assessment already uses) from anywhere in the
@@ -70,8 +82,9 @@ const STEP_META = [
   { id: "functional", icon: "🛏️", label: "Functional Assessment" },
   { id: "outcomes", icon: "📊", label: "Outcome Measures" },
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
+  { id: "carePlan", icon: "🎯", label: "Problems, Goals & Plan" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
-  { id: "aiTreatment", icon: "✨", label: "AI Treatment Suggestions" },
+  { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
   { id: "summary", icon: "✅", label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(1); // 16 core steps shown in the step nav
@@ -1342,6 +1355,12 @@ function GaitSection({ data, setData }) {
       <SelectField label="Tandem gait (heel-to-toe)" type="single" options={["Normal", "Impaired", "Unable", "Not tested"]} value={d.tandemGait} onChange={(v) => set("tandemGait", v)} info={neuroExamLibraryData.tandemGait} />
       <SelectField label="Level of assistance" type="single" options={["Independent", "Supervision", "Contact guard", "Minimal assist", "Moderate assist", "Maximal assist", "Unable to ambulate"]} value={d.assistanceLevel} onChange={(v) => set("assistanceLevel", v)} />
       <div className="vitals-grid">
+        {/* Walking distance (2026-09-02) -- the single most-used baseline in
+            a neuro walking goal ("40 m with Min A -> 100 m with
+            supervision"). It had no field here at all, so that goal could
+            never be pre-filled; neuroClinicalKnowledge.js's
+            walking_limitation rule reads this. */}
+        <NumberField label="Walking distance" value={d.distance} onChange={(v) => set("distance", v)} unit="m" width="45%" />
         <NumberField label="Gait speed" value={d.gaitSpeed} onChange={(v) => set("gaitSpeed", v)} unit="m/s" width="45%" />
         <NumberField label="10-metre walk time" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" width="45%" />
       </div>
@@ -1464,264 +1483,6 @@ function PrecautionsSection({ data, setData, setting }) {
   );
 }
 
-/* ============================================================
-   AI TREATMENT SUGGESTIONS — evidence-linked clinical decision
-   support, NOT a free-form LLM call. deriveNeuroProblems() and
-   matchNeuroTreatments() below are a deterministic rule engine: they
-   only read the therapist's own documented findings (Clinical
-   Interpretation's "Key impairments" tags, plus a couple of derived
-   flags from Functional/Gait) and select from the fixed, hand-vetted
-   NEURO_TREATMENT_CATALOG (neuroTreatmentCatalog.js). Nothing here
-   generates a treatment name, dosage, or citation per-request -- that
-   is the only way to genuinely satisfy "never invent findings/
-   citations/dosage" for a clinical-safety feature like this.
-   ============================================================ */
-function deriveNeuroProblems(data) {
-  const problems = new Set(data.interpretation?.impairments || []);
-  const f = data.functional || {};
-  const transferAssist = ["Minimal assist", "Moderate assist", "Maximal assist", "Dependent", "Requires hoist"];
-  if (transferAssist.includes(f.sitStand) || transferAssist.includes(f.bedChair) || transferAssist.includes(f.bedMobility)) {
-    problems.add("Transfer difficulty");
-  }
-  const adlAssist = ["Minimal assist", "Moderate assist", "Maximal assist", "Dependent"];
-  if (adlAssist.includes(f.toileting) || adlAssist.includes(f.dressing) || adlAssist.includes(f.feeding)) {
-    problems.add("Reduced independence");
-  }
-  const g = data.gait || {};
-  if (g.assistanceLevel && !["Independent", "Supervision"].includes(g.assistanceLevel)) {
-    problems.add("Impaired gait");
-  }
-  return problems;
-}
-
-// Pulls 1-3 short "label: value" strings straight from the documented
-// data for a given problem tag, so "why suggested" only ever quotes
-// what the therapist actually entered.
-function neuroWhyFindings(data, problem) {
-  const out = [];
-  const f = data.functional || {}, g = data.gait || {}, b = data.balance || {}, m = data.motor || {}, c = data.coordination || {}, t = data.tone || {}, s = data.sensory || {};
-  const push = (label, val) => { if (val) out.push(`${label}: ${val}`); };
-  if (problem === "Transfer difficulty") {
-    push("Sit-to-stand transfer", f.sitStand);
-    push("Bed-to-chair transfer", f.bedChair);
-    push("Bed mobility", f.bedMobility);
-  } else if (problem === "Reduced independence") {
-    push("Toileting/bathing", f.toileting);
-    push("Dressing/grooming", f.dressing);
-    if (f.barthel) push("Barthel Index", `${f.barthel}/100`);
-  } else if (problem === "Impaired gait") {
-    push("Gait pattern", g.pattern);
-    push("Level of assistance", g.assistanceLevel);
-    if (g.gaitSpeed) push("Gait speed", `${g.gaitSpeed} m/s`);
-  } else if (problem === "Impaired balance") {
-    push("Standing dynamic balance", b.standDynamic);
-    push("Standing static balance", b.standStatic);
-    if (b.berg) push("Berg Balance Scale", `${b.berg}/56`);
-  } else if (problem === "Muscle weakness") {
-    // LRGrid stores flat "row__column" keys (e.g. "Knee extension__Right").
-    Object.entries(m.mmt || {}).forEach(([key, grade]) => {
-      if (grade && Number(grade) <= 3) out.push(`${key.replace("__", " ")} MMT: ${grade}/5`);
-    });
-  } else if (problem === "Impaired coordination") {
-    Object.entries(c.fingerNose || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Finger-to-nose (${key.replace("__", " ")}): ${val}`); });
-    Object.entries(c.heelShin || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Heel-to-shin (${key.replace("__", " ")}): ${val}`); });
-    push("Dysmetria", c.dysmetria);
-  } else if (problem === "Abnormal tone") {
-    Object.entries(t.toneType || {}).forEach(([key, val]) => { if (val && val !== "Normal") out.push(`Tone (${key.replace("__", " ")}): ${val}`); });
-  } else if (problem === "Sensory loss") {
-    ["lightTouch", "pinprick", "proprioception"].forEach((k) => {
-      const label = k === "lightTouch" ? "Light touch" : k === "pinprick" ? "Pain/pinprick" : "Proprioception";
-      Object.entries(s[k] || {}).forEach(([key, grade]) => { if (grade && grade !== "Intact") out.push(`${label} (${key.replace("__", " ")}): ${grade}`); });
-    });
-  }
-  return out.slice(0, 3);
-}
-
-function neuroPhaseForPatient(data) {
-  const g = data.gait || {}, f = data.functional || {}, b = data.balance || {};
-  const notIndep = (v) => v && v !== "Independent";
-  if (notIndep(f.bedMobility) && notIndep(f.sitStand) && (b.sitStatic === "Poor" || b.sitStatic === "Absent")) return REHAB_PHASES.acute;
-  if (g.assistanceLevel === "Independent" || g.assistanceLevel === "Supervision") return REHAB_PHASES.advanced;
-  if (notIndep(f.sitStand) || notIndep(f.bedChair)) return REHAB_PHASES.early;
-  return REHAB_PHASES.functional;
-}
-
-function matchNeuroTreatments(data) {
-  const problems = deriveNeuroProblems(data);
-  if (!problems.size) return { problems, treatments: [] };
-  const phase = neuroPhaseForPatient(data);
-  const matched = NEURO_TREATMENT_CATALOG.filter((t) => t.triggers.some((trig) => problems.has(trig)));
-  const treatments = matched.map((t) => {
-    const matchedProblem = t.triggers.find((trig) => problems.has(trig));
-    const why = neuroWhyFindings(data, matchedProblem);
-    return {
-      ...t,
-      matchedProblem,
-      why,
-      phase,
-      evidenceRefs: t.evidence.map((id) => EVIDENCE_SOURCES[id]).filter(Boolean),
-    };
-  });
-  // Rank by the fixed priority order of the problem each treatment was matched for.
-  treatments.sort((a, b) => PROBLEM_PRIORITY_ORDER.indexOf(a.matchedProblem) - PROBLEM_PRIORITY_ORDER.indexOf(b.matchedProblem));
-  return { problems, treatments };
-}
-
-function AiTreatmentCard({ t, index, selected, onToggleSelect }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="summary-card">
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }} onClick={() => setOpen((o) => !o)}>
-        <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: "50%", background: BRAND.purpleFaint, color: BRAND.purpleDark, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{String(index + 1).padStart(2, "0")}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="summary-title" style={{ marginBottom: 2 }}>{t.name}</div>
-          <div style={{ fontSize: 12, color: BRAND.gray }}>{t.goal}</div>
-        </div>
-        <div style={{ fontSize: 12, color: BRAND.purple, flexShrink: 0 }}>{open ? "▾" : "▸"}</div>
-      </div>
-
-      {open && (
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BRAND.border}` }}>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}>
-            <b>Why suggested:</b>{" "}
-            {t.why.length ? `Suggested because ${t.why.join("; ")}.` : "Not documented — therapist assessment required."}
-          </div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Phase:</b> {t.phase}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>How:</b> {t.how}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Dosage:</b> {t.dosage}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Progression:</b> {t.progression.join(" → ")}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Monitor:</b> {t.monitor.join(" · ")}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}><b>Precautions:</b> {t.precautionsTemplate}</div>
-          <div style={{ fontSize: 12.5, marginBottom: 8 }}>
-            <b>Evidence ({t.evidenceRefs.length || 0}):</b>
-            {t.evidenceRefs.length ? (
-              <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
-                {t.evidenceRefs.map((e) => (
-                  <li key={e.id} style={{ marginBottom: 4 }}>
-                    {e.citation} <span style={{ color: BRAND.purple, fontWeight: 700 }}>[{e.strength}]</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span> {LIMITED_EVIDENCE_NOTICE}</span>
-            )}
-          </div>
-          <button type="button" className={selected ? "ghost-btn" : "primary-btn"} style={{ width: "100%" }} onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}>
-            {selected ? "✓ Added to Treatment Plan" : "+ Add to Treatment Plan"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Optional hybrid layer: asks the LLM (api/neuroTreatmentReasoning.js) to
-// write a short narrative connecting THIS patient's findings to the
-// rule-engine's priority order. Opt-in via a button (not auto-fetched) so
-// it never spends a Groq call just from opening the step, and its output
-// is rendered in its own clearly-labelled block -- never merged into the
-// verified evidence/dosage text above, which always comes straight from
-// the static catalog regardless of whether this ever runs.
-function AiClinicalReasoningPanel({ problems, treatments, phase }) {
-  const [state, setState] = useState("idle"); // idle | loading | done | error
-  const [reasoning, setReasoning] = useState("");
-  const [error, setError] = useState("");
-
-  async function run() {
-    setState("loading");
-    setError("");
-    try {
-      const res = await fetch("/api/neuroTreatmentReasoning", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({
-          problems,
-          phase,
-          treatments: treatments.map((t) => ({
-            name: t.name, matchedProblem: t.matchedProblem, why: t.why, how: t.how,
-            dosage: t.dosage, evidenceRefs: t.evidenceRefs,
-          })),
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Request failed");
-      setReasoning(json.reasoning);
-      setState("done");
-    } catch (e) {
-      setError(e.message || "Something went wrong");
-      setState("error");
-    }
-  }
-
-  return (
-    <div className="summary-card" style={{ marginBottom: 14, background: BRAND.purpleFaint }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: state === "idle" ? 0 : 8 }}>
-        <span style={{ fontSize: 16 }}>✨</span>
-        <span style={{ fontWeight: 800, fontSize: 13, color: BRAND.purpleDark, flex: 1 }}>AI Clinical Reasoning</span>
-        {state !== "loading" && (
-          <button type="button" className="ghost-btn" onClick={run}>
-            {state === "done" ? "Regenerate" : "Generate"}
-          </button>
-        )}
-      </div>
-      {state === "idle" && (
-        <div style={{ fontSize: 12, color: BRAND.gray }}>
-          Optional — ask the AI to explain, in this patient's own findings, why the priority order above makes sense. It can only reference the treatments, dosage and evidence already shown; it cannot add new ones.
-        </div>
-      )}
-      {state === "loading" && <div style={{ fontSize: 12.5, color: BRAND.gray }}>Thinking…</div>}
-      {state === "error" && <div style={{ fontSize: 12.5, color: "#B4232A" }}>{error} — <button type="button" className="ghost-btn" onClick={run}>Retry</button></div>}
-      {state === "done" && <div style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{reasoning}</div>}
-    </div>
-  );
-}
-
-function AiTreatmentSuggestionsSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "aiTreatment");
-  const selected = Array.isArray(d.selected) ? d.selected : [];
-  const { problems, treatments } = useMemo(() => matchNeuroTreatments(data), [data]);
-  const toggleSelect = (id) => set("selected", selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
-
-  if (!problems.size) {
-    return (
-      <>
-        <SectionIntro icon="✨" title="AI Treatment Suggestions" sub="Evidence-linked treatment options for your consideration — you make the final clinical decision." />
-        <div className="alert alert-amber">
-          Not documented — therapist assessment required. Tag this patient's <b>Key impairments</b> in Clinical Interpretation (or document Transfers/Gait assistance level) to generate suggestions.
-        </div>
-      </>
-    );
-  }
-
-  const priorityList = PROBLEM_PRIORITY_ORDER.filter((p) => problems.has(p));
-
-  return (
-    <>
-      <SectionIntro icon="✨" title="AI Treatment Suggestions" sub="Evidence-linked treatment options for your consideration — you make the final clinical decision." />
-      <div className="subheading">Today's priorities</div>
-      <div className="summary-card">
-        {priorityList.map((p, i) => (
-          <div className="summary-row" key={p}>
-            <span className="summary-key">{String(i + 1).padStart(2, "0")}</span>
-            <span className="summary-val">{p}</span>
-          </div>
-        ))}
-      </div>
-
-      <AiClinicalReasoningPanel problems={priorityList} treatments={treatments} phase={treatments[0]?.phase} />
-
-      <div className="subheading">{treatments.length} treatment option{treatments.length !== 1 ? "s" : ""} identified</div>
-      {treatments.map((t, i) => (
-        <AiTreatmentCard key={t.id} t={t} index={i} selected={selected.includes(t.id)} onToggleSelect={() => toggleSelect(t.id)} />
-      ))}
-
-      <div className="alert alert-amber" style={{ marginTop: 14 }}>
-        These are suggestions for consideration, not a prescription — confirm against the patient's precautions and current presentation before proceeding.
-      </div>
-    </>
-  );
-}
-
 /* ---------- Summary ---------- */
 function fmtVal(v) {
   if (v && typeof v === "object") {
@@ -1751,10 +1512,10 @@ export function SummaryStyles() {
       .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
       .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
       .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-      .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
+      .summary-row { display: flex; gap: 8px; font-size: 13.5px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
       .summary-row:first-child { border-top: none; }
-      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-      .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: 600; }
+      .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
       .primary-btn {
         flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
         padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
@@ -1766,7 +1527,31 @@ export function SummaryStyles() {
     `}</style>
   );
 }
-export function SummarySection({ setting, data, assessSteps }) {
+// "chiefComplaint" -> "Chief Complaint" -- the raw field key was showing
+// verbatim (e.g. "BedMobility", "PriorFunction") with only the CSS
+// text-transform:capitalize applied, which capitalizes just the first
+// letter since there's no whitespace to find word boundaries at. Same
+// approach AssessmentReportView.jsx's humanize() already uses.
+function humanizeKey(k) {
+  return String(k).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+// rowsForStep: a step's own formatter (when it needs one -- e.g. a step
+// whose section holds an array like the Exercise Prescription programme,
+// not flat key/value fields) wins; otherwise fall back to the generic
+// Object.entries flattener every other step already used. Same
+// formatters[stepId] contract as orthoSummary.jsx's AssessmentSummary, so
+// exercisePrescription can reuse formatNeuroExercisePrescriptionSection
+// from neuroExercisePrescription.jsx instead of showing "[object Object]".
+function rowsForStep(step, section, formatters) {
+  const formatter = formatters?.[step.id];
+  if (formatter) return formatter(section);
+  return Object.entries(section)
+    .map(([k, v]) => [k, fmtVal(v)])
+    .filter(([, v]) => v)
+    .map(([label, value]) => ({ label: humanizeKey(label), value }));
+}
+
+export function SummarySection({ setting, data, assessSteps, formatters }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
@@ -1774,37 +1559,31 @@ export function SummarySection({ setting, data, assessSteps }) {
   const exportText = useMemo(() => {
     let lines = [`NEUROLOGICAL ASSESSMENT`, `Setting: ${settingLabel}`, ""];
     steps.filter((s) => s.id !== "summary").forEach((step) => {
-      const section = data[step.id] || {};
-      const rows = Object.entries(section)
-        .map(([k, v]) => [k, fmtVal(v)])
-        .filter(([, v]) => v);
+      const rows = rowsForStep(step, data[step.id] || {}, formatters);
       if (rows.length) {
         lines.push(`— ${step.label} —`);
-        rows.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
         lines.push("");
       }
     });
     return lines.join("\n");
-  }, [data, settingLabel, steps]);
+  }, [data, settingLabel, steps, formatters]);
 
   return (
     <>
       <SectionIntro icon="✅" title="Summary & Review" sub={settingLabel} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
-        const section = data[step.id] || {};
-        const rows = Object.entries(section)
-          .map(([k, v]) => [k, fmtVal(v)])
-          .filter(([, v]) => v);
+        const rows = rowsForStep(step, data[step.id] || {}, formatters);
         if (!rows.length) return null;
         return (
           <div className="summary-card" key={step.id}>
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {rows.map(([k, v]) => (
-              <div className="summary-row" key={k}>
-                <span className="summary-key">{k}</span>
-                <span className="summary-val">{v}</span>
+            {rows.map(({ label, value }) => (
+              <div className="summary-row" key={label}>
+                <span className="summary-key">{label}</span>
+                <span className="summary-val">{value}</span>
               </div>
             ))}
           </div>
@@ -1839,17 +1618,41 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "precautions", "aiTreatment", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "carePlan", "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
   const domainSet = new Set(domainStepIds);
   const core = FULL_STEP_ORDER.filter((id) => ALWAYS_STEP_IDS.includes(id) || domainSet.has(id));
-  const summaryIdx = core.indexOf("summary");
-  const insertAt = summaryIdx === -1 ? core.length : summaryIdx;
+  const interpIdx = core.indexOf("interpretation");
+  const insertAt = interpIdx === -1 ? core.length : interpIdx;
   const next = [...core];
   next.splice(insertAt, 0, ...customIds);
   return next;
+}
+
+// Migration for patients assessed before a mandatory step existed (e.g.
+// "carePlan", added 2026-09-02). Their saved meta.stepOrder is missing that
+// step, so reopening them wouldn't show it. This injects any ALWAYS_STEP_IDS
+// absent from a saved order at their canonical FULL_STEP_ORDER position,
+// preserving the therapist's own custom step ordering otherwise.
+function ensureAlwaysSteps(savedOrder) {
+  if (!Array.isArray(savedOrder) || !savedOrder.length) return savedOrder;
+  const present = new Set(savedOrder);
+  const missing = ALWAYS_STEP_IDS.filter((id) => !present.has(id));
+  if (!missing.length) return savedOrder;
+  const out = [...savedOrder];
+  for (const id of missing) {
+    const canonicalIdx = FULL_STEP_ORDER.indexOf(id);
+    // Insert before the first already-present step that comes after `id`
+    // in the canonical order; fall back to appending before "summary".
+    let insertAt = out.length;
+    for (let i = 0; i < out.length; i++) {
+      if (FULL_STEP_ORDER.indexOf(out[i]) > canonicalIdx) { insertAt = i; break; }
+    }
+    out.splice(insertAt, 0, id);
+  }
+  return out;
 }
 
 const REGIONS = [
@@ -1937,9 +1740,10 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const hasExistingNeuro = Object.keys(neuroSeed).length > 0;
   const [step, setStep] = useState(() => (hasExistingNeuro ? 1 : 0));
   const [setting, setSetting] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.setting || "outpatient" : null));
+  const [condition, setCondition] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.condition || null : null));
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id)));
+  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1961,8 +1765,9 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setData(s);
     setStep(existing ? 1 : 0);
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
+    setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
-    setStepOrder(existing ? s.meta?.stepOrder || FULL_STEP_ORDER : ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id));
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);
@@ -1982,8 +1787,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   useEffect(() => {
     if (phase !== "assess") return;
     setData((prev) => {
-      const meta = { setting, stepOrder, customStepsMeta };
-      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
+      const meta = { setting, condition, stepOrder, customStepsMeta };
+      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
       return { ...prev, meta };
     });
     // Also mirror the chosen setting onto the shared patient record's own
@@ -2091,6 +1896,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       const g = NEURO_LIBRARY.find((x) => x.cat === cat);
       customMeta[neuroId(cat, label)] = { icon: g?.icon || "🧠", label };
     });
+    setCondition(t.id);
     startAssessment(t.domainSteps, customIds, customMeta);
   }
   function toggleRegion(id) {
@@ -2163,8 +1969,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     } else {
       setCustomStepsMeta((m) => ({ ...m, [id]: { icon, label } }));
       setStepOrder((prev) => {
-        const summaryIdx = prev.indexOf("summary");
-        const insertAt = summaryIdx === -1 ? prev.length : summaryIdx;
+        const interpIdx = prev.indexOf("interpretation");
+        const insertAt = interpIdx === -1 ? prev.length : interpIdx;
         const next = [...prev];
         next.splice(insertAt, 0, id);
         return next;
@@ -2271,6 +2077,17 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .info-popover { position: relative; z-index: 1071; width: 320px; max-width: 100%; background: ${BRAND.ink}; color: #EDEBFB; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 10px 30px rgba(20,10,60,.3); }
         .info-popover p { margin: 0; padding-right: 14px; }
         .info-popover-close { position: absolute; top: 8px; right: 8px; border: none; background: transparent; color: #B8AEEF; font-size: 11px; cursor: pointer; }
+
+        /* InfoCardButton's ⓘ (opens the rich Perform/Scale/Interpret card --
+           Vitals, ROM, GCS, Balance, DVT, etc.) had NO CSS rule anywhere in
+           this file at all -- rendered as a bare unstyled native <button>ⓘ
+           </button> (2026-09-03, Aditi: "it is so much boring, and we cannot
+           see it or use it" -- for Neuro specifically it wasn't just boring,
+           it was invisible). Raised "3D" pill matching Cardio/Ortho's own
+           redesign: solid gradient fill + hard bottom edge + soft drop
+           shadow + inset top highlight, pressing flat on :active. */
+        .info-card-btn { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-card-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
 
         .text-input-wrap, .select-wrap { position: relative; display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; }
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 16px; padding: 8px 4px; background: transparent; min-width: 0; }
@@ -2550,10 +2367,29 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
-              {current.id === "aiTreatment" && <AiTreatmentSuggestionsSection data={data} setData={setData} />}
+              {current.id === "carePlan" && (
+                <>
+                  {/* Same scoped-stylesheet reason as the Exercise
+                      Prescription step below -- NeuroCarePlan.jsx is built
+                      on the Ortho field kit's classes. */}
+                  <style>{orthoStyles()}</style>
+                  <NeuroCarePlanSection data={data} setData={setData} />
+                </>
+              )}
+              {current.id === "exercisePrescription" && (
+                <>
+                  {/* Reuses Ortho's ExerciseLibraryCard/ProgrammeEntryCard
+                      (.tech-card/.stepper/.template-list/.vital-field etc.),
+                      which Neuro's own stylesheet doesn't define -- scoped
+                      to just this step the same way SpecialtyPatientProfile.jsx
+                      already does when it renders an Ortho summary. */}
+                  <style>{orthoStyles()}</style>
+                  <NeuroExercisePrescriptionSection data={data} setData={setData} />
+                </>
+              )}
               {current.id === "summary" && (
                 <>
-                  <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
+                  <SummarySection setting={setting} data={data} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
                   <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setSaveModalOpen(true)}>
                     ⭐ Save this assessment as a template
                   </button>
@@ -2610,7 +2446,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               </button>
             </div>
             <div className="ct-modal-body">
-              <SummarySection setting={setting} data={data} assessSteps={assessSteps} />
+              <SummarySection setting={setting} data={data} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
             </div>
           </div>
         )}

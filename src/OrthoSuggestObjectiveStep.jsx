@@ -1,18 +1,43 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, Segmented, SelectField, TextArea, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, suggestCpaItems, suggestKineticChainItems, suggestFmaItems, suggestSttItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow, cpaWhy, cpaHow, kcWhy, kcHow, fmaWhy, fmaHow, sttWhy, sttHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
-import { MMT_GRADE_OPTIONS } from "./orthoClinicalData.js";
+import { RESTRICTION_GRADE, MMT_GRADES } from "./orthoClinicalData.js";
+
+function groupByRegion(items, selectedRegions) {
+  if (selectedRegions.length <= 1) return null;
+  const groups = new Map();
+  items.forEach((item) => {
+    const key = item.regionKey;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+  const regionLabel = (key) => {
+    const r = selectedRegions.find((r) => r.id === key) || ALL_REGIONS.find((r) => r.id === key);
+    return r ? r.label : key;
+  };
+  return [...groups.entries()].map(([key, items]) => ({ key, label: regionLabel(key), items }));
+}
+// The Objective item cards below render the EXACT same controls and info
+// sheets the full ROM/MMT/Special Tests pages do (2026-09-03, Aditi:
+// "objective assessment info cards are not showing the way it normally does
+// in ortho info cards -- it has made their own info cards. I want it same as
+// it is normally presented"). Everything visual here is now imported from
+// orthoRegionAssessments.jsx rather than re-implemented, so the two screens
+// cannot drift apart again.
+import { RomMovementCard, GradeSelect, romInfoText, romRichItem, mmtInfoText, mmtRichItem, specialRichItem, isPositiveResult } from "./orthoRegionAssessments.jsx";
+import { PalpationSection } from "./orthoOutpatientSections.jsx";
+import { palpationFocusZoneIds, palpationZonesForRegions } from "./orthoPalpationData.js";
+import { InfoButton } from "./orthoFieldKit.jsx";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
 import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds } from "./orthoLumbarReasoning.js";
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
-import { OptionChips } from "./orthoAdvancedTools.jsx";
-import { CYRIAX_RESISTED_RESULTS } from "./orthoAdvancedLibrary.js";
+import { CpaSection, KineticChainSection, FmaSection, SttSection, FasciaSection } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
 /* ============================================================
@@ -289,40 +314,41 @@ function ItemCardShell({ label, sublabel, answered, summary, whyLines, howLines,
 }
 
 function RomItemCard({ item, romData, setRom, selectionData, onSelectItem }) {
-  const { regionKey, itemId, label, meta } = item;
+  const { regionKey, itemId, meta } = item;
   const entry = romData[regionKey] || {};
   const val = entry[itemId] || {};
   const key = itemKey("rom", regionKey, itemId);
-  function setSide(side, v) {
+  const gradeL = meta.normal ? RESTRICTION_GRADE(Number(val.left), meta.normal) : null;
+  const gradeR = meta.normal ? RESTRICTION_GRADE(Number(val.right), meta.normal) : null;
+  const norm = [meta.plane, meta.normal != null ? `N=${meta.normal}${meta.unit || "°"}` : null].filter(Boolean).join(" · ");
+  function onSetVal(_id, side, v) {
     setRom(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
     onSelectItem(key);
   }
-  const answered = val.left || val.right;
-  const selected = !!selectionData[key] || !!answered;
-  const norm = meta.normal != null ? `N=${meta.normal}${meta.unit || "°"}` : null;
-  const unit = meta.unit || "°";
-  const summary = [val.left && `L ${val.left}${unit}`, val.right && `R ${val.right}${unit}`].filter(Boolean).join(" / ");
+  function onSetMeta(_id, field, v) {
+    setRom(regionKey, { ...entry, [itemId + "_" + field]: entry[itemId + "_" + field] === v ? "" : v });
+    onSelectItem(key);
+  }
+  // The full ROM page's own row, verbatim: goniometer Stepper per side,
+  // colour-graded restriction label, the (i) sheet with Perform/Reference/
+  // Interpret tabs, and the collapsible pain-quality + end-feel list.
   return (
-    <ItemCardShell label={label} sublabel={[meta.plane, norm].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={romWhy(meta)} howLines={romHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered}>
-      <div className="obj-item-lr">
-        <label className="obj-item-lr-field">
-          <span>L</span>
-          <input type="number" placeholder="--" value={val.left ?? ""} onChange={(e) => setSide("left", e.target.value)} />
-        </label>
-        {meta.bilateral !== false && (
-          <label className="obj-item-lr-field">
-            <span>R</span>
-            <input type="number" placeholder="--" value={val.right ?? ""} onChange={(e) => setSide("right", e.target.value)} />
-          </label>
-        )}
-        <span className="obj-item-unit">{meta.unit || "°"}</span>
-      </div>
-    </ItemCardShell>
+    <RomMovementCard
+      m={meta}
+      val={val}
+      gradeL={gradeL}
+      gradeR={gradeR}
+      pain={entry[itemId + "_pain"]}
+      endFeel={entry[itemId + "_ef"]}
+      norm={norm}
+      onSetVal={onSetVal}
+      onSetMeta={onSetMeta}
+    />
   );
 }
 
 function MmtItemCard({ item, mmtData, setMmt, selectionData, onSelectItem }) {
-  const { regionKey, itemId, label, meta } = item;
+  const { regionKey, itemId, meta } = item;
   const entry = mmtData[regionKey] || {};
   const val = entry[itemId] || {};
   const key = itemKey("mmt", regionKey, itemId);
@@ -330,42 +356,37 @@ function MmtItemCard({ item, mmtData, setMmt, selectionData, onSelectItem }) {
     setMmt(regionKey, { ...entry, [itemId]: { ...val, [side]: v } });
     onSelectItem(key);
   }
-  const answered = val.left || val.right;
-  const selected = !!selectionData[key] || !!answered;
-  const weak = (val.left && val.left !== "5") || (val.right && val.right !== "5");
-  const summary = [val.left && `L ${val.left}`, val.right && `R ${val.right}`].filter(Boolean).join(" / ");
+  // Same .movement-card markup and the same GradeSelect the full MMT page
+  // uses -- the grade dropdown is colour-coded by grade (gradeColor), so a
+  // filled-in muscle no longer reads as a flat grey box (2026-09-03, Aditi:
+  // "MMT after filling, it is showing gray color").
   return (
-    <ItemCardShell label={label} sublabel={[meta.nerve, meta.root].filter(Boolean).join(" · ")} answered={!!answered} summary={summary} whyLines={mmtWhy(meta)} howLines={mmtHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={!!answered && !!weak}>
-      <div className="obj-item-lr">
-        <label className="obj-item-lr-field">
-          <span>L</span>
-          <select value={val.left || ""} onChange={(e) => setSide("left", e.target.value)}>
-            <option value="">--</option>
-            {MMT_GRADE_OPTIONS.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="obj-item-lr-field">
-          <span>R</span>
-          <select value={val.right || ""} onChange={(e) => setSide("right", e.target.value)}>
-            <option value="">--</option>
-            {MMT_GRADE_OPTIONS.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </label>
+    <div className="movement-card">
+      <div className="movement-head">
+        <div className="movement-info">
+          <div className="movement-name-row">
+            <span className="movement-name">{meta.muscle || item.label}</span>
+            <InfoButton title={meta.muscle || item.label} text={mmtInfoText(meta)} richItem={mmtRichItem(meta)} />
+          </div>
+          {(meta.nerve || meta.root) && <div className="muscle-subtitle">{[meta.nerve, meta.root].filter(Boolean).join(" · ")}</div>}
+        </div>
+        <div className="movement-lr">
+          <div className="movement-lr-col">
+            <span className="movement-lr-tag">L</span>
+            <GradeSelect value={val.left} onChange={(v) => setSide("left", v)} />
+          </div>
+          <div className="movement-lr-col">
+            <span className="movement-lr-tag">R</span>
+            <GradeSelect value={val.right} onChange={(v) => setSide("right", v)} />
+          </div>
+        </div>
       </div>
-    </ItemCardShell>
+    </div>
   );
 }
 
 function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, isSideless, selectionData, onSelectItem }) {
-  const { regionKey, itemId, label, meta } = item;
+  const { regionKey, itemId, meta } = item;
   const entry = specialData[regionKey] || {};
   const raw = entry[itemId];
   const key = itemKey("special", regionKey, itemId);
@@ -380,21 +401,33 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
     }
     onSelectItem(key);
   }
-  function setSideChip(s) {
-    setSpecial(regionKey, { ...entry, [itemId + "__side"]: s });
+  function setSideChip(sd) {
+    setSpecial(regionKey, { ...entry, [itemId + "__side"]: sd });
   }
   const options = meta.options || ["Negative", "Positive"];
-  const baseline = options[0];
-  const answered = isSideless ? !!raw : !!(raw && typeof raw === "object" && raw[currentSide]);
-  const selected = !!selectionData[key] || answered;
-  const summary = answered ? [currentSide && !isSideless ? currentSide[0].toUpperCase() + currentSide.slice(1) : null, currentValue].filter(Boolean).join(" — ") : "";
+  // Same .test-card layout, same (i) sheet, and the same red-vs-purple
+  // result chips as the full Special Tests page.
   return (
-    <ItemCardShell label={label} sublabel={meta.structure} answered={answered} summary={summary} whyLines={specialWhy(meta)} howLines={specialHow(meta)} selected={selected} onSelect={() => onSelectItem(key)} finding={answered && currentValue !== baseline}>
+    <div className="test-card">
+      <div className="test-card-title-row">
+        <div className="test-card-title">{meta.label || item.label}</div>
+        <InfoButton
+          title={meta.label || item.label}
+          text={[meta.how, meta.positive && `✅ Positive means: ${meta.positive}`, meta.negative && `⬜ Negative means: ${meta.negative}`].filter(Boolean).join("\n\n") || "No additional reference notes for this test."}
+          richItem={specialRichItem(meta)}
+        />
+      </div>
+      {(meta.structure || meta.sensitivity) && (
+        <div className="muscle-subtitle">
+          {meta.structure && <>Structure: {meta.structure}</>}
+          {meta.sensitivity && <> · Sens: {meta.sensitivity} · Spec: {meta.specificity}</>}
+        </div>
+      )}
       {!isSideless && (
-        <div className="obj-item-side-row">
-          {["Right", "Left", "Bilateral"].map((s) => (
-            <button type="button" key={s} className={"side-chip" + (currentSide === s.toLowerCase() ? " side-chip-active" : "")} onClick={() => setSideChip(s.toLowerCase())}>
-              {s}
+        <div className="side-row" style={{ marginTop: 6, marginBottom: 8 }}>
+          {["Right", "Left", "Bilateral"].map((sd) => (
+            <button type="button" key={sd} className={"side-chip" + (currentSide === sd.toLowerCase() ? " side-chip-active" : "")} onClick={() => setSideChip(sd.toLowerCase())}>
+              {sd}
             </button>
           ))}
         </div>
@@ -402,14 +435,20 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
       <div className="test-radio-row">
         {options.map((o) => {
           const isActive = currentValue === o;
+          const positive = isPositiveResult(o);
           return (
-            <button type="button" key={o} className={"test-radio" + (isActive ? " test-radio-selected" : "")} onClick={() => setResult(isActive ? "" : o)}>
+            <button
+              type="button"
+              key={o}
+              className={"test-radio" + (isActive ? (positive ? " test-radio-selected-red" : " test-radio-selected") : "")}
+              onClick={() => setResult(isActive ? "" : o)}
+            >
               {o}
             </button>
           );
         })}
       </div>
-    </ItemCardShell>
+    </div>
   );
 }
 
@@ -438,115 +477,36 @@ function ObservationItemCard({ item, obsData, setPostureRegion, selectionData, o
   );
 }
 
-/* ---------- Palpation (always a base step, so always shown here -- not
-   part of the suggested/optional library like CPA/Outcome Measure below).
-   Only the 4 flat structured findings fields (writes to the exact same
-   data.palpation fields PalpationSection reads/writes) -- the interactive
-   body map stays on the full Palpation page, linked below rather than
-   duplicated inline. ---------- */
-function PalpationInlineCard({ palpationData, setPalpation }) {
-  const d = palpationData;
-  const answered = !!(d.swelling || d.muscleTone?.length || d.triggerPoints || d.scarMobility?.length);
-  const summary = [d.swelling, d.muscleTone, d.scarMobility].filter(Boolean).join(" · ");
-  return (
-    <ItemCardShell
-      label="Palpation findings"
-      answered={answered}
-      summary={summary}
-      whyLines="Swelling, tone, trigger points, and scar/tissue mobility help localize the tissue source and guide manual treatment technique choice."
-      howLines={["Palpate systematically over and around the affected region, comparing bilaterally where possible.", "Use the full Palpation page for pin-by-pin structure/tenderness detail on the body map."]}
-      howEyebrow="HOW TO PALPATE"
-    >
-      <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => setPalpation("swelling", v)} />
-      <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => setPalpation("muscleTone", v)} />
-      <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => setPalpation("triggerPoints", v)} placeholder="Location and referral pattern..." />
-      <SelectField label="Scar / tissue mobility" type="multi" options={["N/A", "Normal", "Adherent", "Restricted", "Hypersensitive"]} value={d.scarMobility} onChange={(v) => setPalpation("scarMobility", v)} />
-    </ItemCardShell>
-  );
-}
+/* ---------- Palpation ----------
+   Rendered by the real PalpationSection (orthoOutpatientSections.jsx) --
+   the interactive body map plus the same Findings fields, exactly as the
+   full Palpation page presents them (2026-09-03, Aditi: "palpation is not
+   the way it should be presented"). It used to be a bespoke 4-field
+   inline card here with the body map merely linked away to, which is why
+   the AI-assisted route looked nothing like the normal one. Writes to the
+   same data.palpation either way. ---------- */
 
-/* ---------- CPA (Compensation Pattern Analysis / NKT) -- suggested/
-   optional, same as before, but now an inline per-test item list (colored
-   Facilitated/Inhibited/Overactive chips) instead of an "Enter →" jump. ---------- */
-function CpaItemCard({ item, cpaData, setCpa }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = cpaData[regionKey] || {};
-  const value = entry[itemId];
-  return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={cpaWhy(meta)} howLines={cpaHow(meta)} howEyebrow="HOW TO TEST">
-      <OptionChips options={meta.options} value={value} onChange={(v) => setCpa(regionKey, { ...entry, [itemId]: v })} />
-    </ItemCardShell>
-  );
-}
+/* ---------- CPA / Kinetic Chain / Functional Movement / STTT / Fascia ----------
+   Rendered by the REAL sections (orthoAdvancedTools.jsx) -- the same
+   colour-coded option chips carrying each option's own clinical meaning,
+   the same region tabs, and the same (i) sheets with how-to-test /
+   compensator / kinetic-chain-effect / treatment content the standalone
+   pages and the old Phase 0.5 modules show (2026-09-03, Aditi: "cpa,
+   kinetic chain, functional screen, sttt, fascia like in old 0.5 phase
+   does"). These used to be four bespoke one-line item cards here, which is
+   why the AI-assisted route looked nothing like the rest of the app.
+   Fascia had no Ortho screen at all before this. ---------- */
 
-/* ---------- Kinetic Chain (Cook & Boyle joint-by-joint screen) --
-   suggested/optional, same real KC_REGIONS tests + colored option chips
-   the full page uses, now inline. ---------- */
-function KineticChainItemCard({ item, kcData, setKc }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = kcData[regionKey] || {};
-  const value = entry[itemId];
-  return (
-    <ItemCardShell label={label} sublabel={meta.joint} answered={!!value} summary={value || ""} whyLines={kcWhy(meta)} howLines={kcHow(meta)} howEyebrow="HOW TO TEST">
-      <OptionChips options={meta.options} value={value} onChange={(v) => setKc(regionKey, { ...entry, [itemId]: v })} />
-    </ItemCardShell>
-  );
-}
-
-/* ---------- FMA (Functional Movement Assessment) -- suggested/optional,
-   graded Normal/Compensated/Abnormal same as the full page. ---------- */
-const FMA_GRADE_LABELS = ["Normal", "Compensated", "Abnormal"];
-const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
-function FmaItemCard({ item, fmaData, setFma }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = fmaData[regionKey] || {};
-  const grade = entry[itemId + "_grade"];
-  return (
-    <ItemCardShell label={`${meta.icon || ""} ${label}`.trim()} sublabel={meta.phase} answered={!!grade} summary={grade || ""} whyLines={fmaWhy(meta)} howLines={fmaHow(meta)}>
-      <div className="chip-mini-row">
-        {(meta.grades || []).map((g, i) => {
-          const selected = grade === g;
-          const color = FMA_GRADE_COLOR[i];
-          const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
-          return (
-            <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => setFma(regionKey, { ...entry, [itemId + "_grade"]: selected ? "" : g })}>
-              {FMA_GRADE_LABELS[i] || g}
-            </button>
-          );
-        })}
-      </div>
-    </ItemCardShell>
-  );
-}
-
-/* ---------- STTT (Cyriax selective tissue tension) -- suggested/optional,
-   scoped to resisted testing (isolates contractile from inert tissue);
-   active/passive ROM and joint play stay on the full STTT page. ---------- */
-function SttItemCard({ item, sttData, setStt }) {
-  const { regionKey, itemId, label, meta } = item;
-  const entry = sttData[regionKey] || {};
-  const value = entry[itemId + "_result"];
-  return (
-    <ItemCardShell label={label} sublabel={meta.muscle} answered={!!value} summary={value || ""} whyLines={sttWhy(meta)} howLines={sttHow(meta)}>
-      <SelectField options={CYRIAX_RESISTED_RESULTS} value={value} onChange={(v) => setStt(regionKey, { ...entry, [itemId + "_result"]: v })} />
-    </ItemCardShell>
-  );
-}
-
-/* ---------- Outcome Measure -- suggested/optional, same as before, but
-   now the actual question set fills inline (one collapsible card per
-   suggested measure) instead of an "Enter →" jump. Writes to the exact
-   same data.outcomeMeasure.instances[measureId].history shape
-   OrthoOutcomeMeasureFlow.jsx's own saveEntry() produces, so a "Reassess"
-   later on the full page sees this entry as real history, not a
-   duplicate. A discrete "Save entry" action (rather than live-writing
-   each answer) because a half-answered scale has no valid score and an
-   instrument's history is meant to be a series of complete, timestamped
-   administrations, not a rolling draft. ---------- */
-// No per-measure "why/how" reference existed on the old OrthoOutcomeMeasureFlow.jsx
-// page either (MEASURES carries only scoring logic, not prose) -- built
-// from the measure's own real item prompts (not invented) plus the same
-// generic outcome-measure rationale OBJECTIVE_CONTENT already used.
+/* ---------- Outcome measure (inline) ----------
+   Saves into the same data.outcomeMeasure.instances[measureId].history
+   shape OrthoOutcomeMeasureFlow.jsx's own saveEntry() produces, so a
+   "Reassess" later on the full page sees this entry as real history, not
+   a duplicate. ---------- */
+// No per-measure "why/how" reference existed on the old
+// OrthoOutcomeMeasureFlow.jsx page either (MEASURES carries only scoring
+// logic, not prose) -- built from the measure's own real item prompts (not
+// invented) plus the same generic outcome-measure rationale
+// OBJECTIVE_CONTENT already used.
 function outcomeMeasureInfo(measure) {
   return {
     why: `${measure.full} gives an objective, comparable score for this region to track progress and justify the treatment plan.`,
@@ -638,11 +598,6 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const [mmtData, setMmtD] = useSectionData(data, setData, "mmt");
   const [specialData, setSpecialD] = useSectionData(data, setData, "specialTests");
   const [obsData, setObsD] = useSectionData(data, setData, "observation");
-  const [palpationData, setPalpationD] = useSectionData(data, setData, "palpation");
-  const [cpaData, setCpaD] = useSectionData(data, setData, "cpa");
-  const [kcData, setKcD] = useSectionData(data, setData, "kineticChain");
-  const [fmaData, setFmaD] = useSectionData(data, setData, "fma");
-  const [sttData, setSttD] = useSectionData(data, setData, "sttt");
   const [omData, setOmD] = useSectionData(data, setData, "outcomeMeasure");
   // Persists which items have been tapped "+ Select" so the Suggested /
   // Selected / Finding state survives navigating away and back -- an item
@@ -658,23 +613,6 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const setSpecial = (k, v) => {
     setSpecialD(k, v);
     if (!activeIds.has("specialTests")) onToggle("specialTests");
-  };
-  const setPalpation = (k, v) => setPalpationD(k, v); // always a base step -- no activeIds toggle needed
-  const setCpa = (k, v) => {
-    setCpaD(k, v);
-    if (!activeIds.has("cpa")) onToggle("cpa");
-  };
-  const setKc = (k, v) => {
-    setKcD(k, v);
-    if (!activeIds.has("kineticChain")) onToggle("kineticChain");
-  };
-  const setFma = (k, v) => {
-    setFmaD(k, v);
-    if (!activeIds.has("fma")) onToggle("fma");
-  };
-  const setStt = (k, v) => {
-    setSttD(k, v);
-    if (!activeIds.has("sttt")) onToggle("sttt");
   };
   const omInstances = omData.instances || {};
   function saveOutcomeEntry(measureId, answers, score) {
@@ -705,22 +643,23 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // same gating the old whole-category "Enter →" card used.
   const cpaReason = suggestions.find((s) => s.id === "cpa")?.reason;
   const showCpa = !!cpaReason || activeIds.has("cpa");
-  const cpaItems = useMemo(() => (showCpa ? suggestCpaItems(selectedRegions) : []), [showCpa, selectedRegions]);
 
-  // Kinetic Chain / FMA / STTT are optional too, same gating pattern as
-  // CPA above -- only fill inline once suggestObjectiveTests actually
-  // suggests them (or they're already added).
+  // Kinetic Chain / FMA / STTT / Fascia are optional too, same gating pattern
+  // as CPA above -- only shown inline once suggestObjectiveTests actually
+  // suggests them (or they're already added). Each renders its own real
+  // section, which brings its own region tabs, so there is nothing to
+  // pre-resolve per region here any more.
   const kcReason = suggestions.find((s) => s.id === "kineticChain")?.reason;
   const showKc = !!kcReason || activeIds.has("kineticChain");
-  const kcItems = useMemo(() => (showKc ? suggestKineticChainItems(selectedRegions) : []), [showKc, selectedRegions]);
 
   const fmaReason = suggestions.find((s) => s.id === "fma")?.reason;
   const showFma = !!fmaReason || activeIds.has("fma");
-  const fmaItems = useMemo(() => (showFma ? suggestFmaItems(selectedRegions) : []), [showFma, selectedRegions]);
 
   const sttReason = suggestions.find((s) => s.id === "sttt")?.reason;
   const showStt = !!sttReason || activeIds.has("sttt");
-  const sttItems = useMemo(() => (showStt ? suggestSttItems(selectedRegions) : []), [showStt, selectedRegions]);
+
+  const fasciaReason = suggestions.find((s) => s.id === "fascia")?.reason;
+  const showFascia = !!fasciaReason || activeIds.has("fascia");
 
   const { recommended: omRecommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion }), [selectedRegions]);
   const omReasonById = Object.fromEntries(omRecommended.map((r) => [r.id, r.reason]));
@@ -769,8 +708,8 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // don't also duplicate as a whole-category "Enter →" card. Kept in
   // `suggestions` itself since cpaReason/omSuggestedFromReasoning above
   // still read their `reason` text off it.
-  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(id) && libraryById[id]);
-  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt"].includes(s.id));
+  const manuallyAdded = [...activeIds].filter((id) => !suggestedIds.has(id) && !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt", "fascia"].includes(id) && libraryById[id]);
+  const otherSuggestions = suggestions.filter((s) => !["cpa", "outcomeMeasure", "kineticChain", "fma", "sttt", "fascia"].includes(s.id));
 
   const query = q.trim().toLowerCase();
   const searchResults = query ? library.filter((it) => !suggestedIds.has(it.id) && !activeIds.has(it.id) && it.label.toLowerCase().includes(query)) : [];
@@ -788,6 +727,18 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // region without a ported Phase 0.5 engine) means "show everything",
   // same as before this existed.
   const conditionFilter = useMemo(() => (activeConditionObj && engineMatch ? engineMatch.engine.itemIds(activeConditionObj) : null), [activeConditionObj, engineMatch]);
+
+  // Condition-wise palpation (2026-09-03, Aditi: "palpation condition wise")
+  // -- each engine condition lists its own objective tests, some of which are
+  // palpation targets ("Palpation -- Greater Tuberosity", "Joint line
+  // palpation"). palpationFocusZoneIds matches those against the zones this
+  // case's regions actually put on screen, so Palpation leads with the areas
+  // the suspected condition calls for. Empty = show every zone, unchanged.
+  const palpationFocusIds = useMemo(() => {
+    const tests = [...(activeConditionObj?.objectiveTests?.required || []), ...(activeConditionObj?.objectiveTests?.recommended || [])];
+    if (!tests.length) return null;
+    return palpationFocusZoneIds(tests, palpationZonesForRegions(selectedRegions));
+  }, [activeConditionObj, selectedRegions]);
 
   // Scans the exact same rom/mmt/specialTests/observation data the item
   // cards above write into, and derives (a) which named items are
@@ -928,17 +879,26 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         {reviewRom.length > 0 && (
           <>
             <div className="subheading">📐 Range of Motion</div>
-            {reviewRom.map((item) => (
-              <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
-            ))}
+            <div className="rom-card">
+              <div className="rom-row-grid rom-table-head">
+                <span>Movement</span>
+                <span>L</span>
+                <span>R</span>
+              </div>
+              {reviewRom.map((item) => (
+                <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
+              ))}
+            </div>
           </>
         )}
         {reviewMmt.length > 0 && (
           <>
             <div className="subheading">💪 Muscle Strength (MMT)</div>
-            {reviewMmt.map((item) => (
-              <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
-            ))}
+            <div className="rom-card">
+              {reviewMmt.map((item) => (
+                <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
+              ))}
+            </div>
           </>
         )}
         {reviewSpecial.length > 0 && (
@@ -972,12 +932,14 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     <div className="obj-no-zoom">
       <SectionIntro icon="🧠" title="Objective Assessment" info="Individual items below come from the region(s) you picked; the categories at the bottom come from what you documented in Subjective and Pain — none of this is a live AI/diagnosis call." />
 
-      {topConditions.length > 0 && (
+      {topConditions.length > 0 ? (
         <>
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
         </>
-      )}
+      ) : selectedRegions.length > 0 && !engineMatch ? (
+        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, and Shoulder regions. Other regions show the full test library.</Hint>
+      ) : null}
 
       {findingsBlock}
 
@@ -996,73 +958,116 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         </>
       )}
 
-      {visibleRom.length > 0 && (
-        <>
-          <div className="subheading">📐 Range of Motion</div>
-          {visibleRom.map((item) => (
-            <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
-          ))}
-        </>
-      )}
+      {visibleRom.length > 0 && (() => {
+        const groups = groupByRegion(visibleRom, selectedRegions);
+        const renderRomGroup = (items) => (
+          <div className="rom-card">
+            <div className="rom-row-grid rom-table-head">
+              <span>Movement</span><span>L</span><span>R</span>
+            </div>
+            {items.map((item) => (
+              <RomItemCard key={`rom-${item.regionKey}-${item.itemId}`} item={item} romData={romData} setRom={setRom} selectionData={selectionData} onSelectItem={onSelectItem} />
+            ))}
+          </div>
+        );
+        return (
+          <>
+            <div className="subheading">📐 Range of Motion</div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderRomGroup(g.items)}
+              </React.Fragment>
+            )) : renderRomGroup(visibleRom)}
+          </>
+        );
+      })()}
 
-      {visibleMmt.length > 0 && (
-        <>
-          <div className="subheading">💪 Muscle Strength (MMT)</div>
-          {visibleMmt.map((item) => (
-            <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
-          ))}
-        </>
-      )}
+      {visibleMmt.length > 0 && (() => {
+        const groups = groupByRegion(visibleMmt, selectedRegions);
+        const renderMmtGroup = (items) => (
+          <div className="rom-card">
+            {items.map((item) => (
+              <MmtItemCard key={`mmt-${item.regionKey}-${item.itemId}`} item={item} mmtData={mmtData} setMmt={setMmt} selectionData={selectionData} onSelectItem={onSelectItem} />
+            ))}
+          </div>
+        );
+        return (
+          <>
+            <div className="subheading">💪 Muscle Strength (MMT)</div>
+            <div className="mmt-scale-bar">
+              <span className="mmt-scale-label">MMT SCALE</span>
+              <span>5 Normal → 0 Zero</span>
+              <InfoButton title="MMT Grading Scale" text={MMT_GRADES.map((g) => `${g.g} — ${g.label}: ${g.desc}`).join("\n")} />
+            </div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderMmtGroup(g.items)}
+              </React.Fragment>
+            )) : renderMmtGroup(visibleMmt)}
+          </>
+        );
+      })()}
 
-      {visibleSpecial.length > 0 && (
-        <>
-          <div className="subheading">🔬 Special Tests</div>
-          {visibleSpecial.map((item) => (
-            <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} selectionData={selectionData} onSelectItem={onSelectItem} />
-          ))}
-        </>
-      )}
+      {visibleSpecial.length > 0 && (() => {
+        const groups = groupByRegion(visibleSpecial, selectedRegions);
+        const renderSpecialGroup = (items) => items.map((item) => (
+          <SpecialTestItemCard key={`st-${item.regionKey}-${item.itemId}`} item={item} specialData={specialData} setSpecial={setSpecial} selectedRegions={selectedRegions} isSideless={isSideless(item.regionKey)} selectionData={selectionData} onSelectItem={onSelectItem} />
+        ));
+        return (
+          <>
+            <div className="subheading">🔬 Special Tests</div>
+            {groups ? groups.map((g) => (
+              <React.Fragment key={g.key}>
+                <div className="hint" style={{ fontWeight: 600, marginTop: 8, marginBottom: 2 }}>{g.label}</div>
+                {renderSpecialGroup(g.items)}
+              </React.Fragment>
+            )) : renderSpecialGroup(visibleSpecial)}
+          </>
+        );
+      })()}
 
-      <div className="subheading">🖐️ Palpation</div>
-      <PalpationInlineCard palpationData={palpationData} setPalpation={setPalpation} />
+      <PalpationSection
+        data={data}
+        setData={setData}
+        selectedRegions={selectedRegions}
+        focusZoneIds={palpationFocusIds}
+        conditionLabel={activeConditionObj?.name || ""}
+      />
 
-      {showCpa && cpaItems.length > 0 && (
+      {showCpa && (
         <>
-          <div className="subheading">🧠 CPA — Compensation Pattern Analysis</div>
           {cpaReason && <Hint>{cpaReason}</Hint>}
-          {cpaItems.map((item) => (
-            <CpaItemCard key={`cpa-${item.regionKey}-${item.itemId}`} item={item} cpaData={cpaData} setCpa={setCpa} />
-          ))}
+          <CpaSection data={data} setData={setData} />
         </>
       )}
 
-      {showKc && kcItems.length > 0 && (
+      {showKc && (
         <>
-          <div className="subheading">⛓️ Kinetic Chain</div>
           {kcReason && <Hint>{kcReason}</Hint>}
-          {kcItems.map((item) => (
-            <KineticChainItemCard key={`kc-${item.regionKey}-${item.itemId}`} item={item} kcData={kcData} setKc={setKc} />
-          ))}
+          <KineticChainSection data={data} setData={setData} />
         </>
       )}
 
-      {showFma && fmaItems.length > 0 && (
+      {showFma && (
         <>
-          <div className="subheading">🏃 Functional Movement Assessment</div>
           {fmaReason && <Hint>{fmaReason}</Hint>}
-          {fmaItems.map((item) => (
-            <FmaItemCard key={`fma-${item.regionKey}-${item.itemId}`} item={item} fmaData={fmaData} setFma={setFma} />
-          ))}
+          <FmaSection data={data} setData={setData} />
         </>
       )}
 
-      {showStt && sttItems.length > 0 && (
+      {showStt && (
         <>
-          <div className="subheading">🦴 STTT — Selective Tissue Tension</div>
           {sttReason && <Hint>{sttReason}</Hint>}
-          {sttItems.map((item) => (
-            <SttItemCard key={`stt-${item.regionKey}-${item.itemId}`} item={item} sttData={sttData} setStt={setStt} />
-          ))}
+          <SttSection data={data} setData={setData} />
+        </>
+      )}
+
+      {showFascia && (
+        <>
+          {fasciaReason && <Hint>{fasciaReason}</Hint>}
+          <FasciaSection data={data} setData={setData} />
         </>
       )}
 

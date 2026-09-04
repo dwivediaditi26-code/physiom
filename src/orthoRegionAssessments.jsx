@@ -54,7 +54,7 @@ function useSimpleRegionTab(data, setData, sectionKey_, tabs, selectedRegions) {
 const ROM_PAIN_OPTIONS = ["No pain", "Painful arc", "End-range pain", "Throughout"];
 const END_FEEL_OPTIONS = ["Soft", "Firm", "Hard", "Empty", "Springy"];
 
-function romInfoText(m) {
+export function romInfoText(m) {
   const lines = [];
   if (m.start) lines.push(`Start position: ${m.start}`);
   if (m.gonio) lines.push(`Goniometer: ${m.gonio}`);
@@ -71,7 +71,7 @@ function romInfoText(m) {
 // Same field set as physiofeed/learn/RomStudy.jsx's toCard(), split across
 // Perform/Reference/Interpret tabs (same pattern Cardio/Neuro's Learn panel
 // uses) so each tab fits on screen instead of one long scroll.
-function romRichItem(m) {
+export function romRichItem(m) {
   return {
     image: m.id,
     title: m.mv,
@@ -146,7 +146,7 @@ function romCountFor(entry, movements) {
    than a blank box demanding an exact number typed from scratch -- typing
    the exact value directly still works, the Stepper's box is a real,
    always-editable number field. */
-function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
+export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
   // 2026-09-02, Aditi: "when I click on the collapsible button... it is
@@ -183,6 +183,20 @@ function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal
           )}
         </div>
       </div>
+      {/* Quick "Is it normal?" fill -- Aditi: "if we want the normal value in
+          the ROM section, then it should ask is it normal, we document it,
+          or you want to change it" -- the Stepper above already starts
+          showing the normal value, but nothing is actually saved until the
+          therapist touches it; this is the one-tap "yes, document that"
+          confirm, still fully editable via the Stepper afterward if it isn't
+          actually normal for this patient. */}
+      {m.normal != null && (
+        <div className="chip-mini-row">
+          <button type="button" className="rom-normal-btn" onClick={() => { const sides = m.bilateral !== false ? ["left", "right"] : ["left"]; sides.forEach((s) => onSetVal(m.id, s, m.normal)); }}>
+            ✓ Normal — document N={m.normal}{m.unit}
+          </button>
+        </div>
+      )}
       <div className="obj-item-row rom-detail-toggle" onClick={() => setDetailOpen((o) => !o)} role="button">
         <span className="obj-item-row-sub">Pain quality &amp; end feel</span>
         <div className="obj-item-row-right">
@@ -289,7 +303,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
    full clinical scale (5, 4+, 4, 4-, ... 0, NT), exactly as the
    real MMT module does — not a stepper.
    ============================================================ */
-function mmtInfoText(m) {
+export function mmtInfoText(m) {
   const lines = [];
   if (m.action) lines.push(`Action: ${m.action}`);
   if (m.patient) lines.push(`Patient position: ${m.patient}`);
@@ -303,7 +317,7 @@ function mmtInfoText(m) {
 
 // Same field set/order as physiofeed/learn/MmtStudy.jsx's toCard() -- the
 // rich "How to perform" sheet content for an MMT muscle.
-function mmtRichItem(m) {
+export function mmtRichItem(m) {
   return {
     image: m.id,
     title: m.muscle,
@@ -345,7 +359,7 @@ function mmtCountFor(entry, muscles) {
   return n;
 }
 
-function GradeSelect({ value, onChange }) {
+export function GradeSelect({ value, onChange }) {
   const color = gradeColor(value);
   return (
     <select
@@ -564,7 +578,7 @@ function specialTestCountFor(entry, tests) {
   return n;
 }
 
-function isPositiveResult(val) {
+export function isPositiveResult(val) {
   if (!val) return false;
   return /positive|\+ve|grade|deficit|refer|rupture|tear|instability|severe/i.test(val);
 }
@@ -583,7 +597,7 @@ function categoryFor(test) {
 
 // Same field set/order as physiofeed/learn/SpecialStudy.jsx's toCard() --
 // the rich "How to perform" sheet content for a special test.
-function specialRichItem(t) {
+export function specialRichItem(t) {
   return {
     image: t.id,
     title: t.label,
