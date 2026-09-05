@@ -52,6 +52,44 @@ const BRAND = {
   white: "#FFFFFF",
 };
 
+// True if patient name/age are missing from the Demographics section.
+function missingDemographicsFields(dem) {
+  const missing = [];
+  if (!String(dem?.name || "").trim()) missing.push("name");
+  if (!String(dem?.age || "").trim()) missing.push("age");
+  return missing;
+}
+
+// Blocks the explicit "Save Assessment" tap (not the continuous background
+// autosave -- that keeps running regardless, so in-progress work still
+// survives a crash/tab-close) when Patient Name and/or Age are still
+// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
+// appears" effect never fires, so the whole assessment silently has
+// nowhere to be filed under -- this stops that at the one moment the
+// therapist actually intends to finish, rather than nagging on every
+// keystroke. Same component/copy as orthoFieldKit.jsx's
+// MissingDemographicsModal, duplicated rather than cross-imported since
+// this module doesn't otherwise share components with the Ortho files.
+function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
+  const label = missing.length > 1 ? "name and age" : missing[0];
+  return createPortal(
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="missing-dem-icon">📋</div>
+        <div className="missing-dem-title">Patient {label} needed</div>
+        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
+        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
+          Go to Patient Info
+        </button>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ============================================================
    STATIC DATA — Step 1 selector (setting only — Neuro is a
    single system, per O'Sullivan: setting drives the core exam,
@@ -455,6 +493,20 @@ const SENSORY_GRADES = ["Intact", "Impaired", "Absent", "Hyperesthesia", "Parest
 const BALANCE_GRADES = ["Normal", "Good", "Fair", "Poor", "Absent"];
 const TONE_TYPES = ["Normal", "Hypotonia", "Flaccidity", "Hypertonia", "Spasticity", "Rigidity (cogwheel)", "Rigidity (lead-pipe)", "Variable / fluctuating"];
 
+// The 10 ISNCSCI/ASIA key muscle functions -- shared by the generic Motor
+// Examination step's own Myotomal Strength Screen (any suspected
+// radiculopathy) and the Spinal Cord Injury condition library's full
+// ASIA exam below, so the two don't drift out of sync with each other.
+const MYOTOME_ROWS = ["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"];
+const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExamLibraryData["myo" + r]]));
+
+// Same reasoning as MYOTOME_ROWS above, for the ASIA/ISNCSCI key sensory
+// points -- shared by the generic Sensory Examination step's own
+// Dermatomal Sensory Screen and the Spinal Cord Injury condition
+// library's full ASIA exam.
+const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"];
+const DERMATOME_ROW_INFO = Object.fromEntries(DERMATOME_ROWS.map((r) => [r, neuroExamLibraryData["derm" + r]]));
+
 /* ============================================================
    ADD-ON LIBRARY — condition-specific items applied ON TOP of
    the core exam, matching O'Sullivan's "core exam + condition
@@ -685,47 +737,23 @@ const NEURO_RENDERERS = {
   [neuroId("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")]: (d, set) => (
     <LRGrid
       label="Key myotomes (MMT 0-5)"
-      rows={["C5 Elbow flexors", "C6 Wrist extensors", "C7 Elbow extensors", "C8 Finger flexors", "T1 Finger abductors", "L2 Hip flexors", "L3 Knee extensors", "L4 Ankle dorsiflexors", "L5 Great toe extensors", "S1 Ankle plantarflexors"]}
+      rows={MYOTOME_ROWS}
       options={["5", "4", "3", "2", "1", "0"]}
       value={d.myotomes || {}}
       onChange={(v) => set("myotomes", v)}
       info={condInfo("Spinal Cord Injury", "Myotome grading (ASIA key muscles)")}
-      rowInfo={{
-        "C5 Elbow flexors": neuroExamLibraryData["myoC5 Elbow flexors"],
-        "C6 Wrist extensors": neuroExamLibraryData["myoC6 Wrist extensors"],
-        "C7 Elbow extensors": neuroExamLibraryData["myoC7 Elbow extensors"],
-        "C8 Finger flexors": neuroExamLibraryData["myoC8 Finger flexors"],
-        "T1 Finger abductors": neuroExamLibraryData["myoT1 Finger abductors"],
-        "L2 Hip flexors": neuroExamLibraryData["myoL2 Hip flexors"],
-        "L3 Knee extensors": neuroExamLibraryData["myoL3 Knee extensors"],
-        "L4 Ankle dorsiflexors": neuroExamLibraryData["myoL4 Ankle dorsiflexors"],
-        "L5 Great toe extensors": neuroExamLibraryData["myoL5 Great toe extensors"],
-        "S1 Ankle plantarflexors": neuroExamLibraryData["myoS1 Ankle plantarflexors"],
-      }}
+      rowInfo={MYOTOME_ROW_INFO}
     />
   ),
   [neuroId("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")]: (d, set) => (
     <LRGrid
       label="Key sensory points (0-2)"
-      rows={["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"]}
+      rows={DERMATOME_ROWS}
       options={["2 - Normal", "1 - Altered", "0 - Absent"]}
       value={d.dermatomes || {}}
       onChange={(v) => set("dermatomes", v)}
       info={condInfo("Spinal Cord Injury", "Dermatome grading (ASIA sensory)")}
-      rowInfo={{
-        "C5": neuroExamLibraryData.dermC5,
-        "C6": neuroExamLibraryData.dermC6,
-        "C7": neuroExamLibraryData.dermC7,
-        "C8": neuroExamLibraryData.dermC8,
-        "T1": neuroExamLibraryData.dermT1,
-        "T4 (nipple)": neuroExamLibraryData["dermT4 (nipple)"],
-        "T10 (umbilicus)": neuroExamLibraryData["dermT10 (umbilicus)"],
-        "L3": neuroExamLibraryData.dermL3,
-        "L4": neuroExamLibraryData.dermL4,
-        "L5": neuroExamLibraryData.dermL5,
-        "S1": neuroExamLibraryData.dermS1,
-        "S4-5 (perianal)": neuroExamLibraryData["dermS4-5 (perianal)"],
-      }}
+      rowInfo={DERMATOME_ROW_INFO}
     />
   ),
   [neuroId("Spinal Cord Injury", "ASIA Impairment Scale (AIS)")]: (d, set) => (
@@ -1136,6 +1164,22 @@ function CognitionSection({ data, setData }) {
       <SelectField label="Memory" type="multi" options={["Short-term intact", "Short-term impaired", "Long-term intact", "Long-term impaired", "Confabulation noted"]} value={d.memory} onChange={(v) => set("memory", v)} />
       <SelectField label="Language" type="multi" options={["Comprehension intact", "Comprehension impaired", "Expression intact", "Expression impaired (expressive aphasia)", "Naming difficulty", "Repetition impaired", "Dysarthria"]} value={d.language} onChange={(v) => set("language", v)} howTo="Expressive (Broca's) aphasia: non-fluent, effortful speech with relatively preserved comprehension. Receptive (Wernicke's) aphasia: fluent but meaningless speech with impaired comprehension." />
       <SelectField label="Praxis" type="single" options={["Normal", "Apraxia suspected — motor planning difficulty despite adequate strength/sensation"]} value={d.praxis} onChange={(v) => set("praxis", v)} />
+      <SelectField
+        label="Visuospatial function"
+        type="single"
+        options={["Intact", "Impaired - clock drawing", "Impaired - copying a figure (e.g. cube/pentagons)", "Impaired - spatial neglect suspected", "Not tested"]}
+        value={d.visuospatial}
+        onChange={(v) => set("visuospatial", v)}
+        howTo="Its own domain in MoCA (distinct from memory/language/attention) -- clock drawing (draw a clock face, set hands to a given time) and copying a cube or intersecting pentagons are the standard quick bedside tasks. If spatial neglect is suspected, screen it properly via the Stroke condition library's Neglect / inattention item rather than relying on this field alone."
+      />
+      <SelectField
+        label="Executive function"
+        type="multi"
+        options={["Intact", "Impaired planning/sequencing", "Impaired problem-solving", "Impaired judgement/insight", "Perseveration noted", "Not tested"]}
+        value={d.executiveFunction}
+        onChange={(v) => set("executiveFunction", v)}
+        howTo="A distinct cognitive domain from memory/language -- screen with a task like Trail Making, or simply asking the patient to describe how they'd respond to a hypothetical everyday problem and judging the plan's coherence."
+      />
       <TextField label="Screening tool score (MMSE / MoCA)" value={d.screenScore} onChange={(v) => set("screenScore", v)} placeholder="e.g. MoCA 22/30" info={neuroExamLibraryData.mocaMmse} />
       <TextArea label="Additional cognitive observations" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
@@ -1153,18 +1197,32 @@ function CranialNervesSection({ data, setData }) {
       <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} info={neuroExamLibraryData.cn2} />
       <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
       <SelectField label="Pupillary light reflex" type="single" options={["Normal", "Sluggish", "Fixed", "Anisocoria", "Not tested"]} value={d.pupillaryLight} onChange={(v) => set("pupillaryLight", v)} info={neuroExamLibraryData.pupillaryLight} />
+      <SelectField label="Pupillary accommodation" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.pupillaryAccommodation} onChange={(v) => set("pupillaryAccommodation", v)} howTo="Ask the patient to focus on a distant object then a near one (e.g. your finger) -- normally pupils constrict and eyes converge. Tested separately from the light reflex above; together they make up 'PERRLA' (Pupils Equal, Round, Reactive to Light and Accommodation)." />
       <SelectField label="CN V - Trigeminal (facial sensation/jaw)" type="single" options={CN_OPTS} value={d.cn5} onChange={(v) => set("cn5", v)} info={neuroExamLibraryData.cn5} />
       <SelectField label="Corneal reflex" type="single" options={["Present", "Reduced", "Absent", "Not tested"]} value={d.cornealReflex} onChange={(v) => set("cornealReflex", v)} info={neuroExamLibraryData.cornealReflex} />
       <SelectField label="CN VII - Facial (symmetry)" type="single" options={[...CN_OPTS, "Central facial weakness (lower face)", "Peripheral facial weakness (whole side)"]} value={d.cn7} onChange={(v) => set("cn7", v)} info={neuroExamLibraryData.cn7} />
       <SelectField label="CN VIII - Vestibulocochlear (hearing/balance)" type="single" options={CN_OPTS} value={d.cn8} onChange={(v) => set("cn8", v)} info={neuroExamLibraryData.cn8} />
       <SelectField label="CN IX, X - Glossopharyngeal/Vagus (swallow, gag, voice)" type="single" options={[...CN_OPTS, "Dysphagia noted", "Voice change/hoarseness"]} value={d.cn910} onChange={(v) => set("cn910", v)} info={neuroExamLibraryData.cn910} />
+      <SelectField label="Gag reflex" type="single" options={["Present bilaterally", "Reduced/absent - Right", "Reduced/absent - Left", "Reduced/absent - Bilateral", "Not tested"]} value={d.gagReflex} onChange={(v) => set("gagReflex", v)} howTo="Touch the posterior pharyngeal wall on each side with a tongue depressor; a normal response is symmetric elevation of the palate/gag. Low sensitivity and uncomfortable for the patient, so reserve for suspected bulbar involvement (e.g. dysphagia already noted above) rather than routine screening." />
       <SelectField label="CN XI - Accessory (shoulder shrug / head turn)" type="single" options={CN_OPTS} value={d.cn11} onChange={(v) => set("cn11", v)} info={neuroExamLibraryData.cn11} />
       <SelectField label="CN XII - Hypoglossal (tongue)" type="single" options={[...CN_OPTS, "Deviates on protrusion"]} value={d.cn12} onChange={(v) => set("cn12", v)} info={neuroExamLibraryData.cn12} />
     </>
   );
 }
 
-/* ---------- Sensory Examination ---------- */
+/* ---------- Sensory Examination ----------
+   Added (2026-09-04, same treatment as Motor's Myotomal Screen -- checked
+   against current standard neuro-exam sources): a Dermatomal Sensory
+   Screen using the same ASIA/ISNCSCI key sensory points as the Spinal
+   Cord Injury condition item, now available to any patient with
+   suspected radiculopathy rather than gated behind selecting SCI as the
+   condition (shares DERMATOME_ROWS/DERMATOME_ROW_INFO with that item so
+   the two never drift apart). Also added the two standard cortical/
+   discriminative tests that were missing entirely -- point localization
+   and extinction to double simultaneous stimulation (a classic parietal/
+   neglect sign, distinct from and complementary to the Stroke condition
+   library's separate visual/personal neglect screen) -- alongside the
+   existing stereognosis/graphesthesia/two-point discrimination. */
 function SensorySection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "sensory");
   return (
@@ -1175,33 +1233,97 @@ function SensorySection({ data, setData }) {
       <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
       <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} />
       <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
+
+      <div className="subheading">Dermatomal sensory screen</div>
+      <LRGrid
+        label="Key sensory points (0-2)"
+        rows={DERMATOME_ROWS}
+        options={["2 - Normal", "1 - Altered", "0 - Absent"]}
+        value={d.dermatomalScreen || {}}
+        onChange={(v) => set("dermatomalScreen", v)}
+        howTo="Screens for a sensory deficit at a single spinal nerve-root level -- useful for any suspected cervical/lumbar radiculopathy, same key points ISNCSCI/ASIA uses. For a confirmed spinal cord injury, add the full ISNCSCI/ASIA exam from the Spinal Cord Injury condition library instead -- it also grades motor key muscles and derives the AIS classification."
+        rowInfo={DERMATOME_ROW_INFO}
+      />
+
       <div className="subheading">Cortical sensation</div>
       <SelectField label="Stereognosis" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.stereognosis} onChange={(v) => set("stereognosis", v)} info={neuroExamLibraryData.stereognosis} />
       <SelectField label="Graphesthesia" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.graphesthesia} onChange={(v) => set("graphesthesia", v)} info={neuroExamLibraryData.graphesthesia} />
       <SelectField label="Two-point discrimination" type="single" options={["Normal", "Impaired", "Not tested"]} value={d.twoPoint} onChange={(v) => set("twoPoint", v)} info={neuroExamLibraryData.twoPoint} />
+      <SelectField label="Point localization" type="single" options={["Intact", "Impaired", "Not testable"]} value={d.pointLocalization} onChange={(v) => set("pointLocalization", v)} howTo="With eyes closed, touch a point on the skin then ask the patient to open their eyes and point to exactly where they were touched -- distinct from simply detecting the touch (tested above), this checks localization ability specifically." />
+      <SelectField
+        label="Extinction (double simultaneous stimulation)"
+        type="single"
+        options={["Intact - detects both sides", "Extinction present - Right", "Extinction present - Left", "Not testable"]}
+        value={d.extinction}
+        onChange={(v) => set("extinction", v)}
+        howTo="Touch both sides of the body simultaneously with identical stimuli after confirming the patient can detect each side individually. Failure to report one side despite intact single-sided sensation (extinction) is a classic sign of contralateral parietal lobe dysfunction/sensory neglect -- most relevant in Stroke, complementary to (not a replacement for) the Stroke condition library's visual/personal neglect screen."
+      />
       <TextArea label="Additional sensory notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
 }
 
-/* ---------- Motor Examination ---------- */
+/* ---------- Motor Examination ----------
+   Restructured (2026-09-02, Aditi -- "don't treat MMT as the neurological
+   motor examination") from one flat, unlabelled MMT list mixing cervical/
+   shoulder/hip/knee rows together, into the components a real neuro motor
+   exam actually separates: muscle bulk (trophic status, not strength),
+   anatomical Strength/MMT grouped by region, a general Myotomal Strength
+   Screen (nerve-root level, not muscle strength -- distinct question from
+   MMT above, useful for any suspected radiculopathy, not just confirmed
+   SCI), and a properly-detailed Involuntary Movements block. Synergy
+   pattern and Selective Motor Control already exist as their own
+   Stroke-condition library items (see NEURO_RENDERERS above) rather than
+   being duplicated here -- they're condition-specific, unlike everything
+   in this generic step which every neuro patient gets regardless of
+   diagnosis. Tone stays its own step (ToneReflexSection) since it already
+   travels everywhere Motor does (see DOMAIN_STEP libraryItems grouping). */
+const MMT_OPTIONS = MMT_GRADES.map((g) => g.split(" - ")[0]);
+
 function MotorSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "motor");
   return (
     <>
       <SectionIntro icon="💪" title="Motor Examination" />
+
+      <div className="subheading">Muscle bulk</div>
       <LRGrid
-        label="Manual muscle testing (MMT)"
-        rows={["Shoulder flexion", "Elbow flexion", "Elbow extension", "Wrist extension", "Grip strength", "Hip flexion", "Knee extension", "Knee flexion", "Ankle dorsiflexion", "Ankle plantarflexion"]}
-        options={MMT_GRADES.map((g) => g.split(" - ")[0])}
-        value={d.mmt || {}}
-        onChange={(v) => set("mmt", v)}
-        howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction."
+        label="Bulk by region"
+        rows={["Shoulder girdle", "Arm", "Forearm", "Hand", "Thigh", "Leg", "Foot"]}
+        options={["Normal", "Reduced", "Increased"]}
+        value={d.bulk || {}}
+        onChange={(v) => set("bulk", v)}
+        howTo="Trophic status of the muscle, not strength -- look for atrophy, hypertrophy, wasting or asymmetry between the two sides."
       />
-      <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
-      <SelectField label="Muscle bulk" type="single" options={["Normal", "Atrophy present", "Hypertrophy present", "Asymmetrical"]} value={d.bulk} onChange={(v) => set("bulk", v)} />
+      <SelectField label="Asymmetry" type="single" options={["No", "Yes"]} value={d.bulkAsymmetry} onChange={(v) => set("bulkAsymmetry", v)} />
       <SelectField label="Fasciculations" type="single" options={["None", "Present"]} value={d.fasciculations} onChange={(v) => set("fasciculations", v)} />
-      <SelectField label="Involuntary movements" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
+
+      <div className="subheading">Strength / MMT</div>
+      <LRGrid label="Neck" rows={["Neck flexion", "Neck extension", "Neck rotation", "Neck lateral flexion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction." />
+      <LRGrid label="Shoulder" rows={["Shoulder flexion", "Shoulder extension", "Shoulder abduction", "Shoulder adduction", "Shoulder internal rotation", "Shoulder external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Elbow / forearm" rows={["Elbow flexion", "Elbow extension", "Forearm pronation", "Forearm supination"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Wrist / hand" rows={["Wrist flexion", "Wrist extension", "Finger flexion", "Finger extension", "Finger abduction", "Grip strength"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Hip" rows={["Hip flexion", "Hip extension", "Hip abduction", "Hip adduction", "Hip internal rotation", "Hip external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Knee / ankle" rows={["Knee flexion", "Knee extension", "Ankle dorsiflexion", "Ankle plantarflexion", "Ankle inversion", "Ankle eversion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
+
+      <div className="subheading">Myotomal strength screen</div>
+      <LRGrid
+        label="Key nerve-root muscles (0-5)"
+        rows={MYOTOME_ROWS}
+        options={["5", "4", "3", "2", "1", "0"]}
+        value={d.myotomalScreen || {}}
+        onChange={(v) => set("myotomalScreen", v)}
+        howTo="A different question from the anatomical MMT above: is there weakness at a single spinal nerve-root level? Useful for any suspected cervical/lumbar radiculopathy. For a confirmed spinal cord injury, add the full ISNCSCI/ASIA exam from the Spinal Cord Injury condition library instead -- it also grades sensory key points and derives the AIS classification."
+        rowInfo={MYOTOME_ROW_INFO}
+      />
+
+      <div className="subheading">Involuntary movements</div>
+      <SelectField label="Type" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics", "Other"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
+      <SelectField label="Location" type="multi" options={["Face", "Upper limb", "Lower limb", "Trunk", "Generalized"]} value={d.involuntaryLocation} onChange={(v) => set("involuntaryLocation", v)} />
+      <SelectField label="Side" type="single" options={["Right", "Left", "Bilateral"]} value={d.involuntarySide} onChange={(v) => set("involuntarySide", v)} />
+      <SelectField label="Context" type="single" options={["At rest", "With movement", "Both"]} value={d.involuntaryContext} onChange={(v) => set("involuntaryContext", v)} />
+
       <TextArea label="Additional motor notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
@@ -1226,17 +1348,19 @@ function ToneReflexSection({ data, setData }) {
       <div className="subheading">Deep tendon reflexes</div>
       <LRGrid
         label="DTRs"
-        rows={["Biceps (C5-6)", "Brachioradialis (C5-6)", "Triceps (C7-8)", "Patellar (L3-4)", "Achilles (S1-2)"]}
+        rows={["Jaw jerk (CN V)", "Biceps (C5-6)", "Brachioradialis (C5-6)", "Triceps (C7-8)", "Patellar (L3-4)", "Achilles (S1-2)"]}
         options={DTR_GRADES.map((g) => g.split(" - ")[0])}
         value={d.dtr || {}}
         onChange={(v) => set("dtr", v)}
         rowInfo={{
+          "Jaw jerk (CN V)": neuroExamLibraryData.reflexJawJerk,
           "Biceps (C5-6)": neuroExamLibraryData.reflexBiceps,
           "Brachioradialis (C5-6)": neuroExamLibraryData.reflexBrachioradialis,
           "Triceps (C7-8)": neuroExamLibraryData.reflexTriceps,
           "Patellar (L3-4)": neuroExamLibraryData.reflexPatellar,
           "Achilles (S1-2)": neuroExamLibraryData.reflexAchilles,
         }}
+        howTo="Jaw jerk is normally absent or minimal -- an unusually brisk jaw jerk suggests a bilateral corticobulbar (UMN) lesion above the mid-pons (e.g. pseudobulbar palsy), which the limb DTRs below can't distinguish on their own."
       />
       <div className="subheading">Pathological reflexes</div>
       <SelectField
@@ -1255,15 +1379,30 @@ function ToneReflexSection({ data, setData }) {
   );
 }
 
-/* ---------- Coordination ---------- */
+/* ---------- Coordination ----------
+   Non-equilibrium tests (O'Sullivan's Physical Rehabilitation framework:
+   sitting-based fine/gross motor tests, distinct from the standing
+   equilibrium tests that live in BalanceSection below). Added the Rebound
+   (Holmes-Stewart) test, which was missing entirely -- a standard
+   cerebellar-vs-spasticity sign alongside finger-to-nose/heel-to-shin/RAM,
+   not something to fold into "additional notes". */
 function CoordinationSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "coordination");
   return (
     <>
-      <SectionIntro icon="🎯" title="Coordination" />
+      <SectionIntro icon="🎯" title="Coordination" sub="Non-equilibrium (sitting) tests" />
       <LRGrid label="Finger-to-nose" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysmetria (past-pointing)", "Intention tremor", "Unable to perform"]} value={d.fingerNose || {}} onChange={(v) => set("fingerNose", v)} info={neuroExamLibraryData.fingerNose} />
       <LRGrid label="Heel-to-shin" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Ataxic/uncoordinated", "Unable to perform"]} value={d.heelShin || {}} onChange={(v) => set("heelShin", v)} info={neuroExamLibraryData.heelShin} />
       <LRGrid label="Rapid alternating movements" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysdiadochokinesia (slow/irregular)", "Unable to perform"]} value={d.ram || {}} onChange={(v) => set("ram", v)} info={neuroExamLibraryData.ram} />
+      <LRGrid
+        label="Rebound test (Holmes-Stewart)"
+        rows={["Right", "Left"]}
+        columns={["Result"]}
+        options={["Normal - opposing muscle checks the movement", "Positive - limb rebounds, unable to check movement", "Not tested"]}
+        value={d.rebound || {}}
+        onChange={(v) => set("rebound", v)}
+        howTo="Resist elbow flexion isometrically, then release suddenly. Normally the triceps 'checks' the limb before it hits the patient -- a positive rebound (limb flies toward the face/body uncontrolled) suggests cerebellar dysfunction; interpret cautiously if spasticity is also present."
+      />
       <SelectField label="Dysmetria" type="single" options={["None", "Present - overshoots target", "Present - undershoots target"]} value={d.dysmetria} onChange={(v) => set("dysmetria", v)} />
       <SelectField label="Tremor with movement" type="single" options={["None", "Intention tremor (worsens near target)", "Postural tremor", "Action tremor"]} value={d.movementTremor} onChange={(v) => set("movementTremor", v)} />
       <TextArea label="Additional coordination notes" value={d.notes} onChange={(v) => set("notes", v)} />
@@ -1271,12 +1410,35 @@ function CoordinationSection({ data, setData }) {
   );
 }
 
-/* ---------- Balance ---------- */
+/* ---------- Balance ----------
+   Restructured (2026-09-04, per O'Sullivan's equilibrium-coordination
+   framework and the current Mini-BESTest domains -- anticipatory,
+   reactive, sensory orientation, dynamic gait) to add what a modern
+   balance exam actually screens that this step previously had no field
+   for at all: sensory organization (which sensory system the patient
+   relies on -- vision/somatosensory/vestibular), reactive postural
+   control (protective stepping), anticipatory postural control, and the
+   two most ubiquitous functional fall-risk timed tests (TUG, 5xSTS) --
+   Berg and Functional Reach alone don't cover any of those. Dynamic gait
+   itself stays in the separate GaitSection below, same as before. */
 function BalanceSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "balance");
   return (
     <>
       <SectionIntro icon="⚖️" title="Balance" />
+
+      <div className="subheading">Sensory orientation</div>
+      <LRGrid
+        label="Standing balance by sensory condition (mCTSIB)"
+        rows={["Eyes open - firm surface", "Eyes closed - firm surface", "Eyes open - foam surface", "Eyes closed - foam surface"]}
+        columns={["Result"]}
+        options={["Normal", "Increased sway", "Loss of balance / step needed", "Unable to test"]}
+        value={d.sensoryOrg || {}}
+        onChange={(v) => set("sensoryOrg", v)}
+        howTo="Modified Clinical Test of Sensory Interaction on Balance (mCTSIB): removing vision and/or a firm support surface in turn identifies which sensory system (visual, somatosensory, vestibular) the patient relies on most -- a much bigger drop in stability with eyes closed on foam points toward vestibular dependence/dysfunction."
+      />
+
+      <div className="subheading">Static &amp; dynamic balance</div>
       <SelectField label="Static sitting balance" type="single" options={BALANCE_GRADES} value={d.sitStatic} onChange={(v) => set("sitStatic", v)} info={neuroExamLibraryData.balance} />
       <SelectField label="Dynamic sitting balance" type="single" options={BALANCE_GRADES} value={d.sitDynamic} onChange={(v) => set("sitDynamic", v)} />
       <SelectField label="Static standing balance" type="single" options={BALANCE_GRADES} value={d.standStatic} onChange={(v) => set("standStatic", v)} />
@@ -1289,8 +1451,30 @@ function BalanceSection({ data, setData }) {
         onChange={(v) => set("romberg", v)}
         info={neuroExamLibraryData.romberg}
       />
+
+      <div className="subheading">Anticipatory &amp; reactive postural control</div>
+      <SelectField
+        label="Anticipatory postural adjustments"
+        type="single"
+        options={["Normal (stable before/during a self-initiated reach or step)", "Delayed / reduced adjustment", "Absent", "Not tested"]}
+        value={d.anticipatory}
+        onChange={(v) => set("anticipatory", v)}
+        howTo="Observe postural muscle activity that should occur just before a voluntary movement (e.g. reaching overhead, rising onto toes) to prepare for the resulting shift in centre of mass -- a Mini-BESTest domain distinct from the reactive response below."
+      />
+      <SelectField
+        label="Reactive postural control (protective stepping)"
+        type="single"
+        options={["Normal - single step recovers", "Multiple / staggering steps needed", "Absent - requires assistance to prevent a fall", "Not tested"]}
+        value={d.reactive}
+        onChange={(v) => set("reactive", v)}
+        howTo="Response to an external, unexpected perturbation (a light nudge/release test with guarding) -- tests the automatic postural response, not the anticipatory one above. Always guard/spot this test."
+      />
+
+      <div className="subheading">Functional balance &amp; fall-risk measures</div>
       <NumberField label="Functional Reach" value={d.functionalReach} onChange={(v) => set("functionalReach", v)} unit="cm" howTo="Distance reached forward with arm at 90° shoulder flexion without stepping or losing balance, from a fixed standing position." />
       <NumberField label="Berg Balance Scale" value={d.berg} onChange={(v) => set("berg", v)} unit="/56" howTo="14-item functional balance battery; a total score ≤45/56 is associated with increased fall risk." />
+      <NumberField label="Timed Up and Go (TUG)" value={d.tug} onChange={(v) => set("tug", v)} unit="sec" howTo="Time to rise from a standard armchair, walk 3m, turn, walk back, and sit down. ≥12 seconds is a commonly used fall-risk cutoff in community-dwelling older adults -- interpret against norms for the specific population, and note that TUG turn duration specifically has been shown to predict falls in neurological populations." />
+      <NumberField label="Five Times Sit-to-Stand" value={d.fiveTSTS} onChange={(v) => set("fiveTSTS", v)} unit="sec" howTo="Time to stand fully and sit back down five times as fast as possible from a standard chair, arms folded (not pushing off). Slower times are associated with reduced lower-limb power and increased fall risk." />
       <TextArea label="Additional balance notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );
@@ -1325,6 +1509,7 @@ function GaitSection({ data, setData }) {
         <NumberField label="Gait speed" value={d.gaitSpeed} onChange={(v) => set("gaitSpeed", v)} unit="m/s" width="45%" />
         <NumberField label="10-metre walk time" value={d.tenMWT} onChange={(v) => set("tenMWT", v)} unit="sec" width="45%" />
       </div>
+      <NumberField label="Functional Gait Assessment (FGA)" value={d.fga} onChange={(v) => set("fga", v)} unit="/30" howTo="10-item validated gait-specific outcome measure (level-surface gait, change of speed, gait with horizontal head turns, gait with vertical head turns, gait with pivot turn, step over an obstacle, gait with narrow base of support, gait with eyes closed, ambulating backwards, and steps/stairs), each scored 0-3. A total score ≤22/30 is a commonly used fall-risk cutoff in community-dwelling older adults -- lower cutoffs (e.g. ≤15 in Parkinson's, <18 as an inpatient) apply in other populations." />
       <TextArea label="Gait observations" value={d.observations} onChange={(v) => set("observations", v)} placeholder="Step length, cadence, base of support, foot clearance, trunk/pelvic movement, symmetry, use of assistive device..." />
     </>
   );
@@ -1641,6 +1826,19 @@ const NEURO_TEMPLATES = [
   { id: "general", icon: "🧠", label: "General Neurological", domainSteps: DOMAIN_STEP_IDS, libraryItems: [] },
 ];
 
+// Setting + region(s) + condition, joined for display -- e.g. "Inpatient ·
+// Spinal Cord · Stroke". Exported so SpecialtyPatientProfile.jsx can show
+// it right in the Assessment card's header, the same way Ortho's own
+// [orthoParsed.regions, orthoParsed.condition] subtitle already works,
+// instead of only surfacing setting (and nothing for region/condition)
+// buried inside SummarySection's own internal heading.
+export function neuroAssessmentSubtitle(meta = {}) {
+  const settingLabel = SETTINGS.find((s) => s.id === meta.setting)?.label;
+  const regionLabel = (meta.selectedRegions || []).map((id) => REGIONS.find((r) => r.id === id)?.label).filter(Boolean).join(", ");
+  const conditionLabel = NEURO_TEMPLATES.find((t) => t.id === meta.condition)?.label;
+  return [settingLabel, regionLabel, conditionLabel].filter(Boolean).join(" · ");
+}
+
 const MY_TEMPLATES_KEY = "physiomind_neuro_my_templates";
 function loadMyTemplatesFromStorage() {
   if (typeof window === "undefined") return [];
@@ -1715,6 +1913,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   // Re-hydrate when switching to a different patient -- mirrors
   // CardiopulmonaryAssessment.jsx's own re-hydration effect. Keyed only on
@@ -1745,11 +1944,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // Remember the chosen setting/stepOrder/customStepsMeta on the record
   // itself so re-opening this patient later (see hasExistingNeuro above)
   // can skip straight back into the same template instead of asking again.
+  // selectedRegions is included too (2026-09) so SpecialtyPatientProfile.jsx
+  // can show which region(s) were picked -- previously only meaningful for
+  // the "Build by Region" entry mode, it was transient local state that
+  // never made it into the saved record at all.
   useEffect(() => {
     if (phase !== "assess") return;
     setData((prev) => {
-      const meta = { setting, condition, stepOrder, customStepsMeta };
-      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta) return prev;
+      const meta = { setting, condition, stepOrder, customStepsMeta, selectedRegions };
+      if (prev.meta && prev.meta.setting === meta.setting && prev.meta.condition === meta.condition && prev.meta.stepOrder === meta.stepOrder && prev.meta.customStepsMeta === meta.customStepsMeta && prev.meta.selectedRegions === meta.selectedRegions) return prev;
       return { ...prev, meta };
     });
     // Also mirror the chosen setting onto the shared patient record's own
@@ -2151,6 +2354,12 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 1070; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .missing-dem-panel { position: relative; z-index: 1071; background: #fff; border-radius: 20px; padding: 24px 22px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 24px 60px rgba(40,10,90,.35); }
+        .missing-dem-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .missing-dem-title { font-weight: 800; font-size: 17px; color: ${BRAND.ink}; margin-bottom: 8px; text-transform: capitalize; }
+        .missing-dem-body { font-size: 13px; color: ${BRAND.gray}; line-height: 1.5; margin-bottom: 18px; }
       `}</style>
 
       <div className="app-inner">
@@ -2381,7 +2590,14 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                 <button className="ghost-btn" onClick={() => setStep(1)}>
                   ✏️ Edit More
                 </button>
-                <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+                <button
+                  className="primary-btn"
+                  onClick={() => {
+                    const missing = missingDemographicsFields(data.demographics);
+                    if (missing.length) { setMissingDemFields(missing); return; }
+                    onNav?.("clinical");
+                  }}
+                >
                   ✅ Save Assessment
                 </button>
               </>
@@ -2398,6 +2614,13 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); setStep(1); }}
+          />
+        )}
         {reviewOpen && (
           <div className="ct-modal">
             <div className="ct-modal-header">

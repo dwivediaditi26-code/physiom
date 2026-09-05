@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -19,6 +19,7 @@ import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOut
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
+import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -58,7 +59,7 @@ export const IPD_CONDITIONS = [
 ];
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
-const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "review"];
+const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "carePlan", "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
@@ -83,6 +84,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
+  "carePlan",
   "review",
 ];
 
@@ -108,6 +110,7 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
+  carePlan: { icon: "🎯", label: "Problems, Goals & Plan" },
   review: { icon: "✅", label: "Final Review" },
 };
 
@@ -257,6 +260,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   const [visited, setVisited] = useState(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -334,6 +338,16 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     setTimeout(() => setSavedFlash(false), 1800);
   }
 
+  // The explicit "Save Assessment" tap, gated on name+age -- silent 2s
+  // auto-save above still runs regardless so in-progress work always
+  // survives a crash/tab-close, this just stops the therapist from
+  // believing a *named, findable* record was saved when it wasn't.
+  function handleSaveClick() {
+    const missing = missingDemographicsFields(caseInfo);
+    if (missing.length) { setMissingDemFields(missing); return; }
+    saveAssessment();
+  }
+
   // Auto-save (2026-09-02, Aditi: "not saving patient and assessment
   // automatically... nothing saving") -- this wizard keeps its own local
   // `data` state (see the useState above), separate from the app-wide
@@ -401,6 +415,12 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
+          {current.id === "carePlan" && (
+            <>
+              <style>{orthoStyles()}</style>
+              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="ipd" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+            </>
+          )}
           {current.id === "review" && (
             <>
               <AssessmentSummary
@@ -414,7 +434,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
-                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
                   {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
                 </button>
               )}
@@ -438,6 +458,13 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
         </div>
 
         {addOpen && <AddAssessmentModal activeIds={new Set(stepOrder)} onToggle={toggleAssessment} onClose={() => setAddOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); jumpTo("caseInfo"); }}
+          />
+        )}
       </div>
     </div>
   );

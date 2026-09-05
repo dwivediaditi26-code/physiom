@@ -154,6 +154,14 @@ export function orthoStyles() {
         .sheet-panel { position: relative; z-index: 1071; background: #fff; border-radius: 22px; padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); width: 60vw; height: 60vh; max-width: 480px; max-height: 640px; min-width: 300px; min-height: 380px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(40,10,90,.35); animation: sheetPop .18s cubic-bezier(.2,.9,.3,1); }
         .sheet-scroll { flex: 1; overflow-y: auto; min-height: 0; }
         @keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Compact "fill this in before saving" confirm dialog -- reuses
+           .sheet-backdrop above but its own small, auto-height panel
+           instead of .sheet-panel's big educational-sheet sizing. */
+        .missing-dem-panel { position: relative; z-index: 1071; background: #fff; border-radius: 20px; padding: 24px 22px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 24px 60px rgba(40,10,90,.35); animation: sheetPop .18s cubic-bezier(.2,.9,.3,1); }
+        .missing-dem-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .missing-dem-title { font-weight: 800; font-size: 17px; color: ${BRAND.ink}; margin-bottom: 8px; text-transform: capitalize; }
+        .missing-dem-body { font-size: 13px; color: ${BRAND.gray}; line-height: 1.5; margin-bottom: 18px; }
         @keyframes sheetPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
         .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
         .sheet-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: ${BRAND.purple}; }
@@ -645,6 +653,27 @@ export function orthoStyles() {
         .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
         .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+
+        /* Condition-specific assessment module cards — interactive checkboxes */
+        .cmod-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+        .cmod-card { border: 1.5px solid ${BRAND.border}; border-radius: 10px; background: #fff; overflow: hidden; }
+        .cmod-card-open { border-color: ${BRAND.purple}; }
+        .cmod-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; width: 100%; border: none; background: none; cursor: pointer; font-family: inherit; text-align: left; }
+        .cmod-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .cmod-label { flex: 1; font-size: 13px; font-weight: 600; color: ${BRAND.ink}; }
+        .cmod-chev { font-size: 16px; color: ${BRAND.grayLight}; transition: transform .15s; }
+        .cmod-chev.open { transform: rotate(180deg); }
+        .cmod-body { padding: 0 12px 12px; }
+        .cmod-detail { font-size: 12.5px; line-height: 1.55; color: ${BRAND.gray}; background: ${BRAND.purpleFaint}; border-left: 3px solid ${BRAND.purple}; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+        .cmod-detail-title { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: ${BRAND.purple}; text-transform: uppercase; margin-bottom: 4px; }
+        .cmod-checks { display: flex; flex-direction: column; gap: 6px; }
+        .cmod-check-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 13px; color: ${BRAND.ink}; line-height: 1.4; padding: 2px 0; }
+        .cmod-checkbox { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: ${BRAND.purple}; cursor: pointer; border-radius: 3px; }
+        .cmod-check-text { flex: 1; padding-top: 1px; }
+        .cmod-redirect-btn { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1.5px solid ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; text-align: center; }
+        .cmod-redirect-btn:active { background: ${BRAND.purpleFaint}; }
+        .cmod-redirect-done { font-size: 12.5px; font-weight: 600; color: ${BRAND.green}; padding: 4px 0; }
+        .cmod-note { font-size: 12px; line-height: 1.5; color: ${BRAND.gray}; }
 
         /* Findings summary -- collapsible drawer built purely by scanning
            already-answered rom/mmt/specialTests/observation data for a

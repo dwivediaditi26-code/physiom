@@ -1,6 +1,9 @@
-import React, { useState, useRef } from "react";
-import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
-import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters } from "./NeurologicalAssessment.jsx";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { NeuroCarePlanSection, CarePlanSection } from "./NeuroCarePlan.jsx";
+import { goalProgress } from "./neuroClinicalKnowledge.js";
+import { buildOrthoKnowledge } from "./orthoClinicalKnowledge.js";
+import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle } from "./CardiopulmonaryAssessment.jsx";
+import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters, neuroAssessmentSubtitle } from "./NeurologicalAssessment.jsx";
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
@@ -34,9 +37,13 @@ const C = {
   green: "#16a34a", greenBg: "#dcfce7", red: "#dc2626", orange: "#d97706",
 };
 
+// Elevated white "3D" section — soft layered shadow gives depth on a white
+// page (2026-09-03, Aditi: "white 3d section", "good font"). Hairline border
+// keeps edges crisp; the shadow does the lifting.
+const CARD_SHADOW = "0 1px 2px rgba(16,24,40,0.04), 0 6px 16px rgba(16,24,40,0.06)";
 function Card({ children, style }) {
   return (
-    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 18px", marginBottom: 12, ...style }}>
+    <div style={{ background: C.white, border: "1px solid #eef1f6", borderRadius: 18, padding: "18px 20px", marginBottom: 14, boxShadow: CARD_SHADOW, ...style }}>
       {children}
     </div>
   );
@@ -44,8 +51,8 @@ function Card({ children, style }) {
 
 function CardTitle({ children, action }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, letterSpacing: 0.5, textTransform: "uppercase" }}>{children}</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ fontSize: 11.5, fontWeight: 800, color: C.muted, letterSpacing: 0.6, textTransform: "uppercase" }}>{children}</div>
       {action}
     </div>
   );
@@ -196,6 +203,100 @@ const hepDose = (e) => {
   return `${st}×${rp}${hd ? ` · hold ${hd}s` : ""}${fq ? ` · ${fq}` : ""}`;
 };
 
+// The Neuro Care Plan (Problems/Goals/Treatment/Plan/Sessions/Progress) is
+// the exact same editable component used inside the assessment wizard, mounted
+// here in the profile so it can be viewed and edited with room to breathe
+// (2026-09-03, Aditi: "it should also show in the treatment section of the
+// patient profile ... we can edit also"). One data store: edits here and in
+// the assessment both write patient.data.neuro.neuroCarePlan, so they stay in
+// sync. `setData` computes the next neuro object from a ref (no side-effect in
+// a setState updater) and persists via the profile's onSaveField.
+function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
+  const [neuro, setNeuro] = useState(patient?.data?.neuro || {});
+  const neuroRef = useRef(neuro);
+  neuroRef.current = neuro;
+  const pid = patient?.id;
+  useEffect(() => {
+    const next = patient?.data?.neuro || {};
+    neuroRef.current = next;
+    setNeuro(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pid]);
+  const setData = (updater) => {
+    const next = typeof updater === "function" ? updater(neuroRef.current) : updater;
+    neuroRef.current = next;
+    setNeuro(next);
+    onSaveField?.(patient.id, { neuro: next });
+  };
+  return (
+    <>
+      <style>{orthoStyles()}</style>
+      <NeuroCarePlanSection data={neuro} setData={setData} initialPhase={initialPhase} floatingCTA />
+    </>
+  );
+}
+
+// Compact snapshot for the Overview tab: counts + average goal progress.
+function carePlanCounts(cp) {
+  cp = cp || {};
+  const problems = Array.isArray(cp.problems) ? cp.problems : [];
+  const goals = Array.isArray(cp.goals) ? cp.goals : [];
+  const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
+  const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
+  const pcts = goals
+    .map((gl) => {
+      const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[gl.id]) })).filter((e) => Number.isFinite(e.value));
+      return goalProgress(gl, entries).pct;
+    })
+    .filter((p) => p != null);
+  const avg = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : null;
+  return {
+    problems: problems.length, goals: goals.length, treatments: treatments.length,
+    sessions: sessions.length, avgProgress: avg,
+    any: problems.length || goals.length || treatments.length || sessions.length,
+  };
+}
+const neuroCarePlanSnapshot = (neuro) => carePlanCounts(neuro?.neuroCarePlan);
+const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
+
+// Ortho Care Plan — same shared CarePlanSection, fed the ortho knowledge
+// built from the assessment context (setting/condition/regions) parsed from
+// the ortho snapshot. Stored at patient.data.ortho_care_plan (ortho has no
+// live nested object like neuro), persisted via onSaveField. One store:
+// editable here and, once wired, in the ortho assessment.
+const orthoRegionLabel = (r) => [r.side, r.label || r.name || String(r.id || "").replace(/[_/-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())].filter(Boolean).join(" ");
+function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, initialPhase }) {
+  const pid = patient?.id;
+  const pd = patient?.data || {};
+  const setting = orthoPathway || null;
+  const condition = orthoParsed?.rawCondition || null;
+  const regions = (orthoParsed?.selectedRegions || []).map((r) => ({ id: r.id, side: r.side, label: orthoRegionLabel(r) }));
+  const pain = { now: pd.cc_vas_now, worst: pd.cc_vas_worst };
+  const ctxKey = JSON.stringify({ setting, condition, regions, pain });
+  const knowledge = useMemo(() => buildOrthoKnowledge({ setting, condition, regions, pain }), [ctxKey]);
+  const meta = { setting, condition, regions };
+
+  const [cp, setCp] = useState(pd.ortho_care_plan || {});
+  const cpRef = useRef(cp);
+  cpRef.current = cp;
+  useEffect(() => { const next = patient?.data?.ortho_care_plan || {}; cpRef.current = next; setCp(next); /* eslint-disable-next-line */ }, [pid]);
+
+  const data = { meta, pain, orthoCarePlan: cp };
+  const setData = (updater) => {
+    const prev = { meta, pain, orthoCarePlan: cpRef.current };
+    const next = typeof updater === "function" ? updater(prev) : updater;
+    cpRef.current = next.orthoCarePlan;
+    setCp(next.orthoCarePlan);
+    onSaveField?.(pid, { ortho_care_plan: next.orthoCarePlan });
+  };
+  return (
+    <>
+      <style>{orthoStyles()}</style>
+      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA />
+    </>
+  );
+}
+
 export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
@@ -284,32 +385,39 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   ];
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 14px 40px", background: C.bg, minHeight: "100vh" }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 14px 40px", background: C.white, minHeight: "100vh", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif", WebkitFontSmoothing: "antialiased", color: C.text, letterSpacing: "-0.01em" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <button onClick={onBack} style={{ border: `1px solid ${C.border}`, background: "#fff", borderRadius: 10, width: 36, height: 36, fontSize: 16, cursor: "pointer", flexShrink: 0 }}>←</button>
-        <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.primaryBg, color: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ border: "1px solid #eef1f6", background: "#fff", borderRadius: 12, width: 38, height: 38, fontSize: 16, cursor: "pointer", flexShrink: 0, boxShadow: CARD_SHADOW }}>←</button>
+        <div style={{ width: 46, height: 46, borderRadius: "50%", background: "linear-gradient(135deg,#7c3aed,#6d28d9)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, flexShrink: 0, boxShadow: "0 4px 12px rgba(109,40,217,0.28)" }}>
           {initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name || "Patient"}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.02em" }}>{name || "Patient"}</div>
           <div style={{ fontSize: 12, color: C.faint }}>
             {[(d.dem_age || cardioDem.age) && `${d.dem_age || cardioDem.age} yrs`, (d.dem_sex || d.dem_gender)].filter(Boolean).join(" · ")}
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 6, background: "#f1f5f9", borderRadius: 12, padding: 4, marginBottom: 16, overflowX: "auto" }}>
-        {TABS.map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)} style={{
-            flex: "1 0 auto", padding: "8px 10px", borderRadius: 9, border: "none", cursor: "pointer",
-            background: tab === t.k ? "#fff" : "transparent", color: tab === t.k ? C.text : C.muted,
-            fontWeight: 700, fontSize: 12.5, boxShadow: tab === t.k ? "0 1px 4px rgba(0,0,0,0.08)" : "none", whiteSpace: "nowrap",
-          }}>
-            {t.label}
-          </button>
-        ))}
+      {/* Tabs — elevated white pill for the active tab, clean on white */}
+      <style>{`.cp-scroll-x::-webkit-scrollbar{display:none}`}</style>
+      <div className="cp-scroll-x" style={{ display: "flex", gap: 8, padding: "2px 2px 12px", marginBottom: 12, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", borderBottom: "1px solid #f1f5f9" }}>
+        {TABS.map((t) => {
+          const on = tab === t.k;
+          return (
+            <button key={t.k} onClick={() => setTab(t.k)} style={{
+              flex: "1 0 auto", padding: "9px 14px", borderRadius: 11, cursor: "pointer",
+              border: on ? "1px solid #ece7fb" : "1px solid transparent",
+              background: on ? C.white : "transparent", color: on ? C.primary : C.muted,
+              fontWeight: on ? 800 : 600, fontSize: 12.5, whiteSpace: "nowrap",
+              boxShadow: on ? "0 1px 2px rgba(16,24,40,0.05), 0 4px 10px rgba(109,40,217,0.10)" : "none",
+              transition: "all .15s ease",
+            }}>
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ═══ OVERVIEW ═══ */}
@@ -389,18 +497,51 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             {(hasCardio || hasNeuro) && <LinkBtn onClick={() => setTab("assessment")}>View assessment →</LinkBtn>}
           </Card>
 
-          <Card>
-            <CardTitle>Current Treatment</CardTitle>
-            {sessions.length === 0 ? (
-              <EmptyRow>No sessions logged yet.</EmptyRow>
-            ) : (
-              <>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>Session {sessions.length}{plannedSessions > 0 ? ` / ${plannedSessions}` : ""}</div>
-                {lastSession?.treatmentGiven && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4 }}>{lastSession.treatmentGiven}</div>}
-              </>
-            )}
-            <LinkBtn onClick={() => setTab("treatment")}>Continue treatment →</LinkBtn>
-          </Card>
+          {/* Care Plan snapshot (neuro or ortho) — glanceable status, links
+              into the Treatment tab where it's fully editable. */}
+          {(hasNeuro || hasOrtho) && (() => {
+            const snap = hasNeuro ? neuroCarePlanSnapshot(d.neuro) : orthoCarePlanSnapshot(d);
+            return (
+              <Card>
+                <CardTitle>Care Plan</CardTitle>
+                {!snap.any ? (
+                  <EmptyRow>No problems or goals set yet.</EmptyRow>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+                      {[["Problems", snap.problems], ["Goals", snap.goals], ["Treatments", snap.treatments], ["Sessions", snap.sessions]].map(([l, v]) => (
+                        <div key={l} style={{ flex: "1 0 auto", minWidth: 64, textAlign: "center", background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 6px" }}>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: "#7c3aed" }}>{v}</div>
+                          <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 600 }}>{l}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {snap.avgProgress != null && (
+                      <div style={{ fontSize: 13, color: C.text, marginTop: 6 }}>
+                        Average goal progress: <b style={{ color: "#7c3aed" }}>{snap.avgProgress}%</b>
+                      </div>
+                    )}
+                  </>
+                )}
+                <LinkBtn onClick={() => setTab("treatment")}>Open Care Plan →</LinkBtn>
+              </Card>
+            );
+          })()}
+
+          {!hasNeuro && !hasOrtho && (
+            <Card>
+              <CardTitle>Current Treatment</CardTitle>
+              {sessions.length === 0 ? (
+                <EmptyRow>No sessions logged yet.</EmptyRow>
+              ) : (
+                <>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>Session {sessions.length}{plannedSessions > 0 ? ` / ${plannedSessions}` : ""}</div>
+                  {lastSession?.treatmentGiven && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4 }}>{lastSession.treatmentGiven}</div>}
+                </>
+              )}
+              <LinkBtn onClick={() => setTab("treatment")}>Continue treatment →</LinkBtn>
+            </Card>
+          )}
 
           <Card>
             <CardTitle>Home Program</CardTitle>
@@ -412,92 +553,87 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         </>
       )}
 
-      {/* ═══ ASSESSMENT ═══ */}
+      {/* ═══ ASSESSMENT ═══
+          Show the patient's OWN recorded assessment(s) first; the "add
+          another specialty" buttons live in one compact card at the
+          bottom, so a Neuro patient no longer sees an empty Cardio "Open"
+          button above their real assessment (2026-09-03, Aditi: "why
+          cardio assessment adding button is above?"). */}
       {tab === "assessment" && (
         <>
           {hasCardio && <CardioSummaryStyles />}
-          {hasCardio ? (
-            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <span style={{ fontSize: 24 }}>🫀</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
-                <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
-              </div>
-              <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
-            </Card>
-          ) : (
-            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 24 }}>🫀</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
-              </div>
-              <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Cardiopulmonary assessment tool.</div>
-              <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ width: "100%" }}>+ Open Cardio Assessment</GhostBtn>
-            </Card>
-          )}
           {hasNeuro && <NeuroSummaryStyles />}
-          {hasNeuro ? (
-            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          {hasOrtho && <style>{orthoStyles()}</style>}
+
+          {!hasCardio && !hasNeuro && !hasOrtho && (
+            <Card><EmptyRow>No assessment recorded yet — add one below.</EmptyRow></Card>
+          )}
+
+          {hasNeuro && (
+            <Card>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🧠</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
+              {neuroAssessmentSubtitle(d.neuro.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{neuroAssessmentSubtitle(d.neuro.meta)}</div>}
               <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} formatters={neuroSummaryFormatters} />
-            </Card>
-          ) : (
-            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 24 }}>🧠</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
-              </div>
-              <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Neurological assessment tool.</div>
-              <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ width: "100%" }}>+ Open Neuro Assessment</GhostBtn>
             </Card>
           )}
 
-          {/* Ortho Assessment -- real saved summary (2026-09-01), same
-              pattern as Cardio/Neuro above: their own module's summary
-              renderer, fed with their own saved data, jumping back into
-              the real wizard to edit. Which pathway (IPD/Post-op/
-              Outpatient) is whichever one this patient was actually
-              assessed under -- see orthoPathway above. */}
-          {hasOrtho ? (
-            <>
-              <style>{orthoStyles()}</style>
-              <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <span style={{ fontSize: 24 }}>🦴</span>
-                  <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
-                  <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
-                </div>
-                <OrthoAssessmentSummary
-                  icon="🦴"
-                  title={orthoTitle}
-                  sub={[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}
-                  steps={orthoSteps}
-                  data={orthoParsed.data || {}}
-                  onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}
-                  exportHeaderLines={[orthoTitle.toUpperCase()]}
-                  formatters={orthoFormatters}
-                />
-              </Card>
-            </>
-          ) : (
-            <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+          {hasCardio && (
+            <Card>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
+                <span style={{ fontSize: 24 }}>🫀</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
+                <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
+              </div>
+              {cardioAssessmentSubtitle(d.cardio.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{cardioAssessmentSubtitle(d.cardio.meta)}</div>}
+              <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
+            </Card>
+          )}
+
+          {hasOrtho && (
+            <Card>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <span style={{ fontSize: 24 }}>🦴</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>Ortho Assessment</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
+                <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
-              <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>Standalone orthopaedic assessment tool.</div>
-              <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ width: "100%" }}>+ Open Ortho Assessment</GhostBtn>
+              <OrthoAssessmentSummary
+                icon="🦴"
+                title={orthoTitle}
+                sub={[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}
+                steps={orthoSteps}
+                data={orthoParsed.data || {}}
+                onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}
+                exportHeaderLines={[orthoTitle.toUpperCase()]}
+                formatters={orthoFormatters}
+              />
+            </Card>
+          )}
+
+          {(!hasCardio || !hasNeuro || !hasOrtho) && (
+            <Card>
+              <CardTitle>{hasCardio || hasNeuro || hasOrtho ? "Add another assessment" : "Start an assessment"}</CardTitle>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {!hasNeuro && <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ width: "100%", textAlign: "left" }}>🧠 &nbsp;Neurological Assessment</GhostBtn>}
+                {!hasCardio && <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ width: "100%", textAlign: "left" }}>🫀 &nbsp;Cardiopulmonary Assessment</GhostBtn>}
+                {!hasOrtho && <GhostBtn onClick={() => onNav?.("ortho_new_assessment")} style={{ width: "100%", textAlign: "left" }}>🦴 &nbsp;Ortho Assessment</GhostBtn>}
+              </div>
             </Card>
           )}
         </>
       )}
 
       {/* ═══ PROGRESS ═══ */}
-      {tab === "progress" && (
+      {tab === "progress" && hasNeuro && (
+        <NeuroCarePlanPanel key="cp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
+      )}
+      {tab === "progress" && !hasNeuro && hasOrtho && (
+        <OrthoCarePlanPanel key="ocp-progress" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="progress" />
+      )}
+      {tab === "progress" && !hasNeuro && !hasOrtho && (
         <>
           <Card>
             <CardTitle>Pain Progress (NPRS)</CardTitle>
@@ -538,7 +674,13 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       )}
 
       {/* ═══ TREATMENT ═══ */}
-      {tab === "treatment" && (
+      {tab === "treatment" && hasNeuro && (
+        <NeuroCarePlanPanel key="cp-treatment" patient={patient} onSaveField={onSaveField} />
+      )}
+      {tab === "treatment" && !hasNeuro && hasOrtho && (
+        <OrthoCarePlanPanel key="ocp-treatment" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
+      )}
+      {tab === "treatment" && !hasNeuro && !hasOrtho && (
         <>
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>

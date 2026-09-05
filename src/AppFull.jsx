@@ -642,6 +642,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   const selectPatient = (p) => {
+    // Re-selecting the patient who is ALREADY active (e.g. tapping their
+    // profile mid-assessment): keep the current in-memory `data` -- it holds
+    // the freshest, possibly-unsaved edits. Resetting it here to a stale
+    // draft/saved copy would silently drop in-flight Care Plan edits
+    // (2026-09-05).
+    if (p && p.id === activePatientId && Object.keys(data).length > 0) {
+      setShowPatientDb(false);
+      return;
+    }
     // Flush any edits on the outgoing patient before switching -- the 2s
     // debounced autosave effects already do this in the background, but
     // switching mid-edit shouldn't have to wait out that debounce window.
@@ -1843,6 +1852,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     savePatientDB(updated, currentUser?.id);
                     return updated;
                   });
+                  // CRITICAL (2026-09-05): the profile edits patients[] directly,
+                  // but the active patient's in-memory `data` + its localStorage
+                  // draft are a SEPARATE source of truth. If we don't mirror the
+                  // edit into them, re-selecting the patient restores the STALE
+                  // draft and the 2s autosave writes it back over patients[] --
+                  // silently wiping Care Plan problems/goals/treatments/sessions
+                  // saved from the profile. Keep all three in sync here.
+                  if (id === activePatientId) {
+                    setData(prev => {
+                      const next = { ...prev, ...newData };
+                      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: id, data: next })); } catch {}
+                      return next;
+                    });
+                  }
                 }}
                 onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />

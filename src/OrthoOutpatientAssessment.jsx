@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -12,6 +12,7 @@ import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { palpationStructureRows } from "./orthoPalpationData.js";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
+import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { saveTemplate } from "./orthoTemplates.js";
@@ -99,7 +100,7 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // Suggested Objective (which already inline-covers Observation/Palpation
 // itself), skipping these four as separate steps in between. Condition-
@@ -107,7 +108,7 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -144,6 +145,7 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   clinicalAssessment: { icon: "🧠", label: "Clinical Assessment" },
+  carePlan: { icon: "🎯", label: "Problems, Goals & Plan" },
   goals: { icon: "🎯", label: "Goals" },
   treatmentPlan: { icon: "📋", label: "Treatment Plan" },
   techniques: { icon: "🤲", label: "Treatment Techniques" },
@@ -334,6 +336,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
@@ -437,6 +440,16 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     if (demographicsName) onSave("dem_name", demographicsName);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
+  }
+
+  // The explicit "Save Assessment" tap, gated on name+age -- silent 2s
+  // auto-save above still runs regardless so in-progress work always
+  // survives a crash/tab-close, this just stops the therapist from
+  // believing a *named, findable* record was saved when it wasn't.
+  function handleSaveClick() {
+    const missing = missingDemographicsFields(data.demographics);
+    if (missing.length) { setMissingDemFields(missing); return; }
+    saveAssessment();
   }
 
   // Auto-save (2026-09-02, Aditi: "not saving... automatically") -- this
@@ -551,6 +564,12 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} />}
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
+          {current.id === "carePlan" && (
+            <>
+              <style>{orthoStyles()}</style>
+              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="outpatient" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+            </>
+          )}
           {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
           {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
@@ -570,7 +589,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 formatters={orthoSummaryFormatters}
               />
               {onSave && (
-                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveAssessment}>
+                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
                   {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
                 </button>
               )}
@@ -597,6 +616,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
         </div>
 
         {addOpen && <AddAssessmentModal activeIds={new Set(stepOrder)} onToggle={toggleAssessment} onClose={() => setAddOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); jumpTo("demographics"); }}
+          />
+        )}
 
         {saveTemplateOpen && (
           <SaveTemplateModal
