@@ -665,6 +665,10 @@ export function orthoStyles() {
         .cmod-check-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 13px; color: ${BRAND.ink}; line-height: 1.4; padding: 2px 0; }
         .cmod-checkbox { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: ${BRAND.purple}; cursor: pointer; border-radius: 3px; }
         .cmod-check-text { flex: 1; padding-top: 1px; }
+        .cmod-redirect-btn { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1.5px solid ${BRAND.purple}; background: #fff; color: ${BRAND.purple}; font-size: 12.5px; font-weight: 700; font-family: inherit; cursor: pointer; text-align: center; }
+        .cmod-redirect-btn:active { background: ${BRAND.purpleFaint}; }
+        .cmod-redirect-done { font-size: 12.5px; font-weight: 600; color: ${BRAND.green}; padding: 4px 0; }
+        .cmod-note { font-size: 12px; line-height: 1.5; color: ${BRAND.gray}; }
 
         /* Findings summary -- collapsible drawer built purely by scanning
            already-answered rom/mmt/specialTests/observation data for a
