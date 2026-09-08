@@ -1169,67 +1169,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     return total>0?Math.round(filled/total*100):0;
   };
 
-  // Sidebar nav item renderer
-  const SidebarItem = ({ navKey, icon, label }) => {
-    const isAct = active === navKey;
-    const pct = getSectionPct(navKey);
-    return (
-      <div onClick={()=>navTo(navKey)} style={{
-        padding:"8px 12px 8px 28px", cursor:"pointer", margin:"1px 6px",
-        borderRadius:8,
-        background: isAct ? "rgba(124,58,237,0.10)" : "transparent",
-        borderLeft: isAct ? "3px solid #7c3aed" : "3px solid transparent",
-        transition:"all 0.15s",
-      }}>
-        <div style={{display:"flex",alignItems:"center",gap:7}}>
-          <span style={{fontSize:"0.82rem",opacity:isAct?1:0.65,flexShrink:0}}>{icon}</span>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:"0.74rem",fontWeight:isAct?700:500,color:isAct?"#7c3aed":PC.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {label}
-            </div>
-            {pct>0&&(
-              <div style={{marginTop:3,height:2,borderRadius:2,background:PC.border}}>
-                <div style={{height:"100%",width:`${pct}%`,background:pct===100?PC.green:pct>60?PC.yellow:"#7c3aed",borderRadius:2,transition:"width 0.4s"}}/>
-              </div>
-            )}
-          </div>
-          {pct===100&&<span style={{fontSize:"0.75rem",color:PC.green,flexShrink:0,fontWeight:800}}>✓</span>}
-          {pct>0&&pct<100&&<span style={{fontSize:"0.75rem",color:PC.muted,flexShrink:0,fontWeight:600,background:PC.s2,padding:"1px 4px",borderRadius:4}}>{pct}%</span>}
-        </div>
-      </div>
-    );
-  };
-
-  // Collapsible group header
-  const SidebarGroup = ({ groupKey, icon, label, children, accentColor="#7c3aed" }) => {
-    const isOpen = sidebarOpen[groupKey];
-    return (
-      <div style={{marginBottom:2}}>
-        <div onClick={()=>toggleSidebar(groupKey)} style={{
-          display:"flex",alignItems:"center",gap:7,
-          padding:"9px 12px",margin:"2px 6px",cursor:"pointer",borderRadius:8,
-          background: isOpen ? `${accentColor}0d` : "transparent",
-          border:`1px solid ${isOpen ? accentColor+"28" : "transparent"}`,
-          transition:"all 0.15s",
-        }}>
-          <span style={{fontSize:"0.85rem",flexShrink:0}}>{icon}</span>
-          <div style={{flex:1,fontSize:"0.82rem",fontWeight:700,color:isOpen?accentColor:PC.text,textTransform:"uppercase",letterSpacing:"0.5px"}}>{label}</div>
-          <span style={{fontSize:"0.75rem",color:isOpen?accentColor:PC.muted,transition:"transform 0.2s",display:"inline-block",transform:isOpen?"rotate(0deg)":"rotate(-90deg)"}}>▾</span>
-        </div>
-        {isOpen && (
-          <div style={{paddingBottom:4}}>
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Top-level nav item (no indent)
-  const SidebarTopItem = ({ navKey, icon, label }) => {
+  const SidebarTopItem = ({ navKey, navCtx, icon, label }) => {
     const isAct = active === navKey;
     return (
-      <div onClick={()=>navTo(navKey)} style={{
+      <div onClick={()=>navTo(navKey, navCtx||{})} style={{
         display:"flex",alignItems:"center",gap:8,
         padding:"9px 14px",margin:"1px 6px",cursor:"pointer",borderRadius:9,
         background:isAct?"rgba(124,58,237,0.10)":"transparent",
@@ -1298,58 +1242,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         )}
       </div>
 
-      {/* 1. Home */}
+      {/* Simplified flat nav (Aditi: "remove old, put this" -- Home /
+          Patients / Clinical / Learn / PhysioFeed, divider, Settings).
+          Replaces the old Assessment/Advanced Assessment/Treatment/
+          Documentation tool groups, which duplicated the real navigation
+          already on the bottom nav and inside Clinical's own sub-tabs. */}
       <SidebarTopItem navKey="home" icon="🏠" label="Home"/>
-
-      {/* 2. Dashboard */}
-      <SidebarTopItem navKey="dashboard" icon="📊" label="Dashboard"/>
+      <SidebarTopItem navKey="clinical" navCtx={{clinicalSubTab:"patients"}} icon="👥" label="Patients"/>
+      <SidebarTopItem navKey="clinical" icon="🩺" label="Clinical"/>
+      <SidebarTopItem navKey="learn" icon="📚" label="Learn"/>
+      <SidebarTopItem navKey="physiofeed" icon="📰" label="PhysioFeed"/>
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      {/* 3. Assessment (collapsible) */}
-      <SidebarGroup groupKey="assessment" icon="🩺" label="Assessment" accentColor="#7c3aed">
-        <SidebarItem navKey="demographics"   icon="👤" label="Demographics"/>
-        <SidebarItem navKey="cardio_assessment" icon="🫀" label="Cardiopulmonary Assessment"/>
-        <SidebarItem navKey="neuro_assessment" icon="🧠" label="Neurological Assessment (Full)"/>
-        <SidebarItem navKey="ortho_new_assessment" icon="🦴" label="Ortho Assessment"/>
-        <SidebarItem navKey="posture"       icon="🧍" label="Posture Analysis"/>
-        <SidebarItem navKey="observation"   icon="👁️" label="Observation"/>
-        <SidebarItem navKey="palpation"     icon="🖐️" label="Palpation"/>
-        <SidebarItem navKey="rom"           icon="📐" label="Range of Motion"/>
-        <SidebarItem navKey="mmt"           icon="💪" label="MMT"/>
-        <SidebarItem navKey="special"       icon="🔬" label="Special Tests (100+)"/>
-        {/* Disambiguated (2026-08-20, Aditi: clicking "neuro new assessment"
-            was landing on this old item) -- this is an Ortho objective-exam
-            quick screen (reflexes/sensation as part of an Ortho physical
-            exam, config-driven NEURO_MODULE), not the standalone Neuro
-            specialty tool above it. Label made explicit so it can't be
-            mistaken for the real entry point. */}
-        <SidebarItem navKey="neuro"         icon="⚡" label="Neuro Screen (Ortho exam)"/>
-        <SidebarItem navKey="outcome"       icon="📈" label="Outcome Measures"/>
-      </SidebarGroup>
-
-      {/* 4. Advanced Clinical Assessment (collapsible) */}
-      <SidebarGroup groupKey="advanced" icon="🔭" label="Advanced Assessment" accentColor="#9333ea">
-        <SidebarItem navKey="fma"          icon="🏃" label="Functional Assessment"/>
-        <SidebarItem navKey="gait"         icon="🚶" label="Gait Analysis"/>
-        <SidebarItem navKey="cyriax_full"  icon="🦴" label="STTT — Selective Tissue Tension"/>
-        <SidebarItem navKey="kinetic"      icon="⛓️" label="Kinetic Chain"/>
-        <SidebarItem navKey="nkt"          icon="🧠" label="CPA — Compensation Pattern Analysis"/>
-        <SidebarItem navKey="fascia"       icon="🕸️" label="Fascia Integration"/>
-      </SidebarGroup>
-
-      {/* 5. Treatment (collapsible) */}
-      <SidebarGroup groupKey="treatment" icon="💊" label="Treatment" accentColor="#059669">
-        <SidebarItem navKey="treatment"    icon="💊" label="Treatment"/>
-      </SidebarGroup>
-
-      {/* 6. Documentation (collapsible) */}
-      <SidebarGroup groupKey="documentation" icon="📋" label="Documentation" accentColor="#b45309">
-        <SidebarItem navKey="tx_sessions"  icon="⚡" label="Sessions"/>
-        <SidebarItem navKey="soap"         icon="📋" label="SOAP Notes"/>
-        <SidebarItem navKey="ai_assistant" icon="🤖" label="AI Assistant"/>
-      </SidebarGroup>
-
+      <SidebarTopItem navKey="profile" icon="⚙️" label="Settings"/>
 
 
     </>
@@ -1698,16 +1604,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
           }
         </div>
-        {/* Notifications */}
-        <button onClick={()=>navTo("physiofeed")} aria-label="Notifications" title="Notifications"
-          style={{position:"relative",minHeight:34,minWidth:34,padding:0,background:"transparent",
-            border:"none",borderRadius:8,color:PC.text,cursor:"pointer",flexShrink:0,
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <span style={{position:"absolute",top:6,right:7,width:7,height:7,borderRadius:"50%",background:"#7C3AED",border:"1.5px solid #fff"}}/>
-        </button>
         {/* Messages */}
         <button onClick={()=>navTo("physiofeed")} aria-label="Messages" title="Messages"
           style={{minHeight:34,minWidth:34,padding:0,background:"transparent",
@@ -2156,7 +2052,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
@@ -2235,7 +2131,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   )}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
               ):tests==="DEMOGRAPHICS_MODULE"?(
                 <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
                   {(()=>{
