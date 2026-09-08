@@ -67,6 +67,51 @@ import { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal } from "./
 import InstallPrompt from "./InstallPrompt.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
+// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
+// straight into whichever demographic field renders it. A standalone
+// component (not inline hooks) because its callers sit inside a
+// conditionally-rendered branch of the big App component, where calling
+// useState/useRef directly would violate the rules of hooks.
+function VoiceTextInput({ id, value, onChange, placeholder, type, style }) {
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+  const start = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = value || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) onChange((base + " " + final).trim());
+    };
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => setRecording(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+  const stop = () => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    setRecording(false);
+  };
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+      <input id={id} style={{ ...style, flex: 1 }} type={type || "text"} placeholder={placeholder} value={value || ""} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" onClick={recording ? stop : start} title={recording ? "Stop recording" : "Speak"}
+        style={{ flexShrink: 0, width: 40, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d1d5db"}`,
+          background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit" }}>
+        {recording ? "⏹" : "🎤"}
+      </button>
+    </div>
+  );
+}
+
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
@@ -2056,7 +2101,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     return(<>
                       <div style={{fontSize:"1.15rem",fontWeight:800,color:PC.text}}>Demographics</div>
 
-                      {nField("Full Name",<input id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={e=>set("dem_name",e.target.value)}/>,true,"dem_name")}
+                      {nField("Full Name",<VoiceTextInput id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={v=>set("dem_name",v)}/>,true,"dem_name")}
                       {/* className (not just the inline grid style) so this
                           survives the global [style*="1fr 1fr"] mobile
                           override in utils.jsx, which force-collapses ANY
@@ -2071,7 +2116,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           the DOB box look huge. */}
                       <div className="pm-nowrap-2col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                         <div>{nField("Date of Birth",<input id="dem_dob" style={{...nInp,WebkitAppearance:"none",appearance:"none"}} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,false,"dem_dob")}</div>
-                        <div>{nField("Age",<input id="dem_age" style={nInp} type="number" placeholder="e.g. 34" value={data.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,true,"dem_age")}</div>
+                        <div>{nField("Age",<VoiceTextInput id="dem_age" style={nInp} type="text" placeholder="e.g. 34" value={data.dem_age||""} onChange={v=>set("dem_age",v)}/>,true,"dem_age")}</div>
                       </div>
                       <div style={{marginBottom:16}}>
                         <label style={nLbl}>Gender{req}</label>
@@ -2089,8 +2134,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       </div>
                       {nField("Phone",<input id="dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={data.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,true,"dem_phone")}
                       {nField("Email",<input id="dem_email" style={nInp} type="email" placeholder="patient@email.com" value={data.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>,false,"dem_email")}
-                      {nField("Occupation",<input id="dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"dem_occupation")}
-                      {nField("Address",<input id="dem_address" style={nInp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"dem_address")}
+                      {nField("Occupation",<VoiceTextInput id="dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={v=>set("dem_occupation",v)}/>,false,"dem_occupation")}
+                      {nField("Address",<VoiceTextInput id="dem_address" style={nInp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={v=>set("dem_address",v)}/>,false,"dem_address")}
                       {nField("Referring Doctor / Hospital",<input id="dem_referral_dr" style={nInp} placeholder="Dr. Name, Hospital" value={data.dem_referral_dr||data.dem_gp||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>,false,"dem_referral_dr")}
 
                       {/* ── More details toggle: everything the clinic still needs on file, just tucked away by default ── */}

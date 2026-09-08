@@ -1,6 +1,50 @@
 // AppModules.jsx — PDF reports, HEP helpers, QuickVisit, Intake, Onboarding
 // Extracted from AppFull.jsx — pure extraction, no logic changes
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+
+// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
+// straight into whichever field calls it. Reused across the intake form's
+// Full name / Age / Occupation / Address / Chief complaint fields.
+function useVoiceInput(baseValue, onChange) {
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+  const start = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = baseValue || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) onChange((base + " " + final).trim());
+    };
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => setRecording(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+  const stop = () => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    setRecording(false);
+  };
+  return { recording, toggle: () => (recording ? stop() : start()) };
+}
+
+function VoiceMicButton({ recording, onClick, testId }) {
+  return (
+    <button type="button" data-testid={testId} onClick={onClick} title={recording ? "Stop recording" : "Speak"}
+      style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1.5px solid ${recording ? "#dc2626" : "#d1d5db"}`,
+        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "1rem", cursor: "pointer", fontFamily: "inherit" }}>
+      {recording ? "⏹" : "🎤"}
+    </button>
+  );
+}
 import { downloadPDFFromHTML, injectViewerControls } from "./sharedClinicalData.js";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./sharedClinicalData.js";
 // buildRealtimeSOAP is the single, verified-correct source for real
@@ -1733,37 +1777,14 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const set = (k,v) => setFd(p=>({...p,[k]:v}));
 
-  // Plain browser speech-to-text (Web Speech API) for Chief complaint --
-  // dictates straight into the field, no AI parsing step. Same
-  // window.SpeechRecognition lookup as the AI-intake mic elsewhere in the
-  // app; this one just appends the transcript to fd.cc_main directly.
-  const [ccRecording, setCcRecording] = React.useState(false);
-  const ccRecognitionRef = React.useRef(null);
-  const startCcVoice = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = fd.cc_main || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    rec.onresult = (e) => {
-      let final = "";
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
-      }
-      if (final) set("cc_main", (base + " " + final).trim());
-    };
-    rec.onend = () => setCcRecording(false);
-    rec.onerror = () => setCcRecording(false);
-    ccRecognitionRef.current = rec;
-    rec.start();
-    setCcRecording(true);
-  };
-  const stopCcVoice = () => {
-    if (ccRecognitionRef.current) { try { ccRecognitionRef.current.stop(); } catch {} ccRecognitionRef.current = null; }
-    setCcRecording(false);
-  };
+  // Mic buttons for the free-text intake fields -- plain speech-to-text,
+  // no AI parsing. One useVoiceInput call per field, all unconditional at
+  // the top of the component so hook order stays stable across renders.
+  const nameVoice = useVoiceInput(fd.dem_name, (v) => set("dem_name", v));
+  const ageVoice = useVoiceInput(fd.dem_age, (v) => set("dem_age", v));
+  const occupationVoice = useVoiceInput(fd.dem_occupation, (v) => set("dem_occupation", v));
+  const addressVoice = useVoiceInput(fd.dem_address, (v) => set("dem_address", v));
+  const ccVoice = useVoiceInput(fd.cc_main, (v) => set("cc_main", v));
 
   React.useEffect(() => {
     if (Object.keys(fd).length === 0) return;
@@ -1851,8 +1872,18 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       {/* ── STEP 1 · the 7 patient-detail questions ── */}
       {step==="details" && (
         <div>
-          {nField("Full name",<input id="intake_dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>,true,"intake_dem_name")}
-          {nField("Age",<input id="intake_dem_age" style={nInp} type="number" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,false,"intake_dem_age")}
+          {nField("Full name",
+            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+              <input id="intake_dem_name" style={{...nInp,flex:1}} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>
+              <VoiceMicButton recording={nameVoice.recording} onClick={nameVoice.toggle} />
+            </div>
+          ,true,"intake_dem_name")}
+          {nField("Age",
+            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+              <input id="intake_dem_age" style={{...nInp,flex:1}} type="text" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>
+              <VoiceMicButton recording={ageVoice.recording} onClick={ageVoice.toggle} />
+            </div>
+          ,false,"intake_dem_age")}
           <div style={{marginBottom:16}}>
             <label style={nLbl}>Sex</label>
             <div style={{display:"flex",gap:8}}>
@@ -1868,19 +1899,22 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
             </div>
           </div>
           {nField("Phone",<input id="intake_dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,false,"intake_dem_phone")}
-          {nField("Occupation",<input id="intake_dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"intake_dem_occupation")}
-          {nField("Address",<input id="intake_dem_address" style={nInp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"intake_dem_address")}
+          {nField("Occupation",
+            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+              <input id="intake_dem_occupation" style={{...nInp,flex:1}} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>
+              <VoiceMicButton recording={occupationVoice.recording} onClick={occupationVoice.toggle} />
+            </div>
+          ,false,"intake_dem_occupation")}
+          {nField("Address",
+            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+              <input id="intake_dem_address" style={{...nInp,flex:1}} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>
+              <VoiceMicButton recording={addressVoice.recording} onClick={addressVoice.toggle} />
+            </div>
+          ,false,"intake_dem_address")}
           {nField("Chief complaint",
             <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
               <input id="intake_cc_main" style={{...nInp,flex:1}} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>
-              <button type="button" data-testid="cc-mic-btn"
-                onClick={ccRecording ? stopCcVoice : startCcVoice}
-                title={ccRecording ? "Stop recording" : "Speak chief complaint"}
-                style={{flexShrink:0,width:44,borderRadius:10,border:`1.5px solid ${ccRecording?"#dc2626":PC.border}`,
-                  background:ccRecording?"#dc2626":PC.surface,color:ccRecording?"#fff":PC.text,
-                  fontSize:"1rem",cursor:"pointer",fontFamily:"inherit"}}>
-                {ccRecording ? "⏹" : "🎤"}
-              </button>
+              <VoiceMicButton testId="cc-mic-btn" recording={ccVoice.recording} onClick={ccVoice.toggle} />
             </div>
           ,true,"intake_cc_main")}
 
