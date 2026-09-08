@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField } from "./orthoFieldKit.jsx";
 
 // Typical resting adult values -- Vitals now opens already filled with
 // these instead of blank, since most patients most of the time are within
@@ -39,7 +39,7 @@ export function CaseInfoSection({ data, setData }) {
         <TextField label="Ward / Bed" value={d.ward} onChange={(v) => set("ward", v)} placeholder="e.g. Ortho-3 / Bed 12" />
       </div>
       <TextField label="Admitting diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
-      <TextField label="Date of admission" value={d.admitDate} onChange={(v) => set("admitDate", v)} placeholder="DD/MM/YYYY" />
+      <DateField label="Date of admission" value={d.admitDate} onChange={(v) => set("admitDate", v)} />
       <TextField label="Referring physician" value={d.referrer} onChange={(v) => set("referrer", v)} />
     </>
   );
