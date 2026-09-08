@@ -30,6 +30,45 @@ const BRAND = {
   white: "#FFFFFF",
 };
 
+// True if patient name/age are missing from the Demographics section.
+function missingDemographicsFields(dem) {
+  const missing = [];
+  if (!String(dem?.name || "").trim()) missing.push("name");
+  if (!String(dem?.age || "").trim()) missing.push("age");
+  return missing;
+}
+
+// Blocks the explicit "Save Assessment" tap (not the continuous background
+// autosave -- that keeps running regardless, so in-progress work still
+// survives a crash/tab-close) when Patient Name and/or Age are still
+// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
+// appears" effect never fires, so the whole assessment silently has
+// nowhere to be filed under -- this stops that at the one moment the
+// therapist actually intends to finish, rather than nagging on every
+// keystroke. Same component/copy as orthoFieldKit.jsx's/
+// NeurologicalAssessment.jsx's MissingDemographicsModal, duplicated
+// rather than cross-imported since this module doesn't otherwise share
+// components with those files.
+function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
+  const label = missing.length > 1 ? "name and age" : missing[0];
+  return createPortal(
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="missing-dem-icon">📋</div>
+        <div className="missing-dem-title">Patient {label} needed</div>
+        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
+        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
+          Go to Patient Info
+        </button>
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ============================================================
    STATIC DATA — Step 1 / Step 2 selectors
    5 settings × 3 systems = 15 pathway templates
@@ -53,6 +92,18 @@ function rehabSubLabel(system) {
   if (system === "resp") return "Pulmonary Rehabilitation";
   if (system === "combined") return "Cardiopulmonary Rehabilitation";
   return "";
+}
+
+// Setting + system, joined for display -- e.g. "Inpatient · Cardiovascular".
+// Exported so SpecialtyPatientProfile.jsx can show it right in the
+// Assessment card's header, the same way Ortho's own
+// [orthoParsed.regions, orthoParsed.condition] subtitle already works,
+// instead of only surfacing this buried inside SummarySection's own
+// internal heading.
+export function cardioAssessmentSubtitle(meta = {}) {
+  const settingLabel = SETTINGS.find((s) => s.id === meta.setting)?.label;
+  const systemLabel = meta.setting === "rehab" && meta.system ? rehabSubLabel(meta.system) : SYSTEMS.find((s) => s.id === meta.system)?.label;
+  return [settingLabel, systemLabel].filter(Boolean).join(" · ");
 }
 
 const STEP_META = [
@@ -275,7 +326,28 @@ function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, i
 // dropped their info button) -- here the row already has a value before
 // it's ever opened, and its ⓘ/howTo button stays visible in the collapsed
 // state via its own stopPropagation wrapper, not swallowed by the toggle.
-function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10 }) {
+/* Same tap-to-bump control as Ortho's Stepper (orthoFieldKit.jsx) --
+   Aditi asked for the vital fields to work "like the ROM plus and minus"
+   instead of typing a bare number, so this mirrors that +/- pattern. */
+function CardioStepper({ value, onChange, min = 0, max = 99, step = 1 }) {
+  const num = value === undefined || value === "" ? null : Number(value);
+  function bump(delta) {
+    const base = num === null ? (min > 0 ? min : 0) : num;
+    const next = Math.min(max, Math.max(min, +(base + delta).toFixed(2)));
+    onChange(String(next));
+  }
+  return (
+    <div className="stepper">
+      <input className="stepper-input" type="number" inputMode="decimal" value={value ?? ""} placeholder="--" onChange={(e) => onChange(e.target.value)} />
+      <div className="stepper-arrows">
+        <button type="button" className="stepper-arrow" onClick={() => bump(step)} aria-label="Increase">▲</button>
+        <button type="button" className="stepper-arrow" onClick={() => bump(-step)} aria-label="Decrease">▼</button>
+      </div>
+    </div>
+  );
+}
+
+function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10, step = 1 }) {
   const [open, setOpen] = useState(false);
   const hasValue = value !== undefined && value !== null && value !== "";
   return (
@@ -309,7 +381,7 @@ function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10 
             </div>
           ) : (
             <div className="vital-input-wrap">
-              <input type="number" inputMode="decimal" className="vital-input" autoFocus value={value || ""} onChange={(e) => onChange(e.target.value)} />
+              <CardioStepper value={value} onChange={onChange} min={0} max={max} step={step} />
               {unit && <span className="vital-unit">{unit}</span>}
             </div>
           )}
@@ -1106,14 +1178,14 @@ function VitalsSection({ data, setData, system }) {
     <>
       <SectionIntro icon="❤️" title="Baseline Physiological Parameters" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
-        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} />
-        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} />
-        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} />
-        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} />
-        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
-        {respDetail && <VitalRow label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" />}
-        {respDetail && <VitalRow label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" />}
+        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} max={220} />
+        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} max={250} />
+        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" info={cardiovascularData.bloodPressure} max={150} />
+        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" info={respiratoryData.respRate} max={60} />
+        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" info={respiratoryData.spo2} max={100} />
+        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" max={42} step={0.1} />
+        {respDetail && <VitalRow label="Oxygen flow" value={d.o2Flow} onChange={(v) => set("o2Flow", v)} unit="L/min" max={15} />}
+        {respDetail && <VitalRow label="FiO₂" value={d.fio2} onChange={(v) => set("fio2", v)} unit="%" max={100} />}
       </div>
       <SelectField label="Rhythm" type="single" options={["Regular", "Irregular", "Known arrhythmia", "Unknown/not assessed"]} value={d.rhythm} onChange={(v) => set("rhythm", v)} info={cardiovascularData.pulseRhythm} />
       <Segmented label="Position during measurement" options={["Supine", "Sitting", "Standing"]} value={d.position} onChange={(v) => set("position", v)} />
@@ -1757,6 +1829,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
+  const [missingDemFields, setMissingDemFields] = useState(null);
 
   // Re-hydrate when switching to a different patient -- deliberately keyed
   // on activePatientId only (not on every patientData change), otherwise
@@ -2071,6 +2144,11 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .vital-chip-value { flex: 1; text-align: right; font-size: 14px; font-weight: 700; color: ${BRAND.ink}; }
         .vital-chip-toggle { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .vital-chip-body { padding: 0 10px 10px; }
+        .stepper { display: flex; align-items: center; border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; overflow: hidden; width: 62px; }
+        .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px; font-weight: 700; padding: 6px 0; width: 100%; min-width: 0; color: ${BRAND.ink}; }
+        .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
+        .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
 
         /* min-width: 0 overrides the flex-item default of min-width: auto --
            without it a wide child (e.g. a text combobox, not just this
@@ -2138,6 +2216,12 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       /* Real press feedback -- depress + flatten shadow + slight darken (ripple itself comes from rippleEffect.js, injected via JS since .primary-btn is duplicated across several independently-loaded modules rather than one shared stylesheet). */
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
         .primary-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+        .sheet-backdrop { position: fixed; inset: 0; background: rgba(20,10,45,.45); z-index: 1070; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .missing-dem-panel { position: relative; z-index: 1071; background: #fff; border-radius: 20px; padding: 24px 22px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 24px 60px rgba(40,10,90,.35); }
+        .missing-dem-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+        .missing-dem-title { font-weight: 800; font-size: 17px; color: ${BRAND.ink}; margin-bottom: 8px; text-transform: capitalize; }
+        .missing-dem-body { font-size: 13px; color: ${BRAND.gray}; line-height: 1.5; margin-bottom: 18px; }
       `}</style>
 
       <div className="app-inner">
@@ -2257,7 +2341,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
               <button className="ghost-btn" onClick={() => setStep(2)}>
                 ✏️ Edit More
               </button>
-              <button className="primary-btn" onClick={() => onNav?.("clinical")}>
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  const missing = missingDemographicsFields(data.demographics);
+                  if (missing.length) { setMissingDemFields(missing); return; }
+                  onNav?.("clinical");
+                }}
+              >
                 ✅ Save Assessment
               </button>
             </>
@@ -2269,6 +2360,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {missingDemFields && (
+          <MissingDemographicsModal
+            missing={missingDemFields}
+            onClose={() => setMissingDemFields(null)}
+            onGoToDemographics={() => { setMissingDemFields(null); setStep(2); }}
+          />
+        )}
         {reviewOpen && (
           <div className="ct-modal">
             <div className="ct-modal-header">

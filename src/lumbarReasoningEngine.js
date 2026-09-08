@@ -95,9 +95,24 @@ function stateOf(fn) {
   };
 }
 
+function buildAssessmentModules(cl) {
+  if (!cl) return [];
+  const out = [];
+  if (cl.observation) out.push({ label: "Observation", key: "observation", detail: cl.observation });
+  if (cl.posture) out.push({ label: "Posture", key: "posture", detail: cl.posture });
+  if (cl.functionalScreen) out.push({ label: "Functional (FMA)", key: "fma", detail: cl.functionalScreen });
+  if (cl.cyriax) out.push({ label: "STTT (Cyriax)", key: "cyriax_full", detail: cl.cyriax });
+  if (cl.cpa) out.push({ label: "CPA", key: "nkt", detail: cl.cpa });
+  if (cl.kineticChain) out.push({ label: "Kinetic chain", key: "kinetic", detail: cl.kineticChain });
+  if (cl.fascia) out.push({ label: "Fascia", key: "fascia", detail: cl.fascia });
+  if (cl.outcome) out.push({ label: "Outcome", key: "outcome", detail: cl.outcome });
+  return out;
+}
+
 const CONDITIONS = [
   {
     id: "L01", name: "Mechanical / Non-Specific Low Back Pain",
+    conditionLayers: { observation: "Muscle guarding, antalgic posture, lateral shift", posture: "Flattened or increased lordosis", functionalScreen: "Repeated movement assessment (McKenzie) — directional preference", fascia: "Thoracolumbar fascia tightness", outcome: "Oswestry Disability Index (ODI); NPRS; STarT Back" },
     supporting: [
       { label: "No leg pain below knee", check: stateOf((lv) => lv.location.belowKneePain === false) },
       { label: "No dermatomal pattern", check: stateOf((lv) => absent(lv.location.dermatomal) ? true : unknown(lv.location.dermatomal) ? "unknown" : false) },
@@ -127,6 +142,7 @@ const CONDITIONS = [
   },
   {
     id: "L02", name: "Lumbar Disc Herniation / Radiculopathy",
+    conditionLayers: { observation: "Antalgic lean, dermatomal signs, possible foot-drop", posture: "Lateral shift / flattened lordosis", functionalScreen: "SLR / slump reproduces leg symptoms; myotome screen", fascia: "Neural (sciatic) lower-limb tension line", outcome: "Oswestry Disability Index or Roland-Morris (RMDQ); STarT Back" },
     supporting: [
       { label: "Pain below knee", check: stateOf((lv) => lv.location.belowKneePain === true) },
       { label: "Dermatomal distribution", check: stateOf((lv) => present(lv.location.dermatomal)) },
@@ -151,6 +167,7 @@ const CONDITIONS = [
   },
   {
     id: "L03", name: "Lumbar Facet (Zygapophyseal) Joint Dysfunction",
+    conditionLayers: { observation: "Extension-aggravated posture, unilateral muscle guarding", posture: "Increased lordosis, rotation restriction", functionalScreen: "Quadrant / Kemp's reproduces local pain; capsular pattern", fascia: "Lumbar paraspinal fascial tightness", outcome: "Oswestry Disability Index (ODI); NPRS" },
     supporting: [
       { label: "Extension aggravates", check: stateOf((lv) => lv.aggravating.extensionAggravates) },
       { label: "Rotation aggravates", check: stateOf((lv) => lv.aggravating.rotationAggravates) },
@@ -172,6 +189,7 @@ const CONDITIONS = [
   },
   {
     id: "L04", name: "Lumbar Spinal Stenosis",
+    conditionLayers: { observation: "Flexed posture, wide-based gait", posture: "Stooped forward posture relieving symptoms", functionalScreen: "Bicycle test / stoop test; treadmill (neurogenic vs vascular claudication)", fascia: "Neural canal / foraminal narrowing pattern", outcome: "Oswestry Disability Index (ODI); Swiss Spinal Stenosis Questionnaire" },
     supporting: [
       { label: "Bilateral leg symptoms", check: stateOf((lv) => textIncludes(lv.neurological.legNeuroPresent.value, "bilateral")) },
       { label: "Neurogenic claudication pattern", check: stateOf((lv) => lv.neurological.neurogenicClaudication) },
@@ -190,6 +208,7 @@ const CONDITIONS = [
   },
   {
     id: "L05", name: "Sacroiliac Joint (SIJ) Dysfunction",
+    conditionLayers: { observation: "Pelvic asymmetry, PSIS level difference", posture: "Innominate rotation / leg-length discrepancy posture", functionalScreen: "SIJ provocation cluster (3+ of 5 positive = SIJ source); active SLR", fascia: "Posterior sacroiliac ligament / thoracolumbar fascia", outcome: "Oswestry Disability Index (ODI); NPRS" },
     supporting: [
       { label: "Location mentions SI joint / SIJ area (approx, from location text)", check: stateOf((lv) => lv.location.primaryLocation.values.some((v) => textIncludes(v, "si joint", "sacrum", "buttock"))) },
       { label: "No leg symptoms below knee", check: stateOf((lv) => lv.location.belowKneePain === false) },
@@ -206,6 +225,7 @@ const CONDITIONS = [
   },
   {
     id: "L06", name: "Lumbar Instability",
+    conditionLayers: { observation: "Instability jog / catch during active movement", posture: "Excessive segmental motion on PA spring", functionalScreen: "Prone instability test; H & I stability tests", fascia: "Deep segmental stabiliser insufficiency", outcome: "Oswestry Disability Index (ODI); NPRS; PSFS" },
     supporting: [
       { label: "Overall pattern includes intermittent/unpredictable triggers (approx proxy for 'catch'/give-way)", check: stateOf((lv) => lv.symptomBehaviour.overallPattern.values.some((v) => textIncludes(v, "intermittent", "unpredictable"))) },
       { label: "Known/imaged spondylolisthesis history (approx, from medical history text)", check: stateOf((lv) => textIncludes(lv.history.medicalHistory, "spondylolisthesis")) },
@@ -221,6 +241,7 @@ const CONDITIONS = [
   },
   {
     id: "L07", name: "Spondylolisthesis / Spondylolysis",
+    conditionLayers: { observation: "Palpable step deformity, hamstring tightness", posture: "Increased lordosis at slip level", functionalScreen: "Stork test (single-leg hyperextension) reproduces pain", fascia: "Pars interarticularis / anterior longitudinal ligament", outcome: "Oswestry Disability Index (ODI); Meyerding grading (imaging)" },
     supporting: [
       { label: "Extension aggravates", check: stateOf((lv) => lv.aggravating.extensionAggravates) },
       { label: "Flexion relieves", check: stateOf((lv) => lv.relieving.flexionRelieves) },
@@ -258,6 +279,7 @@ const CONDITIONS = [
   },
   {
     id: "L08", name: "Lumbar Muscle Strain",
+    conditionLayers: { observation: "Visible muscle spasm / guarding on movement", posture: "Antalgic lean away from strained side", functionalScreen: "Resisted isometric movements reproduce pain (STTT: strong + painful = contractile)", fascia: "Paraspinal / quadratus lumborum fascial tension", outcome: "NPRS; PSFS; return-to-activity timeline" },
     supporting: [
       { label: "Acute onset from a load-based mechanism", check: stateOf((lv) => lv.mechanism.acuteLiftingMechanism === true) },
       { label: "No leg neurological symptoms", check: stateOf((lv) => lv.neurological.hasLegNeuro === false) },
@@ -276,6 +298,7 @@ const CONDITIONS = [
   },
   {
     id: "L09", name: "Lumbar Myofascial Pain",
+    conditionLayers: { observation: "Taut bands, trigger points on palpation", posture: "Sustained-posture loading pattern", functionalScreen: "Palpation reproducing referred pain pattern", fascia: "Myofascial trigger point / taut band network", outcome: "NPRS; Pressure Pain Threshold (algometry)" },
     lowConfidence: true,
     supporting: [
       { label: "No leg neurological symptoms (approx — not a real myofascial-specific marker, just an absence check)", check: stateOf((lv) => lv.neurological.hasLegNeuro === false) },
@@ -291,6 +314,7 @@ const CONDITIONS = [
   },
   {
     id: "L10", name: "Inflammatory Back Pain (Axial Spondyloarthritis Pattern)",
+    conditionLayers: { observation: "Global restriction, morning stiffness posture", posture: "Flattened lumbar lordosis, reduced chest expansion", functionalScreen: "AROM uniformly restricted all planes (non-capsular pattern)", fascia: "Systemic inflammatory — not fascial-specific", outcome: "BASDAI; BASFI; NPRS; ESR/CRP (lab)" },
     supporting: [
       { label: "Marked/prolonged morning stiffness", check: stateOf((lv) => textIncludes(lv.symptomBehaviour.morning.value, ">1 hour", "30–60 min")) },
       { label: "Movement limitation in all planes (approx, from overall pattern text)", check: stateOf((lv) => lv.symptomBehaviour.overallPattern.values.some((v) => textIncludes(v, "constant"))) },
@@ -359,6 +383,7 @@ function evaluateCondition(condition, lv) {
     // facet dysfunction (C03, 4/6 = 67%) on the old raw-count tiebreak.
     supportingTotal: condition.supporting.length,
     objectiveTests: condition.objectiveTests,
+    assessmentModules: buildAssessmentModules(condition.conditionLayers),
   };
 }
 

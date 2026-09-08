@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { NeuroCarePlanSection } from "./NeuroCarePlan.jsx";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { NeuroCarePlanSection, CarePlanSection } from "./NeuroCarePlan.jsx";
 import { goalProgress } from "./neuroClinicalKnowledge.js";
-import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps } from "./CardiopulmonaryAssessment.jsx";
-import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters } from "./NeurologicalAssessment.jsx";
+import { buildOrthoKnowledge } from "./orthoClinicalKnowledge.js";
+import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle } from "./CardiopulmonaryAssessment.jsx";
+import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters, neuroAssessmentSubtitle } from "./NeurologicalAssessment.jsx";
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
@@ -236,18 +237,16 @@ function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
 }
 
 // Compact snapshot for the Overview tab: counts + average goal progress.
-function neuroCarePlanSnapshot(neuro) {
-  const cp = neuro?.neuroCarePlan || {};
+function carePlanCounts(cp) {
+  cp = cp || {};
   const problems = Array.isArray(cp.problems) ? cp.problems : [];
   const goals = Array.isArray(cp.goals) ? cp.goals : [];
   const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
   const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
   const pcts = goals
-    .map((g) => {
-      const entries = sessions
-        .map((s) => ({ value: parseFloat(s.measures?.[g.id]) }))
-        .filter((e) => Number.isFinite(e.value));
-      return goalProgress(g, entries).pct;
+    .map((gl) => {
+      const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[gl.id]) })).filter((e) => Number.isFinite(e.value));
+      return goalProgress(gl, entries).pct;
     })
     .filter((p) => p != null);
   const avg = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : null;
@@ -256,6 +255,46 @@ function neuroCarePlanSnapshot(neuro) {
     sessions: sessions.length, avgProgress: avg,
     any: problems.length || goals.length || treatments.length || sessions.length,
   };
+}
+const neuroCarePlanSnapshot = (neuro) => carePlanCounts(neuro?.neuroCarePlan);
+const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
+
+// Ortho Care Plan — same shared CarePlanSection, fed the ortho knowledge
+// built from the assessment context (setting/condition/regions) parsed from
+// the ortho snapshot. Stored at patient.data.ortho_care_plan (ortho has no
+// live nested object like neuro), persisted via onSaveField. One store:
+// editable here and, once wired, in the ortho assessment.
+const orthoRegionLabel = (r) => [r.side, r.label || r.name || String(r.id || "").replace(/[_/-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())].filter(Boolean).join(" ");
+function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, initialPhase }) {
+  const pid = patient?.id;
+  const pd = patient?.data || {};
+  const setting = orthoPathway || null;
+  const condition = orthoParsed?.rawCondition || null;
+  const regions = (orthoParsed?.selectedRegions || []).map((r) => ({ id: r.id, side: r.side, label: orthoRegionLabel(r) }));
+  const pain = { now: pd.cc_vas_now, worst: pd.cc_vas_worst };
+  const ctxKey = JSON.stringify({ setting, condition, regions, pain });
+  const knowledge = useMemo(() => buildOrthoKnowledge({ setting, condition, regions, pain }), [ctxKey]);
+  const meta = { setting, condition, regions };
+
+  const [cp, setCp] = useState(pd.ortho_care_plan || {});
+  const cpRef = useRef(cp);
+  cpRef.current = cp;
+  useEffect(() => { const next = patient?.data?.ortho_care_plan || {}; cpRef.current = next; setCp(next); /* eslint-disable-next-line */ }, [pid]);
+
+  const data = { meta, pain, orthoCarePlan: cp };
+  const setData = (updater) => {
+    const prev = { meta, pain, orthoCarePlan: cpRef.current };
+    const next = typeof updater === "function" ? updater(prev) : updater;
+    cpRef.current = next.orthoCarePlan;
+    setCp(next.orthoCarePlan);
+    onSaveField?.(pid, { ortho_care_plan: next.orthoCarePlan });
+  };
+  return (
+    <>
+      <style>{orthoStyles()}</style>
+      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA />
+    </>
+  );
 }
 
 export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
@@ -458,10 +497,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             {(hasCardio || hasNeuro) && <LinkBtn onClick={() => setTab("assessment")}>View assessment →</LinkBtn>}
           </Card>
 
-          {/* Neuro Care Plan snapshot — glanceable status, links into the
-              Treatment tab where it's fully editable (2026-09-03). */}
-          {hasNeuro && (() => {
-            const snap = neuroCarePlanSnapshot(d.neuro);
+          {/* Care Plan snapshot (neuro or ortho) — glanceable status, links
+              into the Treatment tab where it's fully editable. */}
+          {(hasNeuro || hasOrtho) && (() => {
+            const snap = hasNeuro ? neuroCarePlanSnapshot(d.neuro) : orthoCarePlanSnapshot(d);
             return (
               <Card>
                 <CardTitle>Care Plan</CardTitle>
@@ -489,7 +528,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             );
           })()}
 
-          {!hasNeuro && (
+          {!hasNeuro && !hasOrtho && (
             <Card>
               <CardTitle>Current Treatment</CardTitle>
               {sessions.length === 0 ? (
@@ -532,22 +571,24 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
           {hasNeuro && (
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🧠</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
+              {neuroAssessmentSubtitle(d.neuro.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{neuroAssessmentSubtitle(d.neuro.meta)}</div>}
               <NeuroSummarySection setting={d.neuro.meta?.setting} data={d.neuro} assessSteps={buildNeuroAssessSteps(d.neuro.meta?.stepOrder, d.neuro.meta?.customStepsMeta)} formatters={neuroSummaryFormatters} />
             </Card>
           )}
 
           {hasCardio && (
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🫀</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
                 <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
+              {cardioAssessmentSubtitle(d.cardio.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{cardioAssessmentSubtitle(d.cardio.meta)}</div>}
               <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
             </Card>
           )}
@@ -589,7 +630,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {tab === "progress" && hasNeuro && (
         <NeuroCarePlanPanel key="cp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
       )}
-      {tab === "progress" && !hasNeuro && (
+      {tab === "progress" && !hasNeuro && hasOrtho && (
+        <OrthoCarePlanPanel key="ocp-progress" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="progress" />
+      )}
+      {tab === "progress" && !hasNeuro && !hasOrtho && (
         <>
           <Card>
             <CardTitle>Pain Progress (NPRS)</CardTitle>
@@ -633,7 +677,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {tab === "treatment" && hasNeuro && (
         <NeuroCarePlanPanel key="cp-treatment" patient={patient} onSaveField={onSaveField} />
       )}
-      {tab === "treatment" && !hasNeuro && (
+      {tab === "treatment" && !hasNeuro && hasOrtho && (
+        <OrthoCarePlanPanel key="ocp-treatment" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
+      )}
+      {tab === "treatment" && !hasNeuro && !hasOrtho && (
         <>
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>

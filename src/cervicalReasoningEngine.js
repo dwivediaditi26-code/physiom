@@ -113,9 +113,24 @@ function stateOf(fn) {
   };
 }
 
+function buildAssessmentModules(cl) {
+  if (!cl) return [];
+  const out = [];
+  if (cl.observation) out.push({ label: "Observation", key: "observation", detail: cl.observation });
+  if (cl.posture) out.push({ label: "Posture", key: "posture", detail: cl.posture });
+  if (cl.functionalScreen) out.push({ label: "Functional (FMA)", key: "fma", detail: cl.functionalScreen });
+  if (cl.cyriax) out.push({ label: "STTT (Cyriax)", key: "cyriax_full", detail: cl.cyriax });
+  if (cl.cpa) out.push({ label: "CPA", key: "nkt", detail: cl.cpa });
+  if (cl.kineticChain) out.push({ label: "Kinetic chain", key: "kinetic", detail: cl.kineticChain });
+  if (cl.fascia) out.push({ label: "Fascia", key: "fascia", detail: cl.fascia });
+  if (cl.outcome) out.push({ label: "Outcome", key: "outcome", detail: cl.outcome });
+  return out;
+}
+
 const CONDITIONS = [
   {
     id: "C01", name: "Mechanical / Non-Specific Neck Pain",
+    conditionLayers: { observation: "Localised guarding, no neuro signs", posture: "Upper-crossed / forward-head posture", functionalScreen: "Extension-rotation quadrant reproduces local pain", fascia: "Suboccipital & cervical paraspinal fascial tightness", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     supporting: [
       { label: "No arm/hand pain", check: stateOf((cv) => cv.location.armHandPain === false) },
       { label: "No dermatomal pattern", check: stateOf((cv) => absent(cv.location.dermatomal) ? true : unknown(cv.location.dermatomal) ? "unknown" : false) },
@@ -143,6 +158,7 @@ const CONDITIONS = [
   },
   {
     id: "C02", name: "Cervical Radiculopathy (Disc Herniation / Nerve Root Compression)",
+    conditionLayers: { observation: "Antalgic head tilt away from side, arm guarding", posture: "Forward-head posture loading lower cervical", functionalScreen: "Spurling / ULTT reproduces arm symptoms; relief on distraction", fascia: "Neural (median/ulnar/radial) upper-limb tension line", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     // Grounded in Magee Table 3-8 (Differential Diagnosis of Cervical
     // Nerve Root and Brachial Plexus Lesion) and Table 3-11 (Radiculopathy
     // row): dermatomal/myotomal pattern, aggravated by neck movement
@@ -172,6 +188,7 @@ const CONDITIONS = [
   },
   {
     id: "C03", name: "Cervical Facet (Zygapophyseal) Joint Dysfunction",
+    conditionLayers: { observation: "Localised guarding, no neuro signs", posture: "Upper-crossed / forward-head posture", functionalScreen: "Extension-rotation quadrant reproduces local pain", fascia: "Suboccipital & cervical paraspinal fascial tightness", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     // Fig 3-11 (referred pain patterns by segment) + the general facet
     // capsular pattern Magee gives for the cervical spine: "side flexion
     // and rotation equally limited, extension less limited" -- and
@@ -196,6 +213,7 @@ const CONDITIONS = [
   },
   {
     id: "C04", name: "Cervicogenic Headache",
+    conditionLayers: { observation: "Unilateral suboccipital tenderness, restricted C1-2 rotation", posture: "Forward-head posture", functionalScreen: "Flexion-rotation test reproduces headache; sustained-posture provocation", fascia: "Suboccipital fascial restriction / dural tension", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     // Magee's own "Signs of Headaches Having a Cervical Origin" list:
     // occipital/suboccipital component, triggered by neck movement or
     // sustained posture, abnormal head/neck posture, C0-C1/C1-C2
@@ -221,6 +239,7 @@ const CONDITIONS = [
   },
   {
     id: "C05", name: "Whiplash-Associated Disorder (WAD)",
+    conditionLayers: { observation: "Diffuse guarding, protective stiffness", posture: "Protective forward-head / elevated-shoulder posture", functionalScreen: "Global painful/limited AROM, poor DNF endurance", fascia: "Widespread cervical fascial guarding", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     // Directly grounded in Magee Table 3-7 (Quebec Severity
     // Classification of WAD, Grades 0-4) -- the app's own cx_moi_wad
     // field already implements this grading, read here via wadGradeNum.
@@ -243,6 +262,7 @@ const CONDITIONS = [
   },
   {
     id: "C06", name: "Acute Cervical Muscle Strain / Torticollis",
+    conditionLayers: { observation: "Visible muscle spasm, head held in rotated/tilted posture", posture: "Antalgic lateral tilt / rotation away from painful side", functionalScreen: "Resisted isometric movements reproduce pain (STTT: strong + painful = contractile)", fascia: "SCM / upper trapezius / levator scapulae fascial tension", outcome: "NPRS; PSFS; return-to-activity timeline" },
     supporting: [
       { label: "Acute, sudden onset (approx, from onset text)", check: stateOf((cv) => textIncludes(cv.chiefComplaint.onset, "sudden", "acute", "woke up with")) },
       { label: "No arm/hand neurological symptoms", check: stateOf((cv) => cv.location.armHandPain === false) },
@@ -261,6 +281,7 @@ const CONDITIONS = [
   },
   {
     id: "C07", name: "Cervical Spondylosis with Degenerative Stenosis",
+    conditionLayers: { observation: "Guarded multi-level stiffness, possible bilateral arm signs", posture: "Reduced cervical lordosis, forward-head posture", functionalScreen: "Extension-provoked multi-level restriction; gait screen for myelopathic pattern", fascia: "Multi-segmental cervical paraspinal fascial stiffness", outcome: "Neck Disability Index (NDI); PSFS; NPRS" },
     // Magee Table 3-1 (Differential Diagnosis of Cervical Spondylosis,
     // Spinal Stenosis, and Disc Herniation): older age, insidious onset,
     // often bilateral, extension-provoked, multiple levels, less
@@ -289,6 +310,7 @@ const CONDITIONS = [
   },
   {
     id: "C08", name: "Brachial Plexus Lesion / Burner-Stinger Syndrome",
+    conditionLayers: { observation: "Arm guarding, possible deltoid/bicep wasting", posture: "Protective elevated-shoulder posture on affected side", functionalScreen: "ULTT reproduces arm symptoms; Spurling's distinguishes from radiculopathy", fascia: "Brachial plexus neural tension line", outcome: "NPRS; PSFS; return-to-sport timeline" },
     // Magee Table 3-8 / 3-11 differential category: transient
     // burning/electric pain into the arm following a traction or
     // compression mechanism (often sport-related, e.g. shoulder forced
@@ -314,6 +336,7 @@ const CONDITIONS = [
   },
   {
     id: "C09", name: "Peripheral Nerve Entrapment (Distal, Non-Radicular)",
+    conditionLayers: { observation: "Localised hand/forearm wasting in single nerve distribution", posture: "Sustained wrist/elbow posture aggravating entrapment site", functionalScreen: "ULTT reproduces distal symptoms; Tinel's at entrapment site positive", fascia: "Peripheral nerve (median/ulnar/radial) fascial interface", outcome: "NPRS; PSFS; grip-strength dynamometry" },
     // Magee Table 3-11's "Peripheral Nerve" differential row: sensory/
     // motor changes confined to a single peripheral nerve's distribution
     // (not a dermatome/myotome), typically NOT reproduced or aggravated
@@ -348,6 +371,7 @@ const CONDITIONS = [
   },
   {
     id: "C10", name: "Cervical Myofascial Pain",
+    conditionLayers: { observation: "Taut bands, trigger points on palpation (SCM, upper trapezius, levator scapulae)", posture: "Sustained-posture loading pattern", functionalScreen: "Palpation reproducing referred pain pattern (Travell & Simons)", fascia: "Myofascial trigger point / taut band network", outcome: "NPRS; Pressure Pain Threshold (algometry)" },
     // Grounded in Travell & Simons' published Trigger Point referred-pain
     // -pattern chart (figure-cited quick reference, e.g. [V1Fig6.1],
     // [V1Fig7.1], [V1Fig16.1]) for the head/neck muscle group:
@@ -448,6 +472,7 @@ function evaluateCondition(condition, cv) {
     // facet dysfunction (C03, 4/6 = 67%) on the old raw-count tiebreak.
     supportingTotal: condition.supporting.length,
     objectiveTests: condition.objectiveTests,
+    assessmentModules: buildAssessmentModules(condition.conditionLayers),
   };
 }
 

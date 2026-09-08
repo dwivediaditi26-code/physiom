@@ -55,12 +55,12 @@ export function VitalsSection({ data, setData }) {
     <>
       <SectionIntro icon="❤️" title="Vital Signs" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
-        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" />
-        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" />
-        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" />
-        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" />
-        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" />
-        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" />
+        <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" max={250} />
+        <VitalRow label="BP diastolic" value={d.bpDia} onChange={(v) => set("bpDia", v)} unit="mmHg" max={150} />
+        <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" max={220} />
+        <VitalRow label="Respiratory rate" value={d.rr} onChange={(v) => set("rr", v)} unit="/min" max={60} />
+        <VitalRow label="SpO₂" value={d.spo2} onChange={(v) => set("spo2", v)} unit="%" max={100} />
+        <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" max={42} step={0.1} />
         <VitalRow label="Pain (NRS)" value={d.pain} onChange={(v) => set("pain", v)} slider max={10} />
       </div>
     </>

@@ -105,9 +105,24 @@ function stateOf(fn) {
   };
 }
 
+function buildAssessmentModules(cl) {
+  if (!cl) return [];
+  const out = [];
+  if (cl.observation) out.push({ label: "Observation", key: "observation", detail: cl.observation });
+  if (cl.posture) out.push({ label: "Posture", key: "posture", detail: cl.posture });
+  if (cl.functionalScreen) out.push({ label: "Functional (FMA)", key: "fma", detail: cl.functionalScreen });
+  if (cl.cyriax) out.push({ label: "STTT (Cyriax)", key: "cyriax_full", detail: cl.cyriax });
+  if (cl.cpa) out.push({ label: "CPA", key: "nkt", detail: cl.cpa });
+  if (cl.kineticChain) out.push({ label: "Kinetic chain", key: "kinetic", detail: cl.kineticChain });
+  if (cl.fascia) out.push({ label: "Fascia", key: "fascia", detail: cl.fascia });
+  if (cl.outcome) out.push({ label: "Outcome", key: "outcome", detail: cl.outcome });
+  return out;
+}
+
 const CONDITIONS = [
   {
     id: "T01", name: "Thoracic Facet (Zygapophyseal) / Mechanical Dysfunction",
+    conditionLayers: { observation: "Localised paraspinal guarding, no neuro signs", posture: "Increased thoracic kyphosis", functionalScreen: "Rotation & combined extension-rotation reproduce local pain", fascia: "Thoracolumbar & paraspinal fascial tightness", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee p.567-568: capsular pattern "side flexion and rotation
     // equally limited, extension [also limited]." p.570: "Facet
     // syndromes present as stiffness and local pain, which can be
@@ -131,6 +146,7 @@ const CONDITIONS = [
   },
   {
     id: "T02", name: "Thoracic Disc Herniation / Nerve Root Pain",
+    conditionLayers: { observation: "Band-like sensory change, possible cord signs", posture: "Guarded trunk posture", functionalScreen: "Trunk movement provokes dermatomal band; screen cord signs", fascia: "Neural (intercostal) tension bias", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee p.570: "With thoracic disc lesions... Thoracic root
     // involvement or spondylosis usually causes pain that follows the
     // path of the ribs or a deep, 'through-the-chest' pain." p.572:
@@ -154,6 +170,7 @@ const CONDITIONS = [
   },
   {
     id: "T03", name: "Rib / Costovertebral-Costotransverse Dysfunction",
+    conditionLayers: { observation: "Rib-angle tenderness, altered breathing on one side", posture: "Kyphotic / protracted posture", functionalScreen: "Deep breath & Evjenth-Gloeck breath-hold flexion localise rib source", fascia: "Intercostal & serratus fascial restriction", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee Table 8-5 "Rib Dysfunction" (structural/torsional/
     // respiratory subtypes); Evjenth and Gloeck differentiation
     // maneuver (breath-hold during flexion) to distinguish rib from
@@ -176,6 +193,7 @@ const CONDITIONS = [
   },
   {
     id: "T04", name: "Thoracic Outlet Syndrome",
+    conditionLayers: { observation: "Drooped shoulder, prominent first rib on palpation", posture: "Protracted / depressed shoulder posture", functionalScreen: "Adson's / Roos / EAST reproduce arm symptoms; CRLF for first-rib restriction", fascia: "Scalene & pectoral fascial compression of neurovascular bundle", outcome: "PSFS + NPRS; QuickDASH" },
     // Magee p.594: TOS tests boxed as a "key test" category for this
     // chapter (Adson's, Costoclavicular/Military Brace, Cyriax Release,
     // Roos/EAST). CRLF (already implemented in this app under Cervical
@@ -200,6 +218,7 @@ const CONDITIONS = [
   },
   {
     id: "T05", name: "Scheuermann's Disease",
+    conditionLayers: { observation: "Rigid structural kyphosis (adolescent), apex tenderness", posture: "Fixed increased kyphosis not correcting on extension", functionalScreen: "Prone extension does NOT reverse the kyphosis (vs postural)", fascia: "Anterior thoracic fascial shortening", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee p.570 (age 13-16), p.601 (radiographic definition: ≥5°
     // anterior wedging of ≥3 consecutive vertebrae + Schmorl's nodes) --
     // explicitly a radiographic diagnosis, not a special-test one.
@@ -235,6 +254,7 @@ const CONDITIONS = [
   },
   {
     id: "T06", name: "Postural Kyphosis (Round Back) / Upper Crossed Pattern",
+    conditionLayers: { observation: "No structural change; fatigue-related ache", posture: "Slumped / protracted sustained posture", functionalScreen: "Symptoms build with sustained sitting, ease with postural correction", fascia: "Global posterior-chain fascial deconditioning", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee p.574: "round back" as a non-structural, correctable
     // kyphotic presentation, distinct from Scheuermann's fixed
     // structural kyphosis.
@@ -255,6 +275,7 @@ const CONDITIONS = [
   },
   {
     id: "T07", name: "Idiopathic Scoliosis",
+    conditionLayers: { observation: "Rib hump on forward bend, shoulder/pelvic asymmetry", posture: "Lateral spinal curvature, pelvic obliquity", functionalScreen: "Adam's forward bend / skyline view for rib hump; scoliometer >5 degrees = refer", fascia: "Asymmetric paraspinal fascial tension (concave vs convex)", outcome: "Scoliometer; Cobb angle (imaging); PSFS + NPRS" },
     // Magee Table 8-3 curve patterns/prognosis; p.582 "skyline view"
     // (Adam's forward bend equivalent) for rib hump detection --
     // fundamentally an observation + imaging diagnosis.
@@ -291,6 +312,7 @@ const CONDITIONS = [
   },
   {
     id: "T08", name: "Costochondritis / Tietze Syndrome",
+    conditionLayers: { observation: "Anterior chest tenderness +/- swelling at costochondral junction", posture: "Protracted / slumped posture", functionalScreen: "Anterior chest-wall loading (springing, arm horizontal adduction)", fascia: "Anterior chest-wall (pectoral) fascia", outcome: "PSFS + NPRS; Oswestry/RMDQ adapted for spine" },
     // Magee Table 8-2 (Musculoskeletal chest pain row: "Costochondritis
     // — sternum and rib margins"); Case study #4 (p.607): "Tietze
     // syndrome versus rib hypomobility."
@@ -312,6 +334,7 @@ const CONDITIONS = [
   },
   {
     id: "T09", name: "Thoracic Myofascial Pain",
+    conditionLayers: { observation: "Taut bands, trigger points on palpation (trapezius, rhomboids, levator scapulae)", posture: "Sustained-posture loading pattern", functionalScreen: "Palpation reproducing referred pain pattern (Magee Table 8-8)", fascia: "Myofascial trigger point / taut band network", outcome: "NPRS; Pressure Pain Threshold (algometry)" },
     // Grounded from the start in Magee's own Table 8-8 "Thoracic
     // Muscles and Referral of Pain" (p.596) -- unlike lumbar L09 /
     // cervical C10, which both started as UNVERIFIED placeholders
@@ -337,6 +360,7 @@ const CONDITIONS = [
   },
   {
     id: "T10", name: "Ankylosing Spondylitis / Inflammatory Spondyloarthropathy",
+    conditionLayers: { observation: "Global restriction, morning stiffness posture", posture: "Flattened thoracic mobility, reduced chest expansion", functionalScreen: "AROM uniformly restricted all planes; Forestier's bowstring sign", fascia: "Systemic inflammatory — not fascial-specific", outcome: "BASDAI; BASFI; NPRS; ESR/CRP (lab)" },
     // Magee Table 8-9 "Differential Diagnosis of Ankylosing Spondylitis
     // and Thoracic Spinal Stenosis" (p.607): morning stiffness, male
     // predominance, special tests "None" (imaging + Forestier's sign
@@ -427,6 +451,7 @@ function evaluateCondition(condition, tv) {
     // purely because 2 == 2 on the old raw-count tiebreak).
     supportingTotal: condition.supporting.length,
     objectiveTests: condition.objectiveTests,
+    assessmentModules: buildAssessmentModules(condition.conditionLayers),
   };
 }
 

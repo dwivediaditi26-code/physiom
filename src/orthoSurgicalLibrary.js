@@ -336,6 +336,16 @@ const DEFORMITY_BUCKET = {
   restrictionPresets: ["Pin-site care per protocol if an external fixator is in place", "Follow the prescribed gradual correction/distraction schedule — never self-adjust an external fixator", "Weight-bearing status per surgeon and fixation stability", "Monitor neurovascular status distal to the correction site at every session"],
 };
 
+/* Region-agnostic bucket for "Soft-Tissue / Muscle Surgery", which
+   previously resolved to `null` (no curated options -- manual entry
+   only). Spans every region rather than one joint, so it doesn't fit
+   the per-region SURGICAL_BUCKETS shape above. */
+const SOFT_TISSUE_MUSCLE_BUCKET = {
+  procedures: ["Muscle/tendon debridement", "Muscle repair (laceration/rupture)", "Fasciotomy", "Fascia release", "Soft-tissue mass excision", "Muscle flap / transfer", "Compartment release"],
+  approaches: ["Longitudinal", "Transverse", "Curvilinear", "Percutaneous"],
+  immobilization: ["Splint", "Brace", "None"],
+};
+
 /* Some conditions mean something different depending on the region — e.g.
    "Ligament Reconstruction" is ACL work at the knee but a Broström at the
    ankle. This maps a condition id to the region-appropriate bucket key. */
@@ -381,6 +391,7 @@ function bucketFor(regionId, conditionId) {
   if (conditionId === "amputation") return AMPUTATION_BUCKET;
   if (conditionId === "arthritis") return ARTHRITIS_BUCKET;
   if (conditionId === "deformityCorrection") return DEFORMITY_BUCKET;
+  if (conditionId === "softTissueMuscle") return SOFT_TISSUE_MUSCLE_BUCKET;
   const override = REGION_OVERRIDE[conditionId];
   if (override && override[regionId]) return (SURGICAL_BUCKETS[regionId] || {})[override[regionId]] || {};
   const key = CONDITION_BUCKET[conditionId];

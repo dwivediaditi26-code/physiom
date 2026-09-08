@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { SectionIntro, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, Hint, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
 import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
@@ -37,6 +37,10 @@ import { runLumbarDifferential, hasLumbarChecklistData, lumbarConditionItemIds }
 import { runCervicalDifferential, hasCervicalChecklistData, cervicalConditionItemIds } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData, thoracicConditionItemIds } from "./orthoThoracicReasoning.js";
 import { runShoulderDifferential, hasShoulderChecklistData, shoulderConditionItemIds } from "./orthoShoulderReasoning.js";
+import { runHipDifferential, hasHipChecklistData, hipConditionItemIds } from "./orthoHipReasoning.js";
+import { runKneeDifferential, hasKneeChecklistData, kneeConditionItemIds } from "./orthoKneeReasoning.js";
+import { runAnkleFootDifferential, hasAnkleFootChecklistData, ankleFootConditionItemIds } from "./orthoAnkleFootReasoning.js";
+import { runElbowWristHandDifferential, hasElbowWristHandChecklistData, elbowWristHandConditionItemIds } from "./orthoElbowWristHandReasoning.js";
 import { CpaSection, KineticChainSection, FmaSection, SttSection, FasciaSection } from "./orthoAdvancedTools.jsx";
 import { MEASURES, suggestMeasures } from "./orthoOutcomeMeasureData.js";
 
@@ -214,6 +218,228 @@ function ConditionMatchRow({ conditions, activeId, onSelect }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+const MODULE_DOT = {
+  observation: "#7C3AED",
+  posture: "#3B82F6",
+  fma: "#16A34A",
+  cyriax_full: "#0D9488",
+  nkt: "#D97706",
+  kinetic: "#4F46E5",
+  fascia: "#EC4899",
+  outcome: "#6B7280",
+  palpation: "#DC2626",
+  special: "#8B5CF6",
+  rom: "#059669",
+};
+
+const MODULE_TITLE = {
+  observation: "WHAT TO LOOK FOR",
+  posture: "POSTURE FOCUS",
+  fma: "FUNCTIONAL SCREEN",
+  cyriax_full: "SELECTIVE TENSION",
+  nkt: "NEUROMUSCULAR TESTS",
+  kinetic: "CHAIN LINKS",
+  fascia: "FASCIAL LINES",
+  outcome: "OUTCOME MEASURES",
+  palpation: "FOCUS ZONES",
+  special: "KEY TESTS",
+  rom: "ROM FOCUS",
+};
+
+function splitDetailToChecks(detail) {
+  if (!detail) return [];
+  return detail.split(/[;,]/).map((s) => s.trim()).filter((s) => s.length > 2);
+}
+
+// FMA / Fascia / STTT / Kinetic Chain / CPA each already have a full, real
+// section further down this same screen (FmaSection, FasciaSection,
+// SttSection, KineticChainSection, CpaSection) with their own per-test info
+// buttons and structured entry fields. Turning their one-line condition
+// guidance into generic checkboxes would let a therapist "tick" a test that
+// was never actually performed, so these keys don't get checkboxes at all --
+// the module card just explains why they matter here and activates the real
+// section (same activeIds/onToggle switch the rest of this page uses).
+const MODULE_REDIRECT = {
+  fma: { activeId: "fma", cta: "Open Functional Movement Screen" },
+  fascia: { activeId: "fascia", cta: "Open Fascia Assessment" },
+  cyriax_full: { activeId: "sttt", cta: "Open STTT (Cyriax)" },
+  kinetic: { activeId: "kineticChain", cta: "Open Kinetic Chain Screen" },
+  nkt: { activeId: "cpa", cta: "Open CPA" },
+};
+
+// ROM / Special Tests / Palpation are always rendered further down as soon
+// as a region is picked -- there's no separate activation step for these --
+// so the module card just points at where to find them.
+const MODULE_ALWAYS_SHOWN = {
+  rom: "the Range of Motion section below",
+  special: "the Special Tests section below",
+  palpation: "the Palpation section below",
+};
+
+// Instrument names as authored in conditionLayers.outcome ("Neck Disability
+// Index (NDI); PSFS; NPRS") aren't all wired up as a fillable instrument in
+// MEASURES yet. Match what we can to the real measure id so the module card
+// can point at the same fill-in/score/save flow used everywhere else on this
+// screen; anything unmatched is named as plain reference text rather than a
+// checkbox that would falsely suggest a tap alone completes it.
+const OUTCOME_ALIASES = {
+  ndi: ["ndi", "neck disability index"],
+  lumbarDisability: ["odi", "oswestry", "roland-morris", "rmdq", "lumbar disability"],
+  spadi: ["spadi"],
+  oks: ["oxford knee score", "oks"],
+  oxfordHip: ["oxford hip score"],
+  quickDash: ["quickdash", "dash"],
+  faam: ["faam"],
+  lefs: ["lefs"],
+  psfs: ["psfs"],
+};
+
+function matchOutcomeMeasures(detail) {
+  if (!detail) return { matchedIds: [], unmatched: [] };
+  const parts = detail.split(/[;,]|\+/).map((s) => s.trim()).filter(Boolean);
+  const matchedIds = [];
+  const unmatched = [];
+  parts.forEach((part) => {
+    const low = part.toLowerCase();
+    const hit = Object.entries(OUTCOME_ALIASES).find(([, aliases]) => aliases.some((a) => low.includes(a)));
+    if (hit) { if (!matchedIds.includes(hit[0])) matchedIds.push(hit[0]); }
+    else unmatched.push(part);
+  });
+  return { matchedIds, unmatched };
+}
+
+const MODULE_INFO = {
+  observation: { why: "Systematic visual scan before hands-on assessment to identify posture deviations, swelling, muscle wasting, skin changes, and movement patterns that point toward the suspected condition.", what: ["Muscle guarding or spasm patterns", "Swelling, bruising, or skin changes", "Resting limb posture and alignment", "Willingness to move / antalgic behaviour"] },
+  posture: { why: "Sustained postural faults load specific structures and maintain pain cycles. Identifying them guides corrective exercise and ergonomic advice.", what: ["Static alignment in standing and sitting", "Regional vs global postural deviation", "Load-transfer patterns through the kinetic chain"] },
+  fma: { why: "Functional movement screening identifies movement-system impairments that standard ROM/MMT may miss — compensations, motor-control deficits, and movement-pattern faults.", what: ["Quality of movement patterns under load", "Asymmetries between sides", "Compensatory strategies during functional tasks", "Motor-control deficits vs mobility deficits"] },
+  cyriax_full: { why: "Cyriax selective-tissue-tension testing systematically differentiates contractile from non-contractile structures by comparing active, passive, and resisted movements.", what: ["Capsular vs non-capsular restriction patterns", "Contractile vs inert tissue involvement", "End-feel classification for each movement", "Pain-resistance sequence"] },
+  nkt: { why: "Clinical Prediction Analysis identifies neuromuscular compensation patterns — which muscles are facilitated (overactive) vs inhibited (underactive) — to guide corrective activation.", what: ["Facilitated vs inhibited muscle pairs", "Compensation patterns across regions", "Motor-control retraining priorities"] },
+  kinetic: { why: "The kinetic chain screen assesses mobility and stability at each joint in the movement chain, identifying the source of dysfunction that may be remote from the site of symptoms.", what: ["Joint-by-joint mobility/stability balance", "Regional interdependence patterns", "Proximal-to-distal force-transfer efficiency"] },
+  fascia: { why: "Fascial-line assessment identifies myofascial continuity restrictions that may refer symptoms or limit movement along anatomical trains.", what: ["Superficial vs deep fascial restrictions", "Myofascial line involvement (e.g. superficial back line, lateral line)", "Fascial glide and extensibility"] },
+  outcome: { why: "Standardised outcome measures track patient progress objectively and support evidence-based clinical decision-making.", what: ["Baseline severity scoring", "Minimal clinically important difference (MCID) targets", "Patient-reported vs clinician-measured outcomes"] },
+  palpation: { why: "Targeted palpation confirms tissue-level pathology suggested by the movement exam — tenderness, texture changes, temperature, and structural integrity.", what: ["Point tenderness localisation", "Tissue texture and tone abnormalities", "Temperature and swelling assessment", "Structural integrity and crepitus"] },
+  special: { why: "Specific orthopaedic tests confirm or rule out the suspected diagnosis with known sensitivity and specificity values.", what: ["Diagnostic accuracy (sensitivity/specificity)", "Cluster testing for improved confidence", "Positive vs negative likelihood ratios"] },
+  rom: { why: "Range-of-motion assessment quantifies movement restriction and identifies the pattern of limitation to guide treatment.", what: ["Active vs passive ROM comparison", "Painful arc identification", "Capsular vs non-capsular patterns", "End-feel classification"] },
+};
+
+function ModuleInfoSheet({ open, onClose, moduleKey, label, detail }) {
+  const info = MODULE_INFO[moduleKey];
+  return (
+    <Sheet open={open} onClose={onClose} eyebrow="ABOUT THIS ASSESSMENT" title={label}>
+      {info ? (
+        <>
+          <p className="obj-why-text">{info.why}</p>
+          {info.what?.length > 0 && (
+            <>
+              <div className="subheading" style={{ marginTop: 4 }}>What it tells you</div>
+              <ul className="obj-what-list">
+                {info.what.map((w, i) => <li key={i}>{w}</li>)}
+              </ul>
+            </>
+          )}
+          {detail && (
+            <>
+              <div className="subheading">Condition-specific focus</div>
+              <p className="obj-why-text">{detail}</p>
+            </>
+          )}
+        </>
+      ) : (
+        <Hint>No additional reference notes for this one yet.</Hint>
+      )}
+    </Sheet>
+  );
+}
+
+function ConditionModuleCards({ modules, conditionId, data, setData, activeIds, onToggle }) {
+  const [modChecks, setModCheck] = useSectionData(data, setData, "moduleChecks");
+  const [closedKeys, setClosedKeys] = useState({});
+  const [infoKey, setInfoKey] = useState(null);
+  if (!modules || modules.length === 0) return null;
+  const cid = conditionId || "default";
+
+  function toggleOpen(key) {
+    setClosedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+  function isChecked(modKey, idx) {
+    return !!modChecks[`${cid}_${modKey}_${idx}`];
+  }
+  function toggleCheck(modKey, idx) {
+    const k = `${cid}_${modKey}_${idx}`;
+    setModCheck(k, !modChecks[k]);
+  }
+
+  const infoModule = infoKey ? modules.find((m) => m.key === infoKey) : null;
+
+  return (
+    <div className="cmod-list">
+      {modules.map((m) => {
+        const isOpen = !closedKeys[m.key];
+        const dotColor = MODULE_DOT[m.key] || BRAND.purple;
+        const title = MODULE_TITLE[m.key] || m.label.toUpperCase();
+        const redirect = MODULE_REDIRECT[m.key];
+        const alwaysShownNote = MODULE_ALWAYS_SHOWN[m.key];
+        const isOutcome = m.key === "outcome";
+        const checks = !redirect && !alwaysShownNote && !isOutcome ? splitDetailToChecks(m.detail) : [];
+        const outcomeMatch = isOutcome ? matchOutcomeMeasures(m.detail) : null;
+        return (
+          <div key={m.key} className={"cmod-card" + (isOpen ? " cmod-card-open" : "")}>
+            <button type="button" className="cmod-header" onClick={() => toggleOpen(m.key)}>
+              <span className="cmod-dot" style={{ background: dotColor }} />
+              <span className="cmod-label">{m.label}</span>
+              <button type="button" className="info-btn-sm" onClick={(e) => { e.stopPropagation(); setInfoKey(m.key); }} aria-label={`About ${m.label}`}>ⓘ</button>
+              <span className={"cmod-chev" + (isOpen ? " open" : "")}>⌄</span>
+            </button>
+            {isOpen && (
+              <div className="cmod-body">
+                <div className="cmod-detail">
+                  <div className="cmod-detail-title">{title}</div>
+                  {m.detail}
+                </div>
+
+                {checks.length > 0 && (
+                  <div className="cmod-checks">
+                    {checks.map((item, idx) => (
+                      <label key={idx} className="cmod-check-row">
+                        <input type="checkbox" checked={isChecked(m.key, idx)} onChange={() => toggleCheck(m.key, idx)} className="cmod-checkbox" />
+                        <span className="cmod-check-text">{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {redirect && (
+                  activeIds?.has(redirect.activeId) ? (
+                    <div className="cmod-redirect-done">✓ Added — filled in below</div>
+                  ) : (
+                    <button type="button" className="cmod-redirect-btn" onClick={() => onToggle?.(redirect.activeId)}>
+                      {redirect.cta} ↓
+                    </button>
+                  )
+                )}
+
+                {alwaysShownNote && <div className="cmod-note">Covered in {alwaysShownNote}.</div>}
+
+                {isOutcome && (
+                  <div className="cmod-note">
+                    {outcomeMatch.matchedIds.length > 0 && (
+                      <div>Opens in the Outcome Measure section below: {outcomeMatch.matchedIds.map((id) => MEASURES[id]?.label).filter(Boolean).join(", ")}.</div>
+                    )}
+                    {outcomeMatch.unmatched.length > 0 && (
+                      <div style={{ marginTop: outcomeMatch.matchedIds.length > 0 ? 6 : 0 }}>Also consider tracking: {outcomeMatch.unmatched.join(", ")}.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <ModuleInfoSheet open={!!infoKey} onClose={() => setInfoKey(null)} moduleKey={infoKey} label={infoModule?.label || ""} detail={infoModule?.detail || ""} />
     </div>
   );
 }
@@ -667,11 +893,10 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   const showOutcomeMeasure = omRecommended.length > 0 || !!omSuggestedFromReasoning || activeIds.has("outcomeMeasure");
   const outcomeMeasureIds = showOutcomeMeasure ? [...new Set([...omRecommended.map((r) => r.id), ...(activeIds.has("outcomeMeasure") ? Object.keys(omInstances) : [])])] : [];
   // Every region with a ported Phase 0.5 engine for THIS tool's data shape
-  // (today: Lumbar/SI, Cervical, Thoracic, Shoulder) -- add a region here
-  // once its own orthoXReasoning.js adapter exists. Elbow/Wrist/Hand, Hip,
-  // Knee, Ankle/Foot simply aren't in this map yet, so engineMatch stays
-  // null for them and Suggested Objective falls back to the unfiltered
-  // full library, same as before any of this existed.
+  // All regions with a reasoning engine adapter. Each adapter flattens the
+  // wizard's nested data into the old flow's flat format, runs the existing
+  // reasoning engine(s), and maps differentials to the conditions shape
+  // this UI reads (id, name, matchTier, objectiveTests, etc.).
   //
   // hasData/run take the full `data` object (not a narrower regionData
   // slice) so every engine can read whatever it actually needs -- Lumbar/
@@ -680,11 +905,67 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
   // equivalent subjective checklist and reads data.rom/data.mmt/
   // data.specialTests instead, live, updating as the therapist fills in
   // items on this same screen rather than being fixed from Subjective alone.
+  //
+  // When AI intake was used, subjective.__aiExtracted carries the raw
+  // extracted fields but regions[regionId] is empty -- synthesize a
+  // minimal regionData from the AI fields so the spine engines can fire.
+  function spineRegionData(d, r, engineKey) {
+    const manual = d.subjective?.regions?.[r.id];
+    if (manual && Object.values(manual).some((v) => String(v || "").trim())) return manual;
+    const rows = d.subjective?.__aiExtracted;
+    if (!rows?.length) return null;
+    const byKey = {};
+    rows.forEach((row) => { if (row.key && row.value) byKey[row.key] = row.value; });
+    if (!Object.keys(byKey).length) return null;
+    const rd = {};
+    const low = (k) => (byKey[k] || "").toLowerCase();
+    const aggMov = (byKey.aggMovements || "").split(", ").filter(Boolean);
+    const FLEX = { cervical: "Flexion — looking down", lumbarSI: "Forward bending (flexion)", thoracic: "Forward bending (flexion)" };
+    const EXT = { cervical: "Extension — looking up", lumbarSI: "Backward bending (extension)", thoracic: "Backward bending (extension)" };
+    const mapped = [];
+    for (const m of aggMov) {
+      const ml = m.toLowerCase();
+      if (ml.includes("look") && ml.includes("down") || ml.includes("flexion") || ml.includes("bending forward") || ml.includes("bend forward")) mapped.push(FLEX[engineKey] || m);
+      else if (ml.includes("look") && ml.includes("up") || ml.includes("extension") || ml.includes("leaning back")) mapped.push(EXT[engineKey] || m);
+      else if (ml.includes("turn") || ml.includes("rotation")) { if (ml.includes("right")) mapped.push("Rotation right"); else if (ml.includes("left")) mapped.push("Rotation left"); else mapped.push("Rotation"); }
+      else if (ml.includes("side") || ml.includes("lateral")) mapped.push("Side bending");
+      else mapped.push(m);
+    }
+    if (mapped.length) rd.aggMovements = mapped.join(", ");
+    const aggAct = (byKey.aggActivities || "").split(", ").filter(Boolean);
+    const mappedP = [];
+    for (const a of aggAct) { const al = a.toLowerCase(); if (al.includes("computer") || al.includes("desk") || al.includes("screen")) mappedP.push("Computer / desk work"); else if (al.includes("driving")) mappedP.push("Driving"); else if (al.includes("sitting")) mappedP.push("Sitting — prolonged"); else if (al.includes("standing")) mappedP.push("Standing — prolonged"); else mappedP.push(a); }
+    if (mappedP.length) rd.aggPostures = mappedP.join(", ");
+    if (byKey.hasRadiation === "No" || low("hasRadiation") === "no") rd.radiation = "No radiation — local only";
+    else if (byKey.radiationArea) rd.radiation = byKey.radiationArea;
+    const neuro = low("neuroSymptoms");
+    if (neuro.includes("no neuro") || neuro === "none" || neuro === "no") { rd.armNeuro = "No neurological symptoms"; rd.armPresent = "No arm / hand symptoms"; }
+    else if (neuro && neuro !== "no neurological") rd.armNeuro = byKey.neuroSymptoms;
+    const onset = low("onset");
+    if (onset.includes("whiplash") || onset.includes("mva") || onset.includes("car accident")) rd.mechanismType = "Whiplash / rear-end collision";
+    else if (onset.includes("no clear") || onset.includes("insidious") || onset.includes("gradual") || onset.includes("unknown")) rd.mechanismType = "No clear mechanism — insidious onset";
+    else if (onset.includes("fall") || onset.includes("trauma")) rd.mechanismType = "Fall / direct trauma";
+    else if (onset.includes("lift")) rd.mechanismType = "Lifting — heavy or awkward";
+    const morning = low("morningSymptoms") || low("diurnalPattern");
+    if (morning.includes("stiffness") && morning.includes("morning")) rd.morning = "Stiffness < 30 min (mechanical)";
+    const loc = low("locationDescription");
+    if (engineKey === "cervical") { if (loc.includes("right")) rd.location = "Right posterior cervical"; else if (loc.includes("left")) rd.location = "Left posterior cervical"; else rd.location = "Central/posterior cervical"; }
+    else if (engineKey === "lumbarSI") { if (loc.includes("right")) rd.location = "Right lumbar"; else if (loc.includes("left")) rd.location = "Left lumbar"; else rd.location = "Central lumbar"; }
+    else { if (loc.includes("right")) rd.location = "Right thoracic"; else if (loc.includes("left")) rd.location = "Left thoracic"; else rd.location = "Central thoracic"; }
+    const pattern = low("symptomPattern");
+    if (pattern.includes("mechanical")) rd.overallPattern = "Mechanical — varies with movement/position";
+    else if (pattern.includes("constant")) rd.overallPattern = "Constant — never goes away";
+    return Object.keys(rd).length > 0 ? rd : null;
+  }
   const REGION_ENGINES = {
-    lumbarSI: { hasData: (d, r) => hasLumbarChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runLumbarDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
-    cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runCervicalDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: cervicalConditionItemIds, label: "Cervical" },
-    thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]), run: (d, r) => runThoracicDifferential(d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: thoracicConditionItemIds, label: "Thoracic" },
+    lumbarSI: { hasData: (d, r) => hasLumbarChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "lumbarSI"), run: (d, r) => runLumbarDifferential(spineRegionData(d, r, "lumbarSI") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: lumbarConditionItemIds, label: "Lumbar/SI" },
+    cervical: { hasData: (d, r) => hasCervicalChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "cervical"), run: (d, r) => runCervicalDifferential(spineRegionData(d, r, "cervical") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: cervicalConditionItemIds, label: "Cervical" },
+    thoracic: { hasData: (d, r) => hasThoracicChecklistData(d.subjective?.regions?.[r.id]) || !!spineRegionData(d, r, "thoracic"), run: (d, r) => runThoracicDifferential(spineRegionData(d, r, "thoracic") || d.subjective?.regions?.[r.id], d.subjective || {}), itemIds: thoracicConditionItemIds, label: "Thoracic" },
     shoulder: { hasData: (d) => hasShoulderChecklistData(d), run: (d) => runShoulderDifferential(d), itemIds: shoulderConditionItemIds, label: "Shoulder" },
+    hip: { hasData: (d) => hasHipChecklistData(d), run: (d) => runHipDifferential(d), itemIds: hipConditionItemIds, label: "Hip" },
+    knee: { hasData: (d) => hasKneeChecklistData(d), run: (d) => runKneeDifferential(d), itemIds: kneeConditionItemIds, label: "Knee" },
+    ankleFoot: { hasData: (d) => hasAnkleFootChecklistData(d), run: (d) => runAnkleFootDifferential(d), itemIds: ankleFootConditionItemIds, label: "Ankle/Foot" },
+    elbowWristHand: { hasData: (d) => hasElbowWristHandChecklistData(d), run: (d) => runElbowWristHandDifferential(d), itemIds: elbowWristHandConditionItemIds, label: "Elbow/Wrist/Hand" },
   };
   const engineMatch = useMemo(() => {
     for (const region of selectedRegions) {
@@ -739,6 +1020,20 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
     if (!tests.length) return null;
     return palpationFocusZoneIds(tests, palpationZonesForRegions(selectedRegions));
   }, [activeConditionObj, selectedRegions]);
+
+  // The condition's own "outcome" module guidance (e.g. "Neck Disability
+  // Index (NDI); PSFS; NPRS") names real instruments -- match them into the
+  // exact same outcomeMeasureIds/OutcomeMeasureInlineCard flow the
+  // region-based suggestions below already use, so tapping through actually
+  // opens the fill-in/score/save form instead of a second, fake mechanism.
+  const conditionOutcomeDetail = activeConditionObj?.assessmentModules?.find((m) => m.key === "outcome")?.detail;
+  const conditionOutcomeMatch = useMemo(() => matchOutcomeMeasures(conditionOutcomeDetail), [conditionOutcomeDetail]);
+  const finalOutcomeMeasureIds = [...new Set([...outcomeMeasureIds, ...conditionOutcomeMatch.matchedIds])];
+  const finalShowOutcomeMeasure = showOutcomeMeasure || conditionOutcomeMatch.matchedIds.length > 0;
+  const finalOmReasonById = { ...omReasonById };
+  conditionOutcomeMatch.matchedIds.forEach((id) => {
+    if (!finalOmReasonById[id]) finalOmReasonById[id] = `Named for ${activeConditionObj?.name || "this condition"}`;
+  });
 
   // Scans the exact same rom/mmt/specialTests/observation data the item
   // cards above write into, and derives (a) which named items are
@@ -936,9 +1231,12 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         <>
           <div className="subheading" style={{ marginTop: 0 }}>🧠 Possible matches — {engineMatch.engine.label}</div>
           <ConditionMatchRow conditions={topConditions} activeId={activeConditionIdOrDefault} onSelect={setActiveConditionId} />
+          {activeConditionObj?.assessmentModules?.length > 0 && (
+            <ConditionModuleCards modules={activeConditionObj.assessmentModules} conditionId={activeConditionIdOrDefault} data={data} setData={setData} activeIds={activeIds} onToggle={onToggle} />
+          )}
         </>
       ) : selectedRegions.length > 0 && !engineMatch ? (
-        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, and Shoulder regions. Other regions show the full test library.</Hint>
+        <Hint>Condition matching is available for Cervical, Thoracic, Lumbar/SI, Shoulder, Hip, Knee, Ankle/Foot, and Elbow/Wrist/Hand regions.</Hint>
       ) : null}
 
       {findingsBlock}
@@ -1071,13 +1369,13 @@ export default function OrthoSuggestObjectiveStep({ data, setData, selectedRegio
         </>
       )}
 
-      {showOutcomeMeasure && outcomeMeasureIds.length > 0 && (
+      {finalShowOutcomeMeasure && finalOutcomeMeasureIds.length > 0 && (
         <>
           <div className="subheading">📊 Outcome Measure</div>
-          {outcomeMeasureIds.map((id) => {
+          {finalOutcomeMeasureIds.map((id) => {
             const measure = MEASURES[id];
             if (!measure) return null;
-            return <OutcomeMeasureInlineCard key={id} measure={measure} reason={omReasonById[id]} instance={omInstances[id]} onSave={saveOutcomeEntry} />;
+            return <OutcomeMeasureInlineCard key={id} measure={measure} reason={finalOmReasonById[id]} instance={omInstances[id]} onSave={saveOutcomeEntry} />;
           })}
         </>
       )}
