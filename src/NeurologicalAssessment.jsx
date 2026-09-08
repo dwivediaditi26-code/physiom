@@ -1836,8 +1836,8 @@ export function SummaryStyles() {
       .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
       .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
       .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
-      .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-      .summary-row { display: flex; gap: 8px; font-size: 13.5px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
+      .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+      .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
       .summary-row:first-child { border-top: none; }
       .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: 600; }
       .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
@@ -2509,8 +2509,8 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
 
         .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
-        .summary-title { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-        .summary-row { display: flex; gap: 8px; font-size: 12.5px; padding: 3px 0; border-top: 1px solid #F5F3FB; }
+        .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+        .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
         .summary-val { flex: 1; font-weight: 500; word-break: break-word; }

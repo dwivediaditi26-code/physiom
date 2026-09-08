@@ -510,7 +510,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
 
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
-    { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio, Pedia, Sports",         action:()=>onNav("subjective") },
+    { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio, Pedia, Sports",         action:()=>onNav("clinical",{clinicalSubTab:"assessment"}) },
     // 2026-09-02, Aditi: "the AI Assessment tile takes us to the old AI...
     // put it in a new AI orthopedic button" -- this used to open the old
     // Subjective step with an auto-open-AI flag; now starts the same real
@@ -549,7 +549,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
       {/* ── Clinical / Assessment / AI Assessment / Posture Analysis ── */}
       <div className="pm-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:18}}>
         {TILES.map(t=>(
-          <button key={t.key} onClick={t.action} style={{
+          <button key={t.key} data-testid={`home-tile-${t.key}`} onClick={t.action} style={{
             background:"#fff", border:"1px solid #EDEDF2", borderRadius:16, padding: isDesktop?"18px 16px":"12px 8px",
             display:"flex", flexDirection:"column", alignItems:"flex-start", gap:7, textAlign:"left",
             cursor:"pointer", boxShadow:"0 1px 4px rgba(16,24,40,0.04)", minHeight: isDesktop?150:126,
