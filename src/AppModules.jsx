@@ -1733,6 +1733,38 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const set = (k,v) => setFd(p=>({...p,[k]:v}));
 
+  // Plain browser speech-to-text (Web Speech API) for Chief complaint --
+  // dictates straight into the field, no AI parsing step. Same
+  // window.SpeechRecognition lookup as the AI-intake mic elsewhere in the
+  // app; this one just appends the transcript to fd.cc_main directly.
+  const [ccRecording, setCcRecording] = React.useState(false);
+  const ccRecognitionRef = React.useRef(null);
+  const startCcVoice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = fd.cc_main || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) set("cc_main", (base + " " + final).trim());
+    };
+    rec.onend = () => setCcRecording(false);
+    rec.onerror = () => setCcRecording(false);
+    ccRecognitionRef.current = rec;
+    rec.start();
+    setCcRecording(true);
+  };
+  const stopCcVoice = () => {
+    if (ccRecognitionRef.current) { try { ccRecognitionRef.current.stop(); } catch {} ccRecognitionRef.current = null; }
+    setCcRecording(false);
+  };
+
   React.useEffect(() => {
     if (Object.keys(fd).length === 0) return;
     const timer = setTimeout(() => {
@@ -1838,7 +1870,19 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
           {nField("Phone",<input id="intake_dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,false,"intake_dem_phone")}
           {nField("Occupation",<input id="intake_dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"intake_dem_occupation")}
           {nField("Address",<input id="intake_dem_address" style={nInp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"intake_dem_address")}
-          {nField("Chief complaint",<input id="intake_cc_main" style={nInp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>,true,"intake_cc_main")}
+          {nField("Chief complaint",
+            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+              <input id="intake_cc_main" style={{...nInp,flex:1}} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>
+              <button type="button" data-testid="cc-mic-btn"
+                onClick={ccRecording ? stopCcVoice : startCcVoice}
+                title={ccRecording ? "Stop recording" : "Speak chief complaint"}
+                style={{flexShrink:0,width:44,borderRadius:10,border:`1.5px solid ${ccRecording?"#dc2626":PC.border}`,
+                  background:ccRecording?"#dc2626":PC.surface,color:ccRecording?"#fff":PC.text,
+                  fontSize:"1rem",cursor:"pointer",fontFamily:"inherit"}}>
+                {ccRecording ? "⏹" : "🎤"}
+              </button>
+            </div>
+          ,true,"intake_cc_main")}
 
           {/* Everything the old four-tab intake asked for, kept on file and
               kept optional. Nothing was dropped — it just no longer blocks
