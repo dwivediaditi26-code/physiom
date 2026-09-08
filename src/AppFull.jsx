@@ -637,6 +637,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // -- keeps passing); "Today" and "Treatment" are new lenses onto the same
   // patients array, not separate data.
   const [clinicalSubTab, setClinicalSubTab] = useState("patients"); // "today" | "patients" | "treatment"
+  // Lets a navTo("clinical", {clinicalSubTab:"assessment"}) call (Home's
+  // own "Assessment" tile, e.g.) land directly on the Assessment sub-tab
+  // instead of always the Patients default. Aditi: "when we click on
+  // assessment it should take us to assessment tab of clinical .. it is
+  // taking us to older tabs" -- Home's tile used to call onNav("subjective"),
+  // the legacy config-driven Ortho stream's own tab, instead of this one.
+  useEffect(() => {
+    if (active === "clinical" && navContext?.clinicalSubTab) setClinicalSubTab(navContext.clinicalSubTab);
+  }, [active, navContext]);
   const [showIntake, setShowIntake] = useState(false);
   const [intakeData, setIntakeData] = useState({});
   // Clinical tab landing: "+ New Assessment" asks which specialty stream
