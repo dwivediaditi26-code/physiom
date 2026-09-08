@@ -26,7 +26,7 @@ function runAnalysis() {
 
 describe("ConditionObjectiveAssessment — Cervical", () => {
   it("shows a hint instead of the page when no supported region is selected", () => {
-    render(<ConditionObjectiveAssessment data={{}} setData={vi.fn()} selectedRegions={[{ id: "shoulder", label: "Shoulder" }]} />);
+    render(<ConditionObjectiveAssessment data={{}} setData={vi.fn()} selectedRegions={[{ id: "elbow", label: "Elbow" }]} />);
     expect(screen.getByText(/Pick Cervical as a region in Subjective first/i)).toBeInTheDocument();
   });
 
@@ -62,6 +62,49 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
     render(<Harness initialData={data} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
     runAnalysis();
     expect(screen.getByText(/EMERGENCY — Myelopathy/i)).toBeInTheDocument();
+  });
+
+  it("shows the static, authored Findings/Interpretation from the JSON without any tapping (not derived from taps)", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    runAnalysis();
+    expect(screen.getByText(/Resisted movements strong & painless/)).toBeInTheDocument();
+    expect(screen.getByText(/Rules out a contractile lesion/)).toBeInTheDocument();
+    // CPA now supports multiple muscles (array) — C01 has two.
+    expect(screen.getByText(/Deep Neck Flexors \(DNF\)/)).toBeInTheDocument();
+    expect(screen.getByText(/SCM \/ Scalenes/)).toBeInTheDocument();
+  });
+});
+
+describe("ConditionObjectiveAssessment — Thoracic", () => {
+  it("resolves the Thoracic region, shows real condition names, and the Thoracic ROM grid", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "thoracic", label: "Thoracic" }]} />);
+    runAnalysis();
+    expect(screen.getByRole("button", { name: /^T01/ })).toBeInTheDocument();
+    expect(screen.getByText("Thoracic ROM")).toBeInTheDocument();
+    expect(screen.getByText("Localised paraspinal guarding")).toBeInTheDocument();
+  });
+});
+
+describe("ConditionObjectiveAssessment — Lumbar", () => {
+  it("resolves from lumbar/sacrum/pelvis region ids and shows the Lumbar ROM grid", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "sacrum", label: "Sacrum" }]} />);
+    runAnalysis();
+    expect(screen.getByRole("button", { name: /^L01/ })).toBeInTheDocument();
+    expect(screen.getByText("Lumbar ROM")).toBeInTheDocument();
+    expect(screen.getByText("Muscle guarding")).toBeInTheDocument();
+  });
+});
+
+describe("ConditionObjectiveAssessment — Shoulder", () => {
+  it("resolves the Shoulder region, uses Key Exams (not Required/Recommended), and bridges the engine's SH0x id to the library's S0x content", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "shoulder", label: "Shoulder" }]} />);
+    runAnalysis();
+    expect(screen.getByRole("button", { name: /^S01/ })).toBeInTheDocument();
+    expect(screen.getByText("Key Exams")).toBeInTheDocument();
+    // Proves the SH0x -> S0x name-bridge actually resolved real content,
+    // not a blank/default condition.
+    expect(screen.getByText("Painful arc on elevation")).toBeInTheDocument();
+    expect(screen.getByText("Shoulder ROM")).toBeInTheDocument();
   });
 });
 

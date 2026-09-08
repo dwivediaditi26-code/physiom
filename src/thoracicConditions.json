@@ -1,0 +1,772 @@
+{
+  "T01": {
+    "id": "T01",
+    "name": "Thoracic Facet (Zygapophyseal) / Mechanical Dysfunction",
+    "required": [
+      "Observation (posture, kyphosis)",
+      "Thoracic AROM all planes (capsular pattern)",
+      "Rib Springing (vs rib dysfunction)",
+      "Neurological screen (expect normal)"
+    ],
+    "recommended": [
+      "PA central + unilateral vertebral pressures",
+      "Functional movement screen"
+    ],
+    "observation": [
+      "Localised paraspinal guarding",
+      "No neuro signs"
+    ],
+    "posture": [
+      "Increased thoracic kyphosis"
+    ],
+    "palpation": [],
+    "fma": "Rotation & combined extension-rotation reproduce local pain",
+    "fascia": "Thoracolumbar & paraspinal fascial tightness",
+    "specialTests": [
+      {
+        "name": "Rib Springing"
+      }
+    ],
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted trunk rotation/side-flexion — painless (non-contractile)",
+        "Passive rotation reproduces local pain with a capsular end-feel"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Multifidus (thoracic segment)",
+          "state": "Inhibited, unilateral"
+        }
+      ],
+      "pattern": "Erector spinae compensating for the inhibited thoracic multifidus."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Thoracic Rotation Mobility",
+      "fields": [
+        {
+          "label": "Rotation",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "chainEffect": "Rotation is the most thoracic-sensitive plane per Magee; restriction here forces lumbar over-rotation (disc injury risk) and cervical/shoulder overload above."
+    },
+    "functionalScreen": {
+      "name": "Thoracic AROM Screen (rotation, extension, lateral flexion)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Restriction pattern",
+          "options": [
+            "Local, reproducible restriction",
+            "Global restriction (see T10)"
+          ]
+        }
+      ],
+      "note": "Expect a local, reproducible restriction rather than the global pattern seen in T10."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T02": {
+    "id": "T02",
+    "name": "Thoracic Disc Herniation / Nerve Root Pain",
+    "required": [
+      "Observation",
+      "Thoracic AROM",
+      "First Thoracic Nerve Root Stretch",
+      "Passive Scapular Approximation",
+      "Neurological screen"
+    ],
+    "recommended": [
+      "Slump Test (+ trunk rotation, Butler)"
+    ],
+    "observation": [
+      "Band-like sensory change",
+      "Possible cord signs"
+    ],
+    "posture": [
+      "Guarded trunk posture"
+    ],
+    "palpation": [],
+    "fma": "Trunk movement provokes dermatomal band; screen cord signs",
+    "fascia": "Neural (intercostal) tension bias",
+    "specialTests": [
+      {
+        "name": "First Thoracic Nerve Root Stretch"
+      },
+      {
+        "name": "Passive Scapular Approximation"
+      },
+      {
+        "name": "Slump Test (+ trunk rotation, Butler)"
+      }
+    ],
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted trunk flexion/rotation — rarely weak (mostly sensory)",
+        "Passive Slump/rotation reproduces the band-like dermatomal pain (neural, not contractile)"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Diaphragm",
+          "state": "Monitor breathing pattern if respiration aggravates pain (intercostal irritation)"
+        }
+      ],
+      "pattern": "Not a classic muscle-pair (MCC) compensation pattern — this is a neural condition; diaphragm involvement is monitored as an adjunct only."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not primarily a joint-mobility condition (nerve root); kinetic-chain testing is secondary to the neural findings above."
+    },
+    "functionalScreen": {
+      "name": "T4 Syndrome Screen (+ neurological screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Referred arm heaviness/tingling present",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Layered on a standard neurological screen when referred arm heaviness/tingling co-exists."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T03": {
+    "id": "T03",
+    "name": "Rib / Costovertebral-Costotransverse Dysfunction",
+    "required": [
+      "Observation (rib cage symmetry, breathing)",
+      "Rib Springing",
+      "Evjenth-Gloeck breath-hold differentiation test"
+    ],
+    "recommended": [
+      "Costovertebral expansion (4th ICS tape; normal 3–7cm)",
+      "PA central + unilateral vertebral pressures"
+    ],
+    "observation": [
+      "Rib-angle tenderness",
+      "Altered breathing on one side"
+    ],
+    "posture": [
+      "Kyphotic / protracted posture"
+    ],
+    "palpation": [],
+    "fma": "Deep breath & Evjenth-Gloeck breath-hold flexion localise rib source",
+    "fascia": "Intercostal & serratus fascial restriction",
+    "specialTests": [
+      {
+        "name": "Rib Springing"
+      },
+      {
+        "name": "Evjenth-Gloeck Breath-Hold Differentiation Test"
+      },
+      {
+        "name": "Costovertebral Expansion (4th ICS tape)",
+        "type": "number",
+        "unit": "cm",
+        "normal": "normal 3–7cm"
+      }
+    ],
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted trunk rotation may reproduce pain if intercostals are contractile",
+        "Evjenth-Gloeck breath-hold test differentiates rib from spine source"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Diaphragm",
+          "state": "Inhibited, lateral expansion deficit"
+        }
+      ],
+      "pattern": "Often co-exists with reduced lateral costal breathing on the affected side."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Rib Cage Mobility Assessment",
+      "fields": [
+        {
+          "label": "Rib cage mobility",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match: asymmetric expansion or a specific tender/hypomobile rib angle on PA spring test."
+    },
+    "functionalScreen": {
+      "name": "Rib Mobility Screen (pump-handle upper ribs / bucket-handle lower ribs / rib spring)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Rib mobility",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "note": "The same test as Rib Springing above, named as the app's functional screen entry."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T04": {
+    "id": "T04",
+    "name": "Thoracic Outlet Syndrome",
+    "lowConfidence": true,
+    "required": [
+      "Observation (posture, first rib position)",
+      "Cervical Rotation Lateral Flexion (CRLF)"
+    ],
+    "recommended": [
+      "Adson's Test",
+      "Costoclavicular (Military Brace) Test",
+      "Roos Test / EAST",
+      "Cyriax Release Test"
+    ],
+    "observation": [
+      "Dropped shoulder",
+      "Prominent first rib on palpation"
+    ],
+    "posture": [
+      "Protracted / depressed shoulder posture"
+    ],
+    "palpation": [],
+    "fma": "Adson's / Roos / EAST reproduce arm symptoms; CRLF for first-rib restriction",
+    "fascia": "Scalene & pectoral fascial compression of neurovascular bundle",
+    "specialTests": [
+      {
+        "name": "Cervical Rotation Lateral Flexion (CRLF)"
+      },
+      {
+        "name": "Adson's Test"
+      },
+      {
+        "name": "Costoclavicular (Military Brace) Test"
+      },
+      {
+        "name": "Roos Test / EAST"
+      },
+      {
+        "name": "Cyriax Release Test"
+      }
+    ],
+    "sttt": {
+      "caveat": false,
+      "findings": [
+        "Resisted cervical side-flexion (scalenes) reproduces arm symptoms",
+        "CRLF (Cervical Rotation Lateral Flexion) is the passive Cyriax-style provocation test"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Scalenes (cervical)",
+          "state": "Overactive, rib 1 elevation"
+        }
+      ],
+      "pattern": "Directly matches TOS pathomechanics."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Rib Cage Mobility Assessment",
+      "fields": [
+        {
+          "label": "Rib cage mobility",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "chainEffect": "First-rib elevation and asymmetric expansion overlap directly with TOS mechanics; cross-check the Cervical Rotation Mobility chain too."
+    },
+    "functionalScreen": {
+      "name": "T4 Syndrome Screen + cervical ULNT1/Adson's cross-reference",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Upper thoracic referred arm symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Cross-reference cervical ULNT1/Adson's."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "QuickDASH"
+    ]
+  },
+  "T05": {
+    "id": "T05",
+    "name": "Scheuermann's Disease",
+    "lowConfidence": true,
+    "ageNote": "AGE 13–16 ONLY",
+    "required": [
+      "Observation (fixed vs correctable kyphosis on active extension)",
+      "Thoracic AROM (curve flexibility)"
+    ],
+    "recommended": [
+      "Radiographic imaging (≥5° wedging ≥3 vertebrae, Schmorl's nodes)"
+    ],
+    "observation": [
+      "Rigid structural kyphosis (adolescent)",
+      "Apex tenderness"
+    ],
+    "posture": [
+      "Fixed increased kyphosis not correcting on extension"
+    ],
+    "palpation": [],
+    "fma": "Prone extension does NOT reverse the kyphosis (vs postural)",
+    "fascia": "Anterior thoracic fascial shortening",
+    "specialTests": [],
+    "specialTestsNote": "Only radiographic imaging is recommended for this condition (see Recommended above) — no manual special test named in the source.",
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted trunk extension weak relative to flexor tightness (lengthened over a fixed kyphosis)",
+        "Passive extension does NOT reduce the kyphosis (structural, not muscular)"
+      ]
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily a CPA pattern — structural/growth-plate diagnosis; imaging-led, not compensation-led."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Thoracic Extension Mobility",
+      "fields": [
+        {
+          "label": "Extension mobility (foam roller)",
+          "options": [
+            "Normal",
+            "Restricted — fixed, non-correctable"
+          ]
+        }
+      ],
+      "chainEffect": "The fixed, non-correctable restriction over the foam roller is the key kinetic-chain finding distinguishing this from postural (T06) kyphosis."
+    },
+    "functionalScreen": {
+      "name": "Thoracic Extension Mobility Screen (foam roller / chair test)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Kyphosis at rest vs under extension load",
+          "options": [
+            "Corrects under load",
+            "Fixed — does not correct"
+          ]
+        }
+      ],
+      "note": "Document the fixed kyphosis at rest and under extension load."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T06": {
+    "id": "T06",
+    "name": "Postural Kyphosis (Round Back) / Upper Crossed Pattern",
+    "required": [
+      "Observation (is the kyphosis actively correctable?)",
+      "Thoracic AROM"
+    ],
+    "recommended": [
+      "Postural assessment (FHP, upper crossed)",
+      "Thoracic MMT (lower trap, rhomboids, serratus anterior)"
+    ],
+    "observation": [
+      "No structural change; fatigue-related ache"
+    ],
+    "posture": [
+      "Slumped / protracted sustained posture"
+    ],
+    "palpation": [],
+    "fma": "Symptoms build with sustained sitting, ease with postural correction",
+    "fascia": "Global posterior-chain fascial deconditioning",
+    "specialTests": [],
+    "specialTestsNote": "No manual special test named — see Recommended above (postural assessment, Thoracic MMT).",
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted trunk extension weak but improves with cueing (motor control, not structural)",
+        "Passive extension DOES reduce the kyphosis (correctable)"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Lower Trapezius / Serratus Anterior (shoulder)",
+          "state": "Inhibited, moderate"
+        },
+        {
+          "name": "Upper Trapezius / Pectoralis Minor",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Drives the compensatory thoracic slump."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Thoracic Extension Mobility",
+      "fields": [
+        {
+          "label": "Extension mobility (foam roller)",
+          "options": [
+            "Normal",
+            "Restricted — correctable"
+          ]
+        }
+      ],
+      "chainEffect": "Expect a mildly restricted but correctable pattern (postural, not fixed); this drives forward-head posture."
+    },
+    "functionalScreen": {
+      "name": "Thoracic Extension Mobility Screen + Scapular Stability Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Scapular dyskinesis present",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "The upper-crossed pattern typically shows scapular dyskinesis alongside the kyphosis."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T07": {
+    "id": "T07",
+    "name": "Idiopathic Scoliosis",
+    "lowConfidence": true,
+    "ageNote": "AGE 10–18 ONLY",
+    "required": [
+      "Observation (Adam's forward bend / skyline view, pelvic obliquity, shoulder asymmetry)"
+    ],
+    "recommended": [
+      "Scoliometer measurement (>5° = refer)",
+      "Radiographic imaging (Cobb angle)"
+    ],
+    "observation": [
+      "Rib hump on forward bend",
+      "Shoulder/pelvic asymmetry"
+    ],
+    "posture": [
+      "Lateral spinal curvature",
+      "Pelvic obliquity"
+    ],
+    "palpation": [],
+    "fma": "Adam's forward bend / skyline view; scoliometer >5° = refer",
+    "fascia": "Asymmetric paraspinal fascial tension (concave vs convex)",
+    "specialTests": [
+      {
+        "name": "Scoliometer Measurement",
+        "type": "number",
+        "unit": "°",
+        "normal": ">5° = refer"
+      }
+    ],
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted side-flexion may show asymmetric strength (concave shortened vs convex lengthened)",
+        "Primarily an observation + imaging diagnosis — limited STTT value"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Multifidus / Quadratus Lumborum (core)",
+          "state": "Asymmetric activation — concave vs convex"
+        }
+      ],
+      "pattern": "Adjunct finding, not diagnostic."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Primarily an observation + imaging diagnosis, not kinetic-chain-driven; Thoracic Rotation Mobility may show side-to-side asymmetry as an adjunct finding only."
+    },
+    "functionalScreen": {
+      "name": "Thoracic AROM Screen (L/R rotation comparison)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "L/R rotation asymmetry",
+          "options": [
+            "Symmetric",
+            "Asymmetric"
+          ]
+        }
+      ],
+      "note": "Alongside the Adam's forward-bend/skyline observation above."
+    },
+    "outcomeMeasures": [
+      "Scoliometer",
+      "Cobb angle (imaging)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "T08": {
+    "id": "T08",
+    "name": "Costochondritis / Tietze Syndrome",
+    "required": [
+      "Palpation (costochondral junction tenderness)",
+      "Observation (localized swelling — Tietze vs simple costochondritis)"
+    ],
+    "recommended": [
+      "Resisted isometric trunk movements (expect non-provocative)"
+    ],
+    "observation": [
+      "Anterior chest tenderness ± swelling at costochondral junction"
+    ],
+    "posture": [
+      "Protracted / slumped posture"
+    ],
+    "palpation": [
+      "Costochondral Junction Tenderness"
+    ],
+    "fma": "Anterior chest-wall loading (springing, arm horizontal adduction)",
+    "fascia": "Anterior chest-wall (pectoral) fascia",
+    "specialTests": [],
+    "specialTestsNote": "No discrete named special test beyond palpation and resisted loading — see Palpation and STTT modules below.",
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted horizontal shoulder adduction / pec loading reproduces anterior chest pain (contractile/insertional pattern)",
+        "Passive rib springing reproduces local pain"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Pectoralis Minor (shoulder)",
+          "state": "Tight — increases anterior chest-wall tension"
+        }
+      ],
+      "pattern": "Adjunct only; this is primarily a local insertional condition, not an MCC compensation pattern."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a kinetic-chain-driven condition (local costochondral inflammation); Rib Cage Mobility testing would be positioned anteriorly, not the app's posterior rib-angle protocol."
+    },
+    "functionalScreen": {
+      "name": "Rib Mobility Screen — anterior chest wall (pump-handle)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Anterior chest-wall rib mobility",
+          "options": [
+            "Normal",
+            "Restricted / provocative"
+          ]
+        }
+      ],
+      "note": "Adapted to the anterior chest wall rather than the standard posterior rib-angle spring test."
+    },
+    "outcomeMeasures": [
+      "PSFS",
+      "NPRS",
+      "Oswestry/RMDQ adapted for spine"
+    ]
+  },
+  "T09": {
+    "id": "T09",
+    "name": "Thoracic Myofascial Pain",
+    "required": [
+      "Palpation — trapezius, rhomboids, levator scapulae (Table 8-8)",
+      "Palpation — serratus ant/post, multifidus, iliocostalis"
+    ],
+    "recommended": [
+      "Thoracic MMT (lower trap, serratus anterior, rhomboids)"
+    ],
+    "observation": [
+      "Taut bands",
+      "Trigger points (trapezius, rhomboids, levator scapulae)"
+    ],
+    "posture": [
+      "Sustained-posture loading pattern"
+    ],
+    "palpation": [
+      "Trapezius",
+      "Rhomboids",
+      "Levator Scapulae (Table 8-8)",
+      "Serratus Ant/Post",
+      "Multifidus",
+      "Iliocostalis"
+    ],
+    "fma": "Palpation reproducing referred pain pattern (Table 8-8)",
+    "fascia": "Myofascial trigger point / taut band network",
+    "specialTests": [],
+    "specialTestsNote": "No discrete named special test — see Palpation and STTT/CPA modules below (trigger-point testing).",
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted tests reproduce referred (not true) pain from the palpated trigger point — no true weakness",
+        "Passive stretch of the muscle reproduces the referral"
+      ]
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Lower Trapezius",
+          "state": "Inhibited"
+        },
+        {
+          "name": "Rhomboids / Levator Scapulae",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Classic driver of this referred myofascial pattern."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not primarily a joint-mobility condition (myofascial referral); Scapular Stability testing is the more relevant functional correlate below."
+    },
+    "functionalScreen": {
+      "name": "Scapular Stability Screen (winging/dyskinesis)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Scapular winging/dyskinesis",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "note": "Scapulothoracic control quality is the relevant functional test since these are scapular muscles."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "Pressure Pain Threshold (algometry)"
+    ]
+  },
+  "T10": {
+    "id": "T10",
+    "name": "Ankylosing Spondylitis / Inflammatory Spondyloarthropathy",
+    "required": [
+      "Observation (FHP, flattened chest wall, flattened lumbar lordosis)",
+      "Thoracic AROM (expect global/multi-plane restriction)"
+    ],
+    "recommended": [
+      "Forestier's bowstring sign",
+      "Radiographic imaging (\"bamboo spine\")"
+    ],
+    "observation": [
+      "Global restriction",
+      "Morning stiffness posture"
+    ],
+    "posture": [
+      "Flattened thoracic mobility",
+      "Reduced chest expansion"
+    ],
+    "palpation": [],
+    "fma": "AROM uniformly restricted all planes; Forestier's bowstring sign",
+    "fascia": "Systemic inflammation — not fascial-specific",
+    "specialTests": [
+      {
+        "name": "Forestier's Bowstring Sign"
+      }
+    ],
+    "sttt": {
+      "caveat": true,
+      "findings": [
+        "Resisted tests generally painless early (inflammatory, not mechanical)",
+        "Passive ROM uniformly restricted, non-capsular pattern",
+        "Forestier's bowstring sign is the key positive test"
+      ]
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable — systemic inflammatory diagnosis, not a motor-control compensation pattern."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Thoracic Rotation Mobility",
+      "fields": [
+        {
+          "label": "Rotation",
+          "options": [
+            "Normal",
+            "Severely restricted — bilateral, symmetric"
+          ]
+        }
+      ],
+      "chainEffect": "The library explicitly flags \"severely restricted, bilateral, symmetric\" rotation as a prompt to consider ankylosing spondylitis."
+    },
+    "functionalScreen": {
+      "name": "Thoracic AROM + Rib Mobility Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Chest expansion",
+          "options": [
+            "Normal",
+            "Reduced"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Global AROM",
+          "options": [
+            "Normal",
+            "Globally restricted"
+          ]
+        }
+      ],
+      "note": "Reduced chest expansion on the rib screen is a hallmark AS finding alongside global AROM restriction."
+    },
+    "outcomeMeasures": [
+      "BASDAI",
+      "BASFI",
+      "NPRS",
+      "ESR/CRP (lab)"
+    ]
+  },
+  "T11": {
+    "id": "T11",
+    "name": "Serious Pathology / Red Flag",
+    "redFlag": true,
+    "body": "Cardiac, respiratory, or cord-compression indicator → EMERGENCY same-day referral. Any other red flag (visceral, oncologic, infection, fracture) → URGENT referral.",
+    "action": "Replaces the differential list entirely when triggered. No module cards or test suggestions render. STTT/CPA: not applicable."
+  }
+}

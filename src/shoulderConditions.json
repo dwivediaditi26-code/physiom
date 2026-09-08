@@ -1,0 +1,966 @@
+{
+  "S01": {
+    "id": "S01",
+    "name": "Subacromial Pain Syndrome (Impingement)",
+    "keyExams": [
+      "Subacromial cluster: Hawkins-Kennedy, Neer's, painful arc, Empty Can",
+      "Palpation — greater tuberosity",
+      "Resisted isometrics (pain on contraction)"
+    ],
+    "observation": [
+      "Painful arc on elevation",
+      "subtle scapular dyskinesis",
+      "no wasting"
+    ],
+    "posture": [
+      "Forward head / rounded shoulders",
+      "scapular downward rotation"
+    ],
+    "palpation": [
+      "Greater tuberosity"
+    ],
+    "specialTests": [
+      "Hawkins-Kennedy",
+      "Neer's",
+      "Empty Can Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Abduction (supraspinatus)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Abduction",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted abduction reproduces the painful arc",
+        "Pain only on RESISTED abduction = contractile (tendon) source",
+        "Pain also on PASSIVE abduction = inert (bursa) source"
+      ],
+      "interpretation": "Painful only on RESISTED abduction points to a contractile (tendon) source; pain also on PASSIVE abduction points to an inert (bursa) source."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Serratus Anterior",
+          "state": "Inhibited, functional winging"
+        },
+        {
+          "name": "Lower Trapezius",
+          "state": "Inhibited"
+        },
+        {
+          "name": "Pec Minor",
+          "state": "Check overactivity"
+        }
+      ],
+      "pattern": "Serratus Anterior and Lower Trapezius inhibition drive the scapular dyskinesis; also check Pec Minor overactivity. Fascial component (from source): Pec-minor & posterior-capsule tightness limiting scapular upward rotation."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Scapulohumeral Rhythm Assessment",
+      "fields": [
+        {
+          "label": "Scapulohumeral rhythm pattern",
+          "options": [
+            "Normal 2:1 GH:scapular ratio",
+            "Upper trap dominant",
+            "Serratus deficit, medial winging"
+          ]
+        }
+      ],
+      "chainEffect": "Expect \"Upper trap dominant\" or \"Serratus deficit, medial winging\" (2:1 GH:scapular ratio disrupted), directly narrowing the subacromial space."
+    },
+    "functionalScreen": {
+      "name": "Active Flexion / Overhead Reach + Shoulder Abduction Arc",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Active Flexion / Overhead Reach",
+          "options": [
+            "Normal scapulohumeral rhythm",
+            "Abnormal rhythm / early shrug"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Shoulder Abduction Arc",
+          "options": [
+            "No painful arc",
+            "Painful mid-arc (60–120°)",
+            "Painful at top of range (full 180°)"
+          ]
+        }
+      ],
+      "note": "Combined scapulohumeral-rhythm and subacromial screen, with the arc test isolating the painful-arc zone. FMA source note: Scapular-assist / retraction test eases the arc; overhead reach."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S02": {
+    "id": "S02",
+    "name": "Rotator Cuff Tendinopathy",
+    "keyExams": [
+      "Resisted isometrics / MMT (abduction, ER)",
+      "Empty Can Test",
+      "Palpation — greater tuberosity"
+    ],
+    "observation": [
+      "Painful mid-arc",
+      "minimal wasting",
+      "tender cuff insertion"
+    ],
+    "posture": [
+      "Rounded-shoulder posture increasing subacromial load"
+    ],
+    "palpation": [
+      "Greater tuberosity"
+    ],
+    "specialTests": [
+      "Empty Can Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Abduction",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted External Rotation",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ROM",
+          "options": [
+            "Full and painless",
+            "Restricted and/or painful"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted abduction strong but painful",
+        "Resisted ER strong but painful (Cyriax minor-lesion pattern)",
+        "Passive ROM full and painless"
+      ],
+      "interpretation": "Strong-but-painful resisted abduction and ER is the Cyriax minor-lesion (tendon) pattern; full painless passive ROM rules out a capsular restriction."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Infraspinatus / Teres Minor",
+          "state": "Inhibited, pain inhibition"
+        },
+        {
+          "name": "Anterior / Posterior Deltoid",
+          "state": "Check compensation"
+        }
+      ],
+      "pattern": "Infraspinatus/Teres Minor pain-inhibition with Anterior/Posterior Deltoid compensating. Fascial component (from source): Deep-front-arm-line tension; infraspinatus fascial tightness."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Scapulohumeral Rhythm Assessment",
+      "fields": [
+        {
+          "label": "Scapulohumeral rhythm pattern",
+          "options": [
+            "Normal 2:1 GH:scapular ratio",
+            "Upper trap dominant",
+            "Serratus deficit, medial winging"
+          ]
+        }
+      ],
+      "chainEffect": "Same upper-trap-dominant, serratus-deficit pattern as impingement, since tendinopathy and impingement sit on the same mechanical continuum."
+    },
+    "functionalScreen": {
+      "name": "Shoulder Abduction Arc",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Shoulder Abduction Arc",
+          "options": [
+            "No painful arc",
+            "Painful mid-arc (60–120°)",
+            "Painful at top of range (full 180°)"
+          ]
+        }
+      ],
+      "note": "The painful-arc test is the direct functional correlate of tendon irritability under load. FMA source note: Load-and-shift / resisted-hold reproduces pain, not weakness."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S03": {
+    "id": "S03",
+    "name": "Rotator Cuff Tear (Full-Thickness)",
+    "keyExams": [
+      "Full-thickness cuff tests: ER lag, Drop-Arm, Lift-Off",
+      "MMT — abduction, ER, IR",
+      "Imaging (US/MRI) if lag-sign positive"
+    ],
+    "observation": [
+      "Visible supraspinatus/infraspinatus wasting",
+      "drop of the arm"
+    ],
+    "posture": [
+      "Cannot maintain scapular set under load"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "ER lag",
+      "Drop-Arm",
+      "Lift-Off"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Abduction",
+          "options": [
+            "Strong + Painless",
+            "Weak + Painful (partial tear)",
+            "Weak + Painless (complete rupture)"
+          ]
+        },
+        {
+          "label": "Resisted External Rotation",
+          "options": [
+            "Strong + Painless",
+            "Weak + Painful (partial tear)",
+            "Weak + Painless (complete rupture)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Drop-Arm / lag signs",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted abduction/ER weak & painful (partial tear) or weak & painless (complete rupture)",
+        "Drop-Arm/lag signs positive — confirms the major-lesion pattern"
+      ],
+      "interpretation": "Weak & painful = partial tear; weak & painless = complete rupture. Positive Drop-Arm/lag signs confirm this is a major-lesion (structural) pattern, not a minor tendinopathy."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Infraspinatus / Teres Minor",
+          "state": "Complete inhibition, possible tear"
+        },
+        {
+          "name": "Subscapularis (lift-off)",
+          "state": "Check inhibition"
+        },
+        {
+          "name": "Anterior Deltoid / Teres Major",
+          "state": "Check overcompensation"
+        }
+      ],
+      "pattern": "Complete inhibition of Infraspinatus/Teres Minor suggesting possible tear; check Subscapularis (lift-off) too, with Anterior Deltoid/Teres Major overcompensating. Fascial/structural component (from source): Cuff atrophy; loss of dynamic humeral centring."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Scapulohumeral Rhythm Assessment",
+      "fields": [
+        {
+          "label": "Scapulohumeral rhythm pattern",
+          "options": [
+            "Normal 2:1 GH:scapular ratio",
+            "Combined pattern — upper-trap dominance + serratus winging"
+          ]
+        }
+      ],
+      "chainEffect": "Expect the \"combined pattern\" (upper-trap dominance + serratus winging together), reflecting established, more severe dyskinesis."
+    },
+    "functionalScreen": {
+      "name": "Active Flexion/Overhead Reach + Apley Scratch",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Active Flexion / Overhead Reach",
+          "options": [
+            "Sustains elevation",
+            "Functional drop / cannot sustain elevation"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Apley Scratch (overall reach)",
+          "options": [
+            "Normal reach",
+            "Reduced reach"
+          ]
+        }
+      ],
+      "note": "Cross-check with Apley Scratch for overall reach loss."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S04": {
+    "id": "S04",
+    "name": "Adhesive Capsulitis (Frozen Shoulder)",
+    "keyExams": [
+      "Passive ROM + end-feel (capsular pattern ER>Abd>IR)",
+      "Global ROM assessment"
+    ],
+    "observation": [
+      "Global loss of active AND passive motion",
+      "arm held guarded"
+    ],
+    "posture": [
+      "Compensatory scapular hitching / trunk lean on reach"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (all planes)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive External Rotation",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Passive Abduction",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Passive Internal Rotation",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Capsular",
+            "Hard/bony",
+            "Empty"
+          ]
+        }
+      ],
+      "findings": [
+        "All resisted tests strong & painless (rules out contractile lesion)",
+        "Passive ER/Abd/IR all restricted proportionally (ER>Abd>IR)",
+        "Capsular end-feel on passive testing"
+      ],
+      "interpretation": "The textbook Cyriax capsular pattern: proportional restriction ER>Abd>IR with a capsular end-feel, and painless resisted testing ruling out a contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Anterior Deltoid / Upper Trapezius",
+          "state": "Often overactive, compensating"
+        }
+      ],
+      "pattern": "Not primarily a compensation pattern — this is capsular fibrosis — but Anterior Deltoid/Upper Trapezius are often overactive compensating for the globally restricted joint during reach. Fascial component (from source): Capsular / axillary-fold fascial contracture; pan-directional restriction."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Glenohumeral Internal Rotation (GIRD) Assessment",
+      "fields": [
+        {
+          "label": "GIRD finding",
+          "options": [
+            "Normal range",
+            "Severely restricted (<30°), all planes restricted (capsular pattern ER>Abd>IR)"
+          ]
+        }
+      ],
+      "chainEffect": "Severely restricted (<30°), all planes restricted (capsular pattern ER>Abd>IR)... Adhesive capsulitis likely."
+    },
+    "functionalScreen": {
+      "name": "Apley Scratch Lower (IR)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Apley Scratch Lower (IR) reach",
+          "options": [
+            "Normal (T7 or above)",
+            "Restricted to L1–L5 or below buttock"
+          ]
+        }
+      ],
+      "note": "The functional correlate of severe GIRD. FMA source note: Every functional reach (hair, back-pocket) globally limited."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S05": {
+    "id": "S05",
+    "name": "AC Joint Pathology",
+    "keyExams": [
+      "Cross-Arm / Scarf Test",
+      "Palpation — AC joint",
+      "O'Brien's Test"
+    ],
+    "observation": [
+      "Step deformity / swelling over the AC joint",
+      "tender apex"
+    ],
+    "posture": [
+      "Protracted shoulder loading the joint"
+    ],
+    "palpation": [
+      "AC joint"
+    ],
+    "specialTests": [
+      "Cross-Arm / Scarf Test",
+      "O'Brien's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted GH tests (general)",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Horizontal Adduction (cross-body)",
+          "options": [
+            "No localized AC pain",
+            "Reproduces localized AC pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted GH tests generally painless (non-contractile at the GH)",
+        "Passive horizontal adduction reproduces localized AC pain"
+      ],
+      "interpretation": "A joint-play/passive test — not a resisted-muscle one — is what reproduces the pain here, localizing the lesion to the AC joint rather than the GH musculature."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Upper Trapezius / Pec Minor",
+          "state": "Tightness increases AC joint compressive load"
+        }
+      ],
+      "pattern": "Not a classic muscle-compensation pattern (local joint), but Upper Trap/Pec Minor tightness can increase AC joint compressive load. Fascial component (from source): Deltotrapezial fascia over AC joint."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a chain-cascade condition (local AC joint) — Scapulohumeral Rhythm may still show compensatory guarding but isn't diagnostic here."
+    },
+    "functionalScreen": {
+      "name": "Shoulder Abduction Arc",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Shoulder Abduction Arc",
+          "options": [
+            "No painful arc",
+            "Painful mid-arc (60–120°)",
+            "Painful at top of range (full 180°)"
+          ]
+        }
+      ],
+      "note": "Pain specifically AT THE TOP of the arc (full 180°) — rather than the mid-arc 60–120° zone — is the AC-joint-specific finding on this same functional test."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S06": {
+    "id": "S06",
+    "name": "Biceps Tendinopathy / SLAP",
+    "keyExams": [
+      "Speed's Test",
+      "O'Brien's Test",
+      "Palpation — bicipital groove"
+    ],
+    "observation": [
+      "Tender bicipital groove",
+      "no wasting"
+    ],
+    "posture": [
+      "Anterior shoulder carriage"
+    ],
+    "palpation": [
+      "Bicipital groove"
+    ],
+    "specialTests": [
+      "Speed's Test",
+      "O'Brien's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Elbow Flexion (biceps LH)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Shoulder Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted elbow flexion (biceps LH) strong but painful at the bicipital groove — classic contractile pattern",
+        "Resisted shoulder flexion also reproduces groove pain"
+      ],
+      "interpretation": "Strong-but-painful resisted testing localizing to the bicipital groove is the classic Cyriax contractile-lesion pattern for the long head of biceps."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Biceps Brachii",
+          "state": "Overactive, RC inhibition"
+        },
+        {
+          "name": "Infraspinatus / Subscapularis",
+          "state": "Check facilitation"
+        }
+      ],
+      "pattern": "Biceps is often overactive AS A COMPENSATOR for an inhibited rotator cuff, so check Infraspinatus/Subscapularis facilitation too. Fascial component (from source): Deep-front-arm line (biceps-coracoid) tension."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not primarily a chain-cascade condition (local tendon/labral) — Scapulohumeral Rhythm can be checked as an adjunct if impingement co-exists."
+    },
+    "functionalScreen": {
+      "name": "Active Flexion + Apley Scratch (if catching)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Active Flexion (biceps role)",
+          "options": [
+            "Painless",
+            "Reproduces groove pain"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Catching sensation during rotation (Apley Scratch)",
+          "options": [
+            "Absent",
+            "Present — suggests labral component"
+          ]
+        }
+      ],
+      "note": "A catching sensation on Apley Scratch during rotation suggests a labral component. FMA source note: Resisted elevation / O'Brien functional load, catching with rotation."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S07": {
+    "id": "S07",
+    "name": "Anterior Glenohumeral Instability",
+    "keyExams": [
+      "Apprehension Test",
+      "Relocation Test"
+    ],
+    "observation": [
+      "Apprehension guarding",
+      "possible sulcus sign"
+    ],
+    "posture": [
+      "Loose posture",
+      "scapular dyskinesis"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Apprehension Test",
+      "Relocation Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ER at 90° abduction",
+          "options": [
+            "Normal range",
+            "Excessive range, soft/hypermobile end-feel"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests usually strong/painless unless a secondary tendinopathy exists",
+        "Passive ER at 90° abduction may show EXCESSIVE range with a soft/hypermobile end-feel"
+      ],
+      "interpretation": "Excessive passive ER with a soft/hypermobile end-feel is the opposite of a capsular restriction — pointing toward instability rather than adhesive capsulitis or OA."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Subscapularis",
+          "state": "Inhibited, instability pattern"
+        },
+        {
+          "name": "Pec Major",
+          "state": "Check compensation"
+        }
+      ],
+      "pattern": "Subscapularis inhibition with Pec Major compensating is the exact documented finding for anterior instability. Fascial component (from source): Anterior capsule laxity / global ligament laxity screen."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Glenohumeral Internal Rotation (GIRD) Assessment",
+      "fields": [
+        {
+          "label": "GIRD finding",
+          "options": [
+            "Normal range",
+            "Excessive range / soft end-feel (mirror image of frozen-shoulder finding)"
+          ]
+        }
+      ],
+      "chainEffect": "Here checking for EXCESSIVE range/soft end-feel rather than restriction — the mirror image of the frozen-shoulder finding."
+    },
+    "functionalScreen": {
+      "name": "Apley Scratch Upper (ER)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Apley Scratch Upper (ER)",
+          "options": [
+            "Normal reach",
+            "Excessive ER reach with apprehension near end-range"
+          ]
+        }
+      ],
+      "note": "Anterior instability often shows excessive ER reach with apprehension near end-range. FMA source note: Apprehension/relocation in function, feeling of \"coming out\"."
+    },
+    "outcomeMeasures": [
+      "WOSI (Western Ontario Shoulder Instability)",
+      "SPADI"
+    ]
+  },
+  "S08": {
+    "id": "S08",
+    "name": "Calcific Tendinopathy",
+    "keyExams": [
+      "Imaging (X-ray/US) to confirm calcific deposit"
+    ],
+    "observation": [
+      "Acutely held rigid",
+      "marked guarding",
+      "often no wasting"
+    ],
+    "posture": [
+      "Antalgic protective posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Abduction",
+          "options": [
+            "Strong + Painless",
+            "Strong + Severely Painful",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ROM (acute phase)",
+          "options": [
+            "Full and comfortable",
+            "Markedly guarded/painful"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted abduction acutely strong but severely painful (irritable contractile pattern)",
+        "Passive ROM markedly guarded/painful in the acute phase"
+      ],
+      "interpretation": "An irritable contractile pattern in the acute phase — strong but severely painful resisted testing plus guarded passive ROM — is consistent with an acute calcific deposit."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not classic CPA territory acutely (calcific/chemical irritation) — defer Supraspinatus/Infraspinatus facilitation testing until pain allows. Fascial component (from source): Supraspinatus tendon focal tenderness."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Scapulohumeral Rhythm Assessment",
+      "fields": [
+        {
+          "label": "Scapulohumeral rhythm pattern",
+          "options": [
+            "Normal",
+            "Acute guarding — pseudo-frozen-shoulder rhythm"
+          ]
+        }
+      ],
+      "chainEffect": "Expect acute guarding producing a pseudo-frozen-shoulder rhythm rather than a fixed motor-control fault."
+    },
+    "functionalScreen": {
+      "name": "Active Flexion/Overhead Reach",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Active Flexion / Overhead Reach",
+          "options": [
+            "Full, comfortable elevation",
+            "Marked painful restriction of active elevation"
+          ]
+        }
+      ],
+      "note": "Consistent with the acute irritable phase. FMA source note: Marked painful restriction of active elevation."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S09": {
+    "id": "S09",
+    "name": "Glenohumeral Osteoarthritis",
+    "keyExams": [
+      "Imaging (X-ray) for joint-space/osteophytes",
+      "Passive ROM + end-feel"
+    ],
+    "observation": [
+      "Reduced arm swing",
+      "muscle bulk loss",
+      "possible crepitus"
+    ],
+    "posture": [
+      "Guarded elevated-shoulder posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Painless",
+            "Painful (screen for secondary cuff lesion)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ER / Abd / IR",
+          "options": [
+            "Full",
+            "Restricted proportionally (capsular)"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Soft capsular (adhesive capsulitis)",
+            "Hard/bony (osteoarthritis)"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless unless a secondary cuff lesion co-exists",
+        "Passive ER/Abd/IR restricted proportionally (capsular)",
+        "HARD/bony end-feel"
+      ],
+      "interpretation": "A HARD/bony end-feel on proportional capsular-pattern restriction distinguishes OA from adhesive capsulitis, which has a softer capsular end-feel."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Anterior Deltoid / Upper Trapezius",
+          "state": "Often overactive, compensating"
+        }
+      ],
+      "pattern": "Anterior Deltoid/Upper Trap often overactive compensating for globally restricted, painful GH motion. Fascial component (from source): Global capsular fascial restriction."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Glenohumeral Internal Rotation (GIRD) Assessment",
+      "fields": [
+        {
+          "label": "GIRD finding / end-feel",
+          "options": [
+            "Normal range",
+            "Restricted — HARD/bony end-feel (OA)",
+            "Restricted — soft capsular end-feel (adhesive capsulitis, for comparison)"
+          ]
+        }
+      ],
+      "chainEffect": "Same capsular-pattern restriction as adhesive capsulitis, but with a HARD/bony rather than soft capsular end-feel."
+    },
+    "functionalScreen": {
+      "name": "Apley Scratch Lower (IR)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Apley Scratch Lower (IR)",
+          "options": [
+            "Normal reach",
+            "Restricted — crepitus / bony quality at end-range"
+          ]
+        }
+      ],
+      "note": "Same test as adhesive capsulitis, but expect crepitus/a bony quality at end-range rather than a soft capsular stop."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  },
+  "S10": {
+    "id": "S10",
+    "name": "Cervical Referral / Radiculopathy (exclude)",
+    "keyExams": [
+      "Cervical neurological screen",
+      "Spurling's Test"
+    ],
+    "observation": [
+      "Neck-driven guarding",
+      "dermatomal signs"
+    ],
+    "posture": [
+      "Forward-head posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Spurling's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Shoulder resisted tests",
+          "options": [
+            "Painless / normal strength",
+            "Painful / weak"
+          ]
+        },
+        {
+          "label": "Cervical resisted tests / Spurling's",
+          "options": [
+            "Negative",
+            "Positive — reproduces the pain"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Shoulder resisted tests typically painless/normal strength — rules OUT a local shoulder lesion",
+        "Cervical resisted tests / Spurling's reproduce the pain"
+      ],
+      "interpretation": "The key differentiator: normal shoulder resisted testing plus a positive cervical provocation (Spurling's) confirms this is not a shoulder problem, but a cervical referral."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Scalenes (cervical)",
+          "state": "Overactive; DNF (deep neck flexor) inhibition"
+        }
+      ],
+      "pattern": "An overactive-scalenes/DNF-inhibition pattern is the driver here, not a shoulder muscle. Fascial component (from source): Neural (brachial plexus) upper-limb tension bias."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervicothoracic Junction (C7–T4) Mobility",
+      "fields": [
+        {
+          "label": "CT junction mobility",
+          "options": [
+            "Normal",
+            "Hypomobile"
+          ]
+        }
+      ],
+      "chainEffect": "CT junction hypomobility with arm symptoms is a real alternate driver of \"shoulder\" pain, via brachial-plexus tension or first-rib elevation."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not a shoulder-region functional test — use Cervical AROM Screen + ULNT1 instead (see the STTT/CPA findings above). FMA source note: Neck movement / Spurling's reproduces the shoulder pain."
+    },
+    "outcomeMeasures": [
+      "SPADI or DASH/QuickDASH",
+      "Constant-Murley",
+      "Oxford Shoulder Score"
+    ]
+  }
+}

@@ -1,0 +1,1179 @@
+{
+  "C01": {
+    "id": "C01",
+    "name": "Mechanical / Non-Specific Neck Pain",
+    "required": [
+      "Observation (posture, head position, guarding)",
+      "Cervical AROM all planes",
+      "Neurological screen (expect normal)",
+      "Palpation (soft tissue + segmental)"
+    ],
+    "recommended": [
+      "PA central + unilateral vertebral pressures",
+      "Postural assessment (FHP, upper crossed)",
+      "Functional movement screen",
+      "Cervical MMT — craniocervical flexion"
+    ],
+    "observation": [
+      "Localised guarding",
+      "No neurological signs"
+    ],
+    "posture": [
+      "Upper-crossed / forward-head posture"
+    ],
+    "palpation": [
+      "Soft tissue (cervical paraspinals)",
+      "Segmental (C2–C7 facets)"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Side Flexion (L/R)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Rotation (L/R)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Active/Passive ROM",
+          "options": [
+            "Near full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Pattern",
+          "options": [
+            "Non-capsular",
+            "Capsular"
+          ]
+        },
+        {
+          "label": "Pain",
+          "options": [
+            "Only at end-range",
+            "Throughout range",
+            "None"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted movements strong & painless",
+        "ROM near-full, non-capsular",
+        "Pain only at end-range"
+      ],
+      "interpretation": "Rules out a contractile lesion; findings are consistent with a mechanical/non-specific pattern rather than a structural or radicular source."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Deep Neck Flexors (DNF)",
+          "state": "Inhibited"
+        },
+        {
+          "name": "SCM / Scalenes",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Classic “Inhibited → SCM/scalenes overactive → forward head” pattern."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Flexion/Extension Mobility",
+      "fields": [
+        {
+          "label": "Flexion/Extension mobility",
+          "options": [
+            "Near-normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "chainEffect": "Expect near-normal; if extension-restricted, screen for a thoracic-stiffness driver before treating the neck in isolation."
+    },
+    "functionalScreen": {
+      "name": "Deep Neck Flexor Endurance (chin-tuck hold)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Hold time",
+          "unit": "s",
+          "normal": "normal 38–40s"
+        }
+      ],
+      "note": "Direct functional correlate of the DNF-inhibition CPA finding above."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C02": {
+    "id": "C02",
+    "name": "Cervical Radiculopathy (Disc Herniation / Nerve Root Compression)",
+    "required": [
+      "Observation",
+      "Cervical AROM",
+      "Neurological screen (myotomes, dermatomes, reflexes)",
+      "Spurling's Test",
+      "Cervical Distraction Test"
+    ],
+    "recommended": [
+      "ULTT1 — Median Nerve",
+      "ULTT2 — Radial Nerve",
+      "ULTT3 — Ulnar Nerve",
+      "Jackson's Compression Test"
+    ],
+    "observation": [
+      "Antalgic head tilt away from side",
+      "Arm guarding"
+    ],
+    "posture": [
+      "Forward-head posture loading lower cervical"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Spurling's Test",
+      "Cervical Distraction Test",
+      "ULTT1 — Median Nerve",
+      "ULTT2 — Radial Nerve",
+      "ULTT3 — Ulnar Nerve",
+      "Jackson's Compression Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "C5 myotome (deltoid/biceps)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "C6 myotome (wrist ext/biceps)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "C7 myotome (triceps)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "C8 myotome (finger flexors)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "T1 myotome (interossei)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Quadrant (Ext + Rotation + Side-flex)",
+          "options": [
+            "No arm symptoms",
+            "Reproduces arm symptoms"
+          ]
+        }
+      ],
+      "findings": [
+        "Myotome weakness/painless pattern",
+        "Passive quadrant reproduces arm symptoms"
+      ],
+      "interpretation": "Root involvement is supported over a primary contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Scalenes",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Overactive scalenes can mimic/aggravate arm symptoms via thoracic-outlet overlap — screen before attributing everything to the root."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility-driven condition (nerve root compression) — kinetic-chain testing is secondary; focus on neural provocation instead."
+    },
+    "functionalScreen": {
+      "name": "ULNT1 (median nerve, C6/C7 bias)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces arm symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Sensitised / eased by",
+          "options": [
+            "Sensitised by lateral flexion away",
+            "Eased by lateral flexion toward"
+          ]
+        }
+      ],
+      "note": "Direct functional correlate of a cervical radicular pattern."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C03": {
+    "id": "C03",
+    "name": "Cervical Facet (Zygapophyseal) Joint Dysfunction",
+    "required": [
+      "Observation",
+      "Cervical AROM (capsular pattern: side flex + rotation > extension)",
+      "Neurological screen (expect normal)",
+      "Jackson's Compression Test"
+    ],
+    "recommended": [
+      "PA central + unilateral vertebral pressures",
+      "Palpation (segmental)",
+      "Cervical Rotation Lateral Flexion (CRLF)"
+    ],
+    "observation": [
+      "Localised guarding",
+      "No neurological signs"
+    ],
+    "posture": [
+      "Upper-crossed / forward-head posture"
+    ],
+    "palpation": [
+      "Segmental (facet-level)"
+    ],
+    "specialTests": [
+      "Jackson's Compression Test",
+      "Cervical Rotation Lateral Flexion (CRLF)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Rotation",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Rotation",
+          "options": [
+            "No pain",
+            "Pain reproduced"
+          ]
+        },
+        {
+          "label": "Passive Side Flexion",
+          "options": [
+            "No pain",
+            "Pain reproduced"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Capsular",
+            "Hard",
+            "Empty"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests painless",
+        "Passive rotation reproduces local pain",
+        "Passive side-flexion reproduces local pain",
+        "Capsular end-feel"
+      ],
+      "interpretation": "Capsular pattern here is side-flexion + rotation limited more than extension — consistent with facet joint involvement."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Suboccipital muscles / Splenius",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Overactive posterior cervical muscles guarding the facet."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Rotation Mobility",
+      "fields": [
+        {
+          "label": "Rotation",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Pattern",
+          "options": [
+            "C1/C2 dominant",
+            "Lower cervical dominant"
+          ]
+        }
+      ],
+      "chainEffect": "Expect the “lower cervical dominant, FRT normal” pattern (facet/disc-related, not C1/C2); treat co-existing thoracic stiffness first if present."
+    },
+    "functionalScreen": {
+      "name": "Cervical AROM Screen (6-plane)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Capsular pattern reproduced on combined movement",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Capsular pattern = side-flexion + rotation limited more than extension."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C04": {
+    "id": "C04",
+    "name": "Cervicogenic Headache",
+    "required": [
+      "Observation (head/neck posture)",
+      "Cervical AROM (esp. upper cervical rotation)",
+      "Flexion-Rotation Test (FRT)",
+      "Palpation (C0-C1, C1-C2, suboccipital)"
+    ],
+    "recommended": [
+      "Cervical Distraction Test",
+      "Postural assessment (FHP)",
+      "Cervical MMT — craniocervical flexion"
+    ],
+    "observation": [
+      "Unilateral suboccipital tenderness",
+      "Restricted C1-2 rotation"
+    ],
+    "posture": [
+      "Forward-head posture"
+    ],
+    "palpation": [
+      "C0–C1",
+      "C1–C2",
+      "Suboccipital"
+    ],
+    "specialTests": [
+      "Flexion-Rotation Test (FRT)",
+      "Cervical Distraction Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Flexion-Rotation Test (upper-cervical rotation)",
+          "options": [
+            "Negative — no headache reproduced",
+            "Positive — reproduces headache"
+          ]
+        }
+      ],
+      "findings": [
+        "Passive upper-cervical rotation (FRT) reproduces headache",
+        "Resisted extension reproduces suboccipital pain (if present)"
+      ],
+      "interpretation": "A positive FRT localises dysfunction to C1–C2 — the most common documented cause of cervicogenic headache in this library."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Suboccipital muscles",
+          "state": "Overactive, DNF compensation"
+        }
+      ],
+      "pattern": "Base-of-skull headache with restricted C0–C1."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Rotation Mobility — Flexion-Rotation Test (FRT) component",
+      "fields": [
+        {
+          "label": "FRT",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Pattern",
+          "options": [
+            "C1/C2 dominant",
+            "Lower cervical dominant"
+          ]
+        }
+      ],
+      "chainEffect": "“Restricted, C1/C2 dominant” is explicitly documented as the most common cause of cervicogenic headache in this app's own library."
+    },
+    "functionalScreen": {
+      "name": "Postural Screen (CVA + FHP)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Craniovertebral angle",
+          "unit": "°",
+          "normal": "<50° = FHP driving fault"
+        },
+        {
+          "type": "choice",
+          "label": "Forward Head Posture",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "note": "Cross-check the Cervicogenic Dizziness Screen if lightheadedness co-exists."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C05": {
+    "id": "C05",
+    "name": "Whiplash-Associated Disorder (WAD)",
+    "required": [
+      "Observation",
+      "Cervical AROM all planes (guarding/quality)",
+      "Neurological screen",
+      "Sharp-Purser Test",
+      "Alar Ligament Test"
+    ],
+    "recommended": [
+      "Palpation",
+      "VBI / 3-Part Test before manipulation",
+      "Outcome measure (NDI)"
+    ],
+    "observation": [
+      "Diffuse guarding",
+      "Protective stiffness"
+    ],
+    "posture": [
+      "Protective forward-head / elevated-shoulder posture"
+    ],
+    "palpation": [
+      "Cervical palpation (site not further specified in library)"
+    ],
+    "specialTests": [
+      "Sharp-Purser Test",
+      "Alar Ligament Test",
+      "VBI / 3-Part Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Side Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Rotation",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ROM (all directions)",
+          "options": [
+            "Normal end-feel",
+            "Muscle-spasm end-feel"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests globally guarded/weak",
+        "Passive ROM shows a muscle-spasm end-feel in all directions"
+      ],
+      "interpretation": "Acute muscle spasm pattern, not a discrete structural lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Sternocleidomastoid (SCM)",
+          "state": "Bilateral overactive"
+        }
+      ],
+      "pattern": "Acute anterior-neck guarding pattern."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Flexion/Extension Mobility",
+      "fields": [
+        {
+          "label": "Pattern",
+          "options": [
+            "Globally guarded",
+            "Single-segment restriction",
+            "Single-plane restriction"
+          ]
+        }
+      ],
+      "chainEffect": "Expect a globally guarded pattern rather than a single-segment or single-plane restriction."
+    },
+    "functionalScreen": {
+      "name": "Postural Screen (CVA + FHP)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Craniovertebral angle",
+          "unit": "°"
+        },
+        {
+          "type": "choice",
+          "label": "Forward Head Posture",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "note": "At baseline — defer Deep Neck Flexor Endurance testing until acute guarding has settled."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C06": {
+    "id": "C06",
+    "name": "Acute Cervical Muscle Strain / Torticollis",
+    "required": [
+      "Observation (spasm/guarding, deformity)",
+      "Cervical AROM (pain on stretch)",
+      "Palpation (localize strain)",
+      "Neurological screen (expect normal)"
+    ],
+    "recommended": [
+      "Resisted isometric movements",
+      "X-ray only if red flags present"
+    ],
+    "observation": [
+      "Visible muscle spasm",
+      "Head held in rotated/tilted posture"
+    ],
+    "posture": [
+      "Antalgic lateral tilt / rotation away from painful side"
+    ],
+    "palpation": [
+      "Strained muscle (localize)"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Direction of strain (side-flexion / rotation)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted test in the direction of strain: strong but painful"
+      ],
+      "interpretation": "Classic Cyriax contractile-lesion pattern."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "SCM or Scalenes (whichever is in spasm)",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Acute-guarding pattern rather than a chronic MCC-inhibition compensation."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Rotation / Flexion-Extension Mobility",
+      "fields": [
+        {
+          "label": "Restriction pattern",
+          "options": [
+            "Direction-specific, guarding-limited",
+            "Fixed joint block"
+          ]
+        }
+      ],
+      "chainEffect": "Direction-specific, guarding-limited restriction that improves as the strain settles, not a fixed joint block."
+    },
+    "functionalScreen": {
+      "name": "Cervical AROM Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Pattern at baseline",
+          "options": [
+            "Symmetric",
+            "Guarded, asymmetric"
+          ]
+        }
+      ],
+      "note": "Document the guarded, asymmetric pattern at baseline to track recovery of symmetric range."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "PSFS",
+      "Return-to-activity timeline"
+    ]
+  },
+  "C07": {
+    "id": "C07",
+    "name": "Cervical Spondylosis with Degenerative Stenosis",
+    "required": [
+      "Observation",
+      "Cervical AROM (extension likely limited)",
+      "Bilateral neurological screen",
+      "Spurling's Test"
+    ],
+    "recommended": [
+      "Cervical x-ray",
+      "MRI if red flags/progressive signs",
+      "Gait assessment (myelopathic gait)"
+    ],
+    "observation": [
+      "Guarded multi-level stiffness",
+      "Possible bilateral arm signs"
+    ],
+    "posture": [
+      "Reduced cervical lordosis",
+      "Forward-head posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Spurling's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Rotation",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Extension end-feel",
+          "options": [
+            "Normal/springy",
+            "Hard/bony (osteophyte)"
+          ]
+        },
+        {
+          "label": "Active ROM (global)",
+          "options": [
+            "Normal",
+            "Globally reduced across levels"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests painless",
+        "Passive extension shows a hard/bony end-feel",
+        "Active ROM globally reduced across levels"
+      ],
+      "interpretation": "Degenerative/osteophytic pattern across multiple levels."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Upper Trapezius",
+          "state": "Overactive, DNF inhibition"
+        }
+      ],
+      "pattern": "Common in chronic multi-level stiffness."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Flexion/Extension Mobility",
+      "fields": [
+        {
+          "label": "Extension",
+          "options": [
+            "Normal",
+            "Restricted — hard/bony end-feel"
+          ]
+        },
+        {
+          "label": "Gait screen (myelopathic pattern)",
+          "options": [
+            "Normal",
+            "Abnormal — refer, see red-flag override"
+          ]
+        }
+      ],
+      "chainEffect": "Extension likely restricted with a hard/bony end-feel across multiple levels; gait screen for a myelopathic pattern before proceeding."
+    },
+    "functionalScreen": {
+      "name": "Cervical AROM Screen + bilateral neuro/gait check",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "AROM pattern",
+          "options": [
+            "Symmetric",
+            "Globally reduced"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Gait/neuro check",
+          "options": [
+            "Normal",
+            "Abnormal"
+          ]
+        }
+      ],
+      "note": "Bilateral neurological/gait check layered on top given possible multi-level involvement."
+    },
+    "outcomeMeasures": [
+      "Neck Disability Index (NDI)",
+      "PSFS",
+      "NPRS"
+    ]
+  },
+  "C08": {
+    "id": "C08",
+    "name": "Brachial Plexus Lesion / Burner-Stinger Syndrome",
+    "lowConfidence": true,
+    "required": [
+      "Observation",
+      "Neurological screen (document resolution over time)",
+      "Cervical AROM (expect full, non-provocative)"
+    ],
+    "recommended": [
+      "ULTT1 — Median Nerve",
+      "Spurling's Test (distinguish from radiculopathy)"
+    ],
+    "observation": [
+      "Arm guarding",
+      "Possible deltoid/bicep wasting"
+    ],
+    "posture": [
+      "Protective elevated-shoulder posture on affected side"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "ULTT1 — Median Nerve",
+      "Spurling's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "C5 myotome",
+          "options": [
+            "Normal",
+            "Transiently weak"
+          ]
+        },
+        {
+          "label": "C6 myotome",
+          "options": [
+            "Normal",
+            "Transiently weak"
+          ]
+        },
+        {
+          "label": "C7 myotome",
+          "options": [
+            "Normal",
+            "Transiently weak"
+          ]
+        },
+        {
+          "label": "C8 myotome",
+          "options": [
+            "Normal",
+            "Transiently weak"
+          ]
+        },
+        {
+          "label": "T1 myotome",
+          "options": [
+            "Normal",
+            "Transiently weak"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted myotome tests transiently weak in a plexus (not single-root) distribution"
+      ],
+      "interpretation": "ULTT is more informative than a single resisted test here."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a classic compensation pattern (acute traction neurapraxia) — track resisted myotome strength recovery over time rather than a muscle-pair test."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility condition — the plexus is stretched, not a joint restricted; kinetic-chain testing doesn't apply."
+    },
+    "functionalScreen": {
+      "name": "ULNT1 (median bias)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "A general plexus-tension screen — won't isolate radial/ulnar components of a broader plexus stretch."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "PSFS",
+      "Return-to-sport timeline"
+    ]
+  },
+  "C09": {
+    "id": "C09",
+    "name": "Peripheral Nerve Entrapment (Distal, Non-Radicular)",
+    "lowConfidence": true,
+    "required": [
+      "Neurological screen (peripheral nerve vs dermatomal charts)",
+      "ULTT1 — Median Nerve",
+      "ULTT2 — Radial Nerve",
+      "ULTT3 — Ulnar Nerve"
+    ],
+    "recommended": [
+      "Tinel's Sign at Wrist",
+      "Tinel's Sign at Elbow",
+      "Cervical AROM (expect non-provocative)"
+    ],
+    "observation": [
+      "Localised hand/forearm wasting in single nerve distribution"
+    ],
+    "posture": [
+      "Sustained wrist/elbow posture aggravating entrapment site"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "ULTT1 — Median Nerve",
+      "ULTT2 — Radial Nerve",
+      "ULTT3 — Ulnar Nerve",
+      "Tinel's Sign at Wrist",
+      "Tinel's Sign at Elbow"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Muscle of suspected entrapped nerve (e.g. resisted pronation for median/pronator teres)",
+          "options": [
+            "Weak + Painless",
+            "Normal"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Tinel's at entrapment site",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted test of the entrapped nerve's muscle(s) weak & painless",
+        "Tinel's positive at the entrapment site"
+      ],
+      "interpretation": "Site-specific peripheral entrapment pattern, not a cervical root source."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Pronator Teres (upper-limb)",
+          "state": "Overactive, pronator syndrome if median"
+        }
+      ],
+      "pattern": "Match the specific muscle to the suspected entrapment site."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility condition (distal peripheral nerve entrapment) — kinetic-chain reasoning doesn't add to a site-specific entrapment."
+    },
+    "functionalScreen": {
+      "name": "ULNT1 / 2 / 3 (matched to suspected nerve)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces distal symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Cross-reference Elbow's ULNT2 for radial."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "PSFS",
+      "Grip-strength dynamometry"
+    ]
+  },
+  "C10": {
+    "id": "C10",
+    "name": "Cervical Myofascial Pain",
+    "lowConfidence": true,
+    "required": [
+      "Palpation — upper trapezius, SCM, levator scapulae (Travell & Simons)",
+      "Palpation — suboccipital, splenius, semispinalis"
+    ],
+    "recommended": [
+      "Palpation — scalene muscles (cross-check vs C02/C08)",
+      "Reproduction of usual pain on sustained trigger-point palpation"
+    ],
+    "observation": [
+      "Taut bands",
+      "Trigger points (SCM, upper trapezius, levator scapulae)"
+    ],
+    "posture": [
+      "Sustained-posture loading pattern"
+    ],
+    "palpation": [
+      "Upper trapezius",
+      "SCM",
+      "Levator scapulae",
+      "Suboccipital",
+      "Splenius (capitis/cervicis)",
+      "Semispinalis (capitis/cervicis)",
+      "Scalenes (cross-check vs C02/C08)"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Muscle group under referred-pain suspicion",
+          "options": [
+            "Reproduces referred pain, no true weakness",
+            "Normal"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive stretch of the muscle",
+          "options": [
+            "Reproduces referral",
+            "No referral"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests reproduce the referred pain pattern without true weakness",
+        "Passive stretch of the muscle reproduces the referral"
+      ],
+      "interpretation": "Trigger-point response, not a structural contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Upper Trapezius",
+          "state": "check facilitation/overactivity"
+        },
+        {
+          "name": "Levator Scapulae",
+          "state": "check facilitation/overactivity"
+        },
+        {
+          "name": "SCM",
+          "state": "check facilitation/overactivity"
+        }
+      ],
+      "pattern": "Check facilitation/inhibition and compensatory overactivity of all three."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Cervical Flexion/Extension Mobility",
+      "fields": [
+        {
+          "label": "Restriction source",
+          "options": [
+            "Secondary — taut posterior muscle bands",
+            "True joint block"
+          ]
+        }
+      ],
+      "chainEffect": "May show a SECONDARY restriction from taut posterior muscle bands, not a true joint block — distinguish before mobilising the joint itself."
+    },
+    "functionalScreen": {
+      "name": "Postural Screen (CVA + FHP)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Craniovertebral angle",
+          "unit": "°"
+        },
+        {
+          "type": "choice",
+          "label": "Forward Head Posture",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "note": "Sustained-posture loading is the documented driver of this trigger-point pattern."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "Pressure Pain Threshold (algometry)"
+    ]
+  },
+  "C11": {
+    "id": "C11",
+    "name": "Serious Pathology / Red Flag",
+    "redFlag": true,
+    "body": "Myelopathy, vertebrobasilar insufficiency, or suspected fracture → EMERGENCY same-day referral; no manipulation/end-range testing. Instability or other red flag → URGENT referral before continuing.",
+    "action": "Replaces the differential list entirely when triggered. No module cards or test suggestions render. STTT/CPA: not applicable — do not resisted-test or compensation-test until the red flag is cleared."
+  }
+}

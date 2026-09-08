@@ -1,0 +1,1013 @@
+{
+  "L01": {
+    "id": "L01",
+    "name": "Mechanical / Non-Specific Low Back Pain",
+    "required": [
+      "Observation (posture, gait, guarding)",
+      "Lumbar AROM all planes",
+      "Repeated movement assessment (McKenzie-style)",
+      "Neurological screen (expect normal)",
+      "SLR (expect negative)"
+    ],
+    "recommended": [
+      "Palpation (soft tissue + segmental)",
+      "PA/central PA glides",
+      "Core/lumbopelvic motor control",
+      "Functional movement screen",
+      "ODI / NPRS / fear-avoidance screen"
+    ],
+    "observation": [
+      "Muscle guarding",
+      "Antalgic posture",
+      "Lateral shift"
+    ],
+    "posture": [
+      "Flattened or increased lordosis"
+    ],
+    "palpation": [
+      "Soft tissue",
+      "Segmental",
+      "Thoracolumbar fascia tightness"
+    ],
+    "specialTests": [
+      "SLR"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted trunk flexion/extension/side-flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "PA spring test",
+          "options": [
+            "Normal/mild stiffness",
+            "Hypermobile",
+            "Hypomobile/rigid"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted trunk flexion/extension/side-flexion painless & strong",
+        "PA spring test normal/mild stiffness, no single hypermobile or rigid level"
+      ],
+      "interpretation": "Rules out a contractile lesion. Repeated movement assessment (McKenzie-style) is expected to show a directional preference."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Transversus Abdominis (TA)",
+          "state": "Inhibited, erector spinae dominant"
+        }
+      ],
+      "pattern": "\"Inhibited, erector spinae dominant\" is the textbook chronic-LBP CPA finding."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Segmental Stability Tests",
+      "fields": [
+        {
+          "label": "Prone instability / ASLR / TA drawing-in (baseline)",
+          "options": [
+            "Normal",
+            "Mild TA drawing-in deficit",
+            "Positive prone instability test"
+          ]
+        }
+      ],
+      "chainEffect": "Used as a baseline (prone instability, ASLR, TA drawing-in) — expect normal or only mild TA drawing-in deficit, not a positive prone instability test."
+    },
+    "functionalScreen": {
+      "name": "Sit-to-Stand",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Rise strategy",
+          "options": [
+            "Hip-hinge dominant",
+            "Lumbar-dominant"
+          ]
+        }
+      ],
+      "note": "The general hip-hinge-vs-lumbar-dominant strategy screen; a lumbar-dominant rise pattern here corroborates the TA/erector CPA finding."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "NPRS",
+      "STarT Back"
+    ]
+  },
+  "L02": {
+    "id": "L02",
+    "name": "Lumbar Disc Herniation / Radiculopathy",
+    "required": [
+      "Observation",
+      "Lumbar AROM",
+      "Repeated movement assessment",
+      "Neurological screen (myotomes, dermatomes, reflexes)",
+      "SLR",
+      "Slump test"
+    ],
+    "recommended": [
+      "Crossed SLR",
+      "Femoral nerve tension test (if upper lumbar)",
+      "Functional testing (sit-to-stand, gait, squat)",
+      "Core assessment (after irritability considered)"
+    ],
+    "observation": [
+      "Antalgic lean",
+      "Dermatomal signs",
+      "Possible foot-drop"
+    ],
+    "posture": [
+      "Lateral shift / flattened lordosis"
+    ],
+    "palpation": [
+      "Neural (sciatic) lower-limb tension line"
+    ],
+    "specialTests": [
+      "SLR",
+      "Slump test",
+      "Crossed SLR",
+      "Femoral nerve tension test (if upper lumbar)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "L4 myotome (quadriceps)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "L5 myotome (EHL)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        },
+        {
+          "label": "S1 myotome (calf)",
+          "options": [
+            "Normal",
+            "Weak"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "SLR / Slump",
+          "options": [
+            "No leg symptoms reproduced",
+            "Reproduces leg symptoms"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted hip/knee myotome tests (L4 quads, L5 EHL, S1 calf) may be weak & painless",
+        "Passive SLR/Slump reproduces leg pain"
+      ],
+      "interpretation": "Root involvement (not a contractile lesion) is supported — myotome weakness is painless (root pattern), and passive SLR/Slump reproduces neural, not capsular, pain."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Multifidus (at the herniated level)",
+          "state": "Secondarily inhibited — recheck once acute phase settles"
+        }
+      ],
+      "pattern": "Not a classic muscle-pair pattern (neural compression). Recheck Multifidus at the herniated level once the acute phase settles — often secondarily inhibited."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Flexion Control (Waiter's Bow)",
+      "fields": [
+        {
+          "label": "Forward bending pattern",
+          "options": [
+            "Normal",
+            "Aberrant movement / painful arc",
+            "Lateral trunk shift reducing on return"
+          ]
+        }
+      ],
+      "chainEffect": "Watch for the \"aberrant movement, painful arc\" pattern — a lateral trunk shift on forward bending that reduces on return is explicitly documented as indicating disc herniation."
+    },
+    "functionalScreen": {
+      "name": "Forward Bend (lateral shift + centralisation screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Lateral shift on forward bend",
+          "options": [
+            "Absent",
+            "Present, reduces on return",
+            "Present, does not reduce"
+          ]
+        }
+      ],
+      "note": "The direct McKenzie-style functional correlate of this condition."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index or Roland-Morris (RMDQ)",
+      "STarT Back"
+    ]
+  },
+  "L03": {
+    "id": "L03",
+    "name": "Lumbar Facet (Zygapophyseal) Joint Dysfunction",
+    "required": [
+      "Observation",
+      "Lumbar AROM all planes (restriction pattern)",
+      "Quadrant Test / Kemp's Test",
+      "Neurological screen"
+    ],
+    "recommended": [
+      "PA central + unilateral vertebral pressures",
+      "Passive physiological intervertebral movements",
+      "One-leg standing (stork) lumbar extension test",
+      "X-ray if degenerative changes suspected"
+    ],
+    "observation": [
+      "Extension-aggravated posture",
+      "Unilateral muscle guarding"
+    ],
+    "posture": [
+      "Increased lordosis",
+      "Rotation restriction"
+    ],
+    "palpation": [
+      "Lumbar paraspinal fascial tightness"
+    ],
+    "specialTests": [
+      "Quadrant Test / Kemp's Test",
+      "One-leg standing (stork) lumbar extension test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted trunk movements",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive extension + rotation (Kemp's)",
+          "options": [
+            "No pain",
+            "Reproduces local pain, capsular end-feel"
+          ]
+        },
+        {
+          "label": "PA spring test at the level",
+          "options": [
+            "Normal",
+            "Hypomobile/painful"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted trunk movements painless",
+        "Passive extension + rotation (Kemp's) reproduces local pain with a capsular end-feel",
+        "PA spring hypomobile/painful at the level"
+      ],
+      "interpretation": "Rules out a contractile lesion; capsular-pattern findings on passive extension/rotation localize the source to the facet joint."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Multifidus (at the symptomatic segment)",
+          "state": "Inhibited, unilateral"
+        }
+      ],
+      "pattern": "\"Inhibited, unilateral\" classically co-occurs with segmental facet irritation."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Rotation Control",
+      "fields": [
+        {
+          "label": "Thoracic rotation",
+          "options": [
+            "Normal",
+            "Stiff — forcing lumbar load-bearing rotation"
+          ]
+        }
+      ],
+      "chainEffect": "A stiff thoracic spine forcing lumbar load-bearing rotation can drive facet loading — check thoracic rotation before treating the facet in isolation."
+    },
+    "functionalScreen": {
+      "name": "Squat Pattern",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Return-to-stand (extension) phase",
+          "options": [
+            "Non-provocative",
+            "Provokes facet-level pain"
+          ]
+        }
+      ],
+      "note": "Watch the return-to-stand (extension) phase specifically, since facet loading is most provoked there."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "NPRS"
+    ]
+  },
+  "L04": {
+    "id": "L04",
+    "name": "Lumbar Spinal Stenosis",
+    "required": [
+      "Observation (often flexed posture)",
+      "Lumbar AROM (extension likely limited)",
+      "Bilateral neuro screen",
+      "Bilateral SLR"
+    ],
+    "recommended": [
+      "Bicycle Test of van Gelderen",
+      "Stoop Test",
+      "Treadmill Test (1.2mph + preferred, up to 15min)",
+      "Pulse check (vascular vs neurogenic claudication)"
+    ],
+    "observation": [
+      "Flexed posture",
+      "Wide-based gait"
+    ],
+    "posture": [
+      "Stooped forward posture relieving symptoms"
+    ],
+    "palpation": [
+      "Neural canal / foraminal narrowing pattern"
+    ],
+    "specialTests": [
+      "Bilateral SLR",
+      "Bicycle Test of van Gelderen",
+      "Stoop Test",
+      "Treadmill Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive extension",
+          "options": [
+            "Relieves symptoms",
+            "Reproduces leg symptoms (canal narrows)"
+          ]
+        },
+        {
+          "label": "Passive flexion",
+          "options": [
+            "Reproduces leg symptoms",
+            "Relieves symptoms"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless (non-contractile)",
+        "Passive extension reproduces leg symptoms (canal narrows)",
+        "Flexion relieves — the inverse of a typical disc pattern"
+      ],
+      "interpretation": "Bicycle test / stoop test and treadmill testing (neurogenic vs vascular claudication) are the key provocative maneuvers for distinguishing stenosis from a disc pattern."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "TA / Multifidus",
+          "state": "Often globally inhibited from long-standing guarding"
+        },
+        {
+          "name": "Glute Max",
+          "state": "Frequently also inhibited from reduced walking tolerance (deconditioning)"
+        }
+      ],
+      "pattern": "Global inhibition pattern from long-standing guarding and deconditioning."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Flexion Control",
+      "fields": [
+        {
+          "label": "Directional preference",
+          "options": [
+            "Flexion-biased postures relieve",
+            "Extension provokes"
+          ]
+        }
+      ],
+      "chainEffect": "Expect the inverse of the disc pattern: flexion-biased postures relieve, extension provokes; a McKenzie flexion preference here fits stenosis rather than herniation."
+    },
+    "functionalScreen": {
+      "name": "Squat Pattern",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Tolerance for flexion-biased loading strategy",
+          "options": [
+            "Well tolerated",
+            "Poorly tolerated"
+          ]
+        }
+      ],
+      "note": "Assess tolerance for a flexion-biased loading strategy, since gait-based bicycle/stoop provocation (STTT above) isn't part of this app's seated/standing functional screen set."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "Swiss Spinal Stenosis Questionnaire"
+    ]
+  },
+  "L05": {
+    "id": "L05",
+    "name": "Sacroiliac Joint (SIJ) Dysfunction",
+    "required": [
+      "Observation",
+      "SIJ provocation CLUSTER: Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's",
+      "Active SLR"
+    ],
+    "recommended": [
+      "Palpation (PSIS, sacral sulcus — weak inter-rater reliability)",
+      "Standing/sitting flexion tests",
+      "ESR/CRP/HLA-B27 referral if inflammatory features co-exist"
+    ],
+    "observation": [
+      "Pelvic asymmetry",
+      "PSIS level difference"
+    ],
+    "posture": [
+      "Innominate rotation / leg-length discrepancy posture"
+    ],
+    "palpation": [
+      "PSIS",
+      "Sacral sulcus — weak inter-rater reliability",
+      "Posterior sacroiliac ligament / thoracolumbar fascia"
+    ],
+    "specialTests": [
+      "SIJ Compression Test",
+      "SIJ Distraction Test",
+      "Sacral Thrust Test",
+      "Gaenslen's Test",
+      "FABERE/Patrick Test",
+      "Gillet's Test",
+      "Active SLR"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted hip abduction/extension",
+          "options": [
+            "Painless",
+            "Painful (secondary — glute med/involved musculature)"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted hip abduction/extension may be painful secondarily (glute med/involved musculature)",
+        "The SIJ provocation cluster is the primary joint-play equivalent"
+      ],
+      "interpretation": "SIJ provocation cluster: 3+ of 5 positive = SIJ source; active SLR is also part of the required battery. (Note: the source lists six named sub-tests under \"cluster\" — Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's — while its own scoring rule refers to \"3+ of 5\"; both are reproduced verbatim here.)"
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gluteus Maximus",
+          "state": "Inhibited, QL dominant"
+        },
+        {
+          "name": "Piriformis",
+          "state": "Often co-compensates"
+        }
+      ],
+      "pattern": "\"Inhibited, QL dominant\" is the classic driver of SIJ-pattern pain via altered force closure."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Segmental Stability's Active Straight Leg Raise component",
+      "fields": [
+        {
+          "label": "ASLR with manual ASIS compression",
+          "options": [
+            "No change",
+            "Improves with compression (positive force-closure sign)"
+          ]
+        }
+      ],
+      "chainEffect": "Manual ASIS compression improving the ASLR is the direct documented sign of an SIJ force-closure deficit."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Stance (SIJ & Lumbopelvic Control / Trendelenburg)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Pelvic control",
+          "options": [
+            "Stable",
+            "Trendelenburg / drop"
+          ]
+        }
+      ],
+      "note": "The named functional test for exactly this pattern."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "NPRS"
+    ]
+  },
+  "L06": {
+    "id": "L06",
+    "name": "Lumbar Instability",
+    "lowConfidence": true,
+    "lowConfidenceLabel": "Weakest data coverage",
+    "required": [
+      "Observation for instability jog during active movement",
+      "Passive Lumbar Extension Test",
+      "H and I Stability Tests"
+    ],
+    "recommended": [
+      "Farfan Torsion Test",
+      "Pheasant Test",
+      "Imaging if structural instability/spondylolisthesis suspected"
+    ],
+    "observation": [
+      "Instability jog / catch during active movement"
+    ],
+    "posture": [
+      "Excessive segmental motion on PA spring"
+    ],
+    "palpation": [
+      "Deep segmental stabiliser insufficiency"
+    ],
+    "specialTests": [
+      "Passive Lumbar Extension Test",
+      "H and I Stability Tests",
+      "Farfan Torsion Test",
+      "Pheasant Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted trunk tests",
+          "options": [
+            "Strong, well-controlled",
+            "Strong but poorly controlled (instability catch)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive PA spring",
+          "options": [
+            "Normal",
+            "Hypermobile segment"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted trunk tests may be strong but poorly controlled (an instability \"catch\" on active movement, not true weakness)",
+        "Passive PA spring shows a hypermobile segment"
+      ],
+      "interpretation": "Prone instability test and H & I stability tests are the primary provocative maneuvers for this condition."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "TA + Multifidus",
+          "state": "Inhibited, bilateral"
+        }
+      ],
+      "pattern": "\"Inhibited, bilateral\" with erector-spinae global substitution is the textbook instability CPA pattern."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Segmental Stability Tests",
+      "fields": [
+        {
+          "label": "Prone instability test / ASLR / abdominal drawing-in",
+          "options": [
+            "Normal",
+            "Positive — instability confirmed"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match: prone instability test, ASLR, and abdominal drawing-in are this app's own instability battery."
+    },
+    "functionalScreen": {
+      "name": "Rotary Stability (FMS) + Trunk Stability Push-Up (FMS)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Rotary Stability (FMS)",
+          "options": [
+            "Pass",
+            "Fail"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Trunk Stability Push-Up (FMS)",
+          "options": [
+            "Pass",
+            "Fail"
+          ]
+        }
+      ],
+      "note": "The two generic core-stability screens most directly relevant to a diagnosed instability."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "NPRS",
+      "PSFS"
+    ]
+  },
+  "L07": {
+    "id": "L07",
+    "name": "Spondylolisthesis / Spondylolysis",
+    "required": [
+      "Observation (palpate for step deformity)",
+      "Lumbar AROM (extension likely provocative)",
+      "One-Leg Standing (Stork) Lumbar Extension Test",
+      "Neurological screen"
+    ],
+    "recommended": [
+      "Lumbar x-ray (AP, lateral, oblique)",
+      "SPECT/MRI if x-ray negative but suspicion high",
+      "Meyerding grading once imaging confirms slip",
+      "Hamstring length"
+    ],
+    "observation": [
+      "Palpable step deformity",
+      "Hamstring tightness"
+    ],
+    "posture": [
+      "Increased lordosis at slip level"
+    ],
+    "palpation": [
+      "Pars interarticularis / anterior longitudinal ligament"
+    ],
+    "specialTests": [
+      "One-Leg Standing (Stork) Lumbar Extension Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted trunk extension",
+          "options": [
+            "Painless",
+            "Reproduces pain at the pars/slip level"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive extension",
+          "options": [
+            "Non-provocative",
+            "Most provocative movement"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted trunk extension reproduces pain at the pars/slip level (the Stork test is this same single-leg extension provocation)",
+        "Passive extension is often the most provocative movement"
+      ],
+      "interpretation": "Stork test (single-leg hyperextension) reproducing pain is the key provocative finding for this condition."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "TA + Multifidus (segmental stabilisers, at the slip level)",
+          "state": "Assess as for Lumbar Instability's core-stability logic"
+        }
+      ],
+      "pattern": "Same core-stability logic as Lumbar Instability (L06), since dynamic segmental control limits further slip."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Segmental Stability Tests + Lumbar Flexion Control",
+      "fields": [
+        {
+          "label": "Prone instability test at the slip level",
+          "options": [
+            "Normal",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Extension-provoked pain",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "chainEffect": "The prone instability test at the slip level, plus watching for extension-provoked pain (the stork-test principle applied functionally)."
+    },
+    "functionalScreen": {
+      "name": "Sit-to-Stand / Squat Pattern",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Pain on extension/return phase",
+          "options": [
+            "Absent",
+            "Present"
+          ]
+        }
+      ],
+      "note": "Note any pain specifically on the extension/return phase, mirroring the Stork test's single-leg hyperextension provocation."
+    },
+    "outcomeMeasures": [
+      "Oswestry Disability Index (ODI)",
+      "Meyerding grading (imaging)"
+    ]
+  },
+  "L08": {
+    "id": "L08",
+    "name": "Lumbar Muscle Strain",
+    "required": [
+      "Observation (spasm/guarding)",
+      "Lumbar AROM (pain on stretch)",
+      "Resisted isometric movements",
+      "Neurological screen (expect fully normal)"
+    ],
+    "recommended": [
+      "Palpation (localize strained muscle)",
+      "SLR (expect negative)",
+      "X-ray only if red flags present"
+    ],
+    "observation": [
+      "Visible muscle spasm / guarding on movement"
+    ],
+    "posture": [
+      "Antalgic lean away from strained side"
+    ],
+    "palpation": [
+      "Localize strained muscle",
+      "Paraspinal / quadratus lumborum fascial tension"
+    ],
+    "specialTests": [
+      "SLR"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted trunk movement in the direction of strain",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive stretch of the same muscle",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted trunk movement in the direction of strain is strong but painful (classic Cyriax contractile-lesion pattern)",
+        "Passive stretch of the same muscle is also painful"
+      ],
+      "interpretation": "Resisted isometric movements reproduce pain — per Cyriax classification, strong + painful = contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Erector Spinae or QL (whichever strained)",
+          "state": "Check whether primary strain or an overactive compensator (2° to TA/glute max inhibition)"
+        }
+      ],
+      "pattern": "Check whether it's a primary strain or an OVERACTIVE COMPENSATOR before treating as isolated."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Flexion Control",
+      "fields": [
+        {
+          "label": "Restriction pattern",
+          "options": [
+            "Guarded, direction-specific (pain-limited)",
+            "True motor-control fault"
+          ]
+        }
+      ],
+      "chainEffect": "Expect a guarded, direction-specific restriction (pain-limited, not a true motor-control fault); reassess as the strain settles."
+    },
+    "functionalScreen": {
+      "name": "Sit-to-Stand",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Rise strategy at baseline",
+          "options": [
+            "Guarded",
+            "Normal hip-hinge"
+          ]
+        }
+      ],
+      "note": "Document the guarded rise strategy at baseline to track recovery of a normal hip-hinge pattern."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "PSFS",
+      "Return-to-activity timeline"
+    ]
+  },
+  "L09": {
+    "id": "L09",
+    "name": "Lumbar Myofascial Pain",
+    "lowConfidence": true,
+    "lowConfidenceLabel": "Unverified",
+    "required": [
+      "Palpation for taut bands/trigger points reproducing referred pain"
+    ],
+    "recommended": [
+      "Assessment of postural/movement contributors"
+    ],
+    "observation": [
+      "Taut bands",
+      "Trigger points on palpation"
+    ],
+    "posture": [
+      "Sustained-posture loading pattern"
+    ],
+    "palpation": [
+      "Taut bands/trigger points reproducing referred pain",
+      "Myofascial trigger point / taut band network"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted test of muscle under trigger-point suspicion",
+          "options": [
+            "Reproduces referred (not true) pain, no true weakness",
+            "Normal"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted tests reproduce referred (not true) pain from the palpated trigger point, no true weakness"
+      ],
+      "interpretation": "Palpation reproducing the referred pain pattern is the key finding for this condition."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "QL / Erector Spinae",
+          "state": "Overactive, glute max/glute med compensation"
+        }
+      ],
+      "pattern": "This is very often the SYMPTOM of a deeper glute-inhibition pattern, not a primary muscle problem."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not primarily a joint-mobility condition (myofascial referral) — the Single Leg Stance / hip-focused screens are more informative than a lumbar mobility test."
+    },
+    "functionalScreen": {
+      "name": "Sit-to-Stand / Forward Bend",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Lumbar-flexion-dominant strategy loading these muscles",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Check whether a lumbar-flexion-dominant strategy is loading these exact muscles, consistent with the CPA finding above."
+    },
+    "outcomeMeasures": [
+      "NPRS",
+      "Pressure Pain Threshold (algometry)"
+    ]
+  },
+  "L10": {
+    "id": "L10",
+    "name": "Inflammatory Back Pain (Axial Spondyloarthritis Pattern)",
+    "required": [
+      "Observation",
+      "Lumbar AROM all planes (uniform vs single-plane restriction)",
+      "Peripheral joint screen"
+    ],
+    "recommended": [
+      "ESR/CRP, HLA-B27 referral",
+      "Ophthalmology screen if iritis suspected",
+      "Skin/GI history follow-up (psoriasis/IBD)",
+      "FABER + posterior SIJ provocation (cross-refer L05)"
+    ],
+    "observation": [
+      "Global restriction",
+      "Morning stiffness posture"
+    ],
+    "posture": [
+      "Flattened lumbar lordosis",
+      "Reduced chest expansion"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "FABER Test (+ posterior SIJ provocation — cross-refer L05)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Painless (early)",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive ROM (all planes)",
+          "options": [
+            "Uniformly restricted, non-capsular",
+            "Normal"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless early (inflammatory, not mechanical)",
+        "Passive ROM uniformly restricted, non-capsular"
+      ],
+      "interpretation": "AROM uniformly restricted in all planes (non-capsular pattern) is the defining functional finding for this condition."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable — systemic inflammatory diagnosis, not a motor-control compensation pattern."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Lumbar Flexion Control + Rotation Control",
+      "fields": [
+        {
+          "label": "Restriction pattern",
+          "options": [
+            "Directional preference (as in L01–L09)",
+            "Global, non-directional restriction"
+          ]
+        }
+      ],
+      "chainEffect": "Expect GLOBAL, non-directional restriction rather than the directional preference seen in L01–L09."
+    },
+    "functionalScreen": {
+      "name": "Sit-to-Stand + Forward Bend",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Range pattern",
+          "options": [
+            "Symmetric, globally reduced",
+            "Specific direction of preference"
+          ]
+        }
+      ],
+      "note": "Both should show symmetric, globally reduced range rather than a specific direction of preference."
+    },
+    "outcomeMeasures": [
+      "BASDAI",
+      "BASFI",
+      "NPRS",
+      "ESR/CRP (lab)"
+    ]
+  },
+  "L11": {
+    "id": "L11",
+    "name": "Serious Pathology / Red Flag",
+    "redFlag": true,
+    "body": "Cauda equina indicator → EMERGENCY same-day referral. Fracture, inflammatory, or other serious-pathology red flag → URGENT referral before continuing.",
+    "action": "Replaces the differential list entirely when triggered. No module cards or test suggestions render. STTT/CPA: not applicable — do not resisted-test or compensation-test until the red flag is cleared."
+  }
+}
