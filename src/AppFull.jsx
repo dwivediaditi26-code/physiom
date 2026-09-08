@@ -112,6 +112,76 @@ function VoiceTextInput({ id, value, onChange, placeholder, type, style }) {
   );
 }
 
+// Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
+// plain text/date input would hold, so it's a drop-in replacement for
+// Date of Birth (and anywhere else a date is typed by hand). Standalone
+// for the same reason as VoiceTextInput above: its caller sits inside a
+// conditionally-rendered branch of the big App component, where inline
+// hooks would violate the rules of hooks.
+const DATE_WHEEL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function DateWheelField({ value, onChange, inputStyle, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const parts = (value || "").split("/");
+  const day = parts[0] || "", month = parts[1] || "", year = parts[2] || "";
+  useEffect(() => {
+    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  function setPart(which, v) {
+    const d = which === "day" ? v : day, m = which === "month" ? v : month, y = which === "year" ? v : year;
+    onChange([d, m, y].filter(Boolean).length ? `${d || "--"}/${m || "--"}/${y || "----"}` : "");
+  }
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const months = DATE_WHEEL_MONTHS.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 101 }, (_, i) => thisYear - 100 + i).reverse().map(String);
+  const display = day && month && year ? `${day}/${month}/${year}` : "";
+  const colStyle = { flex: 1, maxHeight: 170, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2, border: "1px solid #E5E1F5", borderRadius: 8, padding: 4 };
+  const itemStyle = (active) => ({ padding: "7px 4px", textAlign: "center", borderRadius: 6, fontSize: "0.8rem", fontWeight: active ? 800 : 500, background: active ? "#7c3aed" : "transparent", color: active ? "#fff" : "#111827", cursor: "pointer", border: "none", fontFamily: "inherit" });
+  return (
+    <div style={{ position: "relative" }} ref={ref}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input readOnly value={display} placeholder={placeholder || "DD/MM/YYYY"} onFocus={() => setOpen(true)} onClick={() => setOpen(true)}
+          style={{ ...inputStyle, flex: 1 }} />
+        <button type="button" onClick={() => setOpen((o) => !o)} title="Pick date"
+          style={{ flexShrink: 0, width: 40, borderRadius: 8, border: "1.5px solid #d1d5db", background: "#fff", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
+          📅
+        </button>
+      </div>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #E5E1F5", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.14)", padding: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>Select date</span>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close" style={{ border: "none", background: "none", cursor: "pointer", fontSize: "0.9rem" }}>✕</button>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <div style={colStyle}>{days.map((d) => (<button key={d} type="button" style={itemStyle(d === day)} onClick={() => setPart("day", d)}>{parseInt(d, 10)}</button>))}</div>
+            <div style={colStyle}>{months.map((m) => (<button key={m.value} type="button" style={itemStyle(m.value === month)} onClick={() => setPart("month", m.value)}>{m.label}</button>))}</div>
+            <div style={colStyle}>{years.map((y) => (<button key={y} type="button" style={itemStyle(y === year)} onClick={() => setPart("year", y)}>{y}</button>))}</div>
+          </div>
+          <button type="button" onClick={() => setOpen(false)} style={{ marginTop: 8, width: "100%", padding: "8px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Leave-assessment save/demographics gate: which navTo targets count as
+// actually "leaving" (the 5 real destinations reachable from the bottom
+// nav), and which `active` screens count as "inside a patient's
+// assessment" (the Ortho Screening Workflow's own step keys -- precisely
+// redirectable back to its own Demographics step on an incomplete-data
+// leave -- plus the three self-contained specialty tools, which aren't).
+const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "clinical"]);
+const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise", "soap"]);
+const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
+const ASSESSMENT_ACTIVE_KEYS = new Set([...ORTHO_WF_KEYS, ...OPAQUE_ASSESSMENT_KEYS]);
+function isDemographicsComplete(d) {
+  return !!(d?.dem_name?.trim() && d?.dem_age && d?.dem_sex && d?.dem_phone?.trim());
+}
+
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
@@ -251,6 +321,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
   // container -- so switching tabs never naturally resets scroll the way a
@@ -550,6 +621,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       return (raw && raw.pid) ? raw.pid : null;
     } catch { return null; }
   });
+  // Leave-assessment save/demographics gate (see navTo below): refs mirror
+  // the live values navTo needs but can't have in its own dep array
+  // without recreating the stable callback every render.
+  const activePatientIdRef = useRef(null);
+  useEffect(() => { activePatientIdRef.current = activePatientId; });
+  const dataRef = useRef({});
+  useEffect(() => { dataRef.current = data; });
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profileTab, setProfileTab] = useState(null);
@@ -840,6 +918,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   const navTo = useCallback((key, ctx = {}, navOpts = {}) => {
+    // Leave-assessment gate (Aditi: "when we leave any assessment, it
+    // should ask that do you want to save this assessment or not"):
+    // intercept a real "leave the assessment" nav -- one of the 5
+    // bottom-nav destinations, fired while a patient's assessment is
+    // actively open -- before it happens, and let the confirm modal below
+    // decide whether to continue it. Popstate replays and the modal's own
+    // follow-up call (__skipLeaveGate) bypass this so Back/Forward and the
+    // "Save & leave"/"Leave without saving" buttons themselves don't loop.
+    if (
+      !navOpts.__fromPopState &&
+      !navOpts.__skipLeaveGate &&
+      LEAVE_GATE_TARGETS.has(key) &&
+      key !== activeRef.current &&
+      activePatientIdRef.current &&
+      ASSESSMENT_ACTIVE_KEYS.has(activeRef.current)
+    ) {
+      setPendingLeave({ key, ctx, navOpts });
+      return;
+    }
     // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
     // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
     // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
@@ -898,6 +995,35 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // silently no-ops if Web Analytics isn't enabled on the project yet.
     try { track('module_opened', { module: key }); } catch {}
   }, []);
+
+  // "Save this assessment?" -> Yes: only actually leaves once the
+  // patient's core demographics (Name/Age/Sex/Phone -- the same
+  // requiredOk fields the Demographics screens themselves gate on) are
+  // filled in. Incomplete: cancel the leave, and for the Ortho Screening
+  // Workflow (whose steps are real navTo targets) jump straight to its
+  // own Demographics step; the three self-contained specialty tools
+  // (ortho_new_assessment/neuro_assessment/cardio_assessment) can't be
+  // driven to a specific internal step from outside, so those just stay
+  // put with the alert telling the clinician what's missing.
+  function leaveConfirmSave() {
+    const target = pendingLeave;
+    setPendingLeave(null);
+    if (!target) return;
+    if (isDemographicsComplete(dataRef.current)) {
+      navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
+      return;
+    }
+    if (ORTHO_WF_KEYS.has(activeRef.current)) {
+      navTo("demographics", {}, { __skipLeaveGate: true });
+    }
+    alert("Please fill in the patient's Name, Age, Sex and Phone before leaving this assessment.");
+  }
+  function leaveWithoutSaving() {
+    const target = pendingLeave;
+    setPendingLeave(null);
+    if (!target) return;
+    navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
+  }
 
   // Seed the browser history stack with the starting screen once on mount,
   // so the very first Back press has something real to land on instead of
@@ -1226,6 +1352,34 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}
+
+      {/* ── Leave-assessment save/demographics gate ───────────────────────── */}
+      {pendingLeave && (
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(17,17,27,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+          onClick={()=>setPendingLeave(null)}>
+          <div style={{background:PC.surface,borderRadius:16,padding:"22px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 50px rgba(0,0,0,0.3)"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:"1.02rem",fontWeight:800,color:PC.text,marginBottom:6}}>Save this assessment?</div>
+            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18,lineHeight:1.4}}>
+              Your entries are kept either way. Choosing "Save" also checks that the patient's core details (Name, Age, Sex, Phone) are filled in before you leave.
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button type="button" onClick={leaveConfirmSave}
+                style={{padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Save & Leave
+              </button>
+              <button type="button" onClick={leaveWithoutSaving}
+                style={{padding:"11px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.surface,color:PC.text,fontWeight:700,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Leave without saving
+              </button>
+              <button type="button" onClick={()=>setPendingLeave(null)}
+                style={{padding:"9px",borderRadius:10,border:"none",background:"none",color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Stay on this screen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Guest Mode: "sign in to use this" popup, shown by requireAuth() ── */}
       {authPromptFeature && (
@@ -2115,7 +2269,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           nInp's padding/font-size, which is what was making
                           the DOB box look huge. */}
                       <div className="pm-nowrap-2col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                        <div>{nField("Date of Birth",<input id="dem_dob" style={{...nInp,WebkitAppearance:"none",appearance:"none"}} type="date" value={data.dem_dob||""} onChange={e=>set("dem_dob",e.target.value)}/>,false,"dem_dob")}</div>
+                        <div>{nField("Date of Birth",<DateWheelField value={data.dem_dob||""} onChange={v=>set("dem_dob",v)} inputStyle={nInp}/>,false,"dem_dob")}</div>
                         <div>{nField("Age",<VoiceTextInput id="dem_age" style={nInp} type="text" placeholder="e.g. 34" value={data.dem_age||""} onChange={v=>set("dem_age",v)}/>,true,"dem_age")}</div>
                       </div>
                       <div style={{marginBottom:16}}>

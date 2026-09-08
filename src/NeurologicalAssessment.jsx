@@ -187,6 +187,63 @@ function FieldShell({ label, hint, howTo, info, children }) {
   );
 }
 
+// Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
+// TextField would hold, so it's a drop-in replacement wherever a date is
+// typed by hand today (Aditi: "select from the list date, year, month...
+// like a scrolling thing", not a native calendar widget). Self-contained
+// (own inline styles, no shared CSS classes) since this file doesn't load
+// orthoStyles.js's .date-wheel-* classes the Ortho-only DateField relies on.
+const DATE_WHEEL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function DateWheelField({ label, value, onChange, hint, howTo }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const parts = (value || "").split("/");
+  const day = parts[0] || "", month = parts[1] || "", year = parts[2] || "";
+  useEffect(() => {
+    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  function setPart(which, v) {
+    const d = which === "day" ? v : day, m = which === "month" ? v : month, y = which === "year" ? v : year;
+    onChange([d, m, y].filter(Boolean).length ? `${d || "--"}/${m || "--"}/${y || "----"}` : "");
+  }
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const months = DATE_WHEEL_MONTHS.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 101 }, (_, i) => thisYear - 100 + i).reverse().map(String);
+  const display = day && month && year ? `${day}/${month}/${year}` : "";
+  const colStyle = { flex: 1, maxHeight: 170, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2, border: "1px solid #E0DAF0", borderRadius: 8, padding: 4 };
+  const itemStyle = (active) => ({ padding: "7px 4px", textAlign: "center", borderRadius: 6, fontSize: "0.8rem", fontWeight: active ? 800 : 500, background: active ? "#6C4DFF" : "transparent", color: active ? "#fff" : "#1C1C28", cursor: "pointer", border: "none", fontFamily: "inherit" });
+  return (
+    <FieldShell label={label} hint={hint} howTo={howTo}>
+      <div style={{ position: "relative" }} ref={ref}>
+        <div className="text-input-wrap" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input className="text-input" readOnly value={display} placeholder="DD/MM/YYYY" onFocus={() => setOpen(true)} onClick={() => setOpen(true)} />
+          <button type="button" onClick={() => setOpen((o) => !o)} title="Pick date"
+            style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 8, border: "1.5px solid #d8ccE8", background: "#fff", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
+            📅
+          </button>
+        </div>
+        {open && (
+          <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #E0DAF0", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.14)", padding: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>Select date</span>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close" style={{ border: "none", background: "none", cursor: "pointer", fontSize: "0.9rem" }}>✕</button>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <div style={colStyle}>{days.map((d) => (<button key={d} type="button" style={itemStyle(d === day)} onClick={() => setPart("day", d)}>{parseInt(d, 10)}</button>))}</div>
+              <div style={colStyle}>{months.map((m) => (<button key={m.value} type="button" style={itemStyle(m.value === month)} onClick={() => setPart("month", m.value)}>{m.label}</button>))}</div>
+              <div style={colStyle}>{years.map((y) => (<button key={y} type="button" style={itemStyle(y === year)} onClick={() => setPart("year", y)}>{y}</button>))}</div>
+            </div>
+            <button type="button" onClick={() => setOpen(false)} style={{ marginTop: 8, width: "100%", padding: "8px", borderRadius: 8, border: "none", background: "#6C4DFF", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+          </div>
+        )}
+      </div>
+    </FieldShell>
+  );
+}
+
 // Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
 // straight into whichever field passes `voice`. Same SpeechRecognition
 // lookup as the Chief complaint mic on the New Patient intake form
@@ -1075,7 +1132,7 @@ function DemographicsSection({ data, setData }) {
         onChange={(v) => set("referralSource", v)}
       />
       <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
-      <TextField label="Date of onset / injury" value={d.onsetDate} onChange={(v) => set("onsetDate", v)} />
+      <DateWheelField label="Date of onset / injury" value={d.onsetDate} onChange={(v) => set("onsetDate", v)} />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
   );
