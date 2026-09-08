@@ -71,6 +71,7 @@ const STEP_META = [
   { id: "safety", icon: "🚨", label: "Safety / Medical Stability" },
   { id: "subjective", icon: "🗣️", label: "Subjective Assessment" },
   { id: "chart", icon: "🗂️", label: "Medical / Chart Review" },
+  { id: "observation", icon: "👁️", label: "General Observation" },
   { id: "cognition", icon: "🧠", label: "Mental Status / Cognition" },
   { id: "cranial", icon: "👁️", label: "Cranial Nerve Screen" },
   { id: "sensory", icon: "🖐️", label: "Sensory Examination" },
@@ -1099,6 +1100,77 @@ function ChartSection({ data, setData }) {
   );
 }
 
+/* ---------- General Observation ----------
+   New (2026-09-04, Aditi -- Ortho/Neuro/Cardio General Observation
+   research pass): Neuro had no Observation step at all, the single
+   biggest gap found comparing the three specialties -- Ortho's own
+   Observation is structural (alignment/deformity/SEADS) and Cardio's is
+   cardiopulmonary (distress/cyanosis/JVP), neither of which is the right
+   question for Neuro. Content instead sourced from standard neuro-rehab
+   evaluation forms: attitude/posturing of limbs, skin/pressure areas,
+   external appliances, and mode of ventilation -- what a neuro exam's
+   own eyes are actually checking before any hands-on testing starts.
+   Setting-aware like SafetySection above: ICU/Inpatient/Post-op get the
+   fuller ventilation block (these patients are the ones actually on
+   monitors/vents), Outpatient/Rehab get a movement-pattern glimpse
+   instead (the fuller Gait/Functional steps cover that in real depth
+   either way, so it's a first-impression field here, not a duplicate).
+   Every field is choose-from (SelectField/LRGrid), matching this file's
+   existing convention -- only the trailing notes field is free text. */
+function ObservationSection({ data, setData, setting }) {
+  const [d, set] = useSectionData(data, setData, "observation");
+  const acute = setting === "icu" || setting === "inpatient" || setting === "postop";
+  return (
+    <>
+      <SectionIntro icon="👁️" title="General Observation" />
+      <SelectField label="Body build" type="single" options={["Ectomorphic", "Mesomorphic", "Endomorphic"]} value={d.build} onChange={(v) => set("build", v)} />
+      <SelectField label="General appearance" type="multi" options={["No acute distress", "In distress", "Guarded", "Alert & engaged", "Drowsy", "Confused", "Agitated"]} value={d.appearance} onChange={(v) => set("appearance", v)} />
+      <LRGrid
+        label="Attitude / posturing of limbs"
+        rows={["Upper limb", "Lower limb"]}
+        options={["Normal resting posture", "Flexor posturing", "Extensor posturing", "Flaccid", "Externally rotated", "Contracted"]}
+        value={d.attitude || {}}
+        onChange={(v) => set("attitude", v)}
+        howTo="Observe the limb at rest before touching it -- flexor/extensor posturing and asymmetry between sides are themselves diagnostic (e.g. a flaccid or externally-rotated hemiplegic leg), separate from the formal tone testing that follows in Tone/Reflexes."
+      />
+      <SelectField
+        label="Skin / pressure areas"
+        type="multi"
+        options={["Normal", "Pressure area - sacrum", "Pressure area - heels", "Pressure area - occiput", "Bruising", "Redness", "Broken skin"]}
+        value={d.skin}
+        onChange={(v) => set("skin", v)}
+        howTo="Check sacrum, heels and occiput specifically in any patient with reduced mobility or sensation -- the classic pressure-sore sites, and neuro patients carry elevated risk from both immobility and reduced sensory feedback."
+      />
+      <SelectField label="Deformity / wounds" type="multi" options={["None", "Fixed deformity/contracture", "Surgical wound", "Traumatic wound", "Muscle wasting visible"]} value={d.deformity} onChange={(v) => set("deformity", v)} />
+      <SelectField
+        label="External appliances"
+        type="multi"
+        options={["None", "VP shunt", "Tracheostomy", "PEG / NG tube", "Urinary catheter", "IV line", "Splint / orthosis", "Cervical collar", "External ventricular drain"]}
+        value={d.appliances}
+        onChange={(v) => set("appliances", v)}
+      />
+      {acute && (
+        <>
+          <SelectField label="Mode of ventilation" type="single" options={["Room air", "Supplemental O2", "Mechanically ventilated", "Tracheostomy mask"]} value={d.ventilation} onChange={(v) => set("ventilation", v)} />
+          <SelectField label="Respiration pattern" type="single" options={["Normal", "Laboured", "Shallow", "Irregular", "Cheyne-Stokes"]} value={d.respirationPattern} onChange={(v) => set("respirationPattern", v)} />
+        </>
+      )}
+      <SelectField label="Speech (as observed)" type="single" options={["Normal", "Slurred (dysarthria)", "Non-fluent / effortful", "Fluent but incomprehensible", "Unable to speak (e.g. intubated)"]} value={d.speech} onChange={(v) => set("speech", v)} />
+      {!acute && (
+        <SelectField
+          label="Movement pattern glimpse"
+          type="multi"
+          options={["Symmetrical", "Asymmetrical", "Compensatory strategy noted", "Bed mobility independent", "Transfer independent", "Requires assistance"]}
+          value={d.movementGlimpse}
+          onChange={(v) => set("movementGlimpse", v)}
+          howTo="A quick first impression on arrival/transfer -- the Gait Assessment and Functional Assessment steps later cover this in real depth."
+        />
+      )}
+      <TextArea label="Additional observation notes" value={d.notes} onChange={(v) => set("notes", v)} />
+    </>
+  );
+}
+
 /* ---------- Mental Status / Cognition ---------- */
 function CognitionSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "cognition");
@@ -1726,7 +1798,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "interpretation", "carePlan", "precautions", "exercisePrescription", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", "carePlan", "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2463,6 +2535,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
               {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
               {current.id === "chart" && <ChartSection data={data} setData={setData} />}
+              {current.id === "observation" && <ObservationSection data={data} setData={setData} setting={setting} />}
               {current.id === "cognition" && <CognitionSection data={data} setData={setData} />}
               {current.id === "cranial" && <CranialNervesSection data={data} setData={setData} />}
               {current.id === "sensory" && <SensorySection data={data} setData={setData} />}
