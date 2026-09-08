@@ -1,12 +1,18 @@
-import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
+import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
-import { SCALES } from "./sharedClinicalData.js";
 import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
+
+// Same rich Outcome Measures tool Ortho uses (full searchable/categorized
+// scale library, guided question-by-question fill, blank-PDF export, score
+// history/trend) -- lazy so Neuro's own bundle doesn't grow for patients
+// who never reach this step. Aditi: "the outcome measure form filling
+// should be like ortho".
+const LazyOutcomeMeasuresPro = lazy(() => import("./OutcomeMeasuresPro.jsx"));
 
 // formatters[stepId] contract for SummarySection's rowsForStep -- only
 // exercisePrescription needs one so far (its section holds an array, not
@@ -1720,52 +1726,24 @@ function FunctionalSection({ data, setData }) {
 }
 
 /* ---------- Outcome Measures ----------
-   Was a plain "type the score in yourself" field per measure. Replaced
-   with the same real card-per-scale + "Take full test →" pattern the
-   Cognition domain step already uses (moca/mmse/minicog, above) --
-   sc.score(data)/sc.interpret() come straight from the real SCALES
-   guided-item logic in sharedClinicalData.js (the same data OutcomeMeasuresPro's
-   own live-guided fill uses, read here flat off top-level `data` fields),
-   so this is a preview + a link into the one real guided flow, not a
-   second implementation of it. */
-const NEURO_OUTCOME_SCALE_IDS = ["moca", "mmse", "minicog", "bbs", "tug", "mwt10", "fma", "barthel", "rankin"];
-function OutcomesSection({ data, setData, onNav }) {
+   Was a custom, hardcoded 9-scale card list (moca/mmse/minicog/bbs/tug/
+   mwt10/fma/barthel/rankin only, no search, no PDF, no trend) that only
+   linked out to the real guided-fill engine. Now embeds that same engine
+   directly -- the identical OutcomeMeasuresPro component Ortho's own
+   Outcome Measures step uses, full searchable/categorized library of
+   every scale in SCALES, blank-PDF export, score history -- so Neuro's
+   outcome measures step IS Ortho's, not a smaller lookalike. Embedded
+   inline (not routed through navTo to a separate top-level screen) so it
+   never leaves the Neuro assessment's own step flow, same as how Ortho's
+   Outcome step stays inside its own persistent Screening Workflow shell. */
+function OutcomesSection({ data, setData }) {
+  const setField = (k, v) => setData((prev) => ({ ...prev, [k]: v }));
   return (
     <>
-      <SectionIntro icon="📊" title="Outcome Measures" sub="Tap a scale to fill it in question-by-question, same as the rest of the app -- scores here aren't typed in free-hand." />
-      {NEURO_OUTCOME_SCALE_IDS.map((scaleId) => {
-        const sc = SCALES[scaleId];
-        if (!sc) return null;
-        const score = sc.score(data);
-        const interp = score !== null ? sc.interpret(score) : null;
-        return (
-          <div key={scaleId} style={{ background: "#fff", border: `1px solid ${interp ? interp.color + "50" : "#E5E7EB"}`, borderRadius: 10, padding: "11px 13px", marginBottom: 9 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#0D0D0D" }}>
-                  {sc.icon} {sc.full}
-                </div>
-                {score !== null ? (
-                  <div style={{ fontSize: "0.72rem", color: interp.color, fontWeight: 600, marginTop: 2 }}>
-                    {score}
-                    {sc.unit} — {interp.label}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.72rem", color: "#6B6B7A", marginTop: 2 }}>Not yet recorded</div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => onNav && onNav("outcome", { scaleId })}
-                style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
-              >
-                {score !== null ? "Review →" : "Take full test →"}
-              </button>
-            </div>
-          </div>
-        );
-      })}
-      <TextField label="Other outcome measure" value={data.outcomes?.other} onChange={(v) => setData((prev) => ({ ...prev, outcomes: { ...(prev.outcomes || {}), other: v } }))} placeholder="Name and score" />
+      <SectionIntro icon="📊" title="Outcome Measures" sub="Full scale library, same guided question-by-question flow as Ortho -- search, start, or review any validated scale below." />
+      <Suspense fallback={<div style={{ padding: 20, textAlign: "center", color: "#6B6B7A", fontSize: "0.8rem" }}>Loading outcome measures…</div>}>
+        <LazyOutcomeMeasuresPro data={data} set={setField} />
+      </Suspense>
     </>
   );
 }
