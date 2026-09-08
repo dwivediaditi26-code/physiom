@@ -1,11 +1,13 @@
 // conditionObjectiveAssessment.test.jsx
 // Standalone "AI Objective Assessment" page — condition-wise clone of the
 // claude.ai artifact, generalized across Cervical/Hip/Knee/Ankle-Foot.
-// Confirms: renders only when a supported region is picked, resolves the
-// right region's data, shows condition tabs, tapping a chip persists via
-// setData, switching condition tabs swaps module content, red-flag banners
-// surface for both the Cervical and evidence-model shapes, and the ROM
-// grid only renders for Cervical (Hip/Knee/Ankle-Foot have none).
+// Confirms: renders only when a supported region is picked, gates its
+// content behind the same "🧠 Suggest probable objective assessment"
+// button pattern used elsewhere in the app (SubjectiveObjective.jsx),
+// resolves the right region's data, shows condition tabs, tapping a chip
+// persists via setData, switching condition tabs swaps module content,
+// red-flag banners surface for both the Cervical and evidence-model
+// shapes, and the ROM grid only renders for the region it belongs to.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -18,14 +20,27 @@ function Harness({ initialData, selectedRegions }) {
   return <ConditionObjectiveAssessment data={data} setData={setData} selectedRegions={selectedRegions} />;
 }
 
+function runAnalysis() {
+  fireEvent.click(screen.getByRole("button", { name: /Suggest probable objective assessment/ }));
+}
+
 describe("ConditionObjectiveAssessment — Cervical", () => {
   it("shows a hint instead of the page when no supported region is selected", () => {
     render(<ConditionObjectiveAssessment data={{}} setData={vi.fn()} selectedRegions={[{ id: "shoulder", label: "Shoulder" }]} />);
     expect(screen.getByText(/Pick Cervical as a region in Subjective first/i)).toBeInTheDocument();
   });
 
-  it("renders condition tabs, defaults to C01, and shows the Cervical ROM grid", () => {
+  it("gates condition content behind the Suggest probable objective assessment button", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    expect(screen.getByRole("button", { name: /Suggest probable objective assessment/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^C01/ })).not.toBeInTheDocument();
+    runAnalysis();
+    expect(screen.getByRole("button", { name: /^C01/ })).toBeInTheDocument();
+  });
+
+  it("after running analysis, renders condition tabs, defaults to C01, and shows the Cervical ROM grid", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    runAnalysis();
     expect(screen.getByRole("button", { name: /^C01/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^C04 Cervicogenic Headache/ })).toBeInTheDocument();
     expect(screen.getByText("Cervical ROM")).toBeInTheDocument();
@@ -33,6 +48,7 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
 
   it("tapping an Observation chip persists and switching tabs swaps module content", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    runAnalysis();
     const chip = screen.getByRole("button", { name: "Localised guarding" });
     fireEvent.click(chip);
     expect(chip).toHaveStyle({ color: "#6D28D9" });
@@ -44,6 +60,7 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
   it("surfaces the real red-flag override banner when Subjective data triggers it", () => {
     const data = { subjective: { regions: { cervical: { redFlagsMyelopathy: "Bilateral hand symptoms (grip clumsiness / numbness)" } } } };
     render(<Harness initialData={data} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    runAnalysis();
     expect(screen.getByText(/EMERGENCY — Myelopathy/i)).toBeInTheDocument();
   });
 });
@@ -51,6 +68,7 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
 describe("ConditionObjectiveAssessment — Hip", () => {
   it("resolves the Hip region, shows Key Exams (not Required/Recommended), and its own Hip ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
+    runAnalysis();
     expect(screen.getByRole("button", { name: /^HP01/ })).toBeInTheDocument();
     expect(screen.getByText("Key Exams")).toBeInTheDocument();
     expect(screen.queryByText("Cervical ROM")).not.toBeInTheDocument();
@@ -61,6 +79,7 @@ describe("ConditionObjectiveAssessment — Hip", () => {
 
   it("kinetic-chain-not-applicable condition (adductor-related groin pain) shows the greyed note with no chips", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
+    runAnalysis();
     fireEvent.click(screen.getByRole("button", { name: /HP05/i }));
     expect(screen.getByText(/No hip kinetic-chain test in this app's library isolates pure adduction/)).toBeInTheDocument();
     expect(screen.queryByText("Chain Effect")).not.toBeInTheDocument();
@@ -70,6 +89,7 @@ describe("ConditionObjectiveAssessment — Hip", () => {
 describe("ConditionObjectiveAssessment — Knee", () => {
   it("resolves the Knee region from selectedRegions and shows the Knee ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "knee", label: "Knee" }]} />);
+    runAnalysis();
     expect(screen.getByRole("button", { name: /^KN01/ })).toBeInTheDocument();
     expect(screen.getAllByText("Lachman's test").length).toBeGreaterThan(0);
     expect(screen.getByText("Knee ROM")).toBeInTheDocument();
@@ -79,6 +99,7 @@ describe("ConditionObjectiveAssessment — Knee", () => {
 describe("ConditionObjectiveAssessment — Ankle/Foot", () => {
   it("resolves from either the ankle or the foot region id, combining AK/FT conditions, and shows the Ankle ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "foot", label: "Foot / Toes" }]} />);
+    runAnalysis();
     expect(screen.getByRole("button", { name: /^AK01/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^FT01/ })).toBeInTheDocument();
     expect(screen.getByText("Ankle ROM")).toBeInTheDocument();

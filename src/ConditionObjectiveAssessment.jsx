@@ -236,6 +236,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
+  const [analysisRun, setAnalysisRun] = useState(false);
 
   const regionPicked = regions.some(config.matchesRegion);
 
@@ -300,6 +301,8 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const matchedCondition = engineResult?.conditions.find((c) => c.id === selectedId);
   const specialTestItems = isCervical ? condition.specialTests : condition.keyExams;
 
+  const rankedCount = rankedIds.length;
+
   return (
     <div>
       <div style={{ marginBottom: 4 }}>
@@ -312,6 +315,35 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
         </div>
       </div>
 
+      {/* Same sticky "assistant card" button/copy as the Subjective step's
+          own "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx)
+          — reruns the real Phase 0.5 differential for this region and reveals
+          the ranked, percentage-matched condition cards below rather than
+          showing them unconditionally. */}
+      <button
+        type="button"
+        onClick={() => setAnalysisRun(true)}
+        style={{
+          position: "sticky", top: 0, zIndex: 20, width: "100%", height: 52, padding: "0 14px", borderRadius: 12,
+          border: `1px solid ${BRAND.purple}30`, background: `${BRAND.purple}0f`, cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 12, marginBottom: 4, textAlign: "left",
+        }}
+      >
+        <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+          <span style={{ fontSize: "0.78rem", fontWeight: 800, color: BRAND.purple, display: "flex", alignItems: "center", gap: 5 }}>
+            🧠 Suggest probable objective assessment
+          </span>
+          <span style={{ fontSize: "0.7rem", color: BRAND.gray }}>
+            {engineResult ? `${config.label} — ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched from Subjective` : `${config.label} — no Subjective data yet`}
+          </span>
+        </span>
+        <span style={{ fontSize: "0.76rem", fontWeight: 800, color: BRAND.purple, flexShrink: 0 }}>{analysisRun ? "Re-run →" : "Review →"}</span>
+      </button>
+
+      {!analysisRun ? (
+        <EmptyNote>Tap "Suggest probable objective assessment" above to see conditions ranked by percentage match against what's documented in Subjective.</EmptyNote>
+      ) : (
+        <>
       {redFlag && (
         <div style={{ marginTop: 12, marginBottom: 10, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${BRAND.red}`, background: BRAND.redBg }}>
           <div style={{ fontWeight: 700, fontSize: "0.82rem", color: BRAND.red, marginBottom: 3 }}>🚨 {redFlag.title}</div>
@@ -547,6 +579,8 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           ))}
         </div>
       </ModuleCard>
+        </>
+      )}
     </div>
   );
 }
