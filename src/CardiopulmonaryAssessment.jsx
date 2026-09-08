@@ -291,9 +291,10 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint, voice }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const v = useVoiceInput(value, onChange);
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -303,7 +304,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   }, []);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref}>
+      <div className="select-wrap" ref={ref} style={voice ? { display: "flex", alignItems: "center", gap: 6 } : undefined}>
         <input
           className="select-input"
           value={value || ""}
@@ -314,6 +315,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
           Select ⌄
         </button>
+        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
         {open && (
           <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
         )}
@@ -1075,6 +1077,7 @@ function SubjectiveSection({ data, setData }) {
         value={d.chiefComplaint}
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient lead before narrowing to focused follow-ups."
+        voice
       />
       <TextArea
         label="History of presenting condition"

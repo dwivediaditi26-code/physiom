@@ -312,6 +312,42 @@ function StatusBar() {
   );
 }
 
+// Plain browser speech-to-text (Web Speech API), no AI parsing -- same
+// pattern as the intake form's mic (AppModules.jsx). Scoped per-field via
+// the `voice` prop on FieldRow rather than every field, since most of
+// this form's fields are single-choice pickers with nothing for a
+// transcript to fill.
+function useVoiceInput(baseValue, onChange) {
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+  const start = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = baseValue || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) onChange((base + " " + final).trim());
+    };
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => setRecording(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+  const stop = () => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    setRecording(false);
+  };
+  return { recording, toggle: () => (recording ? stop() : start()) };
+}
+
 function FieldRow({
   field,
   value,
@@ -322,10 +358,12 @@ function FieldRow({
   isDropdownOpen,
   onToggleDropdown,
   onSelectOption,
+  voice,
 }) {
   const taRef = useRef(null);
   const hasValue = typeof value === "string" && value.trim().length > 0;
   const leftAlign = isEditing || hasValue;
+  const v = useVoiceInput(value, (val) => onChange(field.id, val));
 
   useEffect(() => {
     if (isEditing && taRef.current) {
@@ -351,17 +389,26 @@ function FieldRow({
         }}
       >
         {isEditing ? (
-          <textarea
-            ref={taRef}
-            autoFocus
-            rows={1}
-            value={value || ""}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            onBlur={onDeactivate}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Type here..."
-            style={styles.inlineInput}
-          />
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, width: "100%" }} onClick={(e) => e.stopPropagation()}>
+            <textarea
+              ref={taRef}
+              autoFocus
+              rows={1}
+              value={value || ""}
+              onChange={(e) => onChange(field.id, e.target.value)}
+              onBlur={onDeactivate}
+              placeholder="Type here..."
+              style={{ ...styles.inlineInput, flex: 1 }}
+            />
+            {voice && (
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={v.toggle}
+                title={v.recording ? "Stop recording" : "Speak"}
+                style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${v.recording ? "#dc2626" : "#d1d5db"}`,
+                  background: v.recording ? "#dc2626" : "#fff", color: v.recording ? "#fff" : "#111", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}>
+                {v.recording ? "⏹" : "🎤"}
+              </button>
+            )}
+          </div>
         ) : hasValue ? (
           <>
             <span>{value}</span>
@@ -616,6 +663,7 @@ export default function SubjectiveAssessmentDemo({ data, set } = {}) {
                     isDropdownOpen={openDropdown === field.id}
                     onToggleDropdown={toggleDropdown}
                     onSelectOption={selectOption}
+                    voice={field.id === "chiefComplaint"}
                   />
                 );
               })}
