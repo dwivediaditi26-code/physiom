@@ -168,6 +168,20 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
   );
 }
 
+// Leave-assessment save/demographics gate: which navTo targets count as
+// actually "leaving" (the 5 real destinations reachable from the bottom
+// nav), and which `active` screens count as "inside a patient's
+// assessment" (the Ortho Screening Workflow's own step keys -- precisely
+// redirectable back to its own Demographics step on an incomplete-data
+// leave -- plus the three self-contained specialty tools, which aren't).
+const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "clinical"]);
+const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise", "soap"]);
+const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
+const ASSESSMENT_ACTIVE_KEYS = new Set([...ORTHO_WF_KEYS, ...OPAQUE_ASSESSMENT_KEYS]);
+function isDemographicsComplete(d) {
+  return !!(d?.dem_name?.trim() && d?.dem_age && d?.dem_sex && d?.dem_phone?.trim());
+}
+
 // ── Lazy-loaded heavy modules (split into separate async chunks) ──────────────
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
@@ -307,6 +321,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+  const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
   // container -- so switching tabs never naturally resets scroll the way a
@@ -606,6 +621,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       return (raw && raw.pid) ? raw.pid : null;
     } catch { return null; }
   });
+  // Leave-assessment save/demographics gate (see navTo below): refs mirror
+  // the live values navTo needs but can't have in its own dep array
+  // without recreating the stable callback every render.
+  const activePatientIdRef = useRef(null);
+  useEffect(() => { activePatientIdRef.current = activePatientId; });
+  const dataRef = useRef({});
+  useEffect(() => { dataRef.current = data; });
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profileTab, setProfileTab] = useState(null);
@@ -896,6 +918,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   const navTo = useCallback((key, ctx = {}, navOpts = {}) => {
+    // Leave-assessment gate (Aditi: "when we leave any assessment, it
+    // should ask that do you want to save this assessment or not"):
+    // intercept a real "leave the assessment" nav -- one of the 5
+    // bottom-nav destinations, fired while a patient's assessment is
+    // actively open -- before it happens, and let the confirm modal below
+    // decide whether to continue it. Popstate replays and the modal's own
+    // follow-up call (__skipLeaveGate) bypass this so Back/Forward and the
+    // "Save & leave"/"Leave without saving" buttons themselves don't loop.
+    if (
+      !navOpts.__fromPopState &&
+      !navOpts.__skipLeaveGate &&
+      LEAVE_GATE_TARGETS.has(key) &&
+      key !== activeRef.current &&
+      activePatientIdRef.current &&
+      ASSESSMENT_ACTIVE_KEYS.has(activeRef.current)
+    ) {
+      setPendingLeave({ key, ctx, navOpts });
+      return;
+    }
     // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
     // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
     // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
@@ -954,6 +995,35 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // silently no-ops if Web Analytics isn't enabled on the project yet.
     try { track('module_opened', { module: key }); } catch {}
   }, []);
+
+  // "Save this assessment?" -> Yes: only actually leaves once the
+  // patient's core demographics (Name/Age/Sex/Phone -- the same
+  // requiredOk fields the Demographics screens themselves gate on) are
+  // filled in. Incomplete: cancel the leave, and for the Ortho Screening
+  // Workflow (whose steps are real navTo targets) jump straight to its
+  // own Demographics step; the three self-contained specialty tools
+  // (ortho_new_assessment/neuro_assessment/cardio_assessment) can't be
+  // driven to a specific internal step from outside, so those just stay
+  // put with the alert telling the clinician what's missing.
+  function leaveConfirmSave() {
+    const target = pendingLeave;
+    setPendingLeave(null);
+    if (!target) return;
+    if (isDemographicsComplete(dataRef.current)) {
+      navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
+      return;
+    }
+    if (ORTHO_WF_KEYS.has(activeRef.current)) {
+      navTo("demographics", {}, { __skipLeaveGate: true });
+    }
+    alert("Please fill in the patient's Name, Age, Sex and Phone before leaving this assessment.");
+  }
+  function leaveWithoutSaving() {
+    const target = pendingLeave;
+    setPendingLeave(null);
+    if (!target) return;
+    navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
+  }
 
   // Seed the browser history stack with the starting screen once on mount,
   // so the very first Back press has something real to land on instead of
@@ -1282,6 +1352,34 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}
+
+      {/* ── Leave-assessment save/demographics gate ───────────────────────── */}
+      {pendingLeave && (
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(17,17,27,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+          onClick={()=>setPendingLeave(null)}>
+          <div style={{background:PC.surface,borderRadius:16,padding:"22px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 50px rgba(0,0,0,0.3)"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:"1.02rem",fontWeight:800,color:PC.text,marginBottom:6}}>Save this assessment?</div>
+            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18,lineHeight:1.4}}>
+              Your entries are kept either way. Choosing "Save" also checks that the patient's core details (Name, Age, Sex, Phone) are filled in before you leave.
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button type="button" onClick={leaveConfirmSave}
+                style={{padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Save & Leave
+              </button>
+              <button type="button" onClick={leaveWithoutSaving}
+                style={{padding:"11px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.surface,color:PC.text,fontWeight:700,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Leave without saving
+              </button>
+              <button type="button" onClick={()=>setPendingLeave(null)}
+                style={{padding:"9px",borderRadius:10,border:"none",background:"none",color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
+                Stay on this screen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Guest Mode: "sign in to use this" popup, shown by requireAuth() ── */}
       {authPromptFeature && (
