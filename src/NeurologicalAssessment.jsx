@@ -187,12 +187,59 @@ function FieldShell({ label, hint, howTo, info, children }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
+// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
+// straight into whichever field passes `voice`. Same SpeechRecognition
+// lookup as the Chief complaint mic on the New Patient intake form
+// (AppModules.jsx); this one is a reusable per-field mic for TextField.
+function useVoiceInput(baseValue, onChange) {
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+  const start = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = baseValue || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) onChange((base + " " + final).trim());
+    };
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => setRecording(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+  const stop = () => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    setRecording(false);
+  };
+  return { recording, toggle: () => (recording ? stop() : start()) };
+}
+
+function VoiceMicButton({ recording, onClick }) {
+  return (
+    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
+      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
+        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
+      {recording ? "⏹" : "🎤"}
+    </button>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit, voice }) {
+  const v = useVoiceInput(value, onChange);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap">
+      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
+        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -1003,10 +1050,10 @@ function DemographicsSection({ data, setData }) {
       <SectionIntro icon="📋" title="Patient Information" />
       <div className="row-2">
         <div style={{ flex: 2 }}>
-          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} />
+          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} voice />
         </div>
         <div style={{ flex: 1 }}>
-          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} />
+          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} voice />
         </div>
       </div>
       <div className="row-2">
@@ -1014,10 +1061,10 @@ function DemographicsSection({ data, setData }) {
           <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
         </div>
       </div>
-      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" voice />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
-      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
-      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" voice />
+      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} voice />
       <SelectField
         label="Source of referral"
         type="single"
@@ -1025,7 +1072,7 @@ function DemographicsSection({ data, setData }) {
         value={d.referralSource}
         onChange={(v) => set("referralSource", v)}
       />
-      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
+      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
       <TextField label="Date of onset / injury" value={d.onsetDate} onChange={(v) => set("onsetDate", v)} />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
