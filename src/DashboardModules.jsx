@@ -619,7 +619,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile, onQuickStart, currentUser, onSignOut }) {
+function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onCompleteTask, onDismissTask, onAddTask, onProfile, onQuickStart, onStartAI, currentUser, onSignOut }) {
   const { useState, useEffect, useMemo, useCallback } = React;
   const [activeTab,   setActiveTab]   = useState("pending");
   const [scheduleTab, setScheduleTab] = useState("all");
@@ -896,11 +896,12 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
   const now = new Date();
   const greeting = now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening";
   const dateStr  = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  // Minimal Today page (Aditi: "the today page should be minimal remove
+  // the task workflow, patient outcome remove... more minimal") -- just
+  // the one stat that isn't derived from the removed task-workflow/
+  // outcomes sections.
   const STATS = [
     {label:"Today",   value:String(todayCount),             sub:"patients", icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"subjective"},
-    {label:"Pending", value:String(pendingTasks.length),    sub:"tasks",    icon:"⏳",color:pendingTasks.some(t=>t.priority==="high")?"#EF4444":"#D97706",bg:pendingTasks.some(t=>t.priority==="high")?"#FEF2F2":"#FEF3C7",nav:"dashboard"},
-    {label:"Done",    value:String(todayCompleted),         sub:"today",    icon:"✓", color:"#059669",bg:"#ECFDF5",nav:"dashboard"},
-    {label:"Overdue", value:String(overdueTasks),           sub:"alerts",   icon:"⚠",color:"#EF4444",bg:"#FEF2F2",nav:"dashboard"},
   ];
 
   return (
@@ -984,372 +985,6 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           ))}
         </div>
 
-        {/* ── ACTIVE PATIENT ── */}
-        {activeName ? (
-          <div className="dc" style={{
-            background:"linear-gradient(135deg,#6D28D9 0%,#7C3AED 55%,#8B5CF6 100%)",
-            borderRadius:20,padding:"18px",
-            boxShadow:"0 8px 28px rgba(109,40,217,0.28)",animationDelay:"0.1s",cursor:"pointer",
-          }} onClick={()=>onNav("subjective")}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-              <div>
-                <div style={{fontSize:9.5,fontWeight:700,color:"rgba(255,255,255,0.6)",
-                  textTransform:"uppercase",letterSpacing:"0.9px",marginBottom:3}}>Active Patient</div>
-                <div style={{fontSize:17,fontWeight:800,color:"white",letterSpacing:"-0.4px"}}>{activeName}</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2,
-                  maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                  {activeCC||"Assessment pending"} · {activeSess.length} session{activeSess.length!==1?"s":""}
-                </div>
-              </div>
-              <div style={{width:44,height:44,borderRadius:13,
-                background:"rgba(255,255,255,0.18)",border:"2px solid rgba(255,255,255,0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:14,fontWeight:800,color:"white",flexShrink:0}}>
-                {activeName.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase()}
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,marginBottom:14}}>
-              {[
-                {l:"Pain NRS",v:activeNRS>0?`${activeNRS}/10`:"—",s:worstNRS>activeNRS?`↓ from ${worstNRS}`:"not recorded"},
-                {l:"Sessions",v:String(activeSess.length),s:"completed"},
-              ].map(m=>(
-                <div key={m.l} style={{flex:1,background:"rgba(255,255,255,0.14)",borderRadius:11,padding:"8px 9px"}}>
-                  <div style={{fontSize:14,fontWeight:800,color:"white",lineHeight:1}}>{m.v}</div>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,0.6)",marginTop:2,fontWeight:600}}>{m.l}</div>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,0.45)",marginTop:1}}>{m.s}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Explicit CTA -- previously the whole card was clickable with no
-                visible affordance saying what clicking it does. */}
-            <button onClick={(e)=>{ e.stopPropagation(); onNav("subjective"); }} style={{
-              width:"100%",padding:"10px",background:"rgba(255,255,255,0.16)",
-              border:"1px solid rgba(255,255,255,0.3)",borderRadius:11,
-              color:"white",fontWeight:800,fontSize:"0.8rem",cursor:"pointer",
-            }}>Continue Assessment →</button>
-          </div>
-        ) : (
-          <div className="dc" style={{background:"white",borderRadius:20,padding:"20px",
-            border:"2px dashed #E5E7EB",textAlign:"center",animationDelay:"0.1s",cursor:"pointer"}}
-            onClick={()=>onNav("subjective")}>
-            <div style={{fontSize:"1.5rem",marginBottom:8}}>👤</div>
-            <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>No active patient</div>
-            <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>Select or create a patient to begin</div>
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════
-            TASK MANAGEMENT SYSTEM
-        ══════════════════════════════════════════════════════════════ */}
-        <div className="dc" style={{animationDelay:"0.15s"}}>
-
-          {/* Tab bar */}
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-              Task Workflow
-            </div>
-            <div style={{display:"flex",gap:5}}>
-              {[
-                {k:"pending",  label:`Pending ${pendingTasks.length>0?"("+pendingTasks.length+")":""}`},
-                {k:"completed",label:`Done ${todayCompleted>0?"("+todayCompleted+")":""}`},
-              ].map(({k,label})=>(
-                <button key={k} onClick={()=>setActiveTab(k)} style={{
-                  padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",
-                  fontSize:11,fontWeight:700,
-                  background:activeTab===k?"#6D28D9":"#F3F4F6",
-                  color:activeTab===k?"white":"#6B7280",
-                  transition:"all 0.2s",
-                }}>{label}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── PENDING TASKS ── */}
-          {activeTab === "pending" && (
-            <div>
-              {pendingTasks.length === 0 ? (
-                <div style={{background:"white",borderRadius:16,padding:"28px 20px",
-                  border:"2px dashed #E5E7EB",textAlign:"center"}}>
-                  <div style={{fontSize:"2rem",marginBottom:8}}>✅</div>
-                  <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>All clear!</div>
-                  <div style={{fontSize:12,color:"#9CA3AF",marginTop:4}}>
-                    No pending tasks — great clinical workflow
-                  </div>
-                </div>
-              ) : (
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {pendingTasks.map((task,i) => {
-                    const pri = PRI[task.priority] || PRI.medium;
-                    const isCompleting = completing === task.id;
-                    const isExpanded   = expanded === task.id;
-                    return (
-                      <div key={task.id}
-                        className={isCompleting ? "completing" : ""}
-                        style={{
-                          background:"white",
-                          borderRadius:14,
-                          border:`1px solid ${isExpanded?pri.border:"#F1F5F9"}`,
-                          boxShadow:isExpanded?"0 4px 16px rgba(0,0,0,0.08)":"0 1px 5px rgba(0,0,0,0.04)",
-                          overflow:"hidden",
-                          animation:isCompleting?"":"fadeUp 0.4s ease both",
-                          animationDelay:`${i*0.05}s`,
-                          transition:"box-shadow 0.2s, border 0.2s",
-                          transformOrigin:"top",
-                        }}>
-
-                        {/* Priority stripe */}
-                        <div style={{height:3,background:pri.color,width:"100%"}}/>
-
-                        {/* Main row */}
-                        <div style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:11,
-                          cursor:"pointer"}} onClick={()=>setExpanded(isExpanded?null:task.id)}>
-                          {/* Icon */}
-                          <div style={{width:38,height:38,borderRadius:10,background:pri.bg,
-                            display:"flex",alignItems:"center",justifyContent:"center",
-                            fontSize:17,flexShrink:0}}>{task.icon}</div>
-
-                          {/* Info */}
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:"#111827",
-                              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                              {task.title}
-                            </div>
-                            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3,flexWrap:"wrap"}}>
-                              <span style={{fontSize:10.5,color:"#6B7280"}}>{task.patient}</span>
-                              <span style={{color:"#D1D5DB"}}>·</span>
-                              <span style={{fontSize:10,fontWeight:600,color:pri.color,
-                                background:pri.bg,padding:"1px 6px",borderRadius:99}}>
-                                {pri.label}
-                              </span>
-                              {task.dueTime && (
-                                <>
-                                  <span style={{color:"#D1D5DB"}}>·</span>
-                                  <span style={{fontSize:10,color:"#9CA3AF"}}>⏰ {task.dueTime}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Expand arrow */}
-                          <div style={{color:"#9CA3AF",fontSize:12,flexShrink:0,
-                            transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":""}}>▼</div>
-                        </div>
-
-                        {/* Expanded detail */}
-                        {isExpanded && (
-                          <div style={{padding:"0 14px 14px",borderTop:"1px solid #F9FAFB"}}>
-                            {task.note && (
-                              <div style={{background:"#F8FAFC",borderRadius:8,padding:"8px 10px",
-                                marginBottom:12,fontSize:11.5,color:"#6B7280",lineHeight:1.5}}>
-                                📌 {task.note}
-                              </div>
-                            )}
-                            <div style={{display:"flex",gap:8}}>
-                              {/* Open button */}
-                              <button onClick={()=>onNav(task.nav||"subjective")} style={{
-                                flex:1,padding:"9px",borderRadius:9,
-                                background:"#F3F4F6",border:"none",cursor:"pointer",
-                                fontSize:12,fontWeight:700,color:"#374151",
-                                display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                              }}>
-                                📂 Open
-                              </button>
-                              {/* Complete button */}
-                              <button onClick={()=>handleComplete(task.id)} style={{
-                                flex:2,padding:"9px",borderRadius:9,
-                                background:"linear-gradient(135deg,#059669,#10B981)",
-                                border:"none",cursor:"pointer",
-                                fontSize:12,fontWeight:800,color:"white",
-                                display:"flex",alignItems:"center",justifyContent:"center",gap:6,
-                                boxShadow:"0 2px 8px rgba(5,150,105,0.3)",
-                              }}>
-                                {isCompleting ? "✓ Completing…" : "✓ Mark Complete"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Quick complete (collapsed) */}
-                        {!isExpanded && (
-                          <div style={{padding:"0 14px 10px",display:"flex",gap:7}}>
-                            <button onClick={()=>onNav(task.nav||"subjective")} style={{
-                              flex:1,padding:"6px",borderRadius:8,
-                              background:"#F8FAFC",border:"1px solid #E5E7EB",
-                              cursor:"pointer",fontSize:11,fontWeight:600,color:"#6B7280",
-                            }}>Open →</button>
-                            <button onClick={()=>handleComplete(task.id)} style={{
-                              flex:2,padding:"6px",borderRadius:8,
-                              background:"#ECFDF5",border:"1px solid #BBF7D0",
-                              cursor:"pointer",fontSize:11,fontWeight:700,color:"#059669",
-                              display:"flex",alignItems:"center",justifyContent:"center",gap:4,
-                            }}>
-                              {isCompleting
-                                ? <span style={{animation:"checkPop 0.3s ease"}}>✓ Done!</span>
-                                : "✓ Complete"}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── COMPLETED HISTORY ── */}
-          {activeTab === "completed" && (
-            <div>
-              {completedTasks.length === 0 ? (
-                <div style={{background:"white",borderRadius:16,padding:"24px",
-                  border:"1px solid #F1F5F9",textAlign:"center"}}>
-                  <div style={{fontSize:"1.5rem",marginBottom:8}}>📋</div>
-                  <div style={{fontSize:12,color:"#9CA3AF"}}>No completed tasks yet</div>
-                </div>
-              ) : (
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {completedTasks.map((task,i)=>(
-                    <div key={task.id} style={{
-                      background:"white",borderRadius:12,padding:"12px 14px",
-                      border:"1px solid #F1F5F9",
-                      display:"flex",alignItems:"center",gap:11,opacity:0.8,
-                      animation:"fadeUp 0.35s ease both",animationDelay:`${i*0.04}s`,
-                    }}>
-                      <div style={{width:34,height:34,borderRadius:9,
-                        background:"#ECFDF5",border:"1px solid #BBF7D0",
-                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
-                        ✅
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12.5,fontWeight:700,color:"#374151",
-                          textDecoration:"line-through",opacity:0.7,
-                          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                          {task.title}
-                        </div>
-                        <div style={{fontSize:10.5,color:"#9CA3AF",marginTop:2}}>
-                          {task.patient} · Completed{" "}
-                          {task.completedAt
-                            ? new Date(task.completedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
-                            : "today"}
-                        </div>
-                      </div>
-                      <div style={{fontSize:11,fontWeight:600,color:"#059669",
-                        background:"#ECFDF5",padding:"2px 8px",borderRadius:99}}>Done</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── RECENT PATIENTS ── */}
-        <div className="dc" style={{animationDelay:"0.2s"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:11}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>
-              Recent Patients <span style={{fontSize:11,fontWeight:500,color:"#9CA3AF",marginLeft:5}}>({patients.length})</span>
-            </div>
-            <span style={{fontSize:11,fontWeight:600,color:"#6D28D9",cursor:"pointer"}}
-              onClick={()=>onNav("subjective")}>See all →</span>
-          </div>
-          <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:2}}>
-            {[["All","all"],["Active","in-progress"],["Done","completed"]].map(([l,v])=>(
-              <button key={v} onClick={()=>setScheduleTab(v)} style={{
-                padding:"5px 14px",borderRadius:99,border:"none",cursor:"pointer",
-                fontSize:11,fontWeight:700,whiteSpace:"nowrap",
-                background:scheduleTab===v?"#6D28D9":"#F3F4F6",
-                color:scheduleTab===v?"white":"#6B7280",transition:"all 0.2s",
-              }}>{l}</button>
-            ))}
-          </div>
-          {schedule.length === 0 ? (
-            <div style={{background:"white",borderRadius:14,padding:"20px",
-              border:"1px solid #F1F5F9",textAlign:"center",color:"#9CA3AF",fontSize:12}}>
-              No patients yet — create your first patient
-            </div>
-          ) : (
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {schedule.filter(s2=>scheduleTab==="all"||s2.status===scheduleTab).slice(0,5).map((appt,i)=>{
-                const sc = STATUS_CFG[appt.status];
-                return (
-                  <div key={appt.id} style={{
-                    background:"white",borderRadius:14,padding:"12px 14px",
-                    border:`1px solid ${appt.hasRedFlags?"#FECACA":"#F1F5F9"}`,
-                    display:"flex",alignItems:"center",gap:12,
-                    opacity:appt.status==="completed"?0.7:1,cursor:"pointer",
-                    animation:"fadeUp 0.4s ease both",animationDelay:`${i*0.05}s`,
-                  }} onClick={()=>onQuickStart ? onQuickStart(patients.find(p2=>p2.id===appt.id)||patients[i]) : onNav("subjective")}>
-                    <div style={{width:40,height:40,borderRadius:11,
-                      background:`${appt.color}18`,border:`1.5px solid ${appt.color}25`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:12,fontWeight:800,color:appt.color,flexShrink:0,
-                      position:"relative"}}>
-                      {appt.initials}
-                      {appt.hasRedFlags&&(
-                        <div style={{position:"absolute",top:-3,right:-3,width:10,height:10,
-                          background:"#EF4444",borderRadius:"50%",border:"1.5px solid white",
-                          fontSize:7,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}>!</div>
-                      )}
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#111827",
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{appt.name}</div>
-                      <div style={{fontSize:11,color:"#6B7280",marginTop:1,
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{appt.dx}</div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                      <div style={{display:"flex",alignItems:"center",gap:4,
-                        padding:"3px 8px",background:sc.bg,borderRadius:99}}>
-                        <div style={{width:5,height:5,borderRadius:"50%",background:sc.dot,
-                          animation:appt.status==="in-progress"?"pulseDot 1.5s infinite":"none"}}/>
-                        <span style={{fontSize:9.5,fontWeight:700,color:sc.color}}>{sc.label}</span>
-                      </div>
-                      <div style={{fontSize:10,color:"#9CA3AF"}}>{appt.sessionCount} session{appt.sessionCount!==1?"s":""}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-
-
-        {/* ── PATIENT OUTCOMES ── */}
-        <div className="dc" style={{background:"white",borderRadius:20,padding:"16px",
-          border:"1px solid #F1F5F9",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
-          animationDelay:"0.3s"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>Patient Outcomes</div>
-            <div style={{fontSize:11,color:"#9CA3AF"}}>{patients.length} total</div>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-around"}}>
-            <Donut pct={assessPct} color="#6D28D9" label="Assessed"  size={62} stroke={7}/>
-            <Donut pct={romPct}    color="#0891B2" label="ROM Done"   size={62} stroke={7}/>
-            <Donut pct={soapPct}   color="#059669" label="SOAP Done"  size={62} stroke={7}/>
-            <Donut pct={safetyPct} color="#10B981" label="No Flags"   size={62} stroke={7}/>
-          </div>
-          {patients.length===0&&(
-            <div style={{textAlign:"center",color:"#9CA3AF",fontSize:11,marginTop:12}}>
-              Add patients to see outcome analytics
-            </div>
-          )}
-          {patients.length>0&&(
-            <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:16,
-              paddingTop:14,borderTop:"1px solid #F1F5F9"}}>
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>{sessionsThisWeek}</div>
-                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>Sessions this week</div>
-              </div>
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>{patientsThisWeek}</div>
-                <div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>Patients this week</div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* ── START ASSESSMENT CTA ── */}
         <div className="dc" style={{
           background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
@@ -1368,6 +1003,30 @@ function TherapistDashboardModule({ patients, data, onNav, taskDB=[], onComplete
           <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",
             display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem"}}>→</div>
         </div>
+
+        {/* ── AI ASSESSMENT CTA -- same entry point as Home's "AI Assessment"
+            tile (OrthoAssessmentNew's AI intake, entryMode:"ai"). ── */}
+        <div className="dc" style={{
+          background:"white",borderRadius:20,padding:"20px",
+          border:"1.5px solid #EDE9FE",boxShadow:"0 1px 6px rgba(0,0,0,0.04)",
+          animationDelay:"0.4s",
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+          cursor:"pointer",
+        }} onClick={()=>onStartAI ? onStartAI() : onNav("subjective",{autoOpenAI:true})}>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",letterSpacing:"-0.3px"}}>✨ AI Assessment</div>
+            <div style={{fontSize:11,color:"#6B7280",marginTop:3}}>
+              Say your assessment in your words and get it filled
+            </div>
+          </div>
+          <div style={{width:44,height:44,borderRadius:13,background:"#F5F3FF",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.4rem",color:"#7C3AED"}}>→</div>
+        </div>
+
+        {/* Recent Patients / schedule list removed for now (Aditi: "remove
+            schedule list for now we will add later") -- the `schedule`
+            derived data above is left intact so it's a quick re-add, not a
+            rebuild, when that's wanted back. */}
 
       </div>
     </div>

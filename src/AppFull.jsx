@@ -2156,7 +2156,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     ))}
                   </div>
                   {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} currentUser={currentUser} onSignOut={onSignOut}/>
+                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} taskDB={taskDB} onCompleteTask={completeTask} onDismissTask={dismissTask} onAddTask={addOrUpdateTask} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                   ) : clinicalSubTab==="treatment" ? (
                     <TreatmentCaseloadPanel patients={patients}
                       onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
