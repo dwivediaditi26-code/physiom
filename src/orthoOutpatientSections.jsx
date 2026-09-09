@@ -341,7 +341,7 @@ export function TreatmentPlanSection({ data, setData }) {
    this pathway's own `techniques.entries` (useSectionData), matching
    how every other section here stores its own namespaced data.
    ============================================================ */
-const TECHNIQUE_TYPES = [
+export const TECHNIQUE_TYPES = [
   { key: "manual", label: "Joint Mob", icon: "🦴" },
   { key: "dn", label: "Dry Needling", icon: "🪡" },
   { key: "st", label: "Soft Tissue", icon: "👐" },
@@ -366,7 +366,7 @@ const US_FREQ = ["1 MHz (deep — 3–5cm)", "3 MHz (superficial — 1–2cm)"];
 const US_MODE = ["Pulsed 20%", "Pulsed 50%", "Continuous"];
 const ELECTRO_TYPES = ["TENS — conventional (80–150Hz)", "TENS — acupuncture-like (2–4Hz)", "IFT — 80–150Hz (pain)", "IFT — 1–10Hz (muscle stim)", "SWD", "NMES", "Russian stim", "LASER — class 3B/4", "Shockwave"];
 
-const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", grade: "", laterality: "", sets: "", durationMin: "", frequency: "", dosage: "", duration: "", response: "", notes: "", dnMuscle: "", dnNeedles: "", dnDepth: "", dnTwitch: "", usFreq: "", usIntensity: "", usMode: "", usArea: "", tapeType: "", tapeGoal: "", stTechnique: "", stRegion: "", electroType: "", electroParams: "" };
+export const BLANK_TECHNIQUE = { id: null, type: "manual", region: "", technique: "", grade: "", laterality: "", sets: "", durationMin: "", frequency: "", dosage: "", duration: "", response: "", notes: "", dnMuscle: "", dnNeedles: "", dnDepth: "", dnTwitch: "", usFreq: "", usIntensity: "", usMode: "", usArea: "", tapeType: "", tapeGoal: "", stTechnique: "", stRegion: "", electroType: "", electroParams: "" };
 
 /* +/- stepper dosage field -- Sets / Duration (min) / Frequency (x per
    week) as tap-to-adjust counters instead of free-typed text (2026-08-26,
@@ -410,7 +410,7 @@ function TechniqueGradeField({ value, onChange }) {
   );
 }
 
-function techniqueEntryForm(type, form, set) {
+export function techniqueEntryForm(type, form, set) {
   switch (type) {
     case "manual":
       return (
@@ -487,7 +487,7 @@ function techniqueEntryForm(type, form, set) {
   }
 }
 
-function dosageMeta(t) {
+export function dosageMeta(t) {
   const parts = [];
   if (t.sets) parts.push(`${t.sets} sets`);
   if (t.durationMin) parts.push(`${t.durationMin} min`);
@@ -497,7 +497,7 @@ function dosageMeta(t) {
   return parts.join(" · ");
 }
 
-function techniqueLabel(t) {
+export function techniqueLabel(t) {
   if (t.type === "manual") return `${t.technique || "Joint mob"}${t.grade ? ` — Grade ${t.grade}` : ""}${t.region ? ` (${t.region})` : ""}`;
   if (t.type === "dn") return `Dry Needling — ${t.dnMuscle || "unknown muscle"}${t.laterality ? ` (${t.laterality})` : ""}`;
   if (t.type === "st") return `${t.stTechnique || "Soft tissue"}${t.stRegion ? ` — ${t.stRegion}` : ""}`;

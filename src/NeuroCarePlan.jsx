@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB } from "./sharedClinicalData.js";
+import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
   REFERENCES, ASSIST_LADDER, problemById,
@@ -75,20 +76,12 @@ const PHASES = [
 ];
 const TERMS = ["Short term", "Long term"];
 const EQUIPMENT = ["None", "Chair", "Plinth", "Parallel bars", "Walker/frame", "Cane", "Quad cane", "AFO", "Therapy ball", "Foam pad", "Treadmill", "Other"];
-// Manual treatment / modality quick-picks — same vocabulary as the ortho
-// assessment's "Treatment Techniques" step (2026-09-05, Aditi: make the Care
-// Plan's manual add match that page). Tapping one pre-names the treatment;
-// "Other" reveals a free-text field. All flow into the same dose screen.
-const MODALITIES = [
-  { label: "Joint Mob", icon: "🦴" },
-  { label: "Dry Needling", icon: "🪡" },
-  { label: "Soft Tissue", icon: "👐" },
-  { label: "Taping", icon: "🎗️" },
-  { label: "Ultrasound", icon: "〰️" },
-  { label: "Electrotherapy", icon: "⚡" },
-  { label: "Manual Therapy", icon: "🤲" },
-  { label: "Other", icon: "➕" },
-];
+// Manual treatment / modality quick-picks reuse TECHNIQUE_TYPES and its
+// entry form verbatim from the ortho assessment's own "Treatment
+// Techniques" step (2026-09-09, Aditi: it "opens but not the original
+// way" — the Care Plan's technique picker only collected sets/reps/hold,
+// dropping the type-specific fields — Maitland grade, DN muscle/needles,
+// taping pattern, US frequency, etc. — the wizard's step captures).
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 // Defensive: a finding value must render as text. Current data stores
@@ -347,9 +340,9 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   const [picked, setPicked] = useState(null);
   const [dose, setDose] = useState(null);
   const [linked, setLinked] = useState([goal.id]);
-  const [manualName, setManualName] = useState("");
-  const [manualOther, setManualOther] = useState(false);
-  const pickModality = (name) => startDose({ id: "manual_" + uid(), name, target: "Manual treatment / modality", _cat: "Manual", sets: "", reps: "", hold: "", freq: "" });
+  const [techType, setTechType] = useState(null);
+  const [techForm, setTechForm] = useState(BLANK_TECHNIQUE);
+  const setTechField = (k, v) => setTechForm((f) => ({ ...f, [k]: v }));
 
   const all = useMemo(() => Object.entries(exerciseCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [exerciseCategories]);
 
@@ -378,11 +371,11 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   return (
     <div className="ct-modal" style={fullScreen ? { position: "fixed", inset: 0, zIndex: 3000 } : undefined}>
       <div className="ct-modal-header">
-        <div className="ct-modal-title">{picked ? picked.name : "Add treatment"}</div>
+        <div className="ct-modal-title">{picked ? picked.name : techType ? TECHNIQUE_TYPES.find((t) => t.key === techType)?.label : "Add treatment"}</div>
         <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">✕</button>
       </div>
 
-      {!picked && (
+      {!picked && !techType && (
         <>
           <div style={{ padding: "0 14px", fontSize: 12, color: BRAND.gray }}>For: <b style={{ color: BRAND.ink }}>{goal.measure}</b></div>
           <div className="ct-search-wrap">
@@ -427,28 +420,24 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
                 library (SWD, ultrasound, dry needling, manual therapy, taping…)
                 so the therapist can add anything and still attach it to a goal
                 (2026-09-05, Aditi: technique section "should have the freedom
-                to put by the therapist"). Flows into the same dose screen and
-                Sessions/Progress as library treatments. */}
+                to put by the therapist"). Opens the SAME type-specific form
+                (Maitland grade, DN muscle/needles, taping pattern, US
+                frequency, etc.) as the ortho assessment's own "Treatment
+                Techniques" step, not a generic dose screen. */}
             {!search.trim() && !cat && (
               <div className="ct-group">
                 <div className="ct-group-title">ADD A TECHNIQUE / MODALITY</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "4px 2px 6px" }}>
-                  {MODALITIES.map((m) => (
-                    <button key={m.label} type="button"
-                      onClick={() => (m.label === "Other" ? setManualOther((v) => !v) : pickModality(m.label))}
+                  {TECHNIQUE_TYPES.map((t) => (
+                    <button key={t.key} type="button"
+                      onClick={() => { setTechType(t.key); setTechForm({ ...BLANK_TECHNIQUE, type: t.key }); }}
                       style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12.5,
-                        border: `1.5px solid ${m.label === "Other" && manualOther ? BRAND.purple : BRAND.border}`, background: m.label === "Other" && manualOther ? BRAND.purpleFaint : "#fff", color: BRAND.ink }}>
-                      <span>{m.icon}</span>{m.label}
+                        border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.ink }}>
+                      <span>{t.icon}</span>{t.label}
                     </button>
                   ))}
                 </div>
-                {manualOther && (
-                  <div style={{ display: "flex", gap: 8, padding: "2px 2px 0" }}>
-                    <input className="ct-search" style={{ flex: 1 }} placeholder="Name the technique / modality…" value={manualName} onChange={(e) => setManualName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && manualName.trim()) pickModality(manualName.trim()); }} />
-                    <button type="button" className="primary-btn" style={{ flexShrink: 0, padding: "0 14px" }} disabled={!manualName.trim()} onClick={() => pickModality(manualName.trim())}>Next</button>
-                  </div>
-                )}
-                <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>Pick a modality (or Other) → set region/dose/frequency on the next screen; it attaches to this goal and flows into Sessions &amp; Progress.</div>
+                <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>Pick a technique type → fill in its details on the next screen; it attaches to this goal and flows into Sessions &amp; Progress.</div>
               </div>
             )}
             {(search.trim() || cat) && (
@@ -513,11 +502,50 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
           </div>
         </>
       )}
+
+      {techType && (
+        <>
+          <div className="ct-modal-body">
+            <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>For: <b style={{ color: BRAND.ink }}>{goal.measure}</b></div>
+            {techniqueEntryForm(techType, techForm, setTechField)}
+            <TextArea label="Patient response during technique" value={techForm.response} onChange={(v) => setTechField("response", v)} placeholder="e.g. pain reproduction +, ROM improved, comfortable" />
+            {techType !== "dn" && techType !== "taping" && <TextArea label="Additional notes" value={techForm.notes} onChange={(v) => setTechField("notes", v)} />}
+
+            <div className="subheading" style={{ marginTop: 14 }}>Add to goal(s)</div>
+            {allGoals.map((g) => {
+              const on = linked.includes(g.id);
+              return (
+                <button key={g.id} type="button" className={"ct-item" + (on ? " ct-item-checked" : "")} onClick={() => setLinked(on ? linked.filter((x) => x !== g.id) : [...linked, g.id])}>
+                  <span className="ct-checkbox">{on ? "☑" : "☐"}</span>
+                  <span style={{ textAlign: "left" }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="ct-modal-footer" style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setTechType(null); setTechForm(BLANK_TECHNIQUE); }}>Back</button>
+            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={!linked.length}
+              onClick={() => onAdd({ id: uid(), name: techniqueLabel(techForm), category: "Technique", ...techForm, goalIds: linked })}>
+              Add to plan
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 function doseLine(t) {
+  // Techniques (added via TECHNIQUE_TYPES) use durationMin/frequency, not
+  // the exercise library's reps/hold/equipment/assistance/freq shape.
+  if (t.type) {
+    const parts = [];
+    if (t.sets) parts.push(`${t.sets} sets`);
+    if (t.durationMin) parts.push(`${t.durationMin} min`);
+    if (t.frequency) parts.push(`${t.frequency}x/wk`);
+    if (t.dosage) parts.push(t.dosage);
+    return parts.join(" • ");
+  }
   const parts = [];
   if (t.sets && t.reps) parts.push(`${t.sets} × ${t.reps}`);
   else if (t.reps) parts.push(`${t.reps} reps`);
