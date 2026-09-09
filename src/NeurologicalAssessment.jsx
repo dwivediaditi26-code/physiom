@@ -2171,8 +2171,11 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // sectionKey), but the "carePlan" step id is what Summary/Review reads
   // (data[step.id]) and formats -- so without this merge Review always saw
   // an empty object for Problems/Goals/Treatment regardless of what was
-  // actually saved.
-  const reviewData = useMemo(() => ({ ...data, carePlan: data.neuroCarePlan }), [data]);
+  // actually saved. Same mismatch for Exercise Prescription: its sectionKey
+  // is "neuroExercisePrescription" but its step id is "exercisePrescription"
+  // (2026-09-09 finding: a prescribed exercise programme never appeared in
+  // Review at all, the same class of bug as carePlan above).
+  const reviewData = useMemo(() => ({ ...data, carePlan: data.neuroCarePlan, exercisePrescription: data.neuroExercisePrescription }), [data]);
 
   useEffect(() => {
     if (step >= 1 && current) setVisited((v) => new Set(v).add(current.id));
