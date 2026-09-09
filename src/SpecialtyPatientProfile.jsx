@@ -11,6 +11,7 @@ import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDA
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
 import { formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
+import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
 
@@ -605,11 +606,16 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   const counts = carePlanCounts(cp);
   const planNumber = history.length + 1;
   const planLabel = `Plan ${planNumber}${cp.planLabel ? ` — ${cp.planLabel}` : ""}`;
-  // Exercise Prescription lives in the assessment snapshot's own data
-  // (orthoParsed.data.exercisePrescription), not the Care Plan's carePlan
-  // object -- there's no per-plan-version history for it, so this only
+  // Exercise Prescription lives alongside the assessment's own data --
+  // patient.data.neuro.neuroExercisePrescription for Neuro (the wizard
+  // saves its whole local `data` object flat under patient.data.neuro),
+  // orthoParsed.data.exercisePrescription for Ortho (parsed out of the
+  // ortho_*_assessment JSON snapshot) -- not the Care Plan's carePlan
+  // object, so there's no per-plan-version history for it; this only
   // applies to the current (active) plan view.
-  const exerciseRows = !isNeuro ? formatExercisePrescriptionSection(orthoParsed?.data?.exercisePrescription || {}) : [];
+  const exerciseRows = isNeuro
+    ? formatNeuroExercisePrescriptionSection(patient?.data?.neuro?.neuroExercisePrescription || {})
+    : formatExercisePrescriptionSection(orthoParsed?.data?.exercisePrescription || {});
 
   const saveCp = (nextCp, nextHistory) => {
     if (isNeuro) onSaveField?.(patient.id, { neuro: { ...(patient.data.neuro || {}), neuroCarePlan: nextCp, carePlanHistory: nextHistory } });
