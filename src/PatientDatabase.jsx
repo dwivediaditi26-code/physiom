@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { getC } from "./utils.jsx";
+import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
 import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 import { MMT_DATA_LABELS, mmtFallbackLabel, ST_DATA_LABELS, SCALE_DATA_LABELS, resolveCyriaxKey } from "./sharedClinicalData.js";
 import { NKT_REGIONS, injectViewerControls } from "./sharedClinicalData.js";
@@ -430,7 +431,37 @@ const DEMO_PATIENTS = [];
 
 const DEMO_VERSION = "v2026-06c"; // bump this when demo patients change
 
+// In-memory cache of decrypted patient lists, keyed by userId. Real AES
+// decryption (Web Crypto) is unavoidably async, but `patients` state is set
+// synchronously on mount (useState(() => loadPatientDB(...))) -- so
+// hydrateLocalCache() below runs once, asynchronously, right after login
+// (before AppInner ever renders) and populates this. Once populated,
+// loadPatientDB() is a synchronous cache read. Cleared on sign-out.
+const _patientCache = new Map();
+
+function clearPatientCache(userId) {
+  if (userId === undefined) _patientCache.clear();
+  else _patientCache.delete(userId);
+}
+
+// Synchronous peek at what's on disk right now, without decrypting.
+// Legacy (pre-encryption) caches are plain JSON arrays; new caches are a
+// JSON object envelope ({__enc:1, iv, ct}) -- both parse cleanly with
+// JSON.parse, so this never throws on valid data from either era.
+function readDbRawSync(userId) {
+  let raw;
+  try { raw = localStorage.getItem(dbKey(userId)); } catch { return { kind: "empty" }; }
+  if (!raw) return { kind: "empty" };
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { kind: "plaintext", value: parsed };
+    if (isEncryptedEnvelope(parsed)) return { kind: "encrypted", envelope: parsed };
+    return { kind: "empty" };
+  } catch { return { kind: "empty" }; }
+}
+
 function loadPatientDB(userId) {
+  if (_patientCache.has(userId)) return _patientCache.get(userId);
   const DB_KEY = dbKey(userId);
   const DRAFT_KEY = draftKey(userId);
   try {
@@ -441,7 +472,16 @@ function loadPatientDB(userId) {
       localStorage.removeItem(DRAFT_KEY_LEGACY);
       localStorage.setItem("pm_cleared_demo_v5", "1");
     }
-    const stored = JSON.parse(localStorage.getItem(DB_KEY) || "[]");
+    const rawState = readDbRawSync(userId);
+    if (rawState.kind === "encrypted") {
+      // Can't decrypt synchronously. hydrateLocalCache() (called at login,
+      // before AppInner renders) normally already filled _patientCache by
+      // the time this runs. If it somehow hasn't, [] is a safe placeholder
+      // -- the Supabase-merge effect in AppFull.jsx repopulates a moment
+      // later from the server copy either way, so nothing is lost.
+      return [];
+    }
+    const stored = rawState.kind === "plaintext" ? rawState.value : [];
     // Remove any old demo patients that were previously seeded
     const real = stored.filter(p => !p.id.startsWith("demo_"));
     if (real.length !== stored.length) {
@@ -458,11 +498,43 @@ function loadPatientDB(userId) {
         const seeded = [SEED_PATIENT, SEED_PATIENT_2];
         try { localStorage.setItem(DB_KEY, JSON.stringify(seeded)); } catch {}
         try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ pid: SEED_PATIENT.id, data: SEED_PATIENT.data })); } catch {}
+        _patientCache.set(userId, seeded);
         return seeded;
       }
     }
+    _patientCache.set(userId, real);
     return real;
   } catch { return []; }
+}
+
+// Call once, right after login (before rendering the authenticated app), to
+// decrypt an existing local cache into _patientCache ahead of time -- so the
+// synchronous loadPatientDB() call in AppFull.jsx's initial useState almost
+// always already has real data instead of hitting the [] placeholder above.
+// Also transparently upgrades a still-plaintext legacy cache to encrypted.
+async function hydrateLocalCache(userId) {
+  if (!userId) return;
+  const rawState = readDbRawSync(userId);
+  if (rawState.kind === "encrypted") {
+    const decrypted = await decryptJSON(rawState.envelope);
+    if (Array.isArray(decrypted)) {
+      _patientCache.set(userId, decrypted);
+    } else {
+      // Shouldn't normally happen (wrong/missing key, corrupt data). Leave
+      // the cache unset -- loadPatientDB()'s [] fallback + the Supabase
+      // merge effect are the recovery path, not a crash or data loss.
+      console.error("[PatientDatabase] could not decrypt local patient cache for", userId);
+    }
+    return;
+  }
+  // Plaintext or empty -- loadPatientDB() already handles this correctly
+  // (including seeding/migration). Run it once to warm the cache, then
+  // opportunistically re-save as encrypted so this device's cache is
+  // upgraded going forward without the user doing anything.
+  const patients = loadPatientDB(userId);
+  if (rawState.kind === "plaintext" && hasSessionKey()) {
+    savePatientDBLocalOnly(patients, userId);
+  }
 }
 // userId is passed explicitly by the caller (rather than this function calling
 // supabase.auth.getUser() itself) so a save that was already in flight can't
@@ -486,9 +558,34 @@ async function syncPatientsToSupabase(patients, userId) {
     if (error) { console.warn("[Supabase sync]", error.message); throw error; }
   } catch (e) { console.warn("[Supabase sync error]", e); throw e; }
 }
+// Encrypts (when a session key is available) and writes the local cache,
+// updating _patientCache synchronously first so any loadPatientDB() call in
+// the same tick sees fresh data even though the actual encrypt+write is
+// async. Falls back to plaintext when there's no session key (Guest Mode,
+// or a save that races ahead of key derivation) -- same as the old
+// behaviour in that case, never worse.
+async function persistPatientsLocal(patients, userId) {
+  _patientCache.set(userId, patients);
+  try {
+    if (hasSessionKey()) {
+      const envelope = await encryptJSON(patients);
+      if (envelope) { localStorage.setItem(dbKey(userId), JSON.stringify(envelope)); return; }
+    }
+    localStorage.setItem(dbKey(userId), JSON.stringify(patients));
+  } catch {}
+}
+
+// For call sites that already have the authoritative list (e.g. just
+// fetched from Supabase) and only need to update the local cache, not
+// re-upload it. Fire-and-forget, matching how the old raw
+// localStorage.setItem it replaces was also fire-and-forget.
+function savePatientDBLocalOnly(patients, userId) {
+  return persistPatientsLocal(patients, userId);
+}
+
 function savePatientDB(patients, userId) {
-  try { localStorage.setItem(dbKey(userId), JSON.stringify(patients)); } catch {}
-  return syncPatientsToSupabase(patients, userId); // returns a promise — callers that want a save-status indicator can await/.then/.catch this
+  persistPatientsLocal(patients, userId); // fire-and-forget local (encrypted) cache write
+  return syncPatientsToSupabase(patients, userId); // unchanged return contract — callers await/.then/.catch THIS for cloud save status
 }
 const TASK_KEY = 'physio_task_db_v1';
 function loadTaskDB() {
@@ -2267,7 +2364,8 @@ function PostureSessionsView({ d, C, onNav }) {
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
   dbKey, draftKey,
-  loadPatientDB, savePatientDB,
+  loadPatientDB, savePatientDB, savePatientDBLocalOnly,
+  hydrateLocalCache, clearPatientCache,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,

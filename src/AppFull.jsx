@@ -54,12 +54,14 @@ import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
 import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
 import {
-  dbKey, draftKey,
-  loadPatientDB, savePatientDB,
+  draftKey,
+  loadPatientDB, savePatientDB, savePatientDBLocalOnly,
+  hydrateLocalCache, clearPatientCache,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
 } from "./PatientDatabase.jsx";
+import { setSessionKey, clearSessionKey } from "./localCrypto.js";
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
@@ -295,7 +297,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
   // why this matters: without this, two students sharing one browser/device
   // would silently read and overwrite each other's local patient cache.
-  const DB_KEY = dbKey(currentUser?.id);
   const DRAFT_KEY = draftKey(currentUser?.id);
 
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
@@ -537,7 +538,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             merged.push(rt >= lt ? rem : loc);
           }
           merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-          try { localStorage.setItem(DB_KEY, JSON.stringify(merged)); } catch {}
+          savePatientDBLocalOnly(merged, currentUser?.id); // encrypted local cache write, no re-upload
           return merged;
         });
       });
@@ -2617,6 +2618,43 @@ export default function App() {
     return () => { active = false; sub.subscription.unsubscribe(); };
   }, []);
 
+  // ── Local-cache encryption key lifecycle ──────────────────────────────
+  // The AES key that protects the local patient cache (see localCrypto.js /
+  // PatientDatabase.jsx) is derived from the session's access token and
+  // held only in memory. On a genuinely new sign-in we must decrypt the
+  // existing local cache (hydrateLocalCache) BEFORE AppInner's synchronous
+  // `useState(() => loadPatientDB(...))` runs, or that first read sees an
+  // empty placeholder instead of the real cached list. `keyHydrated` gates
+  // that. On sign-out, wipe the key and the decrypted cache from memory.
+  const hydratedUserIdRef = useRef(null);
+  const [keyHydrated, setKeyHydrated] = useState(false);
+  useEffect(() => {
+    if (!session) {
+      clearSessionKey();
+      clearPatientCache();
+      hydratedUserIdRef.current = null;
+      setKeyHydrated(false);
+      return;
+    }
+    const uid = session.user?.id;
+    if (hydratedUserIdRef.current === uid) {
+      // Same user as last time this ran (e.g. a token refresh) -- keep the
+      // in-memory key current, but no need to re-show the loading gate or
+      // redo the (already-done) cache hydration.
+      setSessionKey(session.access_token);
+      return;
+    }
+    hydratedUserIdRef.current = uid;
+    setKeyHydrated(false);
+    let active = true;
+    (async () => {
+      await setSessionKey(session.access_token);
+      await hydrateLocalCache(uid);
+      if (active) setKeyHydrated(true);
+    })();
+    return () => { active = false; };
+  }, [session]);
+
   if (session === undefined) {
     return (
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F7F7F8"}}>
@@ -2642,6 +2680,16 @@ export default function App() {
     // AuthScreen's onAuth is largely redundant with onAuthStateChange above
     // (Supabase fires SIGNED_IN either way) but harmless to pass through.
     return <AuthScreen onAuth={() => {}} onTryGuest={() => setGuestMode(true)} />;
+  }
+
+  if (!keyHydrated) {
+    // Brief gate on a genuinely new sign-in while the local patient cache
+    // is decrypted (see the effect above) -- not shown on token refreshes.
+    return (
+      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F7F7F8"}}>
+        <TabLoader />
+      </div>
+    );
   }
 
   return (
