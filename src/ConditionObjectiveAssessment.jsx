@@ -47,9 +47,12 @@ import cervicalConditionsRaw from "./cervicalConditions.json";
 import thoracicConditionsRaw from "./thoracicConditions.json";
 import lumbarConditionsRaw from "./lumbarConditions.json";
 import shoulderConditionsRaw from "./shoulderConditions.json";
-import { HIP_CONDITIONS, HIP_CONDITION_ORDER, HIP_ROM_MOVEMENTS } from "./hipConditionAssessmentData.js";
-import { KNEE_CONDITIONS, KNEE_CONDITION_ORDER, KNEE_ROM_MOVEMENTS } from "./kneeConditionAssessmentData.js";
-import { ANKLE_FOOT_CONDITIONS, ANKLE_FOOT_CONDITION_ORDER, ANKLE_FOOT_ROM_MOVEMENTS } from "./ankleFootConditionAssessmentData.js";
+import hipConditionsRaw from "./hipConditions.json";
+import kneeConditionsRaw from "./kneeConditions.json";
+import ankleFootConditionsRaw from "./ankleFootConditions.json";
+import { HIP_ROM_MOVEMENTS } from "./hipConditionAssessmentData.js";
+import { KNEE_ROM_MOVEMENTS } from "./kneeConditionAssessmentData.js";
+import { ANKLE_FOOT_ROM_MOVEMENTS } from "./ankleFootConditionAssessmentData.js";
 
 const HAIRLINE = "#E5E7EB";
 
@@ -65,6 +68,9 @@ const { conditions: CERVICAL_CONDITIONS, order: CERVICAL_CONDITION_ORDER } = loa
 const { conditions: THORACIC_CONDITIONS, order: THORACIC_CONDITION_ORDER } = loadConditions(thoracicConditionsRaw, "T11");
 const { conditions: LUMBAR_CONDITIONS, order: LUMBAR_CONDITION_ORDER } = loadConditions(lumbarConditionsRaw, "L11");
 const { conditions: SHOULDER_CONDITIONS, order: SHOULDER_CONDITION_ORDER } = loadConditions(shoulderConditionsRaw, null);
+const { conditions: HIP_CONDITIONS, order: HIP_CONDITION_ORDER } = loadConditions(hipConditionsRaw, null);
+const { conditions: KNEE_CONDITIONS, order: KNEE_CONDITION_ORDER } = loadConditions(kneeConditionsRaw, null);
+const { conditions: ANKLE_FOOT_CONDITIONS, order: ANKLE_FOOT_CONDITION_ORDER } = loadConditions(ankleFootConditionsRaw, null);
 
 // Real AROM movements + normal-value degrees, same sourcing as Hip/Knee/
 // Ankle-Foot's (PatientDatabase.jsx's own ROM lookup / the app's real ROM
@@ -91,11 +97,17 @@ const SHOULDER_ROM_MOVEMENTS = [
 function normalizeName(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
-// Shoulder-only: the live engine's SH0x ids don't match shoulderConditions.json's
-// S0x ids, but the condition names match 1:1 — bridge by name instead of id.
-const SHOULDER_ID_BY_NAME = Object.fromEntries(
-  Object.values(SHOULDER_CONDITIONS).map((c) => [normalizeName(c.name), c.id])
-);
+function idByName(conditions) {
+  return Object.fromEntries(Object.values(conditions).map((c) => [normalizeName(c.name), c.id]));
+}
+// Several live reasoning engines emit their own ids (SH0x, HP0x, KN0x, AK0x/
+// FT0x) that don't match the condition-library JSON's ids (S0x, H0x, K0x,
+// AF0x) — but the condition NAMES match 1:1 in every case, so each of these
+// regions bridges engine id -> library id by normalized name.
+const SHOULDER_ID_BY_NAME = idByName(SHOULDER_CONDITIONS);
+const HIP_ID_BY_NAME = idByName(HIP_CONDITIONS);
+const KNEE_ID_BY_NAME = idByName(KNEE_CONDITIONS);
+const ANKLE_FOOT_ID_BY_NAME = idByName(ANKLE_FOOT_CONDITIONS);
 
 function fieldKey(conditionId, module, sub) {
   return `${conditionId}::${module}${sub ? `::${sub}` : ""}`;
@@ -154,7 +166,7 @@ const REGION_CONFIGS = [
     matchesRegion: (r) => ["shoulder", "upperArm"].includes(r.id),
     hasData: (data) => hasShoulderChecklistData(data),
     run: (data) => runShoulderDifferential(data),
-    matchByName: true,
+    matchByName: true, nameIdMap: SHOULDER_ID_BY_NAME,
     conditions: SHOULDER_CONDITIONS, order: SHOULDER_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
@@ -162,10 +174,11 @@ const REGION_CONFIGS = [
     emptyNote: "Pick Shoulder as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
-    key: "hip", label: "Hip / Groin", schema: "v1",
+    key: "hip", label: "Hip / Groin", schema: "v2",
     matchesRegion: (r) => r.id === "hip",
     hasData: (data) => hasHipChecklistData(data),
     run: (data) => runHipDifferential(data),
+    matchByName: true, nameIdMap: HIP_ID_BY_NAME,
     conditions: HIP_CONDITIONS, order: HIP_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
@@ -173,10 +186,11 @@ const REGION_CONFIGS = [
     emptyNote: "Pick Hip as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
-    key: "knee", label: "Knee", schema: "v1",
+    key: "knee", label: "Knee", schema: "v2",
     matchesRegion: (r) => r.id === "knee",
     hasData: (data) => hasKneeChecklistData(data),
     run: (data) => runKneeDifferential(data),
+    matchByName: true, nameIdMap: KNEE_ID_BY_NAME,
     conditions: KNEE_CONDITIONS, order: KNEE_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
@@ -184,10 +198,11 @@ const REGION_CONFIGS = [
     emptyNote: "Pick Knee as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
-    key: "ankleFoot", label: "Ankle / Foot", schema: "v1",
+    key: "ankleFoot", label: "Ankle / Foot", schema: "v2",
     matchesRegion: (r) => r.id === "ankle" || r.id === "foot",
     hasData: (data) => hasAnkleFootChecklistData(data),
     run: (data) => runAnkleFootDifferential(data),
+    matchByName: true, nameIdMap: ANKLE_FOOT_ID_BY_NAME,
     conditions: ANKLE_FOOT_CONDITIONS, order: ANKLE_FOOT_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
@@ -354,7 +369,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     if (!config.matchByName) return Object.fromEntries(engineResult.conditions.map((c) => [c.id, c]));
     const out = {};
     engineResult.conditions.forEach((c) => {
-      const realId = SHOULDER_ID_BY_NAME[normalizeName(c.name)];
+      const realId = config.nameIdMap[normalizeName(c.name)];
       if (realId) out[realId] = c;
     });
     return out;

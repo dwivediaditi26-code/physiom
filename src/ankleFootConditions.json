@@ -1,0 +1,1412 @@
+{
+  "AF01": {
+    "id": "AF01",
+    "name": "Lateral Ankle Sprain (ATFL/CFL) — Acute",
+    "region": "Ankle",
+    "keyExams": [
+      "Anterior drawer test",
+      "Talar tilt test",
+      "Ottawa Ankle Rules screen"
+    ],
+    "observation": [
+      "Lateral swelling/bruising",
+      "antalgic gait"
+    ],
+    "posture": [
+      "Guarded plantarflexed posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Anterior drawer test",
+      "Talar tilt test",
+      "Ottawa Ankle Rules screen"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Eversion (peroneals)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Inversion (subtalar joint)",
+          "options": [
+            "No pain, no laxity",
+            "Pain reproduced, no laxity",
+            "Pain reproduced with laxity (ATFL/CFL torn — talar tilt)"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted eversion (peroneals) often weak/painful acutely — protective reflex inhibition, not necessarily a tear",
+        "Passive inversion (STJ) reproduces pain, with laxity present if ATFL/CFL torn (talar tilt)"
+      ],
+      "interpretation": "Resisted eversion weakness acutely reflects protective reflex inhibition, not necessarily a structural tear; passive inversion reproducing pain with laxity confirms ATFL/CFL involvement via the talar-tilt mechanism."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Peroneals (acute)",
+          "state": "Inhibited / reflex-guarded"
+        },
+        {
+          "name": "Peroneals (as healing progresses) / Tibialis Anterior",
+          "state": "Overactive, tib ant inhibition"
+        }
+      ],
+      "pattern": "Peroneals are typically inhibited/reflex-guarded acutely; as healing progresses, check for an overactive-peroneals / inhibited-tib-ant pattern feeding recurrent instability. Fascial component (from source): Lateral ligament / peroneal fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Subtalar Joint Mobility (Inversion/Eversion)",
+      "fields": [
+        {
+          "label": "Subtalar mobility pattern",
+          "options": [
+            "Acute guarding",
+            "Hypomobile",
+            "Hypermobile"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match to ATFL/CFL sprain mechanics; expect acute guarding rather than a fixed hypo/hypermobility pattern yet."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Balance (proprioception + CAI screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Single leg balance",
+          "options": [
+            "Deferred — too early acutely",
+            "Tested — normal",
+            "Tested — deficit"
+          ]
+        }
+      ],
+      "note": "Once acute swelling allows — too early acutely, but the baseline test to schedule for follow-up. FMA source note: Anterior-drawer/talar-tilt & single-leg balance deficit."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF02": {
+    "id": "AF02",
+    "name": "Chronic Ankle Instability (CAI)",
+    "region": "Ankle",
+    "keyExams": [
+      "Talar tilt test",
+      "Single-leg balance / proprioception screen",
+      "Subtalar mobility assessment"
+    ],
+    "observation": [
+      "Recurrent swelling",
+      "feeling of giving way"
+    ],
+    "posture": [
+      "Rearfoot varus / supinated posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Talar tilt test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Eversion (peroneals)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Inversion (STJ) range",
+          "options": [
+            "Normal range",
+            "Excessive/hypermobile range"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted eversion often weak — peroneal weakness/reflex inhibition well documented in CAI",
+        "Passive inversion shows excess/hypermobile range — the opposite of a capsular restriction"
+      ],
+      "interpretation": "Peroneal weakness/reflex inhibition on resisted eversion is well documented in CAI; passive inversion showing excessive/hypermobile range (the opposite of a capsular restriction) confirms mechanical laxity rather than stiffness."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Peroneals",
+          "state": "Overactive, tib ant inhibition — OR — simple weakness/delay (cross-check both)"
+        }
+      ],
+      "pattern": "Check both an \"Overactive, tib ant inhibition\" pattern AND simple peroneal weakness/delay — this cross-check is the key CPA question in chronic instability. Fascial component (from source): Peroneal fascial support; subtalar mobility."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Subtalar Joint Mobility",
+      "fields": [
+        {
+          "label": "Subtalar mobility pattern",
+          "options": [
+            "Normal",
+            "Hypermobile, excessive pronation",
+            "Marked L-vs-R asymmetry"
+          ]
+        }
+      ],
+      "chainEffect": "Expect \"hypermobile, excessive pronation\" or a marked L-vs-R asymmetry, per this app's own documented CAI presentation."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Balance (proprioception + CAI screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Single leg balance",
+          "options": [
+            "Normal",
+            "Deficit"
+          ]
+        }
+      ],
+      "note": "The named functional test for exactly this condition. FMA source note: Star-excursion balance deficit, single-leg stance failure."
+    },
+    "outcomeMeasures": [
+      "Cumberland Ankle Instability Tool (CAIT)",
+      "FAAM"
+    ]
+  },
+  "AF03": {
+    "id": "AF03",
+    "name": "High Ankle Sprain (Syndesmosis)",
+    "region": "Ankle",
+    "keyExams": [
+      "Squeeze/mortise test",
+      "External rotation stress test"
+    ],
+    "observation": [
+      "Swelling above joint line",
+      "pain on squeeze"
+    ],
+    "posture": [
+      "Externally-rotated foot guarding"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Squeeze/mortise test",
+      "External rotation stress test"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "External Rotation Stress + Squeeze (proximal tib-fib compression)",
+          "options": [
+            "Not tested",
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Passive external-rotation stress + squeeze (proximal tib-fib compression) reproduces high (syndesmotic) pain — the definitive joint-play test here, not a resisted-muscle one"
+      ],
+      "interpretation": "Resisted dorsiflexion/plantarflexion are less specific in a high ankle sprain; the passive external-rotation stress and squeeze (proximal tib-fib compression) tests are the definitive joint-play findings."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily compensation-driven (ligamentous/syndesmotic) — reassess Tib Ant/Peroneal balance once healed; prolonged non-weight-bearing can inhibit both. Fascial component (from source): Interosseous membrane / distal syndesmotic fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not covered by this app's talocrural/subtalar kinetic-chain tests (a syndesmosis is a separate joint) — rely on the squeeze/external-rotation stress tests above."
+    },
+    "functionalScreen": {
+      "name": "Weight-Bearing Dorsiflexion (Knee-to-Wall)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "note": "Syndesmotic widening affects mortise dorsiflexion mechanics even though it isn't the primary named screen for this injury. FMA source note: Squeeze & external-rotation stress reproduce high pain."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF04": {
+    "id": "AF04",
+    "name": "Achilles Tendinopathy (Insertional or Mid-Portion)",
+    "region": "Ankle",
+    "keyExams": [
+      "Royal London Hospital test",
+      "Single-leg heel raise endurance test",
+      "Achilles palpation (insertional vs mid-portion)"
+    ],
+    "observation": [
+      "Tendon thickening/tenderness",
+      "calf wasting"
+    ],
+    "posture": [
+      "Overpronation increasing tendon load"
+    ],
+    "palpation": [
+      "Achilles tendon — insertional",
+      "Achilles tendon — mid-portion"
+    ],
+    "specialTests": [
+      "Royal London Hospital test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Plantarflexion (gastroc/soleus)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Dorsiflexion — knee extended vs flexed",
+          "options": [
+            "Improves with knee flexed (gastroc tightness)",
+            "No change with knee position (soleus)",
+            "Full, no tightness"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted plantarflexion strong but painful at the tendon — classic contractile pattern",
+        "Passive dorsiflexion better with knee flexed = gastroc (vs soleus) differentiation"
+      ],
+      "interpretation": "Strong-but-painful resisted plantarflexion at the tendon is the classic contractile pattern; comparing passive dorsiflexion with the knee extended vs flexed differentiates a gastrocnemius vs soleus tightness contribution."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gastrocnemius/Soleus",
+          "state": "Overactive, Achilles tendinopathy pattern"
+        },
+        {
+          "name": "Glute Max (hip)",
+          "state": "Inhibited — check"
+        }
+      ],
+      "pattern": "Gastrocnemius/Soleus overactivity compensates for an inhibited Glute Max at the hip; reduced glute-driven propulsion increases calf load. Fascial component (from source): Superficial back line (gastroc-soleus-Achilles)."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Weight-Bearing Dorsiflexion Lunge Test",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "chainEffect": "Restricted dorsiflexion directly increases Achilles load; gastroc/soleus tightness is explicitly named as a driver of this restriction."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Heel Raise (calf endurance)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Single-leg heel raise repetitions",
+          "unit": "reps"
+        },
+        {
+          "type": "choice",
+          "label": "Reproduces tendon pain",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "The direct named functional test for this exact condition. FMA source note: Single-leg heel-raise load & hop reproduce tendon pain."
+    },
+    "outcomeMeasures": [
+      "VISA-A",
+      "FAAM"
+    ]
+  },
+  "AF05": {
+    "id": "AF05",
+    "name": "Achilles Tendon Rupture (Complete)",
+    "region": "Ankle",
+    "keyExams": [
+      "Thompson's (Simmond's) test",
+      "Palpable tendon gap"
+    ],
+    "observation": [
+      "Palpable gap",
+      "positive Thompson",
+      "bruising"
+    ],
+    "posture": [
+      "Cannot toe-off",
+      "flat gait"
+    ],
+    "palpation": [
+      "Palpable tendon gap"
+    ],
+    "specialTests": [
+      "Thompson's (Simmond's) test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Plantarflexion",
+          "options": [
+            "Absent/severely weak (with palpable gap)",
+            "Present, normal strength"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Thompson's (Simmond's) Test — passive calf squeeze",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted plantarflexion absent/severely weak with a palpable gap",
+        "Thompson's/Simmond's (passive calf squeeze) is the definitive test — not active resisted testing"
+      ],
+      "interpretation": "A palpable gap with absent/severely weak resisted plantarflexion, confirmed by a positive Thompson's/Simmond's test (passive calf squeeze — the definitive test here, not active resisted testing), indicates a complete Achilles rupture. Urgent orthopaedic referral, not manipulation or end-range testing."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable acutely — urgent orthopaedic referral takes priority over compensation-pattern testing. Fascial component (from source): N/A — urgent referral."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable acutely."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not applicable acutely — a Single Leg Heel Raise attempt would be diagnostic by its complete failure, but formal functional testing is deferred to urgent referral. FMA source note: Single-leg heel-raise impossible; Thompson positive."
+    },
+    "outcomeMeasures": [
+      "N/A — acute/medical; functional outcome once appropriate"
+    ]
+  },
+  "AF06": {
+    "id": "AF06",
+    "name": "Ankle Osteoarthritis",
+    "region": "Ankle",
+    "keyExams": [
+      "Passive ROM with end-feel assessment",
+      "Weight-bearing dorsiflexion lunge test",
+      "Imaging referral if not already available"
+    ],
+    "observation": [
+      "Anterior joint-line swelling",
+      "reduced DF",
+      "crepitus"
+    ],
+    "posture": [
+      "Stiff antalgic posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Dorsiflexion/Plantarflexion (general)",
+          "options": [
+            "Painless",
+            "Painful (screen for other pathology)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Dorsiflexion/Plantarflexion",
+          "options": [
+            "Full range",
+            "Restricted — capsular pattern PF > DF"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Hard/bony"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless — non-contractile pattern",
+        "Passive DF/PF restricted in a capsular pattern (PF>DF) with a hard/bony end-feel"
+      ],
+      "interpretation": "Painless resisted testing rules out a contractile source; a capsular-pattern restriction (plantarflexion more limited than dorsiflexion) with a hard/bony end-feel is consistent with osteoarthritic change."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gastrocnemius/Soleus",
+          "state": "Overactive/shortened, restricting DF"
+        },
+        {
+          "name": "Tibialis Anterior",
+          "state": "Check for anterior-impingement contribution"
+        }
+      ],
+      "pattern": "Gastrocnemius/Soleus are often overactive/shortened, restricting dorsiflexion — check alongside Tibialis Anterior for an anterior-impingement contribution. Fascial component (from source): Anterior capsular fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Weight-Bearing Dorsiflexion Lunge Test",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "chainEffect": "Expect severe restriction (<4cm / <10°), consistent with OA-related capsular loss."
+    },
+    "functionalScreen": {
+      "name": "Weight-Bearing Dorsiflexion (Knee-to-Wall)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "note": "The same test named as the functional screen for ankle DF restriction, impingement, and OA. FMA source note: Weight-bearing lunge restricted; stairs limited."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF07": {
+    "id": "AF07",
+    "name": "Tibialis Posterior Dysfunction / Progressive Flatfoot (PTTD)",
+    "region": "Ankle",
+    "keyExams": [
+      "Navicular drop test",
+      "Single-leg heel raise (too-many-toes sign)",
+      "Resisted inversion in plantarflexion"
+    ],
+    "observation": [
+      "Medial swelling",
+      "“too-many-toes”",
+      "collapsing arch"
+    ],
+    "posture": [
+      "Hindfoot valgus / flatfoot posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Navicular drop test",
+      "Single-leg heel raise (too-many-toes sign)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Inversion in Plantarflexion (tib post)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Single-leg heel raise — heel inversion",
+          "options": [
+            "Heel inverts normally",
+            "Fails to invert heel"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted inversion (tib post) weak",
+        "Single-leg heel raise fails to invert the heel — the functional resisted-test equivalent",
+        "Navicular drop quantifies the arch collapse"
+      ],
+      "interpretation": "Weak resisted inversion (tibialis posterior) combined with a single-leg heel raise that fails to invert the heel is the functional resisted-test equivalent; navicular drop then quantifies the degree of arch collapse."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Tibialis Posterior",
+          "state": "Inhibited, progressive flatfoot"
+        },
+        {
+          "name": "Peroneals",
+          "state": "Overactive"
+        }
+      ],
+      "pattern": "Tibialis Posterior inhibition (progressive flatfoot) with overactive Peroneals is the textbook PTTD compensation pattern, explicitly documented. Fascial component (from source): Deep posterior-compartment fascia (tib-post)."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Subtalar Joint Mobility",
+      "fields": [
+        {
+          "label": "Subtalar mobility pattern",
+          "options": [
+            "Normal",
+            "Hypermobile, excessive pronation — tibialis posterior failing to control pronation"
+          ]
+        }
+      ],
+      "chainEffect": "\"Hypermobile, excessive pronation... tibialis posterior failing to control pronation\" is the exact documented pattern for this condition."
+    },
+    "functionalScreen": {
+      "name": "Dynamic Arch / Navicular Drop",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Navicular drop",
+          "unit": "mm"
+        }
+      ],
+      "note": "Tibialis posterior function + foot pronation screen — the named functional test for exactly this condition. FMA source note: Single-leg heel-raise fails to invert heel; resisted inversion weak."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF08": {
+    "id": "AF08",
+    "name": "Peroneal Tendinopathy",
+    "region": "Ankle",
+    "keyExams": [
+      "Resisted eversion",
+      "Peroneal tendon palpation behind lateral malleolus",
+      "Subluxation provocation (resisted eversion + dorsiflexion)"
+    ],
+    "observation": [
+      "Retromalleolar swelling/tenderness"
+    ],
+    "posture": [
+      "Rearfoot varus (overload) posture"
+    ],
+    "palpation": [
+      "Peroneal tendon — behind lateral malleolus"
+    ],
+    "specialTests": [
+      "Subluxation provocation (resisted eversion + dorsiflexion)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Eversion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Subluxation Provocation (resisted eversion + dorsiflexion)",
+          "options": [
+            "Not tested",
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted eversion strong but painful behind the lateral malleolus — classic contractile pattern",
+        "Subluxation provocation (resisted eversion + DF) is the joint-play analogue"
+      ],
+      "interpretation": "Strong-but-painful resisted eversion behind the lateral malleolus is the classic contractile pattern for peroneal tendinopathy; the subluxation provocation test (resisted eversion + dorsiflexion) is the joint-play analogue used to screen for tendon instability."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Peroneals",
+          "state": "Overactive, tib ant inhibition — OR — tib post inhibition (determine which)"
+        }
+      ],
+      "pattern": "Determine WHICH muscle the peroneals are compensating for — tibialis anterior inhibition or tibialis posterior inhibition — before treating the peroneals in isolation. Fascial component (from source): Lateral (peroneal) compartment fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Subtalar Joint Mobility (adjunct context)",
+      "fields": [
+        {
+          "label": "Subtalar mobility",
+          "options": [
+            "Normal",
+            "Restricted",
+            "Hypermobile"
+          ]
+        }
+      ],
+      "chainEffect": "Not the primary test for this condition, but useful adjunct context since peroneals stabilise subtalar eversion — informs the compensation pattern noted in CPA above."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Heel Raise (observe heel-eversion quality)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Single-leg heel raise repetitions",
+          "unit": "reps"
+        },
+        {
+          "type": "choice",
+          "label": "Heel-eversion quality",
+          "options": [
+            "Normal",
+            "Abnormal eversion pattern"
+          ]
+        }
+      ],
+      "note": "The app has no peroneal-specific named functional screen, so this tib-post-oriented test is used as the closest adjunct. FMA source note: Resisted eversion & single-leg balance reproduce lateral pain."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF09": {
+    "id": "AF09",
+    "name": "Tarsal Tunnel Syndrome",
+    "region": "Ankle",
+    "keyExams": [
+      "Tinel's sign at tarsal tunnel",
+      "Sensory mapping of plantar foot",
+      "Dorsiflexion-eversion provocation"
+    ],
+    "observation": [
+      "Medial-ankle Tinel",
+      "intrinsic wasting"
+    ],
+    "posture": [
+      "Overpronation compressing the tunnel"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Tinel's sign at tarsal tunnel",
+      "Dorsiflexion-eversion provocation"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Inversion/Plantarflexion (general)",
+          "options": [
+            "Preserved/normal",
+            "Weak"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Tinel's Sign + Sustained Eversion-Dorsiflexion Provocation",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted inversion/PF generally preserved — neural, not contractile pattern",
+        "Tinel's sign + sustained eversion-dorsiflexion is the key provocation; sensory mapping of the plantar foot confirms the distribution"
+      ],
+      "interpretation": "Preserved resisted strength points to a neural rather than contractile source; Tinel's sign combined with sustained eversion-dorsiflexion provocation is the key finding, with sensory mapping of the plantar foot confirming the nerve distribution involved."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a classic muscle-pair pattern (nerve entrapment) — check for overpronation (Tib Post inhibition) as the mechanical driver compressing the tunnel. Fascial component (from source): Flexor retinaculum / tibial neural tension."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility condition (nerve entrapment); Subtalar Mobility can be checked as the mechanical driver of the overpronation noted in CPA above."
+    },
+    "functionalScreen": {
+      "name": "Dynamic Arch / Navicular Drop",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Navicular drop",
+          "unit": "mm"
+        }
+      ],
+      "note": "Overpronation is the documented mechanical driver compressing the tunnel, matching the CPA finding above. FMA source note: Sustained eversion-dorsiflexion & Tinel reproduce burning."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF10": {
+    "id": "AF10",
+    "name": "Anterior Ankle Impingement",
+    "region": "Ankle",
+    "keyExams": [
+      "Weight-bearing dorsiflexion lunge test w/ anterior pain provocation",
+      "Passive dorsiflexion end-feel"
+    ],
+    "observation": [
+      "Anterior joint-line tenderness",
+      "dorsiflexion block"
+    ],
+    "posture": [
+      "Restricted-DF stiff posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Dorsiflexion",
+          "options": [
+            "Painless",
+            "Painful — reproduces anterior pinch (soft-tissue impingement)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Dorsiflexion End-feel",
+          "options": [
+            "Soft/normal (gastroc-tightness restriction)",
+            "Hard/bony (bony impingement)"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted dorsiflexion may reproduce anterior pinch pain if soft-tissue impingement is present",
+        "Passive dorsiflexion end-feel is HARD/bony (bony impingement) — differentiates from a simple gastroc-tightness DF restriction"
+      ],
+      "interpretation": "A hard/bony passive dorsiflexion end-feel is the key distinction separating bony anterior impingement from a simple gastrocnemius-tightness dorsiflexion restriction; resisted dorsiflexion reproducing anterior pinch pain instead points to a soft-tissue impingement component."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gastrocnemius/Soleus",
+          "state": "Overactive, restricting available DF"
+        }
+      ],
+      "pattern": "Gastrocnemius/Soleus overactivity restricting available dorsiflexion increases anterior joint approximation — check calf length/activation alongside the joint pathology itself. Fascial component (from source): Anterior capsular / talar fascial pinch."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Weight-Bearing Dorsiflexion Lunge Test",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "chainEffect": "The direct match for this condition — expect restricted dorsiflexion with anterior pinch pain reproduced during the lunge."
+    },
+    "functionalScreen": {
+      "name": "Weight-Bearing Dorsiflexion (Knee-to-Wall)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — knee-to-wall distance",
+          "unit": "cm"
+        },
+        {
+          "type": "number",
+          "label": "Weight-bearing lunge — ankle dorsiflexion angle",
+          "unit": "°"
+        }
+      ],
+      "note": "The same test, whose own subtitle names \"impingement + CAI screen\" as its purpose. FMA source note: Weight-bearing lunge blocked/painful anteriorly."
+    },
+    "outcomeMeasures": [
+      "FAAM or FAOS",
+      "Cumberland Ankle Instability Tool (instability)"
+    ]
+  },
+  "AF11": {
+    "id": "AF11",
+    "name": "Plantar Fasciitis / Plantar Fasciopathy",
+    "region": "Foot",
+    "keyExams": [
+      "Windlass test (dorsiflex the hallux)",
+      "Palpation — medial calcaneal tubercle / fascia origin",
+      "Gait / arch assessment"
+    ],
+    "observation": [
+      "Medial calcaneal tenderness",
+      "antalgic heel-strike"
+    ],
+    "posture": [
+      "High or collapsed arch",
+      "overpronation"
+    ],
+    "palpation": [
+      "Medial calcaneal tubercle / fascia origin"
+    ],
+    "specialTests": [
+      "Windlass test (dorsiflex the hallux)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Toe Flexion (FHL)",
+          "options": [
+            "Usually painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Windlass Test (passive great-toe dorsiflexion, weight-bearing)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Not a classic resisted-muscle test — fascia, not contractile — resisted toe flexion (FHL) is usually painless",
+        "Windlass test (passive great-toe dorsiflexion, weight-bearing) is the definitive provocation"
+      ],
+      "interpretation": "Plantar fasciitis is not a classic resisted-muscle (contractile) pattern — resisted toe flexion (FHL) is usually painless. The Windlass test (passive great-toe dorsiflexion, weight-bearing) is the definitive provocation."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Flexor Hallucis Longus (FHL)",
+          "state": "Inhibited, plantar fascia overload"
+        }
+      ],
+      "pattern": "FHL inhibition is the exact documented driver — the fascia takes over arch-support duty the FHL should share. Fascial component (from source): Superficial back line (plantar-fascia ↔ gastroc)."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "First MTP Extension — Hallux Mobility",
+      "fields": [
+        {
+          "type": "number",
+          "label": "1st MTP dorsiflexion (windlass, on step)",
+          "unit": "°"
+        },
+        {
+          "type": "choice",
+          "label": "Arch rise observed",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "chainEffect": "This app's own windlass test — dorsiflex the great toe on a step and observe the arch rise — is the direct kinetic-chain correlate for plantar fasciitis."
+    },
+    "functionalScreen": {
+      "name": "Dynamic Arch / Navicular Drop",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Navicular drop",
+          "unit": "mm"
+        }
+      ],
+      "note": "The closest named screen — this app has no foot-specific FMA region, only Ankle — but arch mechanics overlap enough to be informative here. FMA source note: Windlass on single-toe stand reproduces heel pain. Also referenced in KEY EXAMS: Gait / arch assessment."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF12": {
+    "id": "AF12",
+    "name": "Heel Fat Pad Syndrome",
+    "region": "Foot",
+    "keyExams": [
+      "Palpation of central weight-bearing heel pad (vs medial origin)",
+      "Barefoot vs cushioned-footwear comparison"
+    ],
+    "observation": [
+      "Central heel tenderness",
+      "thin heel pad"
+    ],
+    "posture": [
+      "Neutral arch; barefoot hard-surface loading"
+    ],
+    "palpation": [
+      "Central weight-bearing heel pad (vs medial origin)"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Direct Palpation — Central Heel Pad vs Medial Fascia Origin",
+          "options": [
+            "Central pad tender (fat-pad pattern)",
+            "Medial origin tender (plantar-fascia pattern)"
+          ]
+        },
+        {
+          "label": "Windlass Test",
+          "options": [
+            "No reproduction (differentiates from plantar fasciitis)",
+            "Reproduces pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Not a resisted-muscle test — direct palpation of the central weight-bearing heel pad (vs the plantar fascia's medial origin) differentiates the two conditions",
+        "No windlass reproduction — differentiates from plantar fasciitis"
+      ],
+      "interpretation": "Direct palpation differentiates the central weight-bearing heel pad (fat-pad syndrome) from the plantar fascia's medial origin (plantar fasciitis); the absence of windlass-test reproduction further differentiates heel fat pad syndrome from plantar fasciitis."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (fat-pad atrophy/loading) — footwear cushioning is the primary intervention, not muscle activation. Fascial component (from source): Plantar fat-pad / heel fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility condition (fat-pad atrophy) — none of this app's foot/ankle kinetic-chain tests target the heel pad specifically."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not a functional-movement condition — direct palpation comparison (STTT, above) is the primary tool, not a named FMA screen. Barefoot vs cushioned-footwear comparison (from KEY EXAMS) is the practical adjunct. FMA source note: Deep central heel pressure (not medial origin) reproduces pain."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF13": {
+    "id": "AF13",
+    "name": "Morton's Neuroma (Interdigital Neuroma)",
+    "region": "Foot",
+    "keyExams": [
+      "Mulder's click (mediolateral squeeze + interspace pressure)",
+      "Web-space sensory testing",
+      "Toe-box footwear review"
+    ],
+    "observation": [
+      "3rd/4th web-space tenderness",
+      "splayed toes"
+    ],
+    "posture": [
+      "Narrow-toe-box / forefoot-loading posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Mulder's click (mediolateral squeeze + interspace pressure)"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Mulder's Click (passive mediolateral squeeze + interspace pressure)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Web-space sensory testing",
+          "options": [
+            "Normal sensation",
+            "Altered/diminished sensation"
+          ]
+        }
+      ],
+      "findings": [
+        "Not a resisted-muscle test — neural/interdigital — Mulder's click (passive mediolateral squeeze) is the definitive provocation",
+        "Web-space sensory testing maps the distribution"
+      ],
+      "interpretation": "Morton's neuroma is not tested with resisted-muscle testing since it is a neural/interdigital condition; Mulder's click (passive mediolateral squeeze with interspace pressure) is the definitive provocation, with web-space sensory testing mapping the distribution."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a classic compensation pattern — narrow toe-box loading is mechanically driven; Foot Intrinsics facilitation is a supportive adjunct only. Fascial component (from source): Intermetatarsal fascia / plantar digital nerve."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not a joint-mobility condition (interdigital nerve) — none of the foot/ankle kinetic-chain tests isolate the web spaces."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not applicable — Mulder's click (STTT, above) is the primary provocation, not a functional-movement screen. Toe-box footwear review (from KEY EXAMS) is the practical adjunct. FMA source note: Mulder's squeeze click; web-space sensory change."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF14": {
+    "id": "AF14",
+    "name": "Metatarsalgia (Mechanical Forefoot Overload)",
+    "region": "Foot",
+    "keyExams": [
+      "Palpation of metatarsal heads / plantar plate",
+      "Forefoot loading / single-leg heel raise",
+      "Footwear and load review"
+    ],
+    "observation": [
+      "Plantar callus under metatarsal heads"
+    ],
+    "posture": [
+      "Forefoot-loading / high-heel posture"
+    ],
+    "palpation": [
+      "Metatarsal heads / plantar plate"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Toe Flexion/Extension",
+          "options": [
+            "Usually painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Forefoot Loading (single-leg heel raise) — reproduces pain under metatarsal heads",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted toe flexion/extension usually painless",
+        "Forefoot loading (single-leg heel raise) reproducing pain under the metatarsal heads is the functional provocation"
+      ],
+      "interpretation": "Resisted toe flexion/extension is usually painless in metatarsalgia; forefoot loading via a single-leg heel raise that reproduces pain under the metatarsal heads is the functional provocation test."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Foot Intrinsics",
+          "state": "Inhibited, arch collapse"
+        }
+      ],
+      "pattern": "Foot intrinsic inhibition (arch collapse) often allows excess forefoot loading — check short-foot exercise capacity. Fascial component (from source): Plantar plate / forefoot fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "First MTP Extension — Hallux Mobility (adjunct context)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "1st MTP dorsiflexion",
+          "unit": "°"
+        }
+      ],
+      "chainEffect": "Restricted hallux extension shifts load laterally onto the metatarsal heads, feeding this exact metatarsalgia pattern."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Heel Raise (closest adjunct — observe foot-loading tolerance)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Single-leg heel raise repetitions",
+          "unit": "reps"
+        },
+        {
+          "type": "choice",
+          "label": "Reproduces forefoot pain",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "This app has no dedicated forefoot-loading functional test — the ankle-region Single Leg Heel Raise is used as the closest adjunct to observe foot-loading tolerance. FMA source note: Single-leg heel-raise & forefoot load reproduce pain."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF15": {
+    "id": "AF15",
+    "name": "First MTP Osteoarthritis / Hallux Rigidus",
+    "region": "Foot",
+    "keyExams": [
+      "1st MTP active/passive dorsiflexion ROM + end-feel",
+      "Grind/axial compression of the 1st MTP",
+      "Imaging if OA suspected"
+    ],
+    "observation": [
+      "Dorsal 1st-MTP osteophyte",
+      "reduced toe extension"
+    ],
+    "posture": [
+      "Supinated / lateral-loading gait avoiding push-off"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Grind/axial compression of the 1st MTP"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Great-Toe Extension (EHL)",
+          "options": [
+            "Painless",
+            "Painful at end-range"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive 1st MTP Dorsiflexion",
+          "options": [
+            "Full range",
+            "Most restricted — capsular pattern extension > flexion"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Hard/bony"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted great-toe extension (EHL) may be painful at end-range",
+        "Passive 1st MTP dorsiflexion is MOST restricted in a capsular pattern (extension > flexion) with a hard/bony end-feel",
+        "Grind test confirms"
+      ],
+      "interpretation": "Passive 1st MTP dorsiflexion is the most restricted direction in a capsular pattern (extension more limited than flexion) with a hard/bony end-feel; the grind/axial compression test confirms a joint (not tendon) source."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily a compensation pattern (joint OA) — Foot Intrinsics (abductor hallucis) facilitation supports remaining function but doesn't reverse the joint change. Fascial component (from source): Plantar plate / 1st-ray fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "First MTP Extension — Hallux Mobility",
+      "fields": [
+        {
+          "type": "number",
+          "label": "1st MTP dorsiflexion",
+          "unit": "°"
+        },
+        {
+          "type": "choice",
+          "label": "Gait pattern",
+          "options": [
+            "Normal push-off",
+            "Walks on lateral foot border"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match: \"severely restricted, <20° / hallux rigidus ... patient walks on lateral foot border\" is this app's own description of this exact condition."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "No dedicated forefoot/hallux FMA test exists in this app's library — the grind test and passive ROM (above) remain the primary tools. FMA source note: 1st-MTP dorsiflexion loss on toe-off; grind test."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF16": {
+    "id": "AF16",
+    "name": "Turf Toe (1st MTP Hyperextension Sprain)",
+    "region": "Foot",
+    "keyExams": [
+      "1st MTP dorsiflexion stress test",
+      "Plantar plate / sesamoid palpation",
+      "Imaging to exclude sesamoid fracture"
+    ],
+    "observation": [
+      "Swelling/tenderness of 1st MTP",
+      "athlete"
+    ],
+    "posture": [
+      "Push-off avoidance posture"
+    ],
+    "palpation": [
+      "Plantar plate / sesamoid"
+    ],
+    "specialTests": [
+      "1st MTP dorsiflexion stress test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Great-Toe Flexion",
+          "options": [
+            "Normal",
+            "Weak/painful (plantar plate/FHL involvement)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive 1st MTP Dorsiflexion Stress Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted great-toe flexion may be weak/painful if the plantar plate/FHL is involved",
+        "Passive 1st MTP dorsiflexion STRESS reproduces pain — an acute sprain pattern, not the chronic restriction seen in hallux rigidus"
+      ],
+      "interpretation": "Passive 1st MTP dorsiflexion stress reproducing pain reflects an acute capsuloligamentous sprain (turf toe), distinct from the chronic restriction seen in hallux rigidus; weak/painful resisted great-toe flexion suggests plantar plate/FHL involvement."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Flexor Hallucis Longus (FHL)",
+          "state": "Acute reflex inhibition post-injury"
+        }
+      ],
+      "pattern": "FHL may show acute reflex inhibition post-injury — reassess once the sprain has settled. Fascial component (from source): Plantar plate / sesamoid complex."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "First MTP Extension — Hallux Mobility (use cautiously)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "1st MTP dorsiflexion",
+          "unit": "°"
+        }
+      ],
+      "chainEffect": "This test targets the OPPOSITE direction from this injury's mechanism (chronic restriction vs. an acute hyperextension sprain) — use cautiously and only once acute pain allows."
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "No dedicated forefoot/hallux FMA test exists in this app's library — the dorsiflexion stress test (above) remains the primary tool. FMA source note: 1st-MTP dorsiflexion stress reproduces pain; toe-off deficit."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  },
+  "AF17": {
+    "id": "AF17",
+    "name": "Midfoot Sprain / Osteoarthritis (Navicular / Cuboid)",
+    "region": "Foot",
+    "keyExams": [
+      "Midfoot palpation (navicular, cuboid, TMT joints)",
+      "Midfoot stress / piano-key test",
+      "Weight-bearing imaging if Lisfranc suspected"
+    ],
+    "observation": [
+      "Dorsal midfoot swelling/tenderness"
+    ],
+    "posture": [
+      "Collapsed or rigid midfoot posture"
+    ],
+    "palpation": [
+      "Navicular",
+      "Cuboid",
+      "TMT joints"
+    ],
+    "specialTests": [
+      "Midfoot stress / piano-key test"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Midfoot Stress / Piano-Key Glide (joint-play)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted inversion/eversion is less specific for midfoot pathology",
+        "Passive midfoot stress / piano-key glide (joint-play) is the definitive provocation"
+      ],
+      "interpretation": "Resisted inversion/eversion is less specific here; the passive midfoot stress / piano-key glide (joint-play) test is the definitive provocation for navicular/cuboid midfoot pathology."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Tibialis Posterior",
+          "state": "Secondary guarding — screen once acute pain allows"
+        },
+        {
+          "name": "Peroneals",
+          "state": "Secondary guarding — screen once acute pain allows"
+        }
+      ],
+      "pattern": "Tibialis Posterior and Peroneals can secondarily guard around a stiff or unstable midfoot — screen both once acute pain allows. Fascial component (from source): Midfoot dorsal & plantar fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not covered by this app's foot/ankle kinetic-chain tests (talocrural, subtalar, and hallux are modelled; the midtarsal joints are not) — rely on the passive midfoot-stress test above."
+    },
+    "functionalScreen": {
+      "applicable": true,
+      "name": "Single Leg Balance (adjunct — no dedicated midfoot screen exists)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Single leg balance",
+          "options": [
+            "Normal",
+            "Deficit — possible secondary instability"
+          ]
+        }
+      ],
+      "note": "No dedicated midfoot FMA test exists in this app's library — Single Leg Balance can surface secondary instability once acute pain allows. FMA source note: Midfoot stress / piano-key & single-leg load reproduce pain."
+    },
+    "outcomeMeasures": [
+      "FAAM or Manchester-Oxford Foot Questionnaire (MOXFQ)"
+    ]
+  }
+}

@@ -1,0 +1,661 @@
+{
+  "H01": {
+    "id": "H01",
+    "name": "Femoroacetabular Impingement (FAI) / Acetabular Labral Tear",
+    "keyExams": [
+      "FADIR test",
+      "Hip Scour test"
+    ],
+    "observation": [
+      "C-sign grip over groin",
+      "antalgic gait"
+    ],
+    "posture": [
+      "Reduced hip IR posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "FADIR test",
+      "Hip Scour test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Normal",
+            "Painful (screen for secondary lesion)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Flexion + overpressure with FADIR (adduction + IR at end-flexion)",
+          "options": [
+            "No groin pain/click",
+            "Reproduces groin pain/click"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests usually normal — not a contractile pattern",
+        "Passive FADIR (flexion + adduction + IR at end-flexion) with overpressure reproduces groin pain/click"
+      ],
+      "interpretation": "The passive FADIR provocation, not resisted testing, is what reproduces symptoms here — consistent with a labral/impingement source rather than a contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Iliopsoas",
+          "state": "Overactive/tight, anteriorly"
+        },
+        {
+          "name": "Gluteus Maximus",
+          "state": "Inhibited, posteriorly"
+        }
+      ],
+      "pattern": "A Hip Extension Firing Order pattern for a QL/hamstring-dominant compensation. Fascial component (from source): Anterior hip capsule / adductor fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip Internal Rotation Mobility",
+      "fields": [
+        {
+          "label": "Internal rotation mobility",
+          "options": [
+            "Normal",
+            "Moderately restricted (20–29°)"
+          ]
+        }
+      ],
+      "chainEffect": "Moderately restricted (20–29°) internal rotation is explicitly documented as consistent with FAI, where the FADIR test is likely positive."
+    },
+    "functionalScreen": {
+      "name": "Seated Hip Rotation (FAI + capsular screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Seated Hip Rotation",
+          "options": [
+            "Normal, pain-free rotation",
+            "Restricted / painful rotation"
+          ]
+        }
+      ],
+      "note": "The named functional test for exactly this pattern. FMA source note: FADIR & deep squat reproduce groin pain/click."
+    },
+    "outcomeMeasures": [
+      "iHOT-33",
+      "HOOS"
+    ]
+  },
+  "H02": {
+    "id": "H02",
+    "name": "Hip Osteoarthritis",
+    "keyExams": [
+      "Passive hip ROM with end-feel (capsular pattern)",
+      "Hip Scour test"
+    ],
+    "observation": [
+      "Reduced stride",
+      "gluteal/quad wasting",
+      "antalgic gait"
+    ],
+    "posture": [
+      "Fixed-flexion / externally-rotated posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Hip Scour test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Painless",
+            "Painful (screen for secondary lesion)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Internal Rotation (most restricted)",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Passive Flexion",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Passive Abduction",
+          "options": [
+            "Full",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Hard/bony"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless (non-contractile)",
+        "Passive IR most restricted — capsular pattern IR = Flexion = Abduction",
+        "Hard/bony end-feel"
+      ],
+      "interpretation": "A capsular pattern (IR = Flexion = Abduction) with a hard/bony end-feel and painless resisted testing is consistent with osteoarthritic capsular restriction rather than a contractile lesion."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gluteus Maximus",
+          "state": "Inhibited, from disuse/pain"
+        },
+        {
+          "name": "Gluteus Medius",
+          "state": "Inhibited, from disuse/pain"
+        }
+      ],
+      "pattern": "Check the Hip Extension Firing Order (often QL- or hamstring-dominant). Fascial component (from source): Global hip capsular fascial restriction."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip Internal Rotation Mobility",
+      "fields": [
+        {
+          "label": "Internal rotation mobility",
+          "options": [
+            "Normal",
+            "Severely restricted (often <20°), significant asymmetry"
+          ]
+        }
+      ],
+      "chainEffect": "Severely restricted, often <20° with significant asymmetry — matching the capsular-pattern IR loss on passive testing above."
+    },
+    "functionalScreen": {
+      "name": "Seated Hip Rotation",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Seated Hip Rotation",
+          "options": [
+            "Unilateral, moderate restriction (FAI-type)",
+            "Bilateral, more severe restriction, hard/bony end-feel (OA)"
+          ]
+        }
+      ],
+      "note": "Same test as FAI, but expect bilateral, more severe restriction with a hard/bony end-feel. FMA source note: Capsular-pattern loss (IR/flexion); squat & stairs limited."
+    },
+    "outcomeMeasures": [
+      "Oxford Hip Score or HOOS",
+      "HAGOS (groin)",
+      "iHOT-33 (young/sport)"
+    ]
+  },
+  "H03": {
+    "id": "H03",
+    "name": "Greater Trochanteric Pain Syndrome (Gluteal Tendinopathy)",
+    "keyExams": [
+      "Resisted hip abduction (MMT)",
+      "Trendelenburg test",
+      "Ober's test"
+    ],
+    "observation": [
+      "Tender over greater trochanter",
+      "Trendelenburg"
+    ],
+    "posture": [
+      "Hip-drop / adducted stance (compensating glute med)"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Trendelenburg test",
+      "Ober's test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Abduction (glute med/TFL)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Adduction (Ober-type stretch)",
+          "options": [
+            "No lateral pain",
+            "Reproduces lateral pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted abduction strong but painful at the trochanter",
+        "Passive adduction (Ober-type stretch) reproduces lateral pain"
+      ],
+      "interpretation": "Strong-but-painful resisted abduction localizing to the trochanter, plus a positive Ober-type passive stretch, is the classic contractile (tendon) pattern for gluteal tendinopathy."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gluteus Medius",
+          "state": "Inhibited, TFL dominant"
+        }
+      ],
+      "pattern": "The textbook GTPS driver — confirm via therapy localization (touch TFL, retest glute med). Fascial component (from source): Lateral line (ITB/TFL) tension."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip Abduction Mobility & Stability (Trendelenburg + Ober's)",
+      "fields": [
+        {
+          "label": "Trendelenburg",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Ober's",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "chainEffect": "Documents both the mobility restriction and the stability deficit — the direct match for lateral hip pathology."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Squat + Lateral Step Down",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Single Leg Squat (glute med / dynamic valgus)",
+          "options": [
+            "No valgus collapse",
+            "Dynamic valgus collapse"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Lateral Step Down (eccentric glute med)",
+          "options": [
+            "Controlled",
+            "Uncontrolled / pelvic drop"
+          ]
+        }
+      ],
+      "note": "Both are the app's named functional tests for this exact pattern. FMA source note: Single-leg stance 30s & resisted abduction reproduce lateral pain."
+    },
+    "outcomeMeasures": [
+      "VISA-G",
+      "Oxford Hip"
+    ]
+  },
+  "H04": {
+    "id": "H04",
+    "name": "Proximal Hamstring Tendinopathy",
+    "keyExams": [
+      "Resisted hip extension / knee flexion (MMT)",
+      "Palpation — ischial tuberosity"
+    ],
+    "observation": [
+      "Ischial tuberosity tenderness"
+    ],
+    "posture": [
+      "Posterior pelvic-tilt sitting avoidance"
+    ],
+    "palpation": [
+      "Ischial tuberosity"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Hip Extension (knee extended, adding hamstring)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Hip Flexion (knee extended)",
+          "options": [
+            "No pain",
+            "Reproduces pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted hip extension (knee extended) strong but painful at the ischium — classic contractile pattern",
+        "Passive hip flexion with knee extended also reproduces pain"
+      ],
+      "interpretation": "Strong-but-painful resisted extension localizing to the ischium is the classic Cyriax contractile-lesion pattern for the proximal hamstring origin."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Gluteus Maximus",
+          "state": "Inhibited, hamstring dominant"
+        }
+      ],
+      "pattern": "The classic driver: hamstrings become the primary hip extensor and get overloaded. Fascial component (from source): Posterior-chain (hamstring–sacrotuberous) fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip Extension Mobility (Thomas Test)",
+      "fields": [
+        {
+          "label": "Thomas Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "chainEffect": "Provides posterior-chain context, but the Prone Hip Extension functional test below is the more direct diagnostic tool for this condition."
+    },
+    "functionalScreen": {
+      "name": "Prone Hip Extension (glute max firing pattern, Janda)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Firing order (glute max vs hamstring)",
+          "options": [
+            "Glute max fires first",
+            "Hamstring fires first / dominates"
+          ]
+        }
+      ],
+      "note": "Palpate glute max vs hamstring during the test — hamstring firing first/dominating is the direct functional correlate of this condition. FMA source note: Bent-knee stretch / long-lever resisted knee-flexion reproduce pain."
+    },
+    "outcomeMeasures": [
+      "Oxford Hip Score or HOOS",
+      "HAGOS (groin)",
+      "iHOT-33 (young/sport)"
+    ]
+  },
+  "H05": {
+    "id": "H05",
+    "name": "Adductor-Related Groin Pain (Adductor Strain / Athletic Pubalgia)",
+    "keyExams": [
+      "Resisted hip adduction (MMT)",
+      "Palpation — adductor origin / pubic ramus"
+    ],
+    "observation": [
+      "Adductor-origin tenderness",
+      "± swelling"
+    ],
+    "posture": [
+      "Pelvic instability posture"
+    ],
+    "palpation": [
+      "Adductor origin",
+      "Pubic ramus"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Adduction (\"squeeze test\")",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Abduction (stretch)",
+          "options": [
+            "No groin pain",
+            "Reproduces groin pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted adduction strong but painful at the pubic origin — the squeeze test is this same resisted test",
+        "Passive abduction (stretch) also reproduces groin pain"
+      ],
+      "interpretation": "Strong-but-painful resisted adduction localizing to the pubic origin, reproduced by the squeeze test, is the classic contractile pattern for adductor-related groin pain."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Adductors",
+          "state": "Overactive, medial chain"
+        }
+      ],
+      "pattern": "Typically compensating for an inhibited Glute Max — check the Hip Extension Firing Order. Fascial component (from source): Adductor / deep-front-line fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "No hip KC test isolates pure adduction in this app's library (IR/ER/extension/abduction are covered, not adduction specifically) — rely on the resisted/CPA findings above."
+    },
+    "functionalScreen": {
+      "name": "Hip Hinge Pattern or Single Leg Squat",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Hip Hinge Pattern (posterior-chain/pelvic control)",
+          "options": [
+            "Controlled",
+            "Compensatory pattern"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Single Leg Squat (compensatory pattern under loaded groin activity)",
+          "options": [
+            "No compensation",
+            "Compensatory pattern surfaces"
+          ]
+        }
+      ],
+      "note": "Either test screens for compensatory patterns during loaded groin activity; choose per presentation. FMA source note: Resisted adduction (squeeze test) & change-of-direction reproduce pain."
+    },
+    "outcomeMeasures": [
+      "HAGOS (groin)",
+      "Oxford Hip"
+    ]
+  },
+  "H06": {
+    "id": "H06",
+    "name": "Piriformis Syndrome / Deep Gluteal Syndrome",
+    "keyExams": [
+      "Piriformis (FAIR) test"
+    ],
+    "observation": [
+      "Deep buttock tenderness",
+      "± sciatic signs"
+    ],
+    "posture": [
+      "Externally-rotated resting hip"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Piriformis (FAIR) test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted External Rotation (piriformis)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful (reproduces deep buttock pain)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "FAIR Test (passive hip flexion + adduction + IR)",
+          "options": [
+            "Negative",
+            "Positive — reproduces deep buttock pain"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted ER (piriformis) reproduces deep buttock pain",
+        "FAIR test (passive flexion + adduction + IR) is positive — the key provocation"
+      ],
+      "interpretation": "Resisted ER reproducing deep buttock pain, combined with a positive FAIR test, localizes the lesion to the piriformis/deep gluteal space."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Piriformis",
+          "state": "Overactive, glute med compensation (or glute max)"
+        }
+      ],
+      "pattern": "Always check Glute Med/Glute Max facilitation before treating piriformis alone. Fascial component (from source): Deep gluteal fascial compartment; sciatic neural bias."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip External Rotation Mobility",
+      "fields": [
+        {
+          "label": "External rotation mobility",
+          "options": [
+            "Normal",
+            "Restricted, with deep buttock pain"
+          ]
+        }
+      ],
+      "chainEffect": "Restricted external rotation with deep buttock pain is explicitly documented as consistent with piriformis syndrome, where the FAIR test is likely positive."
+    },
+    "functionalScreen": {
+      "name": "Seated Hip Rotation (IR/ER range screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "IR/ER range screen",
+          "options": [
+            "Symmetric",
+            "Restricted ER, deep buttock pain"
+          ]
+        }
+      ],
+      "note": "Cross-reference against the FAIR-test finding above."
+    },
+    "outcomeMeasures": [
+      "Oxford Hip Score or HOOS",
+      "HAGOS (groin)",
+      "iHOT-33 (young/sport)"
+    ]
+  },
+  "H07": {
+    "id": "H07",
+    "name": "Snapping Hip Syndrome (Coxa Saltans, Internal or External)",
+    "keyExams": [
+      "Dynamic snapping hip test (observe/palpate active flexion-extension)"
+    ],
+    "observation": [
+      "Visible/audible snap with movement"
+    ],
+    "posture": [
+      "ITB-tight or hip-flexor-tight posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Dynamic snapping hip test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Hip Flexion (internal/iliopsoas type)",
+          "options": [
+            "No snap reproduced",
+            "Reproduces the snap"
+          ]
+        },
+        {
+          "label": "Resisted Abduction (external/ITB type)",
+          "options": [
+            "No snap reproduced",
+            "Reproduces the snap"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted hip flexion (iliopsoas type) or resisted abduction (ITB type) may reproduce the snap",
+        "Mostly a dynamic/observational finding rather than a static resisted one"
+      ],
+      "interpretation": "These resisted tests are secondary here — the dynamic snapping hip test (active flexion-extension) is the primary provocation for this condition, per the source."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Iliopsoas (internal type)",
+          "state": "Overactive/tight"
+        },
+        {
+          "name": "TFL (external type)",
+          "state": "Overactive, IT band syndrome pattern"
+        }
+      ],
+      "pattern": "Check Glute Med facilitation in both types. Fascial component (from source): Lateral line (external) or iliopsoas (internal) fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Hip Abduction Mobility (external/TFL type) or Hip Extension Mobility / Thomas Test (internal/iliopsoas type)",
+      "fields": [
+        {
+          "label": "Hip Abduction Mobility (external/TFL type)",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        },
+        {
+          "label": "Hip Extension Mobility / Thomas Test (internal/iliopsoas type)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "chainEffect": "Select per the suspected snapping structure — external (ITB) vs internal (iliopsoas)."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Squat or Hip Hinge Pattern",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Dynamic snap observed during loaded movement",
+          "options": [
+            "Not observed",
+            "Observed"
+          ]
+        }
+      ],
+      "note": "Observing the dynamic snap during a loaded functional movement is more revealing than any static positional test for this condition."
+    },
+    "outcomeMeasures": [
+      "Oxford Hip Score or HOOS",
+      "HAGOS (groin)",
+      "iHOT-33 (young/sport)"
+    ]
+  }
+}

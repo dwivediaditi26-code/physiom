@@ -112,7 +112,7 @@ describe("ConditionObjectiveAssessment — Hip", () => {
   it("resolves the Hip region, shows Key Exams (not Required/Recommended), and its own Hip ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
     runAnalysis();
-    expect(screen.getByRole("button", { name: /^HP01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^H01/ })).toBeInTheDocument();
     expect(screen.getByText("Key Exams")).toBeInTheDocument();
     expect(screen.queryByText("Cervical ROM")).not.toBeInTheDocument();
     expect(screen.getByText("Hip ROM")).toBeInTheDocument();
@@ -123,8 +123,8 @@ describe("ConditionObjectiveAssessment — Hip", () => {
   it("kinetic-chain-not-applicable condition (adductor-related groin pain) shows the greyed note with no chips", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "hip", label: "Hip" }]} />);
     runAnalysis();
-    fireEvent.click(screen.getByRole("button", { name: /HP05/i }));
-    expect(screen.getByText(/No hip kinetic-chain test in this app's library isolates pure adduction/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /H05/i }));
+    expect(screen.getByText(/No hip KC test isolates pure adduction/)).toBeInTheDocument();
     expect(screen.queryByText("Chain Effect")).not.toBeInTheDocument();
   });
 });
@@ -133,18 +133,17 @@ describe("ConditionObjectiveAssessment — Knee", () => {
   it("resolves the Knee region from selectedRegions and shows the Knee ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "knee", label: "Knee" }]} />);
     runAnalysis();
-    expect(screen.getByRole("button", { name: /^KN01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^K01/ })).toBeInTheDocument();
     expect(screen.getAllByText("Lachman's test").length).toBeGreaterThan(0);
     expect(screen.getByText("Knee ROM")).toBeInTheDocument();
   });
 });
 
 describe("ConditionObjectiveAssessment — Ankle/Foot", () => {
-  it("resolves from either the ankle or the foot region id, combining AK/FT conditions, and shows the Ankle ROM grid", () => {
+  it("resolves from either the ankle or the foot region id and shows the Ankle ROM grid", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "foot", label: "Foot / Toes" }]} />);
     runAnalysis();
-    expect(screen.getByRole("button", { name: /^AK01/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^FT01/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^AF01/ })).toBeInTheDocument();
     expect(screen.getByText("Ankle ROM")).toBeInTheDocument();
     expect(screen.getByText("Dorsiflexion")).toBeInTheDocument();
   });
