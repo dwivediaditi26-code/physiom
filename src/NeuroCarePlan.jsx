@@ -333,7 +333,7 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
 /* ─── 3. TREATMENT (goal-wise) ────────────────────────────── */
 function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose, fullScreen }) {
   const kb = useKB();
-  const { ASSIST_LADDER, recommendInterventions, exerciseCategories } = kb;
+  const { ASSIST_LADDER, recommendInterventions, exerciseCategories, manualTechniques } = kb;
   const cats = useMemo(() => Object.keys(exerciseCategories), [exerciseCategories]);
   const [cat, setCat] = useState(null);
   const [search, setSearch] = useState("");
@@ -423,8 +423,12 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
                 to put by the therapist"). Opens the SAME type-specific form
                 (Maitland grade, DN muscle/needles, taping pattern, US
                 frequency, etc.) as the ortho assessment's own "Treatment
-                Techniques" step, not a generic dose screen. */}
-            {!search.trim() && !cat && (
+                Techniques" step, not a generic dose screen. Ortho-only
+                (2026-09-09, Aditi: "remove the technique from neuro tab
+                because it is [an] ortho technique") -- these are MSK manual
+                therapy modalities, not part of Neuro's own treatment
+                vocabulary; Neuro's Add Treatment stays exercise-library-only. */}
+            {!search.trim() && !cat && manualTechniques && (
               <div className="ct-group">
                 <div className="ct-group-title">ADD A TECHNIQUE / MODALITY</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "4px 2px 6px" }}>

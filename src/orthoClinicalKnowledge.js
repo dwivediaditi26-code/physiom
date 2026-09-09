@@ -448,5 +448,10 @@ export function buildOrthoKnowledge(ctx = {}) {
     PROBLEM_CATEGORIES, REFERENCES, ASSIST_LADDER, goalProgress,
     conditionLabel, settingLabel, conditionSettingPrecautions,
     exerciseCategories,
+    // Manual therapy/modality picker (Joint Mob, Dry Needling, Taping,
+    // Ultrasound, Electrotherapy) in the Care Plan's "Add treatment" --
+    // MSK-specific, not shown for Neuro (2026-09-09, Aditi: "remove the
+    // technique from neuro tab because it is [an] ortho technique").
+    manualTechniques: true,
   };
 }
