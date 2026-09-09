@@ -302,6 +302,112 @@ function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, i
   );
 }
 
+/* ============================================================
+   PLAN & PROGRESS — Phase 1 (2026-09-09, Aditi: "all the things we
+   have added in the problem list, goals, treatment ... should show in
+   a page like format ... and have a button to edit it").
+
+   A documented, read-only "page" of the current care plan (Problem
+   List -> Goals -> Treatment Plan), matching what's actually saved --
+   with an Edit toggle that drops into the existing live
+   NeuroCarePlanPanel/OrthoCarePlanPanel editor (unchanged). Care
+   History is a stub for now: Phase 2 adds the "Close Plan & Reassess"
+   flow that actually closes a plan and starts a new one; until then
+   every patient has exactly one (always-active) plan. */
+function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoParsed }) {
+  const [editing, setEditing] = useState(false);
+  const cp = isNeuro ? (patient?.data?.neuro?.neuroCarePlan || {}) : (patient?.data?.ortho_care_plan || {});
+  const problems = Array.isArray(cp.problems) ? cp.problems : [];
+  const goals = Array.isArray(cp.goals) ? cp.goals : [];
+  const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
+  const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
+  const counts = carePlanCounts(cp);
+
+  if (editing) {
+    return (
+      <>
+        <GhostBtn onClick={() => setEditing(false)} style={{ marginBottom: 12 }}>← Back to Plan</GhostBtn>
+        {isNeuro
+          ? <NeuroCarePlanPanel patient={patient} onSaveField={onSaveField} />
+          : <OrthoCarePlanPanel patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <CardTitle action={<PrimaryBtn onClick={() => setEditing(true)}>✏️ Edit Plan</PrimaryBtn>}>Current Plan</CardTitle>
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 6 }}>Plan 1 — Active</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 12.5, color: C.muted }}>
+          <span>{counts.problems} Problem{counts.problems === 1 ? "" : "s"}</span>
+          <span>{counts.goals} Goal{counts.goals === 1 ? "" : "s"}</span>
+          <span>{counts.treatments} Treatment{counts.treatments === 1 ? "" : "s"}</span>
+          <span>{counts.sessions} Session{counts.sessions === 1 ? "" : "s"}</span>
+          {counts.avgProgress != null && <span style={{ color: C.primary, fontWeight: 700 }}>{counts.avgProgress}% avg progress</span>}
+        </div>
+      </Card>
+
+      {!counts.any && <Card><EmptyRow>No problems, goals or treatment added yet. Tap Edit Plan to get started.</EmptyRow></Card>}
+
+      {problems.length > 0 && (
+        <Card>
+          <CardTitle>Problem List</CardTitle>
+          {problems.map((p, i) => (
+            <div key={p.id} style={{ padding: "9px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{i + 1}. {p.name}</div>
+              {Array.isArray(p.findings) && p.findings.length > 0 && (
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                  {p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ")}
+                </div>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {goals.length > 0 && (
+        <Card>
+          <CardTitle>Goals</CardTitle>
+          {["short", "long"].map((term) => {
+            const list = goals.filter((g) => g.term === term);
+            if (!list.length) return null;
+            return (
+              <div key={term} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{term === "short" ? "Short term" : "Long term"}</div>
+                {list.map((g) => {
+                  const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[g.id]) })).filter((e) => Number.isFinite(e.value));
+                  const prog = goalProgress(g, entries);
+                  return (
+                    <div key={g.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>
+                      <span style={{ marginRight: 6, color: prog.achieved ? C.green : C.faint }}>{prog.achieved ? "✓" : "○"}</span>
+                      {g.measure}: {g.baseline} → {g.target} <span style={{ color: C.faint, fontSize: 11.5 }}>({g.weeks}w)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {treatments.length > 0 && (
+        <Card>
+          <CardTitle>Treatment Plan</CardTitle>
+          {treatments.map((t) => (
+            <div key={t.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>✓ {t.name}</div>
+          ))}
+        </Card>
+      )}
+
+      <Card>
+        <CardTitle>Care History</CardTitle>
+        <EmptyRow>No previous plans yet — this is the patient's first care plan.</EmptyRow>
+      </Card>
+    </>
+  );
+}
+
 export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
@@ -383,7 +489,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
     { k: "overview", label: "Overview" },
     { k: "assessment", label: "Assessment" },
     { k: "progress", label: "Progress" },
-    { k: "treatment", label: "Treatment" },
+    { k: "treatment", label: "Plan & Progress" },
     { k: "home", label: "Home" },
     { k: "documents", label: "Docs" },
     { k: "posture", label: "Posture" },
@@ -678,12 +784,12 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         </>
       )}
 
-      {/* ═══ TREATMENT ═══ */}
+      {/* ═══ PLAN & PROGRESS ═══ */}
       {tab === "treatment" && hasNeuro && (
-        <NeuroCarePlanPanel key="cp-treatment" patient={patient} onSaveField={onSaveField} />
+        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro />
       )}
       {tab === "treatment" && !hasNeuro && hasOrtho && (
-        <OrthoCarePlanPanel key="ocp-treatment" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
+        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
       )}
       {tab === "treatment" && !hasNeuro && !hasOrtho && (
         <>
