@@ -22,7 +22,7 @@ function Modal({title,children,onClose}){
           justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
           <div>
             <div style={{fontWeight:800,fontSize:"1.05rem",color:TX}}>{title}</div>
-            <div style={{fontSize:"0.68rem",color:MU,marginTop:2}}>PhysioMind — Last updated August 2026</div>
+            <div style={{fontSize:"0.68rem",color:MU,marginTop:2}}>PhysioMind — Last updated September 2026</div>
           </div>
           <button onClick={onClose} style={{background:S2,border:`1px solid ${BD}`,borderRadius:8,
             width:32,height:32,cursor:"pointer",fontSize:"1rem",color:MU,
@@ -80,7 +80,9 @@ export function PrivacyPolicy({onClose}){
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
         <li style={li}>All data is stored on <strong>Supabase</strong> (PostgreSQL), hosted on AWS infrastructure</li>
         <li style={li}>Row Level Security ensures each clinician can only access their own patients</li>
-        <li style={li}>All data is encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
+        <li style={li}>Data held on our servers is encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
+        <li style={li}>Your browser also keeps a local cache of your patient list for speed and offline access. For signed-in accounts, this local cache is separately encrypted (AES-256-GCM) with a key held only in your device's memory for the session — a lost or stolen device without an active login cannot have this cache read off its disk. This does not protect data while you are actively signed in and using the app, since it must be readable to you at that point; no purely client-side scheme can prevent that.</li>
+        <li style={li}>In Guest Mode (no account), nothing is sent to our servers at all — your data stays in your browser's local storage only, unencrypted, and is never synced or backed up. It is lost if you clear your browser data.</li>
         <li style={li}>Clinical images for the Cloudinary image library are uploaded by you and stored under your Cloudinary account</li>
         <li style={li}>We maintain regular automated backups</li>
       </ul>
