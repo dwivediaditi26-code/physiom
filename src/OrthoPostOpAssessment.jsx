@@ -18,6 +18,7 @@ import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
+import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -136,7 +137,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 export function buildOrthoPostOpAssessSteps() {
   return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
 }
-export const orthoPostOpSummaryFormatters = { rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
+export const orthoPostOpSummaryFormatters = { carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
 
 /* ============================================================
    SECTION CONTENT
@@ -315,6 +316,10 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
+  // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
+  // this wizard's local data/setData, so the Review screen (which reads
+  // data[step.id]) would otherwise always see an empty carePlan section.
+  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -476,11 +481,11 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 title="Post-operative Rehab Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
-                data={data}
+                data={reviewData}
                 onEdit={jumpTo}
                 exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
                 extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
-                formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, outcomeMeasure: formatOutcomeMeasureSection }}
+                formatters={{ carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>

@@ -20,6 +20,7 @@ import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
+import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -125,7 +126,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 export function buildOrthoIPDAssessSteps() {
   return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
 }
-export const orthoIPDSummaryFormatters = { rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection };
+export const orthoIPDSummaryFormatters = { carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection };
 
 /* ============================================================
    SECTION CONTENT
@@ -264,6 +265,10 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
+  // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
+  // this wizard's local data/setData, so the Review screen (which reads
+  // data[step.id]) would otherwise always see an empty carePlan section.
+  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -428,10 +433,10 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 title="IPD Orthopedic Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
-                data={data}
+                data={reviewData}
                 onEdit={jumpTo}
                 exportHeaderLines={[`IPD ORTHOPEDIC ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={{ rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
+                formatters={{ carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>

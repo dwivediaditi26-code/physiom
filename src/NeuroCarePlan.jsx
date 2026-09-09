@@ -880,9 +880,13 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
   return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} />;
 }
 
-/* formatters[stepId] contract for NeurologicalAssessment.jsx's
-   SummarySection — one row per goal with its linked treatments. */
-export function formatNeuroCarePlanSection(section) {
+/* formatters[stepId] contract for a specialty's SummarySection — one row
+   per selected problem with its linked goal(s) and treatment(s). Shape is
+   identical for every specialty (CarePlanSection is shared, see above), so
+   this one function serves Neuro's, Ortho's, etc. formatters map; kept
+   under both names since existing call sites import it as
+   formatNeuroCarePlanSection. */
+export function formatCarePlanSection(section) {
   const problems = Array.isArray(section.problems) ? section.problems : [];
   const goals = Array.isArray(section.goals) ? section.goals : [];
   const treatments = Array.isArray(section.treatments) ? section.treatments : [];
@@ -900,3 +904,4 @@ export function formatNeuroCarePlanSection(section) {
     return { label: p.name, value: `${goalPart}${txPart}` };
   });
 }
+export const formatNeuroCarePlanSection = formatCarePlanSection;
