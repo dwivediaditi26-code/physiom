@@ -1,0 +1,816 @@
+{
+  "K01": {
+    "id": "K01",
+    "name": "ACL Tear / Insufficiency",
+    "keyExams": [
+      "Lachman's test",
+      "Pivot shift test"
+    ],
+    "observation": [
+      "Immediate effusion",
+      "Quadriceps inhibition",
+      "Giving-way"
+    ],
+    "posture": [
+      "Genu recurvatum / dynamic valgus"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Lachman's test",
+      "Pivot shift test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Knee Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive tibiofemoral AP glide (Lachman)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted knee extension weak & painless (arthrogenic muscle inhibition from effusion, not a true contractile lesion)",
+        "Passive tibiofemoral AP glide (Lachman) positive — the definitive test"
+      ],
+      "interpretation": "Resisted knee extension is often weak/painless acutely, reflecting arthrogenic muscle inhibition from effusion rather than a true contractile lesion; the passive tibiofemoral AP glide (Lachman) is the definitive test."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "VMO",
+          "state": "Inhibited, post knee injury/surgery"
+        }
+      ],
+      "pattern": "\"Inhibited, post knee injury/surgery\" is the classic post-ACL finding; activate VMO before general quad strengthening. Fascial component (from source): Not applicable acutely; address quads inhibition."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Knee Valgus Stress Test",
+      "fields": [
+        {
+          "label": "Dynamic valgus on squat / single-leg squat / landing",
+          "options": [
+            "Absent",
+            "Present — dynamic valgus pattern"
+          ]
+        }
+      ],
+      "chainEffect": "Dynamic valgus on squat/single-leg squat/landing is explicitly documented as \"the most common pattern in female ACL injuries\"; driven by ankle DF + glute med, not the knee itself."
+    },
+    "functionalScreen": {
+      "name": "Single Leg Hop Series",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Landing mechanics / dynamic valgus",
+          "options": [
+            "Good mechanics, no valgus collapse",
+            "Dynamic valgus / poor landing mechanics"
+          ]
+        }
+      ],
+      "note": "The named return-to-sport functional screen for this exact injury (dynamic valgus + landing mechanics + ACL risk). FMA source note: Lachman/pivot reproduced in function; single-leg hop confidence."
+    },
+    "outcomeMeasures": [
+      "IKDC",
+      "KOOS",
+      "Tegner activity level"
+    ]
+  },
+  "K02": {
+    "id": "K02",
+    "name": "PCL Injury",
+    "keyExams": [
+      "Posterior drawer test"
+    ],
+    "observation": [
+      "Posterior sag",
+      "± posterior bruising"
+    ],
+    "posture": [
+      "Posterior tibial droop stance"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Posterior drawer test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Knee Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive posterior tibiofemoral glide (Posterior Drawer)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted knee flexion may be relatively preserved",
+        "Passive posterior tibiofemoral glide (posterior drawer) positive — the definitive test, not a resisted-muscle one"
+      ],
+      "interpretation": "Resisted knee flexion strength may be relatively preserved; the passive posterior tibiofemoral glide (posterior drawer) is the definitive test for PCL injury, not a resisted-muscle one."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Popliteus",
+          "state": "Overactive, posterior-lateral knee pain"
+        }
+      ],
+      "pattern": "Popliteus can become \"Overactive, posterior-lateral knee pain\" secondary to PCL-deficient posterior laxity — screen once the acute phase allows. Fascial component (from source): Posterior capsule."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Tibial Rotation Assessment (Screw-Home Mechanism)",
+      "fields": [
+        {
+          "label": "Terminal-extension screw-home mechanism",
+          "options": [
+            "Present (normal)",
+            "Absent — disturbed screw-home pattern"
+          ]
+        }
+      ],
+      "chainEffect": "PCL laxity can disturb terminal-extension screw-home; check for an \"absent screw-home\" pattern."
+    },
+    "functionalScreen": {
+      "name": "Double Leg Squat (general baseline)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Squat baseline pattern",
+          "options": [
+            "Symmetric, comfortable",
+            "Discomfort / asymmetry noted"
+          ]
+        }
+      ],
+      "note": "No PCL-specific named functional test exists in this app's library; rely on the joint-play STTT test above as primary. FMA source note: Posterior-drawer load reproduced in function; downhill/decline discomfort."
+    },
+    "outcomeMeasures": [
+      "KOOS or Oxford Knee Score",
+      "Lysholm",
+      "IKDC / Tegner"
+    ]
+  },
+  "K03": {
+    "id": "K03",
+    "name": "Meniscal Tear",
+    "keyExams": [
+      "McMurray's test",
+      "Thessaly test"
+    ],
+    "observation": [
+      "Joint-line swelling",
+      "Catching/locking",
+      "Quad wasting"
+    ],
+    "posture": [
+      "Antalgic",
+      "Avoids full flexion"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "McMurray's test",
+      "Thessaly test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Knee Extension/Flexion",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive tibial rotation at 90° (McMurray-type)",
+          "options": [
+            "No joint-line pain/click",
+            "Reproduces joint-line pain/click"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted extension/flexion usually strong (non-contractile)",
+        "Passive tibial rotation at 90° (McMurray-type) reproduces joint-line pain/click"
+      ],
+      "interpretation": "Strong resisted testing rules out a contractile source; the passive McMurray-type tibial rotation at 90° reproducing joint-line pain/click localizes the lesion to the meniscus."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Hamstrings (medial vs lateral per which meniscus)",
+          "state": "May guard protectively"
+        }
+      ],
+      "pattern": "Hamstrings may guard protectively depending on which meniscus is involved; not a primary compensation-pattern condition. Fascial component (from source): Joint-line capsular fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Tibial Rotation Assessment",
+      "fields": [
+        {
+          "label": "Passive IR/ER at 90°",
+          "options": [
+            "No joint-line pain",
+            "Reproduces joint-line pain"
+          ]
+        }
+      ],
+      "chainEffect": "Passive IR/ER at 90° reproducing joint-line pain is the direct kinetic-chain correlate of a meniscal lesion."
+    },
+    "functionalScreen": {
+      "name": "Double Leg Squat",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Deep flexion loading",
+          "options": [
+            "No joint-line pain",
+            "Reproduces joint-line pain"
+          ]
+        }
+      ],
+      "note": "Deep flexion loading reproducing joint-line pain is the functional equivalent of McMurray-type provocation. FMA source note: McMurray/Thessaly & deep squat reproduce joint-line pain."
+    },
+    "outcomeMeasures": [
+      "KOOS or Oxford Knee Score",
+      "Lysholm",
+      "IKDC / Tegner (sport)"
+    ]
+  },
+  "K04": {
+    "id": "K04",
+    "name": "MCL Sprain",
+    "keyExams": [
+      "Valgus stress test"
+    ],
+    "observation": [
+      "Medial joint-line tenderness",
+      "Valgus laxity"
+    ],
+    "posture": [
+      "Valgus-loading alignment"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Valgus stress test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests around the knee",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive valgus stress (medial gap) at 0°/30°",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests around the knee usually painless (ligament, not contractile)",
+        "Passive valgus stress (medial gap) at 0°/30° positive — the definitive test"
+      ],
+      "interpretation": "Painless resisted testing rules out a contractile source; passive valgus stress (medial gap) at 0°/30° is the definitive test for MCL sprain."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Adductors",
+          "state": "Overactive, medial chain"
+        },
+        {
+          "name": "Pes anserine group",
+          "state": "Often guards medial pain secondarily"
+        }
+      ],
+      "pattern": "Adductors (\"Overactive, medial chain\") and the pes anserine group often guard the medial pain secondarily. Fascial component (from source): Medial capsule / pes anserine fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Knee Valgus Stress Test",
+      "fields": [
+        {
+          "label": "Manual valgus stress at 0°/30° (grading MCL laxity)",
+          "options": [
+            "No gapping",
+            "Gapping present — graded laxity"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match, including its manual valgus-stress component at 0°/30° used to grade MCL laxity."
+    },
+    "functionalScreen": {
+      "name": "Forward Lunge",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Sagittal loading with valgus-stress component",
+          "options": [
+            "No medial pain",
+            "Reproduces medial pain"
+          ]
+        }
+      ],
+      "note": "Sagittal loading with a valgus-stress component if cutting/lateral movement provokes the medial pain. FMA source note: Valgus stress (0°/30°) & cutting reproduce medial pain."
+    },
+    "outcomeMeasures": [
+      "KOOS or Oxford Knee Score",
+      "Lysholm",
+      "IKDC / Tegner (sport)"
+    ]
+  },
+  "K05": {
+    "id": "K05",
+    "name": "LCL Sprain",
+    "keyExams": [
+      "Varus stress test"
+    ],
+    "observation": [
+      "Lateral joint-line tenderness",
+      "Varus laxity"
+    ],
+    "posture": [
+      "Varus-loading alignment"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Varus stress test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests around the knee",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive varus stress (lateral gap) at 0°/30°",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests around the knee usually painless",
+        "Passive varus stress (lateral gap) at 0°/30° positive — the definitive test"
+      ],
+      "interpretation": "Painless resisted testing is expected; passive varus stress (lateral gap) at 0°/30° is the definitive test for LCL sprain."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "TFL / ITB",
+          "state": "Protectively overactive"
+        },
+        {
+          "name": "Biceps Femoris (lateral chain)",
+          "state": "Protectively overactive"
+        }
+      ],
+      "pattern": "TFL/ITB and Biceps Femoris (lateral chain) often become protectively overactive — check TFL \"Overactive, IT band syndrome\" pattern once acute phase allows. Fascial component (from source): Lateral capsule / ITB fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Knee Valgus Stress Test is valgus-focused; this app's KC library has no dedicated varus-stress equivalent — rely on the passive varus-stress STTT test above."
+    },
+    "functionalScreen": {
+      "name": "Forward Lunge (general sagittal-plane screen)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Sagittal-plane loading with lateral-loading component",
+          "options": [
+            "No lateral pain",
+            "Reproduces lateral pain"
+          ]
+        }
+      ],
+      "note": "A general sagittal-plane screen; no LCL-specific named functional test exists in this app's library. FMA source note: Varus stress & lateral loading reproduce pain."
+    },
+    "outcomeMeasures": [
+      "KOOS or Oxford Knee Score",
+      "Lysholm",
+      "IKDC / Tegner (sport)"
+    ]
+  },
+  "K06": {
+    "id": "K06",
+    "name": "Patellofemoral Pain Syndrome (PFPS)",
+    "keyExams": [
+      "Clarke's sign",
+      "Patellar grind test"
+    ],
+    "observation": [
+      "Patellar maltracking",
+      "VMO wasting",
+      "No effusion"
+    ],
+    "posture": [
+      "Dynamic valgus",
+      "Foot pronation",
+      "Femoral IR"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Clarke's sign",
+      "Patellar grind test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Knee Extension at 0–30° (VMO timing test)",
+          "options": [
+            "VMO/VL balanced firing",
+            "VL fires before/dominates VMO"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive patellar glide",
+          "options": [
+            "Central tracking",
+            "Lateral bias / tight lateral retinaculum"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted knee extension at 0–30° (VMO timing test) shows VL firing before/dominating VMO",
+        "Passive patellar glide shows a lateral bias / tight lateral retinaculum"
+      ],
+      "interpretation": "VL dominance over VMO on resisted testing plus a laterally-biased passive patellar glide is the classic PFPS maltracking pattern."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "VMO",
+          "state": "Inhibited, VL dominant"
+        },
+        {
+          "name": "Glute Medius (hip)",
+          "state": "Check — proximal weakness drives dynamic valgus"
+        }
+      ],
+      "pattern": "\"Inhibited, VL dominant\" is the textbook PFPS finding; also check Glute Medius (hip), since proximal weakness drives the dynamic valgus feeding PFPS. Fascial component (from source): Lateral retinaculum / ITB tightness."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Patellar Mobility Test",
+      "fields": [
+        {
+          "label": "Patellar glide bias",
+          "options": [
+            "Central/normal",
+            "Laterally biased, tight lateral retinaculum"
+          ]
+        }
+      ],
+      "chainEffect": "The direct match: \"laterally biased, tight lateral retinaculum\" is explicitly linked in the app's own data to \"CPA: VMO inhibited → VL overactive.\""
+    },
+    "functionalScreen": {
+      "name": "Wall-Slide PF-Compression Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Pain onset angle (30/60/90° knee flexion)",
+          "options": [
+            "No pain through range",
+            "Pain onset at 30°",
+            "Pain onset at 60°",
+            "Pain onset at 90°"
+          ]
+        }
+      ],
+      "note": "The named functional test for a PF pain arc. FMA source note: Single-leg decline squat & step-down reproduce anterior pain."
+    },
+    "outcomeMeasures": [
+      "Kujala (Anterior Knee Pain Scale)",
+      "KOOS"
+    ]
+  },
+  "K07": {
+    "id": "K07",
+    "name": "Patellar Tendinopathy",
+    "keyExams": [
+      "Resisted knee extension (MMT)",
+      "Palpation — patellar tendon"
+    ],
+    "observation": [
+      "Inferior-pole tenderness",
+      "Jumper's history"
+    ],
+    "posture": [
+      "Stiff-landing posture"
+    ],
+    "palpation": [
+      "Patellar tendon"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Knee Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted knee extension strong but painful at the inferior-pole/patellar tendon — classic contractile-lesion pattern"
+      ],
+      "interpretation": "Strong-but-painful resisted knee extension localizing to the inferior pole is the classic Cyriax contractile-lesion pattern for patellar tendinopathy; a decline squat is the functional equivalent."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Rectus Femoris",
+          "state": "Overactive, VMO inhibition"
+        }
+      ],
+      "pattern": "Overactive Rectus Femoris with VMO inhibition often accompanies jumper's knee; check VMO facilitation alongside tendon loading capacity. Fascial component (from source): Superficial front line (quad–patellar tendon)."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Patellar Mobility Test (adjunct)",
+      "fields": [
+        {
+          "label": "Retinacular tension affecting tendon load line",
+          "options": [
+            "Not restricted",
+            "Restricted — affects load line"
+          ]
+        }
+      ],
+      "chainEffect": "Can be checked as an adjunct (retinacular tension affects tendon load line), but isn't primary here — the eccentric loading functional screen below is more direct."
+    },
+    "functionalScreen": {
+      "name": "Eccentric Single-Leg Step-Down Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Eccentric quad/PF compression at speed",
+          "options": [
+            "No tendon pain reproduced",
+            "Reproduces tendon load pain"
+          ]
+        }
+      ],
+      "note": "The named functional test for reproducing tendon load pain. FMA source note: Decline single-leg squat loads and reproduces tendon pain."
+    },
+    "outcomeMeasures": [
+      "VISA-P",
+      "KOOS"
+    ]
+  },
+  "K08": {
+    "id": "K08",
+    "name": "Knee Osteoarthritis",
+    "keyExams": [
+      "Passive knee ROM with end-feel",
+      "Sweep/ballottement test for effusion"
+    ],
+    "observation": [
+      "Bony enlargement",
+      "Effusion",
+      "Varus/valgus",
+      "Crepitus"
+    ],
+    "posture": [
+      "Varus/valgus malalignment"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Sweep/ballottement test for effusion"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Painless",
+            "Painful — screen for secondary tendinopathy"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Flexion/Extension",
+          "options": [
+            "Full",
+            "Restricted — capsular pattern (flexion >> extension)"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Normal/springy",
+            "Capsular/leathery"
+          ]
+        },
+        {
+          "label": "Patellar mobility",
+          "options": [
+            "Normal",
+            "Reduced (crepitus)"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless (non-contractile unless secondary tendinopathy)",
+        "Passive flexion/extension both restricted — capsular pattern (flexion >> extension)",
+        "Capsular/leathery end-feel",
+        "Patellar mobility often reduced (crepitus)"
+      ],
+      "interpretation": "Painless resisted testing with a capsular-pattern restriction (flexion >> extension), leathery end-feel, and reduced patellar mobility with crepitus is the classic degenerative/osteoarthritic pattern."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "VMO",
+          "state": "Commonly inhibited, VL dominant"
+        },
+        {
+          "name": "Glute Medius (hip)",
+          "state": "Often also inhibited, contributing to dynamic malalignment"
+        }
+      ],
+      "pattern": "VMO commonly inhibited with VL dominant, and Glute Medius (hip) often also inhibited contributing to dynamic malalignment — check both. Fascial component (from source): Global knee capsular fascia."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Patellar Mobility Test + Tibial Rotation Assessment",
+      "fields": [
+        {
+          "label": "Patellar glide with crepitus",
+          "options": [
+            "Normal",
+            "Reduced, crepitus present"
+          ]
+        },
+        {
+          "label": "Tibial rotation",
+          "options": [
+            "Normal",
+            "Restricted"
+          ]
+        }
+      ],
+      "chainEffect": "Crepitus with passive glide and restricted rotation both corroborate the capsular/degenerative picture."
+    },
+    "functionalScreen": {
+      "name": "Double Leg Squat",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Pain onset angle and compensation strategy",
+          "options": [
+            "No compensation, comfortable through range",
+            "Heel-rise compensation",
+            "Trunk-lean compensation"
+          ]
+        }
+      ],
+      "note": "Bilateral loading to observe pain onset angle and compensation strategy (heel-rise, trunk lean). FMA source note: Capsular-pattern ROM loss; stairs & squat limited."
+    },
+    "outcomeMeasures": [
+      "WOMAC or KOOS"
+    ]
+  },
+  "K09": {
+    "id": "K09",
+    "name": "Iliotibial Band Friction Syndrome",
+    "keyExams": [
+      "Noble compression test",
+      "Ober's test"
+    ],
+    "observation": [
+      "Lateral epicondyle tenderness ~30° flexion",
+      "Runner"
+    ],
+    "posture": [
+      "Hip-drop / adducted running posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Noble compression test",
+      "Ober's test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests around the knee",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Ober's Test (passive hip-adduction restriction)",
+          "options": [
+            "Negative",
+            "Positive — reproduces lateral knee pain with Noble compression"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests around the knee usually painless",
+        "Ober's test positive — key provocation reproducing lateral knee pain with Noble compression"
+      ],
+      "interpretation": "Painless resisted testing is expected; Ober's test (passive hip-adduction restriction) is the key provocation, reproducing lateral knee pain when combined with Noble compression."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "TFL",
+          "state": "Overactive, IT band syndrome"
+        },
+        {
+          "name": "Glute Medius",
+          "state": "Inhibited (paired compensation)"
+        }
+      ],
+      "pattern": "\"Overactive, IT band syndrome\" is the textbook driver, always compensating for an inhibited Glute Medius; this exact pairing is documented in the app's own data. Fascial component (from source): Lateral line (ITB/TFL) tension."
+    },
+    "kineticChain": {
+      "applicable": true,
+      "name": "Tibial Rotation Assessment",
+      "fields": [
+        {
+          "label": "Tibial IR restriction / lateral chain tightness",
+          "options": [
+            "Normal IR",
+            "Restricted tibial IR — lateral chain tightness"
+          ]
+        }
+      ],
+      "chainEffect": "Explicitly documented: \"restricted tibial IR, lateral chain tightness... biceps femoris and IT band restricting IR.\""
+    },
+    "functionalScreen": {
+      "name": "Eccentric Single-Leg Step-Down Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Repetitive knee flexion-extension under eccentric load",
+          "options": [
+            "No lateral pain reproduced",
+            "Reproduces lateral knee pain"
+          ]
+        }
+      ],
+      "note": "ITBFS is classically provoked by repetitive knee flexion-extension under eccentric load, which this test reproduces directly. FMA source note: Noble/Ober positive; single-leg squat shows valgus."
+    },
+    "outcomeMeasures": [
+      "KOOS or Oxford Knee Score",
+      "Lysholm",
+      "IKDC / Tegner (sport)"
+    ]
+  }
+}
