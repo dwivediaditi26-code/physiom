@@ -202,7 +202,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
         <Hint>✨ Detected clinical context from your narrative: <b>{detectedConditionLabel}</b> — relevant objective tests will be suggested accordingly on the Suggested Objective step.</Hint>
       )}
       <div id="subjective-manual-start" />
-      <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." />
+      <TextArea label="Chief complaint" value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} placeholder="In the patient's own words..." voice />
       {/* Onset is a free-text "type or select" combobox, not a plain input --
           same class of field as Sex/Hand dominance below, which used to be
           squeezed into a row-2 half-width column and had their placeholder

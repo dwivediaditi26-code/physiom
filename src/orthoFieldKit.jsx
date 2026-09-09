@@ -277,12 +277,62 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
   );
 }
 
-export function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
+// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
+// straight into whichever field passes `voice`. Same pattern as Neuro's/
+// Cardio's per-field mic (NeurologicalAssessment.jsx / CardiopulmonaryAssessment.jsx);
+// Ortho previously only had the heavier AI Intake panel (speak the whole
+// narrative, AI extracts structured fields) with no plain per-field mic on
+// e.g. Chief complaint itself (2026-09-09, Aditi: "speech to text ... in
+// all chief complaint ortho neuro cardio").
+function useVoiceInput(baseValue, onChange) {
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef(null);
+  const start = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
+    const base = baseValue || "";
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = "en-IN";
+    rec.onresult = (e) => {
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) onChange((base + " " + final).trim());
+    };
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => setRecording(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+  const stop = () => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    setRecording(false);
+  };
+  return { recording, toggle: () => (recording ? stop() : start()) };
+}
+
+function VoiceMicButton({ recording, onClick }) {
+  return (
+    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
+      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
+        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
+      {recording ? "⏹" : "🎤"}
+    </button>
+  );
+}
+
+export function TextField({ label, value, onChange, placeholder, hint, howTo, unit, voice }) {
+  const v = useVoiceInput(value, onChange);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div className="text-input-wrap">
+      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
+        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -624,10 +674,14 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
   );
 }
 
-export function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
+export function TextArea({ label, value, onChange, placeholder, hint, howTo, voice }) {
+  const v = useVoiceInput(value, onChange);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
+      <div style={voice ? { display: "flex", alignItems: "flex-start" } : undefined}>
+        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} style={voice ? { flex: 1 } : undefined} />
+        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
+      </div>
     </FieldShell>
   );
 }
