@@ -2167,6 +2167,12 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const total = 1 + assessSteps.length;
   const assessIndex = step - 1; // index within assessSteps
   const current = step < 1 ? STEP_META[0] : assessSteps[assessIndex];
+  // NeuroCarePlanSection stores under data.neuroCarePlan (useSectionData's
+  // sectionKey), but the "carePlan" step id is what Summary/Review reads
+  // (data[step.id]) and formats -- so without this merge Review always saw
+  // an empty object for Problems/Goals/Treatment regardless of what was
+  // actually saved.
+  const reviewData = useMemo(() => ({ ...data, carePlan: data.neuroCarePlan }), [data]);
 
   useEffect(() => {
     if (step >= 1 && current) setVisited((v) => new Set(v).add(current.id));
@@ -2717,7 +2723,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               )}
               {current.id === "summary" && (
                 <>
-                  <SummarySection setting={setting} data={data} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
+                  <SummarySection setting={setting} data={reviewData} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
                   <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setSaveModalOpen(true)}>
                     ⭐ Save this assessment as a template
                   </button>

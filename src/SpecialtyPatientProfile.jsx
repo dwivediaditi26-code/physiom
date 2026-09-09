@@ -256,12 +256,12 @@ function carePlanCounts(cp) {
     any: problems.length || goals.length || treatments.length || sessions.length,
   };
 }
-// NeuroCarePlanSection persists via useSectionData(data, setData, "carePlan")
-// -- a top-level `data.carePlan` key, same as every other Neuro section, not
-// a nested `data.neuro.*` namespace (that never existed in the real data
-// model). Was reading the wrong key entirely, so the Overview tab always
-// showed "No problems or goals set yet" regardless of real saved data.
-const neuroCarePlanSnapshot = (pd) => carePlanCounts(pd?.carePlan);
+// NeuroCarePlanSection persists via useSectionData(data, setData,
+// "neuroCarePlan") -- and the assessment wizard saves its whole local data
+// object as patient.data.neuro (onSave("neuro", data)), same object
+// NeuroCarePlanPanel above reads/writes -- so the real path is
+// patient.data.neuro.neuroCarePlan, not a top-level key.
+const neuroCarePlanSnapshot = (pd) => carePlanCounts(pd?.neuro?.neuroCarePlan);
 const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
 
 // Ortho Care Plan — same shared CarePlanSection, fed the ortho knowledge
