@@ -10,6 +10,7 @@ import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatient
 import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
 
@@ -308,7 +309,7 @@ const fmtPlanDate = (iso) => { if (!iso) return ""; try { return new Date(iso).t
 // Read-only Problem List / Goals / Treatment Plan cards -- the "documented
 // page" itself. Shared by the current (active) plan and by any closed plan
 // pulled out of Care History, so both look identical.
-function PlanDocument({ problems, goals, treatments, sessions }) {
+function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
   return (
     <>
       {problems.length > 0 && (
@@ -362,6 +363,24 @@ function PlanDocument({ problems, goals, treatments, sessions }) {
           <CardTitle>Treatment Plan</CardTitle>
           {treatments.map((t) => (
             <div key={t.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>✓ {t.name}</div>
+          ))}
+        </Card>
+      )}
+
+      {/* Exercises prescribed via the assessment's own Exercise Prescription
+          step (a separate, region-browsable library picker with its own
+          sets/reps/hold/frequency dosing) never showed up here -- only the
+          Care Plan's own goal-linked "treatments" did (2026-09-09, Aditi:
+          "add exercise of ortho in treatment tab as there is [a] separate
+          exercise section"). Read-only listing, same {label,value} rows the
+          assessment's own Review screen already uses. */}
+      {exerciseRows && exerciseRows.length > 0 && (
+        <Card>
+          <CardTitle>Prescribed Exercises</CardTitle>
+          {exerciseRows.map((r, i) => (
+            <div key={i} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>
+              🏋 {r.label} <span style={{ color: C.muted, fontSize: 11.5 }}>— {r.value}</span>
+            </div>
           ))}
         </Card>
       )}
@@ -586,6 +605,11 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   const counts = carePlanCounts(cp);
   const planNumber = history.length + 1;
   const planLabel = `Plan ${planNumber}${cp.planLabel ? ` — ${cp.planLabel}` : ""}`;
+  // Exercise Prescription lives in the assessment snapshot's own data
+  // (orthoParsed.data.exercisePrescription), not the Care Plan's carePlan
+  // object -- there's no per-plan-version history for it, so this only
+  // applies to the current (active) plan view.
+  const exerciseRows = !isNeuro ? formatExercisePrescriptionSection(orthoParsed?.data?.exercisePrescription || {}) : [];
 
   const saveCp = (nextCp, nextHistory) => {
     if (isNeuro) onSaveField?.(patient.id, { neuro: { ...(patient.data.neuro || {}), neuroCarePlan: nextCp, carePlanHistory: nextHistory } });
@@ -674,7 +698,7 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
 
       {!counts.any && <Card><EmptyRow>No problems, goals or treatment added yet. Tap Edit Plan to get started.</EmptyRow></Card>}
 
-      <PlanDocument problems={problems} goals={goals} treatments={treatments} sessions={sessions} />
+      <PlanDocument problems={problems} goals={goals} treatments={treatments} sessions={sessions} exerciseRows={exerciseRows} />
 
       <Card>
         <CardTitle>Care History</CardTitle>
