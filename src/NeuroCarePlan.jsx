@@ -883,12 +883,20 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
 /* formatters[stepId] contract for NeurologicalAssessment.jsx's
    SummarySection — one row per goal with its linked treatments. */
 export function formatNeuroCarePlanSection(section) {
+  const problems = Array.isArray(section.problems) ? section.problems : [];
   const goals = Array.isArray(section.goals) ? section.goals : [];
   const treatments = Array.isArray(section.treatments) ? section.treatments : [];
-  if (!goals.length) return [];
-  return goals.map((g) => {
-    const mine = treatments.filter((t) => (t.goalIds || []).includes(g.id));
-    const tx = mine.length ? ` — ${mine.map((t) => t.name).join(", ")}` : "";
-    return { label: g.measure, value: `${g.baseline} → ${g.target} (${g.weeks}w, ${g.term === "short" ? "STG" : "LTG"})${tx}` };
+  // One row per selected problem (not per goal) so the Summary shows what
+  // was picked -- problem, its goal(s), and its treatment(s) -- even before
+  // a goal exists yet, instead of showing nothing until Goals is filled in.
+  if (!problems.length) return [];
+  return problems.map((p) => {
+    const myGoals = goals.filter((g) => g.problemId === p.id);
+    const myTx = treatments.filter((t) => myGoals.some((g) => (t.goalIds || []).includes(g.id)));
+    const goalPart = myGoals.length
+      ? myGoals.map((g) => `${g.measure}: ${g.baseline} → ${g.target} (${g.weeks}w, ${g.term === "short" ? "STG" : "LTG"})`).join("; ")
+      : "No goal set yet";
+    const txPart = myTx.length ? ` — Tx: ${myTx.map((t) => t.name).join(", ")}` : "";
+    return { label: p.name, value: `${goalPart}${txPart}` };
   });
 }

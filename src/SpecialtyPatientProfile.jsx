@@ -256,7 +256,12 @@ function carePlanCounts(cp) {
     any: problems.length || goals.length || treatments.length || sessions.length,
   };
 }
-const neuroCarePlanSnapshot = (neuro) => carePlanCounts(neuro?.neuroCarePlan);
+// NeuroCarePlanSection persists via useSectionData(data, setData, "carePlan")
+// -- a top-level `data.carePlan` key, same as every other Neuro section, not
+// a nested `data.neuro.*` namespace (that never existed in the real data
+// model). Was reading the wrong key entirely, so the Overview tab always
+// showed "No problems or goals set yet" regardless of real saved data.
+const neuroCarePlanSnapshot = (pd) => carePlanCounts(pd?.carePlan);
 const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
 
 // Ortho Care Plan — same shared CarePlanSection, fed the ortho knowledge
@@ -500,7 +505,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
           {/* Care Plan snapshot (neuro or ortho) — glanceable status, links
               into the Treatment tab where it's fully editable. */}
           {(hasNeuro || hasOrtho) && (() => {
-            const snap = hasNeuro ? neuroCarePlanSnapshot(d.neuro) : orthoCarePlanSnapshot(d);
+            const snap = hasNeuro ? neuroCarePlanSnapshot(d) : orthoCarePlanSnapshot(d);
             return (
               <Card>
                 <CardTitle>Care Plan</CardTitle>
