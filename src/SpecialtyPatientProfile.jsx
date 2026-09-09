@@ -475,6 +475,85 @@ function ReassessModal({ cp, planLabel, onClose, onConfirm }) {
   );
 }
 
+// Vertical Clinical Journey timeline: current plan -> its sessions (newest
+// first) -> each closed plan -> its sessions, all the way back to the
+// first plan. Read-only; tapping a plan or session jumps to its detail via
+// the same viewers ClinicalPlanPage already has (onViewPlan/onViewSession).
+function ClinicalJourney({ cp, history, planLabel, onViewPlan, onViewSession }) {
+  const blocks = [
+    { kind: "plan", id: null, label: planLabel, active: true, sessions: Array.isArray(cp.sessions) ? cp.sessions : [] },
+    ...[...history].reverse().map((h) => ({ kind: "plan", id: h.id, label: h.label, active: false, sessions: Array.isArray(h.sessions) ? h.sessions : [] })),
+  ];
+  const anySessions = blocks.some((b) => b.sessions.length);
+  if (!blocks.some((b) => b.active === false) && !anySessions) return null; // nothing to show beyond the plain Current Plan card yet
+
+  return (
+    <Card>
+      <CardTitle>Clinical Journey</CardTitle>
+      <div style={{ position: "relative", paddingLeft: 18 }}>
+        <div style={{ position: "absolute", left: 5, top: 4, bottom: 4, width: 2, background: C.border }} />
+        {blocks.map((b) => (
+          <div key={b.id || "current"}>
+            <div style={{ position: "relative", padding: "6px 0" }}>
+              <div style={{ position: "absolute", left: -18, top: 9, width: 10, height: 10, borderRadius: "50%", background: b.active ? C.primary : C.faint, border: "2px solid #fff", boxShadow: `0 0 0 1px ${b.active ? C.primary : C.faint}` }} />
+              <button onClick={() => b.id && onViewPlan(b.id)} disabled={!b.id} style={{ background: "none", border: "none", padding: 0, textAlign: "left", cursor: b.id ? "pointer" : "default", fontSize: 13.5, fontWeight: 800, color: b.active ? C.primary : C.text }}>
+                {b.label}{b.active ? " — Active" : ""}
+              </button>
+            </div>
+            {[...b.sessions].reverse().map((s) => (
+              <div key={s.id} style={{ position: "relative", padding: "3px 0 3px 4px" }}>
+                <div style={{ position: "absolute", left: -15, top: 8, width: 6, height: 6, borderRadius: "50%", background: C.border }} />
+                <button onClick={() => onViewSession(b.id, s)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: C.muted }}>
+                  Session {s.no} · {s.date}
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// Read-only detail for one session, opened from the Clinical Journey
+// timeline. Deliberately simple (no KBContext/goalProgress dependency,
+// unlike the in-editor SessionReviewCard) since it's just a history view.
+function SessionDetailCard({ session, goals, treatments }) {
+  const doneItems = (session.items || []).filter((it) => it.done);
+  return (
+    <>
+      <Card>
+        <CardTitle>Session {session.no}</CardTitle>
+        <div style={{ fontSize: 12.5, color: C.muted }}>{session.date}</div>
+      </Card>
+      {goals.length > 0 && (
+        <Card>
+          <CardTitle>Measures recorded</CardTitle>
+          {goals.map((g) => {
+            const v = session.measures?.[g.id];
+            if (v == null || v === "") return null;
+            return <div key={g.id} style={{ fontSize: 13, padding: "4px 0", color: C.text }}>{g.measure}: <b>{v}</b></div>;
+          })}
+        </Card>
+      )}
+      <Card>
+        <CardTitle>Treatment performed ({doneItems.length}/{(session.items || []).length})</CardTitle>
+        {doneItems.length === 0 && <EmptyRow>Nothing marked done.</EmptyRow>}
+        {doneItems.map((it) => {
+          const t = treatments.find((x) => x.id === it.treatmentId);
+          return <div key={it.treatmentId} style={{ fontSize: 13, padding: "4px 0", color: C.text }}>✓ {t?.name || it.treatmentId} {it.actual && <span style={{ color: C.muted }}>— {it.actual}</span>}</div>;
+        })}
+      </Card>
+      {session.note && (
+        <Card>
+          <CardTitle>Session note</CardTitle>
+          <div style={{ fontSize: 13, color: C.text }}>{session.note}</div>
+        </Card>
+      )}
+    </>
+  );
+}
+
 /* ============================================================
    PLAN & PROGRESS (2026-09-09, Aditi: "all the things we have added
    in the problem list, goals, treatment ... should show in a page
@@ -497,6 +576,7 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   const [editing, setEditing] = useState(false);
   const [reassessing, setReassessing] = useState(false);
   const [viewingPlanId, setViewingPlanId] = useState(null);
+  const [viewingSession, setViewingSession] = useState(null); // { planId, session }
   const cp = isNeuro ? (patient?.data?.neuro?.neuroCarePlan || {}) : (patient?.data?.ortho_care_plan || {});
   const history = (isNeuro ? patient?.data?.neuro?.carePlanHistory : patient?.data?.ortho_care_plan_history) || [];
   const problems = Array.isArray(cp.problems) ? cp.problems : [];
@@ -561,6 +641,18 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
     );
   }
 
+  if (viewingSession) {
+    const owningPlan = viewingSession.planId ? history.find((h) => h.id === viewingSession.planId) : null;
+    const ownerGoals = owningPlan ? (owningPlan.goals || []) : goals;
+    const ownerTreatments = owningPlan ? (owningPlan.treatments || []) : treatments;
+    return (
+      <>
+        <GhostBtn onClick={() => setViewingSession(null)} style={{ marginBottom: 12 }}>← Back to Journey</GhostBtn>
+        <SessionDetailCard session={viewingSession.session} goals={ownerGoals} treatments={ownerTreatments} />
+      </>
+    );
+  }
+
   return (
     <>
       {reassessing && (
@@ -600,6 +692,12 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
           );
         })}
       </Card>
+
+      <ClinicalJourney
+        cp={cp} history={history} planLabel={planLabel}
+        onViewPlan={(id) => setViewingPlanId(id)}
+        onViewSession={(planId, session) => setViewingSession({ planId, session })}
+      />
     </>
   );
 }

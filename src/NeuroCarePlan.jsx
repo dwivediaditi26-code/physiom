@@ -697,7 +697,7 @@ function newSessionDraft(treatments, no) {
   };
 }
 
-function SessionEditor({ draft, setDraft, treatments, goals, onSave, onCancel }) {
+function SessionEditor({ draft, setDraft, treatments, goals, sessions, onSave, onCancel }) {
   const setItem = (tid, patch) => setDraft({ ...draft, items: draft.items.map((it) => (it.treatmentId === tid ? { ...it, ...patch } : it)) });
   const doneCount = draft.items.filter((it) => it.done).length;
   return (
@@ -737,14 +737,20 @@ function SessionEditor({ draft, setDraft, treatments, goals, onSave, onCancel })
       {goals.length > 0 && (
         <>
           <div className="subheading" style={{ marginTop: 14 }}>Record a measure (optional) — feeds Progress</div>
-          {goals.map((g) => (
-            <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-              <span style={{ flex: 1, fontSize: 12.5 }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
-              <div style={{ width: 90 }}>
-                <TextField label="" value={draft.measures[g.id] ?? ""} onChange={(v) => setDraft({ ...draft, measures: { ...draft.measures, [g.id]: v } })} placeholder={g.unit || "value"} />
+          {goals.map((g) => {
+            const prev = previousMeasureForGoal(sessions, g.id, draft.id, g.baseline);
+            return (
+              <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+                <span style={{ flex: 1, fontSize: 12.5 }}>
+                  {g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span>
+                  {prev && <span style={{ display: "block", fontSize: 10.5, color: BRAND.purpleDark }}>Previous: {prev.value} <span style={{ color: BRAND.gray }}>({prev.source})</span></span>}
+                </span>
+                <div style={{ width: 90 }}>
+                  <TextField label="" value={draft.measures[g.id] ?? ""} onChange={(v) => setDraft({ ...draft, measures: { ...draft.measures, [g.id]: v } })} placeholder={g.unit || "value"} />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </>
       )}
 
@@ -753,29 +759,117 @@ function SessionEditor({ draft, setDraft, treatments, goals, onSave, onCancel })
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onCancel}>Cancel</button>
-        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onSave}>Save session</button>
+        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onSave}>Review session →</button>
       </div>
     </div>
   );
 }
 
-function SessionsPhase({ treatments, goals, sessions, setSessions }) {
+// Most recent prior session's recorded measure for a goal (chronological,
+// excluding the session being edited) -- feeds the "Previous" hint next to
+// each measure field, and falls back to the goal's own baseline when no
+// session has recorded it yet.
+function previousMeasureForGoal(sessions, goalId, excludeId, baseline) {
+  const prior = sessions
+    .filter((s) => s.id !== excludeId && s.measures?.[goalId] != null && s.measures[goalId] !== "")
+    .sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.no || 0) - (b.no || 0));
+  const last = prior[prior.length - 1];
+  return last ? { value: last.measures[goalId], source: `Session ${last.no}` } : (baseline != null && baseline !== "" ? { value: baseline, source: "Baseline" } : null);
+}
+
+// Phase 3 (2026-09-09, Aditi's spec): a Review screen before the session
+// actually saves -- "the therapist can look at the whole clinical
+// reasoning chain before saving." Problems -> Goals (previous -> today,
+// achieved state) -> Treatment performed today -> note. Nothing here is
+// editable; "Edit" goes back to the SessionEditor, "Save Session" commits.
+function SessionReviewCard({ draft, problems, goals, treatments, sessions, onBack, onConfirm }) {
+  const { goalProgress } = useKB();
+  const doneItems = draft.items.filter((it) => it.done);
+  return (
+    <>
+      <SectionIntro icon="✅" title="Session Review" sub={`Session ${draft.no} · ${draft.date} — check it over before saving.`} />
+
+      {problems.length > 0 && (
+        <div className="tech-card">
+          <div className="subheading" style={{ marginTop: 0 }}>Problems</div>
+          {problems.map((p) => <div key={p.id} style={{ fontSize: 12.5, padding: "3px 0" }}>• {p.name}</div>)}
+        </div>
+      )}
+
+      {goals.length > 0 && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Goals</div>
+          {goals.map((g) => {
+            const prev = previousMeasureForGoal(sessions, g.id, draft.id, g.baseline);
+            const today = draft.measures[g.id];
+            const entries = [...sessions.filter((s) => s.id !== draft.id), draft]
+              .map((s) => ({ value: parseFloat(s.measures?.[g.id]) })).filter((e) => Number.isFinite(e.value));
+            const prog = goalProgress(g, entries);
+            return (
+              <div key={g.id} style={{ padding: "6px 0", borderTop: `1px solid ${BRAND.border}` }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700 }}>{g.measure} {prog.achieved && <span style={chip("#ecfdf5", "#047857")}>Achieved</span>}</div>
+                <div style={{ fontSize: 11.5, color: BRAND.gray, marginTop: 2 }}>
+                  {prev ? `${prev.value} (${prev.source})` : "—"} → <b style={{ color: BRAND.ink }}>{today || "not recorded today"}</b>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="tech-card" style={{ marginTop: 10 }}>
+        <div className="subheading" style={{ marginTop: 0 }}>Treatment performed today ({doneItems.length}/{draft.items.length})</div>
+        {doneItems.length === 0 && <div className="summary-empty">Nothing marked done.</div>}
+        {doneItems.map((it) => {
+          const t = treatments.find((x) => x.id === it.treatmentId);
+          if (!t) return null;
+          return <div key={it.treatmentId} style={{ fontSize: 12.5, padding: "3px 0" }}>✓ {t.name} {it.actual && <span style={{ color: BRAND.gray }}>— {it.actual}</span>}</div>;
+        })}
+      </div>
+
+      {draft.note && (
+        <div className="tech-card" style={{ marginTop: 10 }}>
+          <div className="subheading" style={{ marginTop: 0 }}>Session note</div>
+          <div style={{ fontSize: 12.5 }}>{draft.note}</div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={onBack}>← Edit</button>
+        <button type="button" className="primary-btn" style={{ flex: 2 }} onClick={onConfirm}>💾 Save Session</button>
+      </div>
+    </>
+  );
+}
+
+function SessionsPhase({ problems, treatments, goals, sessions, setSessions }) {
   const [draft, setDraft] = useState(null);
+  const [reviewing, setReviewing] = useState(false);
   const ordered = [...sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.no - a.no);
 
   const startNew = () => setDraft(newSessionDraft(treatments, sessions.length + 1));
-  const save = () => {
+  const commit = () => {
     const exists = sessions.some((s) => s.id === draft.id);
     setSessions(exists ? sessions.map((s) => (s.id === draft.id ? draft : s)) : [...sessions, draft]);
     setDraft(null);
+    setReviewing(false);
   };
+
+  if (draft && reviewing) {
+    return (
+      <SessionReviewCard
+        draft={draft} problems={problems} goals={goals} treatments={treatments} sessions={sessions}
+        onBack={() => setReviewing(false)} onConfirm={commit}
+      />
+    );
+  }
 
   return (
     <>
       <SectionIntro icon="🗓" title="Sessions" sub="Record what actually happened. Each session is seeded from the treatment plan — just adjust Planned vs Actual." />
 
       {draft ? (
-        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} onSave={save} onCancel={() => setDraft(null)} />
+        <SessionEditor draft={draft} setDraft={setDraft} treatments={treatments} goals={goals} sessions={sessions} onSave={() => setReviewing(true)} onCancel={() => setDraft(null)} />
       ) : (
         <>
           <button type="button" className="primary-btn" style={{ width: "100%", marginBottom: 14 }} onClick={startNew}>＋ New session</button>
@@ -897,7 +991,7 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
       {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => setPhase("plan")} floatingCTA={floatingCTA} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
-      {phase === "sessions" && <SessionsPhase treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
+      {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
     </KBContext.Provider>
   );
