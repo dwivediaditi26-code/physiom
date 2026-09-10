@@ -628,6 +628,14 @@ function relativeDay(dateStr) {
   return `${diffDays} days ago`;
 }
 
+// Same predicate TherapistDashboardModule's own todayCount uses internally --
+// exported so the Clinical header's "N patients today" subtitle shares one
+// source of truth instead of a second inline copy.
+function getTodaysPatients(patients=[]) {
+  const today = new Date().toDateString();
+  return patients.filter(p => new Date(p.updatedAt).toDateString() === today);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BODY CHART — Interactive pain location mapper
 // ─── Interactive Body Chart ────────────────────────────────────────────────────
@@ -1799,11 +1807,6 @@ function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, o
     reader.readAsText(file);
   };
 
-  const specialtyCounts = SPECIALTY_CARD_META.reduce((acc, sp) => {
-    acc[sp.id] = localPatients.filter(p => specialtyOf(p) === sp.id).length;
-    return acc;
-  }, {});
-
   // Real, computed clinic-status counts (2026-08-17) -- not placeholders.
   // "In progress": has some real clinical content beyond a bare demographic
   // record, but SOAP hasn't been finalised yet.
@@ -1878,10 +1881,12 @@ const innerBody = (
               for which pathway a patient was assessed under. See
               careSettingOf above for why this is a best-effort derivation,
               not stored data, until the Ortho pathway wizard persists it for
-              real. The old second "speciality" pill row underneath this one
-              is gone (2026-09-02) -- speciality is now the By Speciality
-              card grid below, matching the reference design. */}
-          <div style={{padding:"14px 18px 0",display:"flex",gap:8,overflowX:"auto"}}>
+              real. Speciality pills sit in the same scroll row area
+              (2026-09-10, Aditi: "want specialisties in top nav bar" -- the
+              standalone "By Speciality" card grid that used to be further
+              down the page is gone, this row is the only speciality filter
+              now). */}
+          <div className="cp-scroll-x" style={{padding:"14px 18px 0",display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",msOverflowStyle:"none"}}>
             {[{id:"all",label:"All"}, ...CARE_SETTINGS].map(cs => {
               const active = filterCareSetting === cs.id;
               return (
@@ -1895,37 +1900,20 @@ const innerBody = (
               );
             })}
           </div>
-
-          {/* By Speciality -- 2×2 card grid with a real lucide icon per
-              specialty (2026-09-02, replaces the old speciality pill row),
-              same interaction the pill row had: tapping toggles that
-              specialty as a filter over the list below (tap again to
-              clear). Counts are real, computed from localPatients. */}
-          <div style={{padding:"22px 18px 0"}}>
-            <div style={{fontWeight:800,fontSize:"0.98rem",color:"#111827",marginBottom:10}}>By Speciality</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}}>
-              {SPECIALTY_CARD_META.map(sp => {
-                const active = filterSpecialty === sp.id;
-                const Icon = sp.Icon;
-                return (
-                  <button key={sp.id} type="button"
-                    onClick={()=>setFilterSpecialty(active ? "all" : sp.id)}
-                    style={{textAlign:"left",cursor:"pointer",fontFamily:"inherit",
-                      background:"#fff",border:`1.5px solid ${active?"#7c3aed":"#EEEDF5"}`,
-                      borderRadius:18,padding:"16px 14px"}}>
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-                      <div style={{width:44,height:44,borderRadius:14,background:sp.bg,
-                        display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <Icon size={22} color={sp.color} strokeWidth={1.75}/>
-                      </div>
-                      <ChevronRight size={17} color="#C4C4CE"/>
-                    </div>
-                    <div style={{fontWeight:800,fontSize:"0.92rem",color:"#111827",marginTop:12}}>{sp.label}</div>
-                    <div style={{fontSize:"0.78rem",color:"#9CA3AF",marginTop:1}}>{specialtyCounts[sp.id]} Patients</div>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="cp-scroll-x" style={{padding:"8px 18px 0",display:"flex",gap:8,overflowX:"auto",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+            {[{id:"all",label:"All specialities"}, ...SPECIALTY_CARD_META].map(sp => {
+              const active = filterSpecialty === sp.id;
+              return (
+                <button key={sp.id} onClick={()=>setFilterSpecialty(sp.id)}
+                  style={{flexShrink:0,padding:"8px 16px",borderRadius:99,
+                    border:`1.5px solid ${active?(sp.color||"#7c3aed"):"#EEEDF5"}`,
+                    background:active?(sp.bg||"#F3EEFF"):"#fff",
+                    color:active?(sp.color||"#7c3aed"):"#6B7280",fontSize:"0.82rem",fontWeight:700,cursor:"pointer",
+                    whiteSpace:"nowrap"}}>
+                  {sp.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* New Assessment CTA -- only shown in the non-embedded (Switch/
@@ -2370,4 +2358,6 @@ export {
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
   PostureSessionsView,
+  getInitials, avatarGrad, relativeDay,
+  getTodaysPatients,
 };

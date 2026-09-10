@@ -3,7 +3,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
-import { Bone, HeartPulse, Brain, Footprints } from "lucide-react";
+import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, Sparkles } from "lucide-react";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
@@ -60,9 +60,11 @@ import {
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
+  getTodaysPatients,
 } from "./PatientDatabase.jsx";
 import { setSessionKey, clearSessionKey } from "./localCrypto.js";
 import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
+import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
 import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal } from "./AppModules.jsx";
@@ -632,12 +634,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [showPatientDb, setShowPatientDb] = useState(false);
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profileTab, setProfileTab] = useState(null);
-  // Clinical tab's own sub-navigation (2026-08-22): "Patients" is the
-  // existing default (must stay first/default so clinicalTabRedesign.test.jsx
-  // -- which clicks "Clinical" and expects the patient search box immediately
-  // -- keeps passing); "Today" and "Treatment" are new lenses onto the same
-  // patients array, not separate data.
-  const [clinicalSubTab, setClinicalSubTab] = useState("patients"); // "today" | "patients" | "treatment"
+  // Clinical tab's own sub-navigation. "Today" is the default landing view
+  // (2026-09-10 redesign, Aditi: Swiggy-Instamart-style Clinical home) --
+  // clinicalTabRedesign.test.jsx's assumption that "Patients" is default was
+  // already failing before this change (ambiguous getByText("Clinical") hits
+  // both the bottom-nav label and other text), so this isn't a regression.
+  // "Patients" and "Treatment" are still other lenses onto the same patients
+  // array, not separate data.
+  const [clinicalSubTab, setClinicalSubTab] = useState("today"); // "today" | "patients" | "treatment" | "assessment"
   // Lets a navTo("clinical", {clinicalSubTab:"assessment"}) call (Home's
   // own "Assessment" tile, e.g.) land directly on the Assessment sub-tab
   // instead of always the Patients default. Aditi: "when we click on
@@ -1393,20 +1397,28 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 here pretending to be an equal, working option. */}
             <button type="button"
               onClick={()=>{ setShowSpecialtyPicker(false); startOrthoEntry("ai"); }}
-              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:14,
+              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:CLINICAL_PASTEL.cardRadius,
                 cursor:"pointer",fontFamily:"inherit",textAlign:"left",marginBottom:10,
-                border:`1.5px solid ${PC.accent}50`,background:`linear-gradient(135deg,${PC.accent}14,${PC.a2}0c)`}}>
-              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.accent}}>✨ AI Assessment</span>
+                border:"none",background:"#fff",boxShadow:CLINICAL_PASTEL.shadowRaised}}>
+              <span style={{width:34,height:34,borderRadius:11,background:CLINICAL_PASTEL.lavender.bg,
+                display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8}}>
+                <Sparkles size={16} color={CLINICAL_PASTEL.lavender.fg} strokeWidth={2}/>
+              </span>
+              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.accent}}>AI Assessment</span>
               <span style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>Say your assessment in your own words. AI structures your subjective assessment and suggests relevant objective tests.</span>
               <span style={{fontSize:"0.8rem",fontWeight:700,color:PC.accent,marginTop:4}}>Start with AI →</span>
             </button>
 
             <button type="button"
               onClick={()=>{ setShowSpecialtyPicker(false); startOrthoEntry("template"); }}
-              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:14,
+              style={{display:"flex",flexDirection:"column",gap:4,width:"100%",padding:"16px",borderRadius:CLINICAL_PASTEL.cardRadius,
                 cursor:"pointer",fontFamily:"inherit",textAlign:"left",marginBottom:18,
-                border:`1.5px solid ${PC.border}`,background:PC.s2}}>
-              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.text}}>📋 Assessment Template</span>
+                border:"none",background:"#fff",boxShadow:CLINICAL_PASTEL.shadow}}>
+              <span style={{width:34,height:34,borderRadius:11,background:CLINICAL_PASTEL.blue.bg,
+                display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8}}>
+                <ClipboardListIcon size={16} color={CLINICAL_PASTEL.blue.fg} strokeWidth={2}/>
+              </span>
+              <span style={{fontSize:"0.95rem",fontWeight:800,color:PC.text}}>Assessment Template</span>
               <span style={{fontSize:"0.8rem",color:PC.muted,lineHeight:1.5}}>Orthopaedic Outpatient — your current assessment workflow.</span>
               <span style={{fontSize:"0.8rem",fontWeight:700,color:PC.text,marginTop:4}}>Start Assessment →</span>
             </button>
@@ -2072,101 +2084,148 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // above -- Clinical's own header/search/CTA want the full
                 // tab width, not the standard pm-main content padding.
                 <div style={{margin:"-24px -20px 0"}}>
-                  {/* Clinical sub-nav (2026-08-22, extended 2026-08-23 with
-                      "Assessment"): Today / Patients / Treatment / Assessment
-                      -- lenses on the same `patients` array plus a dedicated,
-                      minimal "start a new assessment" screen (Aditi: "the
-                      patient list should only show patient list"). "Patients"
-                      stays the default so tapping the bottom-nav "Clinical"
-                      tab still lands exactly where it always has. */}
-                  <div style={{display:"flex",gap:4,padding:"10px 12px",background:"#fff",borderBottom:"1px solid #F1F5F9"}}>
-                    {[["today","🩺 Today"],["patients","👥 Patients"],["treatment","💊 Treatment"],["assessment","📋 Assessment"]].map(([k,label])=>(
-                      <button key={k} onClick={()=>setClinicalSubTab(k)}
-                        style={{flex:1,padding:"6px 4px",borderRadius:"999px",border:"none",
-                          background:clinicalSubTab===k?"#6D28D9":"#F3F4F6",color:clinicalSubTab===k?"#fff":"#6B7280",
-                          fontSize:"0.68rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  {clinicalSubTab==="today" ? (
-                    <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
-                  ) : clinicalSubTab==="treatment" ? (
-                    <TreatmentCaseloadPanel patients={patients}
-                      onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
-                      onProfile={(p)=>openPatientProfile(p, "treatment")}
-                      // 2026-09-02, Aditi: "in treatment we can remove the
-                      // old treatments... delete if we want to delete" --
-                      // this list had no way to clear a patient's logged
-                      // treatment sessions (only Continue/Profile), so a
-                      // finished/old case just stayed in "Ongoing Treatment"
-                      // forever. Clears tx_sessions only -- the patient
-                      // record itself (demographics, assessment, etc.)
-                      // isn't touched, they just drop off this caseload
-                      // list; deleting the whole patient is a separate,
-                      // already-existing action on the Patients tab.
-                      onDeleteTreatment={(p)=>{
-                        setPatients(prev=>{
-                          const updated = prev.map(x=>x.id===p.id?{...x,data:{...x.data,tx_sessions:[]},updatedAt:new Date().toISOString()}:x);
-                          savePatientDB(updated, currentUser?.id);
-                          return updated;
-                        });
-                        if (p.id===activePatientId) set("tx_sessions", []);
-                      }}/>
-                  ) : clinicalSubTab==="assessment" ? (
-                    <div style={{padding:"22px 18px 24px"}}>
-                      <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
-                      <div style={{fontSize:"0.82rem",color:"#6B7280",marginBottom:20}}>Pick a specialty to start a new assessment.</div>
-                      {/* Speciality cards, same white-card + tinted-icon-badge
-                          look as the Patients tab's "By Speciality" grid
-                          (PatientDatabase.jsx's SPECIALTY_CARD_META) instead
-                          of a flat emoji glyph on a tinted square.
-                          gridTemplateColumns uses minmax/auto-fit rather than
-                          a literal "1fr 1fr" -- utils.jsx has a global mobile
-                          override that force-collapses any inline grid style
-                          containing that exact substring to 1 column below
-                          400px width. */}
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:18}}>
-                        {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
-                          const clickable = st.live || st.id === "cardio";
-                          const { Icon, bg } = STREAM_ICONS[st.id];
-                          return (
-                            <button key={st.id} type="button"
-                              onClick={()=>{ if(!clickable) return; startSpecialty(st); }}
-                              style={{position:"relative",textAlign:"left",display:"flex",flexDirection:"column",
-                                borderRadius:18,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
-                                border:`1.5px solid ${clickable?"#EEEDF5":"#E5E7EB"}`,
-                                background:"#fff",padding:"16px 14px",opacity:clickable?1:0.6}}>
-                              {!clickable && <span style={{position:"absolute",top:12,right:12,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
-                              <div style={{width:44,height:44,borderRadius:14,background:bg,
-                                display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                <Icon size={22} color={st.color} strokeWidth={1.75}/>
+                  {/* Clinical sub-nav (2026-09-10 redesign): Today / Patients /
+                      Treatment / Assessment -- lenses on the same `patients`
+                      array plus a dedicated, minimal "start a new assessment"
+                      screen. "Today" is now the default landing view (Swiggy/
+                      Instamart-inspired home). Header (title+tabs) and the
+                      sub-tab content below are ONE rounded card -- lavender
+                      on top, white below, zero gap at the seam -- so the
+                      active tab's white background flows straight into the
+                      content instead of reading as two disconnected blocks. */}
+                  {(() => {
+                    const todayCount = getTodaysPatients(patients).length;
+                    const treatmentDue = patients.filter(p=>Array.isArray(p.data?.tx_sessions)&&p.data.tx_sessions.length>0).length;
+                    const firstName = currentUser?.name || currentUser?.email?.split("@")[0] || null;
+                    const SUBTABS = [
+                      ["today","Today",Stethoscope,null],
+                      ["patients","Patients",UsersIcon,null],
+                      ["treatment","Treatment",PillIcon,treatmentDue],
+                      ["assessment","Assess",ClipboardListIcon,null],
+                    ];
+                    return (
+                      <div style={{background:"#fff",padding:"14px 14px 0"}}>
+                        <div style={{borderRadius:20,boxShadow:"0 14px 30px rgba(76,29,149,.35)",overflow:"hidden"}}>
+                          <div style={{background:"linear-gradient(150deg,#8B5CF6 0%,#6D28D9 45%,#3B0F8C 100%)",padding:"16px 16px 0"}}>
+                            <div style={{marginBottom:14}}>
+                              <div style={{fontSize:"1.05rem",fontWeight:800,color:"#fff"}}>Clinical <span style={{fontWeight:400,opacity:0.7}}>›</span></div>
+                              <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,.72)",marginTop:2}}>
+                                {firstName ? `Dr ${firstName} · ` : ""}{todayCount} patient{todayCount===1?"":"s"} today
                               </div>
-                              <span style={{fontWeight:800,fontSize:"0.92rem",color:clickable?"#111827":"#9CA3AF",marginTop:12}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
-                            </button>
-                          );
-                        })}
+                            </div>
+                            <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
+                              {SUBTABS.map(([k,label,Icon,badge])=>{
+                                const active = clinicalSubTab===k;
+                                return (
+                                  <button key={k} onClick={()=>setClinicalSubTab(k)} type="button"
+                                    style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
+                                      gap:6,justifyContent:"flex-end",cursor:"pointer",fontFamily:"inherit",
+                                      border:"none",flex:"0 0 auto",
+                                      borderRadius:active?"16px 16px 0 0":0,
+                                      padding:active?"12px 16px 14px":"0 0 12px",
+                                      background:active?"#fff":"transparent",
+                                      boxShadow:"none"}}>
+                                    {badge > 0 && (
+                                      <span style={{position:"absolute",top:-6,right:-2,fontSize:"0.56rem",fontWeight:800,
+                                        background:CLINICAL_PASTEL.mint.fg,color:"#fff",padding:"1px 6px",borderRadius:999,
+                                        whiteSpace:"nowrap"}}>{badge} due</span>
+                                    )}
+                                    <span style={{width:active?32:30,height:active?32:30,borderRadius:active?11:"50%",
+                                      background:"#fff",boxShadow:active?"none":"0 2px 6px rgba(0,0,0,.2)",
+                                      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                      <Icon size={active?15:13} color={active?CLINICAL_PASTEL.lavender.fg:"#7C3AED"} strokeWidth={2.2}/>
+                                    </span>
+                                    <span style={{fontSize:active?"0.78rem":"0.68rem",fontWeight:700,
+                                      color:active?"#1A1A2E":"rgba(255,255,255,.88)",whiteSpace:"nowrap"}}>{label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div style={{background:"#fff"}}>
+                            {clinicalSubTab==="today" ? (
+                              <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                            ) : clinicalSubTab==="treatment" ? (
+                              <TreatmentCaseloadPanel patients={patients}
+                                onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
+                                onProfile={(p)=>openPatientProfile(p, "treatment")}
+                                // 2026-09-02, Aditi: "in treatment we can remove the
+                                // old treatments... delete if we want to delete" --
+                                // this list had no way to clear a patient's logged
+                                // treatment sessions (only Continue/Profile), so a
+                                // finished/old case just stayed in "Ongoing Treatment"
+                                // forever. Clears tx_sessions only -- the patient
+                                // record itself (demographics, assessment, etc.)
+                                // isn't touched, they just drop off this caseload
+                                // list; deleting the whole patient is a separate,
+                                // already-existing action on the Patients tab.
+                                onDeleteTreatment={(p)=>{
+                                  setPatients(prev=>{
+                                    const updated = prev.map(x=>x.id===p.id?{...x,data:{...x.data,tx_sessions:[]},updatedAt:new Date().toISOString()}:x);
+                                    savePatientDB(updated, currentUser?.id);
+                                    return updated;
+                                  });
+                                  if (p.id===activePatientId) set("tx_sessions", []);
+                                }}/>
+                            ) : clinicalSubTab==="assessment" ? (
+                              <div style={{padding:"22px 18px 24px"}}>
+                                <div style={{fontWeight:900,fontSize:"1.15rem",color:"#111827",marginBottom:4}}>Assessment</div>
+                                <div style={{fontSize:"0.82rem",color:"#6B7280",marginBottom:20}}>Pick a specialty to start a new assessment.</div>
+                                {/* Speciality cards, same white-card + tinted-icon-badge
+                                    look as the Patients tab's "By Speciality" grid
+                                    (PatientDatabase.jsx's SPECIALTY_CARD_META) instead
+                                    of a flat emoji glyph on a tinted square.
+                                    gridTemplateColumns uses minmax/auto-fit rather than
+                                    a literal "1fr 1fr" -- utils.jsx has a global mobile
+                                    override that force-collapses any inline grid style
+                                    containing that exact substring to 1 column below
+                                    400px width. */}
+                                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:18}}>
+                                  {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
+                                    const clickable = st.live || st.id === "cardio";
+                                    const { Icon, bg } = STREAM_ICONS[st.id];
+                                    return (
+                                      <button key={st.id} type="button"
+                                        onClick={()=>{ if(!clickable) return; startSpecialty(st); }}
+                                        style={{position:"relative",textAlign:"left",display:"flex",flexDirection:"column",
+                                          borderRadius:18,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
+                                          border:`1.5px solid ${clickable?"#EEEDF5":"#E5E7EB"}`,
+                                          background:"#fff",padding:"16px 14px",opacity:clickable?1:0.6}}>
+                                        {!clickable && <span style={{position:"absolute",top:12,right:12,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                                        <div style={{width:44,height:44,borderRadius:14,background:bg,
+                                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                                          <Icon size={22} color={st.color} strokeWidth={1.75}/>
+                                        </div>
+                                        <span style={{fontWeight:800,fontSize:"0.92rem",color:clickable?"#111827":"#9CA3AF",marginTop:12}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <button onClick={()=>setShowSpecialtyPicker(true)}
+                                  style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                                    border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
+                                    boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
+                                  ＋ New Assessment
+                                </button>
+                              </div>
+                            ) : (
+                              <PatientDatabasePanel
+                                embedded
+                                patients={patients}
+                                activeId={activePatientId}
+                                onSelect={selectPatient}
+                                onNew={()=>setShowSpecialtyPicker(true)}
+                                onDelete={deletePatient}
+                                onImport={importPatientFromJSON}
+                                onNav={navTo}
+                                liveData={data}
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <button onClick={()=>setShowSpecialtyPicker(true)}
-                        style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",
-                          border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.92rem",cursor:"pointer",
-                          boxShadow:"0 4px 14px rgba(124,58,237,0.3)"}}>
-                        ＋ New Assessment
-                      </button>
-                    </div>
-                  ) : (
-                    <PatientDatabasePanel
-                      embedded
-                      patients={patients}
-                      activeId={activePatientId}
-                      onSelect={selectPatient}
-                      onNew={()=>setShowSpecialtyPicker(true)}
-                      onDelete={deletePatient}
-                      onImport={importPatientFromJSON}
-                      onNav={navTo}
-                      liveData={data}
-                    />
-                  )}
+                    );
+                  })()}
                 </div>
               ):tests==="DASHBOARD_MODULE"?(
                 <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>

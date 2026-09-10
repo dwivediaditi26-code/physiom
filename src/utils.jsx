@@ -452,6 +452,13 @@ const MOBILE_CSS = `
   [data-theme="dark"] ::-webkit-scrollbar-track { background: #EBEBED; }
   [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #E0E0E2; border-radius: 4px; }
 
+  /* Reusable "hide the scrollbar on a horizontally-scrolling row" class --
+     several components already inlined this same pair of rules locally
+     (NeuroCarePlan.jsx, SpecialtyPatientProfile.jsx); defining it once
+     globally lets any horizontal-scroll row opt in without duplicating it. */
+  .cp-scroll-x { scrollbar-width: none; -ms-overflow-style: none; }
+  .cp-scroll-x::-webkit-scrollbar { display: none; }
+
   /* ── Light mode SVG text ── */
   [data-theme="light"] svg text { fill: #374151; }
 
