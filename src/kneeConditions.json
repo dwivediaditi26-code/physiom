@@ -15,6 +15,28 @@
       "Genu recurvatum / dynamic valgus"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Immediate effusion": {
+          "text": "Rapid, large-volume swelling within 1-2 hours of injury indicates hemarthrosis from a vascularized intra-articular structure — ACL rupture is the most common cause of acute traumatic knee hemarthrosis, distinguishing it from the delayed, lower-grade effusion typical of an avascular meniscal tear.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12 (Knee)"
+        },
+        "Quadriceps inhibition": {
+          "text": "Reflects arthrogenic muscle inhibition (AMI): effusion-driven mechanoreceptor/nociceptor discharge reflexively suppresses the quadriceps motor-neuron pool at the spinal and supraspinal level, a protective mechanism rather than a true contractile weakness — the physiological basis of the weak-but-painless resisted knee extension pattern seen acutely post-ACL.",
+          "source": "Palmieri-Smith et al., quadriceps arthrogenic muscle inhibition literature (PMC4271337)"
+        },
+        "Giving-way": {
+          "text": "The subjective sensation of the knee buckling during pivoting or deceleration reflects loss of the ACL's role as primary restraint to anterior tibial translation and rotational (pivot) stability, allowing the tibia to sublux under dynamic load.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Genu recurvatum / dynamic valgus": {
+          "text": "Hyperextension laxity (recurvatum) reflects generalized or ACL-specific capsuloligamentous laxity allowing tibial hyperextension, while dynamic valgus collapse (femoral adduction/internal rotation with tibial external rotation on landing) is the biomechanical pattern Hewett identified as the most common mechanism of non-contact ACL injury in female athletes.",
+          "source": "Hewett et al., neuromuscular control and valgus loading predict ACL injury risk (PubMed 15722287)"
+        }
+      }
+    },
     "specialTests": [
       "Lachman's test",
       "Pivot shift test"
@@ -103,6 +125,24 @@
       "Posterior tibial droop stance"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Posterior sag": {
+          "text": "With the knee flexed to 90°, gravity causes the tibia to drop posteriorly relative to the femur when the PCL — the primary static restraint to posterior tibial translation — is deficient; this is the visual basis of the Godfrey/posterior sag sign.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "± posterior bruising": {
+          "text": "Ecchymosis over the posterior knee or proximal calf points to the classic PCL mechanism of a direct posteriorly-directed force on the proximal tibia (e.g. dashboard injury), helping confirm mechanism-consistency for PCL injury over other ligamentous patterns.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Posterior tibial droop stance": {
+          "text": "A resting posterior sag of the tibia under gravity or body weight reflects chronic PCL insufficiency, most evident with the knee flexed near 90° where the deficient posterior restraint allows the tibia to translate posteriorly relative to the femur.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "Posterior drawer test"
     ],
@@ -193,6 +233,32 @@
       "Avoids full flexion"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Joint-line swelling": {
+          "text": "Meniscal tears typically produce a delayed, lower-grade effusion (12-24h post-injury) rather than the immediate hemarthrosis of ACL rupture, reflecting synovial irritation rather than intra-articular bleeding since the inner two-thirds of the meniscus is avascular.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Catching/locking": {
+          "text": "Mechanical catching, or true locking with a block to full extension, occurs when a displaced fragment (classically a bucket-handle tear) becomes physically interposed between the femoral and tibial condyles, obstructing normal joint arthrokinematics.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Quad wasting": {
+          "text": "Reflex quadriceps inhibition secondary to chronic joint irritation and recurrent effusion produces disuse atrophy over the more subacute-to-chronic timeframe typical of a meniscal lesion, most visible in the VMO.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Antalgic": {
+          "text": "A pain-avoidant gait or resting posture reflects protective unloading of the symptomatic tibiofemoral compartment to minimize compressive and rotational joint-line pain generated by the torn meniscal segment.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Avoids full flexion": {
+          "text": "Deep knee flexion markedly increases compressive and shear loading on the posterior horn of the meniscus — the most common tear site — so avoidance of end-range flexion is a protective pattern that helps localize pathology to the meniscus rather than a collateral ligament.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "McMurray's test",
       "Thessaly test"
@@ -281,6 +347,24 @@
       "Valgus-loading alignment"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Medial joint-line tenderness": {
+          "text": "Point tenderness along the medial joint line or the ligament's femoral/tibial attachment localizes the site of fiber disruption, consistent with Cyriax's principle that palpation should reproduce pain directly over the injured structure.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine; Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Valgus laxity": {
+          "text": "Excess medial joint-line gapping under a valgus load indicates mechanical insufficiency of the MCL, the primary static restraint to valgus stress, especially when laxity is present at 30° flexion where the posterior capsule and ACL contribute minimally.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Valgus-loading alignment": {
+          "text": "A resting or dynamic valgus alignment either reflects the causative forced valgus/external-rotation mechanism or an ongoing inability of the compromised medial structures to resist the physiological valgus moment generated during stance.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "Valgus stress test"
     ],
@@ -370,6 +454,24 @@
       "Varus-loading alignment"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Lateral joint-line tenderness": {
+          "text": "Point tenderness over the fibular collateral ligament's femoral or fibular-head attachment localizes the lesion, consistent with Cyriax's principle of palpatory localization of a ligamentous injury.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine; Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Varus laxity": {
+          "text": "Excess lateral joint-line gapping under varus stress indicates LCL insufficiency, the primary static restraint to varus load; because isolated LCL injury is uncommon, this finding should prompt screening for concurrent posterolateral corner or peroneal nerve involvement given the typical direct-varus mechanism.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Varus-loading alignment": {
+          "text": "Static or dynamic varus alignment reflects either the causative varus mechanism of injury or an inability of the compromised LCL/posterolateral structures to resist the varus moment during single-leg stance.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "Varus stress test"
     ],
@@ -453,6 +555,36 @@
       "Femoral IR"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Patellar maltracking": {
+          "text": "A laterally-deviated or laterally-tilting patella during active extension reflects an imbalance between medial (VMO) and lateral (vastus lateralis, ITB/lateral retinaculum) restraint forces, altering patellofemoral contact pressure and reproducing anterior knee pain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12; Witvrouw, patellofemoral pain literature"
+        },
+        "VMO wasting": {
+          "text": "Selective VMO atrophy relative to vastus lateralis has classically been theorized to allow unopposed lateral pull on the patella, though a systematic review and meta-analysis of VMO/VL firing-timing studies found inconsistent evidence for both the magnitude and direction of any true onset delay — the finding is clinically useful but its mechanistic explanation remains contested.",
+          "source": "Wong, \"The relative timing of VMO and VL in the aetiology of anterior knee pain,\" systematic review and meta-analysis (PMC2386790)"
+        },
+        "No effusion": {
+          "text": "The absence of joint effusion helps differentiate PFPS — an extra-articular, retropatellar overload condition — from intra-articular pathology such as ACL or meniscal tear, or an OA flare, all of which typically present with swelling.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Dynamic valgus": {
+          "text": "Femoral adduction/internal rotation producing knee valgus during weight-bearing tasks dynamically increases the effective Q-angle and lateral patellofemoral shear force, a key driver of anterior knee pain distinct from the static Q-angle measured in supine.",
+          "source": "Powers, \"The influence of altered lower-extremity kinematics on patellofemoral joint dysfunction\""
+        },
+        "Foot pronation": {
+          "text": "Excessive subtalar pronation drives compensatory tibial internal rotation that, transmitted proximally through the kinetic chain, increases dynamic knee valgus and lateral patellar tracking forces — a recognized distal contributor to PFPS.",
+          "source": "Tiberio, kinetic chain model of foot pronation and patellofemoral pain; Magee, Orthopedic Physical Assessment"
+        },
+        "Femoral IR": {
+          "text": "Excessive femoral internal rotation, often from weak hip external rotators/gluteus medius, increases the dynamic Q-angle and lateral patellofemoral contact stress — the biomechanical rationale for proximal (hip) rather than purely local rehabilitation targeting in PFPS.",
+          "source": "Powers, \"The influence of altered lower-extremity kinematics on patellofemoral joint dysfunction\""
+        }
+      }
+    },
     "specialTests": [
       "Clarke's sign",
       "Patellar grind test"
@@ -547,6 +679,30 @@
     "palpation": [
       "Patellar tendon"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Inferior-pole tenderness": {
+          "text": "Point tenderness at the inferior pole of the patella localizes to the proximal patellar tendon origin — the classic 'jumper's knee' site — consistent with the reactive/degenerative tendon changes described in the Cook & Purdam continuum model at the point of greatest tensile and compressive load.",
+          "source": "Cook & Purdam, \"Is tendon pathology a continuum? A pathology model to explain the clinical presentation of load-induced tendinopathy\" (2009)"
+        },
+        "Jumper's history": {
+          "text": "A history of repetitive jump-landing loading (volleyball, basketball) is the classic mechanism producing cumulative tensile overload at the patellar tendon origin, consistent with the load-induced pathogenesis central to the Cook & Purdam continuum model.",
+          "source": "Cook & Purdam (2009)"
+        }
+      },
+      "posture": {
+        "Stiff-landing posture": {
+          "text": "Landing with reduced knee flexion excursion decreases the eccentric shock-absorbing role of the quadriceps-patellar tendon complex, concentrating load over a shorter range and increasing peak tendon strain — a recognized biomechanical risk factor for patellar tendinopathy.",
+          "source": "Cook & Purdam (2009); Cook et al., patellar tendinopathy load-management literature"
+        }
+      },
+      "palpation": {
+        "Patellar tendon": {
+          "text": "Reproducing tenderness on direct palpation of the tendon (typically at the inferior pole) confirms the tendon as the primary pain generator, consistent with Cyriax's contractile-lesion localization and the structural correlate to symptoms described in the Cook & Purdam continuum model.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine; Cook & Purdam (2009)"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -625,6 +781,32 @@
       "Varus/valgus malalignment"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Bony enlargement": {
+          "text": "Firm, bony enlargement along the joint line or peripatellar region reflects osteophyte formation, a hallmark palpable and radiographic feature of degenerative joint disease as articular cartilage loss triggers compensatory subchondral bone remodeling.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Effusion": {
+          "text": "Recurrent, often low-grade effusion in OA reflects synovial reaction to cartilage and bone debris and low-grade synovitis, distinguishing it from the acute traumatic hemarthrosis seen with an acute ligamentous injury.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Varus/valgus": {
+          "text": "Static frontal-plane malalignment (most commonly varus) reflects asymmetric compartmental cartilage loss — varus alignment both results from and accelerates medial compartment OA by concentrating load medially, a well-documented self-perpetuating cycle.",
+          "source": "Sharma et al., malalignment and knee OA progression; Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "Crepitus": {
+          "text": "Palpable or audible grinding during active or passive knee motion reflects loss of smooth articular cartilage and irregular subchondral bone/osteophyte contact, one of the most reliable clinical signs of degenerative joint disease.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      },
+      "posture": {
+        "Varus/valgus malalignment": {
+          "text": "Sustained frontal-plane malalignment during static stance and gait concentrates compressive load on the involved compartment (typically medial in varus OA), perpetuating cartilage degeneration — the postural correlate of the varus/valgus deformity noted on observation.",
+          "source": "Sharma et al., malalignment and knee OA progression; Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "Sweep/ballottement test for effusion"
     ],
@@ -737,6 +919,24 @@
       "Hip-drop / adducted running posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Lateral epicondyle tenderness ~30° flexion": {
+          "text": "Tenderness at the lateral femoral epicondyle at approximately 30° of flexion corresponds to the 'impingement zone' where the ITB (or, per the modern compression-model, its underlying innervated fat pad) crosses the epicondyle — the same anatomic zone probed by the Noble compression test.",
+          "source": "Noble compression test literature (Physiopedia; Orthofixar); modern ITB compression-model literature"
+        },
+        "Runner": {
+          "text": "Repetitive knee flexion-extension during running cyclically loads the ITB over the lateral epicondyle, and training-error factors (sudden mileage increase, downhill running, cambered surfaces) are classic aggravators, making a running history a key risk marker for this diagnosis.",
+          "source": "PM&R KnowledgeNow, Iliotibial Band Syndrome overview"
+        }
+      },
+      "posture": {
+        "Hip-drop / adducted running posture": {
+          "text": "A contralateral pelvic drop with ipsilateral hip adduction during single-leg stance reflects gluteus medius weakness, increasing hip adduction and knee internal rotation and consequently ITB tension/compression over the lateral epicondyle with each stride — the documented mechanism behind the TFL-overactive, glute-medius-inhibited compensation pattern.",
+          "source": "Fredericson et al., gluteus medius weakness and iliotibial band syndrome"
+        }
+      }
+    },
     "specialTests": [
       "Noble compression test",
       "Ober's test"

@@ -14,6 +14,24 @@
       "Reduced hip IR posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "C-sign grip over groin": {
+          "text": "Patients cup the hand in a 'C' shape over the anterior/lateral hip, thumb posterior over the trochanter and fingers gripping into the groin, to localize deep intra-articular pain. First described by Byrd, this gesture is a validated descriptor for FAI and labral pathology and helps differentiate deep joint pain from superficial lateral (trochanteric) or posterior (piriformis) pain generators.",
+          "source": "Byrd, 2007 (C-sign); Reiman & Thorborg, hip clinical examination literature"
+        },
+        "antalgic gait": {
+          "text": "A shortened stance phase on the involved limb reduces the terminal-stance hip extension/internal-rotation moment, which would otherwise drive the femoral head into the anterosuperior acetabular rim — the impingement position. Avoiding this loading pattern is a protective gait adaptation in symptomatic FAI/labral tear.",
+          "source": "Magee, Orthopedic Physical Assessment (hip gait); Reiman et al., hip impingement clinical presentation literature"
+        }
+      },
+      "posture": {
+        "Reduced hip IR posture": {
+          "text": "Patients rest the hip in relatively less internal rotation to keep the femoral head off the anterosuperior acetabular rim/labrum. Because flexion plus IR is the same combined position that provokes symptoms on the FADIR test, a guarded reduced-IR resting posture reflects the same underlying anterior impingement mechanism.",
+          "source": "Physio-pedia, FADIR test mechanics; Magee, Orthopedic Physical Assessment, Ch.12 (Hip)"
+        }
+      }
+    },
     "specialTests": [
       "FADIR test",
       "Hip Scour test"
@@ -105,6 +123,28 @@
       "Fixed-flexion / externally-rotated posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Reduced stride": {
+          "text": "Shortened stride length reflects loss of terminal hip extension — typically the earliest range lost in hip OA as the anterior capsule and iliofemoral ligament contract — combined with pain-avoidant loading through late stance.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12 (capsular pattern of the hip)"
+        },
+        "gluteal/quad wasting": {
+          "text": "Disuse atrophy of the gluteals and quadriceps develops secondary to chronic pain-limited weight-bearing and reduced activity, a hallmark secondary sign in established hip OA distinguishing a chronic degenerative presentation from an acute mechanical one.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "antalgic gait": {
+          "text": "A pain-avoidance gait pattern that shortens stance-phase duration on the arthritic hip, reducing joint reaction force, which reaches roughly three times body weight during single-leg stance.",
+          "source": "StatPearls, Trendelenburg Gait (hip joint loading during stance phase)"
+        }
+      },
+      "posture": {
+        "Fixed-flexion / externally-rotated posture": {
+          "text": "This resting posture reflects the classic OA capsular pattern — the hip settles into flexion and external rotation because the anterior capsule and iliofemoral ligament contract first, restricting extension and internal rotation before abduction (capsular pattern: IR = Flexion = Abduction restricted, extension lost earliest).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12 (capsular pattern of the hip); Cyriax capsular pattern concept"
+        }
+      }
+    },
     "specialTests": [
       "Hip Scour test"
     ],
@@ -218,6 +258,24 @@
       "Hip-drop / adducted stance (compensating glute med)"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Tender over greater trochanter": {
+          "text": "Direct point tenderness over the trochanteric facets is the hallmark localizing sign of gluteal tendinopathy — the gluteus medius and minimus tendons insert here, and their compressive loading against the trochanter (especially in adduction) is the primary pain generator in GTPS.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12; Grimaldi, gluteal tendinopathy compressive-load literature"
+        },
+        "Trendelenburg": {
+          "text": "A positive Trendelenburg sign reflects gluteus medius/minimus weakness or pain-inhibition failing to stabilize the pelvis in single-leg stance, causing a contralateral pelvic drop — direct evidence of the abductor mechanism dysfunction underlying GTPS.",
+          "source": "StatPearls, Trendelenburg Sign (gluteus medius/minimus pathophysiology)"
+        }
+      },
+      "posture": {
+        "Hip-drop / adducted stance (compensating glute med)": {
+          "text": "Standing with the pelvis dropped and the hip adducted increases iliotibial band tension and compresses the gluteal tendons against the greater trochanter — patients often unconsciously shift out of this position, or adopt it as a compensatory stance reflecting glute medius weakness/inhibition.",
+          "source": "Grimaldi, gluteal tendinopathy compressive-load literature; Magee, Orthopedic Physical Assessment, Ch.12"
+        }
+      }
+    },
     "specialTests": [
       "Trendelenburg test",
       "Ober's test"
@@ -322,6 +380,26 @@
     "palpation": [
       "Ischial tuberosity"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Ischial tuberosity tenderness": {
+          "text": "Tenderness directly over the ischial tuberosity localizes pathology to the common hamstring tendon origin (semimembranosus, semitendinosus, biceps femoris), the classic site of proximal hamstring tendinopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12; Cyriax contractile-lesion localization principle"
+        }
+      },
+      "posture": {
+        "Posterior pelvic-tilt sitting avoidance": {
+          "text": "A posterior pelvic tilt increases hip flexion at the pelvis relative to the femur, which lengthens the hamstring origin and compresses it against the ischial tuberosity/seat surface — patients with proximal hamstring tendinopathy characteristically avoid this position (and prolonged sitting generally) because it reproduces their pain.",
+          "source": "Musick et al., proximal hamstring tendinopathy load-management literature"
+        }
+      },
+      "palpation": {
+        "Ischial tuberosity": {
+          "text": "Point tenderness at the tendon origin confirms the site of the tendinopathic/enthesis lesion, consistent with the Cyriax principle that a contractile lesion is localized by palpation combined with a painful resisted test (here, resisted hip extension) in that muscle's direction of action.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine (contractile lesion pattern)"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -411,6 +489,34 @@
       "Adductor origin",
       "Pubic ramus"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Adductor-origin tenderness": {
+          "text": "Tenderness at the pubic adductor origin — most commonly adductor longus — is the hallmark localizing sign of adductor-related groin pain, reflecting tendinopathic or acute strain change at the tenoperiosteal junction.",
+          "source": "Doha Agreement classification of groin pain in athletes; Magee, Orthopedic Physical Assessment, Ch.12"
+        },
+        "± swelling": {
+          "text": "Localized swelling, when present, suggests a more acute musculotendinous strain with associated edema/hemorrhage rather than a purely chronic tendinopathic presentation, helping stage the injury (acute strain vs. chronic overuse).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12 (muscle strain grading)"
+        }
+      },
+      "posture": {
+        "Pelvic instability posture": {
+          "text": "An asymmetric or guarded pelvic posture reflects disrupted load transfer through the pubic symphysis and anterior pelvis — the adductors, rectus abdominis, and pelvic floor share a common aponeurosis at the symphysis, so instability here is characteristic of athletic pubalgia rather than an isolated peripheral muscle strain.",
+          "source": "Doha Agreement classification of groin pain in athletes (pubic-related and adductor-related groin pain overlap)"
+        }
+      },
+      "palpation": {
+        "Adductor origin": {
+          "text": "Point tenderness at the proximal adductor longus tenobony junction — the most common site of adductor-related groin pain — confirms the contractile source consistent with a positive resisted adduction/squeeze test.",
+          "source": "Doha Agreement classification of groin pain in athletes"
+        },
+        "Pubic ramus": {
+          "text": "Tenderness extending onto the pubic ramus suggests involvement of the symphyseal/parasymphyseal region (osteitis pubis or athletic pubalgia) rather than an isolated muscle-belly strain — an important differentiator that broadens the differential beyond a simple adductor strain.",
+          "source": "Doha Agreement classification of groin pain in athletes"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -493,6 +599,24 @@
       "Externally-rotated resting hip"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Deep buttock tenderness": {
+          "text": "Tenderness localized deep in the buttock, over the piriformis muscle belly rather than the ischial tuberosity or trochanter, points to the deep gluteal space as the source — the key finding distinguishing this condition from proximal hamstring tendinopathy (H04) or GTPS (H03).",
+          "source": "Physiotutors, FAIR test / deep gluteal syndrome clinical reasoning"
+        },
+        "± sciatic signs": {
+          "text": "Radiating or neural-type symptoms occur because in a notable minority of people the sciatic nerve passes through or is closely related to the piriformis muscle; spasm, hypertrophy, or tightness of the muscle can irritate or compress the nerve, producing sciatica-like referral without a lumbar spine source (deep gluteal syndrome).",
+          "source": "Physiotutors, FAIR test / piriformis-sciatic nerve anatomic relationship"
+        }
+      },
+      "posture": {
+        "Externally-rotated resting hip": {
+          "text": "The piriformis is a hip external rotator; a shortened/overactive piriformis can hold the resting hip in relative external rotation, and patients also tend to favor ER at rest because it slackens the piriformis and reduces tension on an irritated sciatic nerve.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.12; Physiotutors, FAIR test mechanics"
+        }
+      }
+    },
     "specialTests": [
       "Piriformis (FAIR) test"
     ],
@@ -577,6 +701,20 @@
       "ITB-tight or hip-flexor-tight posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Visible/audible snap with movement": {
+          "text": "The defining sign of coxa saltans: in the internal type, the iliopsoas tendon catches and releases over the iliopectineal eminence or femoral head as the hip moves from flexion to extension; in the external type, the iliotibial band/gluteus maximus snaps over the greater trochanter during flexion-extension. The snap itself, not pain, is the primary diagnostic feature in most cases (painless snapping is more common than painful).",
+          "source": "StatPearls, Snapping Hip Syndrome (internal vs. external mechanism)"
+        }
+      },
+      "posture": {
+        "ITB-tight or hip-flexor-tight posture": {
+          "text": "A tight iliotibial band/TFL increases the band's tension and compressive contact against the greater trochanter (external type), while a tight iliopsoas increases its tension and contact against the iliopectineal eminence/femoral head (internal type) — either predisposes to the catching mechanism that produces the snap during hip flexion-extension.",
+          "source": "StatPearls, Snapping Hip Syndrome; Orthobullets, Coxa Saltans"
+        }
+      }
+    },
     "specialTests": [
       "Dynamic snapping hip test"
     ],

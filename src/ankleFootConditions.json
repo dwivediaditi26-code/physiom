@@ -16,6 +16,24 @@
       "Guarded plantarflexed posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Lateral swelling/bruising": {
+          "text": "Localized swelling and ecchymosis over the lateral malleolus reflect capsular/ligamentous hemorrhage from the ATFL (and CFL if more severe) following an inversion mechanism; the lateral (not diffuse or medial) distribution supports a classic inversion-sprain pattern.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "antalgic gait": {
+          "text": "A pain-guarded limp reflects protective offloading of the injured lateral ligament complex; inability to bear weight for four steps immediately after injury and at examination is also one of the Ottawa Ankle Rules criteria used to screen for fracture.",
+          "source": "Stiell et al., Ottawa Ankle Rules validation studies"
+        }
+      },
+      "posture": {
+        "Guarded plantarflexed posture": {
+          "text": "Resting the foot in slight plantarflexion shortens/unloads the ATFL, which is under greatest tension in plantarflexion combined with inversion — a protective position that minimizes strain on the acutely injured ligament.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Anterior drawer test",
       "Talar tilt test",
@@ -114,6 +132,24 @@
       "Rearfoot varus / supinated posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Recurrent swelling": {
+          "text": "Repeated bouts of effusion following minor perturbation reflect ongoing mechanical and functional insufficiency of the lateral ligament complex rather than a single acute event — a hallmark distinguishing CAI from an isolated acute sprain.",
+          "source": "International Ankle Consortium consensus statement on chronic ankle instability"
+        },
+        "feeling of giving way": {
+          "text": "Subjective instability (\"giving way\") is a core diagnostic criterion for CAI per International Ankle Consortium consensus, reflecting a combination of residual mechanical laxity and impaired neuromuscular/proprioceptive control rather than structural failure alone.",
+          "source": "International Ankle Consortium consensus statement"
+        }
+      },
+      "posture": {
+        "Rearfoot varus / supinated posture": {
+          "text": "A varus-aligned, supinated rearfoot sits closer to the inverted position that loads the lateral ligaments, both predisposing to recurrent sprain and reflecting the altered loading pattern that perpetuates instability.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Talar tilt test"
     ],
@@ -203,6 +239,24 @@
       "Externally-rotated foot guarding"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Swelling above joint line": {
+          "text": "Swelling extending proximal to the ankle mortise, over the distal tibiofibular syndesmosis and interosseous membrane, rather than confined to the lateral malleolus, is a key sign distinguishing a syndesmotic injury from a lateral (ATFL/CFL) sprain.",
+          "source": "Williams & Allen, Ankle Syndesmosis Injuries: Anatomy, Biomechanics, Mechanism of Injury, JOSPT 2006"
+        },
+        "pain on squeeze": {
+          "text": "A positive squeeze test — pain reproduced at the syndesmosis when the tibia and fibula are compressed together proximally — occurs because the compressive force is transmitted distally, separating the fibula from the tibia at an already-injured, less stable mortise.",
+          "source": "Teitz & Harrington, Biomechanical Analysis of the Squeeze Test, Am J Sports Med 1998"
+        }
+      },
+      "posture": {
+        "Externally-rotated foot guarding": {
+          "text": "Holding the foot externally rotated avoids the combined external-rotation/dorsiflexion motion that widens the mortise and stresses the injured syndesmotic ligaments — the same mechanism the external rotation stress test deliberately reproduces.",
+          "source": "Williams & Allen, JOSPT 2006 syndesmosis review"
+        }
+      }
+    },
     "specialTests": [
       "Squeeze/mortise test",
       "External rotation stress test"
@@ -273,6 +327,34 @@
       "Achilles tendon — insertional",
       "Achilles tendon — mid-portion"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Tendon thickening/tenderness": {
+          "text": "Fusiform thickening reflects chronic tendinosis — collagen disorganization and neovascularization — rather than an acute inflammatory tendinitis; tenderness localizing to either the mid-portion or the insertion guides the differentiation made on palpation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13; VISA-A development, Robinson et al. 2001"
+        },
+        "calf wasting": {
+          "text": "Wasting reflects chronic disuse and reflexive inhibition of gastrocnemius-soleus from pain avoidance, which further reduces the muscle-tendon unit's shock-absorbing capacity and can perpetuate tendon overload.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Overpronation increasing tendon load": {
+          "text": "Excessive subtalar pronation produces a whipping/bowstring effect on the Achilles as it inserts medially on the calcaneus, increasing shear and torsional load through the tendon — a well-documented contributor to tendinopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Achilles tendon — insertional": {
+          "text": "Tenderness at the calcaneal insertion implicates insertional Achilles tendinopathy, often with a concurrent retrocalcaneal bursitis or Haglund's deformity, a distinct entity from mid-portion disease requiring different loading strategies.",
+          "source": "VISA-A literature, Robinson et al. 2001; Magee, Ch.13"
+        },
+        "Achilles tendon — mid-portion": {
+          "text": "Tenderness 2–6cm proximal to the insertion localizes to the tendon's relatively hypovascular \"watershed\" zone, the most common site of mid-portion Achilles tendinopathy.",
+          "source": "VISA-A literature, Robinson et al. 2001"
+        }
+      }
+    },
     "specialTests": [
       "Royal London Hospital test"
     ],
@@ -378,6 +460,38 @@
     "palpation": [
       "Palpable tendon gap"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Palpable gap": {
+          "text": "A palpable defect in the tendon substance, typically 2–6cm proximal to the insertion, is direct evidence of complete structural discontinuity, although rapidly developing swelling can mask the gap within hours of injury.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "positive Thompson": {
+          "text": "Absence of plantarflexion when the calf is passively squeezed confirms loss of mechanical continuity between gastrocnemius-soleus and the calcaneus. Because it does not rely on active contraction, Thompson's (Simmond's) test remains valid even when pain inhibits voluntary effort, and it is the definitive confirmatory sign of complete rupture.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13 (Thompson/Simmond's test)"
+        },
+        "bruising": {
+          "text": "Ecchymosis tracking down the posterior calf and ankle reflects hemorrhage from the torn tendon and surrounding paratenon, consistent with a recent complete rupture.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Cannot toe-off": {
+          "text": "Loss of the mechanical link between the calf and calcaneus means the ankle can no longer generate the plantarflexion force required for push-off — a functional hallmark of complete Achilles rupture. This is an acute presentation requiring urgent orthopaedic referral, not further mechanical stress testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "flat gait": {
+          "text": "A compensatory flat-footed, shuffling gait avoids the terminal-stance plantarflexion phase that the ruptured tendon can no longer power, substituting hip and knee strategies for the lost ankle push-off.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Palpable tendon gap": {
+          "text": "A discrete palpable defect in the tendon, usually 2–6cm proximal to the calcaneal insertion, is one of the most specific direct signs of a complete rupture and should prompt urgent orthopaedic referral rather than further mechanical testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Thompson's (Simmond's) test"
     ],
@@ -440,6 +554,28 @@
       "Stiff antalgic posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Anterior joint-line swelling": {
+          "text": "Synovial effusion and soft-tissue swelling anterior to the talocrural joint reflects reactive synovitis secondary to degenerative articular change, most visible where the joint capsule lies most superficial.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "reduced DF": {
+          "text": "Anterior tibiotalar osteophyte formation mechanically blocks the talar dome from gliding posteriorly during dorsiflexion, producing a hard bony restriction of dorsiflexion that can coexist with — and is distinct from — the classic capsular pattern in which plantarflexion is more globally limited than dorsiflexion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13 (capsular pattern of the talocrural joint)"
+        },
+        "crepitus": {
+          "text": "Palpable or audible crepitus during range of motion reflects irregular, degenerated articular cartilage surfaces grinding against each other — a hallmark sign of osteoarthritic joint change.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Stiff antalgic posture": {
+          "text": "A globally guarded, stiff gait and resting posture reflects pain avoidance of end-range joint positions that compress the degenerated articular surfaces, minimizing symptomatic loading during weight-bearing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -542,6 +678,28 @@
       "Hindfoot valgus / flatfoot posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Medial swelling": {
+          "text": "Swelling tracking along the medial ankle and hindfoot follows the course of the tibialis posterior tendon behind the medial malleolus, reflecting tenosynovitis or tendinosis at the primary site of pathology.",
+          "source": "StatPearls, Posterior Tibial Tendon Dysfunction"
+        },
+        "“too-many-toes”": {
+          "text": "Viewed from behind, forefoot abduction relative to the hindfoot — secondary to collapse of the medial longitudinal arch and hindfoot valgus as tibialis posterior fails to control pronation — exposes more of the lateral toes than normal. This is the classic positive \"too-many-toes\" sign of posterior tibial tendon insufficiency.",
+          "source": "StatPearls, Posterior Tibial Tendon Dysfunction; Physio-pedia, PTTD"
+        },
+        "collapsing arch": {
+          "text": "Progressive loss of the medial longitudinal arch reflects failure of tibialis posterior's primary dynamic function of supporting the arch during the stance phase of gait, allowing the midfoot to collapse into pronation unchecked.",
+          "source": "StatPearls, Posterior Tibial Tendon Dysfunction"
+        }
+      },
+      "posture": {
+        "Hindfoot valgus / flatfoot posture": {
+          "text": "A valgus-collapsed hindfoot is the static consequence of chronic tibialis posterior insufficiency, since the tendon normally inverts and stabilizes the subtalar joint against the pronating ground-reaction force during stance.",
+          "source": "AAOS, Progressive Collapsing Foot Deformity; StatPearls PTTD"
+        }
+      }
+    },
     "specialTests": [
       "Navicular drop test",
       "Single-leg heel raise (too-many-toes sign)"
@@ -635,6 +793,26 @@
     "palpation": [
       "Peroneal tendon — behind lateral malleolus"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Retromalleolar swelling/tenderness": {
+          "text": "Swelling and tenderness behind the lateral malleolus track the peroneus longus and brevis tendons through the fibular groove, the site most vulnerable to friction-related tendinopathy and subluxation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Rearfoot varus (overload) posture": {
+          "text": "A varus-aligned rearfoot increases the mechanical demand placed on the peroneals — the primary evertors and lateral dynamic stabilizers that must counteract the varus alignment — predisposing the tendons to overload tendinopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Peroneal tendon — behind lateral malleolus": {
+          "text": "Point tenderness directly over the peroneal tendons posterior to the lateral malleolus, their anatomic course through the retromalleolar groove, localizes the lesion to the tendons rather than the lateral ligament complex — an important differentiation from an acute lateral ankle sprain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Subluxation provocation (resisted eversion + dorsiflexion)"
     ],
@@ -731,6 +909,24 @@
       "Overpronation compressing the tunnel"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Medial-ankle Tinel": {
+          "text": "A positive Tinel's sign — tingling or paresthesia reproduced by percussion over the tibial nerve posterior to the medial malleolus — indicates an irritable or compressed nerve at the tarsal tunnel, the classic provocative sign of this entrapment neuropathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13 (Tinel's sign)"
+        },
+        "intrinsic wasting": {
+          "text": "Wasting of the intrinsic foot musculature, innervated by the medial and lateral plantar nerves (branches of the tibial nerve distal to the tunnel), reflects chronic motor denervation from sustained tibial nerve compression.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Overpronation compressing the tunnel": {
+          "text": "Sustained pronation stretches and narrows the tarsal tunnel, which is bordered by the flexor retinaculum, increasing pressure on the tibial nerve and its branches — the documented mechanical driver of this entrapment.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Tinel's sign at tarsal tunnel",
       "Dorsiflexion-eversion provocation"
@@ -800,6 +996,24 @@
       "Restricted-DF stiff posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Anterior joint-line tenderness": {
+          "text": "Tenderness directly over the anterior talocrural joint line localizes to anterior tibiotalar osteophytes or hypertrophic synovial/capsular tissue that becomes pinched between the tibia and talar neck during dorsiflexion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "dorsiflexion block": {
+          "text": "A firm mechanical block to dorsiflexion, rather than a gradual stretch-type restriction, reflects direct bony or soft-tissue impingement as the talus attempts to glide posteriorly beneath the tibia during dorsiflexion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Restricted-DF stiff posture": {
+          "text": "A gait or resting posture that avoids terminal dorsiflexion reflects functional avoidance of the anterior pinch mechanism that reproduces pain during weight-bearing dorsiflexion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -893,6 +1107,34 @@
     "palpation": [
       "Medial calcaneal tubercle / fascia origin"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Medial calcaneal tenderness": {
+          "text": "Tenderness at the medial calcaneal tubercle localizes to the origin of the plantar fascia, the site of maximal tensile and traction stress — and consequent micro-tearing — in plantar fasciopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "antalgic heel-strike": {
+          "text": "Avoidance of forceful heel-strike reflects pain-guarded loading of the inflamed/degenerated fascia origin, and is classically worst with the first steps after rest, when the fascia has shortened overnight and is then abruptly stretched under load.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "High or collapsed arch": {
+          "text": "A high-arched (pes cavus) foot has poor shock absorption and leaves the fascia under greater resting tension, while a collapsed, pronated arch increases fascia strain through sustained elongation — both extremes of arch posture raise tensile load on the plantar fascia via different biomechanical pathways.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "overpronation": {
+          "text": "Excessive pronation elongates the medial longitudinal arch during stance, increasing tensile strain on the plantar fascia with every step — one of the principal mechanical drivers of plantar fasciopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Medial calcaneal tubercle / fascia origin": {
+          "text": "Direct palpation reproducing pain precisely at the fascia's calcaneal origin is the classic and most sensitive palpation finding for plantar fasciitis, helping differentiate it from a central heel-pad or nerve-based cause of heel pain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Windlass test (dorsiflex the hallux)"
     ],
@@ -983,6 +1225,30 @@
     "palpation": [
       "Central weight-bearing heel pad (vs medial origin)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Central heel tenderness": {
+          "text": "Tenderness centered under the weight-bearing portion of the calcaneus, rather than at the medial fascia origin, localizes the lesion to the heel fat pad itself — the primary shock absorber during heel strike.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "thin heel pad": {
+          "text": "A palpably thinned or atrophied fat pad — age-related, from chronic overload, or from prior corticosteroid injection — reduces the heel's natural shock-absorbing capacity, directly increasing impact stress transmitted to the calcaneus with every step.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Neutral arch; barefoot hard-surface loading": {
+          "text": "A neutral, non-pathological arch combined with a history of barefoot or hard-surface loading indicates the pain is mechanically load-related rather than driven by an arch deformity — supporting fat-pad overload rather than a fasciopathy or structural foot deformity as the source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Central weight-bearing heel pad (vs medial origin)": {
+          "text": "Tenderness localizing to the central weight-bearing pad rather than the medial calcaneal tubercle is the key palpatory differentiator from plantar fasciitis, confirming the fat pad itself — not the fascia origin — as the pain generator.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [],
@@ -1041,6 +1307,24 @@
       "Narrow-toe-box / forefoot-loading posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "3rd/4th web-space tenderness": {
+          "text": "Tenderness localized to the third interspace, the most common site, reflects compression and entrapment of the common plantar digital nerve, which is thicker here from the confluence of branches of the medial and lateral plantar nerves and becomes trapped against the transverse intermetatarsal ligament as it passes between the metatarsal heads.",
+          "source": "StatPearls, Morton Neuroma; Orthobullets, Interdigital (Morton's) Neuroma"
+        },
+        "splayed toes": {
+          "text": "Patients often splay or hold the toes apart to widen the forefoot and reduce compressive/traction load on the entrapped interdigital nerve — a common adaptive, protective posture.",
+          "source": "StatPearls, Morton Neuroma"
+        }
+      },
+      "posture": {
+        "Narrow-toe-box / forefoot-loading posture": {
+          "text": "Footwear or gait patterns that increase forefoot loading (narrow toe box, high heels) compress the metatarsal heads together and against the transverse intermetatarsal ligament, mechanically loading the confined space the interdigital nerve passes through — the primary documented driver of Morton's neuroma, per both the entrapment and chronic-microtrauma theories.",
+          "source": "StatPearls, Morton Neuroma"
+        }
+      }
+    },
     "specialTests": [
       "Mulder's click (mediolateral squeeze + interspace pressure)"
     ],
@@ -1102,6 +1386,26 @@
     "palpation": [
       "Metatarsal heads / plantar plate"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Plantar callus under metatarsal heads": {
+          "text": "Hyperkeratotic callus formation directly under one or more metatarsal heads reflects chronically excessive, focal plantar pressure at that site — a marker of mechanical forefoot overload, often from an abnormal weight-distribution pattern such as an elevated or plantarflexed metatarsal or intrinsic muscle weakness.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Forefoot-loading / high-heel posture": {
+          "text": "Postures and footwear that shift body weight anteriorly onto the metatarsal heads — heeled shoes, a forefoot-strike gait — directly increase the compressive load under the forefoot, the mechanical driver of metatarsalgia.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Metatarsal heads / plantar plate": {
+          "text": "Direct tenderness over one or more metatarsal heads and the plantar plate localizes the site of mechanical overload; a positive dorsal drawer at this site would further suggest plantar plate insufficiency contributing to the overload pattern.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -1189,6 +1493,24 @@
       "Supinated / lateral-loading gait avoiding push-off"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Dorsal 1st-MTP osteophyte": {
+          "text": "A palpable or visible dorsal osteophyte at the first metatarsal head reflects bony remodeling in response to chronic dorsal jamming of the joint during gait, and itself becomes an additional mechanical block to further dorsiflexion.",
+          "source": "StatPearls, Hallux Rigidus"
+        },
+        "reduced toe extension": {
+          "text": "Progressive loss of first MTP dorsiflexion — normal gait requires roughly 65° at toe-off — reflects the combination of dorsal osteophyte impingement and plantar capsular contracture that defines hallux rigidus, directly impairing the terminal-stance push-off phase of gait.",
+          "source": "StatPearls, Hallux Rigidus; Lower Extremity Review, Functional Hallux Limitus"
+        }
+      },
+      "posture": {
+        "Supinated / lateral-loading gait avoiding push-off": {
+          "text": "Patients shift weight to the lateral border of the foot and avoid rolling through the restricted, painful first MTP joint at toe-off — a compensatory gait adaptation directly driven by the loss of first-MTP dorsiflexion.",
+          "source": "StatPearls, Hallux Rigidus"
+        }
+      }
+    },
     "specialTests": [
       "Grind/axial compression of the 1st MTP"
     ],
@@ -1276,6 +1598,30 @@
     "palpation": [
       "Plantar plate / sesamoid"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Swelling/tenderness of 1st MTP": {
+          "text": "Acute swelling and tenderness over the first MTP joint reflects capsuloligamentous injury to the plantar plate and collateral ligament complex from a forced hyperextension mechanism — an acute injury pattern distinct from the chronic bony change of hallux rigidus.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "athlete": {
+          "text": "This injury classically occurs in athletes on artificial turf or other firm playing surfaces, where a fixed forefoot combined with an axial load through a raised heel drives the MTP joint into forced hyperextension — the mechanism that gives turf toe its name.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Push-off avoidance posture": {
+          "text": "Avoiding terminal MTP extension during push-off protects the injured plantar plate/capsule from the exact end-range loading that reproduces pain, functionally similar to the push-off avoidance seen in hallux rigidus but arising from an acute sprain rather than a chronic degenerative block.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Plantar plate / sesamoid": {
+          "text": "Tenderness over the plantar plate and sesamoid complex localizes the injury to the primary structures stressed during forced hyperextension, and should prompt imaging to exclude a concurrent sesamoid fracture.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "1st MTP dorsiflexion stress test"
     ],
@@ -1353,6 +1699,34 @@
       "Cuboid",
       "TMT joints"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Dorsal midfoot swelling/tenderness": {
+          "text": "Swelling and tenderness over the dorsal navicular, cuboid, or tarsometatarsal joints reflects capsuloligamentous injury or degenerative change at the midfoot articulations; its dorsal, joint-line location helps distinguish a routine midfoot sprain from a Lisfranc fracture-dislocation, which requires urgent weight-bearing imaging when the mechanism or severity warrants.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "posture": {
+        "Collapsed or rigid midfoot posture": {
+          "text": "A collapsed midfoot reflects ligamentous laxity or instability of the midtarsal joints, while a rigid midfoot reflects degenerative stiffening — both patterns lie along the spectrum from midfoot sprain to osteoarthritis and help direct which structures are prioritized on exam.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      },
+      "palpation": {
+        "Navicular": {
+          "text": "Point tenderness over the navicular localizes to the talonavicular joint or the navicular tuberosity (the tibialis posterior insertion), a common site of both traumatic and degenerative midfoot pathology.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "Cuboid": {
+          "text": "Tenderness over the cuboid may reflect cuboid subluxation (\"cuboid syndrome\") or calcaneocuboid joint pathology, a distinct but related midfoot pain generator from navicular-based pathology.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        },
+        "TMT joints": {
+          "text": "Tenderness at the tarsometatarsal (Lisfranc) joints localizes injury or degeneration to the midfoot-forefoot junction; marked tenderness here following a high-energy mechanism should prompt weight-bearing imaging to exclude a Lisfranc fracture-dislocation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.13"
+        }
+      }
+    },
     "specialTests": [
       "Midfoot stress / piano-key test"
     ],

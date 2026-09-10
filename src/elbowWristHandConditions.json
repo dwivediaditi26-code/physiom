@@ -16,6 +16,28 @@
       "Wrist-loading grip"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Lateral epicondyle tenderness": {
+          "text": "Point tenderness directly over the extensor carpi radialis brevis (ECRB) origin at the lateral epicondyle localizes the lesion to the common extensor origin — the hallmark finding produced by repetitive eccentric wrist-extension overload causing angiofibroblastic tendinosis of the ECRB.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6; Nirschl & Ashman, angiofibroblastic tendinosis model"
+        },
+        "No swelling": {
+          "text": "Absence of swelling supports a chronic degenerative tendinosis rather than an acute inflammatory, bursal, or joint process, consistent with the overuse pathophysiology underlying lateral epicondylalgia.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Poor scapular support": {
+          "text": "Weak scapular stabilizers force the distal wrist extensors to work harder to control the hand during upper-limb tasks, increasing cumulative eccentric load on the ECRB and perpetuating the tendinopathy — a proximal-to-distal loading fault recognized in lateral epicondylalgia rehabilitation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "Wrist-loading grip": {
+          "text": "A grip pattern that keeps the wrist extensors under sustained tension during gripping reproduces the repetitive eccentric loading mechanism that drives ECRB microtrauma — the same biomechanical stress isolated by Cozen's and Mill's testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [
       "Cozen's Test",
       "Mill's Test"
@@ -88,6 +110,20 @@
       "Wrist-flexor-loading grip posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Medial epicondyle tenderness": {
+          "text": "Point tenderness at the common flexor-pronator origin (FCR/FCU/pronator teres) localizes the lesion to the medial epicondyle — the mirror-image tendinopathy to lateral epicondylalgia, but affecting the wrist flexor/pronator mass rather than the extensors.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Wrist-flexor-loading grip posture": {
+          "text": "Repetitive gripping with the wrist held in flexion and pronation (e.g. golf swing, throwing, manual labour) places sustained eccentric load on the flexor-pronator origin — the same mechanism reproduced by the Golfer's elbow test.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [
       "Golfer's Elbow Test"
     ],
@@ -160,6 +196,20 @@
       "Anterior-arm loading"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Antecubital tenderness ± gap/retraction (Popeye)": {
+          "text": "Tenderness over the antecubital fossa without a palpable gap suggests early tendinopathy, whereas a palpable defect with proximal muscle-belly retraction (Popeye deformity) indicates complete tendon rupture from its radial tuberosity insertion, the retraction reflecting the unopposed pull of the biceps once its distal anchor is lost.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6; O'Driscoll et al., Hook Test for distal biceps rupture"
+        }
+      },
+      "posture": {
+        "Anterior-arm loading": {
+          "text": "Postures or activities that load the elbow into resisted flexion-supination (e.g. heavy eccentric lifting) reproduce the mechanism of distal biceps tendon overload and failure, historically associated with a single forceful eccentric contraction against resistance.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [
       "Hook Test"
     ],
@@ -234,6 +284,28 @@
       "Fixed-flexion posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Reduced extension": {
+          "text": "Terminal extension loss is the earliest and most consistent ROM finding in elbow OA, reflecting osteophyte formation at the olecranon/coronoid fossae and anterior capsular fibrosis — consistent with the elbow's capsular pattern of flexion restricted more than extension.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6 (capsular pattern of the elbow)"
+        },
+        "crepitus": {
+          "text": "Palpable or audible crepitus during motion reflects roughened, degenerated articular cartilage and osteophytic irregularity grinding across the joint surfaces — a direct mechanical sign of the degenerative process.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "± loose-body locking": {
+          "text": "Intermittent mechanical locking or catching indicates a loose osteochondral or osteophytic fragment intermittently interposing within the joint, producing a springy rather than hard end-feel and true locking episodes distinct from simple capsular stiffness.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Fixed-flexion posture": {
+          "text": "A resting elbow flexion contracture develops as the anterior capsule fibroses and shortens in response to chronic effusion and osteophyte formation — the joint settles into the position of maximum capsular volume/comfort, characteristic of degenerative and post-traumatic elbow OA.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -325,6 +397,30 @@
       "Olecranon",
       "Fluctuance/temperature assessment"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Posterior fluctuant swelling over olecranon": {
+          "text": "A discrete, fluctuant, superficial swelling directly over the olecranon reflects fluid distension of the subcutaneous olecranon bursa — an inert, non-articular structure — distinguishing this from a true joint effusion or intra-articular process.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Elbow-resting-on-surface loading": {
+          "text": "Repetitive or sustained direct pressure on the posterior elbow (e.g. leaning on a desk or hard surface) is the classic mechanical trigger for olecranon bursal irritation and fluid accumulation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "palpation": {
+        "Olecranon": {
+          "text": "Direct palpation over the olecranon localizes the swelling to the bursa itself rather than the joint line, confirming a superficial rather than intra-articular source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "Fluctuance/temperature assessment": {
+          "text": "Fluctuance confirms a fluid-filled bursal sac; increased local warmth or erythema raises suspicion for septic bursitis and should prompt referral for aspiration and culture rather than routine conservative management.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6; septic bursitis differential"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -376,6 +472,24 @@
       "Valgus-loading throwing posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Medial tenderness": {
+          "text": "Tenderness along the anterior bundle of the UCL, from the medial epicondyle to the sublime tubercle, localizes the lesion to the primary medial elbow stabilizer against valgus stress, most commonly injured in overhead throwing athletes.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "valgus laxity (thrower)": {
+          "text": "Palpable increased medial joint-line gapping under valgus stress in a throwing athlete indicates compromise of the anterior bundle UCL's restraint function — the structure loaded most heavily during the late-cocking and early-acceleration phases of throwing.",
+          "source": "O'Driscoll, Lawton & Smith, Moving Valgus Stress Test (Am J Sports Med, 2005)"
+        }
+      },
+      "posture": {
+        "Valgus-loading throwing posture": {
+          "text": "The late-cocking through early-acceleration phase of the throwing motion generates the highest valgus torque at the elbow, directly loading the anterior bundle of the UCL — the repetitive-overload mechanism underlying UCL sprain in throwers.",
+          "source": "O'Driscoll, Lawton & Smith, Moving Valgus Stress Test (Am J Sports Med, 2005)"
+        }
+      }
+    },
     "specialTests": [
       "Elbow Valgus Stress Test",
       "Moving Valgus Stress Test (MVST)"
@@ -463,6 +577,28 @@
       "Sustained elbow-flexion posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Intrinsic wasting": {
+          "text": "Wasting of the ulnar-innervated intrinsic hand muscles (first dorsal interosseous, hypothenar) reflects motor axon loss from chronic ulnar nerve compression at the cubital tunnel, indicating a more advanced or severe entrapment.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "4th/5th tingling": {
+          "text": "Paresthesia confined to the little finger and ulnar half of the ring finger maps precisely to the ulnar nerve's sensory distribution, differentiating this from median (carpal tunnel) or radial nerve entrapments.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "Tinel medial": {
+          "text": "A positive Tinel's sign over the cubital tunnel, posterior to the medial epicondyle, indicates mechanosensitivity of irritated axons at the site where the ulnar nerve is compressed beneath the arcuate (Osborne's) ligament.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Sustained elbow-flexion posture": {
+          "text": "Elbow flexion increases cubital tunnel pressure several-fold by tensioning the arcuate ligament over the nerve and narrowing the tunnel; sustained or repetitive flexion (phone use, sleeping with the elbow bent) is the classic aggravating posture in cubital tunnel syndrome.",
+          "source": "Apfelberg & Larson, cubital tunnel pressure studies; Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [
       "Tinel's Sign at Elbow"
     ],
@@ -538,6 +674,20 @@
       "Repetitive-pronation loading"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Tenderness ~4cm distal to lateral epicondyle": {
+          "text": "Tenderness centered over the arcade of Fröhse (the proximal fibrous edge of supinator), roughly 4cm distal to the lateral epicondyle rather than directly over it, localizes the lesion to radial nerve entrapment rather than the ECRB origin of lateral epicondylalgia — the single most important differentiator between the two conditions.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Repetitive-pronation loading": {
+          "text": "Repetitive forearm pronation/supination increases dynamic compression of the radial nerve as it passes through the radial tunnel and beneath the arcade of Fröhse, provoking or perpetuating radial tunnel syndrome.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -623,6 +773,24 @@
       "Repetitive-gripping/pronation posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Proximal-volar-forearm tenderness": {
+          "text": "Tenderness over the proximal volar forearm, at the two heads of pronator teres, localizes the compression site of the median nerve as it passes between the muscle's humeral and ulnar heads — proximal to the carpal tunnel and thus a key differentiator from carpal tunnel syndrome.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        },
+        "median signs": {
+          "text": "Sensory or motor changes in the median nerve distribution (thumb, index, middle, and radial half of the ring finger) confirm median nerve involvement, but with a proximal-forearm provocation pattern rather than the wrist-level provocation typical of carpal tunnel syndrome.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      },
+      "posture": {
+        "Repetitive-gripping/pronation posture": {
+          "text": "Repetitive resisted gripping combined with forearm pronation increases pronator teres muscle bulk and contraction tension around the median nerve, provoking the dynamic compression characteristic of pronator teres syndrome.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.6"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -719,6 +887,24 @@
       "Sustained wrist-flexion/workstation posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Thenar wasting": {
+          "text": "Atrophy of the median-innervated thenar muscles (particularly abductor pollicis brevis) reflects motor axon loss from chronic median nerve compression under the flexor retinaculum — a late/severe sign, since sensory symptoms typically precede detectable motor wasting.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "positive flick sign": {
+          "text": "Symptom relief on shaking the hand (the flick sign) is a historically-cited clinical clue for carpal tunnel syndrome reflecting transient improvement in nerve perfusion/venous return at the wrist, though contemporary diagnostic-accuracy studies show only modest sensitivity, so it should be interpreted alongside Phalen's and Tinel's rather than in isolation.",
+          "source": "Pryse-Phillips, Validation of a diagnostic sign in carpal tunnel syndrome, 1984"
+        }
+      },
+      "posture": {
+        "Sustained wrist-flexion/workstation posture": {
+          "text": "Sustained wrist flexion (or extension) raises intracarpal canal pressure, directly compressing the median nerve against the flexor retinaculum — the same postural mechanism exploited provocatively by Phalen's test and the classic ergonomic aggravating factor in CTS.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Phalen's Test",
       "Tinel's Sign at Wrist"
@@ -810,6 +996,26 @@
     "palpation": [
       "1st dorsal compartment"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Radial-styloid swelling/tenderness": {
+          "text": "Swelling and tenderness directly over the radial styloid localizes the pathology to the first dorsal compartment, where the abductor pollicis longus (APL) and extensor pollicis brevis (EPB) tendons become thickened and entrapped within their shared fibro-osseous sheath.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; PMC10437001, First Extensor Wrist Compartment anatomy review"
+        }
+      },
+      "posture": {
+        "Thumb-loading / new-parent lifting posture": {
+          "text": "Repetitive thumb abduction/extension combined with ulnar deviation — the classic mechanism of lifting an infant under the arms — repeatedly loads the APL/EPB tendons through the fibro-osseous first dorsal compartment, the well-documented mechanism behind postpartum De Quervain's tenosynovitis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "1st dorsal compartment": {
+          "text": "Direct palpation over the first dorsal compartment (APL/EPB tendons at the radial styloid) reproduces localized tenderness that confirms the compartment, rather than the wrist joint or scaphoid, as the pain source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Finkelstein's Test"
     ],
@@ -886,6 +1092,30 @@
     "palpation": [
       "Ulnar-sided wrist"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Ulnar-sided swelling": {
+          "text": "Swelling localized to the ulnar aspect of the wrist, between the ulnar styloid and the carpus, reflects synovitis or effusion of the distal radioulnar joint or ulnocarpal space where the triangular fibrocartilage complex (TFCC) resides.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "clicking": {
+          "text": "An audible or palpable click with wrist rotation or ulnar deviation reflects mechanical catching of a torn or unstable TFCC fragment (or associated DRUJ instability) between the ulnar head and carpus during loaded motion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Ulnar-loading grip posture": {
+          "text": "Activities that combine grip with ulnar deviation and forearm rotation (e.g. using a screwdriver or racquet sports) axially load the ulnocarpal joint and compress the TFCC between the ulnar head and carpus, the classic aggravating mechanism for TFCC tears.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "Ulnar-sided wrist": {
+          "text": "Focal tenderness in the ulnar fovea, between the ulnar styloid and the FCU tendon, is a sensitive localizing sign for TFCC and ulnar-sided pathology and forms the basis of the ulnar fovea sign.",
+          "source": "Tay et al., validation of the ulnar fovea sign; Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "TFCC Stress Test (ulnar compression through lunate)"
     ],
@@ -981,6 +1211,24 @@
       "FOOSH-guarded posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Dorsal-radial swelling": {
+          "text": "Localized swelling over the dorsal wrist just distal to Lister's tubercle overlies the scapholunate interval, reflecting synovitis or effusion from disruption of the scapholunate ligament complex.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "tenderness": {
+          "text": "Point tenderness in this same dorsal scapholunate interval — the recognized 'SL tenderness spot' just distal to Lister's tubercle — is a classic localizing sign of scapholunate ligament injury.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; Watson & Ashmead, scaphoid shift test"
+        }
+      },
+      "posture": {
+        "FOOSH-guarded posture": {
+          "text": "A fall onto an outstretched, extended, radially-deviated wrist is the classic mechanism disrupting the scapholunate ligament (producing a dorsal intercalated segment instability pattern), and guarding after such an injury reflects protective splinting of the destabilized joint.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Watson Scaphoid Shift Test"
     ],
@@ -1053,6 +1301,28 @@
       "Stiff guarded posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Dorsal swelling": {
+          "text": "Dorsal wrist swelling in radiocarpal OA reflects synovial reaction and capsular distension secondary to degenerative joint change, most prominent dorsally where the capsule is thinnest.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "reduced motion": {
+          "text": "Global reduction in wrist flexion/extension reflects a capsular-pattern restriction from cartilage loss, osteophyte formation, and capsular fibrosis, consistent with degenerative joint disease rather than a focal soft-tissue lesion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "crepitus": {
+          "text": "Palpable crepitus during wrist motion reflects roughened articular cartilage and osteophyte formation grinding across the radiocarpal joint surfaces, a hallmark degenerative sign.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Stiff guarded posture": {
+          "text": "A generally stiff, protected resting wrist posture reflects long-standing capsular fibrosis and pain-avoidance behaviour typical of chronic degenerative joint disease rather than an acute soft-tissue injury.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -1139,6 +1409,24 @@
       "N/A — immobilise"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Dinner-fork deformity": {
+          "text": "The classic 'dinner-fork' silhouette reflects dorsal displacement and angulation of the distal radial fragment (the Colles' fracture pattern); visible bony deformity of this kind is itself pathognomonic for fracture and mandates immediate splinting and urgent imaging rather than further manual testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; Colles' fracture classification"
+        },
+        "marked swelling": {
+          "text": "Rapid, marked swelling reflects acute haematoma formation and soft-tissue injury accompanying the fracture, and — combined with deformity — is sufficient on its own to warrant urgent imaging referral before any loading or special testing is attempted.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "N/A — immobilise": {
+          "text": "No positional or postural assessment is performed acutely: the priority is immediate splinting/immobilisation of the suspected fracture and urgent imaging referral, since attempting positional loading risks further displacing the fracture fragments and worsening soft-tissue or neurovascular injury.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; general acute-fracture management principles"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [],
@@ -1182,6 +1470,30 @@
     "palpation": [
       "Anatomical snuffbox"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Snuffbox swelling/tenderness": {
+          "text": "Swelling and point tenderness within the anatomical snuffbox overlie the scaphoid waist, the most common fracture site and the region with the most precarious blood supply (retrograde flow from distal to proximal), making this finding a critical trigger for imaging even when initial films are negative.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; scaphoid fracture avascular-necrosis literature"
+        },
+        "FOOSH": {
+          "text": "A fall onto an outstretched hand is the classic mechanism of scaphoid fracture, with axial compressive/hyperextension load transmitted through the wrist concentrating stress at the scaphoid waist.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "N/A — immobilise": {
+          "text": "No postural assessment is performed acutely given the scaphoid's precarious blood supply and the high false-negative rate of initial imaging; immediate thumb-spica immobilisation and referral for repeat or advanced imaging take priority over any positional loading.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "Anatomical snuffbox": {
+          "text": "Point tenderness in the anatomical snuffbox is the most sensitive clinical sign for scaphoid fracture, reflecting direct palpation over the scaphoid waist through the space bordered by the APL/EPB and EPL tendons.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Scaphoid Compression Test"
     ],
@@ -1246,6 +1558,34 @@
     "palpation": [
       "1st CMC joint"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Squared thumb base": {
+          "text": "The 'squared' appearance of the thumb base reflects dorsoradial subluxation of the first metacarpal on the trapezium with osteophyte formation — a classic deformity of advanced first CMC osteoarthritis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7; Eaton-Littler CMC OA staging"
+        },
+        "tenderness": {
+          "text": "Point tenderness directly over the first CMC joint line localizes degenerative change to the trapeziometacarpal joint, distinguishing it from more distal thumb pathology such as De Quervain's tenosynovitis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "± crepitus": {
+          "text": "Palpable crepitus with thumb circumduction reflects roughened articular surfaces grinding within the degenerated trapeziometacarpal joint.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Thumb-loading pinch posture": {
+          "text": "Repetitive pinch/grip loading generates high joint reaction forces across the small-surface-area first CMC joint, accelerating cartilage wear and provoking pain — the biomechanical basis for the Grind Test's axial-load provocation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "1st CMC joint": {
+          "text": "Direct palpation over the trapeziometacarpal joint line reproduces localized pain that confirms the joint itself, rather than surrounding soft tissue, as the pain generator.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Grind Test"
     ],
@@ -1309,6 +1649,26 @@
     "palpation": [
       "ECU tendon"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Ulnar-dorsal tenderness ± subluxation": {
+          "text": "Tenderness along the ulnar-dorsal wrist over the sixth dorsal compartment localizes pathology to the ECU tendon; a palpable or visible snap/subluxation with forearm rotation indicates instability of the tendon within (or out of) its fibro-osseous subsheath, distinguishing frank instability from simple tendinopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Ulnar-loading forearm posture": {
+          "text": "Combined wrist ulnar deviation with forearm supination increases tension and subluxation risk on the ECU tendon within its sixth-compartment groove — the mechanism reproduced by the ECU synergy test.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "ECU tendon": {
+          "text": "Direct palpation of the ECU tendon during resisted ulnar deviation/extension reproduces pain or a palpable snap, confirming the tendon — rather than the TFCC or DRUJ — as the ulnar-sided pain source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "ECU Synergy Test"
     ],
@@ -1389,6 +1749,30 @@
     "palpation": [
       "Flexor tendon nodule/catching at A1 pulley"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Palpable A1-pulley nodule": {
+          "text": "A palpable nodule at the A1 pulley, over the metacarpal head, reflects fibrotic thickening or fusiform swelling of the flexor tendon that outgrows the pulley's fixed diameter, initiating the mechanical catching characteristic of stenosing tenosynovitis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "catching": {
+          "text": "Catching or locking of the digit during active flexion-extension reflects the swollen tendon nodule abruptly forcing its way through the narrowed A1 pulley, producing the characteristic 'trigger' snap.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Gripping-load posture": {
+          "text": "Repetitive or sustained gripping increases mechanical friction and load on the flexor tendon as it passes through the A1 pulley, promoting the nodular thickening and tenosynovitis that underlie trigger finger.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "Flexor tendon nodule/catching at A1 pulley": {
+          "text": "Palpating the flexor tendon directly over the A1 pulley while the patient actively flexes and extends the finger reproduces the catching sensation and confirms the nodule's location at the pulley — the diagnostic reference standard for trigger finger.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -1463,6 +1847,38 @@
       "DIP (Heberden's) nodes",
       "PIP (Bouchard's) nodes"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "DIP/PIP nodes": {
+          "text": "Firm, bony nodules at the DIP joints (Heberden's nodes) and PIP joints (Bouchard's nodes) reflect osteophyte formation at the joint margins — the classic peripheral joint distribution of primary generalized osteoarthritis in the hand.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "deformity": {
+          "text": "Angular deviation at the DIP or PIP joints reflects asymmetric cartilage loss and collateral ligament laxity as the degenerative process progresses, a marker of more advanced joint destruction.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "reduced grip": {
+          "text": "Diminished grip strength reflects both pain-inhibited muscle activation and mechanical disadvantage from joint deformity and stiffness across multiple digital joints, a functional consequence of widespread digital OA.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Deforming digit posture": {
+          "text": "A sustained angular or flexed digit posture reflects the joint's adaptation to asymmetric cartilage loss and capsuloligamentous laxity, a structural consequence of chronic osteoarthritic change rather than acute guarding.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "DIP (Heberden's) nodes": {
+          "text": "Palpable bony nodules at the DIP joint margins confirm osteophyte formation as the swelling's structural cause, distinguishing this bony end-feel from the soft, fluctuant swelling of synovitis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "PIP (Bouchard's) nodes": {
+          "text": "Palpable bony nodules at the PIP joint margins similarly confirm osteophytic, rather than synovial, swelling at this joint, completing the classic Heberden's/Bouchard's node pattern of hand OA.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -1537,6 +1953,26 @@
     "palpation": [
       "Ulnar aspect of thumb MCP"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Ulnar-MCP swelling/tenderness": {
+          "text": "Swelling and tenderness on the ulnar aspect of the thumb MCP joint localize injury to the ulnar collateral ligament, the primary restraint against valgus (radially-directed) stress at this joint, injured by forced thumb abduction such as a fall onto a ski pole or repetitive gamekeeper-style stress.",
+          "source": "Wheeless' Textbook of Orthopaedics, Gamekeeper's Thumb; Campbell, 1955"
+        }
+      },
+      "posture": {
+        "Guarded thumb posture": {
+          "text": "Protective splinting of the thumb in adduction minimizes further valgus stress on the injured or lax UCL, and should prompt caution against aggressive stress testing until a Stener lesion — interposition of the adductor aponeurosis preventing the torn ligament from re-approximating its insertion — has been excluded on imaging.",
+          "source": "Stener, 1962; Stener lesion literature"
+        }
+      },
+      "palpation": {
+        "Ulnar aspect of thumb MCP": {
+          "text": "Focal tenderness over the ulnar aspect of the thumb MCP, near the ligament's insertion at the base of the proximal phalanx, localizes the injury site and — combined with a palpable mass — can be a clinical clue to a Stener lesion, where the ruptured ligament end is trapped superficial to the adductor aponeurosis and cannot heal without surgical repair.",
+          "source": "Stener, 1962; Radsource, Ulnar Collateral Ligament Tears of the Thumb"
+        }
+      }
+    },
     "specialTests": [
       "Valgus Stress Test — Thumb MCP (flexion & extension)"
     ],
@@ -1599,6 +2035,30 @@
     "palpation": [
       "A1-pulley nodule / catching on active flexion-extension"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "A1-pulley nodule": {
+          "text": "As with the wrist-model presentation of this condition, a palpable nodule at the A1 pulley reflects fibrotic thickening of the flexor tendon outgrowing the fixed pulley diameter, the structural basis for triggering.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "catching/locking": {
+          "text": "Catching progressing to frank locking of the digit, requiring passive correction, reflects a more advanced stage of stenosing tenosynovitis in which the nodule can no longer reliably pass through the narrowed pulley.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Gripping-load posture": {
+          "text": "As in the wrist-model presentation, repetitive gripping increases friction and load on the flexor tendon at the A1 pulley, promoting the nodular thickening that produces triggering.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "palpation": {
+        "A1-pulley nodule / catching on active flexion-extension": {
+          "text": "Palpating over the A1 pulley during active finger flexion-extension directly reproduces the catching and confirms the pulley as the mechanical block — the same diagnostic manoeuvre used for the wrist-model presentation of this condition.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -1676,6 +2136,30 @@
     "palpation": [
       "Palmar fascia cords/nodules (ring/little finger)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Palmar cord/nodule": {
+          "text": "A palpable, firm cord or nodule in the palmar fascia, most often over the ring/little finger rays, reflects pathological fibroblastic proliferation and collagen deposition within the palmar aponeurosis — the pathoanatomic hallmark of Dupuytren's disease.",
+          "source": "Orthobullets, Dupuytren's Disease; StatPearls, Dupuytren Contracture"
+        },
+        "ring/little-finger flexion contracture": {
+          "text": "Fixed flexion deformity at the MCP and/or PIP joints of the ring and little fingers reflects progressive shortening of the diseased longitudinal palmar cords, which selectively involve the ulnar rays far more often than the radial digits.",
+          "source": "Orthobullets, Dupuytren's Disease; StatPearls, Dupuytren Contracture"
+        }
+      },
+      "posture": {
+        "Fixed digit-flexion posture": {
+          "text": "A digit held in fixed flexion reflects mechanical shortening by the mature Dupuytren cord rather than active muscular guarding — the deformity does not passively correct because the pathology is a structural fascial contracture, not a soft-tissue or joint-capsule tightness, which is precisely what the Hueston tabletop test exposes.",
+          "source": "Hueston, The Table Top Test, 1982; StatPearls, Dupuytren Contracture"
+        }
+      },
+      "palpation": {
+        "Palmar fascia cords/nodules (ring/little finger)": {
+          "text": "Direct palpation of firm, longitudinally-oriented cords within the palmar fascia, typically along the ring/little finger rays, confirms the fascial (not tendinous) origin of the contracture — the cords are adherent to the skin and do not glide independently of it.",
+          "source": "Orthobullets, Dupuytren's Disease"
+        }
+      }
+    },
     "specialTests": [
       "Hueston Tabletop Test"
     ],
@@ -1746,6 +2230,24 @@
       "Guarded digit posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Fusiform joint swelling": {
+          "text": "Spindle-shaped ('fusiform') swelling localized to a single interphalangeal joint reflects capsular/collateral ligament injury and intra-articular effusion at that joint following an axial or angular stress — a pattern distinct from the diffuse digit swelling seen in infection or the multi-joint pattern of inflammatory arthritis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        },
+        "jammed history": {
+          "text": "A reported 'jammed finger' mechanism — an axial load to the fingertip, often from catching a ball — is the classic history for collateral ligament sprain or volar plate injury at the PIP/DIP joint, and should always prompt screening for a concurrent avulsion fracture.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "Guarded digit posture": {
+          "text": "Holding the injured digit in slight flexion and protecting it from contact minimizes tension on the injured collateral ligament/capsule, a typical protective posture following an acute sprain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      }
+    },
     "specialTests": [
       "Collateral Ligament Stress Test (affected joint)"
     ],
@@ -1816,6 +2318,20 @@
       "N/A"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Triphasic colour change (white-blue-red) with cold": {
+          "text": "The sequential white (vasospasm/ischaemia), blue (cyanosis from static deoxygenated blood), then red (reactive hyperaemic flushing on rewarming) colour change reflects the classic vasospasm-then-reperfusion sequence of digital arterioles in response to cold or emotional stress; this triphasic pattern is the defining diagnostic feature distinguishing Raynaud's phenomenon from other causes of cold hands.",
+          "source": "LeRoy & Medsger, Raynaud's phenomenon classification criteria; Magee, Orthopedic Physical Assessment, Ch.7"
+        }
+      },
+      "posture": {
+        "N/A": {
+          "text": "Posture is not assessed because Raynaud's phenomenon is a vasospastic vascular reflex, not a musculoskeletal or biomechanical condition — no resting position or loading posture influences vasospasm risk the way it would for a joint, tendon, or nerve entrapment lesion.",
+          "source": "LeRoy & Medsger, Raynaud's phenomenon classification criteria"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [],

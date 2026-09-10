@@ -29,6 +29,42 @@
       "Segmental",
       "Thoracolumbar fascia tightness"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Muscle guarding": {
+          "text": "Reflexive paraspinal splinting is a protective, nociception-driven response to disc, facet, ligament, or muscle irritation without a discrete structural lesion. Its diffuse, non-focal pattern (versus a single strained muscle in L08 or a capsular/extension pattern in L03) supports a non-specific mechanical origin diagnosed by exclusion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Antalgic posture": {
+          "text": "A pain-avoidance postural deviation that unloads the symptomatic structure. It is a non-specific sign of nociception rather than a lesion-specific marker, consistent with L01's designation as a diagnosis of exclusion once radicular, facet, and red-flag patterns are ruled out.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Lateral shift": {
+          "text": "A trunk lean adopted to offload a painful lumbar segment; per McKenzie's Mechanical Diagnosis and Therapy, a shift without accompanying leg symptoms or neurological signs is treated as a mechanical deformity (not a discogenic radicular sign) and is expected to reduce with repeated-movement testing showing a clear directional preference.",
+          "source": "McKenzie, Mechanical Diagnosis and Therapy of the Lumbar Spine"
+        }
+      },
+      "posture": {
+        "Flattened or increased lordosis": {
+          "text": "Both directions of lordotic change reflect protective adaptation of the lumbar curve: flattening suggests flexion-biased guarding, while increased lordosis suggests extension-biased guarding. The bidirectional (rather than single stereotyped) pattern is itself consistent with L01's non-specific classification, distinct from the single-direction postures seen in L03 (increased lordosis) or L04 (flexed/stooped).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "palpation": {
+        "Soft tissue": {
+          "text": "Diffuse paraspinal tenderness and hypertonicity reflect secondary muscular guarding rather than a discrete structural lesion — the expected palpatory pattern in non-specific mechanical LBP, contrasting with the focal tenderness of a facet (L03) or strained muscle (L08).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Segmental": {
+          "text": "Localized segmental tenderness at a single level suggests underlying facet or capsular-ligamentous irritation at that level, useful for guiding manual therapy targeting even when the overall presentation remains non-specific.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Thoracolumbar fascia tightness": {
+          "text": "The thoracolumbar fascia links latissimus dorsi, gluteus maximus, and contralateral trunk musculature into a posterior force-transfer sling; tenderness/tightness here reflects a myofascial contribution to mechanical LBP and often co-occurs with the erector-spinae-dominant, TA-inhibited motor control pattern seen on core assessment.",
+          "source": "Vleeming et al., self-bracing mechanism of the thoracolumbar fascia and posterior layer"
+        }
+      }
+    },
     "specialTests": [
       "SLR"
     ],
@@ -132,6 +168,34 @@
     "palpation": [
       "Neural (sciatic) lower-limb tension line"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Antalgic lean": {
+          "text": "Trunk shift away from or toward the symptomatic side changes the position of the disc relative to the adjacent nerve root: a lean away from the painful side typically indicates the herniation lies lateral to the root (shifting away reduces compression), while a lean toward the side suggests a medial (axillary) herniation — the direction helps localize the disc-root relationship.",
+          "source": "McKenzie, Mechanical Diagnosis and Therapy of the Lumbar Spine; Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Dermatomal signs": {
+          "text": "Sensory changes confined to a specific dermatome map directly to the level of nerve root compression, distinguishing this radicular (single-root) presentation from the non-specific, non-dermatomal referred pain of L01.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Possible foot-drop": {
+          "text": "Weakness of ankle/great-toe dorsiflexion (tibialis anterior, EHL) indicates motor compromise of the L4 or L5 nerve root from disc compression. A significant or rapidly progressing foot drop is itself a relative red flag that should prompt urgent escalation and cross-check against the L11 red-flag screen.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "posture": {
+        "Lateral shift / flattened lordosis": {
+          "text": "An antalgic lateral shift, often with loss of lordosis, is a classic disc-herniation postural sign; McKenzie's system describes it as a deformity that may or may not centralize with lateral correction. Unlike the similar-looking shift in L01, here it typically co-presents with dermatomal leg symptoms and a positive SLR/Slump.",
+          "source": "McKenzie, Mechanical Diagnosis and Therapy of the Lumbar Spine"
+        }
+      },
+      "palpation": {
+        "Neural (sciatic) lower-limb tension line": {
+          "text": "Tenderness or symptom reproduction along the course of the sciatic nerve (piriformis, popliteal fossa, peroneal tunnel) reflects mechanosensitivity of neural tissue secondary to root compression/inflammation, correlating with a positive SLR or Slump test rather than a capsular or muscular source.",
+          "source": "Butler, Mobilisation of the Nervous System; Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      }
+    },
     "specialTests": [
       "SLR",
       "Slump test",
@@ -247,6 +311,34 @@
     "palpation": [
       "Lumbar paraspinal fascial tightness"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Extension-aggravated posture": {
+          "text": "Patients position the trunk to avoid extension because it approximates and compresses the zygapophyseal joint surfaces on the symptomatic side while narrowing the intervertebral foramen — the same mechanism that produces a positive Kemp's/Quadrant test.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Unilateral muscle guarding": {
+          "text": "One-sided paraspinal spasm reflects capsular irritation of a single zygapophyseal joint, a more focal pattern than the bilateral/diffuse guarding typical of L01.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "posture": {
+        "Increased lordosis": {
+          "text": "Excessive lumbar extension increases facet joint compressive loading and narrows the space between adjacent articular surfaces, a recognized driver of facet-mediated pain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Rotation restriction": {
+          "text": "Limited rotation toward the involved side reflects a capsular restriction pattern at the symptomatic facet joint, consistent with the joint-play findings expected on Passive Physiological Intervertebral Movement testing at that level.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9 (Cyriax capsular pattern concept)"
+        }
+      },
+      "palpation": {
+        "Lumbar paraspinal fascial tightness": {
+          "text": "Secondary myofascial guarding overlying the irritated facet joint; this diffuse fascial finding should be differentiated from the discrete segmental hypomobility/tenderness found on PA spring testing directly over the joint at that level.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      }
+    },
     "specialTests": [
       "Quadrant Test / Kemp's Test",
       "One-leg standing (stork) lumbar extension test"
@@ -353,6 +445,30 @@
     "palpation": [
       "Neural canal / foraminal narrowing pattern"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Flexed posture": {
+          "text": "Patients adopt lumbar flexion because it enlarges the central canal and neural foraminal cross-sectional area and reduces ligamentum flavum buckling, decompressing cauda equina/nerve roots and relieving neurogenic claudication — the classic stooped ('simian') stenosis posture.",
+          "source": "Katz & Harris, \"Clinical Practice: Lumbar Spinal Stenosis,\" NEJM 2008; Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Wide-based gait": {
+          "text": "A broader base of support compensates for proprioceptive deficit and mild lower-limb weakness from chronic nerve root/cauda equina compromise, and also reduces spinal extension during ambulation, both improving stability and symptom tolerance.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "posture": {
+        "Stooped forward posture relieving symptoms": {
+          "text": "Flexion increases canal and foraminal cross-sectional area, directly explaining why forward-flexed postures — classically, leaning on a shopping cart — relieve neurogenic claudication; this is the inverse of the extension-relief pattern seen in facet dysfunction (L03).",
+          "source": "Katz & Harris, \"Clinical Practice: Lumbar Spinal Stenosis,\" NEJM 2008"
+        }
+      },
+      "palpation": {
+        "Neural canal / foraminal narrowing pattern": {
+          "text": "Reduced space for neural elements, as documented on imaging, correlates with reproducible leg symptoms on passive extension and relief on flexion — the physiological basis for using the extension/flexion provocation pattern (and the Bicycle Test of van Gelderen) to differentiate stenosis from a disc-herniation pattern.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9; \"Bicycle test\" of van Gelderen, J Neurosurg 1977"
+        }
+      }
+    },
     "specialTests": [
       "Bilateral SLR",
       "Bicycle Test of van Gelderen",
@@ -465,6 +581,38 @@
       "Sacral sulcus — weak inter-rater reliability",
       "Posterior sacroiliac ligament / thoracolumbar fascia"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Pelvic asymmetry": {
+          "text": "Visual asymmetry of iliac crest or ASIS height has historically been used to infer SIJ malposition, but static bony-landmark observation for asymmetry has demonstrated poor inter-rater reliability and does not correlate well with symptomatic SIJ pain; modern SIJ diagnosis instead relies on the pain-provocation test cluster.",
+          "source": "Laslett, \"Evidence-Based Diagnosis and Treatment of the Painful Sacroiliac Joint,\" J Man Manip Ther 2008"
+        },
+        "PSIS level difference": {
+          "text": "PSIS height differences are common in asymptomatic individuals and do not reliably localize SIJ dysfunction on their own; this finding should be interpreted only alongside a positive provocation cluster, not as an independent diagnostic marker.",
+          "source": "Laslett, \"Evidence-Based Diagnosis and Treatment of the Painful Sacroiliac Joint,\" J Man Manip Ther 2008"
+        }
+      },
+      "posture": {
+        "Innominate rotation / leg-length discrepancy posture": {
+          "text": "Apparent leg-length asymmetry or an anteriorly/posteriorly rotated innominate is a proposed but poorly validated static marker of SIJ dysfunction. Like the observation findings above, isolated static 'malalignment' findings correlate weakly with symptomatic SIJ pain and should not substitute for dynamic pain-provocation testing.",
+          "source": "Physio-pedia, Sacroiliac Joint Special Test Cluster; Laslett 2008"
+        }
+      },
+      "palpation": {
+        "PSIS": {
+          "text": "Point tenderness over the PSIS is a commonly used but weakly reliable localizing sign for SIJ dysfunction and is retained here only as a supportive, not primary, finding.",
+          "source": "Laslett, \"Evidence-Based Diagnosis and Treatment of the Painful Sacroiliac Joint,\" J Man Manip Ther 2008"
+        },
+        "Sacral sulcus — weak inter-rater reliability": {
+          "text": "Tenderness or apparent deepening of the sacral sulcus has been proposed to reflect sacral torsion but demonstrates poor inter-examiner agreement in validity studies. Note: the condition library's own required-test list names six sub-tests under the SIJ provocation cluster (Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's) while its scoring rule states '3+ of 5 positive.' Researching Laslett's original validated cluster (Laslett et al. 2005, J Manipulative Physiol Ther) resolves the arithmetic but not the naming: the validated pain-provocation cluster used for the '3+ of 5' rule comprises five true provocation tests — Distraction, Compression, Thigh Thrust (posterior shear), Sacral Thrust, and Gaenslen's — with 3-of-5 positive giving ~91% sensitivity/78% specificity for SIJ pain. Gillet's test is a motion-palpation (mobility) test, not a pain-provocation test, and standing/sitting flexion and Gillet's have separately been shown to have poor inter-rater reliability (van der Wurff et al. 2000), which is likely why it and FABER/Patrick are inconsistently bundled into the 'six named tests' description versus excluded from the validated five-test scored cluster. This discrepancy is flagged rather than silently resolved, per the source library's own caveat.",
+          "source": "Laslett et al., \"Diagnosis of Sacroiliac Joint Pain: Validity of Individual Provocation Tests and Composites of Tests,\" Man Ther 2005; van der Wurff et al., reliability of SIJ tests, 2000"
+        },
+        "Posterior sacroiliac ligament / thoracolumbar fascia": {
+          "text": "Tenderness over the long dorsal sacroiliac ligament and thoracolumbar fascia reflects the posterior myofascial 'force closure' sling (gluteus maximus, biceps femoris, thoracolumbar fascia, contralateral latissimus dorsi) implicated in SIJ load transfer; this often accompanies the glute-max-inhibited, QL-dominant pattern found on core/motor-control assessment.",
+          "source": "Vleeming et al., self-bracing mechanism of the sacroiliac joint"
+        }
+      }
+    },
     "specialTests": [
       "SIJ Compression Test",
       "SIJ Distraction Test",
@@ -561,6 +709,26 @@
     "palpation": [
       "Deep segmental stabiliser insufficiency"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Instability jog / catch during active movement": {
+          "text": "A visible 'catch,' jerky deviation, or momentary give-way during active trunk flexion/extension reflects a segment moving beyond neuromuscular control at the extremes of its neutral zone. Per Panjabi's spinal stability model, this represents failure of the active (muscular) and neural (control) subsystems to compensate for excess laxity in the passive (ligamentous/disc) subsystem.",
+          "source": "Panjabi, \"The Stabilizing System of the Spine, Parts I & II,\" J Spinal Disord 1992"
+        }
+      },
+      "posture": {
+        "Excessive segmental motion on PA spring": {
+          "text": "Hypermobility detected on passive PA glide at a single level indicates an enlarged neutral zone at that segment — Panjabi identified an enlarged neutral zone, not gross range of motion, as the direct clinical correlate of spinal instability.",
+          "source": "Panjabi, \"The Stabilizing System of the Spine, Part II: Neutral Zone and Instability Hypothesis,\" J Spinal Disord 1992"
+        }
+      },
+      "palpation": {
+        "Deep segmental stabiliser insufficiency": {
+          "text": "Reduced or absent recruitment of multifidus/transversus abdominis under light load indicates active-subsystem failure to control the neutral zone — consistent with Panjabi's model in which instability arises from inadequate muscular compensation for passive-system laxity rather than gross structural failure alone.",
+          "source": "Panjabi, \"The Stabilizing System of the Spine, Part I,\" J Spinal Disord 1992; Hodges & Richardson, transversus abdominis/multifidus motor control studies"
+        }
+      }
+    },
     "specialTests": [
       "Passive Lumbar Extension Test",
       "H and I Stability Tests",
@@ -668,6 +836,30 @@
     "palpation": [
       "Pars interarticularis / anterior longitudinal ligament"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Palpable step deformity": {
+          "text": "A palpable 'step-off' between adjacent spinous processes reflects anterior translation of one vertebral body relative to the one below via bilateral pars interarticularis defects. Combined with a positive Stork test, this is one of the few observation findings specific enough to warrant imaging confirmation and subsequent Meyerding grading (percentage of anterior translation: Grade I 0–25%, II 25–50%, III 50–75%, IV 75–100%, V >100%/spondyloptosis).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9; Meyerding grading classification"
+        },
+        "Hamstring tightness": {
+          "text": "Reflexive hamstring guarding is a well-documented compensatory finding in spondylolisthesis, thought to reduce anterior pelvic tilt and lumbar lordosis to protect the unstable segment, and is disproportionate to any true hamstring muscle shortness.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "posture": {
+        "Increased lordosis at slip level": {
+          "text": "Anterior vertebral translation shifts the center of gravity forward, provoking a compensatory increase in lordosis at and around the slip level to keep posture upright — this paradoxically increases shear loading through the pars interarticularis and can perpetuate progression of the slip.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      },
+      "palpation": {
+        "Pars interarticularis / anterior longitudinal ligament": {
+          "text": "Localized tenderness over the pars interarticularis reflects the site of the bony defect (spondylolysis) or an active stress reaction; anterior longitudinal ligament tension/tenderness reflects chronic stretch from sustained anterior vertebral translation.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      }
+    },
     "specialTests": [
       "One-Leg Standing (Stork) Lumbar Extension Test"
     ],
@@ -769,6 +961,30 @@
       "Localize strained muscle",
       "Paraspinal / quadratus lumborum fascial tension"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Visible muscle spasm / guarding on movement": {
+          "text": "Acute reflexive contraction of the injured muscle (commonly erector spinae or quadratus lumborum) limits further stretch of torn fibers — a direct contractile-tissue protective response. Its localization to one identifiable muscle, correlating with a strong-and-painful resisted test, distinguishes it from L01's more diffuse guarding.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine (selective tension / contractile lesion pattern)"
+        }
+      },
+      "posture": {
+        "Antalgic lean away from strained side": {
+          "text": "Trunk lean away from the involved side shortens and unloads the strained muscle belly, minimizing tensile stress at the site of the tear during static posture.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      },
+      "palpation": {
+        "Localize strained muscle": {
+          "text": "Point tenderness at the muscle belly or musculotendinous junction localizes the acute strain, consistent with Cyriax's selective-tension principle that pairs a palpation finding with a strong-and-painful resisted test in that muscle's specific line of action.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        },
+        "Paraspinal / quadratus lumborum fascial tension": {
+          "text": "Secondary fascial tightening around the strained muscle reflects compensatory guarding of the surrounding myofascial sling; per the condition's own motor-control note, this should be differentiated from the primary strain site to check whether QL/erector spinae is the true lesion or an overactive compensator (e.g., secondary to TA/glute max inhibition).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9"
+        }
+      }
+    },
     "specialTests": [
       "SLR"
     ],
@@ -864,6 +1080,34 @@
       "Taut bands/trigger points reproducing referred pain",
       "Myofascial trigger point / taut band network"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Taut bands": {
+          "text": "A palpable taut band is the defining physical sign of a myofascial trigger point — a localized region of sustained sarcomere contracture within the muscle — per Travell & Simons' integrated trigger point hypothesis, the same mechanism underlying the cervical myofascial presentation (cross-reference C10).",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        },
+        "Trigger points on palpation": {
+          "text": "Direct palpation reproducing the patient's familiar referred pain pattern — not just local tenderness — is the clinical criterion that distinguishes an active trigger point from simple soft-tissue tenderness, and is the key diagnostic finding required for this condition.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        }
+      },
+      "posture": {
+        "Sustained-posture loading pattern": {
+          "text": "Prolonged static postural loading (e.g., sustained lumbar flexion at a desk or during repetitive lifting) is the classic perpetuating factor for trigger point development, via sustained low-level motor unit activity and localized muscle ischemia in the QL/erector spinae group.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        }
+      },
+      "palpation": {
+        "Taut bands/trigger points reproducing referred pain": {
+          "text": "Reproduction of referred (not just local) pain on palpation is the clinical criterion that establishes the palpated point as the actual symptom generator, differentiating myofascial referral from a structural joint source such as the facet (L03) or SIJ (L05).",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        },
+        "Myofascial trigger point / taut band network": {
+          "text": "QL and erector spinae trigger points classically refer pain to the buttock, groin, and lower lumbar/SI region — patterns that can mimic SIJ or facet pain and should be distinguished from those structural sources using the palpation reproduction criterion above, consistent with this condition's own note that it is often the symptom of a deeper glute-inhibition pattern rather than a primary muscle problem.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -936,6 +1180,28 @@
       "Reduced chest expansion"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Global restriction": {
+          "text": "Lumbar AROM restricted symmetrically and uniformly across all planes — rather than a single-plane/capsular pattern — reflects a systemic inflammatory process affecting the sacroiliac joints, spinal entheses, and facet capsules diffusely, rather than a discrete mechanical lesion. This non-capsular, global pattern is the key functional finding distinguishing axial spondyloarthritis from the directional-preference conditions L01–L09.",
+          "source": "ASAS classification criteria for axial spondyloarthritis; Magee, Orthopedic Physical Assessment, Ch.9"
+        },
+        "Morning stiffness posture": {
+          "text": "Prolonged morning stiffness (classically >30–60 minutes, improving with activity/NSAIDs and worsening with rest) is a core feature of inflammatory back pain per the Calin criteria incorporated into the ASAS classification approach, reflecting inflammation-driven pain physiology rather than the rest-relieved, activity-aggravated pattern typical of mechanical LBP.",
+          "source": "Calin et al., inflammatory back pain criteria; ASAS classification criteria for axial spondyloarthritis"
+        }
+      },
+      "posture": {
+        "Flattened lumbar lordosis": {
+          "text": "Progressive loss of lumbar lordosis reflects paraspinal muscle spasm early in disease and, in established disease, structural involvement (enthesitis, syndesmophyte formation, eventual ankylosis) of the anterior and posterior spinal ligamentous structures and facet joints — an early postural marker that should prompt screening for axial spondyloarthritis.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.9; ASAS classification criteria for axial spondyloarthritis"
+        },
+        "Reduced chest expansion": {
+          "text": "Reduced chest expansion (classically <2.5 cm) reflects costovertebral and costosternal joint involvement by the same systemic inflammatory process — a classic extraspinal sign incorporated into the modified New York criteria for ankylosing spondylitis and correlated with disease chronicity.",
+          "source": "Modified New York criteria for Ankylosing Spondylitis"
+        }
+      }
+    },
     "specialTests": [
       "FABER Test (+ posterior SIJ provocation — cross-refer L05)"
     ],

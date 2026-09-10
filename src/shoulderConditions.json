@@ -19,6 +19,38 @@
     "palpation": [
       "Greater tuberosity"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Painful arc on elevation": {
+          "text": "Pain confined to roughly 60–120° of abduction marks the zone where the greater tuberosity and its attached supraspinatus tendon/subacromial bursa pass directly beneath the coracoacromial arch; pain easing again above ~120° as the tuberosity clears the arch is the classic mechanical signature of subacromial compression.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter; Physiopedia, Painful Arc"
+        },
+        "subtle scapular dyskinesis": {
+          "text": "Delayed or reduced scapular upward rotation limits the normal elevation of the acromion during arm raise, further narrowing the subacromial outlet — Kibler's scapular dyskinesis framework identifies this as both a contributor to and consequence of impingement.",
+          "source": "Kibler, Scapular Dyskinesis and Its Relation to Shoulder Injury"
+        },
+        "no wasting": {
+          "text": "Preserved muscle bulk indicates an intact, mechanically-irritated cuff rather than the denervation/disuse atrophy expected with a structural full-thickness tear (S03) — a key differentiator between impingement and cuff tear on inspection alone.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "posture": {
+        "Forward head / rounded shoulders": {
+          "text": "Thoracic kyphosis with protracted, anteriorly-tilted scapulae (driven by a tight pectoralis minor) measurably reduces the acromiohumeral distance during elevation, a well-documented postural contributor to subacromial impingement.",
+          "source": "JOSPT Clinical Practice Guidelines, Shoulder Pain; Magee, Orthopedic Physical Assessment"
+        },
+        "scapular downward rotation": {
+          "text": "Insufficient scapular upward rotation — from serratus anterior/lower trapezius underactivity — fails to lift the acromion clear of the humeral head's path during elevation, directly narrowing the subacromial space; this is the postural correlate of the 'upper-trap dominant' scapulohumeral-rhythm finding.",
+          "source": "Kibler, Scapular Dyskinesis and Its Relation to Shoulder Injury"
+        }
+      },
+      "palpation": {
+        "Greater tuberosity": {
+          "text": "The greater tuberosity is the supraspinatus (and posteriorly, infraspinatus) insertion and sits directly beneath the coracoacromial arch; focal tenderness here localizes the mechanical conflict to the subacromial tendons/bursa rather than a more proximal or distal structure.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      }
+    },
     "specialTests": [
       "Hawkins-Kennedy",
       "Neer's",
@@ -132,6 +164,34 @@
     "palpation": [
       "Greater tuberosity"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Painful mid-arc": {
+          "text": "The same 60–120° compression zone as impingement, but here reflecting tendon-specific load intolerance from reactive or degenerative matrix disorganization within the tendon itself rather than isolated bursal irritation.",
+          "source": "Cook & Purdam, Continuum Model of Tendon Pathology; JOSPT CPG, Shoulder Pain"
+        },
+        "minimal wasting": {
+          "text": "Tendinopathy is a matrix-disorganization and pain-inhibition process, not a structural tear, so gross muscle bulk is largely preserved — distinguishing it on inspection from the marked wasting seen with a full-thickness tear.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        },
+        "tender cuff insertion": {
+          "text": "Localized tenderness at the tendon-bone junction reflects nociceptor sensitization within tendinopathic tissue, consistent with an insertional (enthesis) source of pain.",
+          "source": "Cook & Purdam, Continuum Model of Tendon Pathology"
+        }
+      },
+      "posture": {
+        "Rounded-shoulder posture increasing subacromial load": {
+          "text": "A protracted scapula with increased thoracic kyphosis raises sustained tensile and compressive load on the rotator cuff tendons during overhead tasks, a recognized mechanical driver of cuff tendinopathy that sits on the same continuum as impingement.",
+          "source": "JOSPT Clinical Practice Guidelines, Shoulder Pain"
+        }
+      },
+      "palpation": {
+        "Greater tuberosity": {
+          "text": "Reproducing pain by direct palpation at the tendon insertion (rather than diffusely) is consistent with Cyriax's principle of localizing a contractile lesion by combining palpation with a painful resisted test in that muscle's line of pull.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      }
+    },
     "specialTests": [
       "Empty Can Test"
     ],
@@ -237,6 +297,24 @@
       "Cannot maintain scapular set under load"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Visible supraspinatus/infraspinatus wasting": {
+          "text": "Visible hollowing of the supraspinous and infraspinous fossae reflects denervation and disuse atrophy with fatty infiltration of the torn tendon's muscle belly — a reliable sign of an established, chronic full-thickness tear rather than an acute tendinopathy.",
+          "source": "Goutallier classification of rotator cuff fatty infiltration; Magee, Orthopedic Physical Assessment"
+        },
+        "drop of the arm": {
+          "text": "Inability to control eccentric lowering of the abducted arm past roughly 90° reflects loss of the cuff's role as a dynamic humeral head depressor and decelerator; this positive Drop-Arm finding has low sensitivity (~21–27%) but high specificity (~88–96%) for a full-thickness tear, so a positive result is strongly confirmatory even though a negative one does not rule it out.",
+          "source": "McGee, Evidence-Based Physical Diagnosis; Physiopedia, Drop Arm Test"
+        }
+      },
+      "posture": {
+        "Cannot maintain scapular set under load": {
+          "text": "With the cuff's dynamic humeral-centering function lost, the scapular stabilizers and deltoid must substitute for the missing force couple, producing an inability to hold a stable scapular position once the arm is loaded — the postural corollary of the 'combined pattern' (upper-trap dominance plus serratus winging) seen on scapulohumeral rhythm testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      }
+    },
     "specialTests": [
       "ER lag",
       "Drop-Arm",
@@ -350,6 +428,24 @@
       "Compensatory scapular hitching / trunk lean on reach"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Global loss of active AND passive motion": {
+          "text": "Equal restriction of active and passive range is the hallmark distinguishing a true capsular restriction from a muscular/tendinous one, where passive range typically exceeds active; it reflects genuine fibrotic shortening of the capsule and rotator interval rather than pain-guarding alone.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine (capsular pattern concept)"
+        },
+        "arm held guarded": {
+          "text": "Protective positioning close to the trunk reflects pain provoked by any capsular stretch during the acute 'freezing' (painful) phase of adhesive capsulitis.",
+          "source": "Neviaser & Neviaser, staging of adhesive capsulitis"
+        }
+      },
+      "posture": {
+        "Compensatory scapular hitching / trunk lean on reach": {
+          "text": "With true glenohumeral motion restricted in a pan-directional (capsular) pattern, functional reach is achieved by substituting scapulothoracic elevation and trunk lean for the missing glenohumeral excursion — a recognized compensatory strategy in frozen shoulder.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -463,6 +559,30 @@
     "palpation": [
       "AC joint"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Step deformity / swelling over the AC joint": {
+          "text": "A visible or palpable step reflects superior displacement of the distal clavicle relative to the acromion following disruption of the AC and/or coracoclavicular ligaments, graded by severity using the Rockwood classification of AC joint injury.",
+          "source": "Rockwood classification, AC joint separation; Magee, Orthopedic Physical Assessment"
+        },
+        "tender apex": {
+          "text": "Tenderness localized precisely to the joint apex, rather than diffusely across the shoulder, pinpoints the AC joint itself as the pain generator.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "posture": {
+        "Protracted shoulder loading the joint": {
+          "text": "A protracted, forward-carried shoulder girdle increases compressive and shear load transmitted across the AC joint during arm use, aggravating an already irritated joint.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "palpation": {
+        "AC joint": {
+          "text": "Direct palpation over the joint line reproducing focal pain is one of the most sensitive individual clinical findings for AC joint pathology, distinguishing it from a subacromial or glenohumeral source.",
+          "source": "McGee, Evidence-Based Physical Diagnosis"
+        }
+      }
+    },
     "specialTests": [
       "Cross-Arm / Scarf Test",
       "O'Brien's Test"
@@ -544,6 +664,30 @@
     "palpation": [
       "Bicipital groove"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Tender bicipital groove": {
+          "text": "Tenderness overlying the intertubercular (bicipital) groove localizes pathology to the long head of biceps tendon as it courses through the groove — the classic site of biceps tendinopathy and a frequent secondary irritant in impingement.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        },
+        "no wasting": {
+          "text": "Biceps tendinopathy and SLAP lesions are overuse/tendon-labral pathologies without denervation, so muscle bulk remains preserved on inspection.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "posture": {
+        "Anterior shoulder carriage": {
+          "text": "A humerus held anteriorly/internally rotated increases mechanical irritation of the long head of biceps tendon both within the groove and at its origin near the superior labrum.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "palpation": {
+        "Bicipital groove": {
+          "text": "Reproducing pain by direct palpation at the groove, typically with the arm positioned in ~10° internal rotation to bring the groove anteriorly, is the classic Cyriax localization test for long head of biceps tendinopathy.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      }
+    },
     "specialTests": [
       "Speed's Test",
       "O'Brien's Test"
@@ -637,6 +781,28 @@
       "scapular dyskinesis"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Apprehension guarding": {
+          "text": "A fear/guarding response — rather than pure pain — when the shoulder is placed in the abduction-external-rotation 'apprehension' position reflects the patient's subconscious anticipation of the humeral head subluxing anteriorly, the behavioral correlate of anterior capsulolabral insufficiency.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter (Apprehension/Relocation Test)"
+        },
+        "possible sulcus sign": {
+          "text": "Inferior humeral head translation on a caudal pull (graded I <1cm, II 1–2cm, III >2cm) indicates laxity of the superior glenohumeral ligament and rotator interval; it frequently co-exists with anterior instability as part of a broader multidirectional laxity pattern, and persistence of the sulcus with the arm externally rotated implicates a lax rotator interval specifically.",
+          "source": "Orthobullets, Multidirectional Shoulder Instability"
+        }
+      },
+      "posture": {
+        "Loose posture": {
+          "text": "A generally lax, poorly-set shoulder girdle posture often reflects underlying generalized ligamentous laxity, a recognized predisposing factor for glenohumeral instability.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        },
+        "scapular dyskinesis": {
+          "text": "Altered scapular positioning reduces glenoid concavity-compression, the dynamic stabilizing mechanism that normally centers the humeral head on the glenoid, compounding the static capsuloligamentous laxity that defines instability.",
+          "source": "Kibler, Scapular Dyskinesis and Its Relation to Shoulder Injury"
+        }
+      }
+    },
     "specialTests": [
       "Apprehension Test",
       "Relocation Test"
@@ -729,6 +895,28 @@
       "Antalgic protective posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Acutely held rigid": {
+          "text": "In the acute resorptive phase, calcium hydroxyapatite crystals trigger an intense inflammatory response that produces severe, chemically-mediated pain forcing the patient to hold the limb almost motionless — distinct from the mechanical, movement-related pain of impingement.",
+          "source": "Uhthoff & Loehr, Calcifying Tendinopathy"
+        },
+        "marked guarding": {
+          "text": "Protective muscle splinting minimizes any movement that would compress or stretch the acutely inflamed calcific deposit and surrounding bursa.",
+          "source": "Uhthoff & Loehr, Calcifying Tendinopathy"
+        },
+        "often no wasting": {
+          "text": "The presentation is acute and chemical/inflammatory rather than a chronic structural or denervation process, so muscle bulk is typically preserved even though pain and guarding are severe.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      },
+      "posture": {
+        "Antalgic protective posture": {
+          "text": "The arm is held adducted and supported against the trunk to minimize subacromial compression on the acutely inflamed supraspinatus deposit, the same biomechanical rationale as protective postures in other acute irritable shoulder conditions.",
+          "source": "Uhthoff & Loehr, Calcifying Tendinopathy"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -810,6 +998,28 @@
       "Guarded elevated-shoulder posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Reduced arm swing": {
+          "text": "Diminished passive and active glenohumeral excursion during functional movement reflects the global capsular thickening and articular restriction characteristic of degenerative joint disease, rather than a localized soft-tissue lesion.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        },
+        "muscle bulk loss": {
+          "text": "Disuse atrophy develops secondary to chronic pain-limited use of the joint over months to years, mechanistically distinct from the acute denervation atrophy that follows a rotator cuff tear.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        },
+        "possible crepitus": {
+          "text": "Palpable or audible crepitus during motion reflects loss of articular cartilage with roughened subchondral bone-on-bone contact, a hallmark physical sign of glenohumeral osteoarthritis.",
+          "source": "McGee, Evidence-Based Physical Diagnosis"
+        }
+      },
+      "posture": {
+        "Guarded elevated-shoulder posture": {
+          "text": "Chronic joint pain and capsular restriction drive a protective, elevated shoulder-girdle posture that minimizes glenohumeral loading during standing and functional activity.",
+          "source": "Magee, Orthopedic Physical Assessment, Shoulder chapter"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -903,6 +1113,24 @@
       "Forward-head posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Neck-driven guarding": {
+          "text": "Protective positioning driven by cervical mechanosensitivity or neural tension — rather than a local shoulder lesion — signals that the true pain generator is proximal, at the cervical spine or brachial plexus.",
+          "source": "Magee, Orthopedic Physical Assessment, Cervical/Shoulder differentiation"
+        },
+        "dermatomal signs": {
+          "text": "Sensory change following a specific dermatomal distribution, rather than a peripheral-nerve or myotomal pattern local to the shoulder, points to cervical nerve root involvement as the source of the 'shoulder' symptoms.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3 (dermatome/myotome differentiation)"
+        }
+      },
+      "posture": {
+        "Forward-head posture": {
+          "text": "Forward head posture increases compressive and foraminal-narrowing load at the lower cervical segments (C5–C7), the same mechanism that produces referred 'shoulder' pain via cervical radiculopathy (cross-reference Cervical C02).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      }
+    },
     "specialTests": [
       "Spurling's Test"
     ],

@@ -20,6 +20,24 @@
       "Increased thoracic kyphosis"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Localised paraspinal guarding": {
+          "text": "Reflexive splinting of the paraspinal muscles around the involved segment is a protective, nociception-driven response to facet/capsular irritation rather than a sign of structural instability. Its localized, single-level pattern (versus the global, multi-segmental guarding of an inflammatory or systemic process) points toward a mechanical facet source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        },
+        "No neuro signs": {
+          "text": "A normal neurological screen rules out nerve root or cord involvement, supporting a facet/capsular source over thoracic disc herniation (T02) — the two share aggravating movements (extension, rotation) but this finding is the key differentiator.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      },
+      "posture": {
+        "Increased thoracic kyphosis": {
+          "text": "An exaggerated thoracic curve increases the flexion moment arm anteriorly and raises compressive/shear loading on the posterior facet joints and their capsules during extension and rotation — the movements that reproduce pain in this condition's functional screen.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      }
+    },
     "fma": "Rotation & combined extension-rotation reproduce local pain",
     "fascia": "Thoracolumbar & paraspinal fascial tightness",
     "specialTests": [
@@ -98,6 +116,24 @@
       "Guarded trunk posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Band-like sensory change": {
+          "text": "A band-like area of altered sensation tracing a thoracic dermatome reflects compression or irritation of a specific thoracic nerve root at its exit foramen — the hallmark sensory pattern of thoracic radiculopathy, distinct from the more diffuse or patchy referral seen in myofascial or facet-referred pain.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8 (thoracic dermatomal pattern)"
+        },
+        "Possible cord signs": {
+          "text": "The thoracic spinal canal is narrow relative to the cord, and thoracic disc herniations are frequently central or paracentral, so a significant herniation can compress the cord itself rather than only a nerve root, producing myelopathic signs (e.g. lower-limb hyperreflexia, clonus, gait change). This finding should immediately escalate the case toward the T11 red-flag/cord-compression pathway rather than routine management.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8 (thoracic canal anatomy and myelopathy risk)"
+        }
+      },
+      "posture": {
+        "Guarded trunk posture": {
+          "text": "Protective splinting of the trunk musculature limits movements that would otherwise increase intradiscal pressure or foraminal narrowing and provoke the inflamed nerve root — a nonspecific but consistent finding across radicular presentations.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      }
+    },
     "fma": "Trunk movement provokes dermatomal band; screen cord signs",
     "fascia": "Neural (intercostal) tension bias",
     "specialTests": [
@@ -171,6 +207,24 @@
       "Kyphotic / protracted posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Rib-angle tenderness": {
+          "text": "Point tenderness directly over the rib angle localizes irritation to the costovertebral or costotransverse joint at that level rather than the adjacent facet joint or disc, steering the differential toward a rib-specific rather than a vertebral source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        },
+        "Altered breathing on one side": {
+          "text": "Asymmetric chest-wall excursion during respiration reflects a mechanically restricted costovertebral/costotransverse joint on the affected side, since normal rib elevation and rotation during inspiration depend on free motion at these joints — the same principle the Evjenth-Gloeck breath-hold test uses to localize a rib versus spine source.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      },
+      "posture": {
+        "Kyphotic / protracted posture": {
+          "text": "A kyphotic, protracted thoracic posture sustains the ribs in a relatively depressed, internally rotated position, increasing resting intercostal and costovertebral joint stiffness over time and predisposing to focal costovertebral/costotransverse dysfunction.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      }
+    },
     "fma": "Deep breath & Evjenth-Gloeck breath-hold flexion localise rib source",
     "fascia": "Intercostal & serratus fascial restriction",
     "specialTests": [
@@ -259,6 +313,24 @@
       "Protracted / depressed shoulder posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Dropped shoulder": {
+          "text": "A chronically depressed shoulder girdle narrows the costoclavicular space — the interval between the clavicle and first rib through which the neurovascular bundle passes — a recognized structural contributor to compressive TOS.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8 (thoracic outlet mechanics)"
+        },
+        "Prominent first rib on palpation": {
+          "text": "An elevated or prominent first rib narrows both the scalene triangle and the costoclavicular space, directly reducing the room available for the brachial plexus and subclavian vessels — the core structural mechanism proposed for neurogenic/vascular TOS. Note that TOS as a clinical entity remains diagnostically contested (no single reference-standard test), so this structural finding should be interpreted as supportive rather than definitive, consistent with this condition's low-confidence flag in the library.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      },
+      "posture": {
+        "Protracted / depressed shoulder posture": {
+          "text": "Protraction and depression of the scapula further narrows the costoclavicular interval and increases tension on the neurovascular bundle as it courses beneath the clavicle, reproducing or aggravating symptoms — the biomechanical rationale behind the Costoclavicular (Military Brace) Test.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8"
+        }
+      }
+    },
     "fma": "Adson's / Roos / EAST reproduce arm symptoms; CRLF for first-rib restriction",
     "fascia": "Scalene & pectoral fascial compression of neurovascular bundle",
     "specialTests": [
@@ -348,6 +420,24 @@
       "Fixed increased kyphosis not correcting on extension"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Rigid structural kyphosis (adolescent)": {
+          "text": "Reflects true structural wedging of at least three consecutive vertebral bodies (Sorensen criteria: more than 5° of anterior wedging per vertebra at the apex), producing a kyphosis that is fixed and does not reduce with passive correction — distinguishing it from the flexible, actively correctable kyphosis of postural round back (T06).",
+          "source": "Sorensen radiographic criteria for Scheuermann's disease"
+        },
+        "Apex tenderness": {
+          "text": "Tenderness at the apex of the curve corresponds to the site of maximal vertebral wedging and endplate irregularity, often with Schmorl's nodes where disc material has herniated through the weakened cartilaginous endplate during the growth-plate disease process.",
+          "source": "Sorensen radiographic criteria; Scheuermann's disease clinical literature"
+        }
+      },
+      "posture": {
+        "Fixed increased kyphosis not correcting on extension": {
+          "text": "Because the deformity arises from structural anterior vertebral body wedging rather than muscular imbalance, active or passive extension cannot reverse it. This fixed, non-correctable quality on extension testing is the key clinical differentiator from postural kyphosis (T06), where extension does reduce the curve.",
+          "source": "Scheuermann's disease clinical literature (rigid deformity, uncorrectable by active extension or passive manipulation)"
+        }
+      }
+    },
     "fma": "Prone extension does NOT reverse the kyphosis (vs postural)",
     "fascia": "Anterior thoracic fascial shortening",
     "specialTests": [],
@@ -415,6 +505,20 @@
       "Slumped / protracted sustained posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "No structural change; fatigue-related ache": {
+          "text": "The absence of structural change together with pain that builds with sustained loading and eases with rest or postural correction reflects a motor-control and muscular-endurance problem rather than a fixed skeletal deformity — consistent with Janda's Upper Crossed Syndrome pattern of overactive/inhibited muscle pairs rather than the structural pathology seen in T05.",
+          "source": "Janda's Upper Crossed Syndrome"
+        }
+      },
+      "posture": {
+        "Slumped / protracted sustained posture": {
+          "text": "Per Janda's Upper Crossed Syndrome, tight pectoralis major/minor and upper trapezius pair with inhibited lower trapezius and serratus anterior, producing a sustained slumped, protracted thoracic posture. Because the driver is muscular imbalance rather than bony structure, active extension is able to reduce the kyphosis — the opposite of the fixed pattern in T05.",
+          "source": "Janda's Upper Crossed Syndrome"
+        }
+      }
+    },
     "fma": "Symptoms build with sustained sitting, ease with postural correction",
     "fascia": "Global posterior-chain fascial deconditioning",
     "specialTests": [],
@@ -494,6 +598,28 @@
       "Pelvic obliquity"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Rib hump on forward bend": {
+          "text": "Vertebral rotation accompanying the lateral curve carries the ribs on the convex side posteriorly, producing the visible rib hump on Adam's forward bend test. This combination of lateral curvature plus rotation (not pure lateral bending) is what defines a structural, as opposed to a purely postural/functional, scoliosis.",
+          "source": "Adam's forward bend test; adolescent idiopathic scoliosis screening literature"
+        },
+        "Shoulder/pelvic asymmetry": {
+          "text": "Asymmetric shoulder height and trunk shift reflect the compensatory curves and coronal imbalance that accompany a primary structural curve, and form part of the standard visual screening battery alongside the forward-bend test and scoliometer.",
+          "source": "Scoliosis Research Society / USPSTF adolescent idiopathic scoliosis screening literature"
+        }
+      },
+      "posture": {
+        "Lateral spinal curvature": {
+          "text": "A measurable lateral deviation of the spine with associated vertebral rotation defines idiopathic scoliosis. An angle of trunk rotation of roughly 5–7° on the scoliometer is the commonly cited threshold for referral to radiographic Cobb-angle measurement, which matches the library's stated >5° referral cutoff.",
+          "source": "Scoliosis Research Society scoliometer screening threshold literature"
+        },
+        "Pelvic obliquity": {
+          "text": "Pelvic obliquity can act as either a compensatory response to, or a contributor to, the primary spinal curve, and should prompt assessment of leg-length and lower kinetic-chain factors alongside the spinal deformity itself.",
+          "source": "Adolescent idiopathic scoliosis screening literature"
+        }
+      }
+    },
     "fma": "Adam's forward bend / skyline view; scoliometer >5° = refer",
     "fascia": "Asymmetric paraspinal fascial tension (concave vs convex)",
     "specialTests": [
@@ -564,6 +690,26 @@
     "palpation": [
       "Costochondral Junction Tenderness"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Anterior chest tenderness ± swelling at costochondral junction": {
+          "text": "Reproducible tenderness at one or more costochondral junctions without swelling is typical of costochondritis (usually ribs 2–5, often multiple levels and bilateral), whereas a firm, localized, spindle-shaped swelling at a single junction — classically the 2nd or 3rd costal cartilage — distinguishes Tietze syndrome. The presence or absence of visible/palpable swelling is the key clinical differentiator between the two.",
+          "source": "Costochondritis / Tietze syndrome clinical differentiation literature (StatPearls; Physiopedia)"
+        }
+      },
+      "posture": {
+        "Protracted / slumped posture": {
+          "text": "A protracted, slumped thoracic posture increases resting tension through pectoralis minor and the anterior chest-wall fascia, which plausibly increases mechanical strain across the costochondral junctions. This postural link should be read as a plausible contributing factor, not a proven causal mechanism — costochondritis is generally idiopathic and this association is not well established in the literature.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.8 (anterior chest-wall loading); honest caveat on causal strength"
+        }
+      },
+      "palpation": {
+        "Costochondral Junction Tenderness": {
+          "text": "Direct palpation reproducing pain at the costochondral or costosternal junction is the primary diagnostic finding for both costochondritis and Tietze syndrome, since there is no specific imaging or lab test for either — diagnosis is clinical and made partly by excluding cardiac and pulmonary causes.",
+          "source": "Costochondritis / Tietze syndrome clinical diagnostic literature (StatPearls)"
+        }
+      }
+    },
     "fma": "Anterior chest-wall loading (springing, arm horizontal adduction)",
     "fascia": "Anterior chest-wall (pectoral) fascia",
     "specialTests": [],
@@ -633,6 +779,50 @@
       "Multifidus",
       "Iliocostalis"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Taut bands": {
+          "text": "A palpable taut band is the defining physical sign of a myofascial trigger point — a localized region of sustained sarcomere contracture within the muscle — per Travell & Simons' integrated trigger point hypothesis, and is the structure from which referred pain is elicited on palpation.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        },
+        "Trigger points (trapezius, rhomboids, levator scapulae)": {
+          "text": "Active trigger points in these three scapular muscles produce well-documented interscapular and periscapular referred pain patterns, and are classically driven by the same inhibited-lower-trapezius / overactive-upper-trapezius-rhomboid-levator imbalance seen in sustained protracted, slumped thoracic postures (cross-reference T06).",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      },
+      "posture": {
+        "Sustained-posture loading pattern": {
+          "text": "Prolonged static postural loading (e.g. desk work, forward-reaching tasks) is the classic perpetuating factor for myofascial trigger point development in the periscapular muscles, causing sustained low-level motor unit activity and localized muscle ischemia at the trigger point site.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      },
+      "palpation": {
+        "Trapezius": {
+          "text": "Trigger points in the middle and lower trapezius fibers refer pain along the medial scapular border, over the acromion, and into the posterior neck; taut fibers at these levels are frequently secondary to the sustained scapular protraction seen in slumped thoracic postures.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Rhomboids": {
+          "text": "Rhomboid trigger points lie along the medial scapular border and refer a superficial, localized ache in the interscapular region itself — one of the most common causes of a 'burning between the shoulder blades' complaint — and typically develop from eccentric postural overload as the muscle resists a protracted, kyphotic thoracic posture.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Levator Scapulae (Table 8-8)": {
+          "text": "Refers pain to the angle of the neck and along the vertebral border of the scapula — a classic 'stiff neck'/upper-back pain generator that is often mistaken for cervical facet or upper thoracic joint pain. Cited from Magee's Table 8-8 referred pain summary.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction; Magee, Orthopedic Physical Assessment, Ch.8, Table 8-8"
+        },
+        "Serratus Ant/Post": {
+          "text": "Serratus anterior trigger points refer pain along the lateral chest wall and can mimic cardiac or pleuritic pain; serratus posterior superior trigger points refer a deep ache under the scapula that can radiate down the posterior arm to the ulnar hand, occasionally mimicking a C8/T1 radicular pattern.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Multifidus": {
+          "text": "Deep thoracic multifidus trigger points produce a localized, deep ache directly over the involved segment and can perpetuate the same segmental guarding seen in facet-related dysfunction (cross-reference T01), reflecting multifidus's role as a key segmental stabilizer that becomes locally hypertonic under sustained postural load.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Iliocostalis": {
+          "text": "Mid-thoracic iliocostalis trigger points refer pain upward toward the shoulder and laterally around the chest wall — on the left side this pattern can mimic angina — while lower-thoracic iliocostalis trigger points refer around toward the abdomen, a pattern that can mimic visceral pain. This wide, non-specific referral is why iliocostalis findings should always be interpreted alongside a red-flag screen (cross-reference T11).",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      }
+    },
     "fma": "Palpation reproducing referred pain pattern (Table 8-8)",
     "fascia": "Myofascial trigger point / taut band network",
     "specialTests": [],
@@ -700,6 +890,28 @@
       "Reduced chest expansion"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Global restriction": {
+          "text": "Uniform restriction across all planes of thoracic motion — rather than the local, single-segment restriction seen in T01 — reflects a systemic inflammatory process progressively ankylosing multiple costovertebral, costotransverse and facet joints simultaneously. This is the 'bilateral, symmetric, severely restricted' rotation pattern the library explicitly flags as a prompt to consider AS.",
+          "source": "Modified New York criteria for Ankylosing Spondylitis; Magee, Orthopedic Physical Assessment, Ch.8"
+        },
+        "Morning stiffness posture": {
+          "text": "Prolonged morning stiffness that improves with activity (rather than with rest) is a hallmark inflammatory pain pattern, distinct from the mechanical pattern of T01–T03 which is typically aggravated by activity and eased by rest. It is one of the core clinical features supporting an inflammatory spondyloarthropathy over a mechanical diagnosis.",
+          "source": "ASAS classification criteria for axial spondyloarthritis; Modified New York criteria"
+        }
+      },
+      "posture": {
+        "Flattened thoracic mobility": {
+          "text": "Progressive ankylosis of the costovertebral, costotransverse and facet joints flattens normal thoracic mobility over time, ultimately contributing to the fixed, 'bamboo spine' postural pattern seen on long-standing imaging.",
+          "source": "Modified New York criteria for Ankylosing Spondylitis; AS radiographic literature"
+        },
+        "Reduced chest expansion": {
+          "text": "Chest expansion (measured at the 4th intercostal space) of less than 2.5cm relative to age/sex-adjusted norms is one of the four clinical criteria in the Modified New York criteria for AS, reflecting ankylosis of the costovertebral and costotransverse joints that restricts normal rib excursion during breathing — one of the few purely mechanical (non-imaging) diagnostic findings for the disease.",
+          "source": "Modified New York criteria for Ankylosing Spondylitis"
+        }
+      }
+    },
     "fma": "AROM uniformly restricted all planes; Forestier's bowstring sign",
     "fascia": "Systemic inflammation — not fascial-specific",
     "specialTests": [
