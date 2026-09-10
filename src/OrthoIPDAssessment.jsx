@@ -111,7 +111,7 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
-  carePlan: { icon: "🎯", label: "Problems, Goals & Plan" },
+  carePlan: { icon: "🎯", label: "Care Plan" },
   review: { icon: "✅", label: "Final Review" },
 };
 

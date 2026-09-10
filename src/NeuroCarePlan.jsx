@@ -1006,28 +1006,49 @@ export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA 
   return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} />;
 }
 
-/* formatters[stepId] contract for a specialty's SummarySection — one row
-   per selected problem with its linked goal(s) and treatment(s). Shape is
+/* formatters[stepId] contract for a specialty's SummarySection. Shape is
    identical for every specialty (CarePlanSection is shared, see above), so
    this one function serves Neuro's, Ortho's, etc. formatters map; kept
    under both names since existing call sites import it as
-   formatNeuroCarePlanSection. */
+   formatNeuroCarePlanSection.
+
+   Returns { groups: [{heading, rows}] } instead of a flat rows[] -- Problem
+   List / Goals / Treatment as their own labeled groups (2026-09-09, Aditi:
+   "care plan should have problem list, goals, treatment in different
+   subtopic, not in whole in one" -- the old version crammed a problem's
+   goal and treatment into one combined cell per row, e.g. "Lumbar range of
+   motion: ... (4w, LTG) — Tx: Prone Lying"). AssessmentSummary
+   (orthoSummary.jsx) renders each group as its own labeled block within
+   the step's card. */
 export function formatCarePlanSection(section) {
   const problems = Array.isArray(section.problems) ? section.problems : [];
   const goals = Array.isArray(section.goals) ? section.goals : [];
   const treatments = Array.isArray(section.treatments) ? section.treatments : [];
-  // One row per selected problem (not per goal) so the Summary shows what
-  // was picked -- problem, its goal(s), and its treatment(s) -- even before
-  // a goal exists yet, instead of showing nothing until Goals is filled in.
-  if (!problems.length) return [];
-  return problems.map((p) => {
-    const myGoals = goals.filter((g) => g.problemId === p.id);
-    const myTx = treatments.filter((t) => myGoals.some((g) => (t.goalIds || []).includes(g.id)));
-    const goalPart = myGoals.length
-      ? myGoals.map((g) => `${g.measure}: ${g.baseline} → ${g.target} (${g.weeks}w, ${g.term === "short" ? "STG" : "LTG"})`).join("; ")
-      : "No goal set yet";
-    const txPart = myTx.length ? ` — Tx: ${myTx.map((t) => t.name).join(", ")}` : "";
-    return { label: p.name, value: `${goalPart}${txPart}` };
-  });
+  if (!problems.length) return { groups: [] };
+
+  const problemName = (id) => problems.find((p) => p.id === id)?.name || "—";
+
+  const groups = [
+    {
+      heading: "Problem List",
+      rows: problems.map((p, i) => ({ label: `${i + 1}. ${p.name}`, value: Array.isArray(p.findings) && p.findings.length ? p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ") : "—" })),
+    },
+    {
+      heading: "Goals",
+      rows: goals.length
+        ? goals.map((g) => ({ label: `${g.measure} (${g.term === "short" ? "STG" : "LTG"}, ${g.weeks}w)`, value: `${g.baseline} → ${g.target} — ${problemName(g.problemId)}` }))
+        : [{ label: "No goals set yet", value: "" }],
+    },
+    {
+      heading: "Treatment",
+      rows: treatments.length
+        ? treatments.map((t) => {
+            const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
+            return { label: t.name, value: myGoals.length ? myGoals.map((g) => g.measure).join(", ") : "—" };
+          })
+        : [{ label: "No treatments set yet", value: "" }],
+    },
+  ];
+  return { groups };
 }
 export const formatNeuroCarePlanSection = formatCarePlanSection;

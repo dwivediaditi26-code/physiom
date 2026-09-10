@@ -127,7 +127,7 @@ const STEP_META = [
   { id: "functional", icon: "🛏️", label: "Functional Assessment" },
   { id: "outcomes", icon: "📊", label: "Outcome Measures" },
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
-  { id: "carePlan", icon: "🎯", label: "Problems, Goals & Plan" },
+  { id: "carePlan", icon: "🎯", label: "Care Plan" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
   { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
   { id: "summary", icon: "✅", label: "Summary & Review" },

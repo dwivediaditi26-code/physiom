@@ -728,6 +728,9 @@ export function orthoStyles() {
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
         .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
         .summary-empty { font-size: 14px; color: ${BRAND.grayLight}; font-style: italic; padding: 4px 0; }
+        .summary-group { margin-top: 10px; }
+        .summary-group:first-child { margin-top: 0; }
+        .summary-group-heading { font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: ${BRAND.purple}; margin-bottom: 2px; }
 
         /* fixed (not sticky) for the same reason as Cardio's identical rule:
            .content/.app-inner don't scroll themselves anymore (see .app-inner

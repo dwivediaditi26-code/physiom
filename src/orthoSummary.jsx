@@ -9,7 +9,11 @@ import { SectionIntro, fmtVal } from "./orthoFieldKit.jsx";
    fmtVal flattener. Region-driven sections (ROM, MMT, Joint Mobility,
    Special Tests) nest data per-region/per-movement — `formatters[stepId]`
    lets those modules supply their own {label, value}[] extractor so their
-   results still show up here instead of "[object Object]". */
+   results still show up here instead of "[object Object]". Some formatters
+   (Care Plan — formatCarePlanSection) instead return { groups: [{heading,
+   rows}] } so Problem List/Goals/Treatment render as their own labeled
+   blocks rather than one flat list; isGrouped()/groupsForStep() below
+   normalize both shapes to a flat row count where a plain count is needed. */
 function rowsForStep(step, section, formatters) {
   const formatter = formatters?.[step.id];
   if (formatter) return formatter(section);
@@ -18,6 +22,8 @@ function rowsForStep(step, section, formatters) {
     .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
     .filter((r) => r.value);
 }
+const isGrouped = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
+const rowCount = (result) => (isGrouped(result) ? result.groups.reduce((n, g) => n + g.rows.length, 0) : result.length);
 
 export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters }) {
   const [copied, setCopied] = useState(false);
@@ -26,36 +32,57 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
   const exportText = useMemo(() => {
     let lines = [...exportHeaderLines, ""];
     contentSteps.forEach((step) => {
-      const rows = rowsForStep(step, data[step.id] || {}, formatters);
-      if (rows.length) {
-        lines.push(`— ${step.label} —`);
-        rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
-        lines.push("");
+      const result = rowsForStep(step, data[step.id] || {}, formatters);
+      if (!rowCount(result)) return;
+      lines.push(`— ${step.label} —`);
+      if (isGrouped(result)) {
+        result.groups.forEach(({ heading, rows }) => {
+          if (!rows.length) return;
+          lines.push(heading + ":");
+          rows.forEach(({ label, value }) => lines.push(value ? `  ${label}: ${value}` : `  ${label}`));
+        });
+      } else {
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
       }
+      lines.push("");
     });
     return lines.join("\n");
   }, [data, exportHeaderLines, contentSteps, formatters]);
 
-  const anyData = contentSteps.some((step) => rowsForStep(step, data[step.id] || {}, formatters).length);
+  const anyData = contentSteps.some((step) => rowCount(rowsForStep(step, data[step.id] || {}, formatters)));
 
   return (
     <>
       <SectionIntro icon={icon} title={title} sub={sub} />
       {extra}
       {contentSteps.map((step) => {
-        const rows = rowsForStep(step, data[step.id] || {}, formatters);
-        if (!rows.length) return null;
+        const result = rowsForStep(step, data[step.id] || {}, formatters);
+        if (!rowCount(result)) return null;
         return (
           <button type="button" className="summary-card" key={step.id} onClick={() => onEdit(step.id)}>
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {rows.map(({ label, value }, i) => (
-              <div className="summary-row" key={label + i}>
-                <span className="summary-key">{label}</span>
-                <span className="summary-val">{value}</span>
-              </div>
-            ))}
+            {isGrouped(result)
+              ? result.groups.map(({ heading, rows }) =>
+                  rows.length ? (
+                    <div key={heading} className="summary-group">
+                      <div className="summary-group-heading">{heading}</div>
+                      {rows.map(({ label, value }, i) => (
+                        <div className="summary-row" key={label + i}>
+                          <span className="summary-key">{label}</span>
+                          {value && <span className="summary-val">{value}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null
+                )
+              : result.map(({ label, value }, i) => (
+                  <div className="summary-row" key={label + i}>
+                    <span className="summary-key">{label}</span>
+                    <span className="summary-val">{value}</span>
+                  </div>
+                ))}
           </button>
         );
       })}
