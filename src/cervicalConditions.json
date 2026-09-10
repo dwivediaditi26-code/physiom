@@ -25,6 +25,34 @@
       "Soft tissue (cervical paraspinals)",
       "Segmental (C2–C7 facets)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Localised guarding": {
+          "text": "Reflexive muscle splinting around the symptomatic segment — a protective, nociception-driven response rather than a sign of structural instability. Its localized (not diffuse) nature points to a mechanical, single-source origin rather than a systemic or multi-structural injury (contrast with WAD's diffuse guarding).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "No neurological signs": {
+          "text": "Absence of dermatomal sensory change, myotomal weakness, or reflex change rules out nerve root involvement, supporting a non-radicular mechanical source (facet, disc annulus, muscle, or ligament) rather than radiculopathy (C02).",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      },
+      "posture": {
+        "Upper-crossed / forward-head posture": {
+          "text": "Per Janda's Upper Crossed Syndrome, tight/overactive upper trapezius, levator scapulae, SCM and pectorals pair with inhibited deep neck flexors and lower trapezius/serratus anterior. Sustained forward head translation increases the cervical flexion moment arm, raising posterior muscle and facet joint compressive load — a well-documented driver of mechanical neck pain.",
+          "source": "Janda's Upper Crossed Syndrome; PMC12841205"
+        }
+      },
+      "palpation": {
+        "Soft tissue (cervical paraspinals)": {
+          "text": "Diffuse paraspinal tenderness/hypertonicity reflects secondary muscular guarding rather than a discrete structural lesion — expected in mechanical neck pain, distinct from the focal tenderness of a facet or discrete nerve lesion.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "Segmental (C2–C7 facets)": {
+          "text": "Localized segmental tenderness at a specific level suggests facet-joint or capsular-ligamentous irritation/hypomobility at that level, useful for guiding manual therapy targeting.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -165,6 +193,25 @@
       "Forward-head posture loading lower cervical"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Antalgic head tilt away from side": {
+          "text": "Tilting the head away from the involved side opens the intervertebral foramen on that side, reducing tension/compression on the inflamed nerve root — a classic antalgic posture in radiculopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3 (foraminal mechanics)"
+        },
+        "Arm guarding": {
+          "text": "Protective arm positioning (often supported overhead or across the chest) reduces traction on the inflamed nerve root; overhead relief is the physiological basis of Bakody's sign, most classic at C4/C5.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3 (Bakody's sign)"
+        }
+      },
+      "posture": {
+        "Forward-head posture loading lower cervical": {
+          "text": "Forward head posture increases compressive and foraminal-narrowing load specifically at the lower cervical segments (C5–C7) — the levels most commonly involved in radiculopathy — potentially aggravating nerve root compression.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      },
+      "palpation": {}
+    },
     "specialTests": [
       "Spurling's Test",
       "Cervical Distraction Test",
@@ -291,6 +338,30 @@
     "palpation": [
       "Segmental (facet-level)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Localised guarding": {
+          "text": "Protective splinting reflects capsular irritation of the involved zygapophyseal joint, without the diffuse pattern seen in whiplash or the neurological overlay of radiculopathy.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "No neurological signs": {
+          "text": "A normal neurological screen supports a facet/capsular source over a radicular one — the two conditions share aggravating movements (extension, rotation) but differ on this exact point.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      },
+      "posture": {
+        "Upper-crossed / forward-head posture": {
+          "text": "Forward head posture increases extension demand through the lower cervical spine during functional tasks (e.g. looking up), raising posterior facet joint compressive loading specifically — the same postural fault as C01 but here loading the facet capsule as the primary pain generator.",
+          "source": "Janda's Upper Crossed Syndrome"
+        }
+      },
+      "palpation": {
+        "Segmental (facet-level)": {
+          "text": "Point tenderness directly over the facet column at one level correlates with the symptomatic zygapophyseal joint and helps confirm the capsular pattern found on AROM testing.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      }
+    },
     "specialTests": [
       "Jackson's Compression Test",
       "Cervical Rotation Lateral Flexion (CRLF)"
@@ -434,6 +505,38 @@
       "C1–C2",
       "Suboccipital"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Unilateral suboccipital tenderness": {
+          "text": "Reflects irritation of the C1–C2 facet joint and suboccipital muscles — the anatomic source of cervicogenic headache referral to the head via convergence onto the trigeminocervical nucleus (shared brainstem pathway between upper cervical afferents and the trigeminal nerve).",
+          "source": "International Headache Society cervicogenic headache criteria; trigeminocervical nucleus convergence"
+        },
+        "Restricted C1-2 rotation": {
+          "text": "C1–C2 provides roughly half of total cervical rotation. Restriction here is the hallmark finding driving cervicogenic headache and is the physiological basis of the Flexion-Rotation Test.",
+          "source": "Hall & Robinson, Flexion-Rotation Test validation studies"
+        }
+      },
+      "posture": {
+        "Forward-head posture": {
+          "text": "Forward head posture increases sustained suboccipital muscle tone and compensatory upper-cervical extension, loading the C0–C2 segments implicated in cervicogenic headache.",
+          "source": "Janda's Upper Crossed Syndrome"
+        }
+      },
+      "palpation": {
+        "C0–C1": {
+          "text": "Tenderness here implicates the atlanto-occipital joint and rectus capitis muscles as a contributor to headache referral.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "C1–C2": {
+          "text": "Tenderness here implicates the atlantoaxial joint — the single most common structural source of cervicogenic headache — consistent with a positive Flexion-Rotation Test.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "Suboccipital": {
+          "text": "Suboccipital muscle tenderness/trigger points (rectus capitis posterior major/minor, obliques) refer pain to the head via segmental convergence, a recognized cervicogenic headache generator.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      }
+    },
     "specialTests": [
       "Flexion-Rotation Test (FRT)",
       "Cervical Distraction Test"
@@ -546,6 +649,30 @@
     "palpation": [
       "Cervical palpation (site not further specified in library)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Diffuse guarding": {
+          "text": "Generalized, multi-segmental muscle spasm reflects an acute post-traumatic inflammatory/protective response following the whiplash mechanism — unlike C01's localized guarding, WAD typically involves multiple structures (discs, facet capsules, ligaments, muscle) simultaneously.",
+          "source": "Quebec Task Force WAD classification (Magee Table 3-7)"
+        },
+        "Protective stiffness": {
+          "text": "Global stiffness limits movement broadly to protect multiple potentially-injured soft tissues in the acute WAD phase, rather than guarding a single structure.",
+          "source": "Quebec Task Force WAD classification"
+        }
+      },
+      "posture": {
+        "Protective forward-head / elevated-shoulder posture": {
+          "text": "This guarding posture offloads irritated cervical structures; sustained shoulder elevation reflects protective upper trapezius/levator scapulae co-contraction, a hallmark acute-WAD finding distinct from the chronic postural adaptation seen in C01.",
+          "source": "Quebec Task Force WAD classification"
+        }
+      },
+      "palpation": {
+        "Cervical palpation (site not further specified in library)": {
+          "text": "Diffuse tenderness without one focal point is consistent with WAD's multi-structural injury pattern, contrasting with the discrete, single-level tenderness typical of mechanical neck pain or facet dysfunction.",
+          "source": "Quebec Task Force WAD classification"
+        }
+      }
+    },
     "specialTests": [
       "Sharp-Purser Test",
       "Alar Ligament Test",
@@ -677,6 +804,30 @@
     "palpation": [
       "Strained muscle (localize)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Visible muscle spasm": {
+          "text": "Visible/palpable spasm (commonly SCM or upper trapezius) is a direct sign of acute contractile-tissue strain — a reflexive protective response to the muscle tear itself.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine (contractile lesion pattern)"
+        },
+        "Head held in rotated/tilted posture": {
+          "text": "The torticollis posture reflects unilateral muscle spasm shortening one side and is held to minimize further stretch and pain in the injured muscle. In a classic SCM strain the head tilts toward and rotates away from the involved side; the exact combination depends on which specific muscle is strained.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      },
+      "posture": {
+        "Antalgic lateral tilt / rotation away from painful side": {
+          "text": "A pain-avoidance posture that minimizes stretch on the acutely strained muscle belly or musculotendinous junction — the specific tilt/rotation pattern helps localize which muscle (SCM, upper trapezius, levator scapulae) is involved.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      },
+      "palpation": {
+        "Strained muscle (localize)": {
+          "text": "Point tenderness at the muscle belly or musculotendinous junction confirms the site of the acute strain, consistent with Cyriax's principle that a contractile lesion is localized by palpation combined with a painful resisted test in that muscle's direction of action.",
+          "source": "Cyriax, Textbook of Orthopaedic Medicine"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [
@@ -762,6 +913,29 @@
       "Forward-head posture"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Guarded multi-level stiffness": {
+          "text": "Widespread stiffness across multiple segments reflects chronic degenerative change (osteophyte formation, disc height loss) rather than a single acute lesion — the multi-level pattern is a key differentiator from acute disc herniation (Magee Table 3-1).",
+          "source": "Magee, Orthopedic Physical Assessment, Table 3-1"
+        },
+        "Possible bilateral arm signs": {
+          "text": "Bilateral involvement raises concern for central or bilateral foraminal stenosis, or early myelopathy, distinguishing this presentation from the typically unilateral pattern of acute disc herniation — bilateral signs should also prompt the C11 red-flag screen.",
+          "source": "Magee, Orthopedic Physical Assessment, Table 3-1"
+        }
+      },
+      "posture": {
+        "Reduced cervical lordosis": {
+          "text": "Loss of the normal cervical curve is a recognized postural and radiographic marker of degenerative disc disease, reflecting disc height loss and compensatory paraspinal muscle guarding.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        },
+        "Forward-head posture": {
+          "text": "A common compensatory posture in spondylosis that further increases anterior column loading and extension demand on already-degenerated segments.",
+          "source": "Magee, Orthopedic Physical Assessment, Ch.3"
+        }
+      },
+      "palpation": {}
+    },
     "specialTests": [
       "Spurling's Test"
     ],
@@ -897,6 +1071,25 @@
       "Protective elevated-shoulder posture on affected side"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Arm guarding": {
+          "text": "Protective positioning reduces traction on the injured plexus — the same biomechanical rationale as nerve root guarding in radiculopathy, but here reflecting a traction/compression injury to the plexus itself rather than a single root.",
+          "source": "Magee, Orthopedic Physical Assessment, Table 3-8"
+        },
+        "Possible deltoid/bicep wasting": {
+          "text": "Wasting reflects denervation atrophy in a C5–C6-dominant (upper trunk / Erb's point) plexus injury pattern, helping localize the lesion to the upper trunk rather than a single nerve root.",
+          "source": "Magee, Orthopedic Physical Assessment, Table 3-8"
+        }
+      },
+      "posture": {
+        "Protective elevated-shoulder posture on affected side": {
+          "text": "Shoulder elevation/shrugging reduces the neck-to-shoulder angle, decreasing traction on the brachial plexus — a classic protective posture following a traction-type injury (e.g. shoulder forced down while head forced away).",
+          "source": "Magee, Orthopedic Physical Assessment, Table 3-8"
+        }
+      },
+      "palpation": {}
+    },
     "specialTests": [
       "ULTT1 — Median Nerve",
       "Spurling's Test"
@@ -995,6 +1188,21 @@
       "Sustained wrist/elbow posture aggravating entrapment site"
     ],
     "palpation": [],
+    "findingInterpretations": {
+      "observation": {
+        "Localised hand/forearm wasting in single nerve distribution": {
+          "text": "Wasting confined to muscles innervated by one peripheral nerve — not a myotome — is the key sign distinguishing a distal entrapment from radiculopathy or plexopathy (e.g. isolated thenar wasting implicates the median nerve/carpal tunnel, not the C6 root).",
+          "source": "C Rex, Examination of Peripheral Nerves and Brachial Plexus, Ch.9"
+        }
+      },
+      "posture": {
+        "Sustained wrist/elbow posture aggravating entrapment site": {
+          "text": "Postures that increase pressure within a specific anatomic tunnel (e.g. sustained wrist flexion for carpal tunnel, elbow flexion for cubital tunnel) mechanically compress the nerve and reproduce symptoms — the same principle behind provocative positional tests like Phalen's.",
+          "source": "C Rex, Examination of Peripheral Nerves and Brachial Plexus, Ch.9"
+        }
+      },
+      "palpation": {}
+    },
     "specialTests": [
       "ULTT1 — Median Nerve",
       "ULTT2 — Radial Nerve",
@@ -1088,6 +1296,54 @@
       "Semispinalis (capitis/cervicis)",
       "Scalenes (cross-check vs C02/C08)"
     ],
+    "findingInterpretations": {
+      "observation": {
+        "Taut bands": {
+          "text": "A palpable taut band is the defining physical sign of a myofascial trigger point — a localized region of sustained sarcomere contracture within the muscle, per Travell & Simons' integrated trigger point hypothesis.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction: The Trigger Point Manual"
+        },
+        "Trigger points (SCM, upper trapezius, levator scapulae)": {
+          "text": "Active trigger points in these muscles produce well-documented referred pain patterns: upper trapezius refers to the temple and jaw angle (a classic tension-type headache generator); SCM refers to the face, vertex and ear (can mimic dizziness); levator scapulae refers to the neck-shoulder angle, a classic 'stiff neck' presentation.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      },
+      "posture": {
+        "Sustained-posture loading pattern": {
+          "text": "Prolonged static postural loading (e.g. desk work) is the classic perpetuating factor for myofascial trigger point development, causing sustained low-level motor unit activity and localized muscle ischemia.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      },
+      "palpation": {
+        "Upper trapezius": {
+          "text": "Refers pain to the temple, angle of the jaw and behind the ear — the single most common trigger point associated with tension-type headache.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "SCM": {
+          "text": "Sternal division refers to the vertex, cheek and eyebrow; clavicular division refers to the forehead and deep ear, and can produce dizziness/balance symptoms that mimic vestibular pathology.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Levator scapulae": {
+          "text": "Refers pain to the angle of the neck and along the vertebral border of the scapula — a classic 'stiff neck' pain generator, often mistaken for facet pain.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Suboccipital": {
+          "text": "Refers pain to the back of the head and behind the eye — a major contributor to cervicogenic-type headache presentations (cross-reference C04).",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Splenius (capitis/cervicis)": {
+          "text": "Splenius capitis refers to the vertex of the skull; splenius cervicis refers to the angle of the neck and behind the eye.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Semispinalis (capitis/cervicis)": {
+          "text": "Semispinalis capitis is a documented source of the classic 'hatband' headache distributed around the temple; deep C4–C5 semispinalis/rotatores trigger points can also entrap the greater occipital nerve, producing occipital headache.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        },
+        "Scalenes (cross-check vs C02/C08)": {
+          "text": "Refers pain down the arm into the thumb/index finger region, frequently mimicking C6 radiculopathy or thoracic outlet syndrome — hence the explicit cross-check against C02 and C08 before attributing arm symptoms to a nerve root.",
+          "source": "Travell & Simons, Myofascial Pain and Dysfunction"
+        }
+      }
+    },
     "specialTests": [],
     "sttt": {
       "resisted": [

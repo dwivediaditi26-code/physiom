@@ -35,7 +35,8 @@
 // the "front door" ranking is bridged by normalized name, not id (see
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useMemo, useState } from "react";
-import { BRAND, useSectionData } from "./orthoFieldKit.jsx";
+import { BRAND, useSectionData, Stepper, Segmented } from "./orthoFieldKit.jsx";
+import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -188,7 +189,7 @@ const REGION_CONFIGS = [
     conditions: SHOULDER_CONDITIONS, order: SHOULDER_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: SHOULDER_ROM_MOVEMENTS, romLabel: "Shoulder ROM",
+    romMovements: SHOULDER_ROM_MOVEMENTS, romLabel: "Shoulder ROM", romBilateral: true,
     emptyNote: "Pick Shoulder as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
@@ -200,7 +201,7 @@ const REGION_CONFIGS = [
     conditions: HIP_CONDITIONS, order: HIP_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: HIP_ROM_MOVEMENTS, romLabel: "Hip ROM",
+    romMovements: HIP_ROM_MOVEMENTS, romLabel: "Hip ROM", romBilateral: true,
     emptyNote: "Pick Hip as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
@@ -212,7 +213,7 @@ const REGION_CONFIGS = [
     conditions: KNEE_CONDITIONS, order: KNEE_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: KNEE_ROM_MOVEMENTS, romLabel: "Knee ROM",
+    romMovements: KNEE_ROM_MOVEMENTS, romLabel: "Knee ROM", romBilateral: true,
     emptyNote: "Pick Knee as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
@@ -224,7 +225,7 @@ const REGION_CONFIGS = [
     conditions: ANKLE_FOOT_CONDITIONS, order: ANKLE_FOOT_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: ANKLE_FOOT_ROM_MOVEMENTS, romLabel: "Ankle ROM",
+    romMovements: ANKLE_FOOT_ROM_MOVEMENTS, romLabel: "Ankle ROM", romBilateral: true,
     emptyNote: "Pick Ankle or Foot as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
   {
@@ -236,7 +237,7 @@ const REGION_CONFIGS = [
     conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER,
     getRedFlag: evidenceModelRedFlag,
     suggestedTestsMode: "single",
-    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist ROM",
+    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist ROM", romBilateral: true,
     emptyNote: "Pick Elbow, Forearm, Wrist, or Hand as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
 ];
@@ -316,8 +317,9 @@ function Chip({ active, onClick, children }) {
       style={{
         padding: "7px 13px", borderRadius: 9, fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", outline: "none",
         border: active ? `1px solid ${BRAND.purple}` : `1px dashed ${HAIRLINE}`,
-        background: active ? BRAND.purpleFaint : "#fff",
-        color: active ? BRAND.purpleDark : BRAND.ink,
+        background: active ? BRAND.purple : "#fff",
+        color: active ? "#fff" : BRAND.ink,
+        boxShadow: active ? "0 4px 10px rgba(108,77,255,.24)" : "none",
       }}
     >
       {children}
@@ -346,6 +348,17 @@ function EmptyNote({ children }) {
 
 function SubLabel({ children }) {
   return <div style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.gray, marginBottom: 6 }}>{children}</div>;
+}
+
+// Small uppercase category label, same treatment as ModuleCard's own
+// section headers (e.g. "SPECIAL TESTS") — for a sub-grouping within a
+// module (e.g. "Side" vs "Result") rather than a field name.
+function CategoryLabel({ children }) {
+  return (
+    <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: BRAND.gray, marginBottom: 6 }}>
+      {children}
+    </div>
+  );
 }
 
 function GreenBox({ title, children }) {
@@ -547,37 +560,122 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           {config.romMovements && (
             <ModuleCard label={config.romLabel} color="#059669">
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {config.romMovements.map((m) => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: "0.8rem", color: BRAND.ink, fontWeight: 600 }}>{m.label}</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <input
-                        type="number"
-                        value={v("rom", m.id)}
-                        onChange={(e) => sv("rom", m.id, e.target.value)}
-                        placeholder="—"
-                        style={{ width: 60, padding: "6px 8px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", textAlign: "center", outline: "none" }}
-                      />
-                      <span style={{ fontSize: "0.75rem", color: BRAND.grayLight }}>° normal {m.normal}°</span>
-                    </span>
-                  </div>
-                ))}
+              {/* Same Stepper + "Normal — document" quick-fill + Active/
+                  Passive/Resisted mode toggle the app's real Range of
+                  Motion step (RomSection/RomMovementCard in
+                  orthoRegionAssessments.jsx) already uses — not a
+                  lookalike, the actual shared components. Limb-joint
+                  regions get L/R columns (config.romBilateral), matching
+                  ROM_DATA's own bilateral:true for those joints; spine
+                  regions already model Left/Right as separate movement
+                  rows (e.g. "Rotation Left"/"Rotation Right"), same as
+                  ROM_DATA's bilateral:false there, so stay single-column. */}
+              <div style={{ marginBottom: 8 }}>
+                <Segmented
+                  options={["Active", "Passive", "Resisted"]}
+                  value={v("rom", "mode") || "Active"}
+                  onChange={(mode) => sv("rom", "mode", mode)}
+                />
+              </div>
+              {config.romBilateral && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", gap: 8, paddingBottom: 6, borderBottom: "1.5px solid #ECE9F7", marginBottom: 2 }}>
+                  <span style={{ fontSize: "0.656rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: BRAND.grayLight }}>Movement</span>
+                  <span style={{ fontSize: "0.656rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: BRAND.grayLight, textAlign: "center" }}>L</span>
+                  <span style={{ fontSize: "0.656rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: BRAND.grayLight, textAlign: "center" }}>R</span>
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {config.romMovements.map((m, i) => {
+                  const max = m.normal ? m.normal * 2 : 200;
+                  const rowStyle = { borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "9px 0" };
+
+                  const normalStr = m.normal != null ? String(m.normal) : "";
+
+                  if (config.romBilateral) {
+                    const rawL = v("rom", m.id + "_left");
+                    const rawR = v("rom", m.id + "_right");
+                    const valL = rawL || normalStr;
+                    const valR = rawR || normalStr;
+                    // Grade is judged off what was actually confirmed, not
+                    // the suggested-normal default the Stepper shows before
+                    // that — otherwise every untouched row would flash "WNL".
+                    const gradeL = m.normal && rawL ? RESTRICTION_GRADE(Number(rawL), m.normal) : null;
+                    const gradeR = m.normal && rawR ? RESTRICTION_GRADE(Number(rawR), m.normal) : null;
+                    return (
+                      <div key={m.id} style={rowStyle}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", alignItems: "center", gap: 8 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
+                            <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                            <Stepper value={valL} onChange={(nv) => sv("rom", m.id + "_left", nv)} min={0} max={max} />
+                            {gradeL && <span style={{ fontSize: "0.53rem", fontWeight: 700, color: gradeL.color }}>{gradeL.label}</span>}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                            <Stepper value={valR} onChange={(nv) => sv("rom", m.id + "_right", nv)} min={0} max={max} />
+                            {gradeR && <span style={{ fontSize: "0.53rem", fontWeight: 700, color: gradeR.color }}>{gradeR.label}</span>}
+                          </div>
+                        </div>
+                        {m.normal != null && (
+                          <div style={{ marginTop: 7 }}>
+                            <button
+                              type="button" className="rom-normal-btn"
+                              onClick={() => { sv("rom", m.id + "_left", String(m.normal)); sv("rom", m.id + "_right", String(m.normal)); }}
+                            >
+                              ✓ Normal — document N={m.normal}°
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  const rawVal = v("rom", m.id);
+                  const val = rawVal || normalStr;
+                  const grade = m.normal && rawVal ? RESTRICTION_GRADE(Number(rawVal), m.normal) : null;
+                  return (
+                    <div key={m.id} style={rowStyle}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
+                          <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
+                        </div>
+                        <Stepper value={val} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
+                      </div>
+                      {grade && (
+                        <div style={{ fontSize: "0.53rem", fontWeight: 700, color: grade.color, textAlign: "right", marginTop: 1 }}>{grade.label}</div>
+                      )}
+                      {m.normal != null && (
+                        <div style={{ marginTop: 7 }}>
+                          <button type="button" className="rom-normal-btn" onClick={() => sv("rom", m.id, String(m.normal))}>
+                            ✓ Normal — document N={m.normal}°
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </ModuleCard>
           )}
 
           <ModuleCard label="Special Tests" color="#8B5CF6">
             {specialTestItems && specialTestItems.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {specialTestItems.map((raw) => {
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {specialTestItems.map((raw, i) => {
                   // Thoracic's specialTests are {name} objects; other v2
                   // regions use plain strings — normalize both.
                   const t = typeof raw === "string" ? raw : raw.name;
                   return (
-                    <div key={t} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "0.8rem", color: BRAND.ink }}>{t}</span>
-                      <ChipGroup options={["Negative", "Positive"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
+                    <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
+                      <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, marginBottom: 10 }}>{t}</div>
+                      <CategoryLabel>Side</CategoryLabel>
+                      <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
+                      <div style={{ marginTop: 10 }}>
+                        <CategoryLabel>Result</CategoryLabel>
+                        <ChipGroup options={["Negative", "Positive", "Equivocal"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
+                      </div>
                     </div>
                   );
                 })}

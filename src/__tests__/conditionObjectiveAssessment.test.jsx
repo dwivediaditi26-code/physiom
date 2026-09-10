@@ -51,7 +51,7 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
     runAnalysis();
     const chip = screen.getByRole("button", { name: "Localised guarding" });
     fireEvent.click(chip);
-    expect(chip).toHaveStyle({ color: "#6D28D9" });
+    expect(chip).toHaveStyle({ color: "#fff", background: "#7C3AED" });
     fireEvent.click(screen.getByRole("button", { name: /C04 Cervicogenic Headache/i }));
     expect(screen.getByText("Unilateral suboccipital tenderness")).toBeInTheDocument();
     expect(screen.queryByText("Localised guarding")).not.toBeInTheDocument();

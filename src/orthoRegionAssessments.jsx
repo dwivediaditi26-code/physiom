@@ -168,16 +168,17 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
           {norm && <span className="rom-norm">{norm}</span>}
         </div>
         <div className="rom-row-cell">
-          {/* square (2026-09-02, Aditi: "make it square") -- same square
-              stepper Treatment Techniques' Sets/Duration/Frequency already
-              use, instead of the flatter default rectangle. */}
-          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
+          {/* 2026-09-10, Aditi: compared side-by-side against the AI
+              Objective Assessment's ROM section and preferred that
+              compact rectangular box over the square -- supersedes the
+              2026-09-02 "make it square" request. */}
+          <Stepper value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
           {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
         </div>
         <div className="rom-row-cell">
           {m.bilateral !== false && (
             <>
-              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} square />
+              <Stepper value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
               {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
             </>
           )}
