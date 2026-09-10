@@ -654,6 +654,21 @@ export function orthoStyles() {
         .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
 
+        /* "Suggest probable objective assessment" button (2026-09-10, Aditi:
+           "make 3d button and motion graphic when we click on it") — solid
+           raised fill + press-in feedback instead of the faint outline
+           look, plus a brief "thinking" state (pulsing brain, shimmer
+           sweep) between tap and the ranked conditions appearing. */
+        .obj-ai-suggest-btn { background: linear-gradient(180deg, #8B5CF6, ${BRAND.purple}); border: none; box-shadow: 0 4px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.25); transition: transform .12s ease, box-shadow .12s ease; }
+        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 2px 6px rgba(124,58,237,.3), inset 0 1px 0 rgba(255,255,255,.15); }
+        .obj-ai-suggest-btn .obj-ai-suggest-title { color: #fff; }
+        .obj-ai-suggest-btn .obj-ai-suggest-sub { color: rgba(255,255,255,.82); }
+        .obj-ai-suggest-btn .obj-ai-suggest-cta { color: #fff; }
+        @keyframes objAiShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, ${BRAND.purple} 0%, #C4B5FD 50%, ${BRAND.purple} 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
+        @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+        .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
+
         /* Condition-specific assessment module cards — interactive checkboxes */
         .cmod-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
         .cmod-card { border: 1.5px solid ${BRAND.border}; border-radius: 10px; background: #fff; overflow: hidden; }

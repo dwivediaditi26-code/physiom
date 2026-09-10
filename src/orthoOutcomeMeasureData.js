@@ -320,3 +320,33 @@ export const REGION_GROUP_LABELS = {
   ankleFoot: "Ankle / Foot",
   general: "General",
 };
+
+/* Maps a condition's free-text instrument name (shoulderConditions.json etc.,
+   e.g. "SPADI or DASH/QuickDASH", "Oxford Hip Score or HOOS") to a MEASURES
+   id that has a guided digital form -- so ConditionObjectiveAssessment.jsx's
+   Outcome Measures card can offer "Fill guided form" for scales we actually
+   have items for, falling back to the old free-text box for the rest (e.g.
+   Constant-Murley, WOSI, PRTEE -- not yet digitized). Checks each "or"/"/"
+   separated token against known aliases, first match wins. */
+const INSTRUMENT_ALIASES = {
+  spadi: ["spadi"],
+  quickDash: ["quickdash", "dash"],
+  oks: ["oxford knee score", "oxford knee"],
+  oxfordHip: ["oxford hip score", "oxford hip"],
+  faam: ["faam"],
+  lefs: ["lefs"],
+  psfs: ["psfs"],
+  ndi: ["neck disability index", "ndi"],
+  lumbarDisability: ["oswestry disability index", "odi", "roland-morris", "rmdq"],
+};
+
+export function matchMeasureIdForInstrument(label) {
+  if (!label) return null;
+  const tokens = String(label).toLowerCase().split(/\s+or\s+|\//).map((t) => t.trim());
+  for (const token of tokens) {
+    for (const [id, aliases] of Object.entries(INSTRUMENT_ALIASES)) {
+      if (aliases.some((a) => token.includes(a))) return id;
+    }
+  }
+  return null;
+}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { SectionIntro, Hint, TextField } from "./orthoFieldKit.jsx";
 import { MEASURES, suggestMeasures, REGION_GROUP_LABELS } from "./orthoOutcomeMeasureData.js";
 import { contentKeyForRegion } from "./orthoSubjectiveRegionData.js";
@@ -181,7 +181,7 @@ function FillView({ measure, onCancel, onFinish }) {
         </div>
       )}
 
-      <div className="bottombar" style={{ position: "static", borderTop: "none", padding: "8px 0" }}>
+      <div className="bottombar" style={{ position: "static", left: "auto", transform: "none", borderTop: "none", padding: "8px 0" }}>
         <button type="button" className="ghost-btn" onClick={() => (index === 0 ? onCancel() : setIndex((i) => i - 1))}>
           ← Back
         </button>
@@ -227,11 +227,40 @@ function ResultView({ measure, answers, onSave, onClose }) {
   );
 }
 
-export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions = [], regionLabelOf }) {
+export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions = [], regionLabelOf, jumpTo }) {
   const { instances, saveEntry } = useOutcomeData(data, setData);
   const [view, setView] = useState("list");
   const [activeId, setActiveId] = useState(null);
   const [finishedAnswers, setFinishedAnswers] = useState(null);
+  // Set by ConditionObjectiveAssessment.jsx's "Fill guided form" button
+  // (data.outcomeMeasure.pendingStart) so tapping a known instrument there
+  // jumps straight into that measure's fill flow here instead of the list,
+  // then jumps back to that same step once saved/discarded. Captured into
+  // local state (not read live off data.outcomeMeasure) since the pending
+  // flag itself is cleared from `data` right away, once consumed.
+  const [returnTo, setReturnTo] = useState(null);
+  useEffect(() => {
+    const pendingStart = data.outcomeMeasure?.pendingStart;
+    if (!pendingStart || !MEASURES[pendingStart.measureId]) return;
+    setActiveId(pendingStart.measureId);
+    setFinishedAnswers(null);
+    setView("fill");
+    setReturnTo(pendingStart.returnTo || null);
+    setData((prev) => {
+      const { pendingStart: _drop, ...rest } = prev.outcomeMeasure || {};
+      return { ...prev, outcomeMeasure: rest };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function returnIfPending() {
+    if (returnTo && jumpTo) {
+      jumpTo(returnTo);
+      setReturnTo(null);
+    } else {
+      setView("list");
+    }
+  }
 
   const activeMeasure = activeId ? MEASURES[activeId] : null;
   // Auto-tag the saved score with a region: the measure's own region for
@@ -248,7 +277,7 @@ export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions
     return (
       <FillView
         measure={activeMeasure}
-        onCancel={() => setView("list")}
+        onCancel={returnIfPending}
         onFinish={(answers) => {
           setFinishedAnswers(answers);
           setView("result");
@@ -262,10 +291,10 @@ export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions
       <ResultView
         measure={activeMeasure}
         answers={finishedAnswers || {}}
-        onClose={() => setView("list")}
+        onClose={returnIfPending}
         onSave={(score) => {
           saveEntry(activeMeasure.id, finishedAnswers || {}, score, activeRegionTag);
-          setView("list");
+          returnIfPending();
         }}
       />
     );

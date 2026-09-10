@@ -9,8 +9,8 @@
 // red-flag banners surface for both the Cervical and evidence-model
 // shapes, and the ROM grid only renders for the region it belongs to.
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 
 const { default: ConditionObjectiveAssessment } = await import("../ConditionObjectiveAssessment.jsx");
 
@@ -20,8 +20,15 @@ function Harness({ initialData, selectedRegions }) {
   return <ConditionObjectiveAssessment data={data} setData={setData} selectedRegions={selectedRegions} />;
 }
 
+// The "Suggest probable objective assessment" button now has a brief
+// simulated "thinking" beat (setTimeout) before analysisRun flips true —
+// fake timers so runAnalysis() stays synchronous for every test that calls it.
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(() => { vi.useRealTimers(); });
+
 function runAnalysis() {
   fireEvent.click(screen.getByRole("button", { name: /Suggest probable objective assessment/ }));
+  act(() => { vi.advanceTimersByTime(600); });
 }
 
 describe("ConditionObjectiveAssessment — Cervical", () => {

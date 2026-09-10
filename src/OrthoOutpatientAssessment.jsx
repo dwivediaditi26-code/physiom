@@ -387,6 +387,34 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
       return next;
     });
   }
+  // "Fill guided form" on a Condition Objective Assessment instrument
+  // (ConditionObjectiveAssessment.jsx's Outcome Measures card) -- adds the
+  // outcomeMeasure step if the condition didn't already promote it (same
+  // insert-in-canonical-order pattern as openGait above), then jumps
+  // straight into that measure's guided fill flow via the pendingStart flag
+  // OrthoOutcomeMeasureFlow.jsx reads on mount.
+  function openOutcomeMeasure(measureId) {
+    setData((prev) => ({ ...prev, outcomeMeasure: { ...prev.outcomeMeasure, pendingStart: { measureId, returnTo: "objectiveAI" } } }));
+    setStepOrder((prev) => {
+      let next = prev;
+      if (!prev.includes("outcomeMeasure")) {
+        const reviewIdx = prev.indexOf("review");
+        const insertAt = reviewIdx === -1 ? prev.length : reviewIdx;
+        const anchor = ORDERED_ALL.indexOf("outcomeMeasure");
+        let pos = insertAt;
+        for (let i = 0; i < prev.length; i++) {
+          if (ORDERED_ALL.indexOf(prev[i]) > anchor) {
+            pos = i;
+            break;
+          }
+        }
+        next = [...prev];
+        next.splice(pos, 0, "outcomeMeasure");
+      }
+      setStep(next.indexOf("outcomeMeasure"));
+      return next;
+    });
+  }
   function toggleAssessment(id) {
     const active = stepOrder.includes(id);
     if (active) {
@@ -554,7 +582,12 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
             />
           )}
           {current.id === "objectiveAI" && (
-            <ConditionObjectiveAssessment data={data} setData={setData} selectedRegions={selectedRegions} />
+            <ConditionObjectiveAssessment
+              data={data}
+              setData={setData}
+              selectedRegions={selectedRegions}
+              onStartOutcomeMeasure={openOutcomeMeasure}
+            />
           )}
           {current.id === "edema" && (
             <>
@@ -575,7 +608,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "functionalAssessment" && <FunctionalAssessmentSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
-          {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} />}
+          {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} jumpTo={jumpTo} />}
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
           {current.id === "carePlan" && (
             <>

@@ -56,6 +56,7 @@ import elbowWristHandConditionsRaw from "./elbowWristHandConditions.json";
 import { HIP_ROM_MOVEMENTS } from "./hipConditionAssessmentData.js";
 import { KNEE_ROM_MOVEMENTS } from "./kneeConditionAssessmentData.js";
 import { ANKLE_FOOT_ROM_MOVEMENTS } from "./ankleFootConditionAssessmentData.js";
+import { MEASURES, matchMeasureIdForInstrument } from "./orthoOutcomeMeasureData.js";
 
 const HAIRLINE = "#E5E7EB";
 
@@ -411,13 +412,23 @@ function FindingInterpretations({ category, selected, interpretations }) {
   );
 }
 
-export default function ConditionObjectiveAssessment({ data, setData, selectedRegions }) {
+export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, onStartOutcomeMeasure }) {
   const regions = selectedRegions || [];
   const config = REGION_CONFIGS.find((cfg) => regions.some(cfg.matchesRegion)) || REGION_CONFIGS[0];
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
   const [analysisRun, setAnalysisRun] = useState(false);
+  // Brief "thinking" state between tap and the ranked conditions appearing
+  // — purely a UI beat (the real differential itself is synchronous), so
+  // the AI-assistant framing reads as doing work rather than an instant
+  // toggle (2026-09-10, Aditi: "motion graphic when we click on it").
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  function runSuggestAnalysis() {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
+    setTimeout(() => { setAnalysisRun(true); setIsAnalyzing(false); }, 550);
+  }
 
   const regionPicked = regions.some(config.matchesRegion);
 
@@ -494,22 +505,27 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           showing them unconditionally. */}
       <button
         type="button"
-        onClick={() => setAnalysisRun(true)}
+        className={"obj-ai-suggest-btn" + (isAnalyzing ? " thinking" : "")}
+        onClick={runSuggestAnalysis}
+        disabled={isAnalyzing}
         style={{
-          position: "sticky", top: 0, zIndex: 20, width: "100%", height: 52, padding: "0 14px", borderRadius: 12,
-          border: `1px solid ${BRAND.purple}30`, background: `${BRAND.purple}0f`, cursor: "pointer", fontFamily: "inherit",
+          position: "sticky", top: 0, zIndex: 20, width: "100%", minHeight: 52, padding: "12px 14px", borderRadius: 12,
+          cursor: isAnalyzing ? "default" : "pointer", fontFamily: "inherit",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 12, marginBottom: 4, textAlign: "left",
         }}
       >
-        <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
-          <span style={{ fontSize: "0.78rem", fontWeight: 800, color: BRAND.purple, display: "flex", alignItems: "center", gap: 5 }}>
-            🧠 Suggest probable objective assessment
+        <span style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+          <span className="obj-ai-suggest-title" style={{ fontSize: "0.78rem", fontWeight: 800, display: "flex", alignItems: "center", gap: 5, lineHeight: 1.35 }}>
+            <span className={isAnalyzing ? "obj-ai-thinking-icon" : undefined}>🧠</span>
+            {isAnalyzing ? "Analyzing…" : "Suggest probable objective assessment"}
           </span>
-          <span style={{ fontSize: "0.7rem", color: BRAND.gray }}>
+          <span className="obj-ai-suggest-sub" style={{ fontSize: "0.7rem", lineHeight: 1.3 }}>
             {engineResult ? `${config.label} — ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched from Subjective` : `${config.label} — no Subjective data yet`}
           </span>
         </span>
-        <span style={{ fontSize: "0.76rem", fontWeight: 800, color: BRAND.purple, flexShrink: 0 }}>{analysisRun ? "Re-run →" : "Review →"}</span>
+        {!isAnalyzing && (
+          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.76rem", fontWeight: 800, flexShrink: 0 }}>{analysisRun ? "Re-run →" : "Review →"}</span>
+        )}
       </button>
 
       {!analysisRun ? (
@@ -967,15 +983,45 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           <ModuleCard label="Outcome Measures" color={BRAND.gray} defaultOpen={false}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {(isV1 ? condition.outcome.split(";").map((s) => s.trim()).filter(Boolean) : condition.outcomeMeasures).map((instrument) => (
-                <div key={instrument}>
-                  <SubLabel>{instrument}</SubLabel>
-                  <input
-                    type="text" value={v("outcome", instrument)} onChange={(e) => sv("outcome", instrument, e.target.value)}
-                    placeholder="Enter score / activity" style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", outline: "none" }}
-                  />
-                </div>
-              ))}
+              {(isV1 ? condition.outcome.split(";").map((s) => s.trim()).filter(Boolean) : condition.outcomeMeasures).map((instrument) => {
+                const measureId = matchMeasureIdForInstrument(instrument);
+                const measure = measureId ? MEASURES[measureId] : null;
+                const history = measure ? data.outcomeMeasure?.instances?.[measureId]?.history : null;
+                const latest = history?.length ? history[history.length - 1] : null;
+                const interp = latest ? measure.interpret(latest.score) : null;
+                return (
+                  <div key={instrument}>
+                    <SubLabel>{instrument}</SubLabel>
+                    {measure ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {latest ? (
+                          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, background: "#FAFAFB" }}>
+                            <span style={{ fontSize: "0.9rem", fontWeight: 800, color: interp?.color || BRAND.ink }}>{latest.score}{measure.unit}</span>
+                            {interp && <span style={{ fontSize: "0.72rem", fontWeight: 700, color: interp.color }}>{interp.label}</span>}
+                          </div>
+                        ) : (
+                          <input
+                            type="text" value={v("outcome", instrument)} onChange={(e) => sv("outcome", instrument, e.target.value)}
+                            placeholder="Enter score / activity" style={{ flex: 1, minWidth: 0, padding: "8px 10px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", outline: "none" }}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onStartOutcomeMeasure?.(measureId)}
+                          style={{ flexShrink: 0, padding: "8px 12px", borderRadius: 8, border: "none", background: BRAND.purple || "#7C3AED", color: "#fff", fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}
+                        >
+                          {latest ? "↻ Reassess" : "▶ Fill guided form"}
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type="text" value={v("outcome", instrument)} onChange={(e) => sv("outcome", instrument, e.target.value)}
+                        placeholder="Enter score / activity" style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", outline: "none" }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </ModuleCard>
         </>

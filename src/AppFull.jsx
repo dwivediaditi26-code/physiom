@@ -2098,10 +2098,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     const treatmentDue = patients.filter(p=>Array.isArray(p.data?.tx_sessions)&&p.data.tx_sessions.length>0).length;
                     const firstName = currentUser?.name || currentUser?.email?.split("@")[0] || null;
                     const SUBTABS = [
-                      ["today","Today",Stethoscope,null],
-                      ["patients","Patients",UsersIcon,null],
-                      ["treatment","Treatment",PillIcon,treatmentDue],
-                      ["assessment","Assess",ClipboardListIcon,null],
+                      ["today","Today",Stethoscope,null,""],
+                      ["patients","Patients",UsersIcon,patients.length,""],
+                      ["treatment","Treatment",PillIcon,treatmentDue,"due"],
+                      ["assessment","Assess",ClipboardListIcon,null,""],
                     ];
                     return (
                       <div style={{background:"#fff",padding:"14px 14px 0"}}>
@@ -2114,7 +2114,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                               </div>
                             </div>
                             <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
-                              {SUBTABS.map(([k,label,Icon,badge])=>{
+                              {SUBTABS.map(([k,label,Icon,badge,badgeSuffix])=>{
                                 const active = clinicalSubTab===k;
                                 return (
                                   <button key={k} onClick={()=>setClinicalSubTab(k)} type="button"
@@ -2126,9 +2126,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                       background:active?"#fff":"transparent",
                                       boxShadow:"none"}}>
                                     {badge > 0 && (
-                                      <span style={{position:"absolute",top:-6,right:-2,fontSize:"0.56rem",fontWeight:800,
-                                        background:CLINICAL_PASTEL.mint.fg,color:"#fff",padding:"1px 6px",borderRadius:999,
-                                        whiteSpace:"nowrap"}}>{badge} due</span>
+                                      <span style={{position:"absolute",top:-8,right:-4,fontSize:"0.72rem",fontWeight:800,
+                                        background:"#10B981",color:"#fff",padding:"2px 8px",borderRadius:999,
+                                        whiteSpace:"nowrap"}}>{badge}{badgeSuffix?` ${badgeSuffix}`:""}</span>
                                     )}
                                     <span style={{width:active?32:30,height:active?32:30,borderRadius:active?11:"50%",
                                       background:"#fff",boxShadow:active?"none":"0 2px 6px rgba(0,0,0,.2)",
