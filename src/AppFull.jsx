@@ -1046,14 +1046,51 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // whatever nav state the browser landed on. If a user goes back further
   // than our first replaceState entry (state is null/foreign), fall back to
   // Home rather than leaving them on a blank pane.
+  //
+  // BUG FIX (2026-09-09, "there is nothing pop up is coming when leaving mid
+  // way"): the leave-assessment gate lives inside navTo() and explicitly
+  // skips itself for `__fromPopState` calls (to avoid looping when the gate's
+  // own Save&Leave/Leave-without-saving buttons replay a popstate-originated
+  // nav). But EVERY real exit from this app funnels through popstate --
+  // the in-header "← Back" button just calls window.history.back() (see
+  // goBack below), and so does the hardware/gesture back button -- so the
+  // gate that only fires from navTo's direct callers (bottom nav taps) was
+  // silently unreachable from the one button clinicians actually use to
+  // leave a screen. This runs the identical gate check here too: the browser
+  // has already moved history by the time popstate fires, but `active`
+  // (React state) hasn't changed yet, so the assessment screen just stays
+  // visually put while the confirm modal shows -- cancelLeave() below
+  // re-pushes the current screen's history entry if the clinician stays.
   useEffect(() => {
     const onPopState = (e) => {
       const s = e.state;
-      navTo(s?.pmNavKey || "home", s?.pmNavCtx || {}, { __fromPopState: true });
+      const targetKey = s?.pmNavKey || "home";
+      if (
+        LEAVE_GATE_TARGETS.has(targetKey) &&
+        targetKey !== activeRef.current &&
+        activePatientIdRef.current &&
+        ASSESSMENT_ACTIVE_KEYS.has(activeRef.current)
+      ) {
+        setPendingLeave({ key: targetKey, ctx: s?.pmNavCtx || {}, navOpts: { __fromPopState: true } });
+        return;
+      }
+      navTo(targetKey, s?.pmNavCtx || {}, { __fromPopState: true });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [navTo]);
+
+  // "Stay on this screen" (button or backdrop tap): if the gate was raised
+  // by a real popstate (browser/hardware Back already moved history one
+  // slot before we intercepted it), restore that slot so a second Back
+  // press still lands correctly instead of skipping over the assessment
+  // screen entirely.
+  function cancelLeave() {
+    if (pendingLeave?.navOpts?.__fromPopState) {
+      try { window.history.pushState({ pmNavKey: activeRef.current, pmNavCtx: navContext }, "", window.location.href); } catch {}
+    }
+    setPendingLeave(null);
+  }
 
   // In-header "← Back" button: defers to the real browser history (rather
   // than a hand-rolled stack) so it stays perfectly in sync with the
@@ -1272,7 +1309,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* ── Leave-assessment save/demographics gate ───────────────────────── */}
       {pendingLeave && (
         <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(17,17,27,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
-          onClick={()=>setPendingLeave(null)}>
+          onClick={cancelLeave}>
           <div style={{background:PC.surface,borderRadius:16,padding:"22px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 50px rgba(0,0,0,0.3)"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:"1.02rem",fontWeight:800,color:PC.text,marginBottom:6}}>Save this assessment?</div>
@@ -1288,7 +1325,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 style={{padding:"11px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.surface,color:PC.text,fontWeight:700,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
                 Leave without saving
               </button>
-              <button type="button" onClick={()=>setPendingLeave(null)}
+              <button type="button" onClick={cancelLeave}
                 style={{padding:"9px",borderRadius:10,border:"none",background:"none",color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
                 Stay on this screen
               </button>

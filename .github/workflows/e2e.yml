@@ -43,6 +43,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # GitHub-hosted Ubuntu runners ship with Google Chrome's apt repo
+      # (dl.google.com/linux/chrome-stable/deb) pre-registered. Playwright
+      # only needs its own bundled Chromium (not system Chrome), but
+      # --with-deps still runs `apt-get update` across ALL registered repos
+      # first, including that one -- and that repo's package index has been
+      # returning "Hash Sum mismatch" on these runners, failing the whole
+      # step before Playwright's actual install even starts. Dropping the
+      # unused repo here avoids depending on it being fixed upstream.
+      # (2026-09-09: two consecutive PR #36 e2e runs failed identically on
+      # this before any test executed.)
+      - name: Remove unused Google Chrome apt source
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 

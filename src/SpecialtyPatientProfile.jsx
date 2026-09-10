@@ -10,6 +10,8 @@ import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatient
 import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
+import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";
 import { injectViewerControls } from "./sharedClinicalData.js";
 
@@ -256,7 +258,12 @@ function carePlanCounts(cp) {
     any: problems.length || goals.length || treatments.length || sessions.length,
   };
 }
-const neuroCarePlanSnapshot = (neuro) => carePlanCounts(neuro?.neuroCarePlan);
+// NeuroCarePlanSection persists via useSectionData(data, setData,
+// "neuroCarePlan") -- and the assessment wizard saves its whole local data
+// object as patient.data.neuro (onSave("neuro", data)), same object
+// NeuroCarePlanPanel above reads/writes -- so the real path is
+// patient.data.neuro.neuroCarePlan, not a top-level key.
+const neuroCarePlanSnapshot = (pd) => carePlanCounts(pd?.neuro?.neuroCarePlan);
 const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
 
 // Ortho Care Plan — same shared CarePlanSection, fed the ortho knowledge
@@ -293,6 +300,434 @@ function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, i
     <>
       <style>{orthoStyles()}</style>
       <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA />
+    </>
+  );
+}
+
+const planUid = () => Math.random().toString(36).slice(2, 9);
+const fmtPlanDate = (iso) => { if (!iso) return ""; try { return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); } catch { return ""; } };
+
+// Read-only Problem List / Goals / Treatment Plan cards -- the "documented
+// page" itself. Shared by the current (active) plan and by any closed plan
+// pulled out of Care History, so both look identical.
+function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
+  return (
+    <>
+      {problems.length > 0 && (
+        <Card>
+          <CardTitle>Problem List</CardTitle>
+          {problems.map((p, i) => (
+            <div key={p.id} style={{ padding: "9px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{i + 1}. {p.name}</div>
+              {Array.isArray(p.findings) && p.findings.length > 0 && (
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                  {p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ")}
+                </div>
+              )}
+              {p.outcome && (
+                <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 99, color: p.outcome === "Resolved" ? "#047857" : p.outcome === "Worse" ? C.red : C.primary, background: p.outcome === "Resolved" ? C.greenBg : p.outcome === "Worse" ? "#fee2e2" : C.primaryBg }}>{p.outcome}</div>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {goals.length > 0 && (
+        <Card>
+          <CardTitle>Goals</CardTitle>
+          {["short", "long"].map((term) => {
+            const list = goals.filter((g) => g.term === term);
+            if (!list.length) return null;
+            return (
+              <div key={term} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{term === "short" ? "Short term" : "Long term"}</div>
+                {list.map((g) => {
+                  const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[g.id]) })).filter((e) => Number.isFinite(e.value));
+                  const prog = goalProgress(g, entries);
+                  const achieved = g.outcome === "Achieved" || (!g.outcome && prog.achieved);
+                  return (
+                    <div key={g.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>
+                      <span style={{ marginRight: 6, color: achieved ? C.green : C.faint }}>{achieved ? "✓" : "○"}</span>
+                      {g.measure}: {g.baseline} → {g.target} <span style={{ color: C.faint, fontSize: 11.5 }}>({g.weeks}w)</span>
+                      {g.outcome && <span style={{ marginLeft: 6, fontSize: 11, color: C.muted }}>· {g.outcome}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {treatments.length > 0 && (
+        <Card>
+          <CardTitle>Treatment Plan</CardTitle>
+          {treatments.map((t) => (
+            <div key={t.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>✓ {t.name}</div>
+          ))}
+        </Card>
+      )}
+
+      {/* Exercises prescribed via the assessment's own Exercise Prescription
+          step (a separate, region-browsable library picker with its own
+          sets/reps/hold/frequency dosing) never showed up here -- only the
+          Care Plan's own goal-linked "treatments" did (2026-09-09, Aditi:
+          "add exercise of ortho in treatment tab as there is [a] separate
+          exercise section"). Read-only listing, same {label,value} rows the
+          assessment's own Review screen already uses. */}
+      {exerciseRows && exerciseRows.length > 0 && (
+        <Card>
+          <CardTitle>Prescribed Exercises</CardTitle>
+          {exerciseRows.map((r, i) => (
+            <div key={i} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>
+              🏋 {r.label} <span style={{ color: C.muted, fontSize: 11.5 }}>— {r.value}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+    </>
+  );
+}
+
+// Close the current plan & reassess (2026-09-09, Aditi's spec: never edit
+// the old plan into the new one -- close it, snapshot it into history
+// forever, and start a fresh plan pre-filled with whatever's carried
+// forward). One screen: mark what happened to each problem/goal, choose
+// what carries forward, name the new plan, confirm.
+function ReassessModal({ cp, planLabel, onClose, onConfirm }) {
+  const problems = Array.isArray(cp.problems) ? cp.problems : [];
+  const goals = Array.isArray(cp.goals) ? cp.goals : [];
+  const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
+  const [problemStatus, setProblemStatus] = useState(() => Object.fromEntries(problems.map((p) => [p.id, "Improved"])));
+  const [carryProblem, setCarryProblem] = useState(() => Object.fromEntries(problems.map((p) => [p.id, true])));
+  const [goalStatus, setGoalStatus] = useState(() => Object.fromEntries(goals.map((g) => [g.id, "Partially achieved"])));
+  const [carryGoal, setCarryGoal] = useState(() => Object.fromEntries(goals.map((g) => [g.id, true])));
+  const [carryTx, setCarryTx] = useState(() => Object.fromEntries(treatments.map((t) => [t.id, true])));
+  const [newLabel, setNewLabel] = useState("");
+
+  const PROBLEM_STATUSES = ["Resolved", "Improved", "Ongoing", "Worse"];
+  const GOAL_STATUSES = ["Achieved", "Partially achieved", "Not achieved"];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 4000, display: "flex", alignItems: "flex-end" }}>
+      <div style={{ background: C.bg, width: "100%", maxHeight: "92vh", overflowY: "auto", borderRadius: "18px 18px 0 0", padding: "18px 16px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>Close Plan & Reassess</div>
+          <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 18, cursor: "pointer", color: C.muted }}>✕</button>
+        </div>
+        <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 14 }}>{planLabel} will be closed and kept in Care History exactly as it stands. Choose what carries into the next plan.</div>
+
+        {problems.length > 0 && (
+          <Card>
+            <CardTitle>What happened to each problem?</CardTitle>
+            {problems.map((p, i) => (
+              <div key={p.id} style={{ padding: "10px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6 }}>{p.name}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                  {PROBLEM_STATUSES.map((s) => (
+                    <button key={s} type="button" onClick={() => {
+                      setProblemStatus((m) => ({ ...m, [p.id]: s }));
+                      if (s === "Resolved") setCarryProblem((m) => ({ ...m, [p.id]: false }));
+                    }}
+                      style={{ padding: "5px 10px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: "pointer", border: `1.5px solid ${problemStatus[p.id] === s ? C.primary : C.border}`, background: problemStatus[p.id] === s ? C.primaryBg : "#fff", color: problemStatus[p.id] === s ? C.primary : C.text }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
+                  <input type="checkbox" checked={!!carryProblem[p.id]} onChange={(e) => setCarryProblem((m) => ({ ...m, [p.id]: e.target.checked }))} />
+                  Carry forward into the new plan
+                </label>
+              </div>
+            ))}
+          </Card>
+        )}
+
+        {goals.length > 0 && (
+          <Card>
+            <CardTitle>Goals</CardTitle>
+            {goals.map((g, i) => (
+              <div key={g.id} style={{ padding: "10px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6 }}>{g.measure}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                  {GOAL_STATUSES.map((s) => (
+                    <button key={s} type="button" onClick={() => {
+                      setGoalStatus((m) => ({ ...m, [g.id]: s }));
+                      if (s === "Achieved") setCarryGoal((m) => ({ ...m, [g.id]: false }));
+                    }}
+                      style={{ padding: "5px 10px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: "pointer", border: `1.5px solid ${goalStatus[g.id] === s ? C.primary : C.border}`, background: goalStatus[g.id] === s ? C.primaryBg : "#fff", color: goalStatus[g.id] === s ? C.primary : C.text }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.text, cursor: "pointer" }}>
+                  <input type="checkbox" checked={!!carryGoal[g.id]} onChange={(e) => setCarryGoal((m) => ({ ...m, [g.id]: e.target.checked }))} />
+                  Carry forward
+                </label>
+              </div>
+            ))}
+          </Card>
+        )}
+
+        {treatments.length > 0 && (
+          <Card>
+            <CardTitle>Treatment</CardTitle>
+            {treatments.map((t, i) => (
+              <label key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderTop: i ? `1px solid ${C.border}` : "none", fontSize: 13, color: C.text, cursor: "pointer" }}>
+                <input type="checkbox" checked={!!carryTx[t.id]} onChange={(e) => setCarryTx((m) => ({ ...m, [t.id]: e.target.checked }))} />
+                {t.name} <span style={{ color: C.faint, fontSize: 11.5 }}>— continue</span>
+              </label>
+            ))}
+          </Card>
+        )}
+
+        <Card>
+          <CardTitle>New plan name</CardTitle>
+          <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g. Functional Progression" style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13.5, fontFamily: "inherit" }} />
+        </Card>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+          <GhostBtn onClick={onClose} style={{ flex: 1 }}>Cancel</GhostBtn>
+          <PrimaryBtn style={{ flex: 2 }} onClick={() => onConfirm({ problemStatus, carryProblem, goalStatus, carryGoal, carryTx, newLabel: newLabel.trim() })}>Create New Plan →</PrimaryBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Vertical Clinical Journey timeline: current plan -> its sessions (newest
+// first) -> each closed plan -> its sessions, all the way back to the
+// first plan. Read-only; tapping a plan or session jumps to its detail via
+// the same viewers ClinicalPlanPage already has (onViewPlan/onViewSession).
+function ClinicalJourney({ cp, history, planLabel, onViewPlan, onViewSession }) {
+  const blocks = [
+    { kind: "plan", id: null, label: planLabel, active: true, sessions: Array.isArray(cp.sessions) ? cp.sessions : [] },
+    ...[...history].reverse().map((h) => ({ kind: "plan", id: h.id, label: h.label, active: false, sessions: Array.isArray(h.sessions) ? h.sessions : [] })),
+  ];
+  const anySessions = blocks.some((b) => b.sessions.length);
+  if (!blocks.some((b) => b.active === false) && !anySessions) return null; // nothing to show beyond the plain Current Plan card yet
+
+  return (
+    <Card>
+      <CardTitle>Clinical Journey</CardTitle>
+      <div style={{ position: "relative", paddingLeft: 18 }}>
+        <div style={{ position: "absolute", left: 5, top: 4, bottom: 4, width: 2, background: C.border }} />
+        {blocks.map((b) => (
+          <div key={b.id || "current"}>
+            <div style={{ position: "relative", padding: "6px 0" }}>
+              <div style={{ position: "absolute", left: -18, top: 9, width: 10, height: 10, borderRadius: "50%", background: b.active ? C.primary : C.faint, border: "2px solid #fff", boxShadow: `0 0 0 1px ${b.active ? C.primary : C.faint}` }} />
+              <button onClick={() => b.id && onViewPlan(b.id)} disabled={!b.id} style={{ background: "none", border: "none", padding: 0, textAlign: "left", cursor: b.id ? "pointer" : "default", fontSize: 13.5, fontWeight: 800, color: b.active ? C.primary : C.text }}>
+                {b.label}{b.active ? " — Active" : ""}
+              </button>
+            </div>
+            {[...b.sessions].reverse().map((s) => (
+              <div key={s.id} style={{ position: "relative", padding: "3px 0 3px 4px" }}>
+                <div style={{ position: "absolute", left: -15, top: 8, width: 6, height: 6, borderRadius: "50%", background: C.border }} />
+                <button onClick={() => onViewSession(b.id, s)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: C.muted }}>
+                  Session {s.no} · {s.date}
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// Read-only detail for one session, opened from the Clinical Journey
+// timeline. Deliberately simple (no KBContext/goalProgress dependency,
+// unlike the in-editor SessionReviewCard) since it's just a history view.
+function SessionDetailCard({ session, goals, treatments }) {
+  const doneItems = (session.items || []).filter((it) => it.done);
+  return (
+    <>
+      <Card>
+        <CardTitle>Session {session.no}</CardTitle>
+        <div style={{ fontSize: 12.5, color: C.muted }}>{session.date}</div>
+      </Card>
+      {goals.length > 0 && (
+        <Card>
+          <CardTitle>Measures recorded</CardTitle>
+          {goals.map((g) => {
+            const v = session.measures?.[g.id];
+            if (v == null || v === "") return null;
+            return <div key={g.id} style={{ fontSize: 13, padding: "4px 0", color: C.text }}>{g.measure}: <b>{v}</b></div>;
+          })}
+        </Card>
+      )}
+      <Card>
+        <CardTitle>Treatment performed ({doneItems.length}/{(session.items || []).length})</CardTitle>
+        {doneItems.length === 0 && <EmptyRow>Nothing marked done.</EmptyRow>}
+        {doneItems.map((it) => {
+          const t = treatments.find((x) => x.id === it.treatmentId);
+          return <div key={it.treatmentId} style={{ fontSize: 13, padding: "4px 0", color: C.text }}>✓ {t?.name || it.treatmentId} {it.actual && <span style={{ color: C.muted }}>— {it.actual}</span>}</div>;
+        })}
+      </Card>
+      {session.note && (
+        <Card>
+          <CardTitle>Session note</CardTitle>
+          <div style={{ fontSize: 13, color: C.text }}>{session.note}</div>
+        </Card>
+      )}
+    </>
+  );
+}
+
+/* ============================================================
+   PLAN & PROGRESS (2026-09-09, Aditi: "all the things we have added
+   in the problem list, goals, treatment ... should show in a page
+   like format ... and have a button to edit it" + the Care Plan
+   Versions spec: "never edit the old plan into the new plan -- close
+   the old plan and create a new plan").
+
+   Phase 1: a documented, read-only "page" of the CURRENT care plan
+   (Problem List -> Goals -> Treatment Plan), with an Edit toggle into
+   the existing live NeuroCarePlanPanel/OrthoCarePlanPanel editor
+   (unchanged).
+
+   Phase 2: "Close Plan & Reassess" actually closes the current plan --
+   frozen forever into carePlanHistory (patient.data.neuro.carePlanHistory
+   for Neuro, patient.data.ortho_care_plan_history for Ortho) -- and opens
+   a new one pre-filled with whatever the therapist chose to carry
+   forward. Care History now lists real closed plans, each viewable in
+   the same read-only PlanDocument layout. */
+function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoParsed }) {
+  const [editing, setEditing] = useState(false);
+  const [reassessing, setReassessing] = useState(false);
+  const [viewingPlanId, setViewingPlanId] = useState(null);
+  const [viewingSession, setViewingSession] = useState(null); // { planId, session }
+  const cp = isNeuro ? (patient?.data?.neuro?.neuroCarePlan || {}) : (patient?.data?.ortho_care_plan || {});
+  const history = (isNeuro ? patient?.data?.neuro?.carePlanHistory : patient?.data?.ortho_care_plan_history) || [];
+  const problems = Array.isArray(cp.problems) ? cp.problems : [];
+  const goals = Array.isArray(cp.goals) ? cp.goals : [];
+  const treatments = Array.isArray(cp.treatments) ? cp.treatments : [];
+  const sessions = Array.isArray(cp.sessions) ? cp.sessions : [];
+  const counts = carePlanCounts(cp);
+  const planNumber = history.length + 1;
+  const planLabel = `Plan ${planNumber}${cp.planLabel ? ` — ${cp.planLabel}` : ""}`;
+  // Exercise Prescription lives alongside the assessment's own data --
+  // patient.data.neuro.neuroExercisePrescription for Neuro (the wizard
+  // saves its whole local `data` object flat under patient.data.neuro),
+  // orthoParsed.data.exercisePrescription for Ortho (parsed out of the
+  // ortho_*_assessment JSON snapshot) -- not the Care Plan's carePlan
+  // object, so there's no per-plan-version history for it; this only
+  // applies to the current (active) plan view.
+  const exerciseRows = isNeuro
+    ? formatNeuroExercisePrescriptionSection(patient?.data?.neuro?.neuroExercisePrescription || {})
+    : formatExercisePrescriptionSection(orthoParsed?.data?.exercisePrescription || {});
+
+  const saveCp = (nextCp, nextHistory) => {
+    if (isNeuro) onSaveField?.(patient.id, { neuro: { ...(patient.data.neuro || {}), neuroCarePlan: nextCp, carePlanHistory: nextHistory } });
+    else onSaveField?.(patient.id, { ortho_care_plan: nextCp, ortho_care_plan_history: nextHistory });
+  };
+
+  const confirmReassess = ({ problemStatus, carryProblem, goalStatus, carryGoal, carryTx, newLabel }) => {
+    const closedPlan = {
+      id: planUid(), label: planLabel,
+      startedAt: cp.startedAt || patient.createdAt || null,
+      closedAt: new Date().toISOString(),
+      problems: problems.map((p) => ({ ...p, outcome: problemStatus[p.id] })),
+      goals: goals.map((g) => ({ ...g, outcome: goalStatus[g.id] })),
+      treatments,
+      sessions,
+    };
+    const keptProblemIds = new Set(problems.filter((p) => carryProblem[p.id]).map((p) => p.id));
+    const keptGoalIds = new Set(goals.filter((g) => carryGoal[g.id] && keptProblemIds.has(g.problemId)).map((g) => g.id));
+    const nextCp = {
+      planLabel: newLabel || "",
+      startedAt: new Date().toISOString(),
+      problems: problems.filter((p) => keptProblemIds.has(p.id)),
+      goals: goals.filter((g) => keptGoalIds.has(g.id)),
+      treatments: treatments.filter((t) => carryTx[t.id] && (t.goalIds || []).some((gid) => keptGoalIds.has(gid))),
+      sessions: [],
+    };
+    saveCp(nextCp, [...history, closedPlan]);
+    setReassessing(false);
+  };
+
+  if (editing) {
+    return (
+      <>
+        <GhostBtn onClick={() => setEditing(false)} style={{ marginBottom: 12 }}>← Back to Plan</GhostBtn>
+        {isNeuro
+          ? <NeuroCarePlanPanel patient={patient} onSaveField={onSaveField} />
+          : <OrthoCarePlanPanel patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />}
+      </>
+    );
+  }
+
+  const viewedPlan = viewingPlanId ? history.find((h) => h.id === viewingPlanId) : null;
+  if (viewedPlan) {
+    return (
+      <>
+        <GhostBtn onClick={() => setViewingPlanId(null)} style={{ marginBottom: 12 }}>← Back to Care History</GhostBtn>
+        <Card>
+          <CardTitle>{viewedPlan.label}</CardTitle>
+          <div style={{ fontSize: 12.5, color: C.muted }}>{fmtPlanDate(viewedPlan.startedAt)} – {fmtPlanDate(viewedPlan.closedAt)}</div>
+        </Card>
+        <PlanDocument problems={viewedPlan.problems || []} goals={viewedPlan.goals || []} treatments={viewedPlan.treatments || []} sessions={viewedPlan.sessions || []} />
+      </>
+    );
+  }
+
+  if (viewingSession) {
+    const owningPlan = viewingSession.planId ? history.find((h) => h.id === viewingSession.planId) : null;
+    const ownerGoals = owningPlan ? (owningPlan.goals || []) : goals;
+    const ownerTreatments = owningPlan ? (owningPlan.treatments || []) : treatments;
+    return (
+      <>
+        <GhostBtn onClick={() => setViewingSession(null)} style={{ marginBottom: 12 }}>← Back to Journey</GhostBtn>
+        <SessionDetailCard session={viewingSession.session} goals={ownerGoals} treatments={ownerTreatments} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {reassessing && (
+        <ReassessModal cp={cp} planLabel={planLabel} onClose={() => setReassessing(false)} onConfirm={confirmReassess} />
+      )}
+
+      <Card>
+        <CardTitle action={<PrimaryBtn onClick={() => setEditing(true)}>✏️ Edit Plan</PrimaryBtn>}>Current Plan</CardTitle>
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 6 }}>{planLabel} — Active</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 12.5, color: C.muted, marginBottom: counts.any ? 12 : 0 }}>
+          <span>{counts.problems} Problem{counts.problems === 1 ? "" : "s"}</span>
+          <span>{counts.goals} Goal{counts.goals === 1 ? "" : "s"}</span>
+          <span>{counts.treatments} Treatment{counts.treatments === 1 ? "" : "s"}</span>
+          <span>{counts.sessions} Session{counts.sessions === 1 ? "" : "s"}</span>
+          {counts.avgProgress != null && <span style={{ color: C.primary, fontWeight: 700 }}>{counts.avgProgress}% avg progress</span>}
+        </div>
+        {counts.any && <GhostBtn onClick={() => setReassessing(true)} style={{ width: "100%" }}>Close Plan & Reassess</GhostBtn>}
+      </Card>
+
+      {!counts.any && <Card><EmptyRow>No problems, goals or treatment added yet. Tap Edit Plan to get started.</EmptyRow></Card>}
+
+      <PlanDocument problems={problems} goals={goals} treatments={treatments} sessions={sessions} exerciseRows={exerciseRows} />
+
+      <Card>
+        <CardTitle>Care History</CardTitle>
+        {history.length === 0 && <EmptyRow>No previous plans yet — this is the patient's first care plan.</EmptyRow>}
+        {[...history].reverse().map((h) => {
+          const hc = carePlanCounts(h);
+          return (
+            <button key={h.id} onClick={() => setViewingPlanId(h.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", textAlign: "left", padding: "10px 0", borderTop: `1px solid ${C.border}`, background: "none", border: "none", borderTopWidth: 1, cursor: "pointer" }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.label}</div>
+                <div style={{ fontSize: 11.5, color: C.muted }}>{fmtPlanDate(h.startedAt)} – {fmtPlanDate(h.closedAt)} · {hc.problems} Problems · {hc.goals} Goals</div>
+              </div>
+              <span style={{ color: C.primary, fontWeight: 700, fontSize: 12 }}>View →</span>
+            </button>
+          );
+        })}
+      </Card>
+
+      <ClinicalJourney
+        cp={cp} history={history} planLabel={planLabel}
+        onViewPlan={(id) => setViewingPlanId(id)}
+        onViewSession={(planId, session) => setViewingSession({ planId, session })}
+      />
     </>
   );
 }
@@ -378,7 +813,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
     { k: "overview", label: "Overview" },
     { k: "assessment", label: "Assessment" },
     { k: "progress", label: "Progress" },
-    { k: "treatment", label: "Treatment" },
+    { k: "treatment", label: "Plan & Progress" },
     { k: "home", label: "Home" },
     { k: "documents", label: "Docs" },
     { k: "posture", label: "Posture" },
@@ -500,7 +935,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
           {/* Care Plan snapshot (neuro or ortho) — glanceable status, links
               into the Treatment tab where it's fully editable. */}
           {(hasNeuro || hasOrtho) && (() => {
-            const snap = hasNeuro ? neuroCarePlanSnapshot(d.neuro) : orthoCarePlanSnapshot(d);
+            const snap = hasNeuro ? neuroCarePlanSnapshot(d) : orthoCarePlanSnapshot(d);
             return (
               <Card>
                 <CardTitle>Care Plan</CardTitle>
@@ -673,12 +1108,12 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         </>
       )}
 
-      {/* ═══ TREATMENT ═══ */}
+      {/* ═══ PLAN & PROGRESS ═══ */}
       {tab === "treatment" && hasNeuro && (
-        <NeuroCarePlanPanel key="cp-treatment" patient={patient} onSaveField={onSaveField} />
+        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro />
       )}
       {tab === "treatment" && !hasNeuro && hasOrtho && (
-        <OrthoCarePlanPanel key="ocp-treatment" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
+        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
       )}
       {tab === "treatment" && !hasNeuro && !hasOrtho && (
         <>

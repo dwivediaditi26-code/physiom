@@ -14,6 +14,7 @@ import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection,
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
 import ConditionObjectiveAssessment from "./ConditionObjectiveAssessment.jsx";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
+import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { saveTemplate } from "./orthoTemplates.js";
@@ -65,6 +66,7 @@ function formatPalpationSection(section) {
 // region-driven sections (ROM/MMT/Special Tests/Palpation/...) correctly
 // instead of falling back to the generic Object.entries flattener.
 export const orthoSummaryFormatters = {
+  carePlan: formatCarePlanSection,
   subjective: formatSubjectiveSection,
   redFlags: formatRedFlagsSection,
   pain: formatPainSection,
@@ -342,6 +344,12 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];
+  // OrthoCarePlanStep persists straight to the patient record
+  // (patientData.ortho_care_plan via onSave), bypassing this wizard's own
+  // local data/setData -- so the "carePlan" step's data never lands in
+  // `data.carePlan`. The Review screen reads data[step.id] for every step,
+  // so without this merge it always saw an empty carePlan section.
+  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -588,7 +596,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
-                data={data}
+                data={reviewData}
                 onEdit={jumpTo}
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
                 formatters={orthoSummaryFormatters}
@@ -654,7 +662,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
-                data={data}
+                data={reviewData}
                 onEdit={(id) => {
                   jumpTo(id);
                   setReviewOpen(false);
