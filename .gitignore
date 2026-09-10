@@ -7,3 +7,13 @@ test-results
 e2e/login.local.json
 # Added by code-review-graph
 .code-review-graph/
+.DS_Store
+.claude/
+
+# Capacitor / Android native project build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/.idea/
