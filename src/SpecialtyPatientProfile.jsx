@@ -932,31 +932,47 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             {(hasCardio || hasNeuro) && <LinkBtn onClick={() => setTab("assessment")}>View assessment →</LinkBtn>}
           </Card>
 
-          {/* Care Plan snapshot (neuro or ortho) — glanceable status, links
-              into the Treatment tab where it's fully editable. */}
+          {/* Care Plan snapshot (neuro and/or ortho) — glanceable status,
+              links into the Treatment tab where it's fully editable. Shows
+              both specialties' snapshots when a patient has both, instead
+              of silently dropping one. */}
           {(hasNeuro || hasOrtho) && (() => {
-            const snap = hasNeuro ? neuroCarePlanSnapshot(d) : orthoCarePlanSnapshot(d);
+            const snaps = [
+              hasNeuro && { label: "Neuro", ...neuroCarePlanSnapshot(d) },
+              hasOrtho && { label: "Ortho", ...orthoCarePlanSnapshot(d) },
+            ].filter(Boolean);
             return (
               <Card>
                 <CardTitle>Care Plan</CardTitle>
-                {!snap.any ? (
+                {snaps.every((snap) => !snap.any) ? (
                   <EmptyRow>No problems or goals set yet.</EmptyRow>
                 ) : (
-                  <>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
-                      {[["Problems", snap.problems], ["Goals", snap.goals], ["Treatments", snap.treatments], ["Sessions", snap.sessions]].map(([l, v]) => (
-                        <div key={l} style={{ flex: "1 0 auto", minWidth: 64, textAlign: "center", background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 6px" }}>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: "#7c3aed" }}>{v}</div>
-                          <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 600 }}>{l}</div>
-                        </div>
-                      ))}
+                  snaps.map((snap) => (
+                    <div key={snap.label} style={{ marginBottom: 10 }}>
+                      {snaps.length > 1 && (
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.muted, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.3 }}>{snap.label}</div>
+                      )}
+                      {!snap.any ? (
+                        <EmptyRow>No problems or goals set yet.</EmptyRow>
+                      ) : (
+                        <>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+                            {[["Problems", snap.problems], ["Goals", snap.goals], ["Treatments", snap.treatments], ["Sessions", snap.sessions]].map(([l, v]) => (
+                              <div key={l} style={{ flex: "1 0 auto", minWidth: 64, textAlign: "center", background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 6px" }}>
+                                <div style={{ fontSize: 18, fontWeight: 900, color: "#7c3aed" }}>{v}</div>
+                                <div style={{ fontSize: 10.5, color: C.muted, fontWeight: 600 }}>{l}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {snap.avgProgress != null && (
+                            <div style={{ fontSize: 13, color: C.text, marginTop: 6 }}>
+                              Average goal progress: <b style={{ color: "#7c3aed" }}>{snap.avgProgress}%</b>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
-                    {snap.avgProgress != null && (
-                      <div style={{ fontSize: 13, color: C.text, marginTop: 6 }}>
-                        Average goal progress: <b style={{ color: "#7c3aed" }}>{snap.avgProgress}%</b>
-                      </div>
-                    )}
-                  </>
+                  ))
                 )}
                 <LinkBtn onClick={() => setTab("treatment")}>Open Care Plan →</LinkBtn>
               </Card>
@@ -1033,6 +1049,19 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <span style={{ fontSize: 24 }}>🦴</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
+                {/* Follow-up/repeat visit for this same patient (2026-09-09,
+                    Aditi: "select from old patient data ... should extract
+                    the subjective assessment from ortho list of old
+                    patient"). The AI Subjective screen's "Select from old
+                    patient data" option reads whatever patient is currently
+                    active -- reachable only from Home/Dashboard's generic
+                    "Start with AI" before now, which always blanks the
+                    active patient first, so that option could never find
+                    anything. This button starts the same AI flow without
+                    touching the patient already selected by viewing this
+                    profile, so listOldPatientRecords() sees their real
+                    saved assessment(s). */}
+                <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { entryMode: "ai" })} style={{ padding: "6px 12px", fontSize: 12 }}>🔄 New Assessment</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               <OrthoAssessmentSummary
@@ -1065,7 +1094,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {tab === "progress" && hasNeuro && (
         <NeuroCarePlanPanel key="cp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
       )}
-      {tab === "progress" && !hasNeuro && hasOrtho && (
+      {tab === "progress" && hasOrtho && (
         <OrthoCarePlanPanel key="ocp-progress" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="progress" />
       )}
       {tab === "progress" && !hasNeuro && !hasOrtho && (
@@ -1110,10 +1139,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
       {/* ═══ PLAN & PROGRESS ═══ */}
       {tab === "treatment" && hasNeuro && (
-        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro />
+        <ClinicalPlanPage key="plan-treatment-neuro" patient={patient} onSaveField={onSaveField} isNeuro />
       )}
-      {tab === "treatment" && !hasNeuro && hasOrtho && (
-        <ClinicalPlanPage key="plan-treatment" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
+      {tab === "treatment" && hasOrtho && (
+        <ClinicalPlanPage key="plan-treatment-ortho" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
       )}
       {tab === "treatment" && !hasNeuro && !hasOrtho && (
         <>
