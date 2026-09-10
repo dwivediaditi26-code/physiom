@@ -11,7 +11,6 @@ import { GeneralObservationSection, formatGeneralObservationSection } from "./or
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { palpationStructureRows } from "./orthoPalpationData.js";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
-import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
 import ConditionObjectiveAssessment from "./ConditionObjectiveAssessment.jsx";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
@@ -103,15 +102,15 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
-// Suggested Objective (which already inline-covers Observation/Palpation
+// AI Objective Assessment (which already inline-covers Observation/Palpation
 // itself), skipping these four as separate steps in between. Condition-
 // wise/General/Templates entries keep the full BASE_IDS sequence.
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -131,7 +130,6 @@ const STEP_META = {
   pain: { icon: "😖", label: "Pain" },
   observation: { icon: "👁️", label: "General Observation" },
   palpation: { icon: "🖐️", label: "Palpation" },
-  suggest: { icon: "🧠", label: "Suggested Objective" },
   objectiveAI: { icon: "🧭", label: "AI Objective Assessment" },
   edema: { icon: "💧", label: "Edema" },
   rom: { icon: "📐", label: "ROM" },
@@ -541,18 +539,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
             />
           )}
           {current.id === "palpation" && <PalpationSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
-          {current.id === "suggest" && (
-            <OrthoSuggestObjectiveStep
-              data={data}
-              setData={setData}
-              selectedRegions={selectedRegions}
-              condition={condition}
-              activeIds={new Set(stepOrder)}
-              onToggle={toggleAssessment}
-              library={ADD_LIBRARY}
-              onJump={jumpTo}
-            />
-          )}
           {current.id === "objectiveAI" && (
             <ConditionObjectiveAssessment data={data} setData={setData} selectedRegions={selectedRegions} />
           )}
