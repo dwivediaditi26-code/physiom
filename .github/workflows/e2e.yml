@@ -24,14 +24,16 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Was 20. Suite has grown to 114 tests, 2 workers, 2 retries, 90s/test --
-    # a bad run (several genuine failures each burning 3x90s) can legitimately
-    # need well over 20 minutes just to finish and produce a report, let alone
-    # pass. A run that gets cut off mid-way produces confusing partial output
-    # (old errors mixed with new, empty artifacts) that looks like a fix
-    # didn't take when it's actually just an unfinished run. 45 min gives a
-    # full-suite run real room to complete either way.
-    timeout-minutes: 45
+    # Was 20, then 45. Suite has grown to 114 tests, 2 workers, 2 retries,
+    # 90s/test -- a clean (non-flaky) 2-worker run got cancelled at the
+    # 45-min mark twice in a row (PR #36/#37), still mid-suite (~test
+    # 60/114), zero failures, purely out of time. Bumping workers to 4
+    # instead of the timeout was tried and made things worse (resource
+    # contention against the single shared preview server caused ~108/114
+    # false failures) so reverted back to 2 workers. 90 min gives a full,
+    # non-flaky 2-worker run of the whole suite real room to actually
+    # finish and produce a report.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 

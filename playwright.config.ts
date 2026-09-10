@@ -10,6 +10,14 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // Tried bumping this to 4 (ubuntu-latest has 4 vCPUs) to fix the 45-min
+  // job timeout routinely cancelling the suite mid-run (PR #36/#37) -- that
+  // made things worse, not better: 4 parallel Chrome instances overloaded
+  // the single shared `vite preview` server, and ~108/114 tests failed on
+  // "Start Assessment button not visible within 25s" (a resource-
+  // contention symptom, not a real regression -- 2 workers never showed
+  // failures like this, only ran out of time). Back to 2; the timeout
+  // fix belongs in the workflow's job timeout-minutes instead.
   workers: process.env.CI ? 2 : undefined,
   // Per-test timeout (Playwright's own default is 30s). The cross-device
   // spec waits up to 45s for a real cloud-save round-trip to a disposable,
