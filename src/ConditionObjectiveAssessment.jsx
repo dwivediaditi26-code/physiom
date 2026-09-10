@@ -386,6 +386,31 @@ function BlueBox({ title, children }) {
   );
 }
 
+// Tap-to-reveal clinical interpretation for Observation/Posture/Palpation
+// findings -- one card per currently-selected chip, sourced from
+// condition.findingInterpretations[category][label] (authored per finding,
+// per condition; see cervicalConditions.json's C01-C10 for the pilot
+// region -- 2026-09-10, Aditi: "do the same for the clinical interpretation
+// when clicking any of the observation posture palpation", with a PDF of
+// cited, condition-specific interpretations as the source). Regions/
+// conditions without authored data for a given finding simply render
+// nothing for that finding -- no fabricated text.
+function FindingInterpretations({ category, selected, interpretations }) {
+  const values = selected ? selected.split(", ").filter(Boolean) : [];
+  const entries = values.map((label) => [label, interpretations?.[label]]).filter(([, entry]) => entry);
+  if (!entries.length) return null;
+  return (
+    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+      {entries.map(([label, entry]) => (
+        <div key={label} style={{ padding: "10px 12px", borderRadius: 10, background: BRAND.purpleFaint, border: `1px solid ${BRAND.purple}33` }}>
+          <div style={{ fontSize: "0.72rem", fontWeight: 700, color: BRAND.purpleDark, marginBottom: 4 }}>{label}</div>
+          <div style={{ fontSize: "0.78rem", color: BRAND.purpleDark, lineHeight: 1.5 }}>{entry.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ConditionObjectiveAssessment({ data, setData, selectedRegions }) {
   const regions = selectedRegions || [];
   const config = REGION_CONFIGS.find((cfg) => regions.some(cfg.matchesRegion)) || REGION_CONFIGS[0];
@@ -538,10 +563,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           <ModuleCard label="Observation" color="#7C3AED">
             <ChipGroup options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} />
+            <FindingInterpretations category="observation" selected={v("observation", "chips")} interpretations={condition.findingInterpretations?.observation} />
           </ModuleCard>
 
           <ModuleCard label="Posture" color="#3B82F6">
             <ChipGroup options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} />
+            <FindingInterpretations category="posture" selected={v("posture", "chips")} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
 
           <ModuleCard label="Palpation" color={BRAND.red}>
@@ -556,6 +583,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             ) : (
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
+            <FindingInterpretations category="palpation" selected={v("palpation", "chips")} interpretations={condition.findingInterpretations?.palpation} />
           </ModuleCard>
 
           {config.romMovements && (
