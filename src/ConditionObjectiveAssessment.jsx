@@ -707,12 +707,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <EmptyNote>{condition.cpa.reason}</EmptyNote>
             ) : (
               <>
-                {condition.cpa.muscles.map((m, i) => (
-                  <div key={i} style={{ marginBottom: 12 }}>
-                    <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
-                    <Chip active={!!v("cpa", "m" + i)} onClick={() => toggleSingle("cpa", "m" + i, v("cpa", "m" + i) ? "" : "confirmed")}>✓ Confirmed on exam</Chip>
-                  </div>
-                ))}
+                {condition.cpa.muscles.map((m, i) => {
+                  const sel = v("cpa", "m" + i);
+                  return (
+                    <div key={i} style={{ marginBottom: 12 }}>
+                      <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
+                      <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
+                    </div>
+                  );
+                })}
                 <PurpleBox title="Clinical Interpretation">{condition.cpa.pattern}</PurpleBox>
               </>
             )}
