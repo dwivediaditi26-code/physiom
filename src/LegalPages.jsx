@@ -102,8 +102,8 @@ export function PrivacyPolicy({onClose}){
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
         <li style={li}><strong>Access:</strong> request a copy of all data we hold about you</li>
         <li style={li}><strong>Correction:</strong> update inaccurate data at any time within the app</li>
-        <li style={li}><strong>Deletion:</strong> request deletion of your account and all associated patient data</li>
-        <li style={li}><strong>Portability:</strong> export your full patient database as CSV/PDF</li>
+        <li style={li}><strong>Deletion:</strong> delete your account and all associated patient data yourself, instantly, from the "Delete account" button in the app — no need to wait on an email request</li>
+        <li style={li}><strong>Portability:</strong> download your full patient database as a JSON file at any time, including as an offered step before deleting your account</li>
         <li style={li}><strong>Objection:</strong> opt out of non-essential data processing</li>
       </ul>
       <p>To exercise these rights, email <a href="mailto:physiomind3@gmail.com" style={{color:A}}>physiomind3@gmail.com</a></p>
@@ -122,7 +122,7 @@ export function PrivacyPolicy({onClose}){
       <h2 style={h2}>9. Data retention</h2>
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
         <li style={li}>Active account data: retained while your account is active</li>
-        <li style={li}>After account deletion: all data deleted within 30 days</li>
+        <li style={li}>After account deletion: your account and all patient records are deleted from our live database immediately, not within 30 days — deletion is real-time and self-service, triggered by you from within the app</li>
         <li style={li}>Backup copies: purged within 90 days of deletion request</li>
       </ul>
 

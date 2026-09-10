@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { getC } from "./utils.jsx";
 import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
 import { getEvidence } from "./physiofeed/data/db.js";
+import DeleteAccountButton from "./AccountDeletion.jsx";
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
@@ -674,6 +675,10 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
                 fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
               Sign out
             </button>
+            <DeleteAccountButton patients={patients} buttonStyle={{
+              padding:"6px 12px",borderRadius:9,border:"1px solid #FCA5A5",
+              background:"transparent",color:"#DC2626",fontSize:"0.8rem",
+              fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}/>
             {/* 2026-09-02, Aditi: "what is DP, what does it do" -- this was
                 a hardcoded "DP" placeholder (not this therapist's actual
                 initials) that opened the old Ortho Subjective assessment
