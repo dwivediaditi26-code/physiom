@@ -597,9 +597,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               {v("resisted", "test") && (
                 <GreenBox title="Findings">
                   <div style={{ fontSize: "0.78rem", color: "#166534" }}>✓ {condition.resistedTestName} — {v("resisted", "test")}</div>
+                  {interpretSttOption(v("resisted", "test")) && (
+                    <div style={{ fontSize: "0.76rem", color: "#166534", marginTop: 4, opacity: 0.85 }}>{interpretSttOption(v("resisted", "test"))}</div>
+                  )}
                 </GreenBox>
               )}
-              <PurpleBox title="Clinical Interpretation">{condition.resistedNarrative}</PurpleBox>
+              <PurpleBox title="Clinical Interpretation">
+                {sttOverallInterpretation([v("resisted", "test")], []) || condition.resistedNarrative}
+              </PurpleBox>
             </ModuleCard>
           ) : (
             <ModuleCard label="STTT — Cyriax" color="#0D9488">
@@ -626,12 +631,17 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <>
                       <div style={{ marginBottom: 12, fontSize: "0.72rem", fontWeight: 700, color: BRAND.gray, textTransform: "uppercase" }}>Resisted</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {condition.sttt.resisted.map((f, i) => (
-                          <div key={i}>
-                            <SubLabel>{f.label}</SubLabel>
-                            <ChipGroup options={f.options} selected={v("sttt", "r" + i)} onToggle={(o) => toggleSingle("sttt", "r" + i, o)} multi={false} />
-                          </div>
-                        ))}
+                        {condition.sttt.resisted.map((f, i) => {
+                          const sel = v("sttt", "r" + i);
+                          const line = interpretSttOption(sel);
+                          return (
+                            <div key={i}>
+                              <SubLabel>{f.label}</SubLabel>
+                              <ChipGroup options={f.options} selected={sel} onToggle={(o) => toggleSingle("sttt", "r" + i, o)} multi={false} />
+                              {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}
@@ -639,25 +649,48 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <>
                       <div style={{ marginTop: 16, marginBottom: 8, fontSize: "0.72rem", fontWeight: 700, color: BRAND.gray, textTransform: "uppercase" }}>Passive</div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {condition.sttt.passive.map((f, i) => (
-                          <div key={i}>
-                            <SubLabel>{f.label}</SubLabel>
-                            <ChipGroup options={f.options} selected={v("sttt", "p" + i)} onToggle={(o) => toggleSingle("sttt", "p" + i, o)} multi={false} />
-                          </div>
-                        ))}
+                        {condition.sttt.passive.map((f, i) => {
+                          const sel = v("sttt", "p" + i);
+                          const line = interpretSttOption(sel);
+                          return (
+                            <div key={i}>
+                              <SubLabel>{f.label}</SubLabel>
+                              <ChipGroup options={f.options} selected={sel} onToggle={(o) => toggleSingle("sttt", "p" + i, o)} multi={false} />
+                              {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}
-                  {(condition.sttt.findings || []).length > 0 && (
-                    <GreenBox title="Findings">
-                      {condition.sttt.findings.map((f, i) => (
-                        <div key={i} style={{ fontSize: "0.78rem", color: "#166534", marginBottom: 3 }}>✓ {f}</div>
-                      ))}
-                    </GreenBox>
-                  )}
-                  {condition.sttt.interpretation && (
-                    <PurpleBox title="Clinical Interpretation">{condition.sttt.interpretation}</PurpleBox>
-                  )}
+                  {(() => {
+                    const resistedSelections = (condition.sttt.resisted || []).map((_, i) => v("sttt", "r" + i));
+                    const passiveSelections = (condition.sttt.passive || []).map((_, i) => v("sttt", "p" + i));
+                    const anySelected = [...resistedSelections, ...passiveSelections].some(Boolean);
+                    const findingsRows = [
+                      ...(condition.sttt.resisted || []).map((f, i) => resistedSelections[i] && { label: f.label, value: resistedSelections[i] }),
+                      ...(condition.sttt.passive || []).map((f, i) => passiveSelections[i] && { label: f.label, value: passiveSelections[i] }),
+                    ].filter(Boolean);
+                    const overall = sttOverallInterpretation(resistedSelections, passiveSelections);
+                    return (
+                      <>
+                        {(anySelected ? findingsRows.length > 0 : (condition.sttt.findings || []).length > 0) && (
+                          <GreenBox title="Findings">
+                            {anySelected
+                              ? findingsRows.map((r, i) => (
+                                  <div key={i} style={{ fontSize: "0.78rem", color: "#166534", marginBottom: 3 }}>✓ {r.label} — {r.value}</div>
+                                ))
+                              : (condition.sttt.findings || []).map((f, i) => (
+                                  <div key={i} style={{ fontSize: "0.78rem", color: "#166534", marginBottom: 3 }}>✓ {f}</div>
+                                ))}
+                          </GreenBox>
+                        )}
+                        <PurpleBox title="Clinical Interpretation">
+                          {anySelected ? (overall || "Select a finding above to see the clinical interpretation.") : condition.sttt.interpretation}
+                        </PurpleBox>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </ModuleCard>
@@ -807,3 +840,98 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 // Cyriax strong/weak x painful/painless vocabulary CYRIAX_REGIONS_DATA
 // already uses elsewhere in the app).
 const RESISTED_TEST_OPTIONS_V1 = ["Strong + Painless", "Strong + Painful", "Weak + Painless", "Weak + Painful"];
+
+// The textbook Cyriax reading of the classic Strong/Weak x Painful/Painless
+// resisted-test combo — exact per standard selective tension testing
+// teaching, used whenever a chip matches one of these four (v1's own
+// RESISTED_TEST_OPTIONS_V1, or any v2 condition whose "resisted" options
+// happen to use the same wording, e.g. rotator cuff Empty Can). Matched by
+// prefix so parenthetical condition-specific suffixes like "Strong +
+// Painful (tendinopathy)" still hit.
+const CLASSIC_RESISTED_INTERPRETATION = [
+  [/^strong\s*\+\s*painless/i, "Normal — no significant lesion of the contractile unit (muscle/tendon) indicated."],
+  [/^strong\s*\+\s*painful/i, "Minor lesion of the contractile unit — e.g. tendinopathy or a minor muscle/tendon strain."],
+  [/^weak\s*\+\s*painless/i, "Suggests a complete rupture of the muscle/tendon, or a neurological lesion (nerve root or peripheral nerve). Painless weakness is a red flag — correlate with myotome/reflex testing."],
+  [/^weak\s*\+\s*painful/i, "Suggests a major partial tear or a more serious lesion of the contractile unit — correlate clinically and consider imaging."],
+];
+
+// Generic flag classifier for the enormous free-text option vocabulary
+// used across every condition's sttt.resisted/passive options (AC joint's
+// "No localized AC pain" vs a myotome's "Weak" vs a ligament test's
+// "Excessive range, soft/hypermobile end-feel", etc.) — keyword-matched
+// so every STTT chip in the app gets a genuinely reactive interpretation
+// instead of the same static per-condition text regardless of selection
+// (2026-09-10, Aditi: "whatever we select, it should interpret what it
+// should mean, according to the saved knowledge of STT").
+function sttFlags(text) {
+  const t = (text || "").toLowerCase();
+  const has = (re) => re.test(t);
+  let pain = null;
+  if (has(/\bpainless\b|no\s+[a-z\- ]*pain|no\s+(groin|leg|arm|joint-line|lateral|snap|nodule|change|reproduction)|\bnegative\b|non-?provocative|no reproduction|preserved\/?normal|usually preserved|no true weakness/)) pain = false;
+  else if (has(/\bpainful\b|\bpositive\b|reproduc|laxity reproduced|catching|clunk|pain reproduced|tender/)) pain = true;
+  let weak = null;
+  if (has(/\bweak\b|absent\/severely weak|diminished|altered/)) weak = true;
+  else if (has(/\bstrong\b|normal sensation|full active extension/)) weak = false;
+  let restricted = null;
+  if (has(/restrict|hypomobile|capsular|rigid|bony end-feel|guard/)) restricted = true;
+  else if (has(/hypermobile|excessive.*(range|mobility)/)) restricted = false;
+  let hypermobile = has(/hypermobile|excessive.*(range|mobility)/) ? true : null;
+  return { pain, weak, restricted, hypermobile };
+}
+
+// One reactive line per selected chip — checked against the exact Cyriax
+// wording first (precise textbook teaching), falling back to the generic
+// flag classifier for every other free-text option in the library.
+function interpretSttOption(option) {
+  if (!option) return null;
+  for (const [re, text] of CLASSIC_RESISTED_INTERPRETATION) {
+    if (re.test(option.trim())) return text;
+  }
+  const { pain, weak, restricted, hypermobile } = sttFlags(option);
+  const parts = [];
+  if (pain === true) parts.push("reproduces symptoms — suggests this structure/movement is a pain source");
+  if (pain === false) parts.push("no symptoms reproduced — this structure/movement is less likely the primary pain source");
+  if (weak === true) parts.push("reduced strength noted — consider partial/complete tear or neurological involvement");
+  if (weak === false) parts.push("strength preserved");
+  if (restricted === true) parts.push("restricted/capsular-pattern movement — suggests joint capsule or periarticular involvement");
+  if (hypermobile === true) parts.push("excessive range/laxity — consider ligamentous insufficiency or instability");
+  if (!parts.length) return null;
+  const line = parts.join("; ");
+  return line.charAt(0).toUpperCase() + line.slice(1) + ".";
+}
+
+// Combined paragraph for the Clinical Interpretation box, synthesizing
+// every selected resisted + passive chip instead of a single fixed string
+// — same classic-pattern-first, generic-fallback approach as
+// interpretSttOption, plus the specific resisted+passive interplay Cyriax
+// teaches (painful resisted + painless passive = contractile source;
+// painful passive too = inert structure also implicated).
+function sttOverallInterpretation(resistedSelections, passiveSelections) {
+  const resisted = resistedSelections.filter(Boolean);
+  const passive = passiveSelections.filter(Boolean);
+  if (!resisted.length && !passive.length) return null;
+
+  const sentences = [];
+  const classicHit = resisted.map((o) => CLASSIC_RESISTED_INTERPRETATION.find(([re]) => re.test(o.trim()))).find(Boolean);
+  if (classicHit) sentences.push(classicHit[1]);
+
+  resisted.forEach((o) => {
+    if (CLASSIC_RESISTED_INTERPRETATION.some(([re]) => re.test(o.trim()))) return; // already covered by classicHit
+    const line = interpretSttOption(o);
+    if (line) sentences.push(line);
+  });
+
+  const passiveFlags = passive.map(sttFlags);
+  if (passiveFlags.some((f) => f.pain === true)) {
+    sentences.push("Painful passive movement also implicates an inert structure (joint capsule, ligament, or bursa) — or a more significant contractile lesion stretched passively.");
+  } else if (passiveFlags.some((f) => f.pain === false) && !classicHit) {
+    sentences.push("Passive movement was pain-free, which points away from primary inert-structure involvement at this position.");
+  } else {
+    passive.forEach((o) => {
+      const line = interpretSttOption(o);
+      if (line) sentences.push(line);
+    });
+  }
+
+  return sentences.length ? sentences.join(" ") : null;
+}
