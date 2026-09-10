@@ -162,7 +162,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         initialAiUpdates={pendingAiUpdates}
         entryMode={effectiveEntryMode}
         initialData={resume?.data}
-        initialStep={resume ? "review" : undefined}
+        initialStep={resume ? resume.initialStep || "review" : undefined}
       />
     );
   }
