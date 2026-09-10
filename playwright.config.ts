@@ -10,14 +10,15 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // Was 2. GitHub-hosted ubuntu-latest standard runners have 4 vCPUs, so 2
-  // workers left half the machine idle -- with retries=2 and a 45-min job
-  // timeout, that meant a normal (non-flaky) full run of 114 tests across
-  // 2 projects routinely got cancelled mid-suite before finishing (seen
-  // twice on PR #36 and #37: cancelled at ~test 60/114, no failures, just
-  // out of time). 4 workers uses the whole runner and should roughly halve
-  // wall-clock time without changing what actually gets tested.
-  workers: process.env.CI ? 4 : undefined,
+  // Tried bumping this to 4 (ubuntu-latest has 4 vCPUs) to fix the 45-min
+  // job timeout routinely cancelling the suite mid-run (PR #36/#37) -- that
+  // made things worse, not better: 4 parallel Chrome instances overloaded
+  // the single shared `vite preview` server, and ~108/114 tests failed on
+  // "Start Assessment button not visible within 25s" (a resource-
+  // contention symptom, not a real regression -- 2 workers never showed
+  // failures like this, only ran out of time). Back to 2; the timeout
+  // fix belongs in the workflow's job timeout-minutes instead.
+  workers: process.env.CI ? 2 : undefined,
   // Per-test timeout (Playwright's own default is 30s). The cross-device
   // spec waits up to 45s for a real cloud-save round-trip to a disposable,
   // often-dormant free-tier Supabase project (cold-start latency on the
