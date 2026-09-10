@@ -1006,27 +1006,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     try { track('module_opened', { module: key }); } catch {}
   }, []);
 
-  // "Save this assessment?" -> Yes: only actually leaves once the
-  // patient's core demographics (Name/Age/Sex/Phone -- the same
-  // requiredOk fields the Demographics screens themselves gate on) are
-  // filled in. Incomplete: cancel the leave, and for the Ortho Screening
-  // Workflow (whose steps are real navTo targets) jump straight to its
-  // own Demographics step; the three self-contained specialty tools
-  // (ortho_new_assessment/neuro_assessment/cardio_assessment) can't be
-  // driven to a specific internal step from outside, so those just stay
-  // put with the alert telling the clinician what's missing.
+  // "Save this assessment?" -> Yes: the assessment data is already
+  // autosaved regardless (see leaveWithoutSaving below -- same navTo call),
+  // so this never actually blocks the navigation. It used to: if core
+  // demographics (Name/Age/Sex/Phone) were incomplete it would refuse to
+  // leave and just alert(), trapping the clinician on the current screen
+  // with no obvious way out. Now it always navigates, and only uses the
+  // incomplete-demographics case to show a non-blocking reminder alert
+  // (fired after navigation) so the data isn't lost mid-thought.
   function leaveConfirmSave() {
     const target = pendingLeave;
     setPendingLeave(null);
     if (!target) return;
-    if (isDemographicsComplete(dataRef.current)) {
-      navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
-      return;
+    const complete = isDemographicsComplete(dataRef.current);
+    navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
+    if (!complete) {
+      alert("Reminder: the patient's Name, Age, Sex and Phone are still incomplete. Assessment data has been saved either way.");
     }
-    if (ORTHO_WF_KEYS.has(activeRef.current)) {
-      navTo("demographics", {}, { __skipLeaveGate: true });
-    }
-    alert("Please fill in the patient's Name, Age, Sex and Phone before leaving this assessment.");
   }
   function leaveWithoutSaving() {
     const target = pendingLeave;
@@ -1314,16 +1310,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:"1.02rem",fontWeight:800,color:PC.text,marginBottom:6}}>Save this assessment?</div>
             <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18,lineHeight:1.4}}>
-              Your entries are kept either way. Choosing "Save" also checks that the patient's core details (Name, Age, Sex, Phone) are filled in before you leave.
+              Your entries are kept either way -- this only asks whether you want a reminder if the patient's core details (Name, Age, Sex, Phone) aren't filled in yet.
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               <button type="button" onClick={leaveConfirmSave}
                 style={{padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#7c3aed,#9333ea)",color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
-                Save & Leave
+                Leave (remind me if details are missing)
               </button>
               <button type="button" onClick={leaveWithoutSaving}
                 style={{padding:"11px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.surface,color:PC.text,fontWeight:700,fontSize:"0.88rem",cursor:"pointer",fontFamily:"inherit"}}>
-                Leave without saving
+                Leave
               </button>
               <button type="button" onClick={cancelLeave}
                 style={{padding:"9px",borderRadius:10,border:"none",background:"none",color:PC.muted,fontWeight:600,fontSize:"0.8rem",cursor:"pointer",fontFamily:"inherit"}}>
