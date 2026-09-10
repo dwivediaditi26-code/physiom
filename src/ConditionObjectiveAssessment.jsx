@@ -35,7 +35,7 @@
 // the "front door" ranking is bridged by normalized name, not id (see
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useMemo, useState } from "react";
-import { BRAND, useSectionData, Stepper, Segmented } from "./orthoFieldKit.jsx";
+import { BRAND, useSectionData, Stepper, Segmented, InfoButton } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
@@ -821,12 +821,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           {isV1 ? (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
-              <SubLabel>{condition.kineticChain.testName}</SubLabel>
+              <div style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink, marginBottom: 10 }}>{condition.kineticChain.testName}</div>
               {condition.kineticChain.notApplicable ? (
                 <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic" }}>{condition.kineticChain.chainEffect}</div>
               ) : (
                 <>
                   <ChipGroup options={condition.kineticChain.chipOptions} selected={v("kineticChain", "state")} onToggle={(o) => toggleSingle("kineticChain", "state", o)} multi={false} />
+                  {interpretSttOption(v("kineticChain", "state")) && (
+                    <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, marginBottom: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "state"))}</div>
+                  )}
                   <BlueBox title="Chain Effect">{condition.kineticChain.chainEffect}</BlueBox>
                 </>
               )}
@@ -837,11 +840,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <EmptyNote>{condition.kineticChain.reason}</EmptyNote>
               ) : (
                 <>
-                  <SubLabel>{condition.kineticChain.name}</SubLabel>
+                  <div style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink, marginBottom: 10 }}>{condition.kineticChain.name}</div>
                   {condition.kineticChain.fields.map((f, i) => (
                     <div key={i} style={{ marginBottom: 12 }}>
                       <SubLabel>{f.label}</SubLabel>
                       <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
+                      {interpretSttOption(v("kineticChain", "f" + i)) && (
+                        <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
+                      )}
                     </div>
                   ))}
                   <BlueBox title="Chain Effect">{condition.kineticChain.chainEffect}</BlueBox>
@@ -851,8 +857,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           )}
 
           {isV1 ? (
-            <ModuleCard label="Functional Screen" color="#16A34A" defaultOpen={false}>
-              <SubLabel>{condition.functionalScreen.testName}</SubLabel>
+            <ModuleCard label="Functional Screen" color="#16A34A">
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
+                {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.testName} text={condition.functionalScreen.note} eyebrow="NOTE" />}
+              </div>
               {condition.functionalScreen.measure.type === "number" && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: condition.functionalScreen.secondaryChip ? 14 : 0 }}>
                   <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{condition.functionalScreen.measure.label}</span>
@@ -867,6 +876,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <div style={{ marginBottom: condition.functionalScreen.secondaryChip ? 14 : 0 }}>
                   <SubLabel>{condition.functionalScreen.measure.label}</SubLabel>
                   <ChipGroup options={condition.functionalScreen.measure.options} selected={v("functionalScreen", "measure")} onToggle={(o) => toggleSingle("functionalScreen", "measure", o)} multi={false} />
+                  {interpretSttOption(v("functionalScreen", "measure")) && (
+                    <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "measure"))}</div>
+                  )}
                 </div>
               )}
               {condition.functionalScreen.measure.type === "text" && (
@@ -880,17 +892,22 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <div>
                   <SubLabel>{condition.functionalScreen.secondaryChip.label}</SubLabel>
                   <ChipGroup options={condition.functionalScreen.secondaryChip.options} selected={v("functionalScreen", "secondary")} onToggle={(o) => toggleSingle("functionalScreen", "secondary", o)} multi={false} />
+                  {interpretSttOption(v("functionalScreen", "secondary")) && (
+                    <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "secondary"))}</div>
+                  )}
                 </div>
               )}
-              {condition.functionalScreen.note && <PurpleBox title="Note">{condition.functionalScreen.note}</PurpleBox>}
             </ModuleCard>
           ) : (
-            <ModuleCard label="Functional Screen" color="#16A34A" defaultOpen={false}>
+            <ModuleCard label="Functional Screen" color="#16A34A">
               {condition.functionalScreen.applicable === false ? (
                 <EmptyNote>{condition.functionalScreen.reason}</EmptyNote>
               ) : (
                 <>
-                  <SubLabel>{condition.functionalScreen.name}</SubLabel>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
+                    {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.name} text={condition.functionalScreen.note} eyebrow="NOTE" />}
+                  </div>
                   {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
                       <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{f.label}</span>
@@ -904,9 +921,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={i} style={{ marginBottom: 14 }}>
                       <SubLabel>{f.label}</SubLabel>
                       <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
+                      {interpretSttOption(v("functionalScreen", "f" + i)) && (
+                        <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
+                      )}
                     </div>
                   ))}
-                  {condition.functionalScreen.note && <PurpleBox title="Note">{condition.functionalScreen.note}</PurpleBox>}
                 </>
               )}
             </ModuleCard>
