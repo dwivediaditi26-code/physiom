@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { NeuroCarePlanSection, CarePlanSection } from "./NeuroCarePlan.jsx";
+import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { goalProgress } from "./neuroClinicalKnowledge.js";
 import { buildOrthoKnowledge } from "./orthoClinicalKnowledge.js";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle } from "./CardiopulmonaryAssessment.jsx";
@@ -310,6 +310,62 @@ const fmtPlanDate = (iso) => { if (!iso) return ""; try { return new Date(iso).t
 // Read-only Problem List / Goals / Treatment Plan cards -- the "documented
 // page" itself. Shared by the current (active) plan and by any closed plan
 // pulled out of Care History, so both look identical.
+// Small round number badge for Problem List rows -- replaces plain "1."
+// text with something that reads as a list at a glance.
+function NumBadge({ n, style }) {
+  return (
+    <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: C.primaryBg, color: C.primary, fontSize: 11.5, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", ...style }}>{n}</span>
+  );
+}
+
+// Thin progress bar for a goal's baseline->target measure, reusing the same
+// goalProgress() pct the Overview snapshot's "Average goal progress" is
+// built from -- so a goal with real session measures shows real progress
+// here instead of just a static checkbox.
+function GoalProgressBar({ pct }) {
+  if (pct == null) return null;
+  return (
+    <div style={{ height: 5, borderRadius: 99, background: C.border, marginTop: 6, overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: pct >= 100 ? C.green : C.primary, transition: "width 0.3s" }} />
+    </div>
+  );
+}
+
+// Treatment Plan is the "what are we actually doing for this patient"
+// section -- the one a clinician glancing at the profile cares about most
+// (2026-09-10, Aditi: "treatment plan is the main thing it should show
+// very attractively and what we are doing"). Given its own visually
+// distinct card (tinted header band, icon chips per treatment, real dose
+// info via doseLine) instead of the same plain bullet-list styling as
+// Problem List/Goals.
+function TreatmentPlanCard({ treatments, goals }) {
+  const goalLabel = (id) => goals.find((g) => g.id === id)?.measure;
+  return (
+    <Card style={{ padding: 0, overflow: "hidden", border: `1.5px solid ${C.primary}22` }}>
+      <div style={{ background: `linear-gradient(135deg, ${C.primary}, #8b5cf6)`, padding: "16px 20px", color: "#fff" }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.85 }}>Treatment Plan</div>
+        <div style={{ fontSize: 15, fontWeight: 800, marginTop: 2 }}>What we're doing now</div>
+      </div>
+      <div style={{ padding: "14px 20px 18px" }}>
+        {treatments.map((t, i) => {
+          const dose = doseLine(t);
+          const linkedGoals = (t.goalIds || []).map(goalLabel).filter(Boolean);
+          return (
+            <div key={t.id} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <span style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, background: C.primaryBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{t.type ? "🩹" : "💪"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{t.name}</div>
+                {dose && <div style={{ fontSize: 12, color: C.primary, fontWeight: 600, marginTop: 2 }}>{dose}</div>}
+                {linkedGoals.length > 0 && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>For: {linkedGoals.join(", ")}</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
   return (
     <>
@@ -317,16 +373,19 @@ function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
         <Card>
           <CardTitle>Problem List</CardTitle>
           {problems.map((p, i) => (
-            <div key={p.id} style={{ padding: "9px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{i + 1}. {p.name}</div>
-              {Array.isArray(p.findings) && p.findings.length > 0 && (
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
-                  {p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ")}
-                </div>
-              )}
-              {p.outcome && (
-                <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 99, color: p.outcome === "Resolved" ? "#047857" : p.outcome === "Worse" ? C.red : C.primary, background: p.outcome === "Resolved" ? C.greenBg : p.outcome === "Worse" ? "#fee2e2" : C.primaryBg }}>{p.outcome}</div>
-              )}
+            <div key={p.id} style={{ display: "flex", gap: 10, padding: "9px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <NumBadge n={i + 1} style={{ marginTop: 1 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{p.name}</div>
+                {Array.isArray(p.findings) && p.findings.length > 0 && (
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                    {p.findings.map((f) => `${f.label}: ${f.value}`).join(" · ")}
+                  </div>
+                )}
+                {p.outcome && (
+                  <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 99, color: p.outcome === "Resolved" ? "#047857" : p.outcome === "Worse" ? C.red : C.primary, background: p.outcome === "Resolved" ? C.greenBg : p.outcome === "Worse" ? "#fee2e2" : C.primaryBg }}>{p.outcome}</div>
+                )}
+              </div>
             </div>
           ))}
         </Card>
@@ -339,17 +398,25 @@ function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
             const list = goals.filter((g) => g.term === term);
             if (!list.length) return null;
             return (
-              <div key={term} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{term === "short" ? "Short term" : "Long term"}</div>
+              <div key={term} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: C.faint, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{term === "short" ? "Short term" : "Long term"}</div>
                 {list.map((g) => {
                   const entries = sessions.map((s) => ({ value: parseFloat(s.measures?.[g.id]) })).filter((e) => Number.isFinite(e.value));
                   const prog = goalProgress(g, entries);
                   const achieved = g.outcome === "Achieved" || (!g.outcome && prog.achieved);
                   return (
-                    <div key={g.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>
-                      <span style={{ marginRight: 6, color: achieved ? C.green : C.faint }}>{achieved ? "✓" : "○"}</span>
-                      {g.measure}: {g.baseline} → {g.target} <span style={{ color: C.faint, fontSize: 11.5 }}>({g.weeks}w)</span>
-                      {g.outcome && <span style={{ marginLeft: 6, fontSize: 11, color: C.muted }}>· {g.outcome}</span>}
+                    <div key={g.id} style={{ padding: "8px 0" }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 13.5, color: C.text }}>
+                        <span style={{ color: achieved ? C.green : C.faint, fontSize: 15 }}>{achieved ? "✓" : "○"}</span>
+                        <span style={{ fontWeight: 700 }}>{g.measure}</span>
+                        <span style={{ color: C.muted }}>{g.baseline} → {g.target}</span>
+                        <span style={{ color: C.faint, fontSize: 11.5, marginLeft: "auto" }}>{g.weeks}w</span>
+                      </div>
+                      {g.outcome ? (
+                        <div style={{ fontSize: 11, color: C.muted, marginTop: 4, marginLeft: 21 }}>{g.outcome}</div>
+                      ) : (
+                        <div style={{ marginLeft: 21 }}><GoalProgressBar pct={prog.pct} /></div>
+                      )}
                     </div>
                   );
                 })}
@@ -359,14 +426,7 @@ function PlanDocument({ problems, goals, treatments, sessions, exerciseRows }) {
         </Card>
       )}
 
-      {treatments.length > 0 && (
-        <Card>
-          <CardTitle>Treatment Plan</CardTitle>
-          {treatments.map((t) => (
-            <div key={t.id} style={{ padding: "5px 0", fontSize: 13, color: C.text }}>✓ {t.name}</div>
-          ))}
-        </Card>
-      )}
+      {treatments.length > 0 && <TreatmentPlanCard treatments={treatments} goals={goals} />}
 
       {/* Exercises prescribed via the assessment's own Exercise Prescription
           step (a separate, region-browsable library picker with its own

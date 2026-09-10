@@ -539,7 +539,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   );
 }
 
-function doseLine(t) {
+export function doseLine(t) {
   // Techniques (added via TECHNIQUE_TYPES) use durationMin/frequency, not
   // the exercise library's reps/hold/equipment/assistance/freq shape.
   if (t.type) {
