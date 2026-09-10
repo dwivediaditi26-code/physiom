@@ -26,7 +26,7 @@ function runAnalysis() {
 
 describe("ConditionObjectiveAssessment — Cervical", () => {
   it("shows a hint instead of the page when no supported region is selected", () => {
-    render(<ConditionObjectiveAssessment data={{}} setData={vi.fn()} selectedRegions={[{ id: "elbow", label: "Elbow" }]} />);
+    render(<ConditionObjectiveAssessment data={{}} setData={vi.fn()} selectedRegions={[{ id: "thigh", label: "Thigh" }]} />);
     expect(screen.getByText(/Pick Cervical as a region in Subjective first/i)).toBeInTheDocument();
   });
 
@@ -146,5 +146,24 @@ describe("ConditionObjectiveAssessment — Ankle/Foot", () => {
     expect(screen.getByRole("button", { name: /^AF01/ })).toBeInTheDocument();
     expect(screen.getByText("Ankle ROM")).toBeInTheDocument();
     expect(screen.getByText("Dorsiflexion")).toBeInTheDocument();
+  });
+});
+
+describe("ConditionObjectiveAssessment — Elbow/Wrist/Hand", () => {
+  it("resolves from elbow/forearm/wrist/hand region ids, bridges the engine's EL/WR/HD ids to the library's E/W/H ids, and shows the combined ROM grid", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "elbow", label: "Elbow" }]} />);
+    runAnalysis();
+    expect(screen.getByRole("button", { name: /^E01/ })).toBeInTheDocument();
+    expect(screen.getByText("Key Exams")).toBeInTheDocument();
+    expect(screen.getByText("Cozen's test")).toBeInTheDocument();
+    expect(screen.getByText("Elbow / Wrist ROM")).toBeInTheDocument();
+    expect(screen.getByText("Supination")).toBeInTheDocument();
+  });
+
+  it("shows the fracture safety caveat (naText) instead of a blank STTT for the suspected-scaphoid-fracture condition", () => {
+    render(<Harness initialData={{}} selectedRegions={[{ id: "wrist", label: "Wrist" }]} />);
+    runAnalysis();
+    fireEvent.click(screen.getByRole("button", { name: /^W07/ }));
+    expect(screen.getByText(/Do NOT resisted-test.*scaphoid/)).toBeInTheDocument();
   });
 });

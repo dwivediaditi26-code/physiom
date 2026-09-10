@@ -1,0 +1,1843 @@
+{
+  "E01": {
+    "id": "E01",
+    "name": "Lateral Epicondylalgia (ECRB Tendinopathy / Tennis Elbow)",
+    "region": "Elbow",
+    "keyExams": [
+      "Cozen's test",
+      "Mill's test"
+    ],
+    "observation": [
+      "Lateral epicondyle tenderness",
+      "No swelling"
+    ],
+    "posture": [
+      "Poor scapular support",
+      "Wrist-loading grip"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Cozen's Test",
+      "Mill's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Extension (Cozen's/Mill's position)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted wrist extension strong but painful at the lateral epicondyle — this app's own library flags this as the \"most important elbow test\"",
+        "Cozen's and Mill's tests reproduce the same finding in different arm positions"
+      ],
+      "interpretation": "Resisted Wrist Extension is documented as the most important elbow test in this library; Cozen's and Mill's are this same resisted test performed in different arm positions, both reproducing pain at the lateral epicondyle."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Extensors (ECRB/ECRL)",
+          "state": "Inhibited, lateral epicondylalgia"
+        },
+        {
+          "name": "Wrist Flexors",
+          "state": "Overactive (compensatory)"
+        }
+      ],
+      "pattern": "Inhibited wrist extensors (ECRB/ECRL) with compensatory overactive wrist flexors — the literal documented interpretation for lateral epicondylalgia in this app's library. Fascial component (from source): Deep-back-arm line / common extensor fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Lateral Epicondyle Load Test (Cozen's / Mill's / Maudsley's)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces lateral elbow pain",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "The named functional screen for exactly this condition. FMA source note: Resisted wrist extension (Cozen's/Mill's) & gripping reproduce pain."
+    },
+    "outcomeMeasures": [
+      "PRTEE (Patient-Rated Tennis Elbow Evaluation)"
+    ]
+  },
+  "E02": {
+    "id": "E02",
+    "name": "Medial Epicondylalgia (FCR/FCU / Golfer's Elbow)",
+    "region": "Elbow",
+    "keyExams": [
+      "Golfer's elbow test"
+    ],
+    "observation": [
+      "Medial epicondyle tenderness"
+    ],
+    "posture": [
+      "Wrist-flexor-loading grip posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Golfer's Elbow Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Flexion (+ pronation)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted wrist flexion strong but painful at the medial epicondyle",
+        "The Golfer's elbow test IS this same resisted test plus pronation"
+      ],
+      "interpretation": "The Golfer's elbow test is the resisted wrist-flexion test performed with added pronation; a strong-but-painful response at the medial epicondyle confirms a contractile pattern."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Flexors (FCR/FCU)",
+          "state": "Overactive, medial epicondylalgia"
+        },
+        {
+          "name": "Wrist Extensors",
+          "state": "Check for inhibition (driver)"
+        }
+      ],
+      "pattern": "Overactive wrist flexors (FCR/FCU) — check wrist extensor inhibition as the driver of this pattern. Fascial component (from source): Common flexor–pronator fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Medial Elbow / Valgus Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces medial elbow pain",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "This screen directly names \"Golfer's Elbow\" as one of its target conditions. FMA source note: Resisted wrist flexion/pronation reproduce medial pain."
+    },
+    "outcomeMeasures": [
+      "PRTEE",
+      "DASH"
+    ]
+  },
+  "E03": {
+    "id": "E03",
+    "name": "Distal Biceps Tendinopathy / Rupture",
+    "region": "Elbow",
+    "keyExams": [
+      "Resisted elbow flexion/supination (biceps)"
+    ],
+    "observation": [
+      "Antecubital tenderness ± gap/retraction (Popeye)"
+    ],
+    "posture": [
+      "Anterior-arm loading"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Hook Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Elbow Flexion (supinated)",
+          "options": [
+            "Strong + Painful (tendinopathy)",
+            "Weak + Painless with palpable gap/Popeye deformity (rupture)",
+            "Strong + Painless"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Hook Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted elbow flexion (supinated) strong but painful at the antecubital fossa suggests tendinopathy",
+        "Weak & painless with a palpable gap/Popeye deformity suggests complete rupture — confirmed by the hook test"
+      ],
+      "interpretation": "A strong-but-painful resisted elbow flexion (supinated) at the antecubital fossa points to tendinopathy; if instead weak and painless with a palpable gap and Popeye deformity, the hook test confirms a complete distal biceps rupture."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Biceps Brachii",
+          "state": "Overactive proximally (RC compensation) if tendinopathy — structural, not compensation-driven, if ruptured"
+        }
+      ],
+      "pattern": "If overactive proximally (rotator-cuff compensation) it can predispose to distal overload and tendinopathy; if ruptured, this is a structural injury, not a compensation pattern. Fascial component (from source): Deep-front arm line (biceps)."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Elbow AROM (supination component)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Elbow supination",
+          "unit": "°"
+        }
+      ],
+      "note": "General baseline only — no dedicated distal-biceps FMA test exists in this app's library; the resisted/hook test above remains primary."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E04": {
+    "id": "E04",
+    "name": "Elbow Osteoarthritis",
+    "region": "Elbow",
+    "keyExams": [
+      "Active/passive elbow ROM with end-feel"
+    ],
+    "observation": [
+      "Reduced extension",
+      "crepitus",
+      "± loose-body locking"
+    ],
+    "posture": [
+      "Fixed-flexion posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Generally painless (non-contractile)",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Flexion/Extension",
+          "options": [
+            "Full range",
+            "Restricted — capsular pattern (flexion > extension)"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Hard/bony",
+            "Springy (loose bodies present)"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless — non-contractile pattern",
+        "Passive flexion/extension both restricted in a capsular pattern (flexion limited more than extension)",
+        "End-feel hard/bony, or springy if loose bodies are present"
+      ],
+      "interpretation": "Painless resisted testing rules out a contractile source; a capsular-pattern restriction (flexion more limited than extension) with a hard/bony end-feel is consistent with osteoarthritis, while a springy end-feel instead suggests loose bodies."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily compensation-driven (joint OA); Triceps/Biceps facilitation supports function around the restricted arc. Fascial component (from source): Anterior capsule fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Elbow AROM (flexion/extension/pronation/supination)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Elbow flexion",
+          "unit": "°"
+        },
+        {
+          "type": "number",
+          "label": "Elbow extension",
+          "unit": "°"
+        },
+        {
+          "type": "number",
+          "label": "Pronation",
+          "unit": "°"
+        },
+        {
+          "type": "number",
+          "label": "Supination",
+          "unit": "°"
+        }
+      ],
+      "note": "The direct match for a capsular-pattern assessment of this condition."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E05": {
+    "id": "E05",
+    "name": "Olecranon Bursitis",
+    "region": "Elbow",
+    "keyExams": [
+      "Olecranon palpation",
+      "Fluctuance/temperature assessment"
+    ],
+    "observation": [
+      "Posterior fluctuant swelling over olecranon"
+    ],
+    "posture": [
+      "Elbow-resting-on-surface loading"
+    ],
+    "palpation": [
+      "Olecranon",
+      "Fluctuance/temperature assessment"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Elbow Extension",
+          "options": [
+            "Usually painless",
+            "Painful (direct posterior pressure loading the bursa)"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted elbow extension usually painless — the bursa is an inert, non-contractile structure",
+        "Painful only if direct posterior pressure loads the bursa",
+        "Palpation/fluctuance is the primary test for this condition"
+      ],
+      "interpretation": "The bursa is inert, not contractile, so resisted elbow extension is usually painless unless direct posterior pressure loads it; palpation and fluctuance assessment remain the primary tests."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (bursal inflammation, often trauma/pressure-related). Fascial component (from source): Posterior olecranon fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not directly covered — palpation/fluctuance (STTT, above) remains the primary tool; Elbow AROM only as a general baseline."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E06": {
+    "id": "E06",
+    "name": "UCL (Ulnar Collateral Ligament) Sprain",
+    "region": "Elbow",
+    "keyExams": [
+      "Elbow valgus stress test"
+    ],
+    "observation": [
+      "Medial tenderness",
+      "valgus laxity (thrower)"
+    ],
+    "posture": [
+      "Valgus-loading throwing posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Elbow Valgus Stress Test",
+      "Moving Valgus Stress Test (MVST)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Flexion/Pronation (secondary stress)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Elbow Valgus Stress (medial gap)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted wrist flexion/pronation may secondarily stress the medial elbow",
+        "Passive elbow valgus stress (medial gap) is the definitive joint-play test — a ligament test, not a resisted-muscle one"
+      ],
+      "interpretation": "Resisted wrist flexion/pronation can secondarily stress the medial elbow, but the definitive test is the passive elbow valgus stress test (medial gap) — a ligament/joint-play test rather than a resisted-muscle test."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Flexors / Pronator Teres (medial flexor-pronator mass)",
+          "state": "Protectively overactive supporting a lax UCL"
+        }
+      ],
+      "pattern": "The medial flexor-pronator mass may become protectively overactive supporting a lax UCL — check once the acute phase allows. Fascial component (from source): Medial capsuloligamentous fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Medial Elbow / Valgus Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Valgus Stress Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Moving Valgus Stress Test (MVST)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "note": "Includes both the standard valgus stress test and the Moving Valgus Stress Test (MVST) — the direct named match for this condition."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E07": {
+    "id": "E07",
+    "name": "Cubital Tunnel Syndrome (Ulnar Neuropathy at the Elbow)",
+    "region": "Elbow",
+    "keyExams": [
+      "Tinel's sign at elbow"
+    ],
+    "observation": [
+      "Intrinsic wasting",
+      "4th/5th tingling",
+      "Tinel medial"
+    ],
+    "posture": [
+      "Sustained elbow-flexion posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Tinel's Sign at Elbow"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Ulnar-Innervated Muscles (FCU, ring/little finger FDP)",
+          "options": [
+            "Normal",
+            "Weak + Painless (neural, advanced cases)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Elbow Flexion + Tinel's + ULTT-Ulnar",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted ulnar-innervated muscles (FCU, ring/little FDP) may show a weak & painless (neural, not contractile) pattern in advanced cases",
+        "Tinel's sign at the elbow, combined with elbow flexion and ULTT-ulnar, is the primary provocation"
+      ],
+      "interpretation": "A weak-and-painless pattern in ulnar-innervated muscles reflects a neural rather than contractile lesion in advanced cases; Tinel's sign at the elbow combined with sustained elbow flexion and the ulnar ULTT is the primary provocation."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Grip / Hand Intrinsics",
+          "state": "Inhibited, neurological cause (ulnar)"
+        }
+      ],
+      "pattern": "Grip/Hand Intrinsics inhibited from a neurological (ulnar) cause — differentiate from a simple overuse-inhibition pattern. Fascial component (from source): Ulnar neural tension line."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "ULNT2 (ulnar bias)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Cubital tunnel Tinel's (medial) + resisted elbow flexion reproduces symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "This setup explicitly includes \"cubital tunnel Tinel's (medial) and resisted elbow flexion\" — the direct named match."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E08": {
+    "id": "E08",
+    "name": "Radial Tunnel Syndrome",
+    "region": "Elbow",
+    "keyExams": [
+      "Resisted supination",
+      "Radial nerve distribution screen"
+    ],
+    "observation": [
+      "Tenderness ~4cm distal to lateral epicondyle"
+    ],
+    "posture": [
+      "Repetitive-pronation loading"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Supination",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Wrist Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Middle-Finger Extension",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [],
+      "findings": [
+        "Resisted supination and resisted wrist extension both reproduce forearm pain, mimicking lateral epicondylalgia",
+        "Pain site is ~4cm distal to the epicondyle, not AT the epicondyle — the key differentiator"
+      ],
+      "interpretation": "Resisted supination and resisted wrist extension both reproduce forearm pain and can mimic lateral epicondylalgia; the key differentiator is that the pain site is roughly 4cm distal to the lateral epicondyle rather than directly over it."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Extensors",
+          "state": "Screen the same group as lateral epicondylalgia — confirm radial-nerve distribution first"
+        }
+      ],
+      "pattern": "Screen the same wrist extensor group as lateral epicondylalgia, but confirm the radial-nerve distribution before treating this as a simple tendinopathy. Fascial component (from source): Radial (PIN) neural tension."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "ULNT2b (radial bias)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces forearm/radial symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "This app's ULNT2 test explicitly distinguishes a median bias (2a) from a radial bias (2b), matching this specific nerve."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "E09": {
+    "id": "E09",
+    "name": "Pronator Teres Syndrome",
+    "region": "Elbow",
+    "keyExams": [
+      "Resisted pronation with elbow flexion"
+    ],
+    "observation": [
+      "Proximal-volar-forearm tenderness",
+      "median signs"
+    ],
+    "posture": [
+      "Repetitive-gripping/pronation posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Pronation",
+          "options": [
+            "Strong + Painless",
+            "Reproduces forearm pain",
+            "Reproduces median-nerve tingling"
+          ]
+        },
+        {
+          "label": "Resisted Wrist Flexion (FCR)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Median ULTT",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted pronation reproduces forearm pain and may reproduce median-nerve tingling — distinguishes from a simple pronator strain",
+        "Resisted wrist flexion may also implicate FCR",
+        "Median ULTT may reproduce median symptoms"
+      ],
+      "interpretation": "Resisted pronation reproducing both forearm pain and median-nerve tingling distinguishes pronator teres syndrome from a simple pronator strain; resisted wrist flexion may also implicate the FCR."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Pronator Teres",
+          "state": "Overactive, pronator syndrome (compressing median nerve)"
+        }
+      ],
+      "pattern": "Pronator Teres overactivity compresses the median nerve — check Biceps/Supinator facilitation as the antagonist pairing. Fascial component (from source): Median neural tension through pronator."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Elbow AROM (pronation/supination) + ULNT2a (median bias)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Pronation",
+          "unit": "°"
+        },
+        {
+          "type": "number",
+          "label": "Supination",
+          "unit": "°"
+        },
+        {
+          "type": "choice",
+          "label": "ULNT2a reproduces median symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Cross-references the proximal median entrapment against distal carpal tunnel syndrome by symptom location."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRTEE (epicondylalgia)"
+    ]
+  },
+  "W01": {
+    "id": "W01",
+    "name": "Carpal Tunnel Syndrome (Median Nerve)",
+    "region": "Wrist",
+    "keyExams": [
+      "Phalen's test",
+      "Tinel's sign at wrist",
+      "Median nerve sensory mapping"
+    ],
+    "observation": [
+      "Thenar wasting",
+      "positive flick sign"
+    ],
+    "posture": [
+      "Sustained wrist-flexion/workstation posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Phalen's Test",
+      "Tinel's Sign at Wrist"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Finger Flexion (FDS/FDP)",
+          "options": [
+            "Usually preserved early",
+            "Weak later (thenar/median intrinsics affected)"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Phalen's Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Tinel's Sign at Wrist",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted finger flexion (FDS/FDP) usually preserved early, weak later as thenar/median intrinsics become affected",
+        "Phalen's and Tinel's are passive/positional provocations, not resisted-muscle tests"
+      ],
+      "interpretation": "Resisted finger flexion is usually preserved early and only becomes weak later as the thenar/median intrinsics are affected; Phalen's and Tinel's signs are passive/positional provocations rather than resisted-muscle tests."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Grip / Hand Intrinsics",
+          "state": "Inhibited, neurological cause (median: thumb/index)"
+        }
+      ],
+      "pattern": "Grip/Hand Intrinsics inhibited from a neurological (median: thumb/index) cause — differentiate from Pronator Teres syndrome by symptom location and provocation. Fascial component (from source): Flexor retinaculum / median neural line."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Carpal Tunnel Screen (Phalen's / Tinel's / compression test)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Reproduces median-nerve symptoms",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        },
+        {
+          "type": "number",
+          "label": "Grip endurance",
+          "unit": "s"
+        }
+      ],
+      "note": "The exact, direct named match for this condition. FMA source note: Phalen/Tinel & median ULTT reproduce; grip endurance reduced."
+    },
+    "outcomeMeasures": [
+      "Boston Carpal Tunnel Questionnaire",
+      "PRWE"
+    ]
+  },
+  "W02": {
+    "id": "W02",
+    "name": "De Quervain's Tenosynovitis",
+    "region": "Wrist",
+    "keyExams": [
+      "Finkelstein's test",
+      "Resisted thumb extension/abduction",
+      "1st dorsal compartment palpation"
+    ],
+    "observation": [
+      "Radial-styloid swelling/tenderness"
+    ],
+    "posture": [
+      "Thumb-loading / new-parent lifting posture"
+    ],
+    "palpation": [
+      "1st dorsal compartment"
+    ],
+    "specialTests": [
+      "Finkelstein's Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Thumb Extension (EPL/EPB)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        },
+        {
+          "label": "Resisted Thumb Abduction (APL)",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Finkelstein's Test (passive-stretch analogue)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted thumb extension (EPL/EPB) strong but painful at the 1st dorsal compartment",
+        "Resisted thumb abduction (APL) strong but painful at the 1st dorsal compartment",
+        "Finkelstein's test is a passive-stretch analogue of the same compartment"
+      ],
+      "interpretation": "Both resisted thumb extension (EPL/EPB) and resisted thumb abduction (APL) are strong but painful over the 1st dorsal compartment; Finkelstein's test is a passive-stretch analogue that reproduces the same compartment pain."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily a compensation pattern (tenosynovitis, often repetitive-strain/postpartum) — Wrist Extensor facilitation supports recovery but isn't the root driver. Fascial component (from source): 1st dorsal-compartment fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "No dedicated named test exists in this app's Wrist FMA set — Finkelstein's test (above) is the primary tool; Wrist AROM+Grip serves only as a general baseline."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W03": {
+    "id": "W03",
+    "name": "TFCC Tear (Ulnar-Sided Wrist Pain)",
+    "region": "Wrist",
+    "keyExams": [
+      "TFCC stress test (ulnar compression through lunate)",
+      "Passive ulnar deviation load",
+      "Ulnar-sided wrist palpation"
+    ],
+    "observation": [
+      "Ulnar-sided swelling",
+      "clicking"
+    ],
+    "posture": [
+      "Ulnar-loading grip posture"
+    ],
+    "palpation": [
+      "Ulnar-sided wrist"
+    ],
+    "specialTests": [
+      "TFCC Stress Test (ulnar compression through lunate)"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Extension/Flexion (general)",
+          "options": [
+            "Not primary",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "TFCC Stress Test (ulnar compression through lunate)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Passive Ulnar-Deviation Load",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted wrist extension/flexion is not the primary test here",
+        "Passive TFCC stress test (ulnar compression through the lunate) is a definitive joint-play test",
+        "Passive ulnar-deviation load is a definitive joint-play test"
+      ],
+      "interpretation": "Resisted wrist extension/flexion is not primary for TFCC pathology; the passive TFCC stress test (ulnar compression through the lunate) and passive ulnar-deviation load are the definitive joint-play tests."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a classic compensation pattern (intra-articular ligament/cartilage) — Wrist Flexor/Extensor balance supports the joint but doesn't address the structural tear. Fascial component (from source): Ulnocarpal / TFCC fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "TFCC / Ulnar Wrist Screen (ulnar fovea sign, DRUJ stability, piano-key test)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Ulnar fovea sign",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "DRUJ stability",
+          "options": [
+            "Stable",
+            "Unstable"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Piano-key test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "note": "The exact, direct named match for this condition."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W04": {
+    "id": "W04",
+    "name": "Scapholunate Ligament Instability",
+    "region": "Wrist",
+    "keyExams": [
+      "Watson scaphoid shift test",
+      "Radiocarpal/midcarpal joint play assessment"
+    ],
+    "observation": [
+      "Dorsal-radial swelling",
+      "tenderness"
+    ],
+    "posture": [
+      "FOOSH-guarded posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Watson Scaphoid Shift Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Extension",
+          "options": [
+            "Usually painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Watson Scaphoid-Shift Test (joint-play)",
+          "options": [
+            "Negative",
+            "Positive — clunk/pain reproduced"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted wrist extension is usually painless",
+        "Passive Watson scaphoid-shift test (joint-play) is the definitive provocation, not a resisted-muscle test"
+      ],
+      "interpretation": "Resisted wrist extension is usually painless in scapholunate instability; the passive Watson scaphoid-shift test — a joint-play test, not a resisted-muscle test — is the definitive provocation."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (ligamentous instability, typically FOOSH-related)."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Scaphoid / Carpal Screen (Watson scaphoid-shift test)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Watson scaphoid-shift test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "note": "The exact, direct named match for this condition."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W05": {
+    "id": "W05",
+    "name": "Wrist Osteoarthritis (Radiocarpal)",
+    "region": "Wrist",
+    "keyExams": [
+      "Active/passive wrist ROM with end-feel",
+      "Imaging referral if not already available"
+    ],
+    "observation": [
+      "Dorsal swelling",
+      "reduced motion",
+      "crepitus"
+    ],
+    "posture": [
+      "Stiff guarded posture"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted tests (general)",
+          "options": [
+            "Generally painless (non-contractile)",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive Wrist Flexion/Extension",
+          "options": [
+            "Full range",
+            "Restricted — capsular pattern"
+          ]
+        },
+        {
+          "label": "End-feel",
+          "options": [
+            "Hard/bony",
+            "Springy"
+          ]
+        },
+        {
+          "label": "Radiocarpal Joint-Play Glide",
+          "options": [
+            "Normal",
+            "Reduced"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted tests generally painless — non-contractile pattern",
+        "Passive wrist flexion/extension both restricted (capsular pattern) with a hard/bony end-feel",
+        "Radiocarpal joint-play glide reduced"
+      ],
+      "interpretation": "Painless resisted testing rules out a contractile source; a capsular-pattern restriction with a hard/bony end-feel and reduced radiocarpal joint-play glide is consistent with radiocarpal osteoarthritis."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Extensors/Flexors",
+          "state": "Facilitation supports remaining function"
+        }
+      ],
+      "pattern": "Wrist Extensor/Flexor facilitation supports remaining function around the restricted joint — not a primary driver (joint OA). Fascial component (from source): Radiocarpal capsular fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Wrist AROM + Grip",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Grip strength",
+          "unit": "kg"
+        }
+      ],
+      "note": "The direct match for a capsular-pattern/functional-capacity assessment."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W06": {
+    "id": "W06",
+    "name": "Distal Radius Fracture (Suspected, Colles/Barton)",
+    "region": "Wrist",
+    "keyExams": [
+      "Deformity/swelling observation",
+      "Urgent imaging referral before further loading"
+    ],
+    "observation": [
+      "Dinner-fork deformity",
+      "marked swelling"
+    ],
+    "posture": [
+      "N/A — immobilise"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [],
+      "passive": [],
+      "findings": [],
+      "interpretation": "",
+      "naText": "Do NOT resisted-test an acute suspected fracture — deformity/swelling observation and urgent imaging take priority."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable acutely."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not applicable acutely — deformity/swelling and imaging take priority over functional testing."
+    },
+    "outcomeMeasures": [
+      "N/A — acute/medical; functional outcome once appropriate"
+    ]
+  },
+  "W07": {
+    "id": "W07",
+    "name": "Scaphoid Fracture (Suspected)",
+    "region": "Wrist",
+    "keyExams": [
+      "Anatomical snuffbox palpation",
+      "Scaphoid compression test",
+      "Imaging referral (repeat if initial films negative)"
+    ],
+    "observation": [
+      "Snuffbox swelling/tenderness",
+      "FOOSH"
+    ],
+    "posture": [
+      "N/A — immobilise"
+    ],
+    "palpation": [
+      "Anatomical snuffbox"
+    ],
+    "specialTests": [
+      "Scaphoid Compression Test"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [],
+      "findings": [],
+      "interpretation": "",
+      "naText": "Do NOT resisted-test — anatomical snuffbox tenderness and axial thumb-load compression are the passive/positional screens; urgent imaging takes priority given the scaphoid's false-negative rate."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable acutely."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Scaphoid / Carpal Screen (anatomical snuffbox, scaphoid compression)",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Anatomical snuffbox tenderness",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        },
+        {
+          "type": "choice",
+          "label": "Scaphoid compression test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "note": "Appropriate even acutely as a screening tool, but confirmed imaging still takes priority given the scaphoid's false-negative rate."
+    },
+    "outcomeMeasures": [
+      "N/A — acute/medical; functional outcome once appropriate"
+    ]
+  },
+  "W08": {
+    "id": "W08",
+    "name": "1st CMC Osteoarthritis (Thumb Base)",
+    "region": "Wrist",
+    "keyExams": [
+      "Grind test",
+      "1st CMC joint palpation",
+      "Thumb ROM assessment"
+    ],
+    "observation": [
+      "Squared thumb base",
+      "tenderness",
+      "± crepitus"
+    ],
+    "posture": [
+      "Thumb-loading pinch posture"
+    ],
+    "palpation": [
+      "1st CMC joint"
+    ],
+    "specialTests": [
+      "Grind Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Thumb Tests (general)",
+          "options": [
+            "Painless",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Grind Test (axial load + rotation at 1st CMC)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted thumb tests may be painful, but capsular restriction is more the story",
+        "The passive Grind Test (axial load + rotation at the 1st CMC) is the definitive provocation"
+      ],
+      "interpretation": "Resisted thumb tests may be painful, but capsular restriction is the more prominent finding; the passive Grind Test (axial load plus rotation at the 1st CMC) is the definitive provocation."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not primarily compensation-driven (joint OA); thumb intrinsic (Grip/Hand Intrinsics) facilitation supports function. Fascial component (from source): 1st CMC capsular fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "No dedicated named CMC test exists in this app's Wrist FMA set — Wrist AROM+Grip's pinch component is the closest adjunct."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W09": {
+    "id": "W09",
+    "name": "ECU Tendinopathy / Instability",
+    "region": "Wrist",
+    "keyExams": [
+      "Resisted wrist extension in ulnar deviation",
+      "ECU synergy test",
+      "ECU tendon palpation"
+    ],
+    "observation": [
+      "Ulnar-dorsal tenderness ± subluxation"
+    ],
+    "posture": [
+      "Ulnar-loading forearm posture"
+    ],
+    "palpation": [
+      "ECU tendon"
+    ],
+    "specialTests": [
+      "ECU Synergy Test"
+    ],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Wrist Extension in Ulnar Deviation",
+          "options": [
+            "Strong + Painless",
+            "Strong + Painful",
+            "Weak + Painless",
+            "Weak + Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "ECU Synergy Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted wrist extension in ULNAR deviation specifically reproduces the pain — differentiates from ECRB/lateral-epicondylalgia's neutral/radial-deviation resisted extension",
+        "ECU synergy test is the functional analogue"
+      ],
+      "interpretation": "Resisted wrist extension specifically in ulnar deviation reproduces the pain, differentiating ECU tendinopathy from lateral epicondylalgia's neutral-or-radial-deviation resisted extension; the ECU synergy test is the functional analogue."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Wrist Extensors",
+          "state": "Same group as lateral epicondylalgia — confirm ulnar-sided, extensor-specific pattern"
+        }
+      ],
+      "pattern": "Same muscle group as lateral epicondylalgia, but confirm the ulnar-sided, extensor tendinopathy-specific pattern before treating as generic extensor tendinopathy. Fascial component (from source): ECU sheath fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "TFCC / Ulnar Wrist Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "ECU tendon — palpate + resisted ulnar deviation/extension",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        }
+      ],
+      "note": "Its own setup explicitly lists \"ECU tendon (ulnar dorsal): palpate + resisted ulnar deviation/extension\" — the direct named match."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "W10": {
+    "id": "W10",
+    "name": "Trigger Finger / Flexor Tenosynovitis (Wrist model)",
+    "region": "Wrist",
+    "keyExams": [
+      "Palpation for flexor tendon nodule/catching at A1 pulley",
+      "Active finger flexion/extension observation"
+    ],
+    "observation": [
+      "Palpable A1-pulley nodule",
+      "catching"
+    ],
+    "posture": [
+      "Gripping-load posture"
+    ],
+    "palpation": [
+      "Flexor tendon nodule/catching at A1 pulley"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Finger Flexion (FDS/FDP)",
+          "options": [
+            "Reproduces catching, not weakness",
+            "Normal"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Palpation at A1 Pulley During Active Flexion-Extension",
+          "options": [
+            "No nodule/catching",
+            "Nodule/catching present"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted finger flexion (FDS/FDP) may reproduce catching, not weakness",
+        "Palpation for the A1-pulley nodule during active flexion-extension is the primary provocation"
+      ],
+      "interpretation": "Resisted finger flexion may reproduce catching rather than true weakness; palpation for the A1-pulley nodule during active finger flexion-extension is the primary provocation for trigger finger."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a classic compensation pattern (tendon stenosis, often repetitive-grip driven) — Grip/Hand Intrinsics facilitation is supportive, not corrective. Fascial component (from source): Flexor tendon-sheath (A1 pulley) fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Finger / Digit Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Composite fist / active flexion-extension shows catching",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Direct match — the composite fist and active flexion-extension components will show the catching/triggering."
+    },
+    "outcomeMeasures": [
+      "PRWE (Patient-Rated Wrist Evaluation)",
+      "QuickDASH"
+    ]
+  },
+  "H01": {
+    "id": "H01",
+    "name": "Digital Osteoarthritis (Heberden's / Bouchard's Nodes)",
+    "region": "Hand",
+    "keyExams": [
+      "Inspection/palpation of DIP (Heberden's) and PIP (Bouchard's) nodes",
+      "Grip and pinch strength",
+      "Imaging if diagnosis unclear"
+    ],
+    "observation": [
+      "DIP/PIP nodes",
+      "deformity",
+      "reduced grip"
+    ],
+    "posture": [
+      "Deforming digit posture"
+    ],
+    "palpation": [
+      "DIP (Heberden's) nodes",
+      "PIP (Bouchard's) nodes"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Finger Flexion/Extension",
+          "options": [
+            "Generally painless (non-contractile)",
+            "Painful"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Passive DIP/PIP Motion",
+          "options": [
+            "Full range",
+            "Restricted, bony end-feel, nodules palpable"
+          ]
+        }
+      ],
+      "findings": [
+        "Resisted finger flexion/extension generally painless — non-contractile pattern",
+        "Passive DIP/PIP motion restricted with a bony end-feel, nodules palpable"
+      ],
+      "interpretation": "Painless resisted testing rules out a contractile source; passive DIP/PIP motion restricted with a bony end-feel and palpable nodules is consistent with digital osteoarthritis."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Grip / Hand Intrinsics",
+          "state": "Facilitation supports function around restricted joints"
+        }
+      ],
+      "pattern": "Grip/Hand Intrinsics facilitation supports function around the restricted joints — not a primary driver (joint OA). Fascial component (from source): Peri-articular digital fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Finger / Digit Screen (PIP/DIP AROM, composite fist)",
+      "fields": [
+        {
+          "type": "number",
+          "label": "Composite fist — fingertip-to-palm distance",
+          "unit": "cm"
+        }
+      ],
+      "note": "The direct match for documenting joint-by-joint restriction and deformity."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRWE",
+      "grip & pinch dynamometry"
+    ]
+  },
+  "H02": {
+    "id": "H02",
+    "name": "Thumb Ulnar Collateral Ligament Injury (Skier's / Gamekeeper's Thumb)",
+    "region": "Hand",
+    "keyExams": [
+      "Valgus stress test of the thumb MCP (flexion & extension)",
+      "Palpation of ulnar aspect of thumb MCP",
+      "Imaging to exclude avulsion fracture (Stener lesion)"
+    ],
+    "observation": [
+      "Ulnar-MCP swelling/tenderness"
+    ],
+    "posture": [
+      "Guarded thumb posture"
+    ],
+    "palpation": [
+      "Ulnar aspect of thumb MCP"
+    ],
+    "specialTests": [
+      "Valgus Stress Test — Thumb MCP (flexion & extension)"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Valgus Stress — Thumb MCP in Flexion",
+          "options": [
+            "Stable",
+            "Laxity/pain reproduced"
+          ]
+        },
+        {
+          "label": "Valgus Stress — Thumb MCP in Extension",
+          "options": [
+            "Stable",
+            "Laxity/pain reproduced"
+          ]
+        }
+      ],
+      "findings": [
+        "Passive valgus stress of the thumb MCP (in flexion AND extension) is the definitive joint-play test"
+      ],
+      "interpretation": "Passive valgus stress testing of the thumb MCP in both flexion and extension is the definitive joint-play test — a resisted-muscle test is not the primary tool for this ligamentous injury."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (acute ligament sprain) — imaging to exclude a Stener lesion takes priority. Fascial component (from source): Ulnar MCP capsuloligamentous fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "No dedicated named thumb-MCP test exists — the Finger/Digit Screen's collateral-ligament-stress component is the closest analogue."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRWE",
+      "grip & pinch dynamometry"
+    ]
+  },
+  "H03": {
+    "id": "H03",
+    "name": "Trigger Finger / Thumb (Stenosing Flexor Tenosynovitis, Hand model)",
+    "region": "Hand",
+    "keyExams": [
+      "Palpation for A1-pulley nodule / catching on active flexion-extension",
+      "Observation of triggering / locking of the digit"
+    ],
+    "observation": [
+      "A1-pulley nodule",
+      "catching/locking"
+    ],
+    "posture": [
+      "Gripping-load posture"
+    ],
+    "palpation": [
+      "A1-pulley nodule / catching on active flexion-extension"
+    ],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [
+        {
+          "label": "Resisted Finger Flexion (general strength)",
+          "options": [
+            "Not primary",
+            "Weak"
+          ]
+        }
+      ],
+      "passive": [
+        {
+          "label": "Palpation at A1 Pulley During Active Flexion-Extension",
+          "options": [
+            "No nodule/catching",
+            "Nodule/catching present"
+          ]
+        }
+      ],
+      "findings": [
+        "Palpation for the A1-pulley nodule during active flexion-extension is the primary provocation, not a resisted-strength test — same logic as the wrist-model version of this condition"
+      ],
+      "interpretation": "As with the wrist-model version of this condition, palpation for the A1-pulley nodule during active flexion-extension is the primary provocation rather than a resisted-strength test."
+    },
+    "cpa": {
+      "muscles": [
+        {
+          "name": "Grip / Hand Intrinsics",
+          "state": "Facilitation — supportive only, not corrective"
+        }
+      ],
+      "pattern": "Grip/Hand Intrinsics facilitation is supportive only here, not corrective for the underlying tendon stenosis. Fascial component (from source): Flexor tendon-sheath (A1 pulley) fascia."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Finger / Digit Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Active flexion-extension shows triggering",
+          "options": [
+            "No",
+            "Yes"
+          ]
+        }
+      ],
+      "note": "Same test as the wrist-model version above — a direct match."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRWE",
+      "grip & pinch dynamometry"
+    ]
+  },
+  "H04": {
+    "id": "H04",
+    "name": "Dupuytren's Contracture (Palmar Fascia)",
+    "region": "Hand",
+    "keyExams": [
+      "Palpation of palmar fascia cords/nodules (ring/little finger)",
+      "Hueston tabletop test",
+      "MCP/PIP flexion contracture measurement"
+    ],
+    "observation": [
+      "Palmar cord/nodule",
+      "ring/little-finger flexion contracture"
+    ],
+    "posture": [
+      "Fixed digit-flexion posture"
+    ],
+    "palpation": [
+      "Palmar fascia cords/nodules (ring/little finger)"
+    ],
+    "specialTests": [
+      "Hueston Tabletop Test"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Hueston Tabletop Test",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "MCP/PIP Passive Extension",
+          "options": [
+            "Full extension",
+            "Extension deficit present"
+          ]
+        }
+      ],
+      "findings": [
+        "Not a resisted-muscle test — the palmar fascia is non-contractile",
+        "Hueston tabletop test (passive/positional) is a definitive test",
+        "MCP/PIP passive extension deficit measurement is a definitive test"
+      ],
+      "interpretation": "Dupuytren's contracture is not tested with resisted-muscle tests since the palmar fascia is non-contractile; the Hueston tabletop test and MCP/PIP passive extension deficit measurement are the definitive tests."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (fascial disease process)."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Finger / Digit Screen",
+      "fields": [
+        {
+          "type": "number",
+          "label": "MCP/PIP flexion contracture",
+          "unit": "°"
+        }
+      ],
+      "note": "The composite-fist and extension components directly quantify the flexion contracture."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRWE",
+      "grip & pinch dynamometry"
+    ]
+  },
+  "H05": {
+    "id": "H05",
+    "name": "Finger Sprain / Collateral Ligament Injury (Jammed Finger)",
+    "region": "Hand",
+    "keyExams": [
+      "Active DIP/PIP extension (exclude mallet / boutonniere)",
+      "Collateral ligament stress test of the affected joint",
+      "Imaging to exclude avulsion fracture"
+    ],
+    "observation": [
+      "Fusiform joint swelling",
+      "jammed history"
+    ],
+    "posture": [
+      "Guarded digit posture"
+    ],
+    "palpation": [],
+    "specialTests": [
+      "Collateral Ligament Stress Test (affected joint)"
+    ],
+    "sttt": {
+      "resisted": [],
+      "passive": [
+        {
+          "label": "Collateral Ligament Stress Test (affected joint)",
+          "options": [
+            "Negative",
+            "Positive"
+          ]
+        },
+        {
+          "label": "Active DIP/PIP Extension (screen for mallet/boutonniere)",
+          "options": [
+            "Full active extension",
+            "Extension lag (mallet/boutonniere pattern)"
+          ]
+        }
+      ],
+      "findings": [
+        "Passive collateral ligament stress test (affected joint) is the definitive joint-play test",
+        "Active DIP/PIP extension screens for a concurrent extensor-tendon injury (mallet/boutonniere) rather than testing a specific muscle"
+      ],
+      "interpretation": "The passive collateral ligament stress test of the affected joint is the definitive joint-play test; active DIP/PIP extension screens for a concurrent extensor-tendon injury (mallet or boutonniere) rather than testing a specific muscle."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not a compensation-pattern condition (acute ligament sprain)."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "name": "Finger / Digit Screen",
+      "fields": [
+        {
+          "type": "choice",
+          "label": "Extensor-zone check (mallet/boutonniere pattern)",
+          "options": [
+            "Normal",
+            "Abnormal"
+          ]
+        }
+      ],
+      "note": "Directly screens for the concurrent tendon injury this condition risks."
+    },
+    "outcomeMeasures": [
+      "DASH/QuickDASH",
+      "PRWE",
+      "grip & pinch dynamometry"
+    ]
+  },
+  "H06": {
+    "id": "H06",
+    "name": "Raynaud's Phenomenon (Vascular Differential)",
+    "region": "Hand",
+    "keyExams": [
+      "History of triphasic colour change (white-blue-red) with cold",
+      "Screen for secondary causes (connective tissue disease) if atypical"
+    ],
+    "observation": [
+      "Triphasic colour change (white-blue-red) with cold"
+    ],
+    "posture": [
+      "N/A"
+    ],
+    "palpation": [],
+    "specialTests": [],
+    "sttt": {
+      "resisted": [],
+      "passive": [],
+      "findings": [],
+      "interpretation": "",
+      "naText": "Not applicable — vascular, not musculoskeletal; no resisted or passive joint test applies."
+    },
+    "cpa": {
+      "applicable": false,
+      "reason": "Not applicable — vascular, not a motor-control/compensation condition."
+    },
+    "kineticChain": {
+      "applicable": false,
+      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+    },
+    "functionalScreen": {
+      "applicable": false,
+      "reason": "Not applicable — no functional-movement screen tests a vascular reflex."
+    },
+    "outcomeMeasures": [
+      "N/A — acute/medical; functional outcome once appropriate"
+    ]
+  }
+}

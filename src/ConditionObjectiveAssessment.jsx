@@ -43,6 +43,7 @@ import { runShoulderDifferential, hasShoulderChecklistData } from "./orthoShould
 import { runHipDifferential, hasHipChecklistData } from "./orthoHipReasoning.js";
 import { runKneeDifferential, hasKneeChecklistData } from "./orthoKneeReasoning.js";
 import { runAnkleFootDifferential, hasAnkleFootChecklistData } from "./orthoAnkleFootReasoning.js";
+import { runElbowWristHandDifferential, hasElbowWristHandChecklistData } from "./orthoElbowWristHandReasoning.js";
 import cervicalConditionsRaw from "./cervicalConditions.json";
 import thoracicConditionsRaw from "./thoracicConditions.json";
 import lumbarConditionsRaw from "./lumbarConditions.json";
@@ -50,6 +51,7 @@ import shoulderConditionsRaw from "./shoulderConditions.json";
 import hipConditionsRaw from "./hipConditions.json";
 import kneeConditionsRaw from "./kneeConditions.json";
 import ankleFootConditionsRaw from "./ankleFootConditions.json";
+import elbowWristHandConditionsRaw from "./elbowWristHandConditions.json";
 import { HIP_ROM_MOVEMENTS } from "./hipConditionAssessmentData.js";
 import { KNEE_ROM_MOVEMENTS } from "./kneeConditionAssessmentData.js";
 import { ANKLE_FOOT_ROM_MOVEMENTS } from "./ankleFootConditionAssessmentData.js";
@@ -71,6 +73,7 @@ const { conditions: SHOULDER_CONDITIONS, order: SHOULDER_CONDITION_ORDER } = loa
 const { conditions: HIP_CONDITIONS, order: HIP_CONDITION_ORDER } = loadConditions(hipConditionsRaw, null);
 const { conditions: KNEE_CONDITIONS, order: KNEE_CONDITION_ORDER } = loadConditions(kneeConditionsRaw, null);
 const { conditions: ANKLE_FOOT_CONDITIONS, order: ANKLE_FOOT_CONDITION_ORDER } = loadConditions(ankleFootConditionsRaw, null);
+const { conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER } = loadConditions(elbowWristHandConditionsRaw, null);
 
 // Real AROM movements + normal-value degrees, same sourcing as Hip/Knee/
 // Ankle-Foot's (PatientDatabase.jsx's own ROM lookup / the app's real ROM
@@ -93,6 +96,12 @@ const SHOULDER_ROM_MOVEMENTS = [
   { id: "flex", label: "Flexion", normal: 180 }, { id: "abd", label: "Abduction", normal: 180 },
   { id: "er", label: "External Rotation", normal: 90 }, { id: "ir", label: "Internal Rotation", normal: 70 },
 ];
+const ELBOW_WRIST_HAND_ROM_MOVEMENTS = [
+  { id: "eflex", label: "Elbow Flexion", normal: 145 }, { id: "eext", label: "Elbow Extension", normal: 0 },
+  { id: "esup", label: "Supination", normal: 90 }, { id: "epro", label: "Pronation", normal: 90 },
+  { id: "wflex", label: "Wrist Flexion", normal: 80 }, { id: "wext", label: "Wrist Extension", normal: 70 },
+  { id: "wrad", label: "Radial Deviation", normal: 20 }, { id: "wuln", label: "Ulnar Deviation", normal: 30 },
+];
 
 function normalizeName(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -108,6 +117,15 @@ const SHOULDER_ID_BY_NAME = idByName(SHOULDER_CONDITIONS);
 const HIP_ID_BY_NAME = idByName(HIP_CONDITIONS);
 const KNEE_ID_BY_NAME = idByName(KNEE_CONDITIONS);
 const ANKLE_FOOT_ID_BY_NAME = idByName(ANKLE_FOOT_CONDITIONS);
+// The Elbow/Wrist/Hand engine's own diagnosis names lack the library's
+// "(Wrist model)"/"(Hand model)" disambiguation suffix on its two "trigger
+// finger" entries — added explicitly since automatic name-matching would
+// otherwise miss both.
+const ELBOW_WRIST_HAND_ID_BY_NAME = {
+  ...idByName(ELBOW_WRIST_HAND_CONDITIONS),
+  [normalizeName("Trigger finger / flexor tenosynovitis")]: "W10",
+  [normalizeName("Trigger finger / thumb (stenosing flexor tenosynovitis)")]: "H03",
+};
 
 function fieldKey(conditionId, module, sub) {
   return `${conditionId}::${module}${sub ? `::${sub}` : ""}`;
@@ -208,6 +226,18 @@ const REGION_CONFIGS = [
     suggestedTestsMode: "single",
     romMovements: ANKLE_FOOT_ROM_MOVEMENTS, romLabel: "Ankle ROM",
     emptyNote: "Pick Ankle or Foot as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
+  },
+  {
+    key: "elbowWristHand", label: "Elbow / Wrist / Hand", schema: "v2",
+    matchesRegion: (r) => ["elbow", "forearm", "wrist", "hand"].includes(r.id),
+    hasData: (data) => hasElbowWristHandChecklistData(data),
+    run: (data) => runElbowWristHandDifferential(data),
+    matchByName: true, nameIdMap: ELBOW_WRIST_HAND_ID_BY_NAME,
+    conditions: ELBOW_WRIST_HAND_CONDITIONS, order: ELBOW_WRIST_HAND_CONDITION_ORDER,
+    getRedFlag: evidenceModelRedFlag,
+    suggestedTestsMode: "single",
+    romMovements: ELBOW_WRIST_HAND_ROM_MOVEMENTS, romLabel: "Elbow / Wrist ROM",
+    emptyNote: "Pick Elbow, Forearm, Wrist, or Hand as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
 ];
 
@@ -585,6 +615,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   {condition.sttt.caveat && (
                     <div style={{ fontSize: "0.72rem", fontStyle: "italic", color: BRAND.grayLight, marginBottom: 10 }}>
                       Extrapolated from general Cyriax principles — no dedicated catalogue for this region in the source library.
+                    </div>
+                  )}
+                  {condition.sttt.naText && (
+                    <div style={{ fontSize: "0.78rem", color: BRAND.red, fontWeight: 600, marginBottom: 10 }}>
+                      ⚠ {condition.sttt.naText}
                     </div>
                   )}
                   {(condition.sttt.resisted || []).length > 0 && (
