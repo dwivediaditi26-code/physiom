@@ -421,9 +421,6 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
 
       {!picked && !techType && (
         <>
-          <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 8 }}>
-            Browse the library and add treatments — link each one to a goal below, or leave it general.
-          </div>
           <div className="ct-search-wrap" style={{ padding: "10px 0" }}>
             <input className="ct-search" placeholder="🔍 Search treatment or goal..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -560,18 +557,41 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
 
       {picked && dose && (
         <>
-          <div>
-            <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>{picked.target}</div>
-            <div className="subheading">Dose</div>
-            <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
+          <div className="dose-compact">
+            {/* Compact dose form (2026-09-11, Aditi: "each exercise dosage
+                set page ... talking so much space ... make it compact") --
+                the four fields below used to be full-width FieldShells
+                stacked one per row (label row + 44px input + 16px margin
+                each, ~320px total just for Duration/Assistance/Equipment/
+                Frequency). Same fields, same components, just laid out two
+                per row with tighter label/input sizing, scoped to this
+                form only via the .dose-compact class so nothing else that
+                reuses TextField/SelectField elsewhere is affected. */}
+            <style>{`
+              .dose-compact .field-block { margin-bottom: 10px; }
+              .dose-compact .field-label-row { margin-bottom: 3px; }
+              .dose-compact .field-label { font-size: 11.5px; }
+              .dose-compact .text-input-wrap, .dose-compact .select-wrap { min-height: 38px; padding: 2px 6px 2px 10px; }
+              .dose-compact .text-input, .dose-compact .select-input { font-size: 13px; padding: 6px 2px; }
+              .dose-compact .select-btn { padding: 6px 8px; font-size: 10px; min-height: 28px; }
+              .dose-compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+              .dose-compact-grid > .field-block { min-width: 0; }
+              .dose-compact-grid .text-input-wrap, .dose-compact-grid .select-wrap { min-width: 0; }
+              .dose-compact-grid .select-btn { padding: 6px 6px; }
+            `}</style>
+            <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 8 }}>{picked.target}</div>
+            <div className="subheading" style={{ marginTop: 0 }}>Dose</div>
+            <div className="row-2" style={{ flexWrap: "wrap", gap: 10, marginBottom: 4 }}>
               <div className="vital-field"><div className="vital-label-row"><span className="vital-label">Sets</span></div><Stepper value={String(dose.sets ?? "")} onChange={(v) => setDose({ ...dose, sets: v })} min={0} max={20} square /></div>
               <div className="vital-field"><div className="vital-label-row"><span className="vital-label">Reps</span></div><Stepper value={String(dose.reps ?? "")} onChange={(v) => setDose({ ...dose, reps: v })} min={0} max={60} square /></div>
               <div className="vital-field"><div className="vital-label-row"><span className="vital-label">Hold (s)</span></div><Stepper value={String(dose.hold ?? "")} onChange={(v) => setDose({ ...dose, hold: v })} min={0} max={600} square /></div>
             </div>
-            <TextField label="Duration (optional)" value={dose.duration} onChange={(v) => setDose({ ...dose, duration: v })} placeholder="e.g. 10 min" />
-            <SelectField label="Assistance" type="single" options={ASSIST_LADDER} value={dose.assistance} onChange={(v) => setDose({ ...dose, assistance: v })} />
-            <SelectField label="Equipment" type="single" options={EQUIPMENT} value={dose.equipment} onChange={(v) => setDose({ ...dose, equipment: v })} />
-            <TextField label="Frequency" value={dose.freq} onChange={(v) => setDose({ ...dose, freq: v })} placeholder="e.g. 3 × / week" />
+            <div className="dose-compact-grid">
+              <TextField label="Duration (optional)" value={dose.duration} onChange={(v) => setDose({ ...dose, duration: v })} placeholder="e.g. 10 min" />
+              <TextField label="Frequency" value={dose.freq} onChange={(v) => setDose({ ...dose, freq: v })} placeholder="e.g. 3 × / week" />
+              <SelectField label="Assistance" type="single" options={ASSIST_LADDER} value={dose.assistance} onChange={(v) => setDose({ ...dose, assistance: v })} />
+              <SelectField label="Equipment" type="single" options={EQUIPMENT} value={dose.equipment} onChange={(v) => setDose({ ...dose, equipment: v })} />
+            </div>
 
             {/* One treatment, many goals -- avoids creating a duplicate
                 record of the same intervention per goal. Goals are optional
@@ -598,7 +618,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setPicked(null); setDose(null); }}>Back</button>
-            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={allGoals.length > 0 && !linked.length}
+            <button type="button" className="primary-btn" style={{ flex: 2 }}
               onClick={() => { onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked }); setPicked(null); setDose(null); setLinked([]); }}>
               Add to plan
             </button>
@@ -635,7 +655,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setTechType(null); setTechForm(BLANK_TECHNIQUE); }}>Back</button>
-            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={allGoals.length > 0 && !linked.length}
+            <button type="button" className="primary-btn" style={{ flex: 2 }}
               onClick={() => { onAdd({ id: uid(), name: techniqueLabel(techForm), category: "Technique", ...techForm, goalIds: linked }); setTechType(null); setTechForm(BLANK_TECHNIQUE); setLinked([]); }}>
               Add to plan
             </button>
@@ -673,7 +693,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
 
   return (
     <>
-      <SectionIntro icon="🏋" title="Treatment" sub="Browse the library below and add treatments — link each one to the goal it's meant to achieve, or leave it general." />
+      <SectionIntro icon="🏋" title="Treatment" />
       {goals.map((g) => {
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
         if (!mine.length) return null;

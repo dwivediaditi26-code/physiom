@@ -906,9 +906,9 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             {[(d.dem_age || cardioDem.age) && `${d.dem_age || cardioDem.age} yrs`, (d.dem_sex || d.dem_gender)].filter(Boolean).join(" · ")}
           </div>
           {specialtyChips.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, maxWidth: "100%" }}>
               {specialtyChips.map((c) => (
-                <span key={c.key} style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: C.primaryBg, border: "1px solid #ece7fb", borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}>
+                <span key={c.key} style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: C.primaryBg, border: "1px solid #ece7fb", borderRadius: 999, padding: "3px 9px", maxWidth: "100%", overflowWrap: "break-word" }}>
                   {c.icon} {c.label}{c.sub ? ` · ${c.sub}` : ""}
                 </span>
               ))}

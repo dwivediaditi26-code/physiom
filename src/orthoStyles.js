@@ -258,17 +258,28 @@ export function orthoStyles() {
         .stepper-low .stepper-input { color: #8A5A0A; }
         .stepper-high { border-color: #B8E6CC; background: ${BRAND.greenBg}; }
         .stepper-high .stepper-input { color: #12603A; }
-        /* Square variant (2026-09-01, Aditi: "sets duration frequency ...
-           square button, square section, not rectangle") -- used only by
-           the Technique section's Sets/Duration/Frequency steppers
-           (DosageSteppers in orthoOutpatientSections.jsx), not the base
-           .stepper class every other numeric field in Ortho also uses, so
-           this doesn't reflow any of those. Height matches the 62px width;
-           the arrow column grows to fill it instead of leaving empty space. */
-        .stepper-square { width: 62px; height: 62px; }
-        .stepper-square .stepper-input { font-size: 15px !important; }
-        .stepper-square .stepper-arrows { flex: 0 0 22px; }
-        .stepper-square .stepper-arrow { width: 22px; height: 50%; font-size: 8px; }
+        /* Square variant (2026-09-11, Aditi: first pass with separate
+           [−]/[+] side buttons was "totally wrong" -- back to the
+           original up/down-arrow shape, just bigger, with the number box
+           and the arrow block staying two visually separate pieces with a
+           real gap between them, not fused into one bordered container
+           like the pre-2026-09-11 62x62 box (whose arrows were a
+           22px-wide column of 8px-font ▲▼, below any real tap-target
+           size). Arrow buttons here are roughly double that. Used by the
+           Care Plan dose form (Sets/Reps/Hold, goal weeks) and the
+           Technique section's Sets/Duration/Frequency steppers; the base
+           .stepper class every other numeric field (ROM, MMT, etc.) uses
+           is untouched. */
+        .stepper-sq-row { display: flex; align-items: stretch; gap: 6px; width: 100%; }
+        .stepper-sq-input { flex: 1 1 auto; min-width: 0; height: 56px; border: 1.5px solid ${BRAND.border}; border-radius: 10px; background: #fff; text-align: center; font-size: 19px !important; font-weight: 700; padding: 0 !important; min-height: 0 !important; color: ${BRAND.ink}; outline: none; -moz-appearance: textfield; appearance: none; }
+        .stepper-sq-input::-webkit-outer-spin-button, .stepper-sq-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .stepper-sq-arrows { flex: 0 0 34px; display: flex; flex-direction: column; gap: 4px; }
+        .stepper-sq-arrow { flex: 1; border: 1.5px solid ${BRAND.border}; border-radius: 8px; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 13px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+        .stepper-sq-arrow:active { background: ${BRAND.purple}; color: #fff; }
+        .stepper-sq-row.stepper-severe .stepper-sq-input { border-color: #F4C6C6; background: ${BRAND.redBg}; color: #B32424; }
+        .stepper-sq-row.stepper-mild .stepper-sq-input { border-color: #F5DBA6; background: ${BRAND.amberBg}; color: #8A5A0A; }
+        .stepper-sq-row.stepper-normal .stepper-sq-input, .stepper-sq-row.stepper-high .stepper-sq-input { border-color: #B8E6CC; background: ${BRAND.greenBg}; color: #12603A; }
+        .stepper-sq-row.stepper-low .stepper-sq-input { border-color: #F5DBA6; background: ${BRAND.amberBg}; color: #8A5A0A; }
 
         /* Movement / muscle card — used by ROM + MMT. Large, scannable,
            tap-first — the therapist reads the name, taps a value or chip,
@@ -647,12 +658,43 @@ export function orthoStyles() {
            numbers, tapping never adds/removes anything); restyled from the
            old always-expanded LumbarDifferentialCard rows into a compact
            swipeable row so the reasoning is visible without owning the page. */
-        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; }
+        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; scrollbar-width: none; }
+        .obj-match-row::-webkit-scrollbar { display: none; }
         .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
         .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
         .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
         .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+
+        /* Objective Assessment subtopic tab bar -- horizontal, scrollable row
+           of individual "3D piano key" tiles; the active tile pops up solid
+           purple with a raised keycap shadow (2026-09-11, per chat reference:
+           "make it piano 3rd button"). Replaces the old all-sections-stacked
+           -on-one-page layout with one subtopic shown at a time. */
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F3F1FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
+        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.purpleDark}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
+        .obj-subtopic-scroll-btn:active { opacity: 1; }
+        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 8px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 39px); }
+        .obj-subtopic-tab { scroll-snap-align: center; }
+        .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
+        .obj-subtopic-tab { flex: 0 0 auto; width: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 4px; border-radius: 14px; cursor: pointer; border: none; font-family: inherit;
+          background: linear-gradient(180deg, #fff, #F4F2FC);
+          box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(109,77,224,.06), 0 4px 8px rgba(76,58,168,.08);
+          transition: transform .12s ease, box-shadow .12s ease; }
+        .obj-subtopic-tab i { font-size: 18px; color: ${BRAND.purpleDark}; opacity: .75; }
+        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; opacity: .75; line-height: 1.2; text-align: center; }
+        .obj-subtopic-tab-active {
+          background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
+          transform: translateY(-4px) scale(1.04);
+          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 5px 0 #4a339e, 0 10px 18px rgba(76,58,168,.4);
+        }
+        .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
+        .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 4px 2px 6px; margin-bottom: 12px; }
+        .obj-subtopic-nav { display: flex; justify-content: space-between; gap: 10px; padding: 14px 4px 4px; }
+        .obj-subtopic-nav-btn { padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .obj-subtopic-nav-btn.back { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; }
+        .obj-subtopic-nav-btn.next { border: none; background: ${BRAND.purple}; color: #fff; }
+        .obj-subtopic-nav-btn:disabled { opacity: 0.4; cursor: default; }
 
         /* "Suggest probable objective assessment" button (2026-09-10, Aditi:
            "make 3d button and motion graphic when we click on it") — solid

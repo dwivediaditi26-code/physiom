@@ -34,7 +34,7 @@
 // shoulderConditions.json uses S01..S10. The condition NAMES match 1:1, so
 // the "front door" ranking is bridged by normalized name, not id (see
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
@@ -310,6 +310,104 @@ function ModuleCard({ label, color, defaultOpen = true, children }) {
   );
 }
 
+// Subtopics shown as a horizontal, scrollable "piano row" below the
+// condition selector — page-by-page assessment instead of every module
+// stacked on one long scroll (2026-09-11, approved chat mockup: purple
+// gradient bar, active tab pops up as a white card). Extra modules that
+// don't get their own tab fold into the nearest clinically-related one:
+// Posture + Fascia -> Observation; CPA-NKT -> Palpation; Kinetic Chain ->
+// Functional. Special Tests, STTT-Cyriax, and Outcome Measures each get
+// their own page (2026-09-11: "make sttt and special test and outcome
+// measure each page different").
+const SUBTOPICS = [
+  { key: "observation", label: "Observation", icon: "ti-eye" },
+  { key: "palpation", label: "Palpation", icon: "ti-hand-stop" },
+  { key: "rom", label: "ROM", icon: "ti-arrows-maximize" },
+  { key: "functional", label: "Functional", icon: "ti-walk" },
+  { key: "special", label: "Special tests", icon: "ti-clipboard-check" },
+  { key: "sttt", label: "STTT / Cyriax", icon: "ti-stethoscope" },
+  { key: "outcome", label: "Outcome measures", icon: "ti-chart-line" },
+];
+
+// Scrolling the row itself drives selection -- whichever tile's center is
+// nearest the track's center becomes active, like a piano-roll/wheel picker
+// (2026-09-11: "whoever in the middle will show"). Tapping a tile still
+// works and scrolls it to center; both paths converge on the same
+// nearest-to-center logic so they never fight each other.
+function SubtopicTabs({ active, onSelect }) {
+  const scrollRef = React.useRef(null);
+  const tileRefs = React.useRef({});
+  const settleTimer = React.useRef(null);
+
+  const centerOn = (key, smooth = true) => {
+    const el = tileRefs.current[key];
+    const track = scrollRef.current;
+    if (!el || !track) return;
+    const target = el.offsetLeft - (track.clientWidth - el.clientWidth) / 2;
+    track.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  const nearestToCenter = () => {
+    const track = scrollRef.current;
+    if (!track) return null;
+    const trackCenter = track.scrollLeft + track.clientWidth / 2;
+    let best = null, bestDist = Infinity;
+    for (const s of SUBTOPICS) {
+      const el = tileRefs.current[s.key];
+      if (!el) continue;
+      const tileCenter = el.offsetLeft + el.clientWidth / 2;
+      const dist = Math.abs(tileCenter - trackCenter);
+      if (dist < bestDist) { bestDist = dist; best = s.key; }
+    }
+    return best;
+  };
+
+  const handleScroll = () => {
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      const key = nearestToCenter();
+      if (key && key !== active) onSelect(key);
+    }, 120);
+  };
+
+  const handleTap = (key) => {
+    onSelect(key);
+    centerOn(key);
+  };
+
+  const scrollBy = (dx) => scrollRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+
+  // Back/Next buttons and the condition-switch reset change `active` from
+  // outside this component -- follow along so the centered tile always
+  // matches whichever page is actually showing.
+  useEffect(() => { centerOn(active); }, [active]);
+
+  return (
+    <div className="obj-subtopic-bar">
+      <button type="button" className="obj-subtopic-scroll-btn" aria-label="Scroll left" onClick={() => scrollBy(-90)}>
+        <i className="ti ti-chevron-left" aria-hidden="true"></i>
+      </button>
+      <div className="obj-subtopic-tabs" ref={scrollRef} onScroll={handleScroll}>
+        {SUBTOPICS.map((s) => (
+          <button
+            key={s.key}
+            ref={(el) => { tileRefs.current[s.key] = el; }}
+            type="button"
+            className={"obj-subtopic-tab" + (active === s.key ? " obj-subtopic-tab-active" : "")}
+            onClick={() => handleTap(s.key)}
+          >
+            <i className={"ti " + s.icon} aria-hidden="true"></i>
+            <span>{s.label}</span>
+          </button>
+        ))}
+      </div>
+      <button type="button" className="obj-subtopic-scroll-btn" aria-label="Scroll right" onClick={() => scrollBy(90)}>
+        <i className="ti ti-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  );
+}
+
 function Chip({ active, onClick, children }) {
   return (
     <button
@@ -427,6 +525,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
+  const [activeSubtopic, setActiveSubtopic] = useState("observation");
   const [analysisRun, setAnalysisRun] = useState(false);
   // Brief "thinking" state between tap and the ranked conditions appearing
   // — purely a UI beat (the real differential itself is synchronous), so
@@ -475,6 +574,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   );
   const selectedId = activeId || rankedIds[0] || config.order[0];
   const condition = config.conditions[selectedId];
+
+  // Switching condition jumps back to the first subtopic page.
+  useEffect(() => { setActiveSubtopic("observation"); }, [selectedId]);
 
   const redFlag = config.getRedFlag(engineResult);
 
@@ -560,6 +662,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             </div>
           )}
 
+          <SubtopicTabs active={activeSubtopic} onSelect={setActiveSubtopic} />
+          <div className="obj-subtopic-page">
+
           <ModuleCard label="Suggested tests" color={BRAND.purple}>
             {config.suggestedTestsMode === "split" ? (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -586,6 +691,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             )}
           </ModuleCard>
 
+          {activeSubtopic === "observation" && <>
           <ModuleCard label="Observation" color="#7C3AED">
             <ChipGroup options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} />
             <FindingInterpretations category="observation" selected={v("observation", "chips")} interpretations={condition.findingInterpretations?.observation} />
@@ -596,6 +702,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             <FindingInterpretations category="posture" selected={v("posture", "chips")} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
 
+          {condition.fascia && (
+            <ModuleCard label="Fascia" color="#EC4899" defaultOpen={false}>
+              <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5 }}>{condition.fascia}</div>
+            </ModuleCard>
+          )}
+          </>}
+
+          {activeSubtopic === "palpation" && <>
           <ModuleCard label="Palpation" color={BRAND.red}>
             {isV1 ? (
               condition.palpationZones ? (
@@ -611,7 +725,33 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             <FindingInterpretations category="palpation" selected={v("palpation", "chips")} interpretations={condition.findingInterpretations?.palpation} />
           </ModuleCard>
 
-          {config.romMovements && (
+          <ModuleCard label="CPA — NKT" color="#D97706">
+            {isV1 ? (
+              <>
+                {condition.cpaNkt.muscle && <SubLabel>{condition.cpaNkt.muscle}</SubLabel>}
+                <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5, marginBottom: 10 }}>{condition.cpaNkt.narrative}</div>
+                <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={v("cpaNkt", "state")} onToggle={(o) => toggleSingle("cpaNkt", "state", o)} multi={false} />
+              </>
+            ) : condition.cpa.applicable === false ? (
+              <EmptyNote>{condition.cpa.reason}</EmptyNote>
+            ) : (
+              <>
+                {condition.cpa.muscles.map((m, i) => {
+                  const sel = v("cpa", "m" + i);
+                  return (
+                    <div key={i} style={{ marginBottom: 12 }}>
+                      <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
+                      <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
+                    </div>
+                  );
+                })}
+                <PurpleBox title="Clinical Interpretation">{condition.cpa.pattern}</PurpleBox>
+              </>
+            )}
+          </ModuleCard>
+          </>}
+
+          {activeSubtopic === "rom" && config.romMovements && (
             <ModuleCard label={config.romLabel} color="#059669">
               {/* Same Stepper + "Normal — document" quick-fill + Active/
                   Passive/Resisted mode toggle the app's real Range of
@@ -713,6 +853,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             </ModuleCard>
           )}
 
+          {activeSubtopic === "special" && <>
           <ModuleCard label="Special Tests" color="#8B5CF6">
             {specialTestItems && specialTestItems.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -737,7 +878,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
           </ModuleCard>
+          </>}
 
+          {activeSubtopic === "sttt" && <>
           {isV1 ? (
             <ModuleCard label="STTT — Cyriax" color="#0D9488">
               <SubLabel>{condition.resistedNarrative}</SubLabel>
@@ -846,32 +989,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               )}
             </ModuleCard>
           )}
+          </>}
 
-          <ModuleCard label="CPA — NKT" color="#D97706">
-            {isV1 ? (
-              <>
-                {condition.cpaNkt.muscle && <SubLabel>{condition.cpaNkt.muscle}</SubLabel>}
-                <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5, marginBottom: 10 }}>{condition.cpaNkt.narrative}</div>
-                <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={v("cpaNkt", "state")} onToggle={(o) => toggleSingle("cpaNkt", "state", o)} multi={false} />
-              </>
-            ) : condition.cpa.applicable === false ? (
-              <EmptyNote>{condition.cpa.reason}</EmptyNote>
-            ) : (
-              <>
-                {condition.cpa.muscles.map((m, i) => {
-                  const sel = v("cpa", "m" + i);
-                  return (
-                    <div key={i} style={{ marginBottom: 12 }}>
-                      <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
-                      <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
-                    </div>
-                  );
-                })}
-                <PurpleBox title="Clinical Interpretation">{condition.cpa.pattern}</PurpleBox>
-              </>
-            )}
-          </ModuleCard>
-
+          {activeSubtopic === "functional" && <>
           {isV1 ? (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
               <div style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink, marginBottom: 10 }}>{condition.kineticChain.testName}</div>
@@ -983,14 +1103,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               )}
             </ModuleCard>
           )}
+          </>}
 
-          {condition.fascia && (
-            <ModuleCard label="Fascia" color="#EC4899" defaultOpen={false}>
-              <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5 }}>{condition.fascia}</div>
-            </ModuleCard>
-          )}
-
-          <ModuleCard label="Outcome Measures" color={BRAND.gray} defaultOpen={false}>
+          {activeSubtopic === "outcome" && <>
+          <ModuleCard label="Outcome Measures" color={BRAND.gray}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {(isV1 ? condition.outcome.split(";").map((s) => s.trim()).filter(Boolean) : condition.outcomeMeasures).map((instrument) => {
                 const measureId = matchMeasureIdForInstrument(instrument);
@@ -1033,6 +1149,31 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               })}
             </div>
           </ModuleCard>
+          </>}
+
+          </div>
+          <div className="obj-subtopic-nav">
+            <button
+              type="button" className="obj-subtopic-nav-btn back"
+              disabled={SUBTOPICS.findIndex((s) => s.key === activeSubtopic) === 0}
+              onClick={() => {
+                const i = SUBTOPICS.findIndex((s) => s.key === activeSubtopic);
+                if (i > 0) setActiveSubtopic(SUBTOPICS[i - 1].key);
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              type="button" className="obj-subtopic-nav-btn next"
+              disabled={SUBTOPICS.findIndex((s) => s.key === activeSubtopic) === SUBTOPICS.length - 1}
+              onClick={() => {
+                const i = SUBTOPICS.findIndex((s) => s.key === activeSubtopic);
+                if (i < SUBTOPICS.length - 1) setActiveSubtopic(SUBTOPICS[i + 1].key);
+              }}
+            >
+              Next →
+            </button>
+          </div>
         </>
       )}
     </div>

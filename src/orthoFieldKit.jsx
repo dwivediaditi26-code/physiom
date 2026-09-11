@@ -749,8 +749,37 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
   let tone = "";
   if (toneProp) tone = toneProp ? " stepper-" + toneProp : "";
   else if (colorize && num !== null) tone = num >= 5 ? " stepper-normal" : num === 4 ? " stepper-mild" : " stepper-severe";
+
+  // Square mode (2026-09-11, Aditi: first pass with separate [−]/[+]
+  // buttons either side of the number was "totally wrong" -- wanted the
+  // original up/down-arrow layout back, just bigger, with the number box
+  // and the arrow block still visually separate pieces. So: same ▲-over-▼
+  // stacked arrow shape as the base .stepper, but as its own block next to
+  // the number box (a real gap between them, not fused into one bordered
+  // container), and each arrow button roughly doubled from the old
+  // 22×15px. Plain (non-square) Stepper -- the thin 68px-wide fields used
+  // all over ROM/MMT/etc -- is untouched.
+  if (square) {
+    return (
+      <div className={"stepper-sq-row" + tone}>
+        <input
+          className="stepper-sq-input"
+          type="number"
+          inputMode="decimal"
+          value={value ?? ""}
+          placeholder="--"
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div className="stepper-sq-arrows">
+          <button type="button" className="stepper-sq-arrow" onClick={() => bump(step)} aria-label="Increase">▲</button>
+          <button type="button" className="stepper-sq-arrow" onClick={() => bump(-step)} aria-label="Decrease">▼</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={"stepper" + tone + (square ? " stepper-square" : "")}>
+    <div className={"stepper" + tone}>
       <input
         className="stepper-input"
         type="number"

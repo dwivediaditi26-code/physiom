@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { SectionIntro, fmtVal } from "./orthoFieldKit.jsx";
+import { humanizeKey } from "./medicalAbbreviations.js";
 
 /* Cardio-style summary/review — one card per completed section, each row a
    plain label/value pair, exactly matching CardiopulmonaryAssessment's
@@ -19,7 +20,7 @@ function rowsForStep(step, section, formatters) {
   if (formatter) return formatter(section);
   return Object.entries(section)
     .filter(([k]) => !k.startsWith("__"))
-    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .map(([k, v]) => ({ label: humanizeKey(k), value: fmtVal(v) }))
     .filter((r) => r.value);
 }
 const isGrouped = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);

@@ -6,6 +6,7 @@ import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
+import { humanizeKey } from "./medicalAbbreviations.js";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -1834,14 +1835,6 @@ export function SummaryStyles() {
       .primary-btn:active { transform: scale(.97); box-shadow: 0 2px 6px rgba(108,77,255,.22); filter: brightness(.96); }
     `}</style>
   );
-}
-// "chiefComplaint" -> "Chief Complaint" -- the raw field key was showing
-// verbatim (e.g. "BedMobility", "PriorFunction") with only the CSS
-// text-transform:capitalize applied, which capitalizes just the first
-// letter since there's no whitespace to find word boundaries at. Same
-// approach AssessmentReportView.jsx's humanize() already uses.
-function humanizeKey(k) {
-  return String(k).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 // rowsForStep: a step's own formatter (when it needs one -- e.g. a step
 // whose section holds an array like the Exercise Prescription programme,

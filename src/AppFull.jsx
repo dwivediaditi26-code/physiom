@@ -1773,15 +1773,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         {/* Text */}
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
           <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
-          {activePatient
-            ? <div style={{fontSize:"0.72rem",color:PC.muted,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                <span style={{color:PC.a3}}>●</span> {activePatient.name.length>18?activePatient.name.slice(0,18)+"…":activePatient.name}
-                {cloudSaveStatus === "saving" && <span style={{color:PC.muted}}> · Saving…</span>}
-                {cloudSaveStatus === "saved" && lastSaved && <span style={{color:PC.green}}> · ✓ Saved {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</span>}
-                {cloudSaveStatus === "error" && <span style={{color:"#dc2626"}}> · ⚠ Offline — will retry</span>}
-              </div>
-            : <div style={{fontSize:"0.68rem",color:PC.muted}}>No patient loaded</div>
-          }
         </div>
         {/* Messages */}
         <button onClick={()=>navTo("physiofeed")} aria-label="Messages" title="Messages"
