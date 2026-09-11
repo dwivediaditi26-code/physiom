@@ -347,8 +347,17 @@ function EmptyNote({ children }) {
   );
 }
 
+// Purple-accent treatment (2026-09-10, Aditi: picked option A from font
+// mockups — "basic black" default and the old flat BRAND.gray were both
+// rejected) — field/group labels read as an intentional design choice
+// instead of disabled-looking muted text. Shared by every module that
+// reuses SubLabel/CategoryLabel: STTT, Kinetic Chain, Functional Screen,
+// Outcome Measures, CPA.
+const LABEL_ACCENT = "#534AB7";
+const LABEL_ACCENT_DARK = "#26215C";
+
 function SubLabel({ children }) {
-  return <div style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.gray, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontSize: "0.8rem", fontWeight: 700, color: LABEL_ACCENT_DARK, letterSpacing: 0.2, marginBottom: 6 }}>{children}</div>;
 }
 
 // Small uppercase category label, same treatment as ModuleCard's own
@@ -356,7 +365,7 @@ function SubLabel({ children }) {
 // module (e.g. "Side" vs "Result") rather than a field name.
 function CategoryLabel({ children }) {
   return (
-    <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: BRAND.gray, marginBottom: 6 }}>
+    <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: LABEL_ACCENT, marginBottom: 6 }}>
       {children}
     </div>
   );
@@ -771,7 +780,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   )}
                   {(condition.sttt.resisted || []).length > 0 && (
                     <>
-                      <div style={{ marginBottom: 12, fontSize: "0.72rem", fontWeight: 700, color: BRAND.gray, textTransform: "uppercase" }}>Resisted</div>
+                      <CategoryLabel>Resisted</CategoryLabel>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {condition.sttt.resisted.map((f, i) => {
                           const sel = v("sttt", "r" + i);
@@ -789,7 +798,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   )}
                   {(condition.sttt.passive || []).length > 0 && (
                     <>
-                      <div style={{ marginTop: 16, marginBottom: 8, fontSize: "0.72rem", fontWeight: 700, color: BRAND.gray, textTransform: "uppercase" }}>Passive</div>
+                      <div style={{ marginTop: 16 }}><CategoryLabel>Passive</CategoryLabel></div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {condition.sttt.passive.map((f, i) => {
                           const sel = v("sttt", "p" + i);
