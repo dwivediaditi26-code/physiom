@@ -346,8 +346,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // straight through, guests get a "sign in to continue" popup instead of
   // a button that would otherwise just silently 401.
   const [authPromptFeature, setAuthPromptFeature] = useState(null); // null | feature label string
-  const requireAuth = useCallback((featureLabel) => {
-    if (isGuest) { setAuthPromptFeature(featureLabel); return false; }
+  // Optional 2nd arg (2026-09-11) -- most callers are the AI-backed
+  // features the default copy describes, but Clinic Protocols is a plain
+  // Supabase-backed save/list feature (needs an account for a different
+  // reason: per-user rows, not a rate-limited AI endpoint), so it passes
+  // its own accurate body text instead of the AI-specific default.
+  const requireAuth = useCallback((featureLabel, bodyText) => {
+    if (isGuest) { setAuthPromptFeature({ label: featureLabel, bodyText }); return false; }
     return true;
   }, [isGuest]);
   // ── CLINICAL STREAM (Step 1 scaffold) ──────────────────────────────
@@ -1411,7 +1416,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* ── Guest Mode: "sign in to use this" popup, shown by requireAuth() ── */}
       {authPromptFeature && (
         <AuthRequiredPrompt
-          feature={authPromptFeature}
+          feature={authPromptFeature.label}
+          bodyText={authPromptFeature.bodyText}
           onClose={()=>setAuthPromptFeature(null)}
           onSignIn={()=>{ setAuthPromptFeature(null); onSignOut(); }}
         />

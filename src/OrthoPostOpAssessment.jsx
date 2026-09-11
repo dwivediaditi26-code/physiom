@@ -75,8 +75,10 @@ const INCISION_TYPES_BY_CONDITION = {
 };
 const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "Anterolateral", "Posterolateral", "Percutaneous / minimally invasive", "Arthroscopic portal(s)"];
 
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 /* Always present for every post-op patient, regardless of surgery type. */
-const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", "carePlan", "review"];
+const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
 const OPTIONAL_IDS = ["jointMobility", "specialTests", "neuroScreen", "residualLimb", "prosthesis"];
 
@@ -100,7 +102,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
-  "carePlan",
+  ...CAREPLAN_STEP_IDS,
   "review",
 ];
 
@@ -124,7 +126,12 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
-  carePlan: { icon: "🎯", label: "Care Plan" },
+  carePlanProblems: { icon: "🧩", label: "Problem List" },
+  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
+  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
+  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
+  carePlanSessions: { icon: "🗓️", label: "Sessions" },
+  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
   review: { icon: "✅", label: "Final Review" },
 };
 
@@ -137,7 +144,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 export function buildOrthoPostOpAssessSteps() {
   return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
 }
-export const orthoPostOpSummaryFormatters = { carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
+export const orthoPostOpSummaryFormatters = { carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection };
 
 /* ============================================================
    SECTION CONTENT
@@ -319,7 +326,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
   // this wizard's local data/setData, so the Review screen (which reads
   // data[step.id]) would otherwise always see an empty carePlan section.
-  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
+  const reviewData = useMemo(() => ({ ...data, carePlanPlan: patientData?.ortho_care_plan || data.carePlanPlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -468,10 +475,19 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
-          {current.id === "carePlan" && (
+          {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>
-              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="postop" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+              <OrthoCarePlanStep
+                patientData={patientData}
+                onSave={onSave}
+                selectedRegions={selectedRegions}
+                condition={condition}
+                setting="postop"
+                pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
+                phase={CAREPLAN_PHASE_BY_STEP[current.id]}
+                onAdvance={goNext}
+              />
             </>
           )}
           {current.id === "review" && (
@@ -485,7 +501,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 onEdit={jumpTo}
                 exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
                 extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
-                formatters={{ carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, outcomeMeasure: formatOutcomeMeasureSection }}
+                formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>

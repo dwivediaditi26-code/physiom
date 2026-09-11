@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PhysioMind — Palpation Cloudinary Photo Uploader (3 photos per structure)</title>
+<style>
+  :root {
+    --purple: #6C4DFF; --purple-dark: #4A2FCC; --purple-faint: #F1EEFF;
+    --ink: #1A1730; --gray: #6B6884; --border: #E4E1F2;
+    --green: #1E9E5A; --green-bg: #E7F8EF; --red: #C63232; --red-bg: #FDECEC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: #FAF9FF; color: var(--ink); margin: 0; padding: 24px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--gray); font-size: 13px; margin-bottom: 20px; }
+  .config {
+    background: #fff; border: 1.5px solid var(--border); border-radius: 14px;
+    padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; }
+  .field label { font-size: 12px; font-weight: 700; color: var(--purple-dark); }
+  .field input {
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit;
+  }
+  .config-note { font-size: 12px; color: var(--gray); width: 100%; line-height: 1.5; }
+  .section-title {
+    font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--purple-dark); margin: 28px 0 12px;
+  }
+  .test-card {
+    background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .test-head { font-weight: 700; font-size: 13.5px; margin-bottom: 8px; }
+  .slots { display: flex; gap: 10px; flex-wrap: wrap; }
+  .slot {
+    flex: 1 1 260px; border: 1.5px dashed var(--border); border-radius: 10px; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px; min-width: 240px;
+  }
+  .slot-row1 { display: flex; align-items: center; gap: 6px; }
+  .slot-num { font-size: 10.5px; font-weight: 800; color: var(--purple-dark); flex-shrink: 0; }
+  .slot input[type="text"] {
+    border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 6px; font-size: 11.5px;
+    font-family: monospace; flex: 1; min-width: 0;
+  }
+  .slot input[type="file"] { font-size: 11px; }
+  .slot-row2 { display: flex; align-items: center; gap: 6px; }
+  .thumb {
+    width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; display: none;
+  }
+  .slot.has-thumb .thumb { display: block; }
+  button {
+    border: none; border-radius: 8px; padding: 6px 11px; font-size: 11.5px; font-weight: 700;
+    cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .btn-upload { background: var(--purple); color: #fff; }
+  .btn-upload:disabled { background: #C9C2F5; cursor: default; }
+  .btn-upload-all { background: var(--purple-dark); color: #fff; padding: 10px 18px; font-size: 13px; }
+  .status { font-size: 10.5px; flex: 1 1 100%; }
+  .status.ok { color: var(--green); }
+  .status.err { color: var(--red); }
+  .status a { color: var(--purple); }
+  .top-actions { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .badge { font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 20px; flex-shrink: 0; }
+  .badge.pending { background: var(--purple-faint); color: var(--purple-dark); }
+  .badge.done { background: var(--green-bg); color: var(--green); }
+  .badge.failed { background: var(--red-bg); color: var(--red); }
+  .badge.already { background: #FFF3D6; color: #9A6B00; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PhysioMind — Palpation Cloudinary Photo Uploader</h1>
+  <div class="sub">3 photo slots per structure (e.g. attachments diagram / starting position / technique close-up) across all 118 Palpation study-library structures — pick a file for each slot you have, then upload. Public IDs match each structure's id in src/palpationData.js (base id, base id + "_2", base id + "_3"), so once uploaded these can be dropped straight into that file's <code>images: [...]</code> arrays.</div>
+
+  <div class="config">
+    <div class="field">
+      <label>Cloud name</label>
+      <input type="text" id="cloudName" value="dr15y1pwj">
+    </div>
+    <div class="field">
+      <label>Unsigned upload preset</label>
+      <input type="text" id="uploadPreset" placeholder="e.g. physio_unsigned">
+    </div>
+    <div class="field">
+      <label>Folder (optional)</label>
+      <input type="text" id="folder" placeholder="leave blank for none">
+    </div>
+    <div class="config-note">
+      Needs an <b>unsigned upload preset</b> — Cloudinary won't accept direct browser uploads with your API secret.
+      In your Cloudinary console: <b>Settings → Upload → Upload presets → Add upload preset</b>, set <b>Signing Mode: Unsigned</b>, save, paste its name above.
+      Settings are remembered in this browser for next time.
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="btn-upload-all" id="uploadAllBtn">⬆ Upload all selected</button>
+  </div>
+
+  <div id="shoulder"></div>
+  <div id="cervical"></div>
+  <div id="head"></div>
+  <div id="arm"></div>
+  <div id="forearm"></div>
+  <div id="trunk"></div>
+  <div id="pelvis"></div>
+  <div id="thigh"></div>
+  <div id="leg"></div>
+  <div id="foot"></div>
+  <div id="bones"></div>
+</div>
+
+<script>
+const SHOULDER = [["Trapezius", ["palp_trapezius", "palp_trapezius_2", "palp_trapezius_3"], [false, false, false]], ["Rhomboids (major & minor)", ["palp_rhomboids", "palp_rhomboids_2", "palp_rhomboids_3"], [false, false, false]], ["Serratus Posterior Superior", ["palp_serratus_posterior_superior", "palp_serratus_posterior_superior_2", "palp_serratus_posterior_superior_3"], [false, false, false]], ["Levator Scapulae", ["palp_levator_scapulae", "palp_levator_scapulae_2", "palp_levator_scapulae_3"], [false, false, false]], ["Posterior Deltoid", ["palp_posterior_deltoid", "palp_posterior_deltoid_2", "palp_posterior_deltoid_3"], [false, false, false]], ["Infraspinatus & Teres Minor", ["palp_infraspinatus_teres_minor", "palp_infraspinatus_teres_minor_2", "palp_infraspinatus_teres_minor_3"], [false, false, false]], ["Teres Major", ["palp_teres_major", "palp_teres_major_2", "palp_teres_major_3"], [false, false, false]], ["Latissimus Dorsi (brief detour)", ["palp_latissimus_dorsi_detour", "palp_latissimus_dorsi_detour_2", "palp_latissimus_dorsi_detour_3"], [false, false, false]], ["Supraspinatus", ["palp_supraspinatus", "palp_supraspinatus_2", "palp_supraspinatus_3"], [false, false, false]], ["Anterior Deltoid", ["palp_anterior_deltoid", "palp_anterior_deltoid_2", "palp_anterior_deltoid_3"], [false, false, false]], ["Subscapularis", ["palp_subscapularis", "palp_subscapularis_2", "palp_subscapularis_3"], [false, false, false]], ["Serratus Anterior", ["palp_serratus_anterior", "palp_serratus_anterior_2", "palp_serratus_anterior_3"], [false, false, false]], ["Pectoralis Major", ["palp_pectoralis_major", "palp_pectoralis_major_2", "palp_pectoralis_major_3"], [false, false, false]], ["Pectoralis Minor", ["palp_pectoralis_minor", "palp_pectoralis_minor_2", "palp_pectoralis_minor_3"], [false, false, false]], ["Subclavius", ["palp_subclavius", "palp_subclavius_2", "palp_subclavius_3"], [false, false, false]]];
+const CERVICAL = [["Sternocleidomastoid (SCM)", ["palp_scm", "palp_scm_2", "palp_scm_3"], [false, false, false]], ["Platysma (brief detour)", ["palp_platysma", "palp_platysma_2", "palp_platysma_3"], [false, false, false]], ["Scalene Group (anterior, middle, posterior)", ["palp_scalene_group", "palp_scalene_group_2", "palp_scalene_group_3"], [false, false, false]], ["Omohyoid, Inferior Belly (brief detour)", ["palp_omohyoid_inferior_belly", "palp_omohyoid_inferior_belly_2", "palp_omohyoid_inferior_belly_3"], [false, false, false]], ["Longus Colli & Longus Capitis", ["palp_longus_colli_capitis", "palp_longus_colli_capitis_2", "palp_longus_colli_capitis_3"], [false, false, false]], ["Rectus Capitis Anterior & Lateralis (brief detour)", ["palp_rectus_capitis_ant_lat", "palp_rectus_capitis_ant_lat_2", "palp_rectus_capitis_ant_lat_3"], [false, false, false]], ["Hyoid Group (infra- & suprahyoids)", ["palp_hyoid_group", "palp_hyoid_group_2", "palp_hyoid_group_3"], [false, false, false]], ["Upper Trapezius (seated variant)", ["palp_upper_trapezius_seated", "palp_upper_trapezius_seated_2", "palp_upper_trapezius_seated_3"], [false, false, false]], ["Levator Scapulae (seated variant)", ["palp_levator_scapulae_seated", "palp_levator_scapulae_seated_2", "palp_levator_scapulae_seated_3"], [false, false, false]], ["Splenius Capitis", ["palp_splenius_capitis", "palp_splenius_capitis_2", "palp_splenius_capitis_3"], [false, false, false]], ["Splenius Cervicis (brief detour)", ["palp_splenius_cervicis", "palp_splenius_cervicis_2", "palp_splenius_cervicis_3"], [false, false, false]], ["Semispinalis Capitis", ["palp_semispinalis_capitis", "palp_semispinalis_capitis_2", "palp_semispinalis_capitis_3"], [false, false, false]], ["Longissimus Capitis, Semispinalis Cervicis, Cervical Multifidus & Rotatores (brief detour)", ["palp_longissimus_capitis_group", "palp_longissimus_capitis_group_2", "palp_longissimus_capitis_group_3"], [false, false, false]], ["Suboccipital Group", ["palp_suboccipital_group", "palp_suboccipital_group_2", "palp_suboccipital_group_3"], [false, false, false]]];
+const HEAD = [["Occipitofrontalis", ["palp_occipitofrontalis", "palp_occipitofrontalis_2", "palp_occipitofrontalis_3"], [false, false, false]], ["Temporoparietalis & Auricularis Group", ["palp_temporoparietalis_auricularis", "palp_temporoparietalis_auricularis_2", "palp_temporoparietalis_auricularis_3"], [false, false, false]], ["Temporalis", ["palp_temporalis", "palp_temporalis_2", "palp_temporalis_3"], [false, false, false]], ["Masseter", ["palp_masseter", "palp_masseter_2", "palp_masseter_3"], [false, false, false]], ["Lateral Pterygoid", ["palp_lateral_pterygoid", "palp_lateral_pterygoid_2", "palp_lateral_pterygoid_3"], [false, false, false]], ["Medial Pterygoid", ["palp_medial_pterygoid", "palp_medial_pterygoid_2", "palp_medial_pterygoid_3"], [false, false, false]], ["Orbicularis Oculi", ["palp_orbicularis_oculi", "palp_orbicularis_oculi_2", "palp_orbicularis_oculi_3"], [false, false, false]], ["Corrugator Supercilii", ["palp_corrugator_supercilii", "palp_corrugator_supercilii_2", "palp_corrugator_supercilii_3"], [false, false, false]], ["Levator Palpebrae Superioris", ["palp_levator_palpebrae_superioris", "palp_levator_palpebrae_superioris_2", "palp_levator_palpebrae_superioris_3"], [false, false, false]], ["Procerus", ["palp_procerus", "palp_procerus_2", "palp_procerus_3"], [false, false, false]], ["Nasalis", ["palp_nasalis", "palp_nasalis_2", "palp_nasalis_3"], [false, false, false]], ["Depressor Septi Nasi", ["palp_depressor_septi_nasi", "palp_depressor_septi_nasi_2", "palp_depressor_septi_nasi_3"], [false, false, false]], ["Levator Labii Superioris Alaeque Nasi", ["palp_llsan", "palp_llsan_2", "palp_llsan_3"], [false, false, false]], ["Levator Labii Superioris", ["palp_levator_labii_superioris", "palp_levator_labii_superioris_2", "palp_levator_labii_superioris_3"], [false, false, false]], ["Zygomaticus Minor", ["palp_zygomaticus_minor", "palp_zygomaticus_minor_2", "palp_zygomaticus_minor_3"], [false, false, false]], ["Zygomaticus Major", ["palp_zygomaticus_major", "palp_zygomaticus_major_2", "palp_zygomaticus_major_3"], [false, false, false]], ["Levator Anguli Oris", ["palp_levator_anguli_oris", "palp_levator_anguli_oris_2", "palp_levator_anguli_oris_3"], [false, false, false]], ["Risorius", ["palp_risorius", "palp_risorius_2", "palp_risorius_3"], [false, false, false]], ["Depressor Anguli Oris", ["palp_depressor_anguli_oris", "palp_depressor_anguli_oris_2", "palp_depressor_anguli_oris_3"], [false, false, false]], ["Depressor Labii Inferioris", ["palp_depressor_labii_inferioris", "palp_depressor_labii_inferioris_2", "palp_depressor_labii_inferioris_3"], [false, false, false]], ["Mentalis", ["palp_mentalis", "palp_mentalis_2", "palp_mentalis_3"], [false, false, false]], ["Buccinator", ["palp_buccinator", "palp_buccinator_2", "palp_buccinator_3"], [false, false, false]], ["Orbicularis Oris", ["palp_orbicularis_oris", "palp_orbicularis_oris_2", "palp_orbicularis_oris_3"], [false, false, false]]];
+const ARM = [["Deltoid", ["palp_deltoid", "palp_deltoid_2", "palp_deltoid_3"], [false, false, false]], ["Biceps Brachii", ["palp_biceps_brachii", "palp_biceps_brachii_2", "palp_biceps_brachii_3"], [false, false, false]], ["Brachialis", ["palp_brachialis", "palp_brachialis_2", "palp_brachialis_3"], [false, false, false]], ["Coracobrachialis", ["palp_coracobrachialis", "palp_coracobrachialis_2", "palp_coracobrachialis_3"], [false, false, false]], ["Triceps Brachii", ["palp_triceps_brachii", "palp_triceps_brachii_2", "palp_triceps_brachii_3"], [false, false, false]], ["Anconeus", ["palp_anconeus", "palp_anconeus_2", "palp_anconeus_3"], [false, false, false]]];
+const FOREARM = [["Brachioradialis", ["palp_brachioradialis", "palp_brachioradialis_2", "palp_brachioradialis_3"], [false, false, false]], ["Pronator Teres", ["palp_pronator_teres", "palp_pronator_teres_2", "palp_pronator_teres_3"], [false, false, false]], ["Wrist Flexor Group (FCR, PL, FCU)", ["palp_wrist_flexor_group", "palp_wrist_flexor_group_2", "palp_wrist_flexor_group_3"], [false, false, false]], ["Flexors Digitorum Superficialis & Profundus", ["palp_flexors_digitorum", "palp_flexors_digitorum_2", "palp_flexors_digitorum_3"], [false, false, false]], ["Flexor Pollicis Longus", ["palp_flexor_pollicis_longus", "palp_flexor_pollicis_longus_2", "palp_flexor_pollicis_longus_3"], [false, false, false]], ["Radial Group (ECRL & ECRB)", ["palp_radial_group", "palp_radial_group_2", "palp_radial_group_3"], [false, false, false]], ["Extensor Digitorum & Extensor Digiti Minimi", ["palp_extensor_digitorum_edm", "palp_extensor_digitorum_edm_2", "palp_extensor_digitorum_edm_3"], [false, false, false]], ["Extensor Carpi Ulnaris", ["palp_extensor_carpi_ulnaris", "palp_extensor_carpi_ulnaris_2", "palp_extensor_carpi_ulnaris_3"], [false, false, false]], ["Supinator", ["palp_supinator", "palp_supinator_2", "palp_supinator_3"], [false, false, false]], ["Deep Distal Four Group (APL, EPB, EPL, Extensor Indicis)", ["palp_deep_distal_four", "palp_deep_distal_four_2", "palp_deep_distal_four_3"], [false, false, false]]];
+const TRUNK = [["Latissimus Dorsi", ["palp_latissimus_dorsi", "palp_latissimus_dorsi_2", "palp_latissimus_dorsi_3"], [false, false, false]], ["Erector Spinae Group", ["palp_erector_spinae", "palp_erector_spinae_2", "palp_erector_spinae_3"], [false, false, false]], ["Transversospinalis Group", ["palp_transversospinalis", "palp_transversospinalis_2", "palp_transversospinalis_3"], [false, false, false]], ["Quadratus Lumborum", ["palp_quadratus_lumborum", "palp_quadratus_lumborum_2", "palp_quadratus_lumborum_3"], [false, false, false]], ["Interspinales", ["palp_interspinales", "palp_interspinales_2", "palp_interspinales_3"], [false, false, false]], ["External & Internal Intercostals", ["palp_intercostals", "palp_intercostals_2", "palp_intercostals_3"], [false, false, false]], ["Rectus Abdominis", ["palp_rectus_abdominis", "palp_rectus_abdominis_2", "palp_rectus_abdominis_3"], [false, false, false]], ["External & Internal Abdominal Obliques", ["palp_abdominal_obliques", "palp_abdominal_obliques_2", "palp_abdominal_obliques_3"], [false, false, false]], ["Diaphragm", ["palp_diaphragm", "palp_diaphragm_2", "palp_diaphragm_3"], [false, false, false]], ["Iliopsoas", ["palp_iliopsoas", "palp_iliopsoas_2", "palp_iliopsoas_3"], [false, false, false]]];
+const PELVIS = [["Gluteus Maximus", ["palp_gluteus_maximus", "palp_gluteus_maximus_2", "palp_gluteus_maximus_3"], [false, false, false]], ["Gluteus Medius", ["palp_gluteus_medius", "palp_gluteus_medius_2", "palp_gluteus_medius_3"], [false, false, false]], ["Piriformis", ["palp_piriformis", "palp_piriformis_2", "palp_piriformis_3"], [false, false, false]], ["Quadratus Femoris", ["palp_quadratus_femoris", "palp_quadratus_femoris_2", "palp_quadratus_femoris_3"], [false, false, false]], ["Other Deep Lateral Rotators (Gemelli & Obturators)", ["palp_other_deep_lateral_rotators", "palp_other_deep_lateral_rotators_2", "palp_other_deep_lateral_rotators_3"], [false, false, false]]];
+const THIGH = [["Hamstring Group", ["palp_hamstring_group", "palp_hamstring_group_2", "palp_hamstring_group_3"], [false, false, false]], ["Tensor Fasciae Latae (TFL)", ["palp_tensor_fasciae_latae", "palp_tensor_fasciae_latae_2", "palp_tensor_fasciae_latae_3"], [false, false, false]], ["Sartorius", ["palp_sartorius", "palp_sartorius_2", "palp_sartorius_3"], [false, false, false]], ["Quadriceps Femoris Group", ["palp_quadriceps_femoris", "palp_quadriceps_femoris_2", "palp_quadriceps_femoris_3"], [false, false, false]], ["Pectineus", ["palp_pectineus", "palp_pectineus_2", "palp_pectineus_3"], [false, false, false]], ["Adductor Longus", ["palp_adductor_longus", "palp_adductor_longus_2", "palp_adductor_longus_3"], [false, false, false]], ["Gracilis", ["palp_gracilis", "palp_gracilis_2", "palp_gracilis_3"], [false, false, false]], ["Adductor Magnus", ["palp_adductor_magnus", "palp_adductor_magnus_2", "palp_adductor_magnus_3"], [false, false, false]]];
+const LEG = [["Tibialis Anterior", ["palp_tibialis_anterior", "palp_tibialis_anterior_2", "palp_tibialis_anterior_3"], [false, false, false]], ["Extensor Digitorum Longus (EDL)", ["palp_extensor_digitorum_longus", "palp_extensor_digitorum_longus_2", "palp_extensor_digitorum_longus_3"], [false, false, false]], ["Extensor Hallucis Longus (EHL)", ["palp_extensor_hallucis_longus", "palp_extensor_hallucis_longus_2", "palp_extensor_hallucis_longus_3"], [false, false, false]], ["Fibularis Longus & Brevis", ["palp_fibularis_longus_brevis", "palp_fibularis_longus_brevis_2", "palp_fibularis_longus_brevis_3"], [false, false, false]], ["Gastrocnemius", ["palp_gastrocnemius", "palp_gastrocnemius_2", "palp_gastrocnemius_3"], [false, false, false]], ["Soleus", ["palp_soleus", "palp_soleus_2", "palp_soleus_3"], [false, false, false]], ["Popliteus", ["palp_popliteus", "palp_popliteus_2", "palp_popliteus_3"], [false, false, false]], ["Tibialis Posterior, Flexor Digitorum Longus & Flexor Hallucis Longus", ["palp_tom_dick_harry", "palp_tom_dick_harry_2", "palp_tom_dick_harry_3"], [false, false, false]]];
+const FOOT = [["Extensor Digitorum Brevis & Extensor Hallucis Brevis", ["palp_edb_ehb", "palp_edb_ehb_2", "palp_edb_ehb_3"], [false, false, false]], ["Dorsal Interossei Pedis (DIP)", ["palp_dorsal_interossei_pedis", "palp_dorsal_interossei_pedis_2", "palp_dorsal_interossei_pedis_3"], [false, false, false]], ["Abductor Hallucis & Flexor Hallucis Brevis", ["palp_abductor_flexor_hallucis_brevis", "palp_abductor_flexor_hallucis_brevis_2", "palp_abductor_flexor_hallucis_brevis_3"], [false, false, false]], ["Abductor Digiti Minimi Pedis & Flexor Digiti Minimi Pedis", ["palp_admp_fdmp", "palp_admp_fdmp_2", "palp_admp_fdmp_3"], [false, false, false]], ["Flexor Digitorum Brevis", ["palp_flexor_digitorum_brevis", "palp_flexor_digitorum_brevis_2", "palp_flexor_digitorum_brevis_3"], [false, false, false]]];
+const BONES = [["Shoulder Girdle Landmarks", ["palp_bones_shoulder_girdle", "palp_bones_shoulder_girdle_2", "palp_bones_shoulder_girdle_3"], [false, false, false]], ["Elbow & Arm Landmarks", ["palp_bones_elbow_arm", "palp_bones_elbow_arm_2", "palp_bones_elbow_arm_3"], [false, false, false]], ["Wrist Landmarks (Carpals)", ["palp_bones_wrist_carpals", "palp_bones_wrist_carpals_2", "palp_bones_wrist_carpals_3"], [false, false, false]], ["Hand Landmarks", ["palp_bones_hand", "palp_bones_hand_2", "palp_bones_hand_3"], [false, false, false]], ["Ligaments of the Upper Extremity", ["palp_ligaments_upper_extremity", "palp_ligaments_upper_extremity_2", "palp_ligaments_upper_extremity_3"], [false, false, false]], ["Face & Cranium Landmarks", ["palp_bones_face_cranium", "palp_bones_face_cranium_2", "palp_bones_face_cranium_3"], [false, false, false]], ["Anterior Neck Landmarks", ["palp_bones_anterior_neck", "palp_bones_anterior_neck_2", "palp_bones_anterior_neck_3"], [false, false, false]], ["Posterior Neck & Cervical Spine Landmarks", ["palp_bones_posterior_neck", "palp_bones_posterior_neck_2", "palp_bones_posterior_neck_3"], [false, false, false]], ["Trunk Landmarks (Sternum, Ribs & Spine)", ["palp_bones_trunk", "palp_bones_trunk_2", "palp_bones_trunk_3"], [false, false, false]], ["Ligaments of the Axial Body", ["palp_ligaments_axial", "palp_ligaments_axial_2", "palp_ligaments_axial_3"], [false, false, false]], ["Pelvis Landmarks", ["palp_bones_pelvis", "palp_bones_pelvis_2", "palp_bones_pelvis_3"], [false, false, false]], ["Thigh & Knee Landmarks", ["palp_bones_thigh_knee", "palp_bones_thigh_knee_2", "palp_bones_thigh_knee_3"], [false, false, false]], ["Foot & Ankle Landmarks", ["palp_bones_foot_ankle", "palp_bones_foot_ankle_2", "palp_bones_foot_ankle_3"], [false, false, false]], ["Ligaments of the Lower Extremity", ["palp_ligaments_lower_extremity", "palp_ligaments_lower_extremity_2", "palp_ligaments_lower_extremity_3"], [false, false, false]]];
+
+function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("pm_cloudinary_cfg") || "{}");
+    if (saved.cloudName) document.getElementById("cloudName").value = saved.cloudName;
+    if (saved.uploadPreset) document.getElementById("uploadPreset").value = saved.uploadPreset;
+    if (saved.folder) document.getElementById("folder").value = saved.folder;
+  } catch {}
+}
+function saveConfig() {
+  try {
+    localStorage.setItem("pm_cloudinary_cfg", JSON.stringify({
+      cloudName: document.getElementById("cloudName").value.trim(),
+      uploadPreset: document.getElementById("uploadPreset").value.trim(),
+      folder: document.getElementById("folder").value.trim(),
+    }));
+  } catch {}
+}
+["cloudName", "uploadPreset", "folder"].forEach((id) => {
+  document.getElementById(id).addEventListener("change", saveConfig);
+});
+
+function buildSection(container, title, items) {
+  const heading = document.createElement("div");
+  heading.className = "section-title";
+  heading.textContent = title;
+  container.appendChild(heading);
+  container._rows = container._rows || [];
+
+  items.forEach(([label, ids, already]) => {
+    const card = document.createElement("div");
+    card.className = "test-card";
+
+    const head = document.createElement("div");
+    head.className = "test-head";
+    head.textContent = label;
+    card.appendChild(head);
+
+    const slotsWrap = document.createElement("div");
+    slotsWrap.className = "slots";
+
+    ids.forEach((publicId, i) => {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+
+      const row1 = document.createElement("div");
+      row1.className = "slot-row1";
+      const num = document.createElement("span");
+      num.className = "slot-num";
+      num.textContent = `#${i + 1}`;
+      const badge = document.createElement("span");
+      badge.className = "badge " + (already[i] ? "already" : "pending");
+      badge.textContent = already[i] ? "ALREADY LIVE" : "PENDING";
+      const idInput = document.createElement("input");
+      idInput.type = "text";
+      idInput.value = publicId;
+      idInput.title = "Cloudinary public_id (asset name)";
+      row1.append(num, badge, idInput);
+
+      const row2 = document.createElement("div");
+      row2.className = "slot-row2";
+      const thumb = document.createElement("img");
+      thumb.className = "thumb";
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      const uploadBtn = document.createElement("button");
+      uploadBtn.className = "btn-upload";
+      uploadBtn.textContent = "Upload";
+      uploadBtn.disabled = true;
+      row2.append(thumb, fileInput, uploadBtn);
+
+      const status = document.createElement("div");
+      status.className = "status";
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        uploadBtn.disabled = !file;
+        if (file) {
+          thumb.src = URL.createObjectURL(file);
+          slot.classList.add("has-thumb");
+        } else {
+          slot.classList.remove("has-thumb");
+        }
+        status.textContent = "";
+        status.className = "status";
+      });
+
+      const refs = { fileInput, idInput, uploadBtn, status, badge, alreadyLive: already[i] };
+      uploadBtn.addEventListener("click", () => uploadSlot(refs));
+
+      slot.append(row1, row2, status);
+      slotsWrap.appendChild(slot);
+      container._rows.push(refs);
+    });
+
+    card.appendChild(slotsWrap);
+    container.appendChild(card);
+  });
+}
+
+async function uploadSlot({ fileInput, idInput, uploadBtn, status, badge }) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const cloudName = document.getElementById("cloudName").value.trim();
+  const uploadPreset = document.getElementById("uploadPreset").value.trim();
+  const folder = document.getElementById("folder").value.trim();
+  if (!cloudName || !uploadPreset) {
+    status.className = "status err";
+    status.textContent = "Set cloud name + upload preset above first.";
+    return;
+  }
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = "…";
+  status.className = "status";
+  status.textContent = "";
+
+  const publicId = (folder ? folder.replace(/\/+$/, "") + "/" : "") + idInput.value.trim();
+
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", uploadPreset);
+  form.append("public_id", publicId);
+
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: "POST",
+      body: form,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || "Upload failed");
+    status.className = "status ok";
+    status.innerHTML = `Uploaded — <a href="${json.secure_url}" target="_blank" rel="noopener">view</a>`;
+    badge.className = "badge done";
+    badge.textContent = "DONE";
+    uploadBtn.textContent = "Re-upload";
+    uploadBtn.disabled = false;
+  } catch (e) {
+    status.className = "status err";
+    status.textContent = "Failed: " + e.message;
+    badge.className = "badge failed";
+    badge.textContent = "FAILED";
+    uploadBtn.textContent = "Retry";
+    uploadBtn.disabled = false;
+  }
+}
+
+loadConfig();
+buildSection(document.getElementById("shoulder"), "Shoulder Girdle — 15 structures × 3 photos = 45 slots", SHOULDER);
+buildSection(document.getElementById("cervical"), "Cervical — 14 structures × 3 photos = 42 slots", CERVICAL);
+buildSection(document.getElementById("head"), "Head — 23 structures × 3 photos = 69 slots", HEAD);
+buildSection(document.getElementById("arm"), "Arm — 6 structures × 3 photos = 18 slots", ARM);
+buildSection(document.getElementById("forearm"), "Forearm — 10 structures × 3 photos = 30 slots", FOREARM);
+buildSection(document.getElementById("trunk"), "Trunk — 10 structures × 3 photos = 30 slots", TRUNK);
+buildSection(document.getElementById("pelvis"), "Pelvis — 5 structures × 3 photos = 15 slots", PELVIS);
+buildSection(document.getElementById("thigh"), "Thigh — 8 structures × 3 photos = 24 slots", THIGH);
+buildSection(document.getElementById("leg"), "Leg — 8 structures × 3 photos = 24 slots", LEG);
+buildSection(document.getElementById("foot"), "Foot — 5 structures × 3 photos = 15 slots", FOOT);
+buildSection(document.getElementById("bones"), "Bones & Ligaments — 14 structures × 3 photos = 42 slots", BONES);
+
+document.getElementById("uploadAllBtn").addEventListener("click", async () => {
+  const allRefs = [
+    ...(document.getElementById("shoulder")._rows || []),
+    ...(document.getElementById("cervical")._rows || []),
+    ...(document.getElementById("head")._rows || []),
+    ...(document.getElementById("arm")._rows || []),
+    ...(document.getElementById("forearm")._rows || []),
+    ...(document.getElementById("trunk")._rows || []),
+    ...(document.getElementById("pelvis")._rows || []),
+    ...(document.getElementById("thigh")._rows || []),
+    ...(document.getElementById("leg")._rows || []),
+    ...(document.getElementById("foot")._rows || []),
+    ...(document.getElementById("bones")._rows || []),
+  ];
+  for (const refs of allRefs) {
+    if (refs.fileInput.files[0] && !refs.uploadBtn.disabled) {
+      await uploadSlot(refs);
+    }
+  }
+});
+</script>
+</body>
+</html>

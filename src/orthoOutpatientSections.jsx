@@ -290,44 +290,6 @@ export function ClinicalAssessmentSection({ data, setData }) {
   );
 }
 
-export function GoalsSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "goals");
-  return (
-    <>
-      <SectionIntro icon="🎯" title="Goals" />
-      <div className="subheading">Short-term goals</div>
-      <TextField label="Pain" value={d.stPain} onChange={(v) => set("stPain", v)} />
-      <TextField label="ROM" value={d.stRom} onChange={(v) => set("stRom", v)} />
-      <TextField label="Strength" value={d.stStrength} onChange={(v) => set("stStrength", v)} />
-      <TextField label="Function" value={d.stFunction} onChange={(v) => set("stFunction", v)} />
-      <div className="subheading">Long-term goals</div>
-      <TextField label="ADL" value={d.ltAdl} onChange={(v) => set("ltAdl", v)} />
-      <TextField label="Work" value={d.ltWork} onChange={(v) => set("ltWork", v)} />
-      <TextField label="Sport" value={d.ltSport} onChange={(v) => set("ltSport", v)} />
-      <TextField label="Independence" value={d.ltIndependence} onChange={(v) => set("ltIndependence", v)} />
-    </>
-  );
-}
-
-export function TreatmentPlanSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "treatmentPlan");
-  return (
-    <>
-      <SectionIntro icon="📋" title="Treatment Plan" />
-      <SelectField label="Manual therapy" type="multi" options={["Joint mobilization", "Soft tissue release", "Myofascial release", "Manipulation", "Dry needling"]} value={d.manualTherapy} onChange={(v) => set("manualTherapy", v)} />
-      <SelectField label="Exercise therapy" type="multi" options={["Mobility exercises", "Strengthening", "Stretching", "Neuromuscular training", "Gait training", "Balance training"]} value={d.exerciseTherapy} onChange={(v) => set("exerciseTherapy", v)} />
-      <SelectField label="Modalities" type="multi" options={["N/A", "Heat", "Ice", "TENS", "Ultrasound", "IFT", "Laser"]} value={d.modalities} onChange={(v) => set("modalities", v)} />
-      <TextArea label="Education" value={d.education} onChange={(v) => set("education", v)} placeholder="Posture, ergonomics, activity modification, pacing..." />
-      <TextArea label="Home exercise program" value={d.hep} onChange={(v) => set("hep", v)} />
-      <div className="row-2">
-        <TextField label="Frequency" value={d.frequency} onChange={(v) => set("frequency", v)} placeholder="e.g. 3x/week" />
-        <TextField label="Duration" value={d.duration} onChange={(v) => set("duration", v)} placeholder="e.g. 6 weeks" />
-      </div>
-      <TextField label="Follow-up" value={d.followUp} onChange={(v) => set("followUp", v)} placeholder="Next review date / interval" />
-    </>
-  );
-}
-
 /* ============================================================
    TREATMENT TECHNIQUES — the same per-technique log Treatment's
    own Techniques tab (ClinicalModules.jsx's TreatmentTechniquesModule,

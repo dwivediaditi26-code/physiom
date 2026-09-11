@@ -60,7 +60,9 @@ export const IPD_CONDITIONS = [
 ];
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
-const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", "carePlan", "review"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
+const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
@@ -85,7 +87,7 @@ const ORDERED_ALL = [
   "activityTolerance",
   "outcomeMeasure",
   "impression",
-  "carePlan",
+  ...CAREPLAN_STEP_IDS,
   "review",
 ];
 
@@ -111,7 +113,12 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   impression: { icon: "🧠", label: "Clinical Impression" },
-  carePlan: { icon: "🎯", label: "Care Plan" },
+  carePlanProblems: { icon: "🧩", label: "Problem List" },
+  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
+  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
+  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
+  carePlanSessions: { icon: "🗓️", label: "Sessions" },
+  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
   review: { icon: "✅", label: "Final Review" },
 };
 
@@ -126,7 +133,7 @@ const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
 export function buildOrthoIPDAssessSteps() {
   return ORDERED_ALL.map((id) => ({ id, ...STEP_META[id] }));
 }
-export const orthoIPDSummaryFormatters = { carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection };
+export const orthoIPDSummaryFormatters = { carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection };
 
 /* ============================================================
    SECTION CONTENT
@@ -268,7 +275,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   // OrthoCarePlanStep saves straight to patientData.ortho_care_plan, not
   // this wizard's local data/setData, so the Review screen (which reads
   // data[step.id]) would otherwise always see an empty carePlan section.
-  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
+  const reviewData = useMemo(() => ({ ...data, carePlanPlan: patientData?.ortho_care_plan || data.carePlanPlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -420,10 +427,19 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
-          {current.id === "carePlan" && (
+          {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>
-              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="ipd" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+              <OrthoCarePlanStep
+                patientData={patientData}
+                onSave={onSave}
+                selectedRegions={selectedRegions}
+                condition={condition}
+                setting="ipd"
+                pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
+                phase={CAREPLAN_PHASE_BY_STEP[current.id]}
+                onAdvance={goNext}
+              />
             </>
           )}
           {current.id === "review" && (
@@ -436,7 +452,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 data={reviewData}
                 onEdit={jumpTo}
                 exportHeaderLines={[`IPD ORTHOPEDIC ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
-                formatters={{ carePlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
+                formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>

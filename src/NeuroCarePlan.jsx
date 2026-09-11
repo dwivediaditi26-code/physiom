@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, createContext, useContext } from "
 import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB } from "./sharedClinicalData.js";
 import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
+import { EvidenceProtocolBrowser } from "./orthoEvidenceProtocols.jsx";
+import { listClinicProtocols } from "./clinicProtocols.js";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
   REFERENCES, ASSIST_LADDER, problemById,
@@ -331,37 +333,78 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
 }
 
 /* ─── 3. TREATMENT (goal-wise) ────────────────────────────── */
-function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, onAdd, onClose, fullScreen }) {
+// Persistent "Select source" tabs (2026-09-11) -- General Library / Evidence-
+// Based Protocol / My Clinic Protocol as one always-visible row instead of
+// link-style rows the therapist had to tap into and then "← back" out of.
+function SourceTab({ icon, label, sub, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, textAlign: "center",
+        padding: "10px 6px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", minWidth: 0,
+        border: `1.5px solid ${active ? BRAND.purple : BRAND.border}`,
+        background: active ? BRAND.purple : "#fff",
+      }}
+    >
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.25, color: active ? "#fff" : BRAND.ink }}>{label}</span>
+      {sub && <span style={{ fontSize: 9, fontWeight: 700, color: active ? "rgba(255,255,255,.85)" : BRAND.purple }}>{sub}</span>}
+    </button>
+  );
+}
+
+// Inline treatment picker (2026-09-11, Aditi: "I don't want my treatment
+// section to have the add to treatment page... I want this page of general
+// library, evidence based protocol, my clinic protocol... presented
+// already there") -- this used to be a modal sheet opened by a "+ Add
+// treatment" button; it's now rendered directly, permanently, inside the
+// Treatment page itself. Not scoped to a single goal any more (there's no
+// button-per-goal to open it from) -- goal-linking is just an optional
+// checklist on the dose-confirm screen, same as the "general" treatment
+// flow already supported.
+function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
   const kb = useKB();
-  const { ASSIST_LADDER, recommendInterventions, exerciseCategories, manualTechniques } = kb;
-  const cats = useMemo(() => Object.keys(exerciseCategories), [exerciseCategories]);
+  const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
+  // Full region switcher (2026-09-11, Aditi: "exercise prescription have
+  // all data of general library... add whole page to general library") --
+  // ortho-only; General Library browses the SAME EXERCISE_DB region picker
+  // Exercise Prescription uses, instead of being locked to whichever
+  // region(s) were picked during the assessment.
+  const regionKeys = useMemo(() => Object.keys(EXERCISE_DB), []);
+  const [region, setRegion] = useState(fullExerciseLibrary ? (defaultRegionKey || regionKeys[0]) : null);
+  const activeCategories = fullExerciseLibrary ? (EXERCISE_DB[region]?.categories || {}) : exerciseCategories;
+  const cats = useMemo(() => Object.keys(activeCategories), [activeCategories]);
   const [cat, setCat] = useState(null);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(null);
   const [dose, setDose] = useState(null);
-  const [linked, setLinked] = useState([goal.id]);
+  const [linked, setLinked] = useState([]);
   const [techType, setTechType] = useState(null);
   const [techForm, setTechForm] = useState(BLANK_TECHNIQUE);
   const setTechField = (k, v) => setTechForm((f) => ({ ...f, [k]: v }));
+  // "Evidence-based protocol" / "My clinic protocols" (2026-09-11) -- two
+  // extra browse modes alongside the existing category/search browsing,
+  // both ortho-only (gated by kb flags). Either one just hands a raw
+  // exercise object to the SAME startDose()/onAdd() pipeline every other
+  // source already uses -- no new dose screen, no new onAdd shape.
+  const [browseMode, setBrowseMode] = useState(null); // null | "protocol" | "clinic"
+  const [kind, setKind] = useState("exercises"); // "exercises" | "manual" -- which library sub-view is shown
+  const [savedProtocols, setSavedProtocols] = useState([]);
+  const [savedProtocolsLoading, setSavedProtocolsLoading] = useState(false);
+  const openClinicProtocols = () => {
+    if (requireAuth && !requireAuth("Clinic Protocols", "Clinic Protocols are saved to your account so you can reuse them across patients and devices — sign in to save and access yours.")) return;
+    setBrowseMode("clinic");
+    setSavedProtocolsLoading(true);
+    listClinicProtocols().then((rows) => { setSavedProtocols(rows); setSavedProtocolsLoading(false); });
+  };
 
-  const all = useMemo(() => Object.entries(exerciseCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [exerciseCategories]);
+  const all = useMemo(() => Object.entries(activeCategories).flatMap(([c, list]) => list.map((e) => ({ ...e, _cat: c }))), [activeCategories]);
 
-  // Ranked, book-referenced suggestions for the problem behind this goal.
-  // Each recommendation's exId is resolved to the real exercise here; the
-  // note/source come from the knowledge base. Suggestions are shown first
-  // but the therapist still opens each to confirm dose -- never auto-added.
-  const suggestions = useMemo(() => {
-    return recommendInterventions(problemId)
-      .map((r) => ({ ...r, ex: all.find((e) => e.id === r.exId) }))
-      .filter((r) => r.ex);
-  }, [problemId, all, recommendInterventions]);
   const results = search.trim()
     ? all.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
     : cat ? all.filter((e) => e._cat === cat) : [];
-
-  // Categories the problem behind this goal declares as clinically
-  // relevant come first; the rest stay available but below.
-  const ordered = [...relevantCats.filter((c) => cats.includes(c)), ...cats.filter((c) => !relevantCats.includes(c))];
 
   const startDose = (ex) => {
     setPicked(ex);
@@ -369,49 +412,95 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
   };
 
   return (
-    <div className="ct-modal" style={fullScreen ? { position: "fixed", inset: 0, zIndex: 3000 } : undefined}>
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">{picked ? picked.name : techType ? TECHNIQUE_TYPES.find((t) => t.key === techType)?.label : "Add treatment"}</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">✕</button>
-      </div>
+    <div>
+      {(picked || techType) && (
+        <div style={{ fontWeight: 800, fontSize: 15, margin: "4px 0 10px" }}>
+          {picked ? picked.name : TECHNIQUE_TYPES.find((t) => t.key === techType)?.label}
+        </div>
+      )}
 
       {!picked && !techType && (
         <>
-          <div style={{ padding: "0 14px", fontSize: 12, color: BRAND.gray }}>For: <b style={{ color: BRAND.ink }}>{goal.measure}</b></div>
-          <div className="ct-search-wrap">
-            <input className="ct-search" placeholder="🔍 Search treatment..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 8 }}>
+            Browse the library and add treatments — link each one to a goal below, or leave it general.
           </div>
-          <div className="ct-modal-body">
-            {!search.trim() && !cat && suggestions.length > 0 && (
+          <div className="ct-search-wrap" style={{ padding: "10px 0" }}>
+            <input className="ct-search" placeholder="🔍 Search treatment or goal..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+
+          {!search.trim() && (evidenceProtocols || clinicProtocols) && (
+            <div style={{ display: "flex", gap: 8, padding: "0 0 12px" }}>
+              <SourceTab icon="📚" label="General Library" active={!browseMode} onClick={() => setBrowseMode(null)} />
+              {evidenceProtocols && (
+                <SourceTab icon="🎯" label="Evidence-Based Protocol" sub="RECOMMENDED" active={browseMode === "protocol"} onClick={() => setBrowseMode("protocol")} />
+              )}
+              {clinicProtocols && (
+                <SourceTab icon="📄" label="My Clinic Protocol" active={browseMode === "clinic"} onClick={openClinicProtocols} />
+              )}
+            </div>
+          )}
+
+          {!browseMode && !search.trim() && manualTechniques && (
+            <div style={{ display: "flex", gap: 6, padding: "0 0 10px" }}>
+              <button type="button" onClick={() => setKind("exercises")}
+                style={{ flex: 1, padding: "7px 8px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 11.5,
+                  border: `1.5px solid ${kind === "exercises" ? BRAND.purple : BRAND.border}`,
+                  background: kind === "exercises" ? BRAND.purpleFaint : "#fff", color: kind === "exercises" ? BRAND.purpleDark : BRAND.gray }}>
+                🏋 Exercises
+              </button>
+              <button type="button" onClick={() => setKind("manual")}
+                style={{ flex: 1, padding: "7px 8px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 11.5,
+                  border: `1.5px solid ${kind === "manual" ? BRAND.purple : BRAND.border}`,
+                  background: kind === "manual" ? BRAND.purpleFaint : "#fff", color: kind === "manual" ? BRAND.purpleDark : BRAND.gray }}>
+                🖐 Manual / Other Treatments
+              </button>
+            </div>
+          )}
+
+          <div style={{ padding: "2px 0 4px" }}>
+            {!search.trim() && browseMode === "protocol" && (
               <div className="ct-group">
-                <div className="ct-group-title" style={{ color: BRAND.purpleDark }}>⭐ SUGGESTED FOR THIS GOAL</div>
-                {suggestions.map((r, i) => {
-                  const already = existing.has(r.ex.id);
-                  return (
-                    <button key={r.ex.id} type="button" className="ct-item" onClick={() => (already ? null : startDose(r.ex))} disabled={already}
-                      style={{ alignItems: "flex-start", borderLeft: `3px solid ${BRAND.purple}` }}>
-                      <span style={{ flex: 1, textAlign: "left" }}>
-                        <span style={{ fontWeight: 600 }}>
-                          <span style={{ color: BRAND.purple, marginRight: 5 }}>{i + 1}.</span>{r.ex.name}
-                          {r.ex.evidence && <span style={{ ...chip("#ecfdf5", "#047857"), marginLeft: 6 }}>{r.ex.evidence}</span>}
-                        </span>
-                        <span style={{ display: "block", fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{r.note}</span>
-                        <span style={{ display: "block", fontSize: 10, color: BRAND.gray, marginTop: 2, fontStyle: "italic" }}>📖 {r.source}</span>
-                      </span>
-                      <span style={{ color: already ? BRAND.gray : BRAND.purple, fontWeight: 700, fontSize: 12 }}>{already ? "Added" : "＋ Add"}</span>
-                    </button>
-                  );
-                })}
-                <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>Suggestions only — ranked by evidence. Browse all treatment types below, or search.</div>
+                <EvidenceProtocolBrowser
+                  isAdded={(ex) => existing.has(ex.id)}
+                  onAddExercise={(ex) => { setBrowseMode(null); startDose({ ...ex, _cat: "Evidence-Based Protocol" }); }}
+                />
               </div>
             )}
-            {!search.trim() && !cat && (
+            {!search.trim() && browseMode === "clinic" && (
+              <div className="ct-group">
+                {savedProtocolsLoading && <div className="summary-empty">Loading…</div>}
+                {!savedProtocolsLoading && savedProtocols.length === 0 && (
+                  <div className="summary-empty">No saved protocols yet — build one from the Exercise Prescription step and save it there.</div>
+                )}
+                {savedProtocols.map((p) => (
+                  <div key={p.id} style={{ marginBottom: 14 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: BRAND.ink, marginBottom: 6 }}>{p.name}</div>
+                    {(p.exercises || []).map((ex) => (
+                      <button key={ex.id} type="button" className="ct-item" onClick={() => { setBrowseMode(null); startDose({ ...ex, _cat: "My Clinic Protocol" }); }}>
+                        <span style={{ flex: 1, textAlign: "left" }}>
+                          <span style={{ fontWeight: 600 }}>{ex.name}</span>
+                          <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{ex.target}</span>
+                        </span>
+                        <span style={{ color: BRAND.purple, fontWeight: 700, fontSize: 12 }}>＋ Add</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!browseMode && !search.trim() && kind === "exercises" && fullExerciseLibrary && (
+              <div style={{ marginBottom: 14 }}>
+                <SelectField label="Region" type="single" options={regionKeys.map((k) => EXERCISE_DB[k].label)}
+                  value={EXERCISE_DB[region]?.label}
+                  onChange={(label) => { setRegion(regionKeys.find((k) => EXERCISE_DB[k].label === label) || region); setCat(null); }} />
+              </div>
+            )}
+            {!browseMode && !search.trim() && !cat && kind === "exercises" && (
               <div className="ct-group">
                 <div className="ct-group-title">ALL TREATMENT TYPES</div>
-                {ordered.map((c) => (
+                {cats.map((c) => (
                   <button key={c} type="button" className="ct-item" onClick={() => setCat(c)}>
                     <span>{c}</span>
-                    {relevantCats.includes(c) && <span style={{ ...chip(BRAND.purpleFaint, BRAND.purpleDark), marginLeft: "auto" }}>Suggested</span>}
                   </button>
                 ))}
               </div>
@@ -428,7 +517,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
                 because it is [an] ortho technique") -- these are MSK manual
                 therapy modalities, not part of Neuro's own treatment
                 vocabulary; Neuro's Add Treatment stays exercise-library-only. */}
-            {!search.trim() && !cat && manualTechniques && (
+            {!browseMode && !search.trim() && !cat && kind === "manual" && manualTechniques && (
               <div className="ct-group">
                 <div className="ct-group-title">ADD A TECHNIQUE / MODALITY</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "4px 2px 6px" }}>
@@ -444,7 +533,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
                 <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>Pick a technique type → fill in its details on the next screen; it attaches to this goal and flows into Sessions &amp; Progress.</div>
               </div>
             )}
-            {(search.trim() || cat) && (
+            {(search.trim() || (!browseMode && cat)) && (
               <div className="ct-group">
                 <div className="ct-group-title">
                   {search.trim() ? `RESULTS (${results.length})` : cat}
@@ -471,7 +560,7 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
 
       {picked && dose && (
         <>
-          <div className="ct-modal-body">
+          <div>
             <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>{picked.target}</div>
             <div className="subheading">Dose</div>
             <div className="row-2" style={{ flexWrap: "wrap", gap: 12 }}>
@@ -485,22 +574,32 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
             <TextField label="Frequency" value={dose.freq} onChange={(v) => setDose({ ...dose, freq: v })} placeholder="e.g. 3 × / week" />
 
             {/* One treatment, many goals -- avoids creating a duplicate
-                record of the same intervention per goal. */}
-            <div className="subheading" style={{ marginTop: 14 }}>Add to goal(s)</div>
-            {allGoals.map((g) => {
-              const on = linked.includes(g.id);
-              return (
-                <button key={g.id} type="button" className={"ct-item" + (on ? " ct-item-checked" : "")} onClick={() => setLinked(on ? linked.filter((x) => x !== g.id) : [...linked, g.id])}>
-                  <span className="ct-checkbox">{on ? "☑" : "☐"}</span>
-                  <span style={{ textAlign: "left" }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
-                </button>
-              );
-            })}
+                record of the same intervention per goal. Goals are optional
+                (2026-09-11, Aditi: "not add to treatment without goal or
+                problem list needed") -- a treatment can be added straight
+                from the library with no goal picked yet, and linked to one
+                later once it exists. */}
+            {allGoals.length > 0 ? (
+              <>
+                <div className="subheading" style={{ marginTop: 14 }}>Add to goal(s) (optional)</div>
+                {allGoals.map((g) => {
+                  const on = linked.includes(g.id);
+                  return (
+                    <button key={g.id} type="button" className={"ct-item" + (on ? " ct-item-checked" : "")} onClick={() => setLinked(on ? linked.filter((x) => x !== g.id) : [...linked, g.id])}>
+                      <span className="ct-checkbox">{on ? "☑" : "☐"}</span>
+                      <span style={{ textAlign: "left" }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
+                    </button>
+                  );
+                })}
+              </>
+            ) : (
+              <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>No goals yet — this will be saved as a general treatment; link it to a goal once you add one.</div>
+            )}
           </div>
-          <div className="ct-modal-footer" style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setPicked(null); setDose(null); }}>Back</button>
-            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={!linked.length}
-              onClick={() => onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked })}>
+            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={allGoals.length > 0 && !linked.length}
+              onClick={() => { onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked }); setPicked(null); setDose(null); setLinked([]); }}>
               Add to plan
             </button>
           </div>
@@ -509,27 +608,35 @@ function AddTreatmentSheet({ goal, allGoals, problemId, relevantCats, existing, 
 
       {techType && (
         <>
-          <div className="ct-modal-body">
-            <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>For: <b style={{ color: BRAND.ink }}>{goal.measure}</b></div>
+          <div>
+            <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>
+              Not linked to a goal yet — you can link it below once you add one.
+            </div>
             {techniqueEntryForm(techType, techForm, setTechField)}
             <TextArea label="Patient response during technique" value={techForm.response} onChange={(v) => setTechField("response", v)} placeholder="e.g. pain reproduction +, ROM improved, comfortable" />
             {techType !== "dn" && techType !== "taping" && <TextArea label="Additional notes" value={techForm.notes} onChange={(v) => setTechField("notes", v)} />}
 
-            <div className="subheading" style={{ marginTop: 14 }}>Add to goal(s)</div>
-            {allGoals.map((g) => {
-              const on = linked.includes(g.id);
-              return (
-                <button key={g.id} type="button" className={"ct-item" + (on ? " ct-item-checked" : "")} onClick={() => setLinked(on ? linked.filter((x) => x !== g.id) : [...linked, g.id])}>
-                  <span className="ct-checkbox">{on ? "☑" : "☐"}</span>
-                  <span style={{ textAlign: "left" }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
-                </button>
-              );
-            })}
+            {allGoals.length > 0 ? (
+              <>
+                <div className="subheading" style={{ marginTop: 14 }}>Add to goal(s) (optional)</div>
+                {allGoals.map((g) => {
+                  const on = linked.includes(g.id);
+                  return (
+                    <button key={g.id} type="button" className={"ct-item" + (on ? " ct-item-checked" : "")} onClick={() => setLinked(on ? linked.filter((x) => x !== g.id) : [...linked, g.id])}>
+                      <span className="ct-checkbox">{on ? "☑" : "☐"}</span>
+                      <span style={{ textAlign: "left" }}>{g.measure} <span style={{ color: BRAND.gray, fontSize: 11 }}>({g.baseline} → {g.target})</span></span>
+                    </button>
+                  );
+                })}
+              </>
+            ) : (
+              <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>No goals yet — this will be saved as a general treatment; link it to a goal once you add one.</div>
+            )}
           </div>
-          <div className="ct-modal-footer" style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setTechType(null); setTechForm(BLANK_TECHNIQUE); }}>Back</button>
-            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={!linked.length}
-              onClick={() => onAdd({ id: uid(), name: techniqueLabel(techForm), category: "Technique", ...techForm, goalIds: linked })}>
+            <button type="button" className="primary-btn" style={{ flex: 2 }} disabled={allGoals.length > 0 && !linked.length}
+              onClick={() => { onAdd({ id: uid(), name: techniqueLabel(techForm), category: "Technique", ...techForm, goalIds: linked }); setTechType(null); setTechForm(BLANK_TECHNIQUE); setLinked([]); }}>
               Add to plan
             </button>
           </div>
@@ -561,16 +668,15 @@ export function doseLine(t) {
   return parts.join(" • ");
 }
 
-function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, floatingCTA }) {
-  const [sheetGoal, setSheetGoal] = useState(null);
-  if (!goals.length) return <><SectionIntro icon="🏋" title="Treatment" /><div className="summary-empty">Add at least one goal first.</div></>;
+function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, floatingCTA, requireAuth }) {
+  const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
 
   return (
     <>
-      <SectionIntro icon="🏋" title="Treatment" sub="Add treatments under the goal they're meant to achieve. One treatment can serve several goals — it stays a single record." />
+      <SectionIntro icon="🏋" title="Treatment" sub="Browse the library below and add treatments — link each one to the goal it's meant to achieve, or leave it general." />
       {goals.map((g) => {
-        const p = problems.find((x) => x.id === g.problemId);
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
+        if (!mine.length) return null;
         return (
           <div key={g.id} style={{ marginBottom: 18 }}>
             <div className="subheading" style={{ marginTop: 10 }}>{g.measure}</div>
@@ -599,42 +705,54 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
                 )}
               </div>
             ))}
-            <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setSheetGoal(g)}>＋ Add treatment</button>
           </div>
         );
       })}
 
-      {treatments.length > 0 && (
-        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>Review treatment plan →</button>
+      {general.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          {goals.length > 0 && <div className="subheading" style={{ marginTop: 10 }}>General</div>}
+          {general.map((t) => (
+            <div key={t.id} className="tech-card">
+              <div className="tech-card-head">
+                <div className="tech-card-title" style={{ fontSize: 13 }}>{t.name}</div>
+                <div className="tech-card-actions">
+                  <button type="button" className="tech-card-del" onClick={() => setTreatments(treatments.filter((x) => x.id !== t.id))} aria-label="Remove treatment">✕</button>
+                </div>
+              </div>
+              <div className="tech-card-meta">{doseLine(t)}</div>
+            </div>
+          ))}
+        </div>
       )}
 
-      {sheetGoal && (
-        <AddTreatmentSheet
-          goal={sheetGoal}
-          allGoals={goals}
-          problemId={(problems.find((p) => p.id === sheetGoal.problemId) || {}).sourceId || null}
-          relevantCats={(problems.find((p) => p.id === sheetGoal.problemId) || {}).treatmentCategories || []}
-          existing={new Set(treatments.filter((t) => t.goalIds.includes(sheetGoal.id)).map((t) => t.exerciseId))}
-          onAdd={(t) => {
-            // If this exercise is already in the plan (added under another
-            // goal), just link the existing record to this goal too.
-            const dup = treatments.find((x) => x.exerciseId === t.exerciseId);
-            if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
-            else setTreatments([...treatments, t]);
-            setSheetGoal(null);
-          }}
-          onClose={() => setSheetGoal(null)}
-          fullScreen={floatingCTA}
-        />
+      {treatments.length > 0 && (
+        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginBottom: 18 })} onClick={onNext}>Review treatment plan →</button>
       )}
+
+      {/* The picker itself -- always on the page, not behind an "Add
+          treatment" button/modal (2026-09-11, Aditi: "I don't want my
+          treatment section to have the add to treatment page ... I want
+          this page ... to be presented already there"). */}
+      <AddTreatmentPanel
+        allGoals={goals}
+        existing={new Set(treatments.map((t) => t.exerciseId))}
+        requireAuth={requireAuth}
+        onAdd={(t) => {
+          // If this exercise is already in the plan (added under another
+          // goal), just link the existing record to the newly picked goals too.
+          const dup = treatments.find((x) => x.exerciseId && x.exerciseId === t.exerciseId);
+          if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
+          else setTreatments([...treatments, t]);
+        }}
+      />
     </>
   );
 }
 
 /* ─── 4. PLAN OVERVIEW ────────────────────────────────────── */
 function PlanPhase({ problems, goals, treatments }) {
-  const { REFERENCES } = useKB();
-  const usedRefs = [...new Set(problems.flatMap((p) => p.refs || []))];
+  const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
   return (
     <>
       <SectionIntro icon="📋" title="Treatment plan" sub="What you intend to do. Sessions record what actually happened." />
@@ -647,7 +765,7 @@ function PlanPhase({ problems, goals, treatments }) {
         ))}
       </div>
 
-      {goals.length === 0 && <div className="summary-empty">Nothing planned yet.</div>}
+      {goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet.</div>}
       {goals.map((g) => {
         const p = problems.find((x) => x.id === g.problemId);
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
@@ -667,16 +785,15 @@ function PlanPhase({ problems, goals, treatments }) {
           </div>
         );
       })}
-
-      {usedRefs.length > 0 && (
-        <div style={{ marginTop: 16, padding: "10px 12px", background: "#f8fafc", border: `1px solid ${BRAND.border}`, borderRadius: 10 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: BRAND.gray, letterSpacing: 0.5, marginBottom: 6 }}>CLINICAL REFERENCES</div>
-          {usedRefs.map((r) => REFERENCES[r] && (
-            <div key={r} style={{ fontSize: 10.5, color: BRAND.gray, lineHeight: 1.5, marginBottom: 4 }}>{REFERENCES[r].citation}</div>
+      {general.length > 0 && (
+        <div className="summary-card" style={{ cursor: "default" }}>
+          <div className="summary-title">General (not linked to a goal)</div>
+          {general.map((t) => (
+            <div key={t.id} className="summary-row">
+              <span className="summary-key">{t.name}</span>
+              <span className="summary-val">{doseLine(t)}</span>
+            </div>
           ))}
-          <div style={{ fontSize: 10, color: BRAND.grayLight, marginTop: 4, fontStyle: "italic" }}>
-            Suggestions are decision support only — the treating therapist remains responsible for all clinical decisions.
-          </div>
         </div>
       )}
     </>
@@ -950,13 +1067,26 @@ function ProgressPhase({ goals, sessions }) {
 // `knowledge` is the specialty's rules engine (NEURO_KNOWLEDGE or ortho's);
 // `sectionKey` is where the care plan lives on the data object
 // ("neuroCarePlan" / "orthoCarePlan"). Everything else is identical UX.
-export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA }) {
+// `phase` (controlled) + `onAdvance`: when the host wants each phase on
+// its own page (2026-09-11, Aditi: "problem, goals, treatment... it's so
+// much congested... I want in a different section, each of them blends" --
+// the Ortho/Neuro wizards mount one carePlan* step per phase and drive
+// `phase` off their own step id), the in-page tab bar (PhaseNav) is hidden
+// -- the wizard's own StepNav is the only phase switcher -- and each
+// phase's own "Next" button advances the wizard instead of an internal tab.
+// Omitting `phase` keeps the original single-page, tabbed behaviour
+// (SpecialtyPatientProfile.jsx's live profile view, where a wizard-style
+// step sequence doesn't apply).
+export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance }) {
   const [d, set] = useSectionData(data, setData, sectionKey);
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
   const treatments = Array.isArray(d.treatments) ? d.treatments : [];
   const sessions = Array.isArray(d.sessions) ? d.sessions : [];
-  const [phase, setPhase] = useState(initialPhase || "problems");
+  const controlled = controlledPhase != null;
+  const [internalPhase, setInternalPhase] = useState(initialPhase || "problems");
+  const phase = controlled ? controlledPhase : internalPhase;
+  const goNextPhase = (next) => (controlled ? onAdvance?.() : setInternalPhase(next));
 
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
@@ -990,10 +1120,10 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
       {/* Hide the horizontal scrollbar on scrollable rows — cleaner look
           (2026-09-03, Aditi: "this grey sliding thing i dont like"). */}
       <style>{`.cp-scroll-x::-webkit-scrollbar{display:none}`}</style>
-      <PhaseNav phase={phase} setPhase={setPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />
-      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => setPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
-      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => setPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
-      {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => setPhase("plan")} floatingCTA={floatingCTA} />}
+      {!controlled && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />}
+      {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => goNextPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
+      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
+      {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => goNextPhase("plan")} floatingCTA={floatingCTA} requireAuth={requireAuth} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
       {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
@@ -1002,8 +1132,8 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
 }
 
 // Thin wrapper: the Neuro Care Plan is CarePlanSection + neuro knowledge.
-export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA }) {
-  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} />;
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance }) {
+  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} />;
 }
 
 /* formatters[stepId] contract for a specialty's SummarySection. Shape is

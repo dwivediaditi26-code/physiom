@@ -1161,7 +1161,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 title={orthoTitle}
                 hideTitle
                 steps={orthoSteps}
-                data={orthoParsed.data || {}}
+                data={{ ...(orthoParsed.data || {}), carePlanPlan: d.ortho_care_plan || orthoParsed.data?.carePlanPlan }}
                 onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}
                 exportHeaderLines={[orthoTitle.toUpperCase()]}
                 formatters={orthoFormatters}

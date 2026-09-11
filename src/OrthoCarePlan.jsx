@@ -22,7 +22,7 @@ const orthoRegionLabel = (r) =>
     .filter(Boolean)
     .join(" ");
 
-export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condition, setting, pain, initialPhase, floatingCTA }) {
+export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condition, setting, pain, initialPhase, floatingCTA, requireAuth, phase, onAdvance }) {
   const regions = (selectedRegions || []).map((r) => ({ id: r.id, side: r.side, label: orthoRegionLabel(r) }));
   // Pain drives the (global) pain problem; fall back to the app-wide NRS
   // fields the profile also reads so both views agree.
@@ -48,7 +48,7 @@ export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condit
   return (
     <>
       <style>{orthoStyles()}</style>
-      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} />
+      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} requireAuth={requireAuth} phase={phase} onAdvance={onAdvance} />
     </>
   );
 }

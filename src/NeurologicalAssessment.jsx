@@ -22,7 +22,7 @@ const LazyOutcomeMeasuresPro = lazy(() => import("./OutcomeMeasuresPro.jsx"));
 // programme instead of "[object Object]" there too.
 export const neuroSummaryFormatters = {
   exercisePrescription: formatNeuroExercisePrescriptionSection,
-  carePlan: formatNeuroCarePlanSection,
+  carePlanPlan: formatNeuroCarePlanSection,
 };
 
 // Opens the rich InfoCard overlay (Perform/Scale/Interpret tabs, same
@@ -127,7 +127,12 @@ const STEP_META = [
   { id: "functional", icon: "🛏️", label: "Functional Assessment" },
   { id: "outcomes", icon: "📊", label: "Outcome Measures" },
   { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
-  { id: "carePlan", icon: "🎯", label: "Care Plan" },
+  { id: "carePlanProblems", icon: "🧩", label: "Problem List" },
+  { id: "carePlanGoals", icon: "🎯", label: "Care Plan Goals" },
+  { id: "carePlanTreatment", icon: "🏋", label: "Care Plan Treatment" },
+  { id: "carePlanPlan", icon: "📋", label: "Care Plan Summary" },
+  { id: "carePlanSessions", icon: "🗓️", label: "Sessions" },
+  { id: "carePlanProgress", icon: "📈", label: "Care Plan Progress" },
   { id: "precautions", icon: "⚠️", label: "Precautions" },
   { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
   { id: "summary", icon: "✅", label: "Summary & Review" },
@@ -1921,7 +1926,9 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", "carePlan", "precautions", "exercisePrescription", "summary"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2175,7 +2182,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // is "neuroExercisePrescription" but its step id is "exercisePrescription"
   // (2026-09-09 finding: a prescribed exercise programme never appeared in
   // Review at all, the same class of bug as carePlan above).
-  const reviewData = useMemo(() => ({ ...data, carePlan: data.neuroCarePlan, exercisePrescription: data.neuroExercisePrescription }), [data]);
+  const reviewData = useMemo(() => ({ ...data, carePlanPlan: data.neuroCarePlan, exercisePrescription: data.neuroExercisePrescription }), [data]);
 
   useEffect(() => {
     if (step >= 1 && current) setVisited((v) => new Set(v).add(current.id));
@@ -2704,13 +2711,13 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
-              {current.id === "carePlan" && (
+              {CAREPLAN_STEP_IDS.includes(current.id) && (
                 <>
                   {/* Same scoped-stylesheet reason as the Exercise
                       Prescription step below -- NeuroCarePlan.jsx is built
                       on the Ortho field kit's classes. */}
                   <style>{orthoStyles()}</style>
-                  <NeuroCarePlanSection data={data} setData={setData} />
+                  <NeuroCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
                 </>
               )}
               {current.id === "exercisePrescription" && (

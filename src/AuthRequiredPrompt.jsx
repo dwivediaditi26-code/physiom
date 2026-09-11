@@ -7,7 +7,9 @@ import React from "react";
 
 const A = "#7c3aed", A2 = "#9333ea", TX = "#1a1025", MU = "#7e6a9a", BD = "#e4d9f2";
 
-export default function AuthRequiredPrompt({ feature, onSignIn, onClose }) {
+const DEFAULT_BODY = "AI features run on a rate-limited server endpoint tied to your account, so this one genuinely needs a sign-in — everything else in guest mode stays open.";
+
+export default function AuthRequiredPrompt({ feature, bodyText, onSignIn, onClose }) {
   return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(26,16,37,0.55)", zIndex: 300,
@@ -23,8 +25,7 @@ export default function AuthRequiredPrompt({ feature, onSignIn, onClose }) {
           Sign in to use {feature}
         </div>
         <div style={{ fontSize: "0.82rem", color: MU, lineHeight: 1.55, marginBottom: 20 }}>
-          AI features run on a rate-limited server endpoint tied to your account, so this one genuinely needs
-          a sign-in — everything else in guest mode stays open.
+          {bodyText || DEFAULT_BODY}
         </div>
         <button type="button" onClick={onSignIn} style={{
           width: "100%", padding: "12px", borderRadius: 10, border: "none",

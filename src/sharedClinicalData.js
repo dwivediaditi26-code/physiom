@@ -5593,6 +5593,11 @@ const EXERCISE_DB = {
         { id:"kn_acl_balance",      name:"Neuromuscular Control — Single Leg",       target:"Proprioception, quadriceps, glute med — ACL",     desc:"Single-leg balance. Eyes closed. Perturbation. Landing training.",          sets:3, reps:1,  hold:30, freq:"Daily",    phase:"Phase 2", evidence:"Strong",    cues:"Slight knee flexion. React to perturbations.",            progression:"Unstable surface → Perturbation → Jump landing" },
         { id:"kn_drop_jump",        name:"Drop Jump Landing Training",               target:"Quadriceps, glutes — ACL prevention",              desc:"Step off box. Land softly with triple flexion. Hold 2s.",                    sets:3, reps:8,  hold:2,  freq:"3×/week",  phase:"Phase 3", evidence:"Strong",    cues:"Land soft — quiet feet. Hips back, knees tracking.",     progression:"Increase height → Add lateral → Sprint → Cut" },
       ],
+      "Post-Op Early Phase": [
+        { id:"kn_ankle_pumps",      name:"Ankle Pumps",                              target:"Gastrocnemius/soleus, tibialis anterior — DVT prophylaxis, circulation", desc:"Supine or seated. Point toes up toward the shin, then down. Rhythmic, full range.", sets:3, reps:20, hold:0,   freq:"Hourly",  phase:"Phase 1", evidence:"Strong", cues:"Full range each direction. Rest of the leg stays still.",  progression:"Add resisted band → Standing calf raises" },
+        { id:"kn_heel_slides",      name:"Heel Slides",                              target:"Knee flexion — active-assisted ROM",              desc:"Supine. Slide heel toward the buttock, bending the knee as far as comfortable. Slide back out.", sets:3, reps:10, hold:5,  freq:"3×/day",  phase:"Phase 1", evidence:"Strong", cues:"Heel stays on the bed. Stop at a firm stretch, not sharp pain.", progression:"Increase flexion range → Seated wall slides → Strap-assisted" },
+        { id:"kn_ext_prop",         name:"Knee Extension Prop (Heel Prop)",          target:"Terminal knee extension — passive stretch",       desc:"Prop the heel on a rolled towel so the knee hangs unsupported. Relax and let gravity straighten the knee.", sets:3, reps:1, hold:300, freq:"3×/day", phase:"Phase 1", evidence:"Strong", cues:"Fully relax the thigh — let gravity do the work, don't force it.", progression:"Add light ankle weight for overpressure → Standing extension holds" },
+      ],
     }
   },
   ankle: {
@@ -5913,6 +5918,22 @@ const PROGRAMME_TEMPLATES = {
   acl_late:       { region:"Knee", label:"ACL Rehab — Return to Sport", exercises:["kn_vmo_squat","kn_step_down","kn_drop_jump","sp_plyometric","sp_agility","sp_nordics"] },
   knee_oa:        { region:"Knee", label:"Knee Osteoarthritis",         exercises:["kn_quad_set","kn_straight_leg","kn_sit_to_stand","kn_leg_press","lb_glute_bridge","ank_calf_raise"] },
   hamstring_str:  { region:"Knee", label:"Hamstring Strain Rehab",      exercises:["kn_hamstring_str","kn_rdl","sp_hip_ext_hamstring","kn_nordic","sp_nordics","sp_sprinting"] },
+  tka_phase1: { region:"Knee", label:"Total Knee Replacement — Protected Phase (0-2wks)",
+    note:"Priority is swelling control, DVT prophylaxis, and regaining full passive extension early -- an extension lag is harder to correct later than a flexion deficit. Follow the surgeon's weight-bearing status.",
+    goals:"Full passive knee extension (0°); flexion progressing toward 90°; hourly ankle pumps; safe transfers and gait with a walker/frame per weight-bearing status; swelling controlled.",
+    exercises:["kn_ankle_pumps","kn_quad_set","kn_heel_slides","kn_ext_prop","kn_straight_leg"] },
+  tka_phase2: { region:"Knee", label:"Total Knee Replacement — Early Strengthening (2-6wks)",
+    note:"Progress active quadriceps control and flexion range; keep working extension -- don't let it regress while chasing flexion.",
+    goals:"Knee flexion ≥90°; full active extension; sit-to-stand with minimal hand support; gait without an extension lag.",
+    exercises:["kn_tqe","kn_sit_to_stand","kn_heel_slides","kn_straight_leg","kn_ext_prop"] },
+  tka_phase3: { region:"Knee", label:"Total Knee Replacement — Functional Strengthening (6-12wks)",
+    note:"Confirm wound/precaution clearance with the surgeon before adding resistance. Emphasis shifts to functional strength and gait quality.",
+    goals:"Flexion ≥110-120°; symmetrical quadriceps strength; independent reciprocal stair negotiation; gait without an aid (per surgeon clearance).",
+    exercises:["kn_vmo_squat","kn_leg_press","hp_step_up","kn_tqe","hp_standing_abd"] },
+  tka_phase4: { region:"Knee", label:"Total Knee Replacement — Advanced / Return to Activity (12wks+)",
+    note:"Later timelines vary by implant, surgical approach and individual healing -- confirm with the surgeon before progressing to higher-impact loading.",
+    goals:"Full functional ROM; good single-leg control and balance; return to low-impact recreational activity/ADLs as cleared.",
+    exercises:["kn_step_down","kn_leg_press","hp_step_up","lb_squat","hp_standing_abd"] },
   // Ankle & Foot
   ankle_sprain:   { region:"Ankle & Foot", label:"Ankle Sprain Rehab",          exercises:["ank_single_leg","ank_peroneal","ank_calf_raise","ank_tibialis_ant","ank_reach_sebt","ank_lateral_hops"] },
   achilles:       { region:"Ankle & Foot", label:"Achilles Tendinopathy",       exercises:["ank_isometric_calf","ank_ec_drop","ank_heavy_slow_calf","ank_single_leg","ank_calf_raise"] },
@@ -5981,6 +6002,37 @@ const PROGRAMME_TEMPLATES = {
   aquatic_rehab:  { region:"Hydrotherapy", label:"Aquatic Rehabilitation",      exercises:["hydro_walk","hydro_squat","hydro_balance","hydro_run","hydro_kick"] },
 };
 
+// Evidence-Based Protocol picker (2026-09-11) -- single source of truth for
+// both the "Add treatment" sheet's operation dropdown and the Exercise
+// Library's "Featured Protocols" grid, so the two can't drift apart. Each
+// phases[].key looks up PROGRAMME_TEMPLATES at render time -- no exercise/
+// goal data duplicated here. `live:false` entries render as disabled/SOON
+// tiles (no phases array needed) until a real protocol is authored for them.
+const EVIDENCE_PROTOCOLS = [
+  { id:"tka", label:"Total Knee Replacement (TKA)", regionKey:"knee", live:true,
+    phases:[
+      { key:"tka_phase1", label:"Protected", weeks:"0-2wks" },
+      { key:"tka_phase2", label:"Early Strengthening", weeks:"2-6wks" },
+      { key:"tka_phase3", label:"Functional Strengthening", weeks:"6-12wks" },
+      { key:"tka_phase4", label:"Advanced / RTA", weeks:"12wks+" },
+    ] },
+  { id:"acl", label:"ACL Reconstruction", regionKey:"knee", live:true,
+    phases:[
+      { key:"acl_early", label:"Early Phase", weeks:"" },
+      { key:"acl_late", label:"Return to Sport", weeks:"" },
+    ] },
+  { id:"rct", label:"Rotator Cuff Repair", regionKey:"shoulder", live:true,
+    phases:[
+      { key:"rct_postop_protected", label:"Protected", weeks:"0-6wks" },
+      { key:"rct_postop_active", label:"Active-Assisted", weeks:"6-12wks" },
+      { key:"rct_postop_strength", label:"Strengthening", weeks:"12wks+" },
+    ] },
+  { id:"thr", label:"Total Hip Replacement (THR)", regionKey:"hip", live:false },
+  { id:"lumbar_surgery", label:"Lumbar Spine Surgery", regionKey:"lumbar", live:false },
+  { id:"cervical_surgery", label:"Cervical Spine Surgery", regionKey:"cervical", live:false },
+  { id:"shoulder_replacement", label:"Shoulder Replacement (TSA/RSA)", regionKey:"shoulder", live:false },
+];
+
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
   Object.values(region.categories).flatMap(cat => cat)
 );
@@ -6032,5 +6084,5 @@ export {
   downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage,
   SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel,
   CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey,
-  EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES,
+  EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS,
 };

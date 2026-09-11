@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, Stepper, InfoButton, useSectionData, BRAND } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, Stepper, useSectionData } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES } from "./sharedClinicalData.js";
 import { matchRegionKey } from "./orthoClinicalData.js";
+import { ExerciseLibraryCard } from "./exerciseCardKit.jsx";
+import { ExerciseLibrarySheet } from "./orthoExerciseLibrary.jsx";
+import { saveClinicProtocol } from "./clinicProtocols.js";
 
 /* ============================================================
    EXERCISE PRESCRIPTION — the same exercise library + programme
@@ -38,74 +41,6 @@ export function StepperField({ label, value, onChange, unit, max = 60 }) {
   );
 }
 
-export function exerciseInfoBody(ex) {
-  return (
-    <>
-      <div style={{ marginBottom: 10 }}>
-        <b>Target:</b> {ex.target}
-      </div>
-      <div style={{ marginBottom: 10 }}>{ex.desc}</div>
-      {ex.cues && (
-        <div style={{ background: BRAND.amberBg, borderRadius: 10, padding: "8px 10px", marginBottom: 10, fontSize: 12.5 }}>
-          💡 {ex.cues}
-        </div>
-      )}
-      {ex.progression && (
-        <div style={{ fontSize: 12.5, color: BRAND.green }}>📈 Progression: {ex.progression}</div>
-      )}
-    </>
-  );
-}
-
-// richItem (not a plain `text` string) so the "How to Perform" sheet gets
-// a reference-photo slot (SheetHero, orthoFieldKit.jsx) the same way ROM/
-// MMT/Special Tests already do -- `image` is a Cloudinary asset id.
-// 2026-09-02, Aditi: "exercise photo same as study mode is not showing" --
-// this said `image: ex.image` despite EXERCISE_DB never actually carrying
-// an `image` field (confirmed: zero entries have one), so it was always
-// undefined and every exercise showed the "No reference photo" fallback
-// no matter what. romRichItem/mmtRichItem/specialRichItem (same file's
-// siblings, orthoRegionAssessments.jsx) all wire this to the item's own
-// id instead -- SheetHero looks that id up directly as the Cloudinary
-// asset name -- so a photo just has to be uploaded under an exercise's id
-// (e.g. "lb_glute_bridge") to show up here with no further code change,
-// same as ROM/MMT/Special Tests already work. Matching that convention.
-export function exerciseRichItem(ex) {
-  return {
-    image: ex.id,
-    title: ex.name,
-    subtitle: ex.target,
-    perform: exerciseInfoBody(ex),
-  };
-}
-
-export function ExerciseLibraryCard({ ex, inProgramme, onAdd, onRemove }) {
-  return (
-    <div className="tech-card">
-      <div className="tech-card-head">
-        <div className="tech-card-title">
-          {ex.name}
-          <div style={{ fontWeight: 400, fontSize: 11.5, color: BRAND.gray, marginTop: 2 }}>{ex.target}</div>
-        </div>
-        <div className="tech-card-actions">
-          <InfoButton title={ex.name} richItem={exerciseRichItem(ex)} eyebrow="EXERCISE" />
-          <button
-            type="button"
-            className={inProgramme ? "tech-card-del" : "tech-card-edit"}
-            onClick={inProgramme ? onRemove : onAdd}
-            aria-label={inProgramme ? "Remove from programme" : "Add to programme"}
-          >
-            {inProgramme ? "✕" : "+"}
-          </button>
-        </div>
-      </div>
-      <div className="tech-card-meta">
-        {ex.sets} × {ex.reps}{ex.hold ? ` · hold ${ex.hold}s` : ""} · {ex.freq} · {ex.phase}
-      </div>
-    </div>
-  );
-}
-
 export function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
   return (
     <div className="tech-card">
@@ -130,7 +65,7 @@ export function ProgrammeEntryCard({ ex, onUpdate, onRemove }) {
   );
 }
 
-export function ExercisePrescriptionSection({ data, setData, selectedRegions = [] }) {
+export function ExercisePrescriptionSection({ data, setData, selectedRegions = [], requireAuth }) {
   const [d, set] = useSectionData(data, setData, "exercisePrescription");
   const programme = Array.isArray(d.programme) ? d.programme : [];
   // Defaults to the case's own first selected region (same matchRegionKey
@@ -149,6 +84,10 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templateMsg, setTemplateMsg] = useState("");
   const progRef = React.useRef(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [saveProtocolOpen, setSaveProtocolOpen] = useState(false);
+  const [saveProtocolName, setSaveProtocolName] = useState("");
+  const [saveProtocolMsg, setSaveProtocolMsg] = useState("");
 
   const setProgramme = (next) => set("programme", next);
   const addEx = (ex) => {
@@ -171,6 +110,24 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
     setTimeout(() => setTemplateMsg(""), 3000);
     setTimeout(() => progRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
+  const isAdded = (ex) => !!programme.find((p) => p.id === ex.id);
+  const saveProtocol = async () => {
+    if (requireAuth && !requireAuth("Clinic Protocols", "Clinic Protocols are saved to your account so you can reuse them across patients and devices — sign in to save and access yours.")) return;
+    if (!programme.length) return;
+    setSaveProtocolOpen(true);
+  };
+  const confirmSaveProtocol = async () => {
+    try {
+      await saveClinicProtocol({ name: saveProtocolName, region: region?.label, exercises: programme });
+      setSaveProtocolOpen(false);
+      setSaveProtocolName("");
+      setSaveProtocolMsg("Saved to My Clinic Protocols.");
+      setTimeout(() => setSaveProtocolMsg(""), 3000);
+    } catch (e) {
+      setSaveProtocolMsg("Couldn't save -- " + (e.message || "try again."));
+      setTimeout(() => setSaveProtocolMsg(""), 4000);
+    }
+  };
 
   const region = EXERCISE_DB[activeRegion];
   const relevantTemplates = Object.entries(PROGRAMME_TEMPLATES).filter(([, t]) => region?.label && (region.label.includes(t.region) || t.region.includes(region.label)));
@@ -187,6 +144,19 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   return (
     <>
       <SectionIntro icon="🏋" title="Exercise Prescription" info="Browse the exercise library by region, add to this patient's programme, then adjust sets/reps/hold/frequency for them specifically." />
+
+      <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={() => setLibraryOpen(true)}>
+        📚 Exercise Library
+      </button>
+      {libraryOpen && (
+        <ExerciseLibrarySheet
+          onClose={() => setLibraryOpen(false)}
+          onAddExercise={addEx}
+          isAdded={isAdded}
+          onSelectRegion={(key) => setActiveRegion(key)}
+          requireAuth={requireAuth}
+        />
+      )}
 
       {relevantTemplates.length > 0 && (
         <>
@@ -231,6 +201,30 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
       {programme.map((ex) => (
         <ProgrammeEntryCard key={ex.id} ex={ex} onUpdate={(field, val) => updateEx(ex.id, field, val)} onRemove={() => removeEx(ex.id)} />
       ))}
+
+      {programme.length > 0 && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={saveProtocol}>
+          💾 Save as Clinic Protocol
+        </button>
+      )}
+      {saveProtocolMsg && <div className="hint" style={{ color: saveProtocolMsg.startsWith("Couldn't") ? "#dc2626" : "#059669", fontWeight: 600, marginTop: 8 }}>{saveProtocolMsg}</div>}
+      {saveProtocolOpen && (
+        <div className="ct-modal" style={{ position: "fixed", inset: 0, zIndex: 3100 }}>
+          <div className="ct-modal-header">
+            <div className="ct-modal-title">Save as Clinic Protocol</div>
+            <button type="button" className="ct-modal-close" onClick={() => setSaveProtocolOpen(false)} aria-label="Close">✕</button>
+          </div>
+          <div className="ct-modal-body">
+            <TextField label="Protocol name" value={saveProtocolName} onChange={setSaveProtocolName} placeholder="e.g. My TKA starter set" />
+            <div className="hint">Saves the {programme.length} exercise{programme.length === 1 ? "" : "s"} currently in this patient's programme, with their current dosing, for reuse on future patients.</div>
+          </div>
+          <div className="ct-modal-footer">
+            <button type="button" className="primary-btn" style={{ width: "100%" }} disabled={!saveProtocolName.trim()} onClick={confirmSaveProtocol}>
+              Save
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

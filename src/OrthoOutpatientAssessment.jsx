@@ -4,7 +4,7 @@ import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
-import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, GoalsSection, TreatmentPlanSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
+import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
@@ -66,7 +66,7 @@ function formatPalpationSection(section) {
 // region-driven sections (ROM/MMT/Special Tests/Palpation/...) correctly
 // instead of falling back to the generic Object.entries flattener.
 export const orthoSummaryFormatters = {
-  carePlan: formatCarePlanSection,
+  carePlanPlan: formatCarePlanSection,
   subjective: formatSubjectiveSection,
   redFlags: formatRedFlagsSection,
   pain: formatPainSection,
@@ -103,7 +103,9 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "review"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // Suggested Objective (which already inline-covers Observation/Palpation
 // itself), skipping these four as separate steps in between. Condition-
@@ -111,7 +113,7 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", "carePlan", "goals", "treatmentPlan", "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -149,9 +151,12 @@ const STEP_META = {
   activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
   outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
   clinicalAssessment: { icon: "🧠", label: "Clinical Assessment" },
-  carePlan: { icon: "🎯", label: "Care Plan" },
-  goals: { icon: "🎯", label: "Goals" },
-  treatmentPlan: { icon: "📋", label: "Treatment Plan" },
+  carePlanProblems: { icon: "🧩", label: "Problem List" },
+  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
+  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
+  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
+  carePlanSessions: { icon: "🗓️", label: "Sessions" },
+  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
   techniques: { icon: "🤲", label: "Treatment Techniques" },
   exercisePrescription: { icon: "🏋", label: "Exercise Prescription" },
   homeProtocol: { icon: "🏠", label: "Home Protocol" },
@@ -357,7 +362,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // local data/setData -- so the "carePlan" step's data never lands in
   // `data.carePlan`. The Review screen reads data[step.id] for every step,
   // so without this merge it always saw an empty carePlan section.
-  const reviewData = useMemo(() => ({ ...data, carePlan: patientData?.ortho_care_plan || data.carePlan }), [data, patientData]);
+  const reviewData = useMemo(() => ({ ...data, carePlanPlan: patientData?.ortho_care_plan || data.carePlanPlan }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));
@@ -618,16 +623,24 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} jumpTo={jumpTo} />}
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
-          {current.id === "carePlan" && (
+          {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>
               <style>{orthoStyles()}</style>
-              <OrthoCarePlanStep patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} condition={condition} setting="outpatient" pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }} />
+              <OrthoCarePlanStep
+                patientData={patientData}
+                onSave={onSave}
+                selectedRegions={selectedRegions}
+                condition={condition}
+                setting="outpatient"
+                pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
+                requireAuth={requireAuth}
+                phase={CAREPLAN_PHASE_BY_STEP[current.id]}
+                onAdvance={goNext}
+              />
             </>
           )}
-          {current.id === "goals" && <GoalsSection data={data} setData={setData} />}
-          {current.id === "treatmentPlan" && <TreatmentPlanSection data={data} setData={setData} />}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
-          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} />}
+          {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} requireAuth={requireAuth} />}
           {current.id === "homeProtocol" && <HomeProtocolSection patientData={patientData} onSave={onSave} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (

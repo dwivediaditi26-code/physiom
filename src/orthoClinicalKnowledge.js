@@ -453,5 +453,23 @@ export function buildOrthoKnowledge(ctx = {}) {
     // MSK-specific, not shown for Neuro (2026-09-09, Aditi: "remove the
     // technique from neuro tab because it is [an] ortho technique").
     manualTechniques: true,
+    // Evidence-based operation/condition protocol picker + saved custom
+    // protocols in "Add treatment" (2026-09-11) -- ortho-only for now,
+    // same reasoning as manualTechniques above: the seeded protocols
+    // (TKA/ACL/RCT) are all ortho conditions, and Neuro's Care Plan stays
+    // exercise-library-only until Neuro protocols exist.
+    evidenceProtocols: true,
+    clinicProtocols: true,
+    // Full region-browsable exercise library (2026-09-11, Aditi: "the
+    // exercise prescription have all data of general library... add whole
+    // page to general library") -- General Library used to only show
+    // exercises for the region(s) picked during the assessment; Exercise
+    // Prescription's own library lets the therapist browse ANY region via
+    // a dropdown (EXERCISE_DB in full). This flag turns that same region
+    // switcher on inside Care Plan's General Library tab too, so it's no
+    // longer a narrower subset of the same data. Ortho-only, like the
+    // flags above -- Neuro's library stays scoped to its one region.
+    fullExerciseLibrary: true,
+    defaultRegionKey: regionKeys[0] || null,
   };
 }
