@@ -869,6 +869,19 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   const goalsText = d.goal_main || d.sub_goals || d.soap_goals || "";
   const goalsList = Array.isArray(goalsText) ? goalsText : String(goalsText).split(/\n|;/).map((g) => g.trim()).filter(Boolean);
 
+  // Which specialty/specialties this patient has an assessment under, plus
+  // each one's type (IPD/Post-op/Outpatient for Ortho, Inpatient/Rehab/etc
+  // for Cardio, Neuro's own settings) and region/condition -- shown right
+  // under the name so it's clear at a glance without opening Assessment.
+  const specialtyChips = [
+    hasOrtho && {
+      key: "ortho", icon: "🦴", label: "Ortho",
+      sub: [orthoPathway === "ipd" ? "IPD" : orthoPathway === "postop" ? "Post-op" : "Outpatient", orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · "),
+    },
+    hasNeuro && { key: "neuro", icon: "🧠", label: "Neuro", sub: neuroAssessmentSubtitle(d.neuro.meta) },
+    hasCardio && { key: "cardio", icon: "🫀", label: "Cardio", sub: cardioAssessmentSubtitle(d.cardio.meta) },
+  ].filter(Boolean);
+
   const TABS = [
     { k: "overview", label: "Overview" },
     { k: "assessment", label: "Assessment" },
@@ -892,6 +905,15 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
           <div style={{ fontSize: 12, color: C.faint }}>
             {[(d.dem_age || cardioDem.age) && `${d.dem_age || cardioDem.age} yrs`, (d.dem_sex || d.dem_gender)].filter(Boolean).join(" · ")}
           </div>
+          {specialtyChips.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              {specialtyChips.map((c) => (
+                <span key={c.key} style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: C.primaryBg, border: "1px solid #ece7fb", borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}>
+                  {c.icon} {c.label}{c.sub ? ` · ${c.sub}` : ""}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

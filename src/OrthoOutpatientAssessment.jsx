@@ -237,7 +237,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // and handleConditionDetected's later re-union need to agree on which
   // base steps are actually in play, so a mid-session condition detection
   // can never silently re-add a step the AI-entry sequence deliberately skipped.
-  const effectiveBaseIds = entryMode === "ai" ? BASE_IDS.filter((id) => !AI_ENTRY_SKIP_IDS.includes(id)) : BASE_IDS;
+  // "suggest" (Suggested Objective) is dropped for non-AI entry -- General/
+  // Condition-wise entry already collects Observation and Palpation as their
+  // own dedicated steps earlier in BASE_IDS, so Suggested Objective's inline
+  // copies of them were pure duplication of the AI Objective Assessment step
+  // that follows it. Kept for AI entry, where those two steps are skipped
+  // (AI_ENTRY_SKIP_IDS) and Suggested Objective is the only place left that
+  // still captures them.
+  const effectiveBaseIds =
+    entryMode === "ai" ? BASE_IDS.filter((id) => !AI_ENTRY_SKIP_IDS.includes(id)) : BASE_IDS.filter((id) => id !== "suggest");
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
