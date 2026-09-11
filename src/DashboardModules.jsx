@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { getC } from "./utils.jsx";
 import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
 import { getEvidence } from "./physiofeed/data/db.js";
-import DeleteAccountButton from "./AccountDeletion.jsx";
 const POSTURE_DEFECTS = {
   forward_head: {
     id:"forward_head", icon:"🫀", label:"Forward Head Posture", region:"Cervical",
@@ -620,7 +619,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
 // ═══════════════════════════════════════════════════════════════════════════
 // THERAPIST DASHBOARD MODULE
 // ═══════════════════════════════════════════════════════════════════════════
-function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickStart, onStartAI, currentUser, onSignOut }) {
+function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickStart, onStartAI, currentUser }) {
   const { useState, useEffect, useMemo } = React;
   const [mounted, setMounted] = useState(false);
 
@@ -669,16 +668,11 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <button onClick={onSignOut}
-              style={{padding:"6px 12px",borderRadius:9,border:"1px solid #E0E0E2",
-                background:"transparent",color:"#6B6B6B",fontSize:"0.8rem",
-                fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
-              Sign out
-            </button>
-            <DeleteAccountButton patients={patients} buttonStyle={{
-              padding:"6px 12px",borderRadius:9,border:"1px solid #FCA5A5",
-              background:"transparent",color:"#DC2626",fontSize:"0.8rem",
-              fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}/>
+            {/* Sign out / Delete account moved to the sidebar, below
+                Settings (2026-09-10, Aditi screenshot: "put this red circle
+                in side bar below the settings ... remove from todays
+                clinical section") -- account-level actions don't belong in
+                the middle of the patient-facing Today dashboard. */}
             {/* 2026-09-02, Aditi: "what is DP, what does it do" -- this was
                 a hardcoded "DP" placeholder (not this therapist's actual
                 initials) that opened the old Ortho Subjective assessment

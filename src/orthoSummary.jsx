@@ -25,7 +25,7 @@ function rowsForStep(step, section, formatters) {
 const isGrouped = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
 const rowCount = (result) => (isGrouped(result) ? result.groups.reduce((n, g) => n + g.rows.length, 0) : result.length);
 
-export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters }) {
+export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters, hideTitle }) {
   const [copied, setCopied] = useState(false);
   const contentSteps = steps.filter((s) => s.id !== "review" && s.id !== "setup");
 
@@ -53,7 +53,13 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
 
   return (
     <>
-      <SectionIntro icon={icon} title={title} sub={sub} />
+      {/* SpecialtyPatientProfile.jsx's card already renders its own
+          icon/title header row (with New Assessment/Edit buttons) right
+          above this component -- rendering it again here duplicated the
+          title on the patient profile screen (2026-09-10, Aditi screenshot:
+          "why it showing like that"). The wizard's own Review step is the
+          only place on its page with a heading, so it still needs this. */}
+      {!hideTitle && <SectionIntro icon={icon} title={title} sub={sub} />}
       {extra}
       {contentSteps.map((step) => {
         const result = rowsForStep(step, data[step.id] || {}, formatters);

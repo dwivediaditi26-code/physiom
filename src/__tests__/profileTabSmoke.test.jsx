@@ -6,7 +6,7 @@
 // Sign Out action is still present and wired to the real onSignOut handler.
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent, within } from "@testing-library/react";
 
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
@@ -35,6 +35,10 @@ describe("Profile tab", () => {
     await waitFor(() => {
       expect(screen.getByText(/Demo profile/i)).toBeTruthy();
     }, { timeout: 10_000 });
-    expect(screen.getByRole("button", { name: /sign out/i })).toBeTruthy();
+    // Scoped to the Profile tab's own content (.physiofeed-root) -- the
+    // sidebar also has its own "Sign out" now (2026-09-10, moved there from
+    // the Clinical "Today" header), so an unscoped query matches both.
+    const profilePanel = document.querySelector(".physiofeed-root");
+    expect(within(profilePanel).getByRole("button", { name: /sign out/i })).toBeTruthy();
   }, 15_000);
 });

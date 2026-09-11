@@ -1106,9 +1106,16 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
           {hasOrtho && (
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              {/* flexWrap (2026-09-10, Aditi screenshot: "red circle area
+                  why it is outside of the edit button") -- unlike Neuro/
+                  Cardio's header row above (one button, always fits), this
+                  row has two action buttons alongside the title with no
+                  shrink/wrap handling, so on narrow phone widths they got
+                  pushed past the card's right edge instead of wrapping
+                  onto their own line below the title. */}
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 6 }}>
                 <span style={{ fontSize: 24 }}>🦴</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1 }}>{orthoTitle}</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: "#0369a1", flex: 1, minWidth: 120 }}>{orthoTitle}</span>
                 {/* Follow-up/repeat visit for this same patient (2026-09-09,
                     Aditi: "select from old patient data ... should extract
                     the subjective assessment from ortho list of old
@@ -1124,10 +1131,13 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { entryMode: "ai" })} style={{ padding: "6px 12px", fontSize: 12 }}>🔄 New Assessment</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
+              {[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ") && (
+                <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}</div>
+              )}
               <OrthoAssessmentSummary
                 icon="🦴"
                 title={orthoTitle}
-                sub={[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ")}
+                hideTitle
                 steps={orthoSteps}
                 data={orthoParsed.data || {}}
                 onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}

@@ -5,8 +5,7 @@ import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
 import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon } from "lucide-react";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
-import { RegionPicker } from "./orthoSetupKit.jsx";
-import { orthoStyles } from "./orthoStyles.js";
+import DeleteAccountButton from "./AccountDeletion.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
 } from "./sharedClinicalData.js";
@@ -661,7 +660,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // demographic data to be fill not this page") -- Ortho Outpatient is the
   // only pathway that's actually live, so there's nothing else to choose.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
-  const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", regions: [] });
+  const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", chiefComplaint: "" });
+  // Two-step picker (2026-09-10, Aditi: "change region to chief complaint
+  // and then ask which specialty and then normal workflow") -- step 1
+  // captures the 5 quick-intake fields (chief complaint replacing the
+  // body-region picker, since region no longer needs to be known before
+  // specialty is even chosen), step 2 asks which specialty so the
+  // assessment can actually route to the right tool instead of assuming
+  // Ortho for everyone.
+  const [quickStartStep, setQuickStartStep] = useState("form"); // "form" | "specialty"
   // Shared "start a new assessment for this specialty" logic -- used by
   // both the "+ New Assessment" specialty-picker modal below and the
   // Clinical tab's own "Assessment" sub-tab pills (2026-08-23), so picking
@@ -692,39 +699,44 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     navTo("ortho_new_assessment", { entryMode: mode });
   }
   // "+ New Assessment"'s minimal 5-question intake (name, age, sex, phone,
-  // region) -- replaces the old AI-vs-Template picker + the wizard's own
-  // region-picker screen + its full Demographics step. Deliberately does
-  // NOT pass entryMode="ai": that mode silently drops Red Flags/Pain/
-  // Observation/Palpation from the step order on the assumption an AI
-  // narrative already covered them, which isn't true here -- nothing but
-  // these 5 fields has been captured, so every safety-relevant step must
-  // still run normally. Skips straight to "subjective" via OrthoAssessment.
-  // jsx's resume mechanism (same one Edit-from-profile uses, just a
-  // different initialStep), landing on the real wizard with Demographics
-  // already filled instead of asking for it twice.
-  function startQuickAssessment() {
-    const { name, age, sex, phone, regions } = quickStart;
+  // chief complaint) -- replaces the old AI-vs-Template picker. Step 1
+  // captures these 5 fields, step 2 asks which specialty, then this
+  // seeds the shared `data` state and routes into that specialty's own
+  // real tool -- the exact same real navigation startSpecialty() already
+  // uses for the Assessment tab's specialty cards, just pre-filled instead
+  // of blank, so every specialty runs its own normal, complete step order
+  // (no safety steps silently skipped; region/pathway/condition for Ortho
+  // are asked normally too, since the intake no longer captures region).
+  function startQuickAssessment(st) {
+    const { name, age, sex, phone, chiefComplaint } = quickStart;
     const seedData = {
       dem_name: name.trim(),
       dem_age: age,
       dem_sex: sex,
       dem_phone: phone.trim(),
       demographics: { name: name.trim(), age, sex },
+      chiefComplaint: chiefComplaint.trim(),
+      cc_main: chiefComplaint.trim(),
     };
     setActivePatientId(null);
     setData(seedData);
     setShowSpecialtyPicker(false);
-    setQuickStart({ name: "", age: "", sex: "", phone: "", regions: [] });
-    navTo("ortho_new_assessment", {
-      resume: {
-        pathway: "outpatient",
-        selectedRegions: regions,
-        condition: "general",
-        customConditionLabel: "",
-        data: seedData,
-        initialStep: "subjective",
-      },
-    });
+    setQuickStartStep("form");
+    setQuickStart({ name: "", age: "", sex: "", phone: "", chiefComplaint: "" });
+    if (st.id === "cardio") {
+      navTo("cardio_assessment");
+    } else if (st.id === "neuro") {
+      navTo("neuro_assessment");
+    } else if (st.id === "ortho_new") {
+      // Plain navigate, no entryMode/resume shortcut -- the actual normal
+      // Ortho flow (pathway: Outpatient/IPD/Post-op, then region, then
+      // condition, then the wizard itself), just pre-filled with the
+      // quick-intake answers instead of starting blank.
+      navTo("ortho_new_assessment");
+    } else {
+      setStream(st.id);
+      createNewPatient();
+    }
   }
   // Demographics step redesign: the 6 core fields (name/dob/age/gender/
   // phone/email/occupation) show up front; everything else the clinic
@@ -1340,6 +1352,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       <SidebarTopItem navKey="profile" icon="⚙️" label="Settings"/>
 
+      {/* Sign out / Delete account -- moved here from the Clinical "Today"
+          tab's own header (2026-09-10, Aditi screenshot: "put this red
+          circle in side bar below the settings ... remove from todays
+          clinical section"). Account-level actions belong in the settings
+          menu, not floating in the middle of a patient-facing dashboard. */}
+      <div style={{padding:"10px 14px 4px",display:"flex",flexDirection:"column",gap:8}}>
+        <button onClick={onSignOut}
+          style={{width:"100%",padding:"8px 10px",borderRadius:9,border:`1px solid ${PC.border}`,
+            background:"transparent",color:PC.muted,fontSize:"0.8rem",
+            fontWeight:700,cursor:"pointer"}}>
+          Sign out
+        </button>
+        <DeleteAccountButton patients={patients} buttonStyle={{
+          width:"100%",padding:"8px 10px",borderRadius:9,border:"1px solid #FCA5A5",
+          background:"transparent",color:"#DC2626",fontSize:"0.8rem",
+          fontWeight:700,cursor:"pointer"}}/>
+      </div>
 
     </>
   );
@@ -1422,71 +1451,112 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* ── NEW ASSESSMENT: MINIMAL QUICK-START ──
           2026-09-10, Aditi: "i want patient small 5 ques minimal data
           demographic data to be fill not this page" -- replaces the old
-          AI-vs-Template picker outright. Name/Age/Sex/Phone/Region is
-          everything startQuickAssessment() needs to create the patient and
-          jump straight into the real Outpatient wizard on Subjective, fully
-          skipping the wizard's own region-picker screen and Demographics
-          step (both pre-filled from here instead). Ortho Outpatient is the
-          only pathway that's actually live, so there's nothing else to ask. */}
+          AI-vs-Template picker outright. Two steps: (1) Name/Age/Sex/Phone/
+          Chief complaint, (2) which specialty -- since the intake no longer
+          asks for a body region up front, specialty has to be picked
+          explicitly instead of always assuming Ortho. Picking a specialty
+          seeds `data` with these 5 answers and routes into that specialty's
+          own real tool via startQuickAssessment(), same real navigation
+          startSpecialty() already uses -- normal step order, nothing
+          skipped, just pre-filled instead of blank. */}
       {showSpecialtyPicker && (
         <div data-testid="specialty-picker-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <style>{orthoStyles()}</style>
           <div style={{width:"100%",maxWidth:440,maxHeight:"88vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
-            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Quick patient details — you can fill in the rest once you're in.</div>
+            {quickStartStep==="form" ? (<>
+              <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Quick patient details — you can fill in the rest once you're in.</div>
 
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
-              <div>
-                <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Full name</label>
-                <input value={quickStart.name} onChange={e=>setQuickStart(q=>({...q,name:e.target.value}))}
-                  placeholder="e.g. Riya Sharma"
-                  style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <div style={{flex:1}}>
-                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Age</label>
-                  <input value={quickStart.age} onChange={e=>setQuickStart(q=>({...q,age:e.target.value}))}
-                    type="number" placeholder="yrs"
+              <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+                <div>
+                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Full name</label>
+                  <input value={quickStart.name} onChange={e=>setQuickStart(q=>({...q,name:e.target.value}))}
+                    placeholder="e.g. Riya Sharma"
                     style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
                 </div>
-                <div style={{flex:1}}>
-                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Phone</label>
-                  <input value={quickStart.phone} onChange={e=>setQuickStart(q=>({...q,phone:e.target.value}))}
-                    type="tel" placeholder="+91 98765 43210"
-                    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                <div style={{display:"flex",gap:10}}>
+                  <div style={{flex:1}}>
+                    <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Age</label>
+                    <input value={quickStart.age} onChange={e=>setQuickStart(q=>({...q,age:e.target.value}))}
+                      type="number" placeholder="yrs"
+                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                  <div style={{flex:1}}>
+                    <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Phone</label>
+                    <input value={quickStart.phone} onChange={e=>setQuickStart(q=>({...q,phone:e.target.value}))}
+                      type="tel" placeholder="+91 98765 43210"
+                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                </div>
+                <div>
+                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:6}}>Sex</label>
+                  <div style={{display:"flex",gap:6}}>
+                    {["Male","Female","Other"].map(opt=>(
+                      <button key={opt} type="button" onClick={()=>setQuickStart(q=>({...q,sex:opt}))}
+                        style={{flex:1,padding:"9px 6px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"0.82rem",fontWeight:700,
+                          background:quickStart.sex===opt?PC.accent:PC.s2,color:quickStart.sex===opt?"#fff":PC.muted}}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Chief complaint</label>
+                  <textarea value={quickStart.chiefComplaint} onChange={e=>setQuickStart(q=>({...q,chiefComplaint:e.target.value}))}
+                    placeholder="e.g. Right knee pain for 2 weeks" rows={2}
+                    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
                 </div>
               </div>
-              <div>
-                <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:6}}>Sex</label>
-                <div style={{display:"flex",gap:6}}>
-                  {["Male","Female","Other"].map(opt=>(
-                    <button key={opt} type="button" onClick={()=>setQuickStart(q=>({...q,sex:opt}))}
-                      style={{flex:1,padding:"9px 6px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"0.82rem",fontWeight:700,
-                        background:quickStart.sex===opt?PC.accent:PC.s2,color:quickStart.sex===opt?"#fff":PC.muted}}>
-                      {opt}
+
+              <button type="button" onClick={()=>setQuickStartStep("specialty")}
+                disabled={!quickStart.name.trim() || !quickStart.chiefComplaint.trim()}
+                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
+                  border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.9rem",
+                  cursor:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?"not-allowed":"pointer",marginBottom:10,
+                  boxShadow:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
+                Next →
+              </button>
+
+              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStartStep("form"); setQuickStart({ name:"", age:"", sex:"", phone:"", chiefComplaint:"" }); }}
+                style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                Cancel
+              </button>
+            </>) : (<>
+              <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>Which specialty?</div>
+              <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>This decides which assessment tool opens next.</div>
+
+              {/* gridTemplateColumns uses minmax/auto-fit rather than a
+                  literal "1fr 1fr" -- utils.jsx has a global mobile
+                  override that force-collapses any inline grid style
+                  containing that exact substring to 1 column below 400px
+                  width (see the Assessment sub-tab's own specialty grid,
+                  which hit this same trap first). */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:16}}>
+                {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
+                  const clickable = st.live || st.id === "cardio";
+                  const { Icon, bg } = STREAM_ICONS[st.id];
+                  return (
+                    <button key={st.id} type="button"
+                      onClick={()=>{ if(!clickable) return; startQuickAssessment(st); }}
+                      style={{position:"relative",textAlign:"left",display:"flex",flexDirection:"column",
+                        borderRadius:16,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
+                        border:`1.5px solid ${clickable?PC.border:"#E5E7EB"}`,
+                        background:PC.surface,padding:"14px 12px",opacity:clickable?1:0.6}}>
+                      {!clickable && <span style={{position:"absolute",top:10,right:10,fontSize:"0.58rem",fontWeight:800,padding:"2px 6px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
+                      <div style={{width:38,height:38,borderRadius:12,background:bg,
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <Icon size={19} color={st.color} strokeWidth={1.75}/>
+                      </div>
+                      <span style={{fontWeight:800,fontSize:"0.86rem",color:clickable?PC.text:"#9CA3AF",marginTop:10}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-              <div>
-                <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:6}}>Region / body part</label>
-                <RegionPicker selectedRegions={quickStart.regions} setSelectedRegions={(updater)=>setQuickStart(q=>({...q,regions: typeof updater==="function"?updater(q.regions):updater}))}/>
-              </div>
-            </div>
 
-            <button type="button" onClick={startQuickAssessment}
-              disabled={!quickStart.name.trim() || quickStart.regions.length===0}
-              style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||quickStart.regions.length===0?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
-                border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.9rem",
-                cursor:!quickStart.name.trim()||quickStart.regions.length===0?"not-allowed":"pointer",marginBottom:10,
-                boxShadow:!quickStart.name.trim()||quickStart.regions.length===0?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
-              Start Assessment →
-            </button>
-
-            <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", regions:[] }); }}
-              style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-              Cancel
-            </button>
+              <button type="button" onClick={()=>setQuickStartStep("form")}
+                style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                ← Back
+              </button>
+            </>)}
           </div>
         </div>
       )}
