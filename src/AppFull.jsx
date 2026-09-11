@@ -791,15 +791,38 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // on one of these two screens, create the patient row the same way the
   // Ortho CTA does, then adopt it as the active patient so the auto-save
   // effect above takes over from here.
+  // Same gap, one step earlier: the "✨ Say your assessment" AI intake fills
+  // Subjective/Pain/Red Flags straight from the narrative but almost never
+  // extracts a patient *name* out of it (2026-09-11, Aditi: "ai assisted
+  // form filling is not documenting in assessment review summary") -- a
+  // clinician who only used AI intake and never typed the Full Name field
+  // left dem_name empty for the whole session, so this effect never fired,
+  // no patients[] row ever existed, and SpecialtyPatientProfile's Review
+  // Summary (which reads patient.data.ortho_outpatient_assessment) had
+  // nothing to show even though the wizard's own local Review step had the
+  // data all along. Fall back to creating the row as soon as the AI-filled
+  // blob has real Subjective/Pain content, same "New Patient" placeholder
+  // name finaliseNewPatient() already uses below.
   useEffect(() => {
     if (activePatientId) return;
     if (active !== "cardio_assessment" && active !== "neuro_assessment" && active !== "ortho_new_assessment") return;
     const name = (data.dem_name || "").trim();
-    if (!name) return;
-    const newP = { id: genId(), name, data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
+    let hasAiFilledData = false;
+    if (!name && active === "ortho_new_assessment" && data.ortho_outpatient_assessment) {
+      try {
+        const wizardData = JSON.parse(data.ortho_outpatient_assessment)?.data || {};
+        const subj = wizardData.subjective || {};
+        const pain = wizardData.pain || {};
+        hasAiFilledData =
+          Object.entries(subj).some(([k, v]) => k !== "__aiExtracted" && String(v || "").trim()) ||
+          Object.values(pain).some((v) => String(v || "").trim());
+      } catch { /* malformed/partial JSON mid-typing -- just wait for the next tick */ }
+    }
+    if (!name && !hasAiFilledData) return;
+    const newP = { id: genId(), name: name || "New Patient", data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
     setPatients(prev => { const updated = [newP, ...prev]; savePatientDB(updated, currentUser?.id); return updated; });
     setActivePatientId(newP.id);
-  }, [data.dem_name, activePatientId, active]);
+  }, [data.dem_name, data.ortho_outpatient_assessment, activePatientId, active]);
 
   const createNewPatient = () => {
     setIntakeData({});
