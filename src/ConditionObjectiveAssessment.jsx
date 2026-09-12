@@ -36,7 +36,7 @@
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useState } from "react";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton } from "./orthoFieldKit.jsx";
-import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
+import { RESTRICTION_GRADE, spineRegionData } from "./orthoClinicalData.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -151,8 +151,8 @@ const REGION_CONFIGS = [
   {
     key: "cervical", label: "Cervical Spine", schema: "v2",
     matchesRegion: (r) => r.id === "cervical",
-    hasData: (data) => hasCervicalChecklistData(data.subjective?.regions?.cervical),
-    run: (data) => runCervicalDifferential(data.subjective?.regions?.cervical, data.subjective),
+    hasData: (data) => hasCervicalChecklistData(data.subjective?.regions?.cervical) || !!spineRegionData(data, { id: "cervical" }, "cervical"),
+    run: (data) => runCervicalDifferential(spineRegionData(data, { id: "cervical" }, "cervical") || data.subjective?.regions?.cervical, data.subjective),
     conditions: CERVICAL_CONDITIONS, order: CERVICAL_CONDITION_ORDER,
     getRedFlag: cervicalRedFlag,
     suggestedTestsMode: "split",
@@ -162,8 +162,8 @@ const REGION_CONFIGS = [
   {
     key: "thoracic", label: "Thoracic Spine", schema: "v2",
     matchesRegion: (r) => r.id === "thoracic",
-    hasData: (data) => hasThoracicChecklistData(data.subjective?.regions?.thoracic),
-    run: (data) => runThoracicDifferential(data.subjective?.regions?.thoracic, data.subjective),
+    hasData: (data) => hasThoracicChecklistData(data.subjective?.regions?.thoracic) || !!spineRegionData(data, { id: "thoracic" }, "thoracic"),
+    run: (data) => runThoracicDifferential(spineRegionData(data, { id: "thoracic" }, "thoracic") || data.subjective?.regions?.thoracic, data.subjective),
     conditions: THORACIC_CONDITIONS, order: THORACIC_CONDITION_ORDER,
     getRedFlag: cervicalRedFlag,
     suggestedTestsMode: "split",
@@ -173,8 +173,8 @@ const REGION_CONFIGS = [
   {
     key: "lumbar", label: "Lumbar / SI", schema: "v2",
     matchesRegion: (r) => ["lumbar", "sacrum", "pelvis"].includes(r.id),
-    hasData: (data) => hasLumbarChecklistData(data.subjective?.regions?.lumbarSI),
-    run: (data) => runLumbarDifferential(data.subjective?.regions?.lumbarSI, data.subjective),
+    hasData: (data) => hasLumbarChecklistData(data.subjective?.regions?.lumbarSI) || !!spineRegionData(data, { id: "lumbarSI" }, "lumbarSI"),
+    run: (data) => runLumbarDifferential(spineRegionData(data, { id: "lumbarSI" }, "lumbarSI") || data.subjective?.regions?.lumbarSI, data.subjective),
     conditions: LUMBAR_CONDITIONS, order: LUMBAR_CONDITION_ORDER,
     getRedFlag: cervicalRedFlag,
     suggestedTestsMode: "split",

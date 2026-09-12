@@ -104,3 +104,63 @@ export function gradeDesc(g) {
   const found = MMT_GRADES.find((x) => x.g === g);
   return found ? found.desc : "";
 }
+
+// Shared by every spine-region reasoning entry point (OrthoSuggestObjectiveStep.jsx
+// and ConditionObjectiveAssessment.jsx) -- when AI intake was used,
+// subjective.__aiExtracted carries the raw extracted fields but
+// subjective.regions[regionId] (the manual checklist) is empty, so the
+// spine engines' hasData() checks would otherwise report no Subjective
+// data at all. Synthesize a minimal regionData object from the AI fields
+// so both entry points agree on whether Subjective data exists and,
+// when it does, run the exact same differential off of it (2026-09-11:
+// "why the AI is not showing the result according to subjective
+// assessment" -- ConditionObjectiveAssessment.jsx used to skip this
+// fallback entirely and only ever check the manual checklist).
+export function spineRegionData(d, r, engineKey) {
+  const manual = d.subjective?.regions?.[r.id];
+  if (manual && Object.values(manual).some((v) => String(v || "").trim())) return manual;
+  const rows = d.subjective?.__aiExtracted;
+  if (!rows?.length) return null;
+  const byKey = {};
+  rows.forEach((row) => { if (row.key && row.value) byKey[row.key] = row.value; });
+  if (!Object.keys(byKey).length) return null;
+  const rd = {};
+  const low = (k) => (byKey[k] || "").toLowerCase();
+  const aggMov = (byKey.aggMovements || "").split(", ").filter(Boolean);
+  const FLEX = { cervical: "Flexion — looking down", lumbarSI: "Forward bending (flexion)", thoracic: "Forward bending (flexion)" };
+  const EXT = { cervical: "Extension — looking up", lumbarSI: "Backward bending (extension)", thoracic: "Backward bending (extension)" };
+  const mapped = [];
+  for (const m of aggMov) {
+    const ml = m.toLowerCase();
+    if (ml.includes("look") && ml.includes("down") || ml.includes("flexion") || ml.includes("bending forward") || ml.includes("bend forward")) mapped.push(FLEX[engineKey] || m);
+    else if (ml.includes("look") && ml.includes("up") || ml.includes("extension") || ml.includes("leaning back")) mapped.push(EXT[engineKey] || m);
+    else if (ml.includes("turn") || ml.includes("rotation")) { if (ml.includes("right")) mapped.push("Rotation right"); else if (ml.includes("left")) mapped.push("Rotation left"); else mapped.push("Rotation"); }
+    else if (ml.includes("side") || ml.includes("lateral")) mapped.push("Side bending");
+    else mapped.push(m);
+  }
+  if (mapped.length) rd.aggMovements = mapped.join(", ");
+  const aggAct = (byKey.aggActivities || "").split(", ").filter(Boolean);
+  const mappedP = [];
+  for (const a of aggAct) { const al = a.toLowerCase(); if (al.includes("computer") || al.includes("desk") || al.includes("screen")) mappedP.push("Computer / desk work"); else if (al.includes("driving")) mappedP.push("Driving"); else if (al.includes("sitting")) mappedP.push("Sitting — prolonged"); else if (al.includes("standing")) mappedP.push("Standing — prolonged"); else mappedP.push(a); }
+  if (mappedP.length) rd.aggPostures = mappedP.join(", ");
+  if (byKey.hasRadiation === "No" || low("hasRadiation") === "no") rd.radiation = "No radiation — local only";
+  else if (byKey.radiationArea) rd.radiation = byKey.radiationArea;
+  const neuro = low("neuroSymptoms");
+  if (neuro.includes("no neuro") || neuro === "none" || neuro === "no") { rd.armNeuro = "No neurological symptoms"; rd.armPresent = "No arm / hand symptoms"; }
+  else if (neuro && neuro !== "no neurological") rd.armNeuro = byKey.neuroSymptoms;
+  const onset = low("onset");
+  if (onset.includes("whiplash") || onset.includes("mva") || onset.includes("car accident")) rd.mechanismType = "Whiplash / rear-end collision";
+  else if (onset.includes("no clear") || onset.includes("insidious") || onset.includes("gradual") || onset.includes("unknown")) rd.mechanismType = "No clear mechanism — insidious onset";
+  else if (onset.includes("fall") || onset.includes("trauma")) rd.mechanismType = "Fall / direct trauma";
+  else if (onset.includes("lift")) rd.mechanismType = "Lifting — heavy or awkward";
+  const morning = low("morningSymptoms") || low("diurnalPattern");
+  if (morning.includes("stiffness") && morning.includes("morning")) rd.morning = "Stiffness < 30 min (mechanical)";
+  const loc = low("locationDescription");
+  if (engineKey === "cervical") { if (loc.includes("right")) rd.location = "Right posterior cervical"; else if (loc.includes("left")) rd.location = "Left posterior cervical"; else rd.location = "Central/posterior cervical"; }
+  else if (engineKey === "lumbarSI") { if (loc.includes("right")) rd.location = "Right lumbar"; else if (loc.includes("left")) rd.location = "Left lumbar"; else rd.location = "Central lumbar"; }
+  else { if (loc.includes("right")) rd.location = "Right thoracic"; else if (loc.includes("left")) rd.location = "Left thoracic"; else rd.location = "Central thoracic"; }
+  const pattern = low("symptomPattern");
+  if (pattern.includes("mechanical")) rd.overallPattern = "Mechanical — varies with movement/position";
+  else if (pattern.includes("constant")) rd.overallPattern = "Constant — never goes away";
+  return Object.keys(rd).length > 0 ? rd : null;
+}
