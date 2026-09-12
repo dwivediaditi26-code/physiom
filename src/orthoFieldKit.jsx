@@ -36,7 +36,7 @@ export function Hint({ children }) {
 // StudyImage.jsx (f_auto,q_auto, no crop) -- duplicated here rather than
 // cross-imported since neither of those live in a shared, exported
 // location; same convention StudyImage.jsx itself already uses.
-const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
+export const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 
 function SheetHero({ name }) {
   const [failed, setFailed] = useState(false);
@@ -145,19 +145,40 @@ const SHEET_TABS = [
    InfoCard/AnatomyGrid/ProtocolList above. `text` stays supported for the
    many other field hints in this file that aren't ROM/MMT/Special Test
    items. */
+// imageTrigger: square photo-thumbnail trigger instead of the ⓘ pill --
+// same underlying sheet/tabs, just a different way in (2026-09-11, Aditi:
+// "put the images of ROM and special test... miniature format... click
+// opens the info card that's already present"). Reuses the exact same
+// Cloudinary asset (richItem.image, keyed by the ROM/Special Test data's
+// own id) SheetHero already shows inside the opened sheet -- no separate
+// image source, so the thumbnail and the sheet's hero photo can never
+// drift apart. Falls back to a plain icon tile (fallbackIcon) when there's
+// no richItem.image or the photo 404s, same as SheetHero's own fallback.
 export function InfoButton(props) {
-  const { text, title, eyebrow = "HOW TO PERFORM", richItem, small } = props;
+  const { text, title, eyebrow = "HOW TO PERFORM", richItem, small, imageTrigger, fallbackIcon } = props;
   const [open, setOpen] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const availableTabs = richItem ? SHEET_TABS.filter((t) => richItem[t.key]) : [];
   const [tab, setTab] = useState(availableTabs[0]?.key);
   const activeTab = availableTabs.find((t) => t.key === tab) ? tab : availableTabs[0]?.key;
   const heading = richItem?.title || title;
   const openSheet = () => { setTab(availableTabs[0]?.key); setOpen(true); };
+  const imgSrc = richItem?.image ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_200,h_200,c_fill/${richItem.image}` : null;
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
-      <button type="button" className={props.label ? "info-btn-full" : small ? "info-btn-sm" : "info-btn"} onClick={openSheet}>
-        ⓘ {props.label || ""}
-      </button>
+      {imageTrigger ? (
+        <button type="button" className="info-img-trigger" onClick={openSheet} aria-label={heading ? `View ${heading}` : "View details"}>
+          {imgSrc && !imgFailed ? (
+            <img src={imgSrc} alt="" onError={() => setImgFailed(true)} />
+          ) : (
+            <i className={"ti " + (fallbackIcon || "ti-photo")} aria-hidden="true"></i>
+          )}
+        </button>
+      ) : (
+        <button type="button" className={props.label ? "info-btn-full" : small ? "info-btn-sm" : "info-btn"} onClick={openSheet}>
+          ⓘ {props.label || ""}
+        </button>
+      )}
       {open && createPortal(
         <div className="sheet-backdrop" onClick={() => setOpen(false)}>
           <div className="sheet-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>

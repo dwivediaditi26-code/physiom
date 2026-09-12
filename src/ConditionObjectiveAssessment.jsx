@@ -36,7 +36,8 @@
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useState } from "react";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton } from "./orthoFieldKit.jsx";
-import { RESTRICTION_GRADE, spineRegionData } from "./orthoClinicalData.js";
+import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
+import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -104,6 +105,48 @@ const ELBOW_WRIST_HAND_ROM_MOVEMENTS = [
   { id: "wflex", label: "Wrist Flexion", normal: 80 }, { id: "wext", label: "Wrist Extension", normal: 70 },
   { id: "wrad", label: "Radial Deviation", normal: 20 }, { id: "wuln", label: "Ulnar Deviation", normal: 30 },
 ];
+
+// Real Cloudinary reference photos for ROM/Special Tests already exist,
+// keyed by id, in the app's own ROM_DATA/SPECIAL_TESTS_DATA (shared with
+// the real ROM/MMT/Special Tests screens in orthoRegionAssessments.jsx --
+// see romRichItem/specialRichItem there) -- 2026-09-11, Aditi: "put the
+// images of ROM and special test... I have already put images in that
+// section." This page's own ROM_MOVEMENTS arrays use their own short ids
+// (not always identical to ROM_DATA's), so ROM_ID_TO_DATA_ID bridges them;
+// Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand happen to already share ids 1:1.
+// Regions/movements with no photo on file just fall back to a plain icon
+// tile (InfoButton's own fallbackIcon) -- no fabricated images.
+const ROM_DATA_BUCKET = { cervical: "Cervical", thoracic: "Thoracic", lumbar: "Lumbar", shoulder: "Shoulder", hip: "Hip", knee: "Knee", ankleFoot: null, elbowWristHand: null };
+const ROM_ID_TO_DATA_ID = {
+  cervical: { flex: "rom_cflex", ext: "rom_cext", latl: "rom_clatl", latr: "rom_clatr", rotl: "rom_crotl", rotr: "rom_crotr" },
+  thoracic: { flex: "rom_thflex", ext: "rom_thext", rotl: "rom_throtl", rotr: "rom_throtr" },
+  lumbar: { flex: "rom_lflex", ext: "rom_lext", latl: "rom_llfl", latr: "rom_llfr", rotl: "rom_lrotl", rotr: "rom_lrotr" },
+  shoulder: { flex: "rom_sflex", abd: "rom_sabd", er: "rom_ser", ir: "rom_sir" },
+  hip: { hflex: "rom_hflex", hext: "rom_hext", habd: "rom_habd", hadd: "rom_hadd", her: "rom_her", hir: "rom_hir" },
+  knee: { kflex: "rom_kflex", kext: "rom_kext" },
+  ankleFoot: {}, // Ankle/Foot ROM_DATA is split across two buckets ("Ankle"/"Foot") this page doesn't currently disambiguate -- falls back to icon rather than guess wrong.
+  elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln" },
+};
+function romRichItemFor(regionKey, movementId) {
+  const bucket = ROM_DATA_BUCKET[regionKey];
+  const dataId = ROM_ID_TO_DATA_ID[regionKey]?.[movementId];
+  if (!bucket || !dataId) return null;
+  const entry = (ROM_DATA[bucket] || []).find((e) => e.id === dataId);
+  return entry ? romRichItem(entry) : null;
+}
+
+// Special Tests library only has a shared photo bucket for these 6 regions
+// (SPECIAL_TESTS_DATA has no Ankle-Foot/Elbow-Wrist-Hand entries) --
+// matched by normalized test name since the condition library's own test
+// names are free text, not ids. No match just falls back to a plain icon.
+const SPECIAL_TEST_DATA_BUCKET = { cervical: "cervical", thoracic: "thoracic", lumbar: "lumbar", shoulder: "shoulder", hip: "hip", knee: "knee", ankleFoot: null, elbowWristHand: null };
+function specialRichItemFor(regionKey, testName) {
+  const bucket = SPECIAL_TEST_DATA_BUCKET[regionKey];
+  if (!bucket) return null;
+  const target = normalizeName(testName);
+  const entry = (SPECIAL_TESTS_DATA[bucket]?.tests || []).find((t) => normalizeName(t.label) === target);
+  return entry ? specialRichItem(entry) : null;
+}
 
 function normalizeName(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -541,20 +584,6 @@ function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
 
 const FINDING_CATEGORY_ICON = { observation: "ti-eye", posture: "ti-walk", palpation: "ti-hand-stop" };
 
-// Leading square icon tile for ROM/Special Tests rows -- same visual
-// language as FindingCard's tile (2026-09-11: "make same for special test
-// and rom just square block of image area"), but these rows keep their
-// existing interaction (Stepper / Side+Result chips) rather than becoming
-// tap-to-select cards, so this is just the leading visual, not a full
-// FindingCard.
-function RowIconTile({ icon }) {
-  return (
-    <div style={{ flex: "0 0 auto", width: 48, height: 48, borderRadius: 10, background: "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <i className={"ti " + icon} style={{ fontSize: 22, color: BRAND.grayLight }} aria-hidden="true"></i>
-    </div>
-  );
-}
-
 function FindingCardList({ category, options, selected, onToggle, interpretations }) {
   const values = selected ? selected.split(", ").filter(Boolean) : [];
   const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
@@ -851,7 +880,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       <div key={m.id} style={rowStyle}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", alignItems: "center", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                            <RowIconTile icon="ti-arrows-maximize" />
+                            <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
                               <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
@@ -887,7 +916,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={m.id} style={rowStyle}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                          <RowIconTile icon="ti-arrows-maximize" />
+                          <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
                             <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
@@ -923,7 +952,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   return (
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                        <RowIconTile icon="ti-clipboard-check" />
+                        <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={specialRichItemFor(config.key, t)} />
                         <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
                       </div>
                       <CategoryLabel>Side</CategoryLabel>

@@ -143,6 +143,9 @@ export function orthoStyles() {
         .info-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
         .info-btn-full { width: 100%; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.purple}; font-weight: 700; font-size: 12px; padding: 9px; border-radius: 10px; cursor: pointer; min-height: 36px; }
+        .info-img-trigger { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 10px; border: none; padding: 0; overflow: hidden; background: #F6F5FA; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .info-img-trigger img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .info-img-trigger i { font-size: 22px; color: ${BRAND.grayLight}; }
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
