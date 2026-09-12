@@ -334,15 +334,7 @@ function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
   );
 }
 
-// sub: one-line general "how to assess" instruction shown right under the
-// section title (2026-09-11, Aditi: "put in palpation observation and
-// posture how to look assess instruction just below the topic name") --
-// general technique guidance, not per-condition/per-finding content.
-// Palpation's line is drawn from the app's own Palpation study mode
-// ("How to palpate", src/physiofeed/learn/palpationIntroTopics.js);
-// Observation/Posture are standard orthopedic-exam teaching (inspection
-// from multiple views before hands-on testing), not tied to any one book.
-function ModuleCard({ label, sub, color, defaultOpen = true, children }) {
+function ModuleCard({ label, color, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderTop: `1px solid ${HAIRLINE}`, padding: "14px 2px" }}>
@@ -351,41 +343,15 @@ function ModuleCard({ label, sub, color, defaultOpen = true, children }) {
         role="button"
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
       >
-        <span style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: color || BRAND.gray }}>
+        <span style={{ fontSize: "0.95rem", fontWeight: 700, color: color || BRAND.ink }}>
           {label}
         </span>
         <span style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.purple }}>{open ? "Close ↑" : "Open →"}</span>
       </div>
-      {open && sub && (
-        <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.74rem", color: BRAND.gray, lineHeight: 1.5 }}>
-          {sub.map((line, i) => <li key={i}>{line}</li>)}
-        </ul>
-      )}
       {open && <div style={{ marginTop: 12 }}>{children}</div>}
     </div>
   );
 }
-
-const MODULE_HOW_TO = {
-  observation: [
-    "Observe before touching the patient.",
-    "Check posture, gait, and guarding from anterior, lateral, and posterior views.",
-    "Note visible deformity, swelling, muscle wasting, or skin/colour changes.",
-    "Compare left and right sides for symmetry.",
-  ],
-  posture: [
-    "Assess static alignment in standing (or sitting), not mid-movement.",
-    "View from anterior, lateral, and posterior.",
-    "Compare bony landmarks left to right (shoulders, pelvis, scapulae).",
-    "Note habitual/antalgic positioning the patient adopts to ease symptoms.",
-  ],
-  palpation: [
-    "Locate the structure first, then judge its condition — don't skip straight to assessment.",
-    "Work superficial to deep, using finger pads with steady, graded pressure.",
-    "Find a bony landmark first, then move off it to the target structure.",
-    "Compare left and right for tenderness, temperature, tone, and swelling.",
-  ],
-};
 
 // Subtopics shown as a horizontal, scrollable "piano row" below the
 // condition selector — page-by-page assessment instead of every module
@@ -582,6 +548,13 @@ function BlueBox({ title, children }) {
 // a panel, no fabricated content. One representative icon per category
 // (not per finding -- the condition library has no per-finding icon
 // mapping and inventing one per finding/condition wouldn't be maintainable).
+// Mechanical split of the authored interpretation paragraph into
+// sentence-level bullets (2026-09-11: "pointwise, not paragraph") --
+// reformats the same authored text, doesn't add or paraphrase anything.
+function splitSentences(text) {
+  return String(text || "").split(/(?<=[.!?])\s+(?=[A-Z(])/).map((s) => s.trim()).filter(Boolean);
+}
+
 function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
   return (
     <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
@@ -602,7 +575,9 @@ function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "0.85rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
           {interpretation && (
-            <div style={{ fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.4, marginTop: 2 }}>{interpretation}</div>
+            <ul style={{ margin: "3px 0 0", paddingLeft: 14, fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.45 }}>
+              {splitSentences(interpretation).map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
           )}
         </div>
         <i className="ti ti-chevron-down" style={{ fontSize: 18, color: BRAND.grayLight, transform: active ? "rotate(180deg)" : "none", flexShrink: 0 }} aria-hidden="true"></i>
@@ -806,11 +781,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </ModuleCard>
 
           {activeSubtopic === "observation" && <>
-          <ModuleCard label="Observation" sub={MODULE_HOW_TO.observation} color="#7C3AED">
+          <ModuleCard label="Observation" color="#7C3AED">
             <FindingCardList category="observation" options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
           </ModuleCard>
 
-          <ModuleCard label="Posture" sub={MODULE_HOW_TO.posture} color="#3B82F6">
+          <ModuleCard label="Posture" color="#3B82F6">
             <FindingCardList category="posture" options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
 
@@ -822,7 +797,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </>}
 
           {activeSubtopic === "palpation" && <>
-          <ModuleCard label="Palpation" sub={MODULE_HOW_TO.palpation} color={BRAND.red}>
+          <ModuleCard label="Palpation" color={BRAND.red}>
             {isV1 ? (
               condition.palpationZones ? (
                 <FindingCardList category="palpation" options={condition.palpationZones} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
