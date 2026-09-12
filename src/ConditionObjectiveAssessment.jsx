@@ -34,8 +34,8 @@
 // shoulderConditions.json uses S01..S10. The condition NAMES match 1:1, so
 // the "front door" ranking is bridged by normalized name, not id (see
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
-import React, { useEffect, useMemo, useState } from "react";
-import { BRAND, useSectionData, Stepper, Segmented, InfoButton } from "./orthoFieldKit.jsx";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { BRAND, useSectionData, Stepper, Segmented, InfoButton, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
@@ -577,7 +577,43 @@ function splitSentences(text) {
 // findings don't get one since the label itself already states what to
 // look for (e.g. "Externally-rotated resting hip"), so a separate
 // technique line would just restate it.
-function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle }) {
+// photoId: deterministic Cloudinary public_id ("physiom_findings/<category>/
+// <slug>") computed from the finding's own category+label -- same id
+// everywhere the finding appears, so once a photo is uploaded from any
+// device it's the exact URL every other device/user requests too, with no
+// separate database/mapping step (2026-09-12, Aditi: "I click it and it
+// uploaded... presented in the main web app... for all the people").
+// Uploads go straight to Cloudinary's unsigned endpoint client-side --
+// explicitly passing public_id makes Cloudinary honor that exact id
+// instead of auto-generating one, which is what keeps the URL predictable.
+function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const [imgVersion, setImgVersion] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_200,h_200,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !photoId) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "ml_default");
+      fd.append("public_id", photoId);
+      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      setImgFailed(false);
+      setImgVersion(Date.now());
+    } catch (err) {
+      alert("Photo upload failed — check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
       <button
@@ -585,8 +621,23 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
         onClick={onToggle}
         style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: 12, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
       >
-        <div style={{ position: "relative", flex: "0 0 auto", width: 64, height: 64, borderRadius: 12, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <i className={"ti " + icon} style={{ fontSize: 28, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+        <div
+          onClick={photoId ? (e) => { e.stopPropagation(); fileInputRef.current?.click(); } : undefined}
+          style={{ position: "relative", flex: "0 0 auto", width: 64, height: 64, borderRadius: 12, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? "pointer" : "default" }}
+        >
+          {photoId && imgSrc && !imgFailed ? (
+            <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 24, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+          )}
+          {photoId && (
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+          )}
+          {uploading && (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-loader-2" style={{ fontSize: 20, color: BRAND.purple }} aria-hidden="true"></i>
+            </div>
+          )}
           <span style={{ position: "absolute", top: -6, left: -6, width: 20, height: 20, borderRadius: 6, background: BRAND.purple, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
           {active && (
             <span style={{ position: "absolute", bottom: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -609,6 +660,17 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
       </button>
     </div>
   );
+}
+
+// Same slug for a given label every time -- this IS the persistence
+// mechanism (no database write needed): whoever uploads a photo for
+// "Localised guarding" and whoever later views "Localised guarding"
+// compute the identical Cloudinary URL.
+function slugifyFinding(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+function findingPhotoId(category, label) {
+  return `physiom_findings/${category}/${slugifyFinding(label)}`;
 }
 
 const FINDING_CATEGORY_ICON = { observation: "ti-eye", posture: "ti-walk", palpation: "ti-hand-stop" };
@@ -893,6 +955,7 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
           active={values.includes(o)}
           instruction={howTo?.[o]}
           interpretation={interpretations?.[o]?.text}
+          photoId={findingPhotoId(category, o)}
           onToggle={() => onToggle(o)}
         />
       ))}
