@@ -750,7 +750,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // this "More details" toggle instead of disappearing.
   const [demMoreOpen, setDemMoreOpen] = useState(false);
 
-  // Auto-save current data to active patient whenever data changes
+  // Auto-save current data to active patient whenever data changes -- LOCAL
+  // cache only. This effect has no debounce, so it fires on every keystroke
+  // while filling an assessment; it used to call savePatientDB (which also
+  // upserts to Supabase) here too, meaning a signed-in user firing one
+  // network request per keystroke with no ordering guarantee and no error
+  // handling -- a slower, older request completing after a newer one could
+  // silently overwrite the just-typed data on the server, and any RLS/auth
+  // failure became an unhandled rejection nobody saw (2026-09-11, Aditi:
+  // "after filling its not saving in assessment"). The real cloud sync
+  // already happens properly debounced (~2s) with cloudSaveStatus/error
+  // handling in the effect right below this one -- this one only needs to
+  // keep the local encrypted cache and React state in sync immediately.
   useEffect(() => {
     if (!activePatientId) return;
     setPatients(prev => {
@@ -775,7 +786,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           return oldHit || grfHit || regionRfHit;
         })()
       } : p);
-      savePatientDB(updated, currentUser?.id);
+      savePatientDBLocalOnly(updated, currentUser?.id);
       return updated;
     });
   }, [data, activePatientId]);
