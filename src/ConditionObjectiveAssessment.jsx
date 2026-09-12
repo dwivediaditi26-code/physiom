@@ -567,7 +567,17 @@ function splitSentences(text) {
     .filter(Boolean);
 }
 
-function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
+// instruction: standard exam technique -- "how to check for this finding"
+// -- always visible under the title. interpretation: what a positive
+// finding clinically means -- only revealed once the card is tapped
+// (2026-09-12, Aditi: "instruction... how we can see localized guarding...
+// clinical interpretation... only shows when we click"). Instruction text
+// is drawn from standard orthopedic exam technique (Magee/Hoppenfeld-style
+// inspection & palpation method), not per-condition data -- Posture
+// findings don't get one since the label itself already states what to
+// look for (e.g. "Externally-rotated resting hip"), so a separate
+// technique line would just restate it.
+function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle }) {
   return (
     <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
       <button
@@ -586,8 +596,11 @@ function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "0.85rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
-          {interpretation && (
-            <ul style={{ margin: "3px 0 0", paddingLeft: 14, fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.45 }}>
+          {instruction && (
+            <div style={{ fontSize: "0.72rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 2 }}>{instruction}</div>
+          )}
+          {active && interpretation && (
+            <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.45 }}>
               {splitSentences(interpretation).map((s, i) => <li key={i}>{s}</li>)}
             </ul>
           )}
@@ -600,9 +613,275 @@ function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
 
 const FINDING_CATEGORY_ICON = { observation: "ti-eye", posture: "ti-walk", palpation: "ti-hand-stop" };
 
+// Standard-technique "how to check" lines for Observation and Palpation
+// findings, keyed by the exact finding label used in the condition
+// library (185 Observation + 67 Palpation labels across all regions).
+// Sourced from standard orthopedic exam method (inspection/palpation
+// technique, landmark location), not per-condition or per-patient data --
+// same instruction shown wherever that exact label appears. Findings with
+// no entry just show no instruction line (no fabricated technique).
+const OBSERVATION_HOW_TO = {
+  "3rd/4th web-space tenderness": "Palpate the dorsal 3rd/4th metatarsal web space for a tender interdigital mass.",
+  "4th/5th tingling": "Screen for tingling in the ring and little finger distribution (ulnar nerve).",
+  "A1-pulley nodule": "Palpate the palmar A1 pulley at the base of the finger for a tender nodule.",
+  "Acutely held rigid": "Observe whether the patient holds the region completely still, avoiding any movement.",
+  "Adductor-origin tenderness": "Palpate the adductor longus origin at the pubic ramus.",
+  "Altered breathing on one side": "Observe chest wall expansion bilaterally during deep breathing for asymmetry.",
+  "Antalgic head tilt away from side": "Observe resting head position for a tilt away from the painful side.",
+  "Antalgic lean": "Observe standing posture for a lean away from the symptomatic side.",
+  "Antalgic posture": "Observe overall resting posture for pain-avoidant positioning.",
+  "Antecubital tenderness ± gap/retraction (Popeye)": "Palpate the antecubital fossa for tenderness and inspect the arm contour for a retracted 'Popeye' bulge.",
+  "Anterior chest tenderness ± swelling at costochondral junction": "Palpate each costochondral junction on the anterior chest wall for tenderness or swelling.",
+  "Anterior joint-line swelling": "Inspect and palpate the anterior joint line for visible or palpable swelling.",
+  "Anterior joint-line tenderness": "Palpate the anterior joint line directly.",
+  "Apex tenderness": "Palpate the apex (tip) of the structure directly for point tenderness.",
+  "Apprehension guarding": "Move the joint toward the position that reproduces instability and watch for a guarded, apprehensive reaction.",
+  "Arm guarding": "Observe whether the patient holds the arm close to the body, resisting movement.",
+  "Band-like sensory change": "Test light touch across the trunk/limb for a band-like area of altered sensation.",
+  "Bony enlargement": "Palpate the joint margins for firm, bony (not soft) enlargement.",
+  "C-sign grip over groin": "Observe whether the patient cups their hand in a C-shape over the lateral hip/groin when describing their pain.",
+  "Catching/locking": "Ask the patient to move the joint through range and observe or feel for a mechanical catch or lock.",
+  "Central heel tenderness": "Palpate the central plantar heel pad directly under weight-bearing load.",
+  "Crepitus": "Palpate the joint while it moves through range, feeling for grinding or grating.",
+  "DIP/PIP nodes": "Palpate the DIP and PIP joints for bony nodules.",
+  "Deep buttock tenderness": "Palpate deep in the buttock, between the ischial tuberosity and greater trochanter, with the hip flexed.",
+  "Dermatomal signs": "Test light touch/pinprick sensation across the relevant dermatomes, comparing sides.",
+  "Diffuse guarding": "Observe for widespread, non-localized muscle guarding rather than a single focal area.",
+  "Dinner-fork deformity": "Inspect the wrist from the side for a dorsal step ('dinner-fork') silhouette.",
+  "Dorsal 1st-MTP osteophyte": "Palpate the dorsal aspect of the 1st MTP joint for a bony prominence.",
+  "Dorsal midfoot swelling/tenderness": "Inspect and palpate the dorsal midfoot over the tarsometatarsal joints.",
+  "Dorsal swelling": "Inspect the dorsal surface for visible swelling.",
+  "Dorsal-radial swelling": "Inspect the dorsal-radial wrist/hand for localized swelling.",
+  "Dropped shoulder": "Observe shoulder height bilaterally in standing for asymmetric drooping.",
+  "Effusion": "Inspect and palpate the joint for a fluid effusion, comparing to the opposite side.",
+  "Extension-aggravated posture": "Observe whether extending the spine/joint reproduces or worsens symptoms.",
+  "FOOSH": "Confirm via history whether the injury was a fall onto an outstretched hand.",
+  "Flexed posture": "Observe resting posture for a held flexed position.",
+  "Fusiform joint swelling": "Inspect the digit/joint for a smooth, spindle-shaped swelling.",
+  "Giving-way": "Ask about or observe episodes of the joint suddenly buckling during activity.",
+  "Global loss of active AND passive motion": "Compare active and passive ROM in all planes; a proportional loss in both suggests a capsular pattern.",
+  "Global restriction": "Assess ROM in all directions for a generalized, non-directional restriction.",
+  "Guarded multi-level stiffness": "Palpate/move each spinal segment to check for stiffness spanning multiple levels rather than one.",
+  "Hamstring tightness": "Perform a passive straight-leg raise or 90/90 test and observe end-range restriction.",
+  "Head held in rotated/tilted posture": "Observe resting head position for fixed rotation or tilt.",
+  "Immediate effusion": "Note whether swelling developed within minutes of injury.",
+  "Inferior-pole tenderness": "Palpate the inferior pole of the patella directly.",
+  "Instability jog / catch during active movement": "Observe active movement for a visible jog, catch, or shift suggesting instability.",
+  "Intrinsic wasting": "Inspect the hand's intrinsic muscles (interossei/thenar/hypothenar) for atrophy, comparing sides.",
+  "Ischial tuberosity tenderness": "Palpate the ischial tuberosity with the hip flexed to relax the hamstring origin.",
+  "Joint-line swelling": "Inspect and palpate along the joint line for swelling.",
+  "Jumper's history": "Confirm via history a sport involving repetitive jumping or landing.",
+  "Lateral epicondyle tenderness": "Palpate directly over the lateral epicondyle (ECRB origin) with the elbow relaxed.",
+  "Lateral epicondyle tenderness ~30° flexion": "Palpate the lateral epicondyle with the elbow positioned at roughly 30° flexion.",
+  "Lateral joint-line tenderness": "Palpate the lateral joint line directly.",
+  "Lateral shift": "Observe standing posture from behind for a visible lateral trunk shift.",
+  "Lateral swelling/bruising": "Inspect the lateral aspect for visible swelling or bruising.",
+  "Localised guarding": "Watch for asymmetric muscle bracing or tension around the painful segment during active movement, compared to the opposite side.",
+  "Localised hand/forearm wasting in single nerve distribution": "Inspect the hand/forearm for muscle wasting confined to a single peripheral nerve's distribution.",
+  "Localised paraspinal guarding": "Observe or palpate for muscle guarding confined to one paraspinal level rather than diffusely.",
+  "Medial calcaneal tenderness": "Palpate the medial calcaneal tubercle, the plantar fascia origin.",
+  "Medial epicondyle tenderness": "Palpate directly over the medial epicondyle (flexor-pronator origin).",
+  "Medial joint-line tenderness": "Palpate the medial joint line directly.",
+  "Medial swelling": "Inspect the medial aspect for visible swelling.",
+  "Medial tenderness": "Palpate the medial structure directly for tenderness.",
+  "Medial-ankle Tinel": "Percuss over the tarsal tunnel behind the medial malleolus, checking for tingling into the sole.",
+  "Morning stiffness posture": "Ask about or observe stiffness on first waking or after rest that eases with movement.",
+  "Muscle guarding": "Observe for reflexive muscle bracing limiting willingness to move the area.",
+  "Neck-driven guarding": "Observe whether shoulder/arm guarding is triggered or worsened by neck movement.",
+  "No effusion": "Inspect and palpate the joint to confirm no fluid swelling is present.",
+  "No neuro signs": "Screen reflexes, sensation, and strength to confirm no neurological deficit.",
+  "No neurological signs": "Screen reflexes, sensation, and strength to confirm no neurological deficit.",
+  "No structural change; fatigue-related ache": "Inspect for structural change; its absence supports an overuse/fatigue rather than structural cause.",
+  "No swelling": "Inspect and palpate to confirm no visible or palpable swelling.",
+  "PSIS level difference": "Palpate both PSIS landmarks and compare their height in standing.",
+  "Painful arc on elevation": "Observe active shoulder elevation for a painful arc, typically 60-120°.",
+  "Painful mid-arc": "Observe active range of motion for pain localized to the middle portion of the arc.",
+  "Palmar cord/nodule": "Palpate the palm for a firm longitudinal cord or nodule.",
+  "Palpable A1-pulley nodule": "Palpate the A1 pulley at the base of the finger for a tender, catching nodule.",
+  "Palpable gap": "Palpate along the tendon/muscle for a defect or gap suggesting rupture.",
+  "Palpable step deformity": "Palpate the joint/bone contour for a step-off suggesting fracture or dislocation.",
+  "Patellar maltracking": "Observe the patella during active knee extension for lateral tracking or tilt.",
+  "Pelvic asymmetry": "Observe pelvic landmarks (ASIS/PSIS/iliac crests) bilaterally for height differences.",
+  "Plantar callus under metatarsal heads": "Inspect the plantar forefoot for callus formation under the metatarsal heads.",
+  "Possible bilateral arm signs": "Screen both upper limbs for neurological signs, not just the symptomatic side.",
+  "Possible cord signs": "Screen for upper motor neuron (cord) signs — hyperreflexia, clonus, gait change.",
+  "Possible deltoid/bicep wasting": "Inspect the deltoid and biceps for muscle bulk loss, comparing sides.",
+  "Possible foot-drop": "Observe gait, or have the patient heel-walk, watching for slapping/dragging of the foot.",
+  "Posterior fluctuant swelling over olecranon": "Inspect/palpate the posterior elbow over the olecranon for a soft, fluctuant swelling.",
+  "Posterior sag": "With the knee flexed to 90°, view from the side for the tibia sagging posteriorly relative to the femur.",
+  "Prominent first rib on palpation": "Palpate above the clavicle in the supraclavicular fossa for a prominent first rib.",
+  "Protective stiffness": "Observe for reduced willingness to move through range, protecting the painful area.",
+  "Proximal-volar-forearm tenderness": "Palpate the proximal volar forearm, over the flexor-pronator mass.",
+  "Quad wasting": "Inspect the thigh (especially VMO) for quadriceps muscle bulk loss, comparing sides.",
+  "Quadriceps inhibition": "Observe or test for reduced voluntary quadriceps activation (e.g. a delayed straight-leg raise lag).",
+  "Radial-styloid swelling/tenderness": "Inspect and palpate over the radial styloid.",
+  "Recurrent swelling": "Ask about or observe a pattern of swelling that recurs with activity.",
+  "Reduced arm swing": "Observe gait for diminished arm swing on the affected side.",
+  "Reduced extension": "Compare active/passive extension to the unaffected side or normal values.",
+  "Reduced stride": "Observe gait for a shortened stride length.",
+  "Restricted C1-2 rotation": "Passively rotate the fully flexed cervical spine (isolating C1-2) and compare range side to side.",
+  "Retromalleolar swelling/tenderness": "Inspect and palpate the area just behind the malleolus.",
+  "Rib hump on forward bend": "Observe the back during forward bending for a rotational rib hump.",
+  "Rib-angle tenderness": "Palpate along the posterior rib angles for point tenderness.",
+  "Rigid structural kyphosis (adolescent)": "Observe whether a thoracic kyphosis corrects with active extension; a curve that stays rigid suggests a structural cause.",
+  "Runner": "Confirm via history that the patient is a runner (relevant activity/loading pattern).",
+  "Shoulder/pelvic asymmetry": "Observe shoulder and pelvic landmarks together for combined asymmetry.",
+  "Snuffbox swelling/tenderness": "Palpate the anatomical snuffbox with the thumb extended.",
+  "Squared thumb base": "Inspect the base of the thumb for a squared, boxy appearance.",
+  "Step deformity / swelling over the AC joint": "Inspect and palpate the AC joint for a visible or palpable step/prominence.",
+  "Swelling above joint line": "Inspect just proximal to the joint line for swelling.",
+  "Swelling/tenderness of 1st MTP": "Inspect and palpate the 1st MTP joint for swelling and tenderness.",
+  "Taut bands": "Palpate the muscle belly for a taut, rope-like band.",
+  "Tender bicipital groove": "Palpate the bicipital groove with the arm at the side, internally rotated about 10°.",
+  "Tender over greater trochanter": "Palpate directly over the greater trochanter with the patient side-lying.",
+  "Tenderness ~4cm distal to lateral epicondyle": "Palpate along the extensor mass roughly 4cm distal to the lateral epicondyle.",
+  "Tendon thickening/tenderness": "Palpate the tendon along its length for thickening or tenderness, comparing to the unaffected side.",
+  "Thenar wasting": "Inspect the thenar eminence for muscle bulk loss, comparing sides.",
+  "Tinel medial": "Percuss over the medial nerve trunk (e.g. cubital tunnel) for distal tingling.",
+  "Trendelenburg": "Observe single-leg stance for a contralateral pelvic drop.",
+  "Trigger points (SCM, upper trapezius, levator scapulae)": "Palpate SCM, upper trapezius, and levator scapulae for tender, taut nodules that reproduce referred pain.",
+  "Trigger points (trapezius, rhomboids, levator scapulae)": "Palpate trapezius, rhomboids, and levator scapulae for tender, taut nodules that reproduce referred pain.",
+  "Trigger points on palpation": "Palpate the muscle for a taut band with a hypersensitive point reproducing referred pain.",
+  "Triphasic colour change (white-blue-red) with cold": "Ask about or observe digit colour change through white, blue, then red phases with cold exposure.",
+  "Ulnar-MCP swelling/tenderness": "Inspect and palpate the ulnar side of the thumb MCP joint.",
+  "Ulnar-dorsal tenderness ± subluxation": "Palpate the ulnar-dorsal wrist for tenderness and check for subluxation with pronation/supination.",
+  "Ulnar-sided swelling": "Inspect the ulnar side of the wrist/hand for visible swelling.",
+  "Unilateral muscle guarding": "Observe for muscle bracing confined to one side only.",
+  "Unilateral suboccipital tenderness": "Palpate the suboccipital region on each side and compare for one-sided tenderness.",
+  "VMO wasting": "Inspect the vastus medialis obliquus (distal-medial thigh) for muscle bulk loss.",
+  "Valgus laxity": "Apply a gentle valgus stress at slight flexion and compare end-feel/gapping to the opposite side.",
+  "Varus laxity": "Apply a gentle varus stress at slight flexion and compare end-feel/gapping to the opposite side.",
+  "Varus/valgus": "Observe standing alignment for varus or valgus deviation at the joint.",
+  "Visible muscle spasm": "Observe or palpate the muscle for visible or palpable involuntary spasm.",
+  "Visible muscle spasm / guarding on movement": "Observe the muscle during active movement for visible spasm or guarding.",
+  "Visible supraspinatus/infraspinatus wasting": "Inspect the posterior/superior scapula for supraspinatus/infraspinatus muscle bulk loss.",
+  "Visible/audible snap with movement": "Observe or listen during active movement for a visible or audible snap.",
+  "Wide-based gait": "Observe gait for an increased base of support.",
+  "antalgic gait": "Observe walking for a pain-avoidant limp, typically a shortened stance phase on the painful side.",
+  "antalgic heel-strike": "Observe gait for reduced or altered heel-strike on the painful side.",
+  "arm held guarded": "Observe whether the arm is held close to the body, protected from movement.",
+  "athlete": "Confirm via history the patient's sport/activity level.",
+  "bruising": "Inspect the area for visible bruising.",
+  "calf wasting": "Inspect calf circumference/bulk, comparing sides.",
+  "catching": "Ask the patient to move through range and observe or feel for a mechanical catch.",
+  "catching/locking": "Ask the patient to move the joint through range and observe or feel for a mechanical catch or lock.",
+  "clicking": "Move the joint through range and listen/feel for an audible or palpable click.",
+  "crepitus": "Palpate the joint while it moves through range, feeling for grinding or grating.",
+  "collapsing arch": "Observe the medial longitudinal arch in standing for collapse.",
+  "deformity": "Inspect the region for visible structural deformity compared to the normal side.",
+  "dermatomal signs": "Test light touch/pinprick sensation across the relevant dermatomes, comparing sides.",
+  "dorsiflexion block": "Passively dorsiflex the ankle and note any bony or soft-tissue block to end-range.",
+  "drop of the arm": "Have the patient slowly lower the arm from full elevation and watch for a sudden drop.",
+  "feeling of giving way": "Ask about or observe episodes of the joint feeling like it will buckle.",
+  "gluteal/quad wasting": "Inspect the buttock and thigh for gluteal/quadriceps muscle bulk loss.",
+  "intrinsic wasting": "Inspect the hand's intrinsic muscles (interossei/thenar/hypothenar) for atrophy, comparing sides.",
+  "jammed history": "Confirm via history an axial-load/jamming mechanism to the digit.",
+  "marked guarding": "Observe for pronounced muscle bracing that clearly limits movement.",
+  "marked swelling": "Inspect for obvious, significant swelling.",
+  "median signs": "Screen the median nerve distribution for sensory/motor signs (thumb, index, middle finger, thenar weakness).",
+  "minimal wasting": "Inspect muscle bulk closely for subtle atrophy, comparing sides.",
+  "muscle bulk loss": "Inspect and measure limb circumference to compare muscle bulk side to side.",
+  "no wasting": "Inspect muscle bulk to confirm no atrophy is present.",
+  "often no wasting": "Inspect muscle bulk to confirm no atrophy is present.",
+  "pain on squeeze": "Squeeze the structure and note reproduction of pain.",
+  "positive Thompson": "Squeeze the calf with the patient prone and note absence of plantarflexion.",
+  "positive flick sign": "Ask whether the patient flicks/shakes the wrist for symptom relief.",
+  "possible crepitus": "Palpate the joint while it moves through range, feeling for grinding or grating.",
+  "possible sulcus sign": "Pull the arm downward with the patient relaxed and observe for a sulcus below the acromion.",
+  "reduced DF": "Compare active/passive ankle dorsiflexion to the opposite side.",
+  "reduced grip": "Test grip strength with a dynamometer and compare sides.",
+  "reduced motion": "Compare active and passive range of motion to the opposite side or normal values.",
+  "reduced toe extension": "Compare active great toe extension strength/range to the opposite side.",
+  "ring/little-finger flexion contracture": "Inspect the ring/little finger for a fixed flexion posture that doesn't fully passively extend.",
+  "splayed toes": "Inspect the forefoot in standing for widened spacing between the toes.",
+  "subtle scapular dyskinesis": "Observe the scapula during repeated arm elevation/lowering for abnormal timing or winging.",
+  "tender apex": "Palpate the apex (tip) of the structure directly.",
+  "tender cuff insertion": "Palpate the rotator cuff insertion just distal to the greater tuberosity.",
+  "tenderness": "Palpate the area systematically to localize the point of maximal tenderness.",
+  "thin heel pad": "Palpate the plantar heel pad thickness, comparing to the opposite side.",
+  "valgus laxity (thrower)": "Apply a gentle valgus stress at 20-30° elbow flexion and compare laxity/end-feel to the opposite side.",
+  "± crepitus": "Palpate the joint through range, feeling for grinding or grating.",
+  "± loose-body locking": "Ask about or observe episodes of sudden locking suggesting an intra-articular loose body.",
+  "± posterior bruising": "Inspect the posterior aspect for bruising.",
+  "± sciatic signs": "Screen for sciatic nerve involvement — posterior leg pain, sensory change, or weakness.",
+  "± swelling": "Inspect and palpate for swelling.",
+  "“too-many-toes”": "Observe the heel from behind in standing — seeing more toes laterally than normal suggests forefoot abduction/flatfoot.",
+};
+
+const PALPATION_HOW_TO = {
+  "1st CMC joint": "Palpate the base of the thumb where it meets the wrist, just distal to the radial styloid, with axial grind.",
+  "1st dorsal compartment": "Palpate over the radial styloid where the APL/EPB tendons cross, thumb tucked into a fist.",
+  "A1-pulley nodule / catching on active flexion-extension": "Palpate the palmar base of the affected finger (A1 pulley) while the patient actively flexes/extends the digit.",
+  "AC joint": "Palpate the small gap between the distal clavicle and acromion, just medial to the tip of the shoulder.",
+  "Achilles tendon — insertional": "Palpate the Achilles insertion onto the calcaneus, at the posterior heel.",
+  "Achilles tendon — mid-portion": "Palpate the tendon 2-6cm proximal to its calcaneal insertion.",
+  "Adductor origin": "Palpate the adductor longus origin at the pubic ramus with the hip slightly abducted.",
+  "Anatomical snuffbox": "Palpate the depression on the radial-dorsal wrist between the EPL and APL/EPB tendons with the thumb extended.",
+  "Bicipital groove": "Palpate the groove on the anterior humerus with the arm at the side, internally rotated about 10°.",
+  "C0–C1": "Palpate just below the occiput for atlanto-occipital segmental motion/tenderness.",
+  "C1–C2": "Palpate lateral to the C2 spinous process for atlanto-axial segmental motion/tenderness.",
+  "Central weight-bearing heel pad (vs medial origin)": "Palpate the central plantar heel pad under weight-bearing load, comparing to the medial calcaneal tubercle.",
+  "Cervical palpation (site not further specified in library)": "Palpate the cervical paraspinal region generally for tenderness or muscle guarding.",
+  "Costochondral Junction Tenderness": "Palpate each costochondral junction along the sternal border for point tenderness.",
+  "Cuboid": "Palpate the lateral midfoot, distal to the calcaneus.",
+  "DIP (Heberden's) nodes": "Palpate the distal interphalangeal joints for bony enlargement.",
+  "Deep segmental stabiliser insufficiency": "Assess deep multifidus/transversus activation via palpation during a low-load contraction test.",
+  "ECU tendon": "Palpate the extensor carpi ulnaris tendon on the ulnar-dorsal wrist during resisted wrist extension/ulnar deviation.",
+  "Flexor tendon nodule/catching at A1 pulley": "Palpate the A1 pulley at the metacarpal head while the patient flexes/extends the finger.",
+  "Fluctuance/temperature assessment": "Palpate for fluid fluctuance and compare skin temperature to the surrounding or contralateral area.",
+  "Greater tuberosity": "Palpate just distal to the anterolateral acromion for the greater tuberosity.",
+  "Iliocostalis": "Palpate the most lateral paraspinal column, lateral to longissimus.",
+  "Ischial tuberosity": "Palpate the ischial tuberosity with the hip flexed to relax the gluteal mass.",
+  "Levator Scapulae (Table 8-8)": "Palpate the superomedial angle of the scapula, following the muscle up to the upper cervical transverse processes.",
+  "Levator scapulae": "Palpate the superomedial angle of the scapula, following the muscle up to the upper cervical transverse processes.",
+  "Localize strained muscle": "Palpate along the muscle belly to localize the point of maximal tenderness/spasm.",
+  "Lumbar paraspinal fascial tightness": "Palpate the lumbar paraspinal fascia for tightness or restriction, comparing sides.",
+  "Medial calcaneal tubercle / fascia origin": "Palpate the medial calcaneal tubercle, the plantar fascia's origin, with the foot slightly dorsiflexed.",
+  "Metatarsal heads / plantar plate": "Palpate each metatarsal head from plantar and dorsal surfaces, applying dorsal stress to check the plantar plate.",
+  "Multifidus": "Palpate directly lateral to the spinous processes for multifidus bulk/tenderness.",
+  "Myofascial trigger point / taut band network": "Palpate the muscle belly for a taut band and a hypersensitive nodule that reproduces referred pain.",
+  "Navicular": "Palpate the medial midfoot, roughly one hand's width anterior to the medial malleolus.",
+  "Neural (sciatic) lower-limb tension line": "Palpate along the sciatic nerve course during a neural tension test (e.g. SLR) for reproduction of symptoms.",
+  "Neural canal / foraminal narrowing pattern": "Correlate with a foraminal compression maneuver (e.g. Spurling's) rather than direct palpation alone.",
+  "Olecranon": "Palpate the tip and surrounding bursa of the olecranon for swelling/tenderness.",
+  "PIP (Bouchard's) nodes": "Palpate the proximal interphalangeal joints for bony enlargement.",
+  "PSIS": "Palpate the posterior superior iliac spines bilaterally and compare height/position.",
+  "Palmar fascia cords/nodules (ring/little finger)": "Palpate the palm over the ring/little finger rays for a firm longitudinal cord or nodule.",
+  "Palpable tendon gap": "Palpate along the tendon's expected course for a gap or defect suggesting rupture.",
+  "Paraspinal / quadratus lumborum fascial tension": "Palpate the region between the 12th rib and iliac crest for tension/tenderness.",
+  "Pars interarticularis / anterior longitudinal ligament": "Palpate the lumbar segments for tenderness over the pars/ALL region; correlate with extension-based provocation.",
+  "Patellar tendon": "Palpate from the inferior pole of the patella to the tibial tuberosity.",
+  "Peroneal tendon — behind lateral malleolus": "Palpate the peroneal tendons just posterior to the lateral malleolus, with resisted eversion.",
+  "Plantar plate / sesamoid": "Palpate the plantar 1st MTP joint and sesamoids with dorsiflexion stress.",
+  "Posterior sacroiliac ligament / thoracolumbar fascia": "Palpate just below the PSIS for the long dorsal SI ligament.",
+  "Pubic ramus": "Palpate along the superior pubic ramus for tenderness.",
+  "Rhomboids": "Palpate between the medial scapular border and spine for tenderness/spasm.",
+  "SCM": "Palpate the sternocleidomastoid from mastoid to sternum/clavicle with the head slightly rotated away.",
+  "Sacral sulcus — weak inter-rater reliability": "Palpate the sacral sulcus bilaterally for symmetry (note: low inter-examiner reliability).",
+  "Scalenes (cross-check vs C02/C08)": "Palpate the scalenes in the posterior triangle of the neck, above the clavicle.",
+  "Segmental": "Perform posterior-to-anterior spring palpation at each segment for stiffness/tenderness.",
+  "Segmental (C2–C7 facets)": "Palpate each cervical facet column from C2 to C7 for tenderness/hypomobility.",
+  "Segmental (facet-level)": "Spring-test each spinal segment individually for restricted or painful motion.",
+  "Semispinalis (capitis/cervicis)": "Palpate deep to the upper trapezius, just lateral to midline, for tenderness.",
+  "Serratus Ant/Post": "Palpate along the lateral ribcage (serratus anterior) or upper/lower back (serratus posterior) for tenderness/weakness on winging.",
+  "Soft tissue": "Palpate the surrounding soft tissue generally for tone, tenderness, and swelling.",
+  "Soft tissue (cervical paraspinals)": "Palpate the cervical paraspinal muscles bilaterally for tone/tenderness.",
+  "Splenius (capitis/cervicis)": "Palpate beneath the upper trapezius/SCM, deep in the posterolateral neck.",
+  "Strained muscle (localize)": "Palpate along the muscle to localize the exact point of strain.",
+  "Suboccipital": "Palpate just below the occiput, lateral to midline.",
+  "TMT joints": "Palpate the tarsometatarsal joints on the dorsum of the midfoot.",
+  "Taut bands/trigger points reproducing referred pain": "Palpate for a taut band; sustained pressure on the nodule should reproduce the patient's referred pain pattern.",
+  "Thoracolumbar fascia tightness": "Palpate the thoracolumbar fascia over the lower back for restriction/tightness.",
+  "Trapezius": "Palpate upper, middle, and lower trapezius fibers for tone and tenderness.",
+  "Ulnar aspect of thumb MCP": "Palpate the ulnar collateral ligament of the thumb MCP joint.",
+  "Ulnar-sided wrist": "Palpate the ulnar side of the wrist between the ECU and FCU tendons.",
+  "Upper trapezius": "Palpate the upper trapezius from the occiput to the shoulder for tone/trigger points.",
+};
+
 function FindingCardList({ category, options, selected, onToggle, interpretations }) {
   const values = selected ? selected.split(", ").filter(Boolean) : [];
   const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
+  const howTo = category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {options.map((o, i) => (
@@ -612,6 +891,7 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
           icon={icon}
           label={o}
           active={values.includes(o)}
+          instruction={howTo?.[o]}
           interpretation={interpretations?.[o]?.text}
           onToggle={() => onToggle(o)}
         />
