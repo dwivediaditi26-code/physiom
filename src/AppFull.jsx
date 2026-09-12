@@ -3,7 +3,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
-import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon } from "lucide-react";
+import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding } from "lucide-react";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
 import {
@@ -2253,9 +2253,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     const firstName = currentUser?.name || currentUser?.email?.split("@")[0] || null;
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
+                      ["assessment","Assess",ClipboardListIcon,null,""],
                       ["patients","Patients",UsersIcon,patients.length,""],
                       ["treatment","Treatment",PillIcon,treatmentDue,"due"],
-                      ["assessment","Assess",ClipboardListIcon,null,""],
+                      ["posture","Posture",PersonStanding,null,""],
                     ];
                     return (
                       <div style={{background:"#fff",padding:"14px 14px 0"}}>
@@ -2271,7 +2272,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                               {SUBTABS.map(([k,label,Icon,badge,badgeSuffix])=>{
                                 const active = clinicalSubTab===k;
                                 return (
-                                  <button key={k} onClick={()=>setClinicalSubTab(k)} type="button"
+                                  <button key={k} onClick={()=>k==="posture" ? navTo("posture") : setClinicalSubTab(k)} type="button"
                                     style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"center",
                                       gap:6,justifyContent:"flex-end",cursor:"pointer",fontFamily:"inherit",
                                       border:"none",flex:"0 0 auto",

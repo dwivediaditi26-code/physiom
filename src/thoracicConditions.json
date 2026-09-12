@@ -302,7 +302,7 @@
     "recommended": [
       "Adson's Test",
       "Costoclavicular (Military Brace) Test",
-      "Roos Test / EAST",
+      "Roos Test / Elevated Arm Stress Test (EAST)",
       "Cyriax Release Test"
     ],
     "observation": [
@@ -344,7 +344,7 @@
         "name": "Costoclavicular (Military Brace) Test"
       },
       {
-        "name": "Roos Test / EAST"
+        "name": "Roos Test / Elevated Arm Stress Test (EAST)"
       },
       {
         "name": "Cyriax Release Test"

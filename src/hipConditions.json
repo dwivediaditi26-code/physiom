@@ -589,7 +589,7 @@
     "id": "H06",
     "name": "Piriformis Syndrome / Deep Gluteal Syndrome",
     "keyExams": [
-      "Piriformis (FAIR) test"
+      "Piriformis Test (FAIR)"
     ],
     "observation": [
       "Deep buttock tenderness",
@@ -618,7 +618,7 @@
       }
     },
     "specialTests": [
-      "Piriformis (FAIR) test"
+      "Piriformis Test (FAIR)"
     ],
     "sttt": {
       "resisted": [

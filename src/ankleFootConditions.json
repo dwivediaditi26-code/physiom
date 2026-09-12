@@ -4,7 +4,7 @@
     "name": "Lateral Ankle Sprain (ATFL/CFL) — Acute",
     "region": "Ankle",
     "keyExams": [
-      "Anterior drawer test",
+      "Anterior Drawer Test — Ankle",
       "Talar tilt test",
       "Ottawa Ankle Rules screen"
     ],
@@ -35,7 +35,7 @@
       }
     },
     "specialTests": [
-      "Anterior drawer test",
+      "Anterior Drawer Test — Ankle",
       "Talar tilt test",
       "Ottawa Ankle Rules screen"
     ],
@@ -445,7 +445,7 @@
     "name": "Achilles Tendon Rupture (Complete)",
     "region": "Ankle",
     "keyExams": [
-      "Thompson's (Simmond's) test",
+      "Thompson's Test",
       "Palpable tendon gap"
     ],
     "observation": [
@@ -493,7 +493,7 @@
       }
     },
     "specialTests": [
-      "Thompson's (Simmond's) test"
+      "Thompson's Test"
     ],
     "sttt": {
       "resisted": [
@@ -897,7 +897,7 @@
     "name": "Tarsal Tunnel Syndrome",
     "region": "Ankle",
     "keyExams": [
-      "Tinel's sign at tarsal tunnel",
+      "Tinel's Sign — Ankle",
       "Sensory mapping of plantar foot",
       "Dorsiflexion-eversion provocation"
     ],
@@ -928,7 +928,7 @@
       }
     },
     "specialTests": [
-      "Tinel's sign at tarsal tunnel",
+      "Tinel's Sign — Ankle",
       "Dorsiflexion-eversion provocation"
     ],
     "sttt": {
@@ -1092,7 +1092,7 @@
     "name": "Plantar Fasciitis / Plantar Fasciopathy",
     "region": "Foot",
     "keyExams": [
-      "Windlass test (dorsiflex the hallux)",
+      "Windlass Test",
       "Palpation — medial calcaneal tubercle / fascia origin",
       "Gait / arch assessment"
     ],
@@ -1136,7 +1136,7 @@
       }
     },
     "specialTests": [
-      "Windlass test (dorsiflex the hallux)"
+      "Windlass Test"
     ],
     "sttt": {
       "resisted": [

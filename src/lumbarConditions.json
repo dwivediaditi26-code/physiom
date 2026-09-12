@@ -66,7 +66,7 @@
       }
     },
     "specialTests": [
-      "SLR"
+      "Straight Leg Raise (SLR)"
     ],
     "sttt": {
       "resisted": [
@@ -148,7 +148,7 @@
       "Lumbar AROM",
       "Repeated movement assessment",
       "Neurological screen (myotomes, dermatomes, reflexes)",
-      "SLR",
+      "Straight Leg Raise (SLR)",
       "Slump test"
     ],
     "recommended": [
@@ -197,7 +197,7 @@
       }
     },
     "specialTests": [
-      "SLR",
+      "Straight Leg Raise (SLR)",
       "Slump test",
       "Crossed SLR",
       "Femoral nerve tension test (if upper lumbar)"
@@ -291,13 +291,13 @@
     "required": [
       "Observation",
       "Lumbar AROM all planes (restriction pattern)",
-      "Quadrant Test / Kemp's Test",
+      "Kemp's Test (Lumbar Quadrant)",
       "Neurological screen"
     ],
     "recommended": [
       "PA central + unilateral vertebral pressures",
       "Passive physiological intervertebral movements",
-      "One-leg standing (stork) lumbar extension test",
+      "Stork Test (Single Leg Extension)",
       "X-ray if degenerative changes suspected"
     ],
     "observation": [
@@ -340,8 +340,8 @@
       }
     },
     "specialTests": [
-      "Quadrant Test / Kemp's Test",
-      "One-leg standing (stork) lumbar extension test"
+      "Kemp's Test (Lumbar Quadrant)",
+      "Stork Test (Single Leg Extension)"
     ],
     "sttt": {
       "resisted": [
@@ -562,7 +562,7 @@
     "required": [
       "Observation",
       "SIJ provocation CLUSTER: Compression, Distraction, Sacral Thrust, Gaenslen's, FABERE/Patrick, Gillet's",
-      "Active SLR"
+      "Active Straight Leg Raise (ASLR)"
     ],
     "recommended": [
       "Palpation (PSIS, sacral sulcus — weak inter-rater reliability)",
@@ -614,13 +614,13 @@
       }
     },
     "specialTests": [
-      "SIJ Compression Test",
-      "SIJ Distraction Test",
+      "SI Compression Test",
+      "SI Distraction Test",
       "Sacral Thrust Test",
       "Gaenslen's Test",
-      "FABERE/Patrick Test",
+      "FABER / Patrick's Test",
       "Gillet's Test",
-      "Active SLR"
+      "Active Straight Leg Raise (ASLR)"
     ],
     "sttt": {
       "resisted": [
@@ -817,7 +817,7 @@
     "required": [
       "Observation (palpate for step deformity)",
       "Lumbar AROM (extension likely provocative)",
-      "One-Leg Standing (Stork) Lumbar Extension Test",
+      "Stork Test (Single Leg Extension)",
       "Neurological screen"
     ],
     "recommended": [
@@ -861,7 +861,7 @@
       }
     },
     "specialTests": [
-      "One-Leg Standing (Stork) Lumbar Extension Test"
+      "Stork Test (Single Leg Extension)"
     ],
     "sttt": {
       "resisted": [
@@ -986,7 +986,7 @@
       }
     },
     "specialTests": [
-      "SLR"
+      "Straight Leg Raise (SLR)"
     ],
     "sttt": {
       "resisted": [

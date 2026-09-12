@@ -35,6 +35,7 @@
 // the "front door" ranking is bridged by normalized name, not id (see
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
@@ -145,13 +146,33 @@ function romRichItemFor(regionKey, movementId) {
 // 2026-09-11, Aditi: "special test of all region is not present" was a
 // bug, not missing data). Matched by normalized test name since the
 // condition library's own test names are free text, not ids.
-const SPECIAL_TEST_DATA_BUCKET = { cervical: "cervical", thoracic: "thoracic", lumbar: "lumbar", shoulder: "shoulder", hip: "hip", knee: "knee", ankleFoot: "ankle_foot", elbowWristHand: "elbow_wrist" };
+// Some regions' condition libraries also cite a handful of tests that are
+// real, photographed entries in the library -- just filed under a
+// neighbouring region's bucket, because that's genuinely where the same
+// test lives clinically (thoracic outlet tests under "cervical", SIJ/ITB
+// provocation tests under "hip"). Listed as a fallback bucket, checked
+// after the region's own, rather than duplicating those entries
+// (2026-09-12, Aditi: several Special Tests showed no photo even though
+// the exact same test already had one under a different region tab).
+const SPECIAL_TEST_DATA_BUCKET = {
+  cervical: ["cervical"],
+  thoracic: ["thoracic", "cervical"],
+  lumbar: ["lumbar", "hip"],
+  shoulder: ["shoulder", "cervical"],
+  hip: ["hip"],
+  knee: ["knee", "hip"],
+  ankleFoot: ["ankle_foot"],
+  elbowWristHand: ["elbow_wrist"],
+};
 function specialRichItemFor(regionKey, testName) {
-  const bucket = SPECIAL_TEST_DATA_BUCKET[regionKey];
-  if (!bucket) return null;
+  const buckets = SPECIAL_TEST_DATA_BUCKET[regionKey];
+  if (!buckets) return null;
   const target = normalizeName(testName);
-  const entry = (SPECIAL_TESTS_DATA[bucket]?.tests || []).find((t) => normalizeName(t.label) === target);
-  return entry ? specialRichItem(entry) : null;
+  for (const bucket of buckets) {
+    const entry = (SPECIAL_TESTS_DATA[bucket]?.tests || []).find((t) => normalizeName(t.label) === target);
+    if (entry) return specialRichItem(entry);
+  }
+  return null;
 }
 
 function normalizeName(s) {
@@ -291,6 +312,53 @@ const REGION_CONFIGS = [
     emptyNote: "Pick Elbow, Forearm, Wrist, or Hand as a region in Subjective first — this page shows the condition-wise objective assessment for it.",
   },
 ];
+
+// Every region's condition-wise findings live under their own
+// data.conditionAssessment_<regionKey> section (see useSectionData below) --
+// a single assessment can cover more than one region, so there's no single
+// flat data.objectiveAI to read. Without this, the wizard's own Review step
+// and the saved Patient Profile summary both read data.objectiveAI, find it
+// always empty, and show nothing even though real findings were recorded
+// (2026-09-12, Aditi: "whatever we filled in AI assessment is not
+// documenting"). OrthoOutpatientAssessment.jsx / SpecialtyPatientProfile.jsx
+// call this to build a data.objectiveAI substitute the same way they already
+// do for carePlanPlan (data.ortho_care_plan), then register an identity
+// formatter for it since the grouping work happens here.
+const OBJECTIVE_MODULE_LABELS = {
+  observation: "Observation", posture: "Posture", palpation: "Palpation",
+  cpaNkt: "CPA — NKT", cpa: "CPA — NKT", rom: "ROM", resisted: "STTT — Resisted Test",
+  sttt: "STTT", kineticChain: "Kinetic Chain", functionalScreen: "Functional Screen",
+  special: "Special Test", outcome: "Outcome Measure",
+};
+function objectiveFieldLabel(module, sub) {
+  const base = OBJECTIVE_MODULE_LABELS[module] || module;
+  if (module === "special") return sub && sub.endsWith("_side") ? `${sub.slice(0, -5)} — side` : sub || base;
+  if (module === "outcome") return sub || base;
+  if (!sub || ["chips", "state", "mode", "test", "r", "p", "m"].includes(sub)) return base;
+  return `${base} — ${sub}`;
+}
+export function formatConditionObjectiveSection(data) {
+  const groups = [];
+  REGION_CONFIGS.forEach((cfg) => {
+    const state = data?.["conditionAssessment_" + cfg.key];
+    if (!state || !Object.keys(state).length) return;
+    const byCondition = {};
+    Object.entries(state).forEach(([key, val]) => {
+      if (!val) return;
+      const [conditionId, module, sub] = key.split("::");
+      (byCondition[conditionId] ||= []).push({ module, sub, val });
+    });
+    Object.entries(byCondition).forEach(([conditionId, fields]) => {
+      if (!fields.length) return;
+      const conditionName = cfg.conditions[conditionId]?.name || conditionId;
+      groups.push({
+        heading: `${cfg.label} — ${conditionName}`,
+        rows: fields.map(({ module, sub, val }) => ({ label: objectiveFieldLabel(module, sub), value: val })),
+      });
+    });
+  });
+  return { groups };
+}
 
 /* ---------- small building blocks, matching the artifact's flat/hairline/
    purple-only-on-selected visual language ---------- */
@@ -590,8 +658,11 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const fileInputRef = useRef(null);
-  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_200,h_200,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const hasPhoto = !!(photoId && imgSrc && !imgFailed);
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -616,42 +687,66 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
 
   return (
     <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
+      {/* Zoom viewer -- tapping an already-uploaded photo used to just
+          re-open the file picker, with no way to actually see it full-size
+          (2026-09-12, Aditi: "clicking the uploaded photo... showing upload
+          option not opening zoomed photo"). Now the tile opens this instead,
+          and "Replace photo" inside it is the one remaining way to re-upload. */}
+      {zoomOpen && hasPhoto && createPortal(
+        <div onClick={() => setZoomOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
+          <img src={zoomSrc} alt={label} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", width: "auto", height: "auto", objectFit: "contain", borderRadius: 8 }} />
+          {uploading && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-loader-2" style={{ fontSize: 32, color: "#fff" }} aria-hidden="true"></i>
+            </div>
+          )}
+          <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
+            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
+              <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+        </div>,
+        document.body
+      )}
       <button
         type="button"
         onClick={onToggle}
-        style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: 12, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+        style={{ display: "flex", alignItems: "center", gap: 16, textAlign: "left", padding: 14, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
       >
         <div
-          onClick={photoId ? (e) => { e.stopPropagation(); fileInputRef.current?.click(); } : undefined}
-          style={{ position: "relative", flex: "0 0 auto", width: 64, height: 64, borderRadius: 12, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? "pointer" : "default" }}
+          onClick={photoId ? (e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); } : undefined}
+          style={{ position: "relative", flex: "0 0 auto", width: 96, height: 96, borderRadius: 16, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
         >
-          {photoId && imgSrc && !imgFailed ? (
+          {hasPhoto ? (
             <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 24, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 34, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
           )}
           {photoId && (
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
           )}
           {uploading && (
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-loader-2" style={{ fontSize: 20, color: BRAND.purple }} aria-hidden="true"></i>
+              <i className="ti ti-loader-2" style={{ fontSize: 26, color: BRAND.purple }} aria-hidden="true"></i>
             </div>
           )}
-          <span style={{ position: "absolute", top: -6, left: -6, width: 20, height: 20, borderRadius: 6, background: BRAND.purple, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
+          <span style={{ position: "absolute", top: -8, left: -8, width: 24, height: 24, borderRadius: 7, background: BRAND.purple, color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
           {active && (
-            <span style={{ position: "absolute", bottom: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-check" style={{ fontSize: 12 }} aria-hidden="true"></i>
+            <span style={{ position: "absolute", bottom: -8, right: -8, width: 24, height: 24, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-check" style={{ fontSize: 14 }} aria-hidden="true"></i>
             </span>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
+          <div style={{ fontSize: "0.95rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
           {instruction && (
-            <div style={{ fontSize: "0.72rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 2 }}>{instruction}</div>
+            <div style={{ fontSize: "0.78rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 3 }}>{instruction}</div>
           )}
           {active && interpretation && (
-            <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.45 }}>
+            <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.78rem", color: BRAND.gray, lineHeight: 1.5 }}>
               {splitSentences(interpretation).map((s, i) => <li key={i}>{s}</li>)}
             </ul>
           )}
@@ -965,12 +1060,25 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
 
 export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, onStartOutcomeMeasure }) {
   const regions = selectedRegions || [];
-  const config = REGION_CONFIGS.find((cfg) => regions.some(cfg.matchesRegion)) || REGION_CONFIGS[0];
+  // Picking 2+ regions in Subjective used to only ever show the FIRST
+  // matching region's condition-wise assessment here -- the rest were
+  // simply unreachable on this page (2026-09-12, Aditi: "after selecting
+  // 2 or more region its showing only one region"). matchedConfigs keeps
+  // every region actually in play; a small tab row below lets the
+  // therapist switch between them, each with its own independent
+  // data.conditionAssessment_<regionKey> section, same tab pattern
+  // ROM/MMT/Special Tests already use for their own region switching.
+  const matchedConfigs = useMemo(() => REGION_CONFIGS.filter((cfg) => regions.some(cfg.matchesRegion)), [regions]);
+  const [activeConfigKey, setActiveConfigKey] = useState(null);
+  const config = matchedConfigs.find((c) => c.key === activeConfigKey) || matchedConfigs[0] || REGION_CONFIGS[0];
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
   const [activeSubtopic, setActiveSubtopic] = useState("observation");
   const [analysisRun, setAnalysisRun] = useState(false);
+  // Switching regions should land on that region's own front screen, not
+  // whatever condition/analysis state the previous region was showing.
+  useEffect(() => { setActiveId(null); setAnalysisRun(false); setActiveSubtopic("observation"); }, [config.key]);
   // Brief "thinking" state between tap and the ranked conditions appearing
   // — purely a UI beat (the real differential itself is synchronous), so
   // the AI-assistant framing reads as doing work rather than an instant
@@ -1032,8 +1140,30 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   };
   const toggleSingle = (module, sub, option) => sv(module, sub, v(module, sub) === option ? "" : option);
 
+  const regionTabs = matchedConfigs.length > 1 && (
+    <div className="region-tab-row-wrap">
+      <div className="region-tab-row">
+        {matchedConfigs.map((cfg) => (
+          <button
+            type="button"
+            key={cfg.key}
+            className={"region-tab" + (cfg.key === config.key ? " region-tab-active" : "")}
+            onClick={() => setActiveConfigKey(cfg.key)}
+          >
+            {cfg.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   if (!regionPicked || !condition) {
-    return <EmptyNote>{config.emptyNote}</EmptyNote>;
+    return (
+      <div>
+        {regionTabs}
+        <EmptyNote>{config.emptyNote}</EmptyNote>
+      </div>
+    );
   }
 
   const isV1 = config.schema === "v1";
@@ -1043,15 +1173,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
   return (
     <div>
-      <div style={{ marginBottom: 4 }}>
-        <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: BRAND.purple }}>
-          Physiom · Ortho Outpatient
-        </div>
-        <div style={{ fontSize: "1.15rem", fontWeight: 700, color: BRAND.ink, marginTop: 2 }}>{config.label} — Objective Assessment</div>
-        <div style={{ fontSize: "0.8rem", color: BRAND.gray, marginTop: 3 }}>
-          Tap a condition below — every module updates to that condition's authored findings.
-        </div>
-      </div>
+      {regionTabs}
 
       {/* Same sticky "assistant card" button/copy as the Subjective step's
           own "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx)
@@ -1109,31 +1231,13 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <SubtopicTabs active={activeSubtopic} onSelect={setActiveSubtopic} />
           <div className="obj-subtopic-page">
 
-          <ModuleCard label="Suggested tests" color={BRAND.purple}>
-            {config.suggestedTestsMode === "split" ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <SubLabel>Required</SubLabel>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.78rem", color: BRAND.ink, lineHeight: 1.6 }}>
-                    {(isV1 ? condition.requiredTests : condition.required).map((t, i) => <li key={i}>{t}</li>)}
-                  </ul>
-                </div>
-                <div>
-                  <SubLabel>Recommended</SubLabel>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.78rem", color: BRAND.gray, lineHeight: 1.6 }}>
-                    {(isV1 ? condition.recommendedTests : condition.recommended).map((t, i) => <li key={i}>{t}</li>)}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <SubLabel>Key Exams</SubLabel>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.78rem", color: BRAND.ink, lineHeight: 1.6 }}>
-                  {condition.keyExams.map((t, i) => <li key={i}>{t}</li>)}
-                </ul>
-              </div>
-            )}
-          </ModuleCard>
+          {/* "Suggested tests" (Required/Recommended, or Key Exams for v1
+              regions) intentionally not rendered here (2026-09-12, Aditi:
+              remove it from every AI Objective Assessment page, she'll give
+              it its own dedicated place later). The data itself is untouched
+              -- still on condition.required/recommended/keyExams (or
+              requiredTests/recommendedTests for v1 regions) -- so that future
+              view can read it directly, same as this block did. */}
 
           {activeSubtopic === "observation" && <>
           <ModuleCard label="Observation" color="#7C3AED">

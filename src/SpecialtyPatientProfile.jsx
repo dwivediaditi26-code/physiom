@@ -7,6 +7,7 @@ import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummarySty
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
+import { formatConditionObjectiveSection } from "./ConditionObjectiveAssessment.jsx";
 import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
@@ -1161,7 +1162,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 title={orthoTitle}
                 hideTitle
                 steps={orthoSteps}
-                data={{ ...(orthoParsed.data || {}), carePlanPlan: d.ortho_care_plan || orthoParsed.data?.carePlanPlan }}
+                data={{ ...(orthoParsed.data || {}), carePlanPlan: d.ortho_care_plan || orthoParsed.data?.carePlanPlan, objectiveAI: formatConditionObjectiveSection(orthoParsed.data || {}) }}
                 onEdit={() => onNav?.("ortho_new_assessment", { resume: orthoResume })}
                 exportHeaderLines={[orthoTitle.toUpperCase()]}
                 formatters={orthoFormatters}

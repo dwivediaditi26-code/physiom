@@ -769,7 +769,7 @@
     "name": "Knee Osteoarthritis",
     "keyExams": [
       "Passive knee ROM with end-feel",
-      "Sweep/ballottement test for effusion"
+      "Sweep / Ballottement Test"
     ],
     "observation": [
       "Bony enlargement",
@@ -808,7 +808,7 @@
       }
     },
     "specialTests": [
-      "Sweep/ballottement test for effusion"
+      "Sweep / Ballottement Test"
     ],
     "sttt": {
       "resisted": [

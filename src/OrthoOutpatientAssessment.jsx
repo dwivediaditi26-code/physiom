@@ -12,7 +12,7 @@ import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
 import { palpationStructureRows } from "./orthoPalpationData.js";
 import { KineticChainSection, CpaSection, SttSection, FmaSection, FasciaSection, formatKineticChainSection, formatCpaSection, formatSttSection, formatFmaSection, formatFasciaSection } from "./orthoAdvancedTools.jsx";
 import OrthoSuggestObjectiveStep from "./OrthoSuggestObjectiveStep.jsx";
-import ConditionObjectiveAssessment from "./ConditionObjectiveAssessment.jsx";
+import ConditionObjectiveAssessment, { formatConditionObjectiveSection } from "./ConditionObjectiveAssessment.jsx";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
@@ -67,6 +67,7 @@ function formatPalpationSection(section) {
 // instead of falling back to the generic Object.entries flattener.
 export const orthoSummaryFormatters = {
   carePlanPlan: formatCarePlanSection,
+  objectiveAI: (section) => section,
   subjective: formatSubjectiveSection,
   redFlags: formatRedFlagsSection,
   pain: formatPainSection,
@@ -242,15 +243,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // and handleConditionDetected's later re-union need to agree on which
   // base steps are actually in play, so a mid-session condition detection
   // can never silently re-add a step the AI-entry sequence deliberately skipped.
-  // "suggest" (Suggested Objective) is dropped for non-AI entry -- General/
-  // Condition-wise entry already collects Observation and Palpation as their
-  // own dedicated steps earlier in BASE_IDS, so Suggested Objective's inline
-  // copies of them were pure duplication of the AI Objective Assessment step
-  // that follows it. Kept for AI entry, where those two steps are skipped
-  // (AI_ENTRY_SKIP_IDS) and Suggested Objective is the only place left that
-  // still captures them.
-  const effectiveBaseIds =
-    entryMode === "ai" ? BASE_IDS.filter((id) => !AI_ENTRY_SKIP_IDS.includes(id)) : BASE_IDS.filter((id) => id !== "suggest");
+  // "suggest" (Suggested Objective) is dropped for every entry mode
+  // (2026-09-12, Aditi: "remove this objective assessment duplicate old
+  // from AI section") -- once a condition is picked inside AI Objective
+  // Assessment, that step's own Observation/Palpation subtopic tabs cover
+  // the exact same ground Suggested Objective used to, making it pure
+  // duplication for AI entry too, not just General/Condition-wise entry.
+  const effectiveBaseIds = BASE_IDS.filter((id) => id !== "suggest" && (entryMode !== "ai" || !AI_ENTRY_SKIP_IDS.includes(id)));
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
@@ -362,7 +361,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // local data/setData -- so the "carePlan" step's data never lands in
   // `data.carePlan`. The Review screen reads data[step.id] for every step,
   // so without this merge it always saw an empty carePlan section.
-  const reviewData = useMemo(() => ({ ...data, carePlanPlan: patientData?.ortho_care_plan || data.carePlanPlan }), [data, patientData]);
+  const reviewData = useMemo(() => ({ ...data, carePlanPlan: patientData?.ortho_care_plan || data.carePlanPlan, objectiveAI: formatConditionObjectiveSection(data) }), [data, patientData]);
 
   useEffect(() => {
     if (current) setVisited((v) => new Set(v).add(current.id));

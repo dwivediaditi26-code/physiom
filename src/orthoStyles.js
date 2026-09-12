@@ -143,9 +143,9 @@ export function orthoStyles() {
         .info-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
         .info-btn-full { width: 100%; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.purple}; font-weight: 700; font-size: 12px; padding: 9px; border-radius: 10px; cursor: pointer; min-height: 36px; }
-        .info-img-trigger { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 10px; border: none; padding: 0; overflow: hidden; background: #F6F5FA; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .info-img-trigger { flex: 0 0 auto; width: 96px; height: 96px; border-radius: 16px; border: none; padding: 0; overflow: hidden; background: #F6F5FA; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .info-img-trigger img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .info-img-trigger i { font-size: 22px; color: ${BRAND.grayLight}; }
+        .info-img-trigger i { font-size: 34px; color: ${BRAND.grayLight}; }
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
@@ -677,19 +677,19 @@ export function orthoStyles() {
         .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F3F1FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
         .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.purpleDark}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
         .obj-subtopic-scroll-btn:active { opacity: 1; }
-        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 8px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 39px); }
+        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 42px); }
         .obj-subtopic-tab { scroll-snap-align: center; }
         .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
-        .obj-subtopic-tab { flex: 0 0 auto; width: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 4px; border-radius: 14px; cursor: pointer; border: none; font-family: inherit;
+        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
           background: linear-gradient(180deg, #fff, #F4F2FC);
           box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(109,77,224,.06), 0 4px 8px rgba(76,58,168,.08);
           transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-subtopic-tab i { font-size: 18px; color: ${BRAND.purpleDark}; opacity: .75; }
-        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; opacity: .75; line-height: 1.2; text-align: center; }
+        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.purpleDark}; opacity: .75; }
+        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; opacity: .75; line-height: 1.2; text-align: center; white-space: nowrap; }
         .obj-subtopic-tab-active {
           background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
-          transform: translateY(-4px) scale(1.04);
-          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 5px 0 #4a339e, 0 10px 18px rgba(76,58,168,.4);
+          transform: translateY(-2px);
+          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #4a339e, 0 6px 12px rgba(76,58,168,.4);
         }
         .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
         .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 4px 2px 6px; margin-bottom: 12px; }

@@ -52,9 +52,9 @@
       }
     },
     "specialTests": [
-      "Hawkins-Kennedy",
-      "Neer's",
-      "Empty Can Test"
+      "Hawkins-Kennedy Test",
+      "Neer's Test",
+      "Empty Can / Jobe Test"
     ],
     "sttt": {
       "resisted": [
@@ -150,7 +150,7 @@
     "name": "Rotator Cuff Tendinopathy",
     "keyExams": [
       "Resisted isometrics / MMT (abduction, ER)",
-      "Empty Can Test",
+      "Empty Can / Jobe Test",
       "Palpation — greater tuberosity"
     ],
     "observation": [
@@ -193,7 +193,7 @@
       }
     },
     "specialTests": [
-      "Empty Can Test"
+      "Empty Can / Jobe Test"
     ],
     "sttt": {
       "resisted": [
@@ -316,9 +316,9 @@
       }
     },
     "specialTests": [
-      "ER lag",
+      "External Rotation Lag Sign",
       "Drop-Arm",
-      "Lift-Off"
+      "Lift-Off Test (Gerber)"
     ],
     "sttt": {
       "resisted": [
@@ -545,9 +545,9 @@
     "id": "S05",
     "name": "AC Joint Pathology",
     "keyExams": [
-      "Cross-Arm / Scarf Test",
+      "Cross-Arm Adduction Test",
       "Palpation — AC joint",
-      "O'Brien's Test"
+      "O'Brien's Test (Active Compression)"
     ],
     "observation": [
       "Step deformity / swelling over the AC joint",
@@ -584,8 +584,8 @@
       }
     },
     "specialTests": [
-      "Cross-Arm / Scarf Test",
-      "O'Brien's Test"
+      "Cross-Arm Adduction Test",
+      "O'Brien's Test (Active Compression)"
     ],
     "sttt": {
       "resisted": [
@@ -651,7 +651,7 @@
     "name": "Biceps Tendinopathy / SLAP",
     "keyExams": [
       "Speed's Test",
-      "O'Brien's Test",
+      "O'Brien's Test (Active Compression)",
       "Palpation — bicipital groove"
     ],
     "observation": [
@@ -690,7 +690,7 @@
     },
     "specialTests": [
       "Speed's Test",
-      "O'Brien's Test"
+      "O'Brien's Test (Active Compression)"
     ],
     "sttt": {
       "resisted": [
