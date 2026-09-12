@@ -17,6 +17,15 @@
     <!-- Preconnect to speed up external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
 
+    <!-- Tabler outline icon webfont — used by <i class="ti ti-*"> icons
+         across the Ortho Objective Assessment redesign (subtopic tabs,
+         ROM/Special Tests photo-trigger fallback icon, finding cards).
+         Without this, every ti-* icon silently renders as an empty glyph
+         (2026-09-11, Aditi: "not showing same photo as I have already
+         uploaded" — was actually the fallback icon rendering blank, not a
+         missing photo). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+
     <!-- Favicon (was pointing at a nonexistent /favicon.svg — now a real generated icon) -->
     <link rel="icon" type="image/png" href="/favicon.png" />
 

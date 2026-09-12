@@ -334,7 +334,15 @@ function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
   );
 }
 
-function ModuleCard({ label, color, defaultOpen = true, children }) {
+// sub: one-line general "how to assess" instruction shown right under the
+// section title (2026-09-11, Aditi: "put in palpation observation and
+// posture how to look assess instruction just below the topic name") --
+// general technique guidance, not per-condition/per-finding content.
+// Palpation's line is drawn from the app's own Palpation study mode
+// ("How to palpate", src/physiofeed/learn/palpationIntroTopics.js);
+// Observation/Posture are standard orthopedic-exam teaching (inspection
+// from multiple views before hands-on testing), not tied to any one book.
+function ModuleCard({ label, sub, color, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderTop: `1px solid ${HAIRLINE}`, padding: "14px 2px" }}>
@@ -348,10 +356,17 @@ function ModuleCard({ label, color, defaultOpen = true, children }) {
         </span>
         <span style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.purple }}>{open ? "Close ↑" : "Open →"}</span>
       </div>
+      {open && sub && <div style={{ fontSize: "0.74rem", color: BRAND.gray, lineHeight: 1.4, marginTop: 6, fontStyle: "italic" }}>{sub}</div>}
       {open && <div style={{ marginTop: 12 }}>{children}</div>}
     </div>
   );
 }
+
+const MODULE_HOW_TO = {
+  observation: "Observe before touching the patient — posture, gait, guarding, and skin changes from anterior, lateral, and posterior views.",
+  posture: "Assess static alignment in standing (or sitting) from anterior, lateral, and posterior views, comparing bony landmarks left to right.",
+  palpation: "Palpate systematically from superficial to deep, comparing left and right, using finger pads with steady, graded pressure — locate the structure first, then judge its condition.",
+};
 
 // Subtopics shown as a horizontal, scrollable "piano row" below the
 // condition selector — page-by-page assessment instead of every module
@@ -777,11 +792,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </ModuleCard>
 
           {activeSubtopic === "observation" && <>
-          <ModuleCard label="Observation" color="#7C3AED">
+          <ModuleCard label="Observation" sub={MODULE_HOW_TO.observation} color="#7C3AED">
             <FindingCardList category="observation" options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
           </ModuleCard>
 
-          <ModuleCard label="Posture" color="#3B82F6">
+          <ModuleCard label="Posture" sub={MODULE_HOW_TO.posture} color="#3B82F6">
             <FindingCardList category="posture" options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
 
@@ -793,7 +808,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </>}
 
           {activeSubtopic === "palpation" && <>
-          <ModuleCard label="Palpation" color={BRAND.red}>
+          <ModuleCard label="Palpation" sub={MODULE_HOW_TO.palpation} color={BRAND.red}>
             {isV1 ? (
               condition.palpationZones ? (
                 <FindingCardList category="palpation" options={condition.palpationZones} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
