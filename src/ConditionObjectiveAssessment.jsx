@@ -356,16 +356,35 @@ function ModuleCard({ label, sub, color, defaultOpen = true, children }) {
         </span>
         <span style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.purple }}>{open ? "Close ↑" : "Open →"}</span>
       </div>
-      {open && sub && <div style={{ fontSize: "0.74rem", color: BRAND.gray, lineHeight: 1.4, marginTop: 6, fontStyle: "italic" }}>{sub}</div>}
+      {open && sub && (
+        <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.74rem", color: BRAND.gray, lineHeight: 1.5 }}>
+          {sub.map((line, i) => <li key={i}>{line}</li>)}
+        </ul>
+      )}
       {open && <div style={{ marginTop: 12 }}>{children}</div>}
     </div>
   );
 }
 
 const MODULE_HOW_TO = {
-  observation: "Observe before touching the patient — posture, gait, guarding, and skin changes from anterior, lateral, and posterior views.",
-  posture: "Assess static alignment in standing (or sitting) from anterior, lateral, and posterior views, comparing bony landmarks left to right.",
-  palpation: "Palpate systematically from superficial to deep, comparing left and right, using finger pads with steady, graded pressure — locate the structure first, then judge its condition.",
+  observation: [
+    "Observe before touching the patient.",
+    "Check posture, gait, and guarding from anterior, lateral, and posterior views.",
+    "Note visible deformity, swelling, muscle wasting, or skin/colour changes.",
+    "Compare left and right sides for symmetry.",
+  ],
+  posture: [
+    "Assess static alignment in standing (or sitting), not mid-movement.",
+    "View from anterior, lateral, and posterior.",
+    "Compare bony landmarks left to right (shoulders, pelvis, scapulae).",
+    "Note habitual/antalgic positioning the patient adopts to ease symptoms.",
+  ],
+  palpation: [
+    "Locate the structure first, then judge its condition — don't skip straight to assessment.",
+    "Work superficial to deep, using finger pads with steady, graded pressure.",
+    "Find a bony landmark first, then move off it to the target structure.",
+    "Compare left and right for tenderness, temperature, tone, and swelling.",
+  ],
 };
 
 // Subtopics shown as a horizontal, scrollable "piano row" below the
@@ -582,17 +601,12 @@ function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "0.85rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
+          {interpretation && (
+            <div style={{ fontSize: "0.72rem", color: BRAND.gray, lineHeight: 1.4, marginTop: 2 }}>{interpretation}</div>
+          )}
         </div>
         <i className="ti ti-chevron-down" style={{ fontSize: 18, color: BRAND.grayLight, transform: active ? "rotate(180deg)" : "none", flexShrink: 0 }} aria-hidden="true"></i>
       </button>
-      {active && interpretation && (
-        <div style={{ padding: "0 12px 12px" }}>
-          <div style={{ padding: "10px 12px", borderRadius: 10, background: BRAND.purpleFaint }}>
-            <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: BRAND.purpleDark, marginBottom: 4 }}>Clinical interpretation</div>
-            <div style={{ fontSize: "0.78rem", color: BRAND.ink, lineHeight: 1.5 }}>{interpretation}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
