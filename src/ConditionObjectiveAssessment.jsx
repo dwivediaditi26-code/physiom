@@ -112,11 +112,13 @@ const ELBOW_WRIST_HAND_ROM_MOVEMENTS = [
 // see romRichItem/specialRichItem there) -- 2026-09-11, Aditi: "put the
 // images of ROM and special test... I have already put images in that
 // section." This page's own ROM_MOVEMENTS arrays use their own short ids
-// (not always identical to ROM_DATA's), so ROM_ID_TO_DATA_ID bridges them;
-// Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand happen to already share ids 1:1.
+// (not always identical to ROM_DATA's), so ROM_ID_TO_DATA_ID bridges them.
+// Ankle-Foot and Elbow-Wrist-Hand each combine movements from two
+// ROM_DATA buckets ("Ankle"+"Foot", "Elbow"+"Wrist"), so those two map to
+// an array of buckets to search rather than a single bucket name.
 // Regions/movements with no photo on file just fall back to a plain icon
 // tile (InfoButton's own fallbackIcon) -- no fabricated images.
-const ROM_DATA_BUCKET = { cervical: "Cervical", thoracic: "Thoracic", lumbar: "Lumbar", shoulder: "Shoulder", hip: "Hip", knee: "Knee", ankleFoot: null, elbowWristHand: null };
+const ROM_DATA_BUCKET = { cervical: "Cervical", thoracic: "Thoracic", lumbar: "Lumbar", shoulder: "Shoulder", hip: "Hip", knee: "Knee", ankleFoot: ["Ankle", "Foot"], elbowWristHand: ["Elbow", "Wrist", "Hand & Fingers"] };
 const ROM_ID_TO_DATA_ID = {
   cervical: { flex: "rom_cflex", ext: "rom_cext", latl: "rom_clatl", latr: "rom_clatr", rotl: "rom_crotl", rotr: "rom_crotr" },
   thoracic: { flex: "rom_thflex", ext: "rom_thext", rotl: "rom_throtl", rotr: "rom_throtr" },
@@ -124,22 +126,26 @@ const ROM_ID_TO_DATA_ID = {
   shoulder: { flex: "rom_sflex", abd: "rom_sabd", er: "rom_ser", ir: "rom_sir" },
   hip: { hflex: "rom_hflex", hext: "rom_hext", habd: "rom_habd", hadd: "rom_hadd", her: "rom_her", hir: "rom_hir" },
   knee: { kflex: "rom_kflex", kext: "rom_kext" },
-  ankleFoot: {}, // Ankle/Foot ROM_DATA is split across two buckets ("Ankle"/"Foot") this page doesn't currently disambiguate -- falls back to icon rather than guess wrong.
+  ankleFoot: { adf: "rom_adf", apf: "rom_apf", ainv: "rom_ainv", aev: "rom_aev" },
   elbowWristHand: { eflex: "rom_eflex", eext: "rom_eext", esup: "rom_esup", epro: "rom_epro", wflex: "rom_wflex", wext: "rom_wext", wrad: "rom_wrad", wuln: "rom_wuln" },
 };
 function romRichItemFor(regionKey, movementId) {
-  const bucket = ROM_DATA_BUCKET[regionKey];
+  const buckets = [].concat(ROM_DATA_BUCKET[regionKey] || []);
   const dataId = ROM_ID_TO_DATA_ID[regionKey]?.[movementId];
-  if (!bucket || !dataId) return null;
-  const entry = (ROM_DATA[bucket] || []).find((e) => e.id === dataId);
-  return entry ? romRichItem(entry) : null;
+  if (!buckets.length || !dataId) return null;
+  for (const bucket of buckets) {
+    const entry = (ROM_DATA[bucket] || []).find((e) => e.id === dataId);
+    if (entry) return romRichItem(entry);
+  }
+  return null;
 }
 
-// Special Tests library only has a shared photo bucket for these 6 regions
-// (SPECIAL_TESTS_DATA has no Ankle-Foot/Elbow-Wrist-Hand entries) --
-// matched by normalized test name since the condition library's own test
-// names are free text, not ids. No match just falls back to a plain icon.
-const SPECIAL_TEST_DATA_BUCKET = { cervical: "cervical", thoracic: "thoracic", lumbar: "lumbar", shoulder: "shoulder", hip: "hip", knee: "knee", ankleFoot: null, elbowWristHand: null };
+// Special Tests photo library has a shared bucket per region, including
+// "elbow_wrist" and "ankle_foot" (SPECIAL_TESTS_DATA does cover these --
+// 2026-09-11, Aditi: "special test of all region is not present" was a
+// bug, not missing data). Matched by normalized test name since the
+// condition library's own test names are free text, not ids.
+const SPECIAL_TEST_DATA_BUCKET = { cervical: "cervical", thoracic: "thoracic", lumbar: "lumbar", shoulder: "shoulder", hip: "hip", knee: "knee", ankleFoot: "ankle_foot", elbowWristHand: "elbow_wrist" };
 function specialRichItemFor(regionKey, testName) {
   const bucket = SPECIAL_TEST_DATA_BUCKET[regionKey];
   if (!bucket) return null;
@@ -549,10 +555,16 @@ function BlueBox({ title, children }) {
 // (not per finding -- the condition library has no per-finding icon
 // mapping and inventing one per finding/condition wouldn't be maintainable).
 // Mechanical split of the authored interpretation paragraph into
-// sentence-level bullets (2026-09-11: "pointwise, not paragraph") --
-// reformats the same authored text, doesn't add or paraphrase anything.
+// bullets (2026-09-11: "pointwise, not paragraph"; 2026-09-12: many are
+// authored as one long clause-heavy sentence -- "so lengthy" -- so this
+// also breaks at em-dash/semicolon clause boundaries, not just sentence
+// ends). Reformats the same authored text verbatim, doesn't add, remove,
+// or paraphrase any words.
 function splitSentences(text) {
-  return String(text || "").split(/(?<=[.!?])\s+(?=[A-Z(])/).map((s) => s.trim()).filter(Boolean);
+  return String(text || "")
+    .split(/(?<=[.!?])\s+(?=[A-Z(])|\s*[—;]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
