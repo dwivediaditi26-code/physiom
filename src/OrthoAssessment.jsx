@@ -7,8 +7,6 @@ import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
 import OrthoPostOpAssessment, { POSTOP_CONDITIONS } from "./OrthoPostOpAssessment.jsx";
 import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS } from "./OrthoOutpatientAssessment.jsx";
 import OrthoAIIntakePanel from "./OrthoAIIntakePanel.jsx";
-import OrthoOldDataPicker from "./OrthoOldDataPicker.jsx";
-import { listOldPatientRecords } from "./orthoAiIntake.js";
 
 /* ============================================================
    ORTHO ASSESSMENT — standalone entry point.
@@ -89,9 +87,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   // both sub-screens keeps the rest of the step machine unchanged.
   const [aiIntakeDone, setAiIntakeDone] = useState(false);
   const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
-  const [oldDataOpen, setOldDataOpen] = useState(false);
   const [aiSuggestedRegions, setAiSuggestedRegions] = useState([]);
-  const oldRecords = listOldPatientRecords(patientData);
 
   // One path for both AI-intake sources (a parsed narrative and an imported
   // old record): seed Subjective/Pain, and pre-tick whatever region(s) that
@@ -241,33 +237,6 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
                 requireAuth={requireAuth}
                 onApply={(updates) => { applyIntakeUpdates(updates); }}
               />
-              {/* 2026-09-03, Aditi: "when I click on select from old patient
-                  data, it is not giving me the list of old patient data to
-                  select from" -- this used to import one hardcoded source
-                  immediately on tap. Now it opens the real list of every
-                  prior record on this patient, each previewable before it's
-                  applied (see OrthoOldDataPicker.jsx). Still offered even
-                  when there's nothing on file, so the option answers for
-                  itself instead of silently not being there. */}
-              <button type="button" className={"picker-card" + (oldDataOpen ? " selected" : "")} style={{ width: "100%", marginTop: 10 }}
-                onClick={() => setOldDataOpen((o) => !o)}>
-                <div className="picker-icon">📋</div>
-                <div>
-                  <div className="picker-label">Select from old patient data</div>
-                  <div className="picker-desc">
-                    {oldRecords.length
-                      ? `${oldRecords.length} earlier record${oldRecords.length > 1 ? "s" : ""} on file — pick one to pull forward.`
-                      : "Pull forward an earlier assessment already on file for this patient."}
-                  </div>
-                </div>
-              </button>
-              {oldDataOpen && (
-                <OrthoOldDataPicker
-                  patientData={patientData}
-                  onClose={() => setOldDataOpen(false)}
-                  onApply={(updates) => { setOldDataOpen(false); applyIntakeUpdates(updates); }}
-                />
-              )}
               <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }}
                 onClick={() => setAiIntakeDone(true)}>
                 Skip — I'll fill it out manually

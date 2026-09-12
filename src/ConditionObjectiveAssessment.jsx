@@ -494,26 +494,82 @@ function BlueBox({ title, children }) {
   );
 }
 
-// Tap-to-reveal clinical interpretation for Observation/Posture/Palpation
-// findings -- one card per currently-selected chip, sourced from
-// condition.findingInterpretations[category][label] (authored per finding,
-// per condition; see cervicalConditions.json's C01-C10 for the pilot
-// region -- 2026-09-10, Aditi: "do the same for the clinical interpretation
-// when clicking any of the observation posture palpation", with a PDF of
-// cited, condition-specific interpretations as the source). Regions/
-// conditions without authored data for a given finding simply render
-// nothing for that finding -- no fabricated text.
-function FindingInterpretations({ category, selected, interpretations }) {
-  const values = selected ? selected.split(", ").filter(Boolean) : [];
-  const entries = values.map((label) => [label, interpretations?.[label]]).filter(([, entry]) => entry);
-  if (!entries.length) return null;
+// Card-list variant of ChipGroup+FindingInterpretations for Observation/
+// Posture/Palpation (2026-09-11, per approved chat mockup: "put it in all
+// observation posture and palpation of all regions") -- one square icon
+// tile per finding (numbered, checkmark badge when selected) instead of a
+// pill, with that finding's clinical interpretation expanding directly
+// under its own card on tap instead of in a separate list below every
+// chip. Same condition.findingInterpretations[category][label] source as
+// before -- findings without authored interpretation text just don't show
+// a panel, no fabricated content. One representative icon per category
+// (not per finding -- the condition library has no per-finding icon
+// mapping and inventing one per finding/condition wouldn't be maintainable).
+function FindingCard({ index, icon, label, active, interpretation, onToggle }) {
   return (
-    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-      {entries.map(([label, entry]) => (
-        <div key={label} style={{ padding: "10px 12px", borderRadius: 10, background: BRAND.purpleFaint, border: `1px solid ${BRAND.purple}33` }}>
-          <div style={{ fontSize: "0.72rem", fontWeight: 700, color: BRAND.purpleDark, marginBottom: 4 }}>{label}</div>
-          <div style={{ fontSize: "0.78rem", color: BRAND.purpleDark, lineHeight: 1.5 }}>{entry.text}</div>
+    <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", padding: 12, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+      >
+        <div style={{ position: "relative", flex: "0 0 auto", width: 64, height: 64, borderRadius: 12, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <i className={"ti " + icon} style={{ fontSize: 28, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+          <span style={{ position: "absolute", top: -6, left: -6, width: 20, height: 20, borderRadius: 6, background: BRAND.purple, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
+          {active && (
+            <span style={{ position: "absolute", bottom: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-check" style={{ fontSize: 12 }} aria-hidden="true"></i>
+            </span>
+          )}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
+        </div>
+        <i className="ti ti-chevron-down" style={{ fontSize: 18, color: BRAND.grayLight, transform: active ? "rotate(180deg)" : "none", flexShrink: 0 }} aria-hidden="true"></i>
+      </button>
+      {active && interpretation && (
+        <div style={{ padding: "0 12px 12px" }}>
+          <div style={{ padding: "10px 12px", borderRadius: 10, background: BRAND.purpleFaint }}>
+            <div style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: BRAND.purpleDark, marginBottom: 4 }}>Clinical interpretation</div>
+            <div style={{ fontSize: "0.78rem", color: BRAND.ink, lineHeight: 1.5 }}>{interpretation}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FINDING_CATEGORY_ICON = { observation: "ti-eye", posture: "ti-walk", palpation: "ti-hand-stop" };
+
+// Leading square icon tile for ROM/Special Tests rows -- same visual
+// language as FindingCard's tile (2026-09-11: "make same for special test
+// and rom just square block of image area"), but these rows keep their
+// existing interaction (Stepper / Side+Result chips) rather than becoming
+// tap-to-select cards, so this is just the leading visual, not a full
+// FindingCard.
+function RowIconTile({ icon }) {
+  return (
+    <div style={{ flex: "0 0 auto", width: 48, height: 48, borderRadius: 10, background: "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <i className={"ti " + icon} style={{ fontSize: 22, color: BRAND.grayLight }} aria-hidden="true"></i>
+    </div>
+  );
+}
+
+function FindingCardList({ category, options, selected, onToggle, interpretations }) {
+  const values = selected ? selected.split(", ").filter(Boolean) : [];
+  const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {options.map((o, i) => (
+        <FindingCard
+          key={o}
+          index={i + 1}
+          icon={icon}
+          label={o}
+          active={values.includes(o)}
+          interpretation={interpretations?.[o]?.text}
+          onToggle={() => onToggle(o)}
+        />
       ))}
     </div>
   );
@@ -693,13 +749,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
           {activeSubtopic === "observation" && <>
           <ModuleCard label="Observation" color="#7C3AED">
-            <ChipGroup options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} />
-            <FindingInterpretations category="observation" selected={v("observation", "chips")} interpretations={condition.findingInterpretations?.observation} />
+            <FindingCardList category="observation" options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
           </ModuleCard>
 
           <ModuleCard label="Posture" color="#3B82F6">
-            <ChipGroup options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} />
-            <FindingInterpretations category="posture" selected={v("posture", "chips")} interpretations={condition.findingInterpretations?.posture} />
+            <FindingCardList category="posture" options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
 
           {condition.fascia && (
@@ -713,16 +767,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <ModuleCard label="Palpation" color={BRAND.red}>
             {isV1 ? (
               condition.palpationZones ? (
-                <ChipGroup options={condition.palpationZones} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} />
+                <FindingCardList category="palpation" options={condition.palpationZones} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
               ) : (
                 <EmptyNote>Not specified in condition library.</EmptyNote>
               )
             ) : condition.palpation.length > 0 ? (
-              <ChipGroup options={condition.palpation} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} />
+              <FindingCardList category="palpation" options={condition.palpation} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
             ) : (
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
-            <FindingInterpretations category="palpation" selected={v("palpation", "chips")} interpretations={condition.findingInterpretations?.palpation} />
           </ModuleCard>
 
           <ModuleCard label="CPA — NKT" color="#D97706">
@@ -797,9 +850,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     return (
                       <div key={m.id} style={rowStyle}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", alignItems: "center", gap: 8 }}>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
-                            <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                            <RowIconTile icon="ti-arrows-maximize" />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
+                              <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
+                            </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                             <Stepper value={valL} onChange={(nv) => sv("rom", m.id + "_left", nv)} min={0} max={max} />
@@ -830,9 +886,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   return (
                     <div key={m.id} style={rowStyle}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
-                          <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                          <RowIconTile icon="ti-arrows-maximize" />
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
+                            <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
+                            <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
+                          </div>
                         </div>
                         <Stepper value={val} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
                       </div>
@@ -863,7 +922,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   const t = typeof raw === "string" ? raw : raw.name;
                   return (
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
-                      <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, marginBottom: 10 }}>{t}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <RowIconTile icon="ti-clipboard-check" />
+                        <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
+                      </div>
                       <CategoryLabel>Side</CategoryLabel>
                       <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
                       <div style={{ marginTop: 10 }}>

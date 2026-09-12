@@ -2,8 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
-import { listOldPatientRecords } from "./orthoAiIntake.js";
-import OrthoOldDataPicker, { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
+import { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
 
 // AI text/voice intake for Subjective -- lazy-loaded since most sessions
 // won't open it, and it pulls in its own fetch/speech-recognition logic.
@@ -98,36 +97,7 @@ export function RedFlagScreenSection({ data, setData }) {
 export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
-  // Three equal, always-visible entry options for this step: say it, write
-  // it, or pull it in from this patient's own history. The third one now
-  // opens the real list of records on file (2026-09-03, Aditi: "when I
-  // click on select from old patient data, it is not giving me the list of
-  // old patient data to select from") instead of blind-importing a single
-  // hardcoded source. Only fills fields still blank either way, so it can't
-  // silently clobber anything already typed here.
-  const [oldDataOpen, setOldDataOpen] = useState(false);
-  const oldRecords = listOldPatientRecords(patientData);
-  function loadOldRecord(updates) {
-    setData((prev) => {
-      const existing = prev.subjective || {};
-      const merged = { ...existing };
-      Object.entries(updates.subjective || {}).forEach(([k, v]) => {
-        if (k === "regions") {
-          merged.regions = { ...(v || {}), ...(existing.regions || {}) };
-          return;
-        }
-        if (!String(existing[k] || "").trim()) merged[k] = v;
-      });
-      const existingPain = prev.pain || {};
-      const mergedPain = { ...existingPain };
-      Object.entries(updates.pain || {}).forEach(([k, v]) => {
-        if (!String(existingPain[k] || "").trim()) mergedPain[k] = v;
-      });
-      return { ...prev, subjective: merged, pain: mergedPain };
-    });
-    setOldDataOpen(false);
-    scrollToManualFields();
-  }
+  // Two entry options for this step: say it, or write it.
   function scrollToManualFields() {
     const el = document.getElementById("subjective-manual-start");
     // scrollIntoView is missing in some embedded/webview and test DOMs --
@@ -192,10 +162,6 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       <button type="button" className="ai-intake-toggle" onClick={scrollToManualFields}>
         ✍️ Write it manually
       </button>
-      <button type="button" className="ai-intake-toggle" onClick={() => setOldDataOpen((o) => !o)}>
-        📋 Select from old patient data{oldRecords.length ? ` (${oldRecords.length})` : ""}
-      </button>
-      {oldDataOpen && <OrthoOldDataPicker patientData={patientData} onClose={() => setOldDataOpen(false)} onApply={loadOldRecord} />}
       <AiExtractedPanel rows={d.__aiExtracted || []} />
 
       {detectedConditionLabel && (
