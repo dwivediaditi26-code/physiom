@@ -177,9 +177,20 @@ const MOBILE_CSS = `
   @media (max-width: 767px) { .pm-hamburger { display: flex; } }
 
   /* ── Main content ── */
-  .pm-main { flex: 1; padding: 14px 14px 0 14px; overflow-y: auto; overflow-x: hidden; min-width: 0; }
-  @media (min-width: 480px) { .pm-main { padding: 20px 20px 0 20px; } }
-  @media (min-width: 640px) { .pm-main { padding: 28px 32px; } }
+  /* --pm-pad-x/--pm-pad-top track the actual padding at each breakpoint so
+     .pm-bleed (below) can cancel it exactly instead of guessing a fixed
+     pixel value. The old full-bleed screens (Clinical/PhysioFeed/Learn/
+     Ortho/Neuro) used a hardcoded margin -24px -20px 0, which only
+     happened to cancel this padding in the ~480-640px band -- on wider
+     phones (.pm-main padding grows to 28px/32px) that hardcoded value
+     under-cancels, leaving a visible grey gutter down both sides even
+     though the screen itself has no max-width (2026-09-12, Aditi: real
+     phone screenshot, "hardcoded fixed width instead of percentage-based
+     sizing"). */
+  .pm-main { --pm-pad-x: 14px; --pm-pad-top: 14px; flex: 1; padding: var(--pm-pad-top) var(--pm-pad-x) 0 var(--pm-pad-x); overflow-y: auto; overflow-x: hidden; min-width: 0; }
+  @media (min-width: 480px) { .pm-main { --pm-pad-x: 20px; --pm-pad-top: 20px; } }
+  @media (min-width: 640px) { .pm-main { --pm-pad-x: 32px; --pm-pad-top: 28px; } }
+  .pm-bleed { margin: calc(-1 * var(--pm-pad-top, 20px)) calc(-1 * var(--pm-pad-x, 20px)) 0; }
 
   /* ── Form-style single-column panels (Demographics and similar plain
      stacked-field screens) -- .pm-main itself has no max-width (it's the

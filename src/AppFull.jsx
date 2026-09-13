@@ -1894,7 +1894,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
 
         {/* Main */}
-        <div className="pm-main" ref={mainScrollRef} style={{flex:1,padding:"28px 32px",overflowY:"auto",overflowX:"hidden",minWidth:0}}>
+        <div className="pm-main" ref={mainScrollRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",minWidth:0}}>
 
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
@@ -2089,7 +2089,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               tab width like every other assessment screen instead of
               floating in a narrower column. */}
           {active==="cardio_assessment" && (
-            <div style={{margin:"-24px -20px 0"}}>
+            <div className="pm-bleed">
               <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
             </div>
           )}
@@ -2106,7 +2106,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               relationship Cardiopulmonary Assessment already has to
               Special Tests/ROM/etc. */}
           {active==="neuro_assessment" && (
-            <div style={{margin:"-24px -20px 0"}}>
+            <div className="pm-bleed">
               <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
             </div>
           )}
@@ -2117,7 +2117,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               objective stepper) stays reachable, relabeled "Old Ortho" in
               STREAMS, untouched below. */}
           {active==="ortho_new_assessment" && (
-            <div style={{margin:"-24px -20px 0"}}>
+            <div className="pm-bleed">
               <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
             </div>
           )}
@@ -2134,7 +2134,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               edits made in THIS session show up here immediately instead
               of only after the next autosave flush. */}
           {active==="assessment_report" && (
-            <div style={{margin:"-24px -20px 0",background:"#f8fafc",minHeight:"100vh"}}>
+            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100vh"}}>
               <AssessmentReportView
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 onNav={navTo}
@@ -2148,7 +2148,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               (Cardio/Neuro/any Ortho pathway, or none) now opens here.
               Same live-data merge as the report view above. */}
           {active==="specialty_profile" && (
-            <div style={{margin:"-24px -20px 0",background:"#f8fafc",minHeight:"100vh"}}>
+            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100vh"}}>
               <SpecialtyPatientProfile
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
@@ -2220,7 +2220,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
               ):tests==="PHYSIOFEED_MODULE"?(
-                <div style={{margin:"-24px -20px 0"}}>
+                <div className="pm-bleed">
                   <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
                     <LazyPhysioFeedEntry/>
                   </Suspense>
@@ -2237,7 +2237,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // Same negative-margin full-bleed trick PhysioFeed uses just
                 // above -- Clinical's own header/search/CTA want the full
                 // tab width, not the standard pm-main content padding.
-                <div style={{margin:"-24px -20px 0"}}>
+                <div className="pm-bleed">
                   {/* Clinical sub-nav (2026-09-10 redesign): Today / Patients /
                       Treatment / Assessment -- lenses on the same `patients`
                       array plus a dedicated, minimal "start a new assessment"
