@@ -1,12 +1,16 @@
 // Respiratory assessment cards. Same shape as cardioPulmonaryData.js —
 // import both into your assessment screens; InfoCard.jsx renders either.
 
+const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+const img = (id) => `${CLOUDINARY_BASE}${id}`;
+
 export const respiratoryData = {
   respRate: {
     title: "Respiratory Rate & Pattern",
     icon: "🌬️",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_resp_rate"), img("r_resp_rate_2"), img("r_resp_rate_3")],
       caption: "Count for a full 60s, unnoticed by the patient",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, seated or supine, chest visible; count without their awareness to avoid altering the pattern." },
@@ -32,6 +36,7 @@ export const respiratoryData = {
     icon: "🫁",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_chest_shape"), img("r_chest_shape_2"), img("r_chest_shape_3")],
       caption: "View from front, side, and behind",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated or standing, chest fully exposed, good lighting from front and side." },
@@ -59,6 +64,7 @@ export const respiratoryData = {
     icon: "🌀",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_breathing_pattern"), img("r_breathing_pattern_2"), img("r_breathing_pattern_3")],
       caption: "Watch chest and abdomen together",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, chest and abdomen visible." },
@@ -85,6 +91,7 @@ export const respiratoryData = {
     icon: "💪",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_work_of_breathing"), img("r_work_of_breathing_2"), img("r_work_of_breathing_3")],
       caption: "Look at neck, shoulders, and intercostal spaces",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated upright if possible, neck and chest exposed." },
@@ -110,6 +117,7 @@ export const respiratoryData = {
     icon: "🎯",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_trachea"), img("r_trachea_2"), img("r_trachea_3")],
       caption: "Gentle palpation in the suprasternal notch",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, neck slightly flexed and relaxed." },
@@ -135,6 +143,7 @@ export const respiratoryData = {
     icon: "📐",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_chest_expansion"), img("r_chest_expansion_2"), img("r_chest_expansion_3")],
       caption: "Thumbs together at midline, hands on ribs",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, examiner behind or in front depending on the level being assessed." },
@@ -160,6 +169,7 @@ export const respiratoryData = {
     icon: "🖐️",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_fremitus"), img("r_fremitus_2"), img("r_fremitus_3")],
       caption: "Ulnar borders of hands, patient says '99'",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, back exposed." },
@@ -185,6 +195,7 @@ export const respiratoryData = {
     icon: "🫧",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_surgical_emphysema"), img("r_surgical_emphysema_2"), img("r_surgical_emphysema_3")],
       caption: "Palpate for crackling under the skin",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, chest/neck exposed." },
@@ -210,6 +221,7 @@ export const respiratoryData = {
     icon: "🩺",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_breath_sounds"), img("r_breath_sounds_2"), img("r_breath_sounds_3")],
       caption: "Systematic apex-to-base, side to side",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, chest exposed, breathing through an open mouth." },
@@ -235,6 +247,7 @@ export const respiratoryData = {
     icon: "🔊",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_added_sounds"), img("r_added_sounds_2"), img("r_added_sounds_3")],
       caption: "Note timing, and whether coughing clears it",
       boxes: [
         { tone: "", label: "👤 Position", text: "Same as breath sounds — seated, chest exposed." },
@@ -261,6 +274,7 @@ export const respiratoryData = {
     icon: "😤",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_cough"), img("r_cough_2"), img("r_cough_3")],
       caption: "Voluntary cough vs huff",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated, supported if post-surgical." },
@@ -286,6 +300,7 @@ export const respiratoryData = {
     icon: "🧫",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_sputum"), img("r_sputum_2"), img("r_sputum_3")],
       caption: "Colour, consistency, and quantity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Collect a sample if possible, or ask the patient to describe it." },
@@ -312,6 +327,7 @@ export const respiratoryData = {
     icon: "📊",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_peak_cough_flow"), img("r_peak_cough_flow_2"), img("r_peak_cough_flow_3")],
       caption: "Peak flow meter with a cough manoeuvre",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated upright, using a peak flow meter with a mouthpiece." },
@@ -337,6 +353,7 @@ export const respiratoryData = {
     icon: "💡",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_spo2"), img("r_spo2_2"), img("r_spo2_3")],
       caption: "Probe on finger or earlobe, wait for a stable trace",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's hand warm and relaxed; nail polish or false nails removed if possible." },
@@ -362,6 +379,7 @@ export const respiratoryData = {
     icon: "🔵",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_cyanosis"), img("r_cyanosis_2"), img("r_cyanosis_3")],
       caption: "Check tongue/lips (central) and nail beds (peripheral)",
       boxes: [
         { tone: "", label: "👤 Position", text: "Good natural or white light, patient's mouth and hands visible." },
@@ -386,6 +404,7 @@ export const respiratoryData = {
     icon: "📈",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_spirometry"), img("r_spirometry_2"), img("r_spirometry_3")],
       caption: "FEV₁, FVC, and their ratio",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated upright, nose clip on, good lip seal around the mouthpiece." },
@@ -411,6 +430,7 @@ export const respiratoryData = {
     icon: "📋",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_mmrc"), img("r_mmrc_2"), img("r_mmrc_3")],
       caption: "Patient-reported breathlessness with activity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Interview format — no special positioning needed." },
@@ -438,6 +458,7 @@ export const respiratoryData = {
     icon: "🎚️",
     category: "Learn · Respiratory",
     perform: {
+      images: [img("r_borg"), img("r_borg_2"), img("r_borg_3")],
       caption: "0–10 scale shown during activity",
       boxes: [
         { tone: "", label: "👤 Position", text: "Used during or immediately after an exercise task." },

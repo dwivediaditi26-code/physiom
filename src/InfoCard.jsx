@@ -85,8 +85,23 @@ function normalizeImages(perform) {
   return [{ src: perform.image || null, label: null }];
 }
 
+// Every Cardio/Neuro card's image slot is a deterministic Cloudinary URL
+// (CLOUDINARY_BASE + a per-card, per-slot id, e.g. "c_heart_rate_2") built
+// in cardiovascularData.js/neuroExamLibraryData.js -- the same "id known up
+// front, photo uploaded later" scheme ConditionObjectiveAssessment.jsx's
+// finding photos already use. Recovering that id from the URL is what lets
+// this card upload straight to the right Cloudinary slot itself, in-app,
+// the same way Observation/Palpation/Posture findings already do (2026-09-12,
+// Aditi: "want to have the freedom... upload directly in the webapp itself,
+// just like we have done in AI observation palpation posture").
+const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload";
+const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+function publicIdFromSrc(src) {
+  return src && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
+}
+
 function PerformPane({ perform }) {
-  const slots = normalizeImages(perform);
+  const baseSlots = normalizeImages(perform);
   const [idx, setIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   // Cardio/neuro image slots are now wired to a Cloudinary asset id per
@@ -96,9 +111,49 @@ function PerformPane({ perform }) {
   // yet. Track which src's have failed to load and fall back to the same
   // placeholder a `null` slot shows, instead of a broken-image icon.
   const [erroredSrcs, setErroredSrcs] = useState(() => new Set());
-  useEffect(() => { setIdx(0); setFullscreen(false); }, [perform]);
+  // versions: {slotIndex: timestamp} -- cache-busts a slot's URL right
+  // after a successful upload so the new photo shows immediately instead
+  // of a stale cached 404/old image; uploadingIdx tracks which slot's
+  // upload is in flight for its own spinner.
+  const [versions, setVersions] = useState({});
+  const [uploadingIdx, setUploadingIdx] = useState(null);
+  const fileInputRef = useRef(null);
+  const uploadTargetIdx = useRef(null);
+  useEffect(() => { setIdx(0); setFullscreen(false); setVersions({}); setUploadingIdx(null); }, [perform]);
+
+  const slots = baseSlots.map((sl, i) => ({
+    ...sl,
+    publicId: publicIdFromSrc(sl.src),
+    src: sl.src && versions[i] ? `${sl.src}?v=${versions[i]}` : sl.src,
+  }));
   const active = slots[Math.min(idx, slots.length - 1)];
   const activeSrc = active.src && !erroredSrcs.has(active.src) ? active.src : null;
+
+  function triggerUpload(i) {
+    uploadTargetIdx.current = i;
+    fileInputRef.current?.click();
+  }
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const i = uploadTargetIdx.current;
+    const publicId = slots[i]?.publicId;
+    if (!file || publicId == null) return;
+    setUploadingIdx(i);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "ml_default");
+      fd.append("public_id", publicId);
+      const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      setVersions((prev) => ({ ...prev, [i]: Date.now() }));
+    } catch {
+      alert("Photo upload failed — check your connection and try again.");
+    } finally {
+      setUploadingIdx(null);
+    }
+  }
 
   // Swipe left/right between the (up to 3) photo slots (2026-09-01, Aditi:
   // "the infocard that have images is not able to slide when I slide left
@@ -131,38 +186,55 @@ function PerformPane({ perform }) {
 
   return (
     <>
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
       {/* Image slot(s) — pass perform.image (single) or perform.images (up
           to 3, each a URL or {src,label}) once real photos exist; until
           then this shows a placeholder per slot so the layout never has
           to change when photos are added one at a time. Tapping a real
           photo opens it full-screen (ImageLightbox below), swiping pages
           between slots -- same renderer for every Cardio and Neuro card,
-          so this applies everywhere at once. */}
+          so this applies everywhere at once. An empty slot's placeholder is
+          itself the upload trigger; an already-uploaded slot gets a small
+          "Replace" badge instead, since the main tap there opens fullscreen. */}
       {activeSrc ? (
-        <div
-          style={{ ...s.illusImg, cursor: "pointer", touchAction: "pan-y" }}
-          onClick={handleImageClick}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          role="button"
-          aria-label="View photo full screen, swipe for more photos"
-        >
-          <img
-            src={activeSrc}
-            alt={active.label || perform.caption || ""}
-            style={s.illusImgTag}
-            onError={() => setErroredSrcs((prev) => new Set(prev).add(activeSrc))}
-          />
-          {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
+        <div style={{ ...s.illusImg, position: "relative" }}>
+          <div
+            style={{ cursor: "pointer", touchAction: "pan-y" }}
+            onClick={handleImageClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            role="button"
+            aria-label="View photo full screen, swipe for more photos"
+          >
+            <img
+              src={activeSrc}
+              alt={active.label || perform.caption || ""}
+              style={s.illusImgTag}
+              onError={() => setErroredSrcs((prev) => new Set(prev).add(activeSrc))}
+            />
+            {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
+          </div>
+          {active.publicId && (
+            <button type="button" style={s.replaceBadge} onClick={() => triggerUpload(idx)} aria-label="Replace this photo">
+              {uploadingIdx === idx ? "…" : "📷"}
+            </button>
+          )}
         </div>
       ) : (
         // Swipe still needs to work from here too -- a slot with no photo
         // yet (partial upload progress) shouldn't block swiping across to
         // a sibling slot that does have one.
-        <div style={{ ...s.illus, touchAction: "pan-y" }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div
+          style={{ ...s.illus, touchAction: "pan-y", cursor: active.publicId ? "pointer" : "default" }}
+          onClick={active.publicId ? () => triggerUpload(idx) : undefined}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          role={active.publicId ? "button" : undefined}
+          aria-label={active.publicId ? "Upload a photo for this slot" : undefined}
+        >
           <div style={s.illusPlaceholder}>
-            <div style={s.illusPlaceholderIcon}>🖼️</div>
-            <div style={s.illusCap}>{active.label || perform.caption || "Add position/technique image"}</div>
+            <div style={s.illusPlaceholderIcon}>{uploadingIdx === idx ? "⏳" : "🖼️"}</div>
+            <div style={s.illusCap}>{uploadingIdx === idx ? "Uploading…" : active.label || perform.caption || (active.publicId ? "Tap to upload a photo" : "Add position/technique image")}</div>
           </div>
         </div>
       )}
@@ -186,7 +258,8 @@ function PerformPane({ perform }) {
         </div>
       ))}
       {fullscreen && active.src && (
-        <ImageLightbox slots={slots} idx={idx} setIdx={setIdx} caption={perform.caption} onClose={() => setFullscreen(false)} />
+        <ImageLightbox slots={slots} idx={idx} setIdx={setIdx} caption={perform.caption} onClose={() => setFullscreen(false)}
+          onReplace={() => triggerUpload(idx)} uploading={uploadingIdx === idx} />
       )}
     </>
   );
@@ -196,7 +269,7 @@ function PerformPane({ perform }) {
 // (higher z-index) so it works identically wherever InfoCard is used
 // (Cardio, Neuro). Tap the backdrop or the close button to dismiss; tap
 // a dot to page between the card's other photos without leaving fullscreen.
-function ImageLightbox({ slots, idx, setIdx, caption, onClose }) {
+function ImageLightbox({ slots, idx, setIdx, caption, onClose, onReplace, uploading }) {
   const active = slots[idx];
   // Same swipe-to-page gesture as the inline card view above -- only
   // click-dots worked here too. Pages among slots that actually have a
@@ -215,6 +288,11 @@ function ImageLightbox({ slots, idx, setIdx, caption, onClose }) {
   }
   return createPortal(
     <div style={s.lightboxDim} onClick={onClose}>
+      {onReplace && (
+        <button type="button" style={s.lightboxReplace} onClick={(e) => { e.stopPropagation(); onReplace(); }} disabled={uploading}>
+          📷 {uploading ? "Uploading…" : "Replace photo"}
+        </button>
+      )}
       <button type="button" style={s.lightboxClose} onClick={onClose} aria-label="Close full-screen photo">✕</button>
       <img
         src={active.src}
@@ -353,6 +431,16 @@ const s = {
   lightboxClose: {
     position: "absolute", top: 16, right: 16, width: 36, height: 36, borderRadius: "50%",
     border: "none", background: "rgba(255,255,255,.14)", color: "#fff", fontSize: 16, fontWeight: 700,
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  lightboxReplace: {
+    position: "absolute", top: 16, left: 16, padding: "8px 14px", borderRadius: 20,
+    border: "none", background: "rgba(255,255,255,.14)", color: "#fff", fontWeight: 700, fontSize: 12.5,
+    cursor: "pointer", fontFamily: "inherit",
+  },
+  replaceBadge: {
+    position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: "50%",
+    border: "none", background: "rgba(20,10,45,.55)", color: "#fff", fontSize: 12,
     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
   },
   lightboxImg: { maxWidth: "100%", maxHeight: "78vh", objectFit: "contain", borderRadius: 12, cursor: "default" },
