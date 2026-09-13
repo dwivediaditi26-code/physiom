@@ -1075,19 +1075,21 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
   const [activeSubtopic, setActiveSubtopic] = useState("observation");
-  const [analysisRun, setAnalysisRun] = useState(false);
   // Switching regions should land on that region's own front screen, not
-  // whatever condition/analysis state the previous region was showing.
-  useEffect(() => { setActiveId(null); setAnalysisRun(false); setActiveSubtopic("observation"); }, [config.key]);
-  // Brief "thinking" state between tap and the ranked conditions appearing
-  // — purely a UI beat (the real differential itself is synchronous), so
-  // the AI-assistant framing reads as doing work rather than an instant
-  // toggle (2026-09-10, Aditi: "motion graphic when we click on it").
+  // whatever condition state the previous region was showing.
+  useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); }, [config.key]);
+  // Content used to stay hidden behind this tap -- Aditi wants it visible
+  // immediately since the ranking is already computed synchronously from
+  // Subjective data (engineResult/rankedIds below), so the button is now
+  // just a "re-run" affordance that replays the "Analyzing…" beat in place
+  // rather than a reveal gate (2026-09-10, Aditi: "motion graphic when we
+  // click on it"; 2026-09-13, Aditi: "show it normally even we dont click
+  // button").
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   function runSuggestAnalysis() {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
-    setTimeout(() => { setAnalysisRun(true); setIsAnalyzing(false); }, 550);
+    setTimeout(() => setIsAnalyzing(false), 550);
   }
 
   const regionPicked = regions.some(config.matchesRegion);
@@ -1176,10 +1178,13 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
       {regionTabs}
 
       {/* Same sticky "assistant card" button/copy as the Subjective step's
-          own "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx)
-          — reruns the real Phase 0.5 differential for this region and reveals
-          the ranked, percentage-matched condition cards below rather than
-          showing them unconditionally. */}
+          own "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx).
+          The ranked cards below are always visible and already reflect the
+          current Subjective data live (2026-09-13, Aditi: "show it normally
+          even we dont click button") -- tapping just replays the "Analyzing…"
+          beat as a visual refresh cue after editing Subjective, it doesn't
+          reveal anything new. The sub-line below spells this out so it's
+          clear the button isn't the only way to see results. */}
       <button
         type="button"
         className={"obj-ai-suggest-btn" + (isAnalyzing ? " thinking" : "")}
@@ -1197,19 +1202,18 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             {isAnalyzing ? "Analyzing…" : "Suggest probable objective assessment"}
           </span>
           <span className="obj-ai-suggest-sub" style={{ fontSize: "0.7rem", lineHeight: 1.3 }}>
-            {engineResult ? `${config.label} — ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched from Subjective` : `${config.label} — no Subjective data yet`}
+            {engineResult
+              ? `${config.label} — ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched from Subjective. Updated Subjective? Tap to refresh.`
+              : `${config.label} — no Subjective data yet. Fill Subjective, then tap to check for matches.`}
           </span>
         </span>
         {!isAnalyzing && (
-          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.76rem", fontWeight: 800, flexShrink: 0 }}>{analysisRun ? "Re-run →" : "Review →"}</span>
+          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.76rem", fontWeight: 800, flexShrink: 0 }}>Re-run →</span>
         )}
       </button>
 
-      {!analysisRun ? (
-        <EmptyNote>Tap "Suggest probable objective assessment" above to see conditions ranked by percentage match against what's documented in Subjective.</EmptyNote>
-      ) : (
-        <>
-          {redFlag && (
+      <>
+        {redFlag && (
             <div style={{ marginTop: 12, marginBottom: 10, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${BRAND.red}`, background: BRAND.redBg }}>
               <div style={{ fontWeight: 700, fontSize: "0.82rem", color: BRAND.red, marginBottom: 3 }}>🚨 {redFlag.title}</div>
               {redFlag.lines.map((l, i) => (
@@ -1729,7 +1733,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             </button>
           </div>
         </>
-      )}
     </div>
   );
 }
