@@ -867,7 +867,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // setStream() is needed here.
     navTo(chosenSpecialty === "cardio" ? "cardio_assessment"
         : chosenSpecialty === "neuro"  ? "neuro_assessment"
-        : "subjective");
+        : "ortho_new_assessment");
     setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
     setTimeout(() => setJsonMsg(null), 2500);
   };
