@@ -2101,28 +2101,40 @@ function OnboardingModal({ PC, onDismiss }) {
     { icon:"✨", title:"Generate SOAP & Send HEP",     desc:"Once assessed, use the SOAP module to generate an AI clinical note, then build a Home Exercise Programme and send it via WhatsApp or PDF.",   color:"#d97706" },
   ];
   const [step, setStep] = React.useState(0);
+  // Apple 5.1.1(v) / DPDP Act Sec 6: this acknowledgment is a mandatory
+  // clickwrap, not a dismissible tour slide -- it cannot be skipped or
+  // closed via backdrop click until the checkbox is explicitly checked.
+  const [ackChecked, setAckChecked] = React.useState(false);
   const s = STEPS[step];
+  const onLastStep = step === STEPS.length - 1;
   return (
-    <div onClick={onDismiss} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:PC.surface,borderRadius:20,padding:"28px 24px 22px",maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",border:`1px solid ${s.color}44`,textAlign:"center"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:PC.surface,borderRadius:20,padding:"28px 24px 22px",maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",border:`1px solid ${s.color}44`,textAlign:"center"}}>
         {/* Step dots */}
         <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:20}}>
           {STEPS.map((_,i)=>(<div key={i} style={{width:i===step?20:7,height:7,borderRadius:99,background:i===step?s.color:PC.border,transition:"all 0.3s"}}/>))}
         </div>
         <div style={{fontSize:"2.8rem",marginBottom:14,lineHeight:1}}>{s.icon}</div>
         <div style={{fontWeight:900,fontSize:"1.15rem",color:PC.text,marginBottom:10,letterSpacing:"-0.3px"}}>{s.title}</div>
-        <div style={{fontSize:"0.88rem",color:PC.muted,lineHeight:1.65,marginBottom:24}}>{s.desc}</div>
+        <div style={{fontSize:"0.88rem",color:PC.muted,lineHeight:1.65,marginBottom:onLastStep?18:24}}>{s.desc}</div>
+        {onLastStep && (
+          <label style={{display:"flex",gap:10,alignItems:"flex-start",textAlign:"left",marginBottom:20,cursor:"pointer",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:12,padding:12}}>
+            <input type="checkbox" checked={ackChecked} onChange={e=>setAckChecked(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0}}/>
+            <span style={{fontSize:"0.78rem",color:PC.text,lineHeight:1.5,fontWeight:600}}>
+              I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
+            </span>
+          </label>
+        )}
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center"}}>
           {step > 0 && (
             <button onClick={()=>setStep(n=>n-1)} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>← Back</button>
           )}
-          {step < STEPS.length-1 ? (
+          {!onLastStep ? (
             <button onClick={()=>setStep(n=>n+1)} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:s.color,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Next →</button>
           ) : (
-            <button onClick={onDismiss} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:s.color,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Let's go 🚀</button>
+            <button onClick={onDismiss} disabled={!ackChecked} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:ackChecked?s.color:`${s.color}55`,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:ackChecked?"pointer":"not-allowed"}}>Let's go 🚀</button>
           )}
         </div>
-        <button onClick={onDismiss} style={{marginTop:14,background:"none",border:"none",color:PC.muted,fontSize:"0.75rem",cursor:"pointer",textDecoration:"underline"}}>Skip tour</button>
       </div>
     </div>
   );

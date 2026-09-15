@@ -12,6 +12,7 @@ import {
 import { compareMeasurement, capturesComparable, protocolQuality } from "./measurementError.js";
 import HybridKendall from "./HybridKendall";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
+import PatientCameraConsent from "./PatientCameraConsent.jsx";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POSE_CONNECTIONS = [
   [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
@@ -3160,6 +3161,42 @@ function drawLevelLine(ctx, x1, y1, x2, y2, color, label) {
   }
 }
 
+// Patient facial de-identification (DPDP Act 2023 Sec 3 — facial anonymisation
+// — and Apple Guideline 1.4.1). Facial features are clinically irrelevant to a
+// posture assessment: this draws an opaque bar over the frame from the top
+// down to just below the patient's eye/ear landmarks (i.e. covering the face
+// above the nose bridge) before an image is persisted to the patient record.
+// The body/alignment overlay below the neck is left untouched so the
+// clinician can still verify posture from the stored image. `lm` uses the
+// MediaPipe Pose 33-keypoint schema (0=nose, 2/5=eyes, 7/8=ears) with x/y
+// normalised 0-1, same convention as drawOverlay above. Falls back to a
+// fixed top-of-frame bar when no usable landmarks are available.
+// IMPORTANT: only ever call this on a canvas destined for storage
+// (posture_sessions / posture_composite_reports) -- never on the live
+// viewfinder or the immediate post-capture confirm screen, which the
+// clinician needs unobstructed to verify frame alignment.
+function applyFaceDeidentification(ctx, W, H, lm) {
+  if (!ctx || !W || !H) return;
+  let barBottom = null;
+  if (Array.isArray(lm) && lm.length > 8) {
+    const ys = [0, 2, 5, 7, 8]
+      .map(i => lm[i])
+      .filter(p => p && (p.visibility === undefined || p.visibility >= 0.3))
+      .map(p => p.y * H);
+    if (ys.length) {
+      // Cover down to just below the lowest of nose/eyes/ears, plus a small
+      // margin so the jaw/chin is masked too (still above the clinically
+      // relevant neck/shoulder line used for posture scoring).
+      barBottom = Math.min(H, Math.max(...ys) + 0.06 * H);
+    }
+  }
+  if (barBottom === null) barBottom = 0.22 * H; // fallback: top ~22% of frame
+  ctx.save();
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, barBottom);
+  ctx.restore();
+}
+
 function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
   if(!ctx||!lm) return;
   if(clearFirst) ctx.clearRect(0,0,W,H);
@@ -5181,6 +5218,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     : /shoulder/i.test(reg) ? "posterior"
     : /knee|ankle|foot/i.test(reg) ? "anterior" : "anterior";
   const [mode,setMode]=useState("upload");
+  // Patient camera-consent gate (DPDP Act Sec 6 / Apple 5.1.1) — must be
+  // shown and confirmed once per mounted session before the very first
+  // camera access; consentGranted then persists for the rest of this
+  // component's lifetime so repeat captures aren't re-prompted.
+  const [showConsentGate,setShowConsentGate]=useState(false);
+  const [consentGranted,setConsentGranted]=useState(false);
+  const [pendingCameraKey,setPendingCameraKey]=useState(null);
   const [view,setView]=useState(navContext.region ? _regionView(navContext.region) : "anterior");
   const [mpStatus,setMpStatus]=useState("loading");
   const [camStatus,setCamStatus]=useState("idle");
@@ -5952,7 +5996,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         const octx=oc.getContext("2d"); octx.drawImage(fc,0,0,W,H);
         drawOverlay({ctx:octx,W,H,lm:result.lm,view:currentView,showGrid:true,measurements:result.measurements,clearFirst:false});
         const annotated=oc.toDataURL("image/jpeg",0.92);
-        setCapturedImg(annotated);
+        setCapturedImg(annotated); // live post-capture confirm screen — kept unblurred so the clinician can verify full-body frame alignment
+        // Separate de-identified copy for anything persisted to the patient
+        // record (posture_sessions / posture_composite_reports) — never the
+        // preview above. See applyFaceDeidentification for rationale.
+        const ocStore=document.createElement("canvas"); ocStore.width=W; ocStore.height=H;
+        const octxStore=ocStore.getContext("2d"); octxStore.drawImage(oc,0,0,W,H);
+        applyFaceDeidentification(octxStore,W,H,result.lm);
+        const storedImg=ocStore.toDataURL("image/jpeg",0.92);
         const calib=computeCalibration(result.lm,patientHeightCm,H);
         processLandmarks(result.lm,currentView,H);
         if(currentView==="left"||currentView==="right"){
@@ -5971,13 +6022,16 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           const r=calcReliability(result.lm,currentView);
           const f=r.blocked?[]:buildFindings(result.lm,currentView,m);
           const s=scorePosture(m,f,r);
-          saveMvResult(currentView,m,f,s,r,annotated);
+          // storedImg (not annotated) — this result flows into mvResults and
+          // from there into the persisted posture_sessions/posture_composite_reports
+          // record via handleGenerateComposite, so it must be the de-identified copy.
+          saveMvResult(currentView,m,f,s,r,storedImg);
           // Built from this view's own m/f/s rather than component state, which
           // has not been updated for this view yet — but carries the same
           // capture conditions and metrics the single-view path records.
           const _pe1={
             view:currentView,time:new Date().toISOString(),
-            score:s?.score,band:s?.band,findings:f.length,img:annotated,
+            score:s?.score,band:s?.band,findings:f.length,img:storedImg,
             capture:{
               calibrated: !!m?._calibrated, patientHeightCm,
               distanceCm: captureDistanceCm, protocolConfirmed,
@@ -7331,10 +7385,37 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // (mode never left "upload"). Mirrors handleAddPhotoForView but opens
   // the camera instead of the file picker.
   function handleUseCameraForView(key) {
+    // Consent gate: the first camera access of a session must be preceded
+    // by the two-checkbox confirmation (DPDP Act Sec 6 / Apple 5.1.1).
+    // Hold the requested view key and resume this same flow from
+    // handleConsentConfirm once the clinician confirms.
+    if (!consentGranted) {
+      setPendingCameraKey(key);
+      setShowConsentGate(true);
+      return;
+    }
     selectViewForCapture(key);
     captureFrozenRef.current=false; setCapturedImg(null);
     setMode("live");
     startCamera(camFacing||"environment");
+  }
+
+  function handleConsentConfirm() {
+    setConsentGranted(true);
+    setShowConsentGate(false);
+    const key = pendingCameraKey;
+    setPendingCameraKey(null);
+    if (key !== null && key !== undefined) {
+      selectViewForCapture(key);
+      captureFrozenRef.current=false; setCapturedImg(null);
+      setMode("live");
+      startCamera(camFacing||"environment");
+    }
+  }
+
+  function handleConsentCancel() {
+    setShowConsentGate(false);
+    setPendingCameraKey(null);
   }
 
   // Deselects the currently loaded photo for the active view (wrong photo
@@ -7402,6 +7483,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             try{drawOverlay({ctx:octx,W,H,lm:landmarks,view:vm[view]||"anterior",showGrid:true,measurements:measurements||{},clearFirst:false});}catch(_){}
             try{drawManualOverlay({ctx:octx,W,H,placed:manualPlaced,pointDefs:manualPointDefs,connections:manualConnections});}catch(_){}
           }
+          // Patient facial de-identification (DPDP Act Sec 3 / Apple 1.4.1) --
+          // this is the copy that gets persisted into posture_sessions, so
+          // black-bar the face above the nose bridge before baking it. Uses
+          // the pose landmarks already computed for this result when
+          // available; falls back to a fixed top-frame bar otherwise.
+          try{applyFaceDeidentification(octx,W,H,landmarks);}catch(_){}
           resolve(oc.toDataURL("image/jpeg",0.8));
         }catch(e){fallback();}};
         im.onerror=fallback;
@@ -9191,6 +9278,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
 
       {/* ── Report modal ── */}
       {reportModal}
+
+      {/* ── Patient camera-consent gate — must be confirmed before the
+          first camera access of this session (DPDP Act Sec 6 / Apple
+          5.1.1); see handleUseCameraForView/handleConsentConfirm. ── */}
+      {showConsentGate && createPortal(
+        <PatientCameraConsent onConfirm={handleConsentConfirm} onCancel={handleConsentCancel} />,
+        document.body
+      )}
 
       {/* ── Image zoom lightbox (2026-08-29, Aditi: "result... it should
           able to zoom") ── */}

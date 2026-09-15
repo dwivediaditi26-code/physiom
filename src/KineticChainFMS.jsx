@@ -5,6 +5,8 @@ import { C, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { KC_REGIONS } from "./sharedClinicalData.js";
 // Shared component that remains in SubjectiveObjective.jsx (render-time only; safe cycle).
 import { SmallClinicalImg } from "./SubjectiveObjective.jsx";
+// Mandatory pre-camera consent gate (DPDP Act 2023 / App Store 5.1.1 compliance).
+import PatientCameraConsent from "./PatientCameraConsent.jsx";
 
 
 // ─── CPA REGION DATABASE ─────────────────────────────────────────────────────
@@ -1751,16 +1753,36 @@ async function generateFMSReportPDF(report){
 }
 
 // ─── AI CAMERA PANEL (Optional) ───────────────────────────────────────────────
+// Module-scoped flag: once the clinician grants camera consent for a movement
+// test in this active app session, subsequent tests in the same session don't
+// re-prompt. Resets naturally on full page reload / new session.
+let fmsCameraSessionConsent = false;
+
 function FMSCameraPanel({onClose}){
   const videoRef=useRef(null), canvasRef=useRef(null), streamRef=useRef(null);
   const poseRef=useRef(null), cameraRef=useRef(null);
   const [status,setStatus]=useState("loading");
   const [camFacing,setCamFacing]=useState("user");
+  // Patient-camera consent gate — must be confirmed before getUserMedia() opens.
+  const [showConsentGate,setShowConsentGate]=useState(!fmsCameraSessionConsent);
+  const [consentGranted,setConsentGranted]=useState(fmsCameraSessionConsent);
 
   useEffect(()=>{
+    if(!consentGranted) return; // camera stays closed until consent is granted
     initCam();
     return ()=>{ cleanup(); };
-  },[]);
+  },[consentGranted]);
+
+  function handleConsentConfirm(){
+    fmsCameraSessionConsent=true;
+    setConsentGranted(true);
+    setShowConsentGate(false);
+  }
+
+  function handleConsentCancel(){
+    setShowConsentGate(false);
+    if(onClose) onClose();
+  }
 
   async function initCam(){
     setStatus("loading");
@@ -1794,6 +1816,12 @@ function FMSCameraPanel({onClose}){
   }
 
   function flipCam(){cleanup();setCamFacing(f=>f==="user"?"environment":"user");setTimeout(initCam,300);}
+
+  if(showConsentGate){
+    return (
+      <PatientCameraConsent onConfirm={handleConsentConfirm} onCancel={handleConsentCancel} />
+    );
+  }
 
   return(
     <div style={{background:"#FFFFFF",borderRadius:12,overflow:"hidden",marginBottom:12,position:"relative"}}>

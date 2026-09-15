@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>PhysioMind uses the camera to capture posture and movement assessment photos for educational documentation. Photos are only used for on-device measurement overlays and are not diagnostic.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>PhysioMind can save exported assessment PDFs and posture images to your photo library when you choose to.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
