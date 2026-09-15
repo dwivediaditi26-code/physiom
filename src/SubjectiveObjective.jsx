@@ -6415,7 +6415,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       {/* ── Saved confirmation toast ── */}
       {showSavedToast && (
         <div style={{
-          position:"fixed", bottom:80, left:"50%", transform:"translateX(-50%)",
+          position:"fixed", bottom:"calc(80px + env(safe-area-inset-bottom))", left:"50%", transform:"translateX(-50%)",
           background:"#059669", color:"#fff",
           padding:"10px 22px", borderRadius:50,
           fontSize:"0.88rem", fontWeight:700,

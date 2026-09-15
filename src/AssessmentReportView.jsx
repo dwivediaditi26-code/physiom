@@ -186,7 +186,7 @@ export default function AssessmentReportView({ patient, onNav, onBack }) {
       )}
 
       {(hasCardio || hasNeuro) && (
-        <div style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 60, width: "100%", maxWidth: 720, padding: "0 14px", display: "flex", gap: 8, zIndex: 25 }}>
+        <div style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(60px + env(safe-area-inset-bottom))", width: "100%", maxWidth: 720, padding: "0 14px", display: "flex", gap: 8, zIndex: 25 }}>
           {hasCardio && (
             <button onClick={() => onNav?.("cardio_assessment")} style={{ flex: 1, padding: "11px", background: "#dc2626", border: "none", borderRadius: 12, color: "#fff", fontWeight: 800, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(220,38,38,0.3)" }}>
               ✏️ Edit Cardio

@@ -796,8 +796,12 @@ export function orthoStyles() {
            .content/.app-inner don't scroll themselves anymore (see .app-inner
            fix above), so sticky has nothing of its own to stick within --
            fixed pins to the real viewport; bottom:60px (not 0) clears
-           physiom's own fixed bottom nav bar (.pm-bnav, ~59px). */
-        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 60px; width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+           physiom's own fixed bottom nav bar (.pm-bnav, ~59px). The nav bar
+           itself grew by env(safe-area-inset-bottom) (see .pm-bnav in
+           utils.jsx, added for the notch/home-indicator safe area), so this
+           offset must grow by the same amount or the button sits behind the
+           taller bar on notched devices. */
+        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(60px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
           flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;

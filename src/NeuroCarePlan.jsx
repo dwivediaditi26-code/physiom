@@ -100,7 +100,12 @@ const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8p
 // this for a last-child element (nothing below it to stick against). In the
 // assessment wizard (no floatingCTA) it stays in normal flow so it never
 // overlaps the wizard's own Back/Next footer.
-const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 74, width: "min(680px, calc(100vw - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
+// bottom uses calc(...) rather than a plain number because .pm-bnav (the
+// bottom nav in utils.jsx) now carries padding-bottom: env(safe-area-inset-
+// bottom) for the iOS home-indicator safe area, making it taller on notched
+// devices -- this offset must grow by the same amount or the CTA sits
+// behind the nav bar instead of above it.
+const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(74px + env(safe-area-inset-bottom))", width: "min(680px, calc(100vw - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
 const ctaStyle = (floating, base) => (floating ? { ...base, ...FLOATING_CTA } : base);
 // Extra bottom padding so the last card isn't hidden behind the fixed bar.
 const FLOATING_PAD = { paddingBottom: 84 };
