@@ -57,13 +57,13 @@ export function PrivacyPolicy({onClose}){
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
         <li style={li}>Patient demographics: name, age, gender, occupation</li>
         <li style={li}>Clinical assessment data: ROM measurements, special test results, SOAP notes, diagnosis</li>
-        <li style={li}>Posture analysis images and AI-generated measurements (stored locally on device, not uploaded to our servers)</li>
+        <li style={li}>Posture and movement-screening photos: captured via your device camera, analysed on-device using AI (MediaPipe/ViTPose) to compute angle measurements, and then synced to our database as part of the patient's record so you can access it across your devices. The face is automatically obscured above the nose bridge before the photo is saved. You must obtain the patient's informed consent before any capture — the app requires this via an on-screen consent step before the camera opens.</li>
         <li style={li}>Body chart pain mapping data</li>
         <li style={li}>Exercise prescription records</li>
       </ul>
-      <h3 style={h3}>2c. Data we do NOT collect</h3>
+      <h3 style={h3}>2c. What we do not do with this data</h3>
       <ul style={{paddingLeft:18,margin:"6px 0"}}>
-        <li style={li}>Posture photos are processed entirely on your device using AI (MediaPipe/ViTPose) — they are never sent to our servers</li>
+        <li style={li}>The AI pose analysis itself (landmark detection, angle calculation) runs entirely on your device — the pose-estimation model never sends the raw photo to our servers merely to compute the measurement, only the resulting image and measurements are synced for your own record-keeping</li>
         <li style={li}>We do not sell data to third parties</li>
         <li style={li}>We do not use patient data for advertising</li>
       </ul>
@@ -84,6 +84,7 @@ export function PrivacyPolicy({onClose}){
         <li style={li}>Your browser also keeps a local cache of your patient list for speed and offline access. For signed-in accounts, this local cache is separately encrypted (AES-256-GCM) with a key held only in your device's memory for the session — a lost or stolen device without an active login cannot have this cache read off its disk. This does not protect data while you are actively signed in and using the app, since it must be readable to you at that point; no purely client-side scheme can prevent that.</li>
         <li style={li}>In Guest Mode (no account), nothing is sent to our servers at all — your data stays in your browser's local storage only, unencrypted, and is never synced or backed up. It is lost if you clear your browser data.</li>
         <li style={li}>Clinical images for the Cloudinary image library are uploaded by you and stored under your Cloudinary account</li>
+        <li style={li}>Posture and movement-screening photos of patients are stored in your Supabase database, scoped to your account by Row Level Security, with the patient's face automatically obscured before storage</li>
         <li style={li}>We maintain regular automated backups</li>
       </ul>
 

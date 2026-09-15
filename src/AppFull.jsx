@@ -40,6 +40,7 @@ import {
 import BodyChartPro from "./BodyChartPro.jsx";
 import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
+import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import { NeurologicalModule, NeuroTemplatesHub } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
 // Dynamic import -- ObjectiveHub statically imports REGION_NAV/REGION_FAMILY_KEY
@@ -2783,6 +2784,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 // with LandingPage.jsx itself (deleted -- nothing else imported it).
 
 export default function App() {
+  // Public, no-auth-required routes for the App Store / Play Store listing
+  // forms and web crawlers -- these must resolve before any session check
+  // so /privacy and /terms work even for a signed-out visitor with no
+  // account, hitting the URL directly (see vercel.json for the rewrite that
+  // makes a direct navigation to these paths reach index.html at all).
+  const publicPath = typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : "";
+  if (publicPath === "/privacy") {
+    return <PrivacyPolicy onClose={() => { window.location.href = "/"; }} />;
+  }
+  if (publicPath === "/terms") {
+    return <TermsOfService onClose={() => { window.location.href = "/"; }} />;
+  }
+
   // `undefined` = still checking for an existing session, `null` = signed out,
   // an object = signed in. Kept as three distinct states so we never flash the
   // login screen for a split second while Supabase is still resolving the

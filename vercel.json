@@ -1,5 +1,9 @@
 {
   "buildCommand": "node -e \"const fs=require('fs');const v=Date.now();const sw=fs.readFileSync('public/sw.js','utf8').replace('__CACHE_VERSION__',v);fs.writeFileSync('public/sw.js',sw);\" && npm run build",
+  "rewrites": [
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" }
+  ],
   "headers": [
     { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
     { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
