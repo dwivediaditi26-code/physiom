@@ -117,7 +117,12 @@ const MOBILE_CSS = `
   body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
   /* ── Layout shell ── */
-  .pm-shell { display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+  /* min-height: 100dvh (with 100vh as the fallback for browsers that don't
+     support dvh) instead of 100vh alone -- iOS standalone/home-screen PWAs
+     can under-report 100vh vs. the true visible frame, leaving a strip of
+     unstyled background exposed below the fixed bottom nav (only visible
+     once installed to the home screen, not in a regular Safari tab). */
+  .pm-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; background: #F7F7F8; }
 
   /* ── Header ── */
   .pm-header { padding: 0 12px !important; }
