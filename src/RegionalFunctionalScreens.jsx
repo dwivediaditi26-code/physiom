@@ -4380,11 +4380,6 @@ function FunctionalScreenHub({ data, set, navTo=()=>{}, navContext={} }) {
             border:`1px solid ${C.border}`,background:C.s2,color:C.muted}}>
           👤 Patient Profile
         </button>
-        <button type="button" onClick={()=>navTo("soap")}
-          style={{flex:1,padding:"10px 4px",borderRadius:10,cursor:"pointer",fontWeight:800,fontSize:"0.78rem",fontFamily:"inherit",
-            border:"none",background:`linear-gradient(135deg,${C.accent},${C.a2})`,color:"#fff"}}>
-          📋 Go to SOAP →
-        </button>
       </div>
     </div>
   );

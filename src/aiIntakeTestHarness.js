@@ -216,16 +216,18 @@ async function runOne(narrative, opts = {}) {
       // startup, so this test harness never adds weight to the normal
       // app bundle every user downloads -- only loaded if you actually
       // run a test.
-      // Imported through the SAME lazy wrapper files AppFull.jsx already
-      // uses (lazy_subjective.jsx / lazy_soapnote.jsx), not the raw
-      // SubjectiveObjective.jsx / ClinicalModules.jsx files directly --
-      // a second, different dynamic-import path to the same large
-      // module confuses Rollup's chunking and can pull it into the
-      // eagerly-loaded main bundle instead of keeping it lazy for
-      // everyone who never runs this test tool.
+      // Imported through the SAME lazy wrapper file AppFull.jsx already
+      // uses (lazy_subjective.jsx), not the raw SubjectiveObjective.jsx
+      // file directly -- a second, different dynamic-import path to the
+      // same large module confuses Rollup's chunking and can pull it into
+      // the eagerly-loaded main bundle instead of keeping it lazy for
+      // everyone who never runs this test tool. buildRealtimeSOAP now
+      // lives only in ClinicalModules.jsx (its lazy_soapnote.jsx wrapper
+      // was removed along with the SOAP Notes UI it existed for), so it's
+      // imported directly here instead.
       const [{ runEngineV6 }, { buildRealtimeSOAP }] = await Promise.all([
         import("./lazy_subjective.jsx"),
-        import("./lazy_soapnote.jsx"),
+        import("./ClinicalModules.jsx"),
       ]);
 
       interpretation = runEngineV6(sandboxData, [mapped.region]);

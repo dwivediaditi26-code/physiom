@@ -1497,14 +1497,6 @@ function ClinicalImpressionTab({ d, C, onSaveField, onNav }) {
           </div>
         </div>
       )}
-
-      {/* SOAP hint */}
-      {ciItems.some(x=>x.tag==="primary") && (
-        <div style={{marginTop:12,padding:"9px 12px",background:"#ECFDF5",border:"1px solid #BBF7D0",borderRadius:10,fontSize:11,color:"#065F46",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span>Working diagnosis appears in your SOAP Assessment field.</span>
-          <span onClick={()=>onNav&&onNav("soap")} style={{fontWeight:700,cursor:"pointer",color:"#059669"}}>Open SOAP →</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -1991,7 +1983,7 @@ const innerBody = (
           <div style={{padding:"22px 18px 18px",display:"flex",gap:10}}>
             {[
               {val:assessmentsInProgress, label:"Assessments in progress", color:"#7c3aed"},
-              {val:soapPending, label:"SOAP notes pending", color:"#0d9488"},
+              {val:soapPending, label:"Diagnoses pending", color:"#0d9488"},
               {val:homeProtocolsToday, label:"Home protocols today", color:"#059669"},
             ].map(s => (
               <div key={s.label} style={{flex:1,background:"#F8F7FC",borderRadius:14,padding:"14px 10px",textAlign:"center"}}>

@@ -29,13 +29,12 @@ describe("AuthScreen -- Explore Demo Patient (scripted walkthrough) entry point"
     render(<AuthScreen onAuth={() => {}} onTryGuest={() => {}} />);
     fireEvent.click(screen.getByText(/guided demo/i));
     expect(screen.getByText("Subjective Assessment")).toBeInTheDocument();
-    expect(screen.getByText("1/4")).toBeInTheDocument();
+    expect(screen.getByText("1/3")).toBeInTheDocument();
   });
 
   test("finishing the walkthrough and hitting Create Account lands back on the real Register form", () => {
     render(<AuthScreen onAuth={() => {}} onTryGuest={() => {}} />);
     fireEvent.click(screen.getByText(/guided demo/i));
-    fireEvent.click(screen.getByText("Next →"));
     fireEvent.click(screen.getByText("Next →"));
     fireEvent.click(screen.getByText("Next →"));
     fireEvent.click(screen.getByText("Create your free account →"));

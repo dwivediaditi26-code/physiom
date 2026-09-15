@@ -111,7 +111,7 @@ describe("Sessions — list view, structured modalities/treatment, past-session 
     render(<QuickVisitForm PC={PC} data={{}} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByText(/＋ IFT/));
-    fireEvent.click(screen.getByText("Save & Go to SOAP →"));
+    fireEvent.click(screen.getByText("Save session"));
     expect(setMock).toHaveBeenCalledWith("tx_sessions", expect.arrayContaining([
       expect.objectContaining({ modalities: expect.arrayContaining([expect.objectContaining({ name: "IFT" })]) }),
     ]));

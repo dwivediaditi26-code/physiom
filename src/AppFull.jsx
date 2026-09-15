@@ -182,7 +182,7 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
 // redirectable back to its own Demographics step on an incomplete-data
 // leave -- plus the three self-contained specialty tools, which aren't).
 const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "clinical"]);
-const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise", "soap"]);
+const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise"]);
 const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
 const ASSESSMENT_ACTIVE_KEYS = new Set([...ORTHO_WF_KEYS, ...OPAQUE_ASSESSMENT_KEYS]);
 function isDemographicsComplete(d) {
@@ -227,7 +227,6 @@ const LazyFascia        = lazy(() => import("./lazy_fascia.jsx"));
 const LazyKinetic       = lazy(() => import("./lazy_kinetic.jsx"));
 const LazyCyriaxRegion  = lazy(() => import("./lazy_cyriax_region.jsx"));
 const LazyObservation   = lazy(() => import("./lazy_observation.jsx"));
-const LazySOAPNote      = lazy(() => import("./lazy_soapnote.jsx"));
 const LazyMMT           = lazy(() => import("./lazy_mmt.jsx"));
 const LazyROM           = lazy(() => import("./lazy_rom.jsx"));
 
@@ -380,7 +379,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Heavy tabs — only mount on first visit
   const HEAVY_TABS = new Set([
     "posture", "ddx", "fms", "nkt", "cyriax",
-    "fascia", "kinetic", "soap", "treatment", "exercise",
+    "fascia", "kinetic", "treatment", "exercise",
     "outcome", "special", "gait", "neuro", "palpation",
     "mmt", "rom", "dashboard", "reports",
   ]);
@@ -1953,7 +1952,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             // of Home/PhysioFeed/Learn/Profile too (those aren't part of
             // this workflow at all). Scope it to the exact screens wfSteps
             // below can land on.
-            const wfScreens = ["demographics","subj_region","subjective","subj_ai","chart_palpation","objective","treatment","exercise","soap",...oKeys];
+            const wfScreens = ["demographics","subj_region","subjective","subj_ai","chart_palpation","objective","treatment","exercise",...oKeys];
             // Posture Analysis has its own dedicated entry screen (hero card,
             // AI/Manual toggle, view grid) that doesn't fit the S->O->A->P
             // step flow -- hide the stepper there specifically, not the rest
@@ -1977,7 +1976,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               { key:"chart",        label:"Chart/Palp",    short:"Chart",  nav:"chart_palpation", done:!!(d2.body_chart_pro||d2.palpation_site), active:active==="chart_palpation" },
               { key:"objective",    label:"Objective",     short:"Obj",    nav:"objective",       done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
               { key:"treatment",    label:"Treatment",     short:"Treat",  nav:"treatment",       done:!!(d2.soap_modalities||d2.soap_frequency||d2.tx_exercise_prescription||d2.tx_techniques), active:(active==="treatment"||active==="exercise")&&txTab!=="hep" },
-              { key:"soap",         label:"SOAP",          short:"SOAP",   nav:"soap",            done:!!(d2.soap_a_diagnosis||d2.soap_icd10||d2.soap_a), active:active==="soap" },
               { key:"home",         label:"Home Protocol", short:"Home",   nav:"treatment",       done:!!(d2.hep_programme), active:active==="treatment"&&txTab==="hep" },
             ];
             const doneCount = wfSteps.filter(s => s.done).length;
@@ -2550,13 +2548,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="SPECIAL_TESTS_MODULE"?(
                 <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazySpecial data={data} set={set} navContext={active==="special"?navContext:{}}/></Suspense>
-                {/* ── Done → Continue SOAP bar ── */}
-                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
-                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                    Continue SOAP →
-                  </button>
-                </div>
               </div>
               ):tests==="NKT_REGION"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -2581,13 +2572,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="NEURO_MODULE"?(
                 <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyNeuro data={data} set={set} navTo={navTo} navContext={active==="neuro"?navContext:{}}/></Suspense>
-                {/* ── Done → Continue SOAP bar ── */}
-                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
-                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                    Continue SOAP →
-                  </button>
-                </div>
               </div>
               ):tests==="NEURO_TEMPLATES_MODULE"?(
                 <Suspense fallback={<TabFallback/>}><LazyNeuroTemplates data={data} navTo={navTo} navContext={active==="neurotemplates"?navContext:{}}/></Suspense>
@@ -2598,24 +2582,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="MMT_MODULE"?(
                 <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyMMT data={data} set={set} navContext={active==="mmt"?navContext:{}}/></Suspense>
-                {/* ── Done → Continue SOAP bar ── */}
-                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
-                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                    Continue SOAP →
-                  </button>
-                </div>
               </div>
               ):tests==="ROM_MODULE"?(
                 <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
                 <Suspense fallback={<TabFallback/>}><LazyROM data={data} set={set} navContext={active==="rom"?navContext:{}}/></Suspense>
-                {/* ── Done → Continue SOAP bar ── */}
-                <div style={{marginTop:20,padding:"12px 16px",background:`${PC.accent}08`,border:`1.5px solid ${PC.accent}25`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div style={{fontSize:"0.82rem",color:PC.muted}}>Finished? Your data is auto-saved.</div>
-                  <button onClick={()=>navTo("soap")} style={{padding:"9px 18px",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,border:"none",borderRadius:9,color:"#fff",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                    Continue SOAP →
-                  </button>
-                </div>
               </div>
               ):tests==="OUTCOME_MODULE"?(
                 <>{/* ── S→O→A→P workflow breadcrumb ── */}
@@ -2671,8 +2641,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
                 </div>
-              ):tests==="SOAP_MODULE"?(
-              <Suspense fallback={<TabFallback/>}><LazySOAPNote data={data} set={set} onNav={navTo} initialTab={active==="soap"?navContext.initialTab:undefined}/></Suspense>
               ):tests==="AI_MODULE"?(
               <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")} requireAuth={requireAuth}/>
               ):(

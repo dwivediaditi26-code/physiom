@@ -57,7 +57,7 @@ describe("Exercise Prescription visibility in Sessions", () => {
     const setMock = vi.fn();
     render(<QuickVisitForm PC={PC} data={data} set={setMock} navTo={() => {}} />);
     fireEvent.click(screen.getByText("＋ New session"));
-    fireEvent.click(screen.getByText("Save & Go to SOAP →"));
+    fireEvent.click(screen.getByText("Save session"));
     const [, savedSessions] = setMock.mock.calls.find(c => c[0] === "tx_sessions");
     expect(savedSessions[0].exercisePrescription).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: "Bridging" })])

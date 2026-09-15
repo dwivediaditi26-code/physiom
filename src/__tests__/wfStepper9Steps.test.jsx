@@ -1,12 +1,14 @@
 // wfStepper9Steps.test.jsx
-// Regression coverage for the 9-step "Screening Workflow" stepper
+// Regression coverage for the "Screening Workflow" stepper
 // (2026-08-17): Subjective's region picker / AI panel / body chart+
 // palpation used to be bundled into one long scroll under a single
 // "Subjective" step. They're now their own steps -- Demographics, Body
 // Regions, Subjective, AI, Chart/Palp, Objective, Treatment, Home
-// Protocol, SOAP -- each showing only its own content, reusing the exact
+// Protocol -- each showing only its own content, reusing the exact
 // same SubjectiveModule / BodyChart / Palpation / Treatment code that
 // already existed (viewStep prop just controls what's visible).
+// The SOAP step was removed when SOAP note generation was removed from
+// the app entirely.
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor, within } from "@testing-library/react";
@@ -54,10 +56,10 @@ async function createOrthoPatient() {
   await screen.findByText("Screening Workflow");
 }
 
-describe("Screening Workflow stepper — 9 steps, each its own page", () => {
-  it("shows all 9 step dots once a patient is active", async () => {
+describe("Screening Workflow stepper — 8 steps, each its own page", () => {
+  it("shows all 8 step dots once a patient is active", async () => {
     await createOrthoPatient();
-    for (const key of ["demographics","region","subjective","ai","chart","objective","treatment","home","soap"]) {
+    for (const key of ["demographics","region","subjective","ai","chart","objective","treatment","home"]) {
       expect(screen.getByTestId(`wf-step-${key}`)).toBeInTheDocument();
     }
   });

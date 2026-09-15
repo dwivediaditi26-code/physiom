@@ -156,23 +156,6 @@ function MuscleBadge({ id, title, size=40 }) {
   );
 }
 
-function genROMSoap(data){
-  const findings=[];
-  ROM_REGIONS.forEach(reg=>{
-    ROM_DATA[reg].forEach(m=>{
-      const sides=m.bilateral?["_L","_R"]:[""];
-      sides.forEach(s=>{
-        const v=data[`${m.id}${s}_arom`]||data[`${m.id}${s}`];
-        if(v){
-          const g=RESTRICTION_GRADE(parseFloat(v),m.normal);
-          if(g&&g.label!=="WNL") findings.push(`${m.mv}${s?` (${s.slice(1)})`:""}=${v}${m.unit} [${g.label} restriction: ${Math.round(g.pct)}% normal]`);
-        }
-      });
-    });
-  });
-  return findings.length===0?"No significant ROM restrictions recorded.":`ROM restrictions identified:\n${findings.join("\n")}`;
-}
-
 
 // Deep-link highlight animation — injected once globally
 if (typeof document !== "undefined" && !document.getElementById("physio-hl-style")) {
@@ -234,7 +217,6 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
     }, 350);
   },[navContext.romHighlight, navContext.romHighlights]);
   const [selected,setSelected]=useState(null);
-  const [showSoap,setShowSoap]=useState(false);
   const [mode,setMode]=useState("arom"); // arom | prom | resisted
 
   const movements=ROM_DATA[region]||[];
@@ -291,9 +273,6 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
         {[["arom","Active ROM"],["prom","Passive ROM"],["resisted","Resisted"]].map(([m,l])=>
           btn(l,mode===m,()=>setMode(m),C.accent)
         )}
-        <div style={{marginLeft:"auto"}}>
-          {btn(showSoap?"▲ Hide SOAP":"▼ SOAP Note",showSoap,()=>setShowSoap(p=>!p),C.a3)}
-        </div>
       </div>
 
       {/* ── ROM SNAPSHOT & TREND ───────────────────────────────────────── */}
@@ -324,14 +303,6 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
           </div>
         )}
       </div>
-
-      {/* SOAP Note */}
-      {showSoap&&(
-        <div style={{marginBottom:12,padding:"10px 12px",background:C.s2,borderRadius:8,border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:"0.6rem",fontWeight:700,color:C.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>ROM SOAP — Objective Findings</div>
-          <pre style={{fontSize:"0.72rem",color:C.text,whiteSpace:"pre-wrap",margin:0,lineHeight:1.6}}>{genROMSoap(data)}</pre>
-        </div>
-      )}
 
       {/* Overall Restriction Summary */}
       {allFindings.length>0&&(
@@ -2520,19 +2491,6 @@ function NeuroTemplatesHub({ data, navTo, navContext={} }) {
           );
         })}
       </div>
-
-      {/* Structured assessment output -- the same SOAP note the ortho
-          side uses, jumped straight to the Objective tab where every
-          neurological finding (GCS, cranial nerves, condition-staging
-          scales, etc.) already renders live. */}
-      <button onClick={() => navTo("soap",{initialTab:"O"})} style={{
-        display:"flex",alignItems:"center",gap:6,marginBottom:20,
-        padding:"8px 14px",borderRadius:9,cursor:"pointer",
-        border:`1px solid ${C.border}`,background:C.surface,color:C.text,
-        fontWeight:700,fontSize:"0.76rem",
-      }}>
-        📋 View SOAP assessment summary
-      </button>
 
       <ActiveComp data={data} navTo={navTo}/>
     </div>

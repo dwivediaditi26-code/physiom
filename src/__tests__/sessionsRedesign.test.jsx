@@ -69,7 +69,7 @@ describe("Sessions list/detail navigation", () => {
     fireEvent.click(screen.getByText("＋ New session"));
     fireEvent.click(screen.getByText(/＋ Joint mobilisation/));
     fireEvent.click(screen.getByText(/＋ Hot pack/));
-    fireEvent.click(screen.getByText("Save & Go to SOAP →"));
+    fireEvent.click(screen.getByText("Save session"));
     const [, savedSessions] = setMock.mock.calls.find(c => c[0] === "tx_sessions");
     const entry = savedSessions[0];
     expect(entry.treatment).toEqual(expect.arrayContaining([expect.objectContaining({ name: "Joint mobilisation" })]));

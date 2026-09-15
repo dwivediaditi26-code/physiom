@@ -1,5 +1,5 @@
 // DemoWalkthrough.jsx — pre-login, scripted, read-only preview of the core
-// workflow (Subjective -> AI Intake -> ROM -> SOAP) using one canned demo
+// workflow (Subjective -> AI Intake -> ROM) using one canned demo
 // patient (Rahul). Deliberately NOT an interactive guest mode: no writes,
 // no Supabase calls, no real data entry -- just enough of the real
 // workflow visible that a visitor understands what they'd be signing up
@@ -27,12 +27,6 @@ const DEMO = {
     { label: "Right Rotation", value: "60°" },
     { label: "Left Rotation", value: "55°" },
   ],
-  soap: {
-    s: "Neck pain for 4 months. Gradual onset. Increases with prolonged laptop work. Pain score 6/10.",
-    o: "Forward head posture. ROM limited in lateral flexion. Spurling's test positive. MMT: weakness in deep neck flexors.",
-    a: "Mechanical neck pain with postural dysfunction.",
-    p: "Manual therapy, posture correction, strengthening, stretching, HEP. Review in 7 days.",
-  },
 };
 
 function StepChrome({ step, total, title, onBack, onClose, children }) {
@@ -154,35 +148,10 @@ function StepROM() {
   );
 }
 
-function StepSOAP() {
-  const rows = [["S", "Subjective", DEMO.soap.s], ["O", "Objective", DEMO.soap.o],
-    ["A", "Assessment", DEMO.soap.a], ["P", "Plan", DEMO.soap.p]];
-  return (
-    <div>
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
-        borderRadius: 99, background: "#f5f3ff", border: "1px solid #ddd6fe", marginBottom: 14 }}>
-        <span style={{ fontSize: "0.68rem", fontWeight: 800, color: A }}>✦ AI-Generated Draft</span>
-      </div>
-      {rows.map(([letter, label, text]) => (
-        <div key={letter} style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <span style={{ width: 20, height: 20, borderRadius: 6, background: A, color: "#fff",
-              fontSize: "0.68rem", fontWeight: 800, display: "flex", alignItems: "center",
-              justifyContent: "center" }}>{letter}</span>
-            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: MU }}>{label}</span>
-          </div>
-          <div style={{ fontSize: "0.8rem", color: TX, lineHeight: 1.55, paddingLeft: 26 }}>{text}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 const STEPS = [
   { key: "subjective", title: "Subjective Assessment", Comp: StepSubjective },
   { key: "ai", title: "AI Patient Intake", Comp: StepAIIntake },
   { key: "rom", title: "ROM — Neck", Comp: StepROM },
-  { key: "soap", title: "SOAP Notes + AI", Comp: StepSOAP },
 ];
 
 export default function DemoWalkthrough({ onClose, onCreateAccount }) {

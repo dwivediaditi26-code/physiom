@@ -1534,7 +1534,7 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
     set("tx_sessions",[entry,...sessionsArr]);
     setPending([]);
     setSaved(true);
-    setTimeout(()=>{setSaved(false); navTo("soap");},900);
+    setTimeout(()=>{setSaved(false); navTo("home");},900);
   };
 
   const updatePast = () => {
@@ -1755,7 +1755,7 @@ function SessionDetailView({ PC, data, set, navTo, sessionsArr, activeId, onBack
       </div>
 
       <button onClick={isNew?saveNew:updatePast} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#0F6E56",color:"#fff",fontWeight:800,fontSize:"0.85rem",cursor:"pointer",marginBottom:8}}>
-        {saved?(isNew?"✅ Saved — opening SOAP to sign…":"✅ Session updated"):(isNew?"Save & Go to SOAP →":"Update session")}
+        {saved?(isNew?"✅ Session saved":"✅ Session updated"):(isNew?"Save session":"Update session")}
       </button>
       {isNew&&(
         <div style={{display:"flex",gap:8}}>
@@ -2097,8 +2097,7 @@ function OnboardingModal({ PC, onDismiss }) {
   const STEPS = [
     { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
     { icon:"👤", title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
-    { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests → SOAP. Each module saves automatically as you type.",             color:"#059669" },
-    { icon:"✨", title:"Generate SOAP & Send HEP",     desc:"Once assessed, use the SOAP module to generate an AI clinical note, then build a Home Exercise Programme and send it via WhatsApp or PDF.",   color:"#d97706" },
+    { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests. Each module saves automatically as you type.",             color:"#059669" },
   ];
   const [step, setStep] = React.useState(0);
   // Apple 5.1.1(v) / DPDP Act Sec 6: this acknowledgment is a mandatory
