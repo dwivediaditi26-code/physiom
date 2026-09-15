@@ -170,7 +170,12 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
 
   const pdfFooter = (docName) => {
     const therapistName = d.therapist_name || "Your Physiotherapist";
-    return '<div style="background:#1e293b;padding:10px 40px;display:flex;justify-content:space-between;align-items:center;">'
+    // App Store Guideline 1.4.1 requires this exact disclaimer on
+    // assessment report export views, not just onboarding.
+    return '<div style="background:#f8fafc;padding:8px 40px;border-top:1px solid #e2e8f0;text-align:center;">'
+      + '<div style="color:#94a3b8;font-size:7.5px;line-height:1.5;">PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.</div>'
+      + '</div>'
+      + '<div style="background:#1e293b;padding:10px 40px;display:flex;justify-content:space-between;align-items:center;">'
       + '<div style="color:#94a3b8;font-size:8px;">PhysioMind &middot; ' + docName + '</div>'
       + '<div style="color:#64748b;font-size:8px;text-align:center;"><span style="color:#c9a84c;font-weight:700;">CONFIDENTIAL</span> &mdash; For Authorised Healthcare Professionals Only &middot; Not for Distribution</div>'
       + '<div style="color:#94a3b8;font-size:8px;">Page 1 &middot; ' + today + '</div>'
@@ -2090,7 +2095,7 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
 
 function OnboardingModal({ PC, onDismiss }) {
   const STEPS = [
-    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"A posture screening & education tool. AI-assisted posture screening, notes, outcome trackers, and general movement suggestions. For education only — not a medical device, and not medical advice.", color:"#7c3aed" },
+    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
     { icon:"👤", title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
     { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests → SOAP. Each module saves automatically as you type.",             color:"#059669" },
     { icon:"✨", title:"Generate SOAP & Send HEP",     desc:"Once assessed, use the SOAP module to generate an AI clinical note, then build a Home Exercise Programme and send it via WhatsApp or PDF.",   color:"#d97706" },

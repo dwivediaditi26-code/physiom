@@ -5,8 +5,13 @@ import { inject } from '@vercel/analytics'
 import * as Sentry from '@sentry/react'
 import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 import { installButtonRipple } from './rippleEffect.js'
+import { initNativeApp } from './nativeApp.js'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
+
+// Android hardware back button + status bar setup -- no-ops on the web
+// build, only active inside the Capacitor-wrapped app. See nativeApp.js.
+initNativeApp()
 
 // On-demand console test tool for the AI intake pipeline -- attaches
 // window.physioAITest but runs nothing automatically. Open DevTools on

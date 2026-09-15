@@ -5,6 +5,7 @@ import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
 import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding } from "lucide-react";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
+import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
@@ -1415,6 +1416,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   return(
     <div className="pm-shell" style={{background:PC.bg,color:PC.text,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",transition:"background 0.2s,color 0.15s"}}>
       <MobileStyleInjector/>
+      <OfflineBanner/>
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}

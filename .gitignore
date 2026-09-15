@@ -17,3 +17,11 @@ android/app/build/
 android/capacitor-cordova-android-plugins/build/
 android/local.properties
 android/.idea/
+
+# Capacitor / iOS native project build artifacts
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/App/App/public/
+ios/**/*.xcuserstate
+ios/**/xcuserdata/

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#7c3aed" />
     <meta name="description" content="PhysioMind Pro — Posture Screening & Education (not a medical device; not medical advice)" />
 
@@ -43,6 +43,16 @@
         /* Prevent text size adjustment on mobile rotation */
         -webkit-text-size-adjust: 100%;
       }
+
+      /* App Store / Play Store native-feel hardening (App Store Review
+         Guideline 4.2 — reviewers reject apps that "feel like a website":
+         no tap-highlight flash, no double-tap-to-zoom delay, no rubber-band
+         overscroll bounce past page edges, no accidental text selection on
+         taps). Inputs/textareas keep normal text selection so clinical
+         note-taking and copy/paste still work. */
+      * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      body { overscroll-behavior-y: none; user-select: none; -webkit-user-select: none; }
+      input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
 
       /* Loading screen — shown before React hydrates */
       #root:empty::after {

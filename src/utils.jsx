@@ -321,6 +321,7 @@ const MOBILE_CSS = `
     background: #ffffff; border-top: 2px solid #E4E4E6;
     box-shadow: 0 -4px 20px rgba(124,58,237,0.10);
     max-height: 75vh;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   @media (max-width: 767px) { .pm-bnav { display: flex; } }
   @media (max-width: 767px) {
@@ -540,7 +541,7 @@ const MOBILE_CSS = `
   @media (max-width: 767px) {
     .pm-mobile-hdr {
       display: flex; align-items: center; gap: 9px;
-      padding: 10px 14px; position: sticky; top: 0; z-index: 101;
+      padding: max(10px, env(safe-area-inset-top)) 14px 10px; position: sticky; top: 0; z-index: 101;
       min-height: 64px; flex-shrink: 0;
     }
     .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
