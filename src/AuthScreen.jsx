@@ -74,6 +74,11 @@ function Register({onSwitch,onAuth,onShowLegal}){
     const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic}}});
     setLoading(false);
     if(er){setError(er.message);return;}
+    // The signup checkbox above already covers the same academic-training-aid
+    // acknowledgment the onboarding tour's last step asks for -- mark it done
+    // now so a brand-new account never gets asked a second time right after
+    // signing up (2026-09-15, Aditi: "asking again and again for consent").
+    try{localStorage.setItem("pm_onboarded","1");}catch{}
     if(data.session){onAuth(data.user);}
     else{setMsg("Account created! Check your email to confirm, then sign in.");}
   };
@@ -97,6 +102,7 @@ function Register({onSwitch,onAuth,onShowLegal}){
         <button type="button" onClick={()=>onShowLegal("terms")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Terms of Service</button>
         {" "}and{" "}
         <button type="button" onClick={()=>onShowLegal("privacy")} style={{background:"none",border:"none",color:A,fontWeight:700,cursor:"pointer",fontSize:"0.76rem",padding:0}}>Privacy Policy</button>
+        , and I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
       </span>
     </label>
     <button type="submit" style={{...btnS,opacity:loading||!agreed?0.5:1}} disabled={loading||!agreed}>{loading?"Creating…":"Create free account →"}</button>
