@@ -735,18 +735,23 @@ export function orthoStyles() {
            purple with a raised keycap shadow (2026-09-11, per chat reference:
            "make it piano 3rd button"). Replaces the old all-sections-stacked
            -on-one-page layout with one subtopic shown at a time. */
-        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F3F1FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
-        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.purpleDark}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
+        /* Neutral resting state, purple reserved for the active tab only
+           (2026-09-16, Aditi: "this is too much purple" -- bar background,
+           inactive-tab tint and inactive-tab text were all purple on top
+           of each other). Matches .region-tab's own gray-resting/
+           purple-active convention. */
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F6F5FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
+        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
         .obj-subtopic-scroll-btn:active { opacity: 1; }
         .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 42px); }
         .obj-subtopic-tab { scroll-snap-align: center; }
         .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
         .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
-          background: linear-gradient(180deg, #fff, #F4F2FC);
-          box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(109,77,224,.06), 0 4px 8px rgba(76,58,168,.08);
+          background: linear-gradient(180deg, #fff, #F7F7F9);
+          box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(20,10,45,.05), 0 4px 8px rgba(20,10,45,.06);
           transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.purpleDark}; opacity: .75; }
-        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.purpleDark}; opacity: .75; line-height: 1.2; text-align: center; white-space: nowrap; }
+        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.gray}; }
+        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
         .obj-subtopic-tab-active {
           background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
           transform: translateY(-2px);
