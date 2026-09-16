@@ -849,7 +849,7 @@ export function Alert({ tone = "amber", children }) {
 export function SectionIntro({ icon, title, sub, info, action }) {
   return (
     <div className="section-intro">
-      <div className="section-intro-icon">{icon}</div>
+      {icon && <div className="section-intro-icon">{icon}</div>}
       <div style={{ flex: 1 }}>
         <div className="section-intro-title-row">
           <div className="section-intro-title">{title}</div>

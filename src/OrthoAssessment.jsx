@@ -279,7 +279,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         <div className="content">
           {step === 0 && (
             <>
-              <SectionIntro icon="🦴" title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
+              <SectionIntro title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
               <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
               <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
                 <PickerIcon icon="ti-sparkles" />

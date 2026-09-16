@@ -527,7 +527,7 @@ function Alert({ tone = "amber", children }) {
 function SectionIntro({ icon, title, sub }) {
   return (
     <div className="section-intro">
-      <div className="section-intro-icon">{icon}</div>
+      {icon && <div className="section-intro-icon">{icon}</div>}
       <div>
         <div className="section-intro-title">{title}</div>
         {sub && <div className="section-intro-sub">{sub}</div>}
@@ -2338,7 +2338,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         <div className="content">
           {step === 0 && (
             <>
-              <SectionIntro icon={<Icon name="hospital" />} title="Where is the patient being assessed?" sub="Select the patient setting to configure the assessment — 5 settings × 3 systems = 15 pathways." />
+              <SectionIntro title="Where is the patient being assessed?" sub="Select the patient setting to configure the assessment — 5 settings × 3 systems = 15 pathways." />
               <div className="picker-grid">
                 {SETTINGS.map((s) => (
                   <button key={s.id} className={"picker-card" + (setting === s.id ? " selected" : "")} onClick={() => setSetting(s.id)}>

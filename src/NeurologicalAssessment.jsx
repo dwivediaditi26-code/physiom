@@ -539,7 +539,7 @@ function Alert({ tone = "amber", children }) {
 function SectionIntro({ icon, title, sub }) {
   return (
     <div className="section-intro">
-      <div className="section-intro-icon">{icon}</div>
+      {icon && <div className="section-intro-icon">{icon}</div>}
       <div>
         <div className="section-intro-title">{title}</div>
         {sub && <div className="section-intro-sub">{sub}</div>}
@@ -2608,7 +2608,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         <div className="content">
           {phase === "setting" && (
             <>
-              <SectionIntro icon={<Icon name="hospital" />} title="Where is the patient being assessed?" sub="Select the setting, then choose how you'd like to build the exam — from a template, by region, or item by item." />
+              <SectionIntro title="Where is the patient being assessed?" sub="Select the setting, then choose how you'd like to build the exam — from a template, by region, or item by item." />
               <div className="picker-grid">
                 {SETTINGS.map((s) => (
                   <button key={s.id} className={"picker-card" + (setting === s.id ? " selected" : "")} onClick={() => setSetting(s.id)}>
