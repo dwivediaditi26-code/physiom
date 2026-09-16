@@ -364,7 +364,6 @@ const MOBILE_CSS = `
   .pm-bnav-tabs {
     display: flex; overflow: visible; scrollbar-width: none;
     border-top: 1px solid #E4E4E6; flex-shrink: 0;
-    padding-bottom: env(safe-area-inset-bottom);
     background: #ffffff;
   }
   .pm-bnav-tabs::-webkit-scrollbar { display: none; }
@@ -384,8 +383,7 @@ const MOBILE_CSS = `
   /* ── Sub-nav panel ── */
   .pm-bnav-panel {
     overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
-    padding: 8px 10px; display: none; flex-direction: column; gap: 3px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    padding: 8px 10px 6px; display: none; flex-direction: column; gap: 3px;
     max-height: calc(75vh - 56px);
   }
   .pm-bnav-panel.open { display: flex; }
