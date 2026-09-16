@@ -332,16 +332,19 @@ export function orthoStyles() {
            to actually shrink/wrap its text instead of forcing the row wider
            than its container. Still used by orthoAdvancedTools.jsx's other
            movement lists (RomSection moved to the .rom-row table layout
-           below; MMT moved to the .mmt-row layout just below --
-           2026-09-16, Aditi first wanted grades stacked under the name,
-           then tried it live and asked for L/R back beside the photo
-           instead, name top-aligned rather than centered). */
+           below; MMT moved to the stacked .mmt-row/.mmt-grades-row layout
+           just below -- 2026-09-16, Aditi tried grades stacked under the
+           name, then beside the photo instead, then on an actual narrow
+           phone the beside-photo row had no room left for the name column
+           at all and wrapped/overlapped, so back to stacked: name+photo on
+           their own row, L/R grades on the row under it, full width to
+           breathe instead of squeezed beside a fixed-width photo). */
         .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
         .movement-info { flex: 1 1 160px; min-width: 0; }
         .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .mmt-row { display: flex; align-items: flex-start; gap: 10px; }
-        .mmt-name-col { flex: 1 1 auto; min-width: 0; padding-top: 2px; }
-        .mmt-grades-row { display: flex; gap: 10px; flex-shrink: 0; }
+        .mmt-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .mmt-name-col { min-width: 0; }
+        .mmt-grades-row { display: flex; gap: 10px; }
         /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
            detail collapses, not the whole movement row (degree steppers
            stay visible since they're filled for every movement). */

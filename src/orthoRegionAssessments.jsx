@@ -414,15 +414,15 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
                   <span className="movement-name">{m.muscle}</span>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}
                 </div>
-                <div className="mmt-grades-row">
-                  <div className="movement-lr-col">
-                    <span className="movement-lr-tag">L</span>
-                    <GradeSelect value={val.left} onChange={(v) => set(activeKey, { ...entry, [m.id]: { ...val, left: v } })} />
-                  </div>
-                  <div className="movement-lr-col">
-                    <span className="movement-lr-tag">R</span>
-                    <GradeSelect value={val.right} onChange={(v) => set(activeKey, { ...entry, [m.id]: { ...val, right: v } })} />
-                  </div>
+              </div>
+              <div className="mmt-grades-row">
+                <div className="movement-lr-col">
+                  <span className="movement-lr-tag">L</span>
+                  <GradeSelect value={val.left} onChange={(v) => set(activeKey, { ...entry, [m.id]: { ...val, left: v } })} />
+                </div>
+                <div className="movement-lr-col">
+                  <span className="movement-lr-tag">R</span>
+                  <GradeSelect value={val.right} onChange={(v) => set(activeKey, { ...entry, [m.id]: { ...val, right: v } })} />
                 </div>
               </div>
             </div>

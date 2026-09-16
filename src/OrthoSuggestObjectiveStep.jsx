@@ -596,15 +596,15 @@ function MmtItemCard({ item, mmtData, setMmt, selectionData, onSelectItem }) {
           </div>
           {(meta.nerve || meta.root) && <div className="muscle-subtitle">{[meta.nerve, meta.root].filter(Boolean).join(" · ")}</div>}
         </div>
-        <div className="mmt-grades-row">
-          <div className="movement-lr-col">
-            <span className="movement-lr-tag">L</span>
-            <GradeSelect value={val.left} onChange={(v) => setSide("left", v)} />
-          </div>
-          <div className="movement-lr-col">
-            <span className="movement-lr-tag">R</span>
-            <GradeSelect value={val.right} onChange={(v) => setSide("right", v)} />
-          </div>
+      </div>
+      <div className="mmt-grades-row">
+        <div className="movement-lr-col">
+          <span className="movement-lr-tag">L</span>
+          <GradeSelect value={val.left} onChange={(v) => setSide("left", v)} />
+        </div>
+        <div className="movement-lr-col">
+          <span className="movement-lr-tag">R</span>
+          <GradeSelect value={val.right} onChange={(v) => setSide("right", v)} />
         </div>
       </div>
     </div>
