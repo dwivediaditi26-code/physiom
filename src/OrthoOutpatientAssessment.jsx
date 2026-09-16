@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
-import { AiJourneyDots, AiHubNav } from "./orthoSetupKit.jsx";
+import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
@@ -132,14 +132,18 @@ const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_ST
 // this component's own stages start at Subjective(2); anything in
 // AI_HUB_IDS collapses onto the single "Summary" dot (4).
 function aiStageIndexFor(id) {
+  if (id === "demographics") return 0;
+  if (id === "region") return 1;
   if (id === "subjective") return 2;
   if (id === "objectiveAI") return 3;
   return 4;
 }
-// Demographics/Region (0-1) happened pre-wizard and no longer have a screen
-// to jump back to from inside this component; Subjective/AI Objective/
-// Summary (2-4) are all real, current steps.
-const AI_WIZARD_JUMPABLE = new Set([2, 3, 4]);
+// All 5 stages are reachable from inside the wizard now (2026-09-16, Aditi:
+// "why can't we select again the demographic and region... I can't go
+// back") -- Demographics/Region via the one-off pseudo-steps
+// jumpToDemographics()/jumpToRegion() insert; Subjective/AI Objective/
+// Summary are already real steps.
+const AI_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
@@ -155,6 +159,10 @@ export function buildOrthoAssessSteps() {
 
 const STEP_META = {
   demographics: { icon: <Icon name="clipboard" />, label: "Demographics" },
+  // Not in BASE_IDS/ORDERED_ALL -- a one-off pseudo-step, inserted into
+  // stepOrder on demand by jumpToRegion() (AI-assisted entry only), the
+  // same trick jumpToDemographics() already uses.
+  region: { icon: <Icon name="compass" />, label: "Body Region" },
   subjective: { icon: <Icon name="notes" />, label: "Subjective" },
   redFlags: { icon: <Icon name="flag" />, label: "Red Flag Screen" },
   vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
@@ -265,7 +273,13 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
+export default function OrthoOutpatientAssessment({ selectedRegions: initialSelectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
+  // Editable, not a fixed prop (2026-09-16, Aditi: "why can't we select
+  // again the demographic and region... I can't go back") -- AI-assisted
+  // entry picks regions on a pre-wizard screen (OrthoAssessment.jsx) that
+  // no longer exists once this component mounts, so re-opening that choice
+  // has to live here now; see the "region" pseudo-step below.
+  const [selectedRegions, setSelectedRegions] = useState(initialSelectedRegions);
   // See AI_ENTRY_SKIP_IDS above -- the one place both the initial stepOrder
   // and handleConditionDetected's later re-union need to agree on which
   // base steps are actually in play, so a mid-session condition detection
@@ -419,8 +433,18 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     if (step < steps.length - 1) setStep(step + 1);
   }
   function goBack() {
-    if (step > 0) setStep(step - 1);
-    else onExit?.();
+    if (step > 0) { setStep(step - 1); return; }
+    // jumpToDemographics()/jumpToRegion() insert their pseudo-step at index
+    // 0 -- without this, hitting Back right after jumping there from
+    // partway through the assessment would exit the whole thing instead of
+    // just backing out of the edit (2026-09-16, Aditi: dots jump in from
+    // anywhere, so Back landing here is now the common case, not an edge
+    // case). Drop the pseudo-step and stay put instead.
+    if (current.id === "demographics" || current.id === "region") {
+      setStepOrder((prev) => prev.filter((id) => id !== current.id));
+      return;
+    }
+    onExit?.();
   }
   function jumpTo(id) {
     const idx = stepOrder.indexOf(id);
@@ -434,6 +458,17 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   function jumpToDemographics() {
     if (!stepOrder.includes("demographics")) {
       setStepOrder((prev) => ["demographics", ...prev]);
+    }
+    setStep(0);
+  }
+  // Same for "region" -- AI-assisted entry picks it on a pre-wizard screen
+  // that's gone once this component mounts, but the journey-dots header
+  // still shows a "Region" stage and it needs to actually go somewhere
+  // (2026-09-16, Aditi: "why can't we select again the demographic and
+  // region... I can't go back").
+  function jumpToRegion() {
+    if (!stepOrder.includes("region")) {
+      setStepOrder((prev) => ["region", ...prev]);
     }
     setStep(0);
   }
@@ -618,7 +653,9 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
                 activeIndex={aiStageIndexFor(current.id)}
                 jumpableIndices={AI_WIZARD_JUMPABLE}
                 onJump={(i) => {
-                  if (i === 2) jumpTo("subjective");
+                  if (i === 0) jumpToDemographics();
+                  else if (i === 1) jumpToRegion();
+                  else if (i === 2) jumpTo("subjective");
                   else if (i === 3) jumpTo("objectiveAI");
                   else if (i === 4) jumpTo(AI_HUB_IDS.find((id) => stepOrder.includes(id)) || "review");
                 }}
@@ -646,6 +683,16 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
 
         <div className="content">
           {current.id === "demographics" && <DemographicsSection data={data} setData={setData} />}
+          {current.id === "region" && (
+            <>
+              <SectionIntro icon="🧭" title="Body Region" sub="What area are you assessing? Select up to 3 — you can always pull in another region later from within ROM, MMT, or Special Tests." />
+              <RegionPicker
+                selectedRegions={selectedRegions}
+                setSelectedRegions={setSelectedRegions}
+                excludeIds={["upperArm", "forearm", "thigh", "leg", "wholeBody", "multiple"]}
+              />
+            </>
+          )}
           {current.id === "subjective" && (
             <SubjectiveSection
               data={data}
