@@ -2167,7 +2167,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               edits made in THIS session show up here immediately instead
               of only after the next autosave flush. */}
           {active==="assessment_report" && (
-            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100vh"}}>
+            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100dvh"}}>
               <AssessmentReportView
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 onNav={navTo}
@@ -2181,7 +2181,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               (Cardio/Neuro/any Ortho pathway, or none) now opens here.
               Same live-data merge as the report view above. */}
           {active==="specialty_profile" && (
-            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100vh"}}>
+            <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100dvh"}}>
               <SpecialtyPatientProfile
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
