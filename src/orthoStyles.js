@@ -40,6 +40,7 @@ export function orthoStyles() {
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
           transform: translateZ(0); -webkit-transform: translateZ(0);
+          contain: paint; isolation: isolate;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
