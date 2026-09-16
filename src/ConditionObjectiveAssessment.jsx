@@ -1177,21 +1177,30 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     <div>
       {regionTabs}
 
-      {/* Same sticky "assistant card" button/copy as the Subjective step's
-          own "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx).
+      {/* Same "assistant card" button/copy as the Subjective step's own
+          "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx).
           The ranked cards below are always visible and already reflect the
           current Subjective data live (2026-09-13, Aditi: "show it normally
           even we dont click button") -- tapping just replays the "Analyzing…"
           beat as a visual refresh cue after editing Subjective, it doesn't
           reveal anything new. The sub-line below spells this out so it's
-          clear the button isn't the only way to see results. */}
+          clear the button isn't the only way to see results.
+          Not sticky: when this renders inside the AI Objective Assessment
+          wizard step, it sat under the same scrolling ancestor as that
+          step's own sticky .topbar (journey dots + back button) and, being
+          `top: 0` itself, rode straight to the very top of the screen on
+          scroll -- landing on top of / interleaved with the topbar instead
+          of under it (2026-09-16, Aditi: "the header it's all mixing up
+          it's clicking so bad ... everything is vibrating"). Matches the
+          single-sticky-header-per-screen pattern already established for
+          .topbar/Cardio's header rather than stacking a second one. */}
       <button
         type="button"
         className={"obj-ai-suggest-btn" + (isAnalyzing ? " thinking" : "")}
         onClick={runSuggestAnalysis}
         disabled={isAnalyzing}
         style={{
-          position: "sticky", top: 0, zIndex: 20, width: "100%", minHeight: 52, padding: "12px 14px", borderRadius: 12,
+          width: "100%", minHeight: 52, padding: "12px 14px", borderRadius: 12,
           cursor: isAnalyzing ? "default" : "pointer", fontFamily: "inherit",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 12, marginBottom: 4, textAlign: "left",
         }}
