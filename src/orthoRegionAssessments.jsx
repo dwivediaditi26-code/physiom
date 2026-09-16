@@ -699,22 +699,24 @@ export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey
         return (
           <div className="test-card" key={t.id}>
             <div className="test-card-title-row">
-              {t.how && <InfoButton imageTrigger size="md" fallbackIcon="ti-clipboard-check" title={t.label} richItem={specialRichItem(t)} />}
-              <div className="test-card-title">{t.label}</div>
+              <div className="test-card-title-main">
+                {t.how && <InfoButton imageTrigger size="md" fallbackIcon="ti-clipboard-check" title={t.label} richItem={specialRichItem(t)} />}
+                <div className="test-card-title">{t.label}</div>
+              </div>
+              {!isSideless && (
+                <div className="side-row">
+                  {["Right", "Left", "Bilateral"].map((s) => (
+                    <button type="button" key={s} className={"side-chip" + (currentSide === s.toLowerCase() ? " side-chip-active" : "")} onClick={() => setSide(s.toLowerCase())}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {(t.structure || t.sensitivity) && (
               <div className="muscle-subtitle">
                 {t.structure && <>Structure: {t.structure}</>}
                 {t.sensitivity && <> · Sens: {t.sensitivity} · Spec: {t.specificity}</>}
-              </div>
-            )}
-            {!isSideless && (
-              <div className="side-row" style={{ marginTop: 6, marginBottom: 8 }}>
-                {["Right", "Left", "Bilateral"].map((s) => (
-                  <button type="button" key={s} className={"side-chip" + (currentSide === s.toLowerCase() ? " side-chip-active" : "")} onClick={() => setSide(s.toLowerCase())}>
-                    {s}
-                  </button>
-                ))}
               </div>
             )}
             <div className="test-radio-row">

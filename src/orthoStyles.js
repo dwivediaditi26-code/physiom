@@ -355,7 +355,14 @@ export function orthoStyles() {
            match the selected grade/outcome, exactly like the real app. */
         .grade-select { border: 1.5px solid ${BRAND.border}; border-radius: 9px; background: #fff; color: ${BRAND.ink}; font-size: 12.5px; font-weight: 700; padding: 6px 8px; min-height: 34px; min-width: 58px; cursor: pointer; }
         .grade-select:focus { outline: none; border-color: ${BRAND.purple}; }
-        .test-card-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+        /* Title row also carries the side selector (2026-09-16, Aditi: "put
+           the special test name beside the photo... right left and
+           bilateral... in the right corner") -- photo+name stay grouped on
+           the left, side chips pinned to the far right of the same row,
+           wrapping to their own line only when the card gets too narrow. */
+        .test-card-title-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 4px; }
+        .test-card-title-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .test-card-title-row .test-card-title { margin-bottom: 0; }
         .test-result-select { width: 100%; margin-top: 8px; min-width: 0; font-size: 12px; }
         .test-result-positive { border-color: #F4C6C6; background: ${BRAND.redBg}; color: #B32424; }
         .test-result-negative { border-color: #B8E6CC; background: ${BRAND.greenBg}; color: #12603A; }
