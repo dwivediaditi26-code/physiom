@@ -167,7 +167,7 @@ export function InfoButton(props) {
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
       {imageTrigger ? (
-        <button type="button" className="info-img-trigger" onClick={openSheet} aria-label={heading ? `View ${heading}` : "View details"}>
+        <button type="button" className={"info-img-trigger" + (small ? " info-img-trigger-sm" : "")} onClick={openSheet} aria-label={heading ? `View ${heading}` : "View details"}>
           {imgSrc && !imgFailed ? (
             <img src={imgSrc} alt="" onError={() => setImgFailed(true)} />
           ) : (

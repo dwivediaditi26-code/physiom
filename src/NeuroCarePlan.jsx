@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, createContext, useContext } from "react";
-import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND, InfoButton } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB } from "./sharedClinicalData.js";
+import { exerciseRichItem } from "./exerciseCardKit.jsx";
 import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
 import { EvidenceProtocolBrowser } from "./orthoEvidenceProtocols.jsx";
 import { listClinicProtocols } from "./clinicProtocols.js";
@@ -85,6 +86,11 @@ const EQUIPMENT = ["None", "Chair", "Plinth", "Parallel bars", "Walker/frame", "
 // dropping the type-specific fields — Maitland grade, DN muscle/needles,
 // taping pattern, US frequency, etc. — the wizard's step captures).
 const uid = () => Math.random().toString(36).slice(2, 9);
+// Sentinel `cat` value for the Add Treatment panel's "All" tile (2026-09-16,
+// Aditi: treatment-type tiles first, not a flat category list) -- distinct
+// from a real category name so `cat === ALL_TYPES` unambiguously means
+// "every category", same idea as Exercise Prescription's own "All" tile.
+const ALL_TYPES = "__all__";
 
 // Defensive: a finding value must render as text. Current data stores
 // strings, but legacy records can carry an object (e.g. per-limb tone maps);
@@ -409,7 +415,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
 
   const results = search.trim()
     ? all.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
-    : cat ? all.filter((e) => e._cat === cat) : [];
+    : cat === ALL_TYPES ? all : cat ? all.filter((e) => e._cat === cat) : [];
 
   const startDose = (ex) => {
     setPicked(ex);
@@ -499,12 +505,25 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
             )}
             {!browseMode && !search.trim() && !cat && kind === "exercises" && (
               <div className="ct-group">
-                <div className="ct-group-title">ALL TREATMENT TYPES</div>
-                {cats.map((c) => (
-                  <button key={c} type="button" className="ct-item" onClick={() => setCat(c)}>
-                    <span>{c}</span>
+                <div className="ct-group-title">TREATMENT TYPES</div>
+                <div className="picker-grid">
+                  <button type="button" className="picker-card" onClick={() => setCat(ALL_TYPES)}>
+                    <div className="picker-icon">🗂️</div>
+                    <div>
+                      <div className="picker-label">All</div>
+                      <div className="picker-desc">{all.length} exercise{all.length === 1 ? "" : "s"}</div>
+                    </div>
                   </button>
-                ))}
+                  {cats.map((c) => (
+                    <button key={c} type="button" className="picker-card" onClick={() => setCat(c)}>
+                      <div className="picker-icon">🏋</div>
+                      <div>
+                        <div className="picker-label">{c}</div>
+                        <div className="picker-desc">{activeCategories[c].length} exercise{activeCategories[c].length === 1 ? "" : "s"}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {/* Manual entry — for modalities/techniques not in the exercise
@@ -538,20 +557,33 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
             {(search.trim() || (!browseMode && cat)) && (
               <div className="ct-group">
                 <div className="ct-group-title">
-                  {search.trim() ? `RESULTS (${results.length})` : cat}
+                  {search.trim() ? `RESULTS (${results.length})` : cat === ALL_TYPES ? "All" : cat}
                   {!search.trim() && <button type="button" onClick={() => setCat(null)} style={{ marginLeft: 8, background: "none", border: "none", color: BRAND.purple, fontWeight: 700, fontSize: 11, cursor: "pointer" }}>← all types</button>}
                 </div>
                 {results.length === 0 && <div className="summary-empty">No matching treatments.</div>}
+                {/* Thumbnail (2026-09-16, Aditi: "the photos... beside the
+                    exercise name... when we click on the photo, it should
+                    show the info card") -- same imageTrigger pattern ROM/
+                    Special Tests already use, same Cloudinary asset the
+                    info sheet's own hero photo shows, so thumbnail and
+                    sheet can't drift apart. Row itself is a div now (a
+                    button can't nest another button), with the
+                    thumbnail as its own tap target and the name/target
+                    area as a separate button that starts dosing. */}
                 {results.map((e) => {
                   const already = existing.has(e.id);
                   return (
-                    <button key={e.id} type="button" className="ct-item" onClick={() => (already ? null : startDose(e))} disabled={already}>
-                      <span style={{ flex: 1, textAlign: "left" }}>
-                        <span style={{ fontWeight: 600 }}>{e.name}</span>
-                        <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{e.target}</span>
-                      </span>
-                      <span style={{ color: already ? BRAND.gray : BRAND.purple, fontWeight: 700, fontSize: 12 }}>{already ? "Added" : "＋ Add"}</span>
-                    </button>
+                    <div key={e.id} className="ct-item" style={{ paddingLeft: 4 }}>
+                      <InfoButton imageTrigger small fallbackIcon="ti-barbell" title={e.name} richItem={exerciseRichItem(e)} />
+                      <button type="button" onClick={() => (already ? null : startDose(e))} disabled={already}
+                        style={{ flex: 1, display: "flex", alignItems: "center", background: "none", border: "none", padding: 0, cursor: already ? "default" : "pointer", fontFamily: "inherit" }}>
+                        <span style={{ flex: 1, textAlign: "left" }}>
+                          <span style={{ fontWeight: 600 }}>{e.name}</span>
+                          <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{e.target}</span>
+                        </span>
+                        <span style={{ color: already ? BRAND.gray : BRAND.purple, fontWeight: 700, fontSize: 12 }}>{already ? "Added" : "＋ Add"}</span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>

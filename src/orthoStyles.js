@@ -152,6 +152,12 @@ export function orthoStyles() {
         .info-img-trigger { flex: 0 0 auto; width: 96px; height: 96px; border-radius: 16px; border: none; padding: 0; overflow: hidden; background: #F6F5FA; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .info-img-trigger img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .info-img-trigger i { font-size: 34px; color: ${BRAND.grayLight}; }
+        /* Compact variant for inline list rows (Add Treatment's exercise
+           results, 2026-09-16, Aditi: "the photos... small photos beside
+           the exercise name") -- same trigger, same sheet, just sized down
+           to sit next to a name/target line instead of a full tile. */
+        .info-img-trigger-sm { width: 40px; height: 40px; border-radius: 10px; }
+        .info-img-trigger-sm i { font-size: 18px; }
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
