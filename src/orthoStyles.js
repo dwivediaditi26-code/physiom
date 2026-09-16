@@ -39,6 +39,15 @@ export function orthoStyles() {
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
+          /* Same GPU-compositor-layer promotion as AppFull.jsx's .pm-header
+             (2026-09-16, Aditi: "the header is shaking like an earthquake
+             when I am scrolling") -- this sticky topbar sits right below
+             that one and was repainted every scroll frame the same way,
+             which on the AI Objective Assessment screen (long content,
+             frequent scrolling) showed up as visible jitter and made the
+             journey dots/back button hard to tap accurately mid-scroll. */
+          transform: translateZ(0); -webkit-transform: translateZ(0);
+          will-change: transform; backface-visibility: hidden;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
@@ -174,8 +183,14 @@ export function orthoStyles() {
            therapist gets the full teaching card without leaving the
            assessment. Sheet itself grows via its existing max-height:82vh. */
         .sheet-subtitle { font-size: 13px; font-weight: 700; color: ${BRAND.purple}; margin: -6px 0 10px; flex-shrink: 0; }
-        .sheet-hero { position: relative; background: ${BRAND.purpleFaint}; border-radius: 14px; overflow: hidden; margin-bottom: 10px; min-height: 90px; max-height: 150px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; flex-shrink: 0; }
-        .sheet-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* aspect-ratio:1/1 instead of a min/max-height range (2026-09-16,
+           Aditi: "put the images of the exercises in a square box") -- the
+           reference photo is usually a 2x2 numbered step grid baked into
+           one image, and the old height range let object-fit:cover crop it
+           unevenly depending on the sheet's width. A fixed square keeps the
+           whole 2x2 grid visible and consistent everywhere it's shown. */
+        .sheet-hero { position: relative; background: ${BRAND.purpleFaint}; border-radius: 14px; overflow: hidden; margin-bottom: 10px; aspect-ratio: 1 / 1; width: 100%; display: flex; align-items: center; justify-content: center; cursor: zoom-in; flex-shrink: 0; }
+        .sheet-hero img { width: 100%; height: 100%; object-fit: contain; display: block; }
         .sheet-hero-fallback { color: ${BRAND.grayLight}; font-size: 12px; padding: 40px 0; }
         .sheet-hero-zoom { position: absolute; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(20,10,45,.55); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
 

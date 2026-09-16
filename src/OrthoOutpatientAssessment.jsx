@@ -113,7 +113,14 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // used to only appear when a condition's `promote` list named it (Spine,
 // Sports/Overuse) or the therapist added it manually; now it's a standard
 // step like ROM/MMT for every Outpatient entry.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
+// "techniques" (Treatment Techniques) dropped from the default step list
+// (2026-09-16, Aditi: "remove the treatment techniques as it's already in
+// the care plan treatment") -- Care Plan Treatment (carePlanTreatment,
+// part of CAREPLAN_STEP_IDS below) already records this, so it was a
+// duplicate entry screen. Kept out of OPTIONAL_IDS too (not offered via
+// "Add assessment"); still in ORDERED_ALL/STEP_META so a patient record
+// saved before this change still renders correctly in Review/Summary.
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -127,7 +134,7 @@ const OPTIONAL_IDS = ["vitals", "edema", "neuroScreen", "kineticChain", "cpa", "
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
-const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
+const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
 // Demographics(0)/Region(1) already happened pre-wizard for AI entry, so
 // this component's own stages start at Subjective(2); anything in
 // AI_HUB_IDS collapses onto the single "Summary" dot (4).
