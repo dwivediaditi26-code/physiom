@@ -108,7 +108,12 @@ const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
+// specialTests moved from OPTIONAL_IDS to BASE_IDS (2026-09-16, Aditi:
+// "why the special test is not showing constantly? It should show") -- it
+// used to only appear when a condition's `promote` list named it (Spine,
+// Sports/Overuse) or the therapist added it manually; now it's a standard
+// step like ROM/MMT for every Outpatient entry.
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -117,8 +122,8 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // data") -- OrthoAssessment.jsx now collects it pre-wizard, one screen
 // before Region, and feeds it in via initialAiUpdates.demographics exactly
 // like an AI-parsed narrative already did.
-const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt"];
-const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests"];
+const OPTIONAL_IDS = ["vitals", "edema", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
@@ -347,6 +352,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     const idx = stepOrder.indexOf(initialStep);
     return idx >= 0 ? idx : 0;
   });
+  // Every wizard step shares the same scroll container, so it never gets a
+  // fresh scrollTop of its own -- tapping a StepNav circle after scrolling
+  // deep into the previous step used to land the new step already scrolled
+  // down instead of at its top (2026-09-16, Aditi: "when I click on the
+  // second tab, it takes me to that end scrolling page"). Same reset
+  // AppFull.jsx's own navTo() already does for top-level tab switches.
+  useEffect(() => {
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
+  }, [step]);
   // Seeds Subjective/Pain once, up front, from whatever the AI-intake
   // landing screen produced (OrthoAssessment.jsx) -- either an AI parse of
   // the clinician's own words, or an import of this same patient's existing
