@@ -100,19 +100,24 @@ const renderVal = (v) => (v == null ? "" : typeof v === "object" ? Object.values
 const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: bg, color });
 
 // Bottom CTA so "Continue"/"Review" is always reachable without scrolling to
-// the end of a long list (2026-09-03, Aditi: "make it like static in screen").
+// the end of a long list (2026-09-03, Aditi: "make it like static in
+// screen"; 2026-09-16, Aditi: "when we on goal or problem list page and add
+// to plan we have to scroll down to add to the plan... make it constant").
 // When the Care Plan is embedded in the patient profile (floatingCTA), the CTA
 // is a FIXED bar floating above the app's ~64px bottom nav — sticky can't do
 // this for a last-child element (nothing below it to stick against). In the
-// assessment wizard (no floatingCTA) it stays in normal flow so it never
-// overlaps the wizard's own Back/Next footer.
+// assessment wizard (no floatingCTA) it floats the same way, just above the
+// wizard's OWN fixed Back/Next bar (.bottombar, orthoStyles.js: bottom 60px
+// + ~70px of its own height) instead of the app's bottom nav, so it never
+// overlaps that footer.
 // bottom uses calc(...) rather than a plain number because .pm-bnav (the
 // bottom nav in utils.jsx) now carries padding-bottom: env(safe-area-inset-
 // bottom) for the iOS home-indicator safe area, making it taller on notched
 // devices -- this offset must grow by the same amount or the CTA sits
 // behind the nav bar instead of above it.
 const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(74px + env(safe-area-inset-bottom))", width: "min(680px, calc(100vw - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
-const ctaStyle = (floating, base) => (floating ? { ...base, ...FLOATING_CTA } : base);
+const FLOATING_CTA_WIZARD = { ...FLOATING_CTA, bottom: "calc(138px + env(safe-area-inset-bottom))" };
+const ctaStyle = (floating, base) => ({ ...base, ...(floating ? FLOATING_CTA : FLOATING_CTA_WIZARD) });
 // Extra bottom padding so the last card isn't hidden behind the fixed bar.
 const FLOATING_PAD = { paddingBottom: 84 };
 
@@ -366,7 +371,7 @@ function SourceTab({ icon, label, sub, active, onClick }) {
 // button-per-goal to open it from) -- goal-linking is just an optional
 // checklist on the dose-confirm screen, same as the "general" treatment
 // flow already supported.
-function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, setSearch, searchOpen, setSearchOpen }) {
+function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
   const kb = useKB();
   const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
   // Full region switcher (2026-09-11, Aditi: "exercise prescription have
@@ -395,6 +400,12 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
   // source already uses -- no new dose screen, no new onAdd shape.
   const [browseMode, setBrowseMode] = useState(null); // null | "protocol" | "clinic"
   const [kind, setKind] = useState("exercises"); // "exercises" | "manual" -- which library sub-view is shown
+  // Tells TreatmentPhase to hide its own floating "Review treatment plan"
+  // button while a dose is being edited here, so the two fixed-position
+  // bars don't stack on top of each other at the same screen position
+  // (2026-09-16, Aditi: "after selecting treatment it['s] button is not
+  // constant showing... in manual technique also").
+  useEffect(() => { onDoseEditingChange?.(!!(picked || techType)); }, [picked, techType]);
   const [savedProtocols, setSavedProtocols] = useState([]);
   const [savedProtocolsLoading, setSavedProtocolsLoading] = useState(false);
   const openClinicProtocols = () => {
@@ -416,7 +427,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
   };
 
   return (
-    <div>
+    <div style={(picked || techType) ? FLOATING_PAD : undefined}>
       {(picked || techType) && (
         <div style={{ fontWeight: 800, fontSize: 15, margin: "4px 0 10px" }}>
           {picked ? picked.name : TECHNIQUE_TYPES.find((t) => t.key === techType)?.label}
@@ -657,7 +668,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
               <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>No goals yet — this will be saved as a general treatment; link it to a goal once you add one.</div>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <div style={ctaStyle(floatingCTA, { display: "flex", gap: 8, marginTop: 14 })}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setPicked(null); setDose(null); }}>Back</button>
             <button type="button" className="primary-btn" style={{ flex: 2 }}
               onClick={() => { onAdd({ id: uid(), exerciseId: picked.id, name: picked.name, category: picked._cat, ...dose, goalIds: linked }); setPicked(null); setDose(null); setLinked([]); }}>
@@ -694,7 +705,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
               <div style={{ fontSize: 10.5, color: BRAND.gray, padding: "6px 4px 0" }}>No goals yet — this will be saved as a general treatment; link it to a goal once you add one.</div>
             )}
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <div style={ctaStyle(floatingCTA, { display: "flex", gap: 8, marginTop: 14 })}>
             <button type="button" className="ghost-btn" style={{ flex: 1 }} onClick={() => { setTechType(null); setTechForm(BLANK_TECHNIQUE); }}>Back</button>
             <button type="button" className="primary-btn" style={{ flex: 2 }}
               onClick={() => { onAdd({ id: uid(), name: techniqueLabel(techForm), category: "Technique", ...techForm, goalIds: linked }); setTechType(null); setTechForm(BLANK_TECHNIQUE); setLinked([]); }}>
@@ -737,6 +748,10 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
   // dead space before the treatment-type tiles.
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  // Hides this component's own floating "Review treatment plan" bar while
+  // AddTreatmentPanel's floating "Add to plan" bar is showing -- both are
+  // position:fixed at the same spot, so only one can be on screen at once.
+  const [doseEditing, setDoseEditing] = useState(false);
 
   return (
     <>
@@ -797,7 +812,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         </div>
       )}
 
-      {treatments.length > 0 && (
+      {treatments.length > 0 && !doseEditing && (
         <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginBottom: 18 })} onClick={onNext}>Review treatment plan →</button>
       )}
 
@@ -809,6 +824,8 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         allGoals={goals}
         existing={new Set(treatments.map((t) => t.exerciseId))}
         requireAuth={requireAuth}
+        floatingCTA={floatingCTA}
+        onDoseEditingChange={setDoseEditing}
         search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
         onAdd={(t) => {
           // If this exercise is already in the plan (added under another
