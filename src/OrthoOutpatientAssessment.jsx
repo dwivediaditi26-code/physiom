@@ -267,7 +267,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   // Assessment, that step's own Observation/Palpation subtopic tabs cover
   // the exact same ground Suggested Objective used to, making it pure
   // duplication for AI entry too, not just General/Condition-wise entry.
-  const effectiveBaseIds = BASE_IDS.filter((id) => id !== "suggest" && (entryMode !== "ai" || !AI_ENTRY_SKIP_IDS.includes(id)));
+  // "AI Objective Assessment" is only useful for the AI-assisted entry
+  // (it's the step that covers Observation/Palpation/ROM/MMT inline for
+  // that flow) -- General/Condition-wise entry already gets those as their
+  // own plain steps below, so showing objectiveAI there too was a second,
+  // redundant tab (2026-09-16, Aditi: "remove the AI objective assessment
+  // tab it should be normally basic").
+  const effectiveBaseIds = BASE_IDS.filter(
+    (id) => id !== "suggest" && (entryMode !== "ai" || !AI_ENTRY_SKIP_IDS.includes(id)) && (id !== "objectiveAI" || entryMode === "ai")
+  );
   // `condition` used to be a plain prop, fixed for the whole assessment --
   // AI Assisted Assessment always enters with condition="general", which
   // meant Suggested Objective (orthoObjectiveSuggestions.js) could never
