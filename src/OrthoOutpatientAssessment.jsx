@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, InfoButton, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
@@ -745,12 +745,19 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                   landing here with no context had no way to connect it back
                   to the Subjective answers they'd just filled in (2026-09-15,
                   Aditi: wants this "stepwise" and clear for students new to
-                  the app). */}
-              <SectionIntro
-                icon="🧭"
-                title="AI Objective Assessment"
-                info="This reads the Subjective answers you already entered — especially the ⭐ starred ones — and ranks which conditions best fit them, before you've done a single objective test. Pick a condition tab below to see its suggested ROM/MMT/Special Tests; performing those then sharpens the ranking further. If a region shows 'no Subjective data yet', go back to Subjective and fill in its region-specific checklist first."
-              />
+                  the app). That explanation used to be a full SectionIntro
+                  (icon + big title + info button) -- but the AI-wizard's own
+                  sticky .topbar already shows this exact step's icon and
+                  "AI Objective Assessment" title right above, so the two
+                  stacked was the same heading twice plus its margins, eating
+                  a big chunk of the screen before any real content
+                  (2026-09-16, Aditi: "it's taking so much white space...
+                  wherever the written font is it should stop there only").
+                  Keeping just the (i) button preserves the explanation
+                  without repeating the heading. */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+                <InfoButton text="This reads the Subjective answers you already entered — especially the ⭐ starred ones — and ranks which conditions best fit them, before you've done a single objective test. Pick a condition tab below to see its suggested ROM/MMT/Special Tests; performing those then sharpens the ranking further. If a region shows 'no Subjective data yet', go back to Subjective and fill in its region-specific checklist first." />
+              </div>
               <ConditionObjectiveAssessment
                 data={data}
                 setData={setData}
