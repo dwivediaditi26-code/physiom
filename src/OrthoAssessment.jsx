@@ -41,10 +41,14 @@ const PATHWAY_META = {
   outpatient: { Component: OrthoOutpatientAssessment, conditions: OUTPATIENT_CONDITIONS, label: "Outpatient / Musculoskeletal" },
 };
 
-// Demographics/Region/Subjective (indices 0-2) are the only stages this
-// pre-wizard screen can actually jump between -- AI Objective/Summary
-// (3-4) don't exist until the wizard mounts.
-const AI_PRE_WIZARD_JUMPABLE = new Set([0, 1, 2]);
+// All 5 stages are jumpable from here, including AI Objective/Summary
+// (3-4) -- those used to render as plain, unclickable labels because the
+// wizard they live in only mounted once Subjective was finished. Jumping
+// to them now (handleJourneyJump, below) mounts the wizard straight onto
+// that stage instead, leaving Subjective blank rather than gating on it
+// (2026-09-16, Aditi: "should be activated and can be clicked on it even
+// if the subjective assessment is not filled").
+const AI_PRE_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
 const OPD_MODES = [
   { id: "condition", icon: "🩺", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
@@ -112,6 +116,31 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   // different side, or joined by any other region. Subjective is now the
   // last pre-wizard phase (2026-09-16 reorder), so finishing it mounts the
   // wizard immediately -- nothing left to ask before then.
+  // AI Objective(3)/Summary(4) used to render as plain, unclickable labels
+  // on the pre-wizard Demographics/Region/Subjective screens -- the wizard
+  // component (which those two stages actually live in) only ever mounted
+  // once Subjective was finished, so there was no page to jump to yet
+  // (2026-09-16, Aditi: "it should not be the way... should be activated
+  // and can be clicked on it even if the subjective assessment is not
+  // filled"). Mounts the wizard right now, straight onto that stage,
+  // leaving Subjective (and anything else not yet filled) simply blank --
+  // nothing here requires it, and the wizard's own dots still let you come
+  // back to fill it later. Whatever Demographics/Region data was already
+  // entered still carries over via aiDemographicsData/selectedRegions below.
+  const [pendingInitialStep, setPendingInitialStep] = useState(undefined);
+  function jumpToWizardStage(targetStepId) {
+    setPathway("outpatient");
+    setCondition("general");
+    setOpdMode("general");
+    setPickedAi(true);
+    setPendingInitialStep(targetStepId);
+    setStep(3);
+  }
+  function handleJourneyJump(i) {
+    if (i <= 2) { setAiSubStep(i); return; }
+    jumpToWizardStage(i === 3 ? "objectiveAI" : "functionalAssessment");
+  }
+
   function applyIntakeUpdates(updates) {
     setPendingAiUpdates(updates);
     const suggested = (updates?.regions || []).filter((r) => r && r.id);
@@ -144,6 +173,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
     setSubjectiveChoice(null);
+    setPendingInitialStep(undefined);
   }
 
   function selectAiAssisted() {
@@ -157,6 +187,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
     setSubjectiveChoice(null);
+    setPendingInitialStep(undefined);
     setStep(1);
   }
 
@@ -183,7 +214,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         }
         entryMode={effectiveEntryMode}
         initialData={resume?.data}
-        initialStep={resume ? resume.initialStep || "review" : undefined}
+        initialStep={pendingInitialStep || (resume ? resume.initialStep || "review" : undefined)}
       />
     );
   }
@@ -290,14 +321,14 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 0 && (
             <>
-              <AiJourneyDots activeIndex={0} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+              <AiJourneyDots activeIndex={0} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <DemographicsSection data={aiDemographicsData} setData={setAiDemographicsData} />
             </>
           )}
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 1 && (
             <>
-              <AiJourneyDots activeIndex={1} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+              <AiJourneyDots activeIndex={1} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro
                 icon="🧭"
                 title="Body Region"
@@ -321,7 +352,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
             <>
-              <AiJourneyDots activeIndex={2} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+              <AiJourneyDots activeIndex={2} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
               {subjectiveChoice !== "ai" && (
                 <>
