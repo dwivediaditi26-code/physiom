@@ -65,8 +65,11 @@ export function ConditionPicker({ conditions, condition, setCondition, customLab
 /* Region multi-select with per-region Right/Left/Bilateral side chips, plus
    a write-in row for a region that isn't in the standard list — used
    identically by every Ortho module (IPD, Post-op Rehab, Outpatient, ...). */
-export function RegionPicker({ selectedRegions, setSelectedRegions }) {
+export function RegionPicker({ selectedRegions, setSelectedRegions, excludeIds }) {
   const [customText, setCustomText] = useState("");
+  const groups = excludeIds
+    ? REGION_GROUPS.map((g) => ({ ...g, items: g.items.filter((it) => !excludeIds.includes(it.id)) })).filter((g) => g.items.length > 0)
+    : REGION_GROUPS;
   function toggleRegion(id) {
     setSelectedRegions((prev) => {
       const exists = prev.find((r) => r.id === id);
@@ -86,7 +89,7 @@ export function RegionPicker({ selectedRegions, setSelectedRegions }) {
   const customRegions = selectedRegions.filter((r) => r.customLabel);
   return (
     <>
-      {REGION_GROUPS.map((g) => (
+      {groups.map((g) => (
         <div key={g.group} className="region-group">
           <div className="region-group-title">{g.group.toUpperCase()}</div>
           <div className="region-chip-wrap">

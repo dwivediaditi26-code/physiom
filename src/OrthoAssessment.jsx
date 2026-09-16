@@ -252,7 +252,14 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
                   ✨ Pre-selected from what you already told us: <b>{regionLabelList(aiSuggestedRegions)}</b> — check it's right, then add, remove, or change the side below.
                 </Hint>
               )}
-              <RegionPicker selectedRegions={selectedRegions} setSelectedRegions={setSelectedRegions} />
+              {/* Outpatient only (2026-09-16, Aditi): drop the in-between
+                  segment/general options -- IPD and Post-op Rehab keep the
+                  full list. */}
+              <RegionPicker
+                selectedRegions={selectedRegions}
+                setSelectedRegions={setSelectedRegions}
+                excludeIds={isOutpatient ? ["forearm", "thigh", "leg", "wholeBody", "multiple"] : undefined}
+              />
             </>
           )}
 
