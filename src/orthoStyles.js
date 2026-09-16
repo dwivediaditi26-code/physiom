@@ -48,6 +48,15 @@ export function orthoStyles() {
              journey dots/back button hard to tap accurately mid-scroll. */
           transform: translateZ(0); -webkit-transform: translateZ(0);
           will-change: transform; backface-visibility: hidden;
+          /* Still vibrating after the above (2026-09-16, Aditi: "there is
+             still the problem"). Two independently-stuck position:sticky
+             elements (this one, right under .pm-mobile-hdr) recalculating
+             and repainting together every scroll frame is a known source
+             of visible flicker in WebKit even with each individually
+             GPU-promoted -- contain+isolation gives this one its own
+             paint/stacking context so the browser stops coupling the two
+             sticky elements' repaints. */
+          contain: paint; isolation: isolate;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
