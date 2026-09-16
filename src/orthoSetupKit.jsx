@@ -10,18 +10,34 @@ import { REGION_GROUPS, REGION_LABEL, regionDisplayLabel, regionLabelList } from
    Exported here (rather than living in just one of those two files) since
    both need it. */
 export const AI_JOURNEY_STAGES = ["Demographics", "Region", "Subjective", "AI Objective", "Summary"];
-export function AiJourneyDots({ activeIndex }) {
+// onJump(i), when given, is only wired up for the stages listed in
+// jumpableIndices -- a stage the host component can't actually reach right
+// now (e.g. tapping "Region" from inside the wizard, after Demographics/
+// Region already happened pre-wizard and that screen no longer exists)
+// renders as plain text, not a dead button (2026-09-16, Aditi: "when I'm
+// selecting region or subjective... it should jump" -- but only where
+// jumping is real, not everywhere the dot appears).
+export function AiJourneyDots({ activeIndex, onJump, jumpableIndices }) {
   return (
     <div className="ai-journey-dots">
-      {AI_JOURNEY_STAGES.map((label, i) => (
-        <React.Fragment key={label}>
-          {i > 0 && <div className={"ai-journey-line" + (i <= activeIndex ? " done" : "")} />}
-          <div className="ai-journey-step">
-            <div className={"ai-journey-dot" + (i === activeIndex ? " active" : i < activeIndex ? " done" : "")} />
-            <div className={"ai-journey-label" + (i === activeIndex ? " active" : "")}>{label}</div>
-          </div>
-        </React.Fragment>
-      ))}
+      {AI_JOURNEY_STAGES.map((label, i) => {
+        const canJump = onJump && i !== activeIndex && (!jumpableIndices || jumpableIndices.has(i));
+        return (
+          <React.Fragment key={label}>
+            {i > 0 && <div className={"ai-journey-line" + (i <= activeIndex ? " done" : "")} />}
+            <div className="ai-journey-step">
+              <div className={"ai-journey-dot" + (i === activeIndex ? " active" : i < activeIndex ? " done" : "")} />
+              {canJump ? (
+                <button type="button" className="ai-journey-label ai-journey-label-btn" onClick={() => onJump(i)}>
+                  {label}
+                </button>
+              ) : (
+                <div className={"ai-journey-label" + (i === activeIndex ? " active" : "")}>{label}</div>
+              )}
+            </div>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }

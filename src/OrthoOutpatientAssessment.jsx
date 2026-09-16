@@ -136,6 +136,10 @@ function aiStageIndexFor(id) {
   if (id === "objectiveAI") return 3;
   return 4;
 }
+// Demographics/Region (0-1) happened pre-wizard and no longer have a screen
+// to jump back to from inside this component; Subjective/AI Objective/
+// Summary (2-4) are all real, current steps.
+const AI_WIZARD_JUMPABLE = new Set([2, 3, 4]);
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
@@ -610,7 +614,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
               from any of the others, not forced into a fixed order. */}
           {entryMode === "ai" ? (
             <>
-              <AiJourneyDots activeIndex={aiStageIndexFor(current.id)} />
+              <AiJourneyDots
+                activeIndex={aiStageIndexFor(current.id)}
+                jumpableIndices={AI_WIZARD_JUMPABLE}
+                onJump={(i) => {
+                  if (i === 2) jumpTo("subjective");
+                  else if (i === 3) jumpTo("objectiveAI");
+                  else if (i === 4) jumpTo(AI_HUB_IDS.find((id) => stepOrder.includes(id)) || "review");
+                }}
+              />
               {AI_HUB_IDS.includes(current.id) && (
                 <AiHubNav
                   items={AI_HUB_IDS.filter((id) => stepOrder.includes(id)).map((id) => ({ id, label: STEP_META[id].label }))}

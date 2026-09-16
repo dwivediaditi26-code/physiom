@@ -67,7 +67,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
 // adjacent to gender").
 function AgeQuickSelect({ value, onChange }) {
   return (
-    <FieldShell label="Age">
+    <FieldShell label="Age (yrs)">
       <div className="age-select-wrap">
         <select className="age-select" value={value || ""} onChange={(e) => onChange(e.target.value)}>
           <option value="">—</option>
@@ -75,7 +75,6 @@ function AgeQuickSelect({ value, onChange }) {
             <option key={n} value={n}>{n}</option>
           ))}
         </select>
-        <span className="combo-unit">yrs</span>
       </div>
     </FieldShell>
   );

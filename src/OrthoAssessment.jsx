@@ -41,6 +41,11 @@ const PATHWAY_META = {
   outpatient: { Component: OrthoOutpatientAssessment, conditions: OUTPATIENT_CONDITIONS, label: "Outpatient / Musculoskeletal" },
 };
 
+// Demographics/Region/Subjective (indices 0-2) are the only stages this
+// pre-wizard screen can actually jump between -- AI Objective/Summary
+// (3-4) don't exist until the wizard mounts.
+const AI_PRE_WIZARD_JUMPABLE = new Set([0, 1, 2]);
+
 const OPD_MODES = [
   { id: "condition", icon: "🩺", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
   { id: "general", icon: "📋", label: "General Assessment", desc: "Standard OPD assessment — nothing pre-promoted, add whatever you need" },
@@ -285,14 +290,14 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 0 && (
             <>
-              <AiJourneyDots activeIndex={0} />
+              <AiJourneyDots activeIndex={0} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <DemographicsSection data={aiDemographicsData} setData={setAiDemographicsData} />
             </>
           )}
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 1 && (
             <>
-              <AiJourneyDots activeIndex={1} />
+              <AiJourneyDots activeIndex={1} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro
                 icon="🧭"
                 title="Body Region"
@@ -316,7 +321,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
             <>
-              <AiJourneyDots activeIndex={2} />
+              <AiJourneyDots activeIndex={2} onJump={setAiSubStep} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
               {subjectiveChoice !== "ai" && (
                 <>

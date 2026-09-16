@@ -373,14 +373,14 @@ export function orthoStyles() {
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
         .select-input { cursor: pointer; }
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
-        .age-select-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 10px; min-height: 44px; }
-        .age-select { flex: 1; border: none; outline: none; font-size: 15px; font-weight: 600; padding: 8px 2px; background: transparent; min-width: 0; color: ${BRAND.ink}; }
+        .age-select-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; min-height: 44px; }
+        .age-select { flex: 1; border: none; outline: none; font-size: 15px; font-weight: 600; padding: 8px 0; background: transparent; min-width: 0; width: 100%; color: ${BRAND.ink}; }
         /* Age fixed-width + Gender flexible, not an even 50/50 split -- at
            50% the 3-pill Gender row had no room and wrapped to a 2nd line,
            leaving Age's single-line box floating with empty space beside
            it (2026-09-16, Aditi: "so much gap... make it compact"). A
            narrow, content-sized Age column keeps both fields one line tall. */
-        .age-gender-row > *:first-child { flex: 0 0 104px; }
+        .age-gender-row > *:first-child { flex: 0 0 108px; }
         .age-gender-row > *:last-child { flex: 1 1 auto; min-width: 0; }
         .age-gender-row .segmented { flex-wrap: nowrap; }
         .age-gender-row .seg-btn { flex: 1 1 0; padding-left: 6px; padding-right: 6px; text-align: center; }
@@ -800,6 +800,8 @@ export function orthoStyles() {
         .ai-journey-dot.active { background: ${BRAND.purple}; box-shadow: 0 0 0 4px ${BRAND.purpleFaint}; transform: scale(1.15); }
         .ai-journey-label { font-size: 9px; color: ${BRAND.gray}; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; }
         .ai-journey-label.active { color: ${BRAND.purple}; }
+        .ai-journey-label-btn { font-size: 9px; color: ${BRAND.purpleDark}; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
+        .ai-journey-label-btn:active { text-decoration-color: currentColor; }
         .ai-journey-line { flex: 1; height: 2px; background: ${BRAND.border}; margin: 4px 2px 0; }
         .ai-journey-line.done { background: ${BRAND.purple}; }
 
