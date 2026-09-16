@@ -377,37 +377,29 @@ function conditionMatchPct(m) {
   return Math.round((m.supportingMatched.length / m.supportingTotal) * 100);
 }
 
-// Tile color cycles purple/blue/green by rank position, not match tier --
-// the match tier/supporting-signs detail still surfaces in the line below
-// the row once a condition is selected, so nothing is lost by keeping the
-// tile itself simple (2026-09-16, Aditi: match a reference mockup's L01/
-// L02/L03 colored-tile picker).
-const COND_TILE_PALETTE = [
-  { bg: BRAND.purpleFaint, accent: BRAND.purple, code: BRAND.purpleDark },
-  { bg: "#EAF2FE", accent: "#3B82F6", code: "#1D4ED8" },
-  { bg: BRAND.greenBg, accent: BRAND.green, code: "#15803D" },
-];
-
 function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
   return (
     <div className="obj-match-row">
-      {order.map((id, i) => {
+      {order.map((id) => {
         const c = conditions[id];
         if (!c) return null;
+        const m = matchById[id];
+        const pct = conditionMatchPct(m);
         const isActive = id === activeId;
-        const pal = COND_TILE_PALETTE[i % COND_TILE_PALETTE.length];
         return (
           <button
             key={id}
             type="button"
             className={"obj-match-card" + (isActive ? " obj-match-card-active" : "")}
-            style={{ background: pal.bg, borderColor: isActive ? pal.accent : "transparent" }}
             onClick={() => onSelect(id)}
           >
-            <span className="obj-match-check" style={{ borderColor: pal.accent, background: isActive ? pal.accent : "#fff" }}>
-              {isActive && <i className="ti ti-check" aria-hidden="true"></i>}
-            </span>
-            <span className="obj-match-pct" style={{ color: pal.code }}>{id}</span>
+            {pct != null ? (
+              <span className="obj-match-pct">{pct}%</span>
+            ) : m ? (
+              <span className="obj-match-pct" style={{ color: MATCH_TIER_TONE[m.matchTier] }}>{m.matchTier}</span>
+            ) : (
+              <span className="obj-match-pct" style={{ fontSize: 13 }}>{id}</span>
+            )}{" "}
             <span className="obj-match-name">{c.name}</span>
           </button>
         );
@@ -454,13 +446,15 @@ const SUBTOPICS = [
   { key: "outcome", label: "Outcome measures", icon: "ti-chart-line" },
 ];
 
-// Plain tap-to-select pill tabs (2026-09-16, Aditi: match a reference
-// mockup's simple purple-pill tab row) -- replaces the earlier piano-roll
-// wheel picker where scrolling itself drove selection. Tapping a tile still
-// scrolls it into view so the active pill stays visible.
+// Scrolling the row itself drives selection -- whichever tile's center is
+// nearest the track's center becomes active, like a piano-roll/wheel picker
+// (2026-09-11: "whoever in the middle will show"). Tapping a tile still
+// works and scrolls it to center; both paths converge on the same
+// nearest-to-center logic so they never fight each other.
 function SubtopicTabs({ active, onSelect }) {
   const scrollRef = React.useRef(null);
   const tileRefs = React.useRef({});
+  const settleTimer = React.useRef(null);
 
   const centerOn = (key, smooth = true) => {
     const el = tileRefs.current[key];
@@ -468,6 +462,29 @@ function SubtopicTabs({ active, onSelect }) {
     if (!el || !track) return;
     const target = el.offsetLeft - (track.clientWidth - el.clientWidth) / 2;
     track.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  const nearestToCenter = () => {
+    const track = scrollRef.current;
+    if (!track) return null;
+    const trackCenter = track.scrollLeft + track.clientWidth / 2;
+    let best = null, bestDist = Infinity;
+    for (const s of SUBTOPICS) {
+      const el = tileRefs.current[s.key];
+      if (!el) continue;
+      const tileCenter = el.offsetLeft + el.clientWidth / 2;
+      const dist = Math.abs(tileCenter - trackCenter);
+      if (dist < bestDist) { bestDist = dist; best = s.key; }
+    }
+    return best;
+  };
+
+  const handleScroll = () => {
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      const key = nearestToCenter();
+      if (key && key !== active) onSelect(key);
+    }, 120);
   };
 
   const handleTap = (key) => {
@@ -487,7 +504,7 @@ function SubtopicTabs({ active, onSelect }) {
       <button type="button" className="obj-subtopic-scroll-btn" aria-label="Scroll left" onClick={() => scrollBy(-90)}>
         <i className="ti ti-chevron-left" aria-hidden="true"></i>
       </button>
-      <div className="obj-subtopic-tabs" ref={scrollRef}>
+      <div className="obj-subtopic-tabs" ref={scrollRef} onScroll={handleScroll}>
         {SUBTOPICS.map((s) => (
           <button
             key={s.key}
@@ -637,7 +654,7 @@ function splitSentences(text) {
 // Uploads go straight to Cloudinary's unsigned endpoint client-side --
 // explicitly passing public_id makes Cloudinary honor that exact id
 // instead of auto-generating one, which is what keeps the URL predictable.
-function FindingCard({ icon, label, active, instruction, interpretation, onToggle, photoId }) {
+function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -669,7 +686,7 @@ function FindingCard({ icon, label, active, instruction, interpretation, onToggl
   }
 
   return (
-    <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: active ? BRAND.purpleFaint : "#fff", overflow: "hidden" }}>
+    <div style={{ borderRadius: 12, border: active ? `1.5px solid ${BRAND.purple}` : `1px solid ${HAIRLINE}`, background: "#fff", overflow: "hidden" }}>
       {/* Zoom viewer -- tapping an already-uploaded photo used to just
           re-open the file picker, with no way to actually see it full-size
           (2026-09-12, Aditi: "clicking the uploaded photo... showing upload
@@ -701,20 +718,26 @@ function FindingCard({ icon, label, active, instruction, interpretation, onToggl
       >
         <div
           onClick={photoId ? (e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); } : undefined}
-          style={{ position: "relative", flex: "0 0 auto", width: 72, height: 72, borderRadius: 12, background: active ? "#fff" : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
+          style={{ position: "relative", flex: "0 0 auto", width: 96, height: 96, borderRadius: 16, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
         >
           {hasPhoto ? (
             <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 28, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 34, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
           )}
           {photoId && (
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
           )}
           {uploading && (
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-loader-2" style={{ fontSize: 22, color: BRAND.purple }} aria-hidden="true"></i>
+              <i className="ti ti-loader-2" style={{ fontSize: 26, color: BRAND.purple }} aria-hidden="true"></i>
             </div>
+          )}
+          <span style={{ position: "absolute", top: -8, left: -8, width: 24, height: 24, borderRadius: 7, background: BRAND.purple, color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
+          {active && (
+            <span style={{ position: "absolute", bottom: -8, right: -8, width: 24, height: 24, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-check" style={{ fontSize: 14 }} aria-hidden="true"></i>
+            </span>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -728,9 +751,7 @@ function FindingCard({ icon, label, active, instruction, interpretation, onToggl
             </ul>
           )}
         </div>
-        <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 7, border: `1.5px solid ${active ? BRAND.purple : HAIRLINE}`, background: active ? BRAND.purple : "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {active && <i className="ti ti-check" style={{ fontSize: 14, color: "#fff" }} aria-hidden="true"></i>}
-        </span>
+        <i className="ti ti-chevron-down" style={{ fontSize: 18, color: BRAND.grayLight, transform: active ? "rotate(180deg)" : "none", flexShrink: 0 }} aria-hidden="true"></i>
       </button>
     </div>
   );
@@ -1020,9 +1041,10 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
   const howTo = category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {options.map((o) => (
+      {options.map((o, i) => (
         <FindingCard
           key={o}
+          index={i + 1}
           icon={icon}
           label={o}
           active={values.includes(o)}
@@ -1210,11 +1232,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           )}
 
           <div style={{ marginTop: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontWeight: 700, fontSize: "0.95rem", color: BRAND.ink }}>Possible conditions based on your subjective</span>
-              <InfoButton text="Ranked from your Subjective findings, most likely first." />
-            </div>
-            <div style={{ fontSize: "0.78rem", color: BRAND.gray, marginTop: 2, marginBottom: 10 }}>Tap to select and view suggested objective findings.</div>
             <ConditionTabs conditions={config.conditions} order={order} matchById={matchById} activeId={selectedId} onSelect={setActiveId} />
           </div>
 
