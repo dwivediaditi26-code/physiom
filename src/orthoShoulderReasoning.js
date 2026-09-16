@@ -15,17 +15,32 @@
 // and Possible Matches sharpens as the therapist fills in items on the same
 // screen, rather than being computed once up front.
 //
-// Left out on purpose (real gap, not fabricated): the old flow's shl_rf/
-// shr_rf (shoulder-side red-flag checklist), shl_radiation/shr_radiation,
-// and shl_arc/shr_arc (painful-arc) fields don't exist in this tool's
-// Shoulder subjective checklist at all -- so painful-arc, and several red-
-// flag sub-signals (malignancy night pain, septic joint, vascular
-// compromise, dislocation) can't fire from subjective data here. Real ROM/
-// MMT/Special Test results and the free-text chief complaint still drive
-// the differential; only that one extra layer of old-flow-specific
-// subjective detail is missing, same class of gap as the other three
-// adapters' demographics.age: null.
+// Fix (2026-09-15, Aditi: shoulder ignored the Subjective checklist while
+// Knee/Hip/Ankle/Elbow all read theirs): the comment this replaced was
+// written before this wizard's own Shoulder region checklist existed
+// (orthoSubjectiveRegionData.js's SUBJECTIVE_REGION_FIELDS.shoulder --
+// location/radiation/mechanism/aggravating/relieving/pattern/stiffness/
+// irritability/redFlags/function, rendered by RegionSubjectiveTabs on the
+// Subjective step). normalizeFromData()'s shoulder reader below is built
+// around free-text keyword matching against cc_main/cc_onset plus two old-
+// flow-style fields (shl_radiation/shr_radiation, shl_rf/shr_rf) -- rather
+// than rewire that tuned matching logic, this adapter now feeds it real
+// data the same way: the checklist's own selected option text (which
+// already contains the exact keywords normalizeFromData() searches for --
+// "overhead", "stiff", "trauma", "night", "cancer history", "down to
+// hand", etc.) gets appended into cc_main, and radiation/red-flag answers
+// are passed through to shl_radiation/shl_rf directly. Painful-arc (needs
+// a literal "60" substring) and a few red-flag sub-signals (septic joint,
+// vascular compromise, dislocation) still can't fire from subjective data
+// here, since this checklist's option wording doesn't carry those exact
+// signals -- real ROM/MMT/Special Test results cover those instead.
 import { runShoulderPhase05, shoulderTestNav } from "./shoulderPhase05.js";
+
+function joinMulti(v) {
+  if (!v) return "";
+  if (Array.isArray(v)) return v.join(", ");
+  return String(v);
+}
 
 const ROM_IDS = ["rom_sflex", "rom_sabd", "rom_ser", "rom_sir"];
 const MMT_IDS = ["mmt_supra", "mmt_infra", "mmt_subscap"];
@@ -52,8 +67,32 @@ function specialTestValue(raw) {
 function buildFlatShoulderData(data) {
   const flat = {};
   const subjective = data.subjective || {};
-  flat.cc_main = subjective.chiefComplaint || "";
+  const regionData = subjective.regions?.shoulder || {};
+
+  // normalizeFromData() reads cc_main as free text for nightPain/
+  // constantPain/easesWithRest/paresthesia/onsetTraumatic/onsetInsidious/
+  // overheadAggravation/progressiveStiffness -- appending the checklist's
+  // own selected option text (not just the patient's chief-complaint
+  // sentence) lets those same keyword checks fire from structured answers
+  // too, e.g. "Progressive stiffness in all directions (frozen shoulder
+  // pattern)" contains both "progressive" and "stiff".
+  const checklistText = [
+    joinMulti(regionData.mechanism),
+    joinMulti(regionData.aggravating),
+    joinMulti(regionData.relieving),
+    regionData.pattern || "",
+    joinMulti(regionData.stiffness),
+  ].filter(Boolean).join(", ");
+  flat.cc_main = [subjective.chiefComplaint, checklistText].filter(Boolean).join(". ");
   flat.cc_onset = subjective.onset || "";
+  // shl_radiation/shr_radiation and shl_rf/shr_rf are read verbatim as
+  // free text by normalizeFromData() (see shRadiation/shRf there) -- both
+  // sides get the same joined string since this checklist doesn't ask
+  // radiation/red-flags per side.
+  flat.shl_radiation = joinMulti(regionData.radiation);
+  flat.shr_radiation = flat.shl_radiation;
+  flat.shl_rf = joinMulti(regionData.redFlags);
+  flat.shr_rf = flat.shl_rf;
 
   const romData = (data.rom && data.rom["Shoulder"]) || {};
   ROM_IDS.forEach((id) => {
