@@ -366,7 +366,7 @@ function SourceTab({ icon, label, sub, active, onClick }) {
 // button-per-goal to open it from) -- goal-linking is just an optional
 // checklist on the dose-confirm screen, same as the "general" treatment
 // flow already supported.
-function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
+function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, setSearch, searchOpen, setSearchOpen }) {
   const kb = useKB();
   const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
   // Full region switcher (2026-09-11, Aditi: "exercise prescription have
@@ -379,7 +379,9 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
   const activeCategories = fullExerciseLibrary ? (EXERCISE_DB[region]?.categories || {}) : exerciseCategories;
   const cats = useMemo(() => Object.keys(activeCategories), [activeCategories]);
   const [cat, setCat] = useState(null);
-  const [search, setSearch] = useState("");
+  // search/searchOpen are lifted up into TreatmentPhase and passed down as
+  // props -- see the 2026-09-16 comment there -- so the toggle button can
+  // live in the SectionIntro title row (top-right) instead of its own row.
   const [picked, setPicked] = useState(null);
   const [dose, setDose] = useState(null);
   const [linked, setLinked] = useState([]);
@@ -423,9 +425,24 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
 
       {!picked && !techType && (
         <>
-          <div className="ct-search-wrap" style={{ padding: "10px 0" }}>
-            <input className="ct-search" placeholder="🔍 Search treatment or goal..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
+          {searchOpen && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0 10px" }}>
+              <input
+                autoFocus
+                className="ct-search"
+                style={{ flex: 1, width: "auto" }}
+                placeholder="🔍 Search treatment or goal..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button
+                type="button"
+                aria-label="Close search"
+                onClick={() => { setSearch(""); setSearchOpen(false); }}
+                style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.gray, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+            </div>
+          )}
 
           {!search.trim() && (evidenceProtocols || clinicProtocols) && (
             <div style={{ display: "flex", gap: 8, padding: "0 0 12px" }}>
@@ -714,10 +731,20 @@ export function doseLine(t) {
 
 function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, floatingCTA, requireAuth }) {
   const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
+  // Lifted out of AddTreatmentPanel (2026-09-16, Aditi: "the magnifying
+  // glass should be in the top right") so the search toggle can sit in the
+  // SectionIntro title row instead of on its own row below, with a gap of
+  // dead space before the treatment-type tiles.
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <>
-      <SectionIntro icon="🏋" title="Treatment" />
+      <SectionIntro icon="🏋" title="Treatment" action={!searchOpen && (
+        <button type="button" aria-label="Search treatments" onClick={() => setSearchOpen(true)}
+          style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.purpleDark, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >🔍</button>
+      )} />
       {goals.map((g) => {
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
         if (!mine.length) return null;
@@ -782,6 +809,7 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         allGoals={goals}
         existing={new Set(treatments.map((t) => t.exerciseId))}
         requireAuth={requireAuth}
+        search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
         onAdd={(t) => {
           // If this exercise is already in the plan (added under another
           // goal), just link the existing record to the newly picked goals too.
@@ -1156,6 +1184,26 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
       return { ...p, findings: s.findings, baseline: s.baseline };
     });
     if (changed) set("problems", next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggested]);
+
+  // Auto-select every suggested problem the first time it's derived, so
+  // Goals already has something to show instead of sitting empty until
+  // the therapist manually ticks boxes on Problem List first (2026-09-16,
+  // Aditi: "the goal in the orthopedic... should show the goals already
+  // presented, not when we select the problem list"). autoSeededIds
+  // remembers which sourceIds have already been auto-added so a problem
+  // the therapist deliberately unchecks/removes doesn't keep reappearing
+  // -- it's only ever auto-added once per unique suggestion.
+  const autoSeededIds = Array.isArray(d.autoSeededIds) ? d.autoSeededIds : [];
+  useEffect(() => {
+    if (!suggested.length) return;
+    const existingSourceIds = new Set(problems.map((p) => p.sourceId).filter(Boolean));
+    const fresh = suggested.filter((s) => !existingSourceIds.has(s.id) && !autoSeededIds.includes(s.id));
+    if (!fresh.length) return;
+    const toAdd = fresh.map((s) => ({ id: uid(), sourceId: s.id, name: s.name, category: s.category, findings: s.findings, baseline: s.baseline, treatmentCategories: s.treatmentCategories, refs: s.refs, evidence: s.evidence, manual: false }));
+    set("problems", [...problems, ...toAdd]);
+    set("autoSeededIds", [...autoSeededIds, ...fresh.map((s) => s.id)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggested]);
 

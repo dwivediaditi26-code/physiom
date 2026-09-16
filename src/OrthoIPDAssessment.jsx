@@ -270,6 +270,15 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   const [addOpen, setAddOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
+  // Every wizard step shares the same scroll container, so it never gets a
+  // fresh scrollTop of its own -- tapping a StepNav circle after scrolling
+  // deep into the previous step used to land the new step already scrolled
+  // down instead of at its top (2026-09-16, Aditi: "when I click on the
+  // second tab, it takes me to that end scrolling page"). Same reset
+  // AppFull.jsx's own navTo() already does for top-level tab switches.
+  useEffect(() => {
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
+  }, [step]);
 
   const steps = useMemo(() => stepOrder.map((id) => ({ id, ...STEP_META[id] })), [stepOrder]);
   const current = steps[step] || steps[0];

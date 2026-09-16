@@ -842,7 +842,11 @@ export function Alert({ tone = "amber", children }) {
   return <div className={"alert alert-" + tone}>{children}</div>;
 }
 
-export function SectionIntro({ icon, title, sub, info }) {
+// `action` (2026-09-16, Aditi: "the magnifying glass should be in the top
+// right") -- an optional right-aligned slot in the title row, e.g. Care
+// Plan Treatment's search toggle, instead of it rendering on its own row
+// with dead space above the section content.
+export function SectionIntro({ icon, title, sub, info, action }) {
   return (
     <div className="section-intro">
       <div className="section-intro-icon">{icon}</div>
@@ -850,6 +854,7 @@ export function SectionIntro({ icon, title, sub, info }) {
         <div className="section-intro-title-row">
           <div className="section-intro-title">{title}</div>
           {info && <InfoButton text={info} />}
+          {action && <div style={{ marginLeft: "auto" }}>{action}</div>}
         </div>
         {sub && <div className="section-intro-sub">{sub}</div>}
       </div>

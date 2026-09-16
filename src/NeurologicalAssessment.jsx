@@ -2072,6 +2072,16 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
+  // Every wizard step/phase shares the same scroll container, so it never
+  // gets a fresh scrollTop of its own -- tapping a StepNav circle (or moving
+  // between setting/mode/template/region/assess phases) after scrolling deep
+  // into the previous screen used to land the new one already scrolled down
+  // instead of at its top (2026-09-16, Aditi: "when I click on the second
+  // tab, it takes me to that end scrolling page"). Same reset AppFull.jsx's
+  // own navTo() already does for top-level tab switches.
+  useEffect(() => {
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
+  }, [step, phase]);
 
   // Re-hydrate when switching to a different patient -- mirrors
   // CardiopulmonaryAssessment.jsx's own re-hydration effect. Keyed only on
@@ -2332,6 +2342,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
+          /* Same GPU-compositor-layer promotion as AppFull.jsx's
+             .pm-mobile-hdr and Ortho's own .topbar (orthoStyles.js)
+             (2026-09-16, Aditi: "the header is shaking like an earthquake
+             when I am scrolling") -- without this the browser repaints
+             this sticky topbar from scratch every scroll frame instead of
+             compositing it on its own GPU layer, which showed up as
+             visible jitter. */
+          transform: translateZ(0); -webkit-transform: translateZ(0);
+          will-change: transform; backface-visibility: hidden;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within

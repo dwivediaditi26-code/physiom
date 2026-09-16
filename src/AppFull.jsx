@@ -1808,6 +1808,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
+        // Same GPU-compositor-layer promotion as .pm-header just above and
+        // every assessment's own .topbar (orthoStyles.js) (2026-09-16,
+        // Aditi: "the header is shaking like an earthquake when I am
+        // scrolling") -- this is the sticky header actually visible on
+        // mobile (.pm-header is desktop-only), and it was still being
+        // repainted from scratch every scroll frame instead of composited
+        // on its own GPU layer, which is what showed up as jitter.
+        transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
+        willChange: "transform", backfaceVisibility: "hidden",
       }}>
         {/* Hamburger */}
         <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation"
