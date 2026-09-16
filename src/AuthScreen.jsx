@@ -71,13 +71,17 @@ function Register({onSwitch,onAuth,onShowLegal}){
     if(pass.length<6){setError("Password must be at least 6 characters");return;}
     if(!agreed){setError("Please agree to the Terms & Privacy Policy to continue");return;}
     setLoading(true);
-    const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic}}});
+    // pm_onboarded in user_metadata at creation time: the signup checkbox
+    // above already covers the same academic-training-aid acknowledgment
+    // the onboarding tour's last step asks for, and setting it on the
+    // account itself (not just this browser's localStorage) means it
+    // never resurfaces on another device/browser either (2026-09-15,
+    // Aditi: first "asking again and again for consent" right after
+    // signup, then "why is this coming every time I login" on a different
+    // device/session).
+    const{data,error:er}=await supabase.auth.signUp({email,password:pass,options:{data:{full_name:name,clinic_name:clinic,pm_onboarded:true}}});
     setLoading(false);
     if(er){setError(er.message);return;}
-    // The signup checkbox above already covers the same academic-training-aid
-    // acknowledgment the onboarding tour's last step asks for -- mark it done
-    // now so a brand-new account never gets asked a second time right after
-    // signing up (2026-09-15, Aditi: "asking again and again for consent").
     try{localStorage.setItem("pm_onboarded","1");}catch{}
     if(data.session){onAuth(data.user);}
     else{setMsg("Account created! Check your email to confirm, then sign in.");}

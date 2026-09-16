@@ -362,7 +362,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // AssessmentEngine (built in Step 2).
   const [stream, setStream] = useState(() => localStorage.getItem("pm_stream") || "ortho");
   useEffect(() => { try { localStorage.setItem("pm_stream", stream); } catch(e){} }, [stream]);
+  // Tied to the ACCOUNT (Supabase user_metadata), not just this browser's
+  // localStorage -- a device-local flag alone re-prompted signed-in users
+  // on every new browser/device/private-window/cleared-storage session,
+  // reading as being asked for consent "every time I login" (2026-09-15,
+  // Aditi). localStorage is still checked first for guest-mode users, who
+  // have no account to attach this to, and as a fast synchronous default
+  // before currentUser's metadata is known.
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('pm_onboarded'));
+  useEffect(() => {
+    if (currentUser?.user_metadata?.pm_onboarded) {
+      try { localStorage.setItem('pm_onboarded', '1'); } catch {}
+      setShowOnboarding(false);
+    }
+  }, [currentUser?.user_metadata?.pm_onboarded]);
   const [lastSaved, setLastSaved] = useState(null);
   // 'idle' | 'saving' | 'saved' | 'error' — reflects whether the active
   // patient's data has actually reached Supabase (the real record), not just
@@ -1419,7 +1432,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       <OfflineBanner/>
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
-      {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{ localStorage.setItem("pm_onboarded","1"); setShowOnboarding(false); }}/>}
+      {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{
+        localStorage.setItem("pm_onboarded","1");
+        setShowOnboarding(false);
+        // Signed-in accounts: persist to Supabase user_metadata too, so this
+        // never reappears on another device/browser or after this one's
+        // storage is cleared. Guest mode has no account to attach it to --
+        // localStorage above is all it gets, same as before.
+        if (currentUser?.id) { supabase.auth.updateUser({ data: { pm_onboarded: true } }).catch(()=>{}); }
+      }}/>}
 
       {/* ── Leave-assessment save/demographics gate ───────────────────────── */}
       {pendingLeave && (
