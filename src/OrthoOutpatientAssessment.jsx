@@ -272,6 +272,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
   const [detectedConditionLabel, setDetectedConditionLabel] = useState(aiDetectedCondition ? aiDetectedCondition.label : null);
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
+  // Red-star "required for this condition" badge on StepNav (2026-09-16,
+  // Aditi) -- reads the same promote list that already drives step
+  // ordering, just surfaces it visually instead of only reordering silently.
+  const requiredStepIds = useMemo(() => new Set(conditionMeta ? conditionMeta.promote : []), [conditionMeta]);
 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
@@ -546,7 +550,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
             )}
           </div>
           <div className="stepnav-wrap">
-            <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} />
+            <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} requiredIds={requiredStepIds} />
           </div>
           <div className="progress-label">
             Step {step + 1} of {steps.length}

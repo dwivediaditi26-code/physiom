@@ -857,7 +857,7 @@ export function SectionIntro({ icon, title, sub, info }) {
 }
 
 /* Top step nav — small circles per step, tap to jump anywhere */
-export function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
+export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requiredIds }) {
   const refs = useRef([]);
   useEffect(() => {
     const el = refs.current[currentIndex];
@@ -868,6 +868,13 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
       {steps.map((s, i) => {
         const active = i === currentIndex;
         const seen = visited.has(s.id) && !active;
+        // Red star badge (2026-09-16, Aditi: "let it shows I want it to be
+        // there... it need to be filled out because the condition we have
+        // chosen") -- the condition card's own `promote` list already names
+        // exactly which steps that clinical context calls for; this just
+        // makes that visible on the step itself instead of only reordering
+        // it silently. Clears once the therapist actually visits the step.
+        const required = requiredIds && requiredIds.has(s.id) && !visited.has(s.id);
         return (
           <button
             key={s.id}
@@ -875,10 +882,23 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
             type="button"
             className={"step-circle" + (active ? " step-active" : seen ? " step-seen" : "")}
             onClick={() => onJump(i)}
-            aria-label={s.label}
-            title={s.label}
+            aria-label={required ? `${s.label} — required for this condition` : s.label}
+            title={required ? `${s.label} — required for this condition` : s.label}
+            style={{ position: "relative" }}
           >
             {s.icon}
+            {required && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%",
+                  background: "#DC2626", border: "1.5px solid #fff", fontSize: 7, lineHeight: "7px",
+                  color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                ★
+              </span>
+            )}
           </button>
         );
       })}
