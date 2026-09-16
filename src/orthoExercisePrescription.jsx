@@ -81,6 +81,13 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
   const [activeRegion, setActiveRegion] = useState(defaultRegionKey);
   const [activePhase, setActivePhase] = useState("All");
   const [search, setSearch] = useState("");
+  // Category (treatment type) tiles instead of dumping every category's
+  // full list on one long scroll (2026-09-16, Aditi: "it should first give
+  // us the treatment types then we select on it"). null = showing the tile
+  // grid; "All" or a real category name = showing that scope's exercises.
+  // Resets whenever the region changes, same as search/phase implicitly do.
+  const [activeCategory, setActiveCategory] = useState(null);
+  const changeRegion = (key) => { setActiveRegion(key); setActiveCategory(null); setSearch(""); };
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templateMsg, setTemplateMsg] = useState("");
   const progRef = React.useRef(null);
@@ -131,15 +138,24 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
 
   const region = EXERCISE_DB[activeRegion];
   const relevantTemplates = Object.entries(PROGRAMME_TEMPLATES).filter(([, t]) => region?.label && (region.label.includes(t.region) || t.region.includes(region.label)));
+  const matchesFilters = (e) =>
+    (activePhase === "All" || e.phase === activePhase) &&
+    (!search || e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()));
   const filteredCategories = region
     ? Object.entries(region.categories).reduce((acc, [cat, exs]) => {
-        const filtered = exs.filter(
-          (e) => (activePhase === "All" || e.phase === activePhase) && (!search || e.name.toLowerCase().includes(search.toLowerCase()) || e.target.toLowerCase().includes(search.toLowerCase()))
-        );
+        const filtered = exs.filter(matchesFilters);
         if (filtered.length) acc[cat] = filtered;
         return acc;
       }, {})
     : {};
+  // Scoped down to just the tapped category (or every category, for "All")
+  // once the therapist has picked a treatment type -- the tile grid itself
+  // (below) shows every category so its own counts aren't pre-filtered by
+  // a category selection.
+  const scopedCategories =
+    activeCategory && activeCategory !== "All"
+      ? { [activeCategory]: filteredCategories[activeCategory] || [] }
+      : filteredCategories;
 
   return (
     <>
@@ -153,7 +169,7 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
           onClose={() => setLibraryOpen(false)}
           onAddExercise={addEx}
           isAdded={isAdded}
-          onSelectRegion={(key) => setActiveRegion(key)}
+          onSelectRegion={changeRegion}
           requireAuth={requireAuth}
         />
       )}
@@ -181,19 +197,57 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
       )}
 
       <div className="subheading">Browse exercises</div>
-      <SelectField label="Region" type="single" options={Object.values(EXERCISE_DB).map((r) => r.label)} value={region?.label} onChange={(label) => setActiveRegion(Object.keys(EXERCISE_DB).find((k) => EXERCISE_DB[k].label === label) || activeRegion)} />
-      <Segmented label="Phase" options={PHASES} value={activePhase} onChange={(v) => setActivePhase(v || "All")} />
+      <SelectField label="Region" type="single" options={Object.values(EXERCISE_DB).map((r) => r.label)} value={region?.label} onChange={(label) => changeRegion(Object.keys(EXERCISE_DB).find((k) => EXERCISE_DB[k].label === label) || activeRegion)} />
       <TextField label="Search" value={search} onChange={setSearch} placeholder="Search exercises or muscles..." />
 
-      {Object.entries(filteredCategories).map(([cat, exs]) => (
-        <div key={cat}>
-          <div className="subheading" style={{ marginTop: 14 }}>{cat}</div>
-          {exs.map((ex) => (
-            <ExerciseLibraryCard key={ex.id} ex={ex} inProgramme={!!programme.find((p) => p.id === ex.id)} onAdd={() => addEx(ex)} onRemove={() => removeEx(ex.id)} />
+      {/* Search overrides the tile picker entirely -- results span every
+          category so a name/muscle search still finds a match regardless
+          of which treatment type it lives under. */}
+      {search ? (
+        Object.entries(filteredCategories).map(([cat, exs]) => (
+          <div key={cat}>
+            <div className="subheading" style={{ marginTop: 14 }}>{cat}</div>
+            {exs.map((ex) => (
+              <ExerciseLibraryCard key={ex.id} ex={ex} inProgramme={!!programme.find((p) => p.id === ex.id)} onAdd={() => addEx(ex)} onRemove={() => removeEx(ex.id)} />
+            ))}
+          </div>
+        ))
+      ) : activeCategory === null ? (
+        <div className="picker-grid" style={{ marginTop: 10 }}>
+          <button type="button" className="picker-card" onClick={() => setActiveCategory("All")}>
+            <div className="picker-icon">🗂️</div>
+            <div>
+              <div className="picker-label">All</div>
+              <div className="picker-desc">{Object.values(region?.categories || {}).flat().length} exercises</div>
+            </div>
+          </button>
+          {Object.entries(region?.categories || {}).map(([cat, exs]) => (
+            <button type="button" key={cat} className="picker-card" onClick={() => setActiveCategory(cat)}>
+              <div className="picker-icon">🏋</div>
+              <div>
+                <div className="picker-label">{cat}</div>
+                <div className="picker-desc">{exs.length} exercise{exs.length === 1 ? "" : "s"}</div>
+              </div>
+            </button>
           ))}
         </div>
-      ))}
-      {Object.keys(filteredCategories).length === 0 && <div className="summary-empty">No exercises match this filter.</div>}
+      ) : (
+        <>
+          <button type="button" className="ghost-btn" style={{ marginBottom: 10 }} onClick={() => setActiveCategory(null)}>
+            ← Treatment types
+          </button>
+          <Segmented label="Phase" options={PHASES} value={activePhase} onChange={(v) => setActivePhase(v || "All")} />
+          {Object.entries(scopedCategories).map(([cat, exs]) => (
+            <div key={cat}>
+              {activeCategory === "All" && <div className="subheading" style={{ marginTop: 14 }}>{cat}</div>}
+              {exs.map((ex) => (
+                <ExerciseLibraryCard key={ex.id} ex={ex} inProgramme={!!programme.find((p) => p.id === ex.id)} onAdd={() => addEx(ex)} onRemove={() => removeEx(ex.id)} />
+              ))}
+            </div>
+          ))}
+          {Object.keys(scopedCategories).length === 0 && <div className="summary-empty">No exercises match this filter.</div>}
+        </>
+      )}
 
       {templateMsg && <div className="hint" style={{ color: "#059669", fontWeight: 600, marginTop: 8 }}>{templateMsg}</div>}
       <div className="subheading" ref={progRef} style={{ marginTop: 18 }}>This patient's programme ({programme.length})</div>
