@@ -158,6 +158,12 @@ export function orthoStyles() {
            to sit next to a name/target line instead of a full tile. */
         .info-img-trigger-sm { width: 40px; height: 40px; border-radius: 10px; }
         .info-img-trigger-sm i { font-size: 18px; }
+        /* Medium variant for the plain (non-AI) ROM/MMT/Special Tests rows
+           (2026-09-16, Aditi: "put the image square but make it a bit
+           larger... not be bigger like in the AI") -- between the sm inline
+           thumbnail and the full 96px AI Objective Assessment tile. */
+        .info-img-trigger-md { width: 60px; height: 60px; border-radius: 14px; }
+        .info-img-trigger-md i { font-size: 24px; }
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
@@ -331,7 +337,7 @@ export function orthoStyles() {
         .rom-row-grid { display: grid; grid-template-columns: 1fr 68px 68px; align-items: center; gap: 8px; }
         .rom-table-head { padding-bottom: 6px; border-bottom: 1.5px solid ${BRAND.border}; margin-bottom: 2px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: ${BRAND.grayLight}; }
         .rom-table-head span:not(:first-child) { text-align: center; }
-        .rom-row-name { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; }
+        .rom-row-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
         .rom-row-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .movement-name { font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; letter-spacing: -.01em; }
         .muscle-subtitle { font-size: 11px; color: ${BRAND.grayLight}; margin-top: 1px; font-weight: 500; }

@@ -163,8 +163,8 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
     <div className="rom-row" ref={rowRef}>
       <div className="rom-row-grid">
         <div className="rom-row-name">
+          <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.mv} richItem={romRichItem(m)} />
           <span className="movement-name">{m.mv}</span>
-          <InfoButton title={m.mv} text={romInfoText(m)} richItem={romRichItem(m)} />
           {norm && <span className="rom-norm">{norm}</span>}
         </div>
         <div className="rom-row-cell">
@@ -411,8 +411,8 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
               <div className="movement-head">
                 <div className="movement-info">
                   <div className="movement-name-row">
+                    <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
                     <span className="movement-name">{m.muscle}</span>
-                    <InfoButton title={m.muscle} text={mmtInfoText(m)} richItem={mmtRichItem(m)} />
                   </div>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}
                 </div>
@@ -699,8 +699,8 @@ export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey
         return (
           <div className="test-card" key={t.id}>
             <div className="test-card-title-row">
+              {t.how && <InfoButton imageTrigger size="md" fallbackIcon="ti-clipboard-check" title={t.label} richItem={specialRichItem(t)} />}
               <div className="test-card-title">{t.label}</div>
-              {t.how && <InfoButton title={t.label} text={[t.how, t.positive && `✅ Positive means: ${t.positive}`, t.negative && `⬜ Negative means: ${t.negative}`].filter(Boolean).join("\n\n")} richItem={specialRichItem(t)} />}
             </div>
             {(t.structure || t.sensitivity) && (
               <div className="muscle-subtitle">

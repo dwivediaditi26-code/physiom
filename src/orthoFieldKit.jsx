@@ -155,7 +155,7 @@ const SHEET_TABS = [
 // drift apart. Falls back to a plain icon tile (fallbackIcon) when there's
 // no richItem.image or the photo 404s, same as SheetHero's own fallback.
 export function InfoButton(props) {
-  const { text, title, eyebrow = "HOW TO PERFORM", richItem, small, imageTrigger, fallbackIcon } = props;
+  const { text, title, eyebrow = "HOW TO PERFORM", richItem, small, size, imageTrigger, fallbackIcon } = props;
   const [open, setOpen] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const availableTabs = richItem ? SHEET_TABS.filter((t) => richItem[t.key]) : [];
@@ -164,10 +164,11 @@ export function InfoButton(props) {
   const heading = richItem?.title || title;
   const openSheet = () => { setTab(availableTabs[0]?.key); setOpen(true); };
   const imgSrc = richItem?.image ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_200,h_200,c_fill/${richItem.image}` : null;
+  const sizeClass = size === "md" ? " info-img-trigger-md" : small ? " info-img-trigger-sm" : "";
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
       {imageTrigger ? (
-        <button type="button" className={"info-img-trigger" + (small ? " info-img-trigger-sm" : "")} onClick={openSheet} aria-label={heading ? `View ${heading}` : "View details"}>
+        <button type="button" className={"info-img-trigger" + sizeClass} onClick={openSheet} aria-label={heading ? `View ${heading}` : "View details"}>
           {imgSrc && !imgFailed ? (
             <img src={imgSrc} alt="" onError={() => setImgFailed(true)} />
           ) : (
