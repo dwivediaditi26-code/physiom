@@ -247,7 +247,15 @@ const MOBILE_CSS = `
 
   /* ── Global touch targets — EVERY button/input gets 44px min ── */
   @media (max-width: 767px) {
-    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow) {
+    /* .ai-journey-label-btn (orthoSetupKit.jsx) is an 8.5px text label
+       under a breadcrumb dot, sized to match its sibling non-jumpable
+       step's plain <div> label exactly -- forcing it to 40px here left it
+       ~30px taller than that sibling, and since a button's own text
+       centers inside that box while the div's text sits at its natural
+       top, the two rendered at visibly different heights (2026-09-16,
+       Aditi: AI-journey header screenshot showing the step labels bunched
+       up instead of sitting under their own dots). */
+    button:not(.pm-bnav-tab):not(.pm-bnav-item):not(.pm-bnav-dx):not(.pm-rom-qual-btn):not(.pm-region-chip):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn) {
       min-height: 40px;
     }
     input, select, textarea {
@@ -544,9 +552,14 @@ const MOBILE_CSS = `
   }
   .pm-stepper-row::-webkit-scrollbar { display: none; }
 
-  /* Touch targets */
+  /* Touch targets. This !important rule beats the non-!important one
+     above (line ~250) regardless of exclusion list, so an addition there
+     alone doesn't actually exempt anything -- .ai-journey-label-btn has
+     to be excluded here too (2026-09-16, Aditi: AI-journey breadcrumb
+     labels rendering 40px tall instead of matching their sibling's
+     natural ~10px). */
   @media (max-width: 767px) {
-    button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow) { min-height: 40px !important; }
+    button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn) { min-height: 40px !important; }
   }
 
   /* ── Show/hide helpers ── */
