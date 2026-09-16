@@ -291,3 +291,30 @@ export function subjectiveFieldsForRegion(region) {
   const key = contentKeyForRegion(region);
   return (key && SUBJECTIVE_REGION_FIELDS[key]) || GENERIC_REGION_FIELDS;
 }
+
+// Which fields actually change what "AI Objective Assessment" suggests --
+// verified directly against each region's differential-matching adapter
+// (2026-09-15, following the Shoulder/Hip/Ankle keyword-matching audit &
+// fix). Cervical/Thoracic/Lumbar's own Phase 0.5 engines read almost their
+// entire checklist by field id (confirmed by grep against
+// orthoCervicalReasoning.js/orthoThoracicReasoning.js/orthoLumbarReasoning.js),
+// so those three are starred wholesale rather than field-by-field. The
+// others list only fields a real keyword/value match was verified against;
+// anything left off (e.g. Knee's radiation/relieving/irritability/function,
+// same class of gap Shoulder/Hip/Ankle had before this fix) is collected
+// for the record but does not currently change the ranking -- said
+// honestly rather than starred aspirationally.
+const FULLY_WIRED_REGIONS = ["cervical", "thoracic", "lumbarSI"];
+const MATCHING_RELEVANT_FIELDS = {
+  shoulder: ["mechanism", "aggravating", "relieving", "pattern", "stiffness", "radiation", "redFlags"],
+  hip: ["location", "locationPattern", "mechanism", "aggravating", "pattern", "mechanical", "redFlags", "cSign", "piriformisSigns", "meralgiaSigns", "hamstringOnsetPattern"],
+  knee: ["location", "mechanism", "givingWay", "locking", "pattern", "redFlags"],
+  ankleFoot: ["location", "radiation", "mechanism", "aggravating", "pattern", "swelling", "redFlags", "previousSprains", "poppingSound", "weightBearingAfterInjury", "morningSymptoms", "instability", "calfAchillesOnset", "shinPain", "lisfrancScreen", "peronealSymptoms"],
+  elbowWristHand: ["location", "radiation", "mechanism", "aggravating", "pattern", "neuro", "redFlags"],
+};
+export function isMatchingRelevant(region, fieldId) {
+  const key = contentKeyForRegion(region);
+  if (!key) return false;
+  if (FULLY_WIRED_REGIONS.includes(key)) return true;
+  return (MATCHING_RELEVANT_FIELDS[key] || []).includes(fieldId);
+}

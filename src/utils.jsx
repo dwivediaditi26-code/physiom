@@ -122,7 +122,15 @@ const MOBILE_CSS = `
      can under-report 100vh vs. the true visible frame, leaving a strip of
      unstyled background exposed below the fixed bottom nav (only visible
      once installed to the home screen, not in a regular Safari tab). */
-  .pm-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; background: #F7F7F8; }
+  /* overflow-x:clip, not hidden -- hidden paired with no overflow-y set
+     forces the browser to compute overflow-y as auto (CSS overflow-axis
+     pairing rule), which turns this into a phantom scroll box that never
+     actually scrolls (nothing overflows it) but still counts as the
+     "nearest scrolling ancestor" for any position:sticky element nested
+     inside it -- silently breaking every sticky assessment header, since
+     the real page scroll happens on body/html instead. clip suppresses
+     the same horizontal bleed without triggering that pairing. */
+  .pm-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; overflow-x: clip; overflow-y: visible; background: #F7F7F8; }
 
   /* ── Header ── */
   .pm-header { padding: 0 12px !important; }
@@ -192,7 +200,14 @@ const MOBILE_CSS = `
      though the screen itself has no max-width (2026-09-12, Aditi: real
      phone screenshot, "hardcoded fixed width instead of percentage-based
      sizing"). */
-  .pm-main { --pm-pad-x: 14px; --pm-pad-top: 14px; flex: 1; padding: var(--pm-pad-top) var(--pm-pad-x) 0 var(--pm-pad-x); overflow-y: auto; overflow-x: hidden; min-width: 0; }
+  /* overflow-y:auto here was a leftover from an earlier fixed-height
+     scroll-container design; .pm-main has no capped height any more (see
+     the natural-document-flow fix elsewhere in this file), so it never
+     actually overflows -- but the declared auto still claims the
+     "nearest scrolling ancestor" slot for any sticky element nested
+     inside it, same phantom-scroll-box problem as .pm-shell above.
+     Dropped, and overflow-x switched to clip for the same reason. */
+  .pm-main { --pm-pad-x: 14px; --pm-pad-top: 14px; flex: 1; padding: var(--pm-pad-top) var(--pm-pad-x) 0 var(--pm-pad-x); overflow-x: clip; overflow-y: visible; min-width: 0; }
   @media (min-width: 480px) { .pm-main { --pm-pad-x: 20px; --pm-pad-top: 20px; } }
   @media (min-width: 640px) { .pm-main { --pm-pad-x: 32px; --pm-pad-top: 28px; } }
   .pm-bleed { margin: calc(-1 * var(--pm-pad-top, 20px)) calc(-1 * var(--pm-pad-x, 20px)) 0; }
@@ -208,7 +223,7 @@ const MOBILE_CSS = `
   @media (min-width: 1100px) { .pm-form-panel { max-width: 820px; } }
 
   /* ── Body wrapper ── */
-  .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: hidden; }
+  .pm-body { display: flex; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: clip; overflow-y: visible; }
 
   /* ── Cards ── */
   .pm-card {
@@ -544,6 +559,13 @@ const MOBILE_CSS = `
   /* ── Mobile-only compact header ── */
   .pm-mobile-hdr { display: none; }
   @media (max-width: 767px) {
+    /* Exposed so any other sticky element on mobile (e.g. an assessment
+       screen's own .topbar) can offset itself by exactly this header's
+       real rendered height -- including the safe-area inset on notched
+       phones -- instead of a hardcoded pixel guess that drifts out of
+       sync and either overlaps this header or leaves a gap. 54px = the
+       10px bottom padding + this header's ~44px content row height. */
+    :root { --pm-mobile-hdr-h: calc(max(10px, env(safe-area-inset-top)) + 54px); }
     .pm-mobile-hdr {
       display: flex; align-items: center; gap: 9px;
       padding: max(10px, env(safe-area-inset-top)) 14px 10px; position: sticky; top: 0; z-index: 101;

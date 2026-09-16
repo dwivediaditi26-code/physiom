@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { AiJourneyDots, AiHubNav } from "./orthoSetupKit.jsx";
+import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -108,11 +110,27 @@ const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatme
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
-// Suggested Objective (which already inline-covers Observation/Palpation
-// itself), skipping these four as separate steps in between. Condition-
-// wise/General/Templates entries keep the full BASE_IDS sequence.
-const AI_ENTRY_SKIP_IDS = ["redFlags", "pain", "observation", "palpation"];
+// AI Objective Assessment (which already inline-covers Observation/
+// Palpation/ROM/MMT itself), skipping these as separate steps in between.
+// Condition-wise/General/Templates entries keep the full BASE_IDS sequence.
+// "demographics" is skipped too (2026-09-16, Aditi: "first show demographic
+// data") -- OrthoAssessment.jsx now collects it pre-wizard, one screen
+// before Region, and feeds it in via initialAiUpdates.demographics exactly
+// like an AI-parsed narrative already did.
+const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt"];
 const OPTIONAL_IDS = ["vitals", "edema", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+// The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
+// Objective Assessment, freely jumpable rather than forced Next-Next-Next
+// (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
+const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "review"];
+// Demographics(0)/Region(1) already happened pre-wizard for AI entry, so
+// this component's own stages start at Subjective(2); anything in
+// AI_HUB_IDS collapses onto the single "Summary" dot (4).
+function aiStageIndexFor(id) {
+  if (id === "subjective") return 2;
+  if (id === "objectiveAI") return 3;
+  return 4;
+}
 
 const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
@@ -127,42 +145,42 @@ export function buildOrthoAssessSteps() {
 }
 
 const STEP_META = {
-  demographics: { icon: "📋", label: "Demographics" },
-  subjective: { icon: "📝", label: "Subjective" },
-  redFlags: { icon: "🚩", label: "Red Flag Screen" },
-  vitals: { icon: "❤️", label: "Vital Signs" },
-  pain: { icon: "😖", label: "Pain" },
-  observation: { icon: "👁️", label: "General Observation" },
-  palpation: { icon: "🖐️", label: "Palpation" },
-  suggest: { icon: "🧠", label: "Suggested Objective" },
-  objectiveAI: { icon: "🧭", label: "AI Objective Assessment" },
-  edema: { icon: "💧", label: "Edema" },
-  rom: { icon: "📐", label: "ROM" },
-  mmt: { icon: "💪", label: "MMT" },
-  specialTests: { icon: "🔬", label: "Special Tests" },
-  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
-  kineticChain: { icon: "⛓️", label: "Kinetic Chain" },
-  cpa: { icon: "🧠", label: "CPA (NKT)" },
-  sttt: { icon: "🦴", label: "STTT (Cyriax)" },
-  fma: { icon: "🏃", label: "Functional Movement" },
-  fascia: { icon: "🧵", label: "Fascia" },
-  gait: { icon: "🚶", label: "Gait / Movement" },
-  balance: { icon: "⚖️", label: "Balance" },
-  functionalAssessment: { icon: "🏃", label: "Functional Assessment" },
-  activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
-  outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
-  clinicalAssessment: { icon: "🧠", label: "Clinical Assessment" },
-  carePlanProblems: { icon: "🧩", label: "Problem List" },
-  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
-  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
-  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
-  carePlanSessions: { icon: "🗓️", label: "Sessions" },
-  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
-  techniques: { icon: "🤲", label: "Treatment Techniques" },
-  exercisePrescription: { icon: "🏋", label: "Exercise Prescription" },
-  homeProtocol: { icon: "🏠", label: "Home Protocol" },
-  progress: { icon: "📈", label: "Progress / Follow-up" },
-  review: { icon: "✅", label: "Final Review" },
+  demographics: { icon: <Icon name="clipboard" />, label: "Demographics" },
+  subjective: { icon: <Icon name="notes" />, label: "Subjective" },
+  redFlags: { icon: <Icon name="flag" />, label: "Red Flag Screen" },
+  vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
+  pain: { icon: <Icon name="pain" />, label: "Pain" },
+  observation: { icon: <Icon name="eye" />, label: "General Observation" },
+  palpation: { icon: <Icon name="hand" />, label: "Palpation" },
+  suggest: { icon: <Icon name="brain" />, label: "Suggested Objective" },
+  objectiveAI: { icon: <Icon name="compass" />, label: "AI Objective Assessment" },
+  edema: { icon: <Icon name="droplet" />, label: "Edema" },
+  rom: { icon: <Icon name="ruler" />, label: "ROM" },
+  mmt: { icon: <Icon name="muscle" />, label: "MMT" },
+  specialTests: { icon: <Icon name="microscope" />, label: "Special Tests" },
+  neuroScreen: { icon: <Icon name="bolt" />, label: "Neuro Screen" },
+  kineticChain: { icon: <Icon name="chain" />, label: "Kinetic Chain" },
+  cpa: { icon: <Icon name="brain" />, label: "CPA (NKT)" },
+  sttt: { icon: <Icon name="bone" />, label: "STTT (Cyriax)" },
+  fma: { icon: <Icon name="run" />, label: "Functional Movement" },
+  fascia: { icon: <Icon name="thread" />, label: "Fascia" },
+  gait: { icon: <Icon name="walk" />, label: "Gait / Movement" },
+  balance: { icon: <Icon name="scale" />, label: "Balance" },
+  functionalAssessment: { icon: <Icon name="run" />, label: "Functional Assessment" },
+  activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
+  outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
+  clinicalAssessment: { icon: <Icon name="brain" />, label: "Clinical Assessment" },
+  carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
+  carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
+  carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  carePlanSessions: { icon: <Icon name="calendar" />, label: "Sessions" },
+  carePlanProgress: { icon: <Icon name="trend" />, label: "Care Plan Progress" },
+  techniques: { icon: <Icon name="handshake" />, label: "Treatment Techniques" },
+  exercisePrescription: { icon: <Icon name="dumbbell" />, label: "Exercise Prescription" },
+  homeProtocol: { icon: <Icon name="home" />, label: "Home Protocol" },
+  progress: { icon: <Icon name="trend" />, label: "Progress / Follow-up" },
+  review: { icon: <Icon name="check" />, label: "Final Review" },
 };
 
 const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
@@ -382,6 +400,17 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
     const idx = stepOrder.indexOf(id);
     if (idx >= 0) setStep(idx);
   }
+  // AI-assisted entry drops "demographics" from stepOrder entirely (it's
+  // collected pre-wizard in OrthoAssessment.jsx instead) -- but if a student
+  // skipped name/age there, MissingDemographicsModal's "Go to Patient Info"
+  // still needs somewhere real to send them. Same one-off-insert pattern as
+  // openGait() below: add it back in at the front, then jump there.
+  function jumpToDemographics() {
+    if (!stepOrder.includes("demographics")) {
+      setStepOrder((prev) => ["demographics", ...prev]);
+    }
+    setStep(0);
+  }
   function openGait() {
     setStepOrder((prev) => {
       let next = prev;
@@ -549,12 +578,36 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
               </button>
             )}
           </div>
-          <div className="stepnav-wrap">
-            <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} requiredIds={requiredStepIds} />
-          </div>
-          <div className="progress-label">
-            Step {step + 1} of {steps.length}
-          </div>
+          {/* AI-assisted entry keeps the same journey-dots header the two
+              pre-wizard screens (OrthoAssessment.jsx) already used for
+              Demographics/Region, instead of switching to this wizard's own
+              full icon-strip + "Step X of Y" (2026-09-16, Aditi: didn't want
+              "this whole old outpatient" chrome taking over once past
+              Region). The Summary stage additionally gets the non-linear hub
+              pill-nav so Problem List/Goals/Treatment/... are all reachable
+              from any of the others, not forced into a fixed order. */}
+          {entryMode === "ai" ? (
+            <>
+              <AiJourneyDots activeIndex={aiStageIndexFor(current.id)} />
+              {AI_HUB_IDS.includes(current.id) && (
+                <AiHubNav
+                  items={AI_HUB_IDS.filter((id) => stepOrder.includes(id)).map((id) => ({ id, label: STEP_META[id].label }))}
+                  activeId={current.id}
+                  visited={visited}
+                  onJump={jumpTo}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <div className="stepnav-wrap">
+                <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} requiredIds={requiredStepIds} />
+              </div>
+              <div className="progress-label">
+                Step {step + 1} of {steps.length}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="content">
@@ -598,16 +651,29 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
             />
           )}
           {current.id === "objectiveAI" && (
-            <ConditionObjectiveAssessment
-              data={data}
-              setData={setData}
-              selectedRegions={selectedRegions}
-              onStartOutcomeMeasure={openOutcomeMeasure}
-            />
+            <>
+              {/* Nothing on this screen previously explained where the ranked
+                  condition cards below actually come from -- a student
+                  landing here with no context had no way to connect it back
+                  to the Subjective answers they'd just filled in (2026-09-15,
+                  Aditi: wants this "stepwise" and clear for students new to
+                  the app). */}
+              <SectionIntro
+                icon="🧭"
+                title="AI Objective Assessment"
+                info="This reads the Subjective answers you already entered — especially the ⭐ starred ones — and ranks which conditions best fit them, before you've done a single objective test. Pick a condition tab below to see its suggested ROM/MMT/Special Tests; performing those then sharpens the ranking further. If a region shows 'no Subjective data yet', go back to Subjective and fill in its region-specific checklist first."
+              />
+              <ConditionObjectiveAssessment
+                data={data}
+                setData={setData}
+                selectedRegions={selectedRegions}
+                onStartOutcomeMeasure={openOutcomeMeasure}
+              />
+            </>
           )}
           {current.id === "edema" && (
             <>
-              <SectionIntro icon="💧" title="Edema" />
+              <SectionIntro icon={<Icon name="droplet" />} title="Edema" />
               <EdemaFields data={data} setData={setData} />
             </>
           )}
@@ -649,7 +715,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           {current.id === "review" && (
             <>
               <AssessmentSummary
-                icon="✅"
+                icon={<Icon name="check" />}
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
@@ -690,7 +756,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
           <MissingDemographicsModal
             missing={missingDemFields}
             onClose={() => setMissingDemFields(null)}
-            onGoToDemographics={() => { setMissingDemFields(null); jumpTo("demographics"); }}
+            onGoToDemographics={() => { setMissingDemFields(null); jumpToDemographics(); }}
           />
         )}
 
@@ -715,7 +781,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions, condition: 
             </div>
             <div className="ct-modal-body">
               <AssessmentSummary
-                icon="✅"
+                icon={<Icon name="check" />}
                 title="Outpatient Musculoskeletal Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}

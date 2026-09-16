@@ -1917,7 +1917,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
 
         {/* Main */}
-        <div className="pm-main" ref={mainScrollRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",minWidth:0}}>
+        {/* overflowY was "auto" -- .pm-main has no height cap at any
+            breakpoint (flex:1 alone), so it never actually overflows
+            internally; body is always the real scrolling element (see the
+            navTo() comment above mainScrollRef). A declared overflow-y:auto
+            still claims the "nearest scrolling ancestor" slot for any
+            position:sticky element nested inside it though, which silently
+            broke every sticky assessment header (Ortho/Cardio/Neuro) since
+            their sticky topbar bound to this inert box instead of body.
+            overflow-x:clip (not hidden) so the visible y-axis doesn't get
+            forced back to auto by the browser's overflow axis-pairing rule. */}
+        <div className="pm-main" ref={mainScrollRef} style={{flex:1,overflowY:"visible",overflowX:"clip",minWidth:0}}>
 
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all

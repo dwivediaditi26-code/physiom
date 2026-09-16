@@ -1,7 +1,7 @@
 import React, { useState, lazy, Suspense } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
-import { subjectiveFieldsForRegion } from "./orthoSubjectiveRegionData.js";
+import { subjectiveFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
 import { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
 
 // AI text/voice intake for Subjective -- lazy-loaded since most sessions
@@ -15,12 +15,17 @@ const LazyOrthoAIIntakePanel = lazy(() => import("./OrthoAIIntakePanel.jsx"));
    are shared across all three pathways).
    ============================================================ */
 
-function RegionField({ field, value, onChange }) {
+// ⭐ appended to the label (not a separate element) so it survives
+// whichever field component renders it -- SelectField/TextArea/TextField
+// all just print `label` as-is, no prop plumbing needed for the marker
+// itself, only for the legend/title explaining what it means (below).
+function RegionField({ field, value, onChange, starred }) {
+  const label = starred ? `⭐ ${field.label}` : field.label;
   if (field.type === "multi" || field.type === "single") {
-    return <SelectField label={field.label} type={field.type} options={field.options} value={value} onChange={onChange} />;
+    return <SelectField label={label} type={field.type} options={field.options} value={value} onChange={onChange} />;
   }
-  if (field.type === "textarea") return <TextArea label={field.label} value={value} onChange={onChange} />;
-  return <TextField label={field.label} value={value} onChange={onChange} />;
+  if (field.type === "textarea") return <TextArea label={label} value={value} onChange={onChange} />;
+  return <TextField label={label} value={value} onChange={onChange} />;
 }
 
 /* Tab row reusing the exact .region-tab-row-wrap/.region-tab CSS already
@@ -38,6 +43,7 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
   return (
     <>
       <div className="subheading">Region-specific subjective</div>
+      <Hint>⭐ = this answer directly changes which conditions "AI Objective Assessment" suggests next. Everything else is still valuable documentation, it just doesn't currently feed that matching.</Hint>
       <div className="region-tab-row-wrap">
         <div className="region-tab-row">
           {selectedRegions.map((r, i) => (
@@ -48,9 +54,30 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
         </div>
       </div>
       {fields.map((f) => (
-        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} />
+        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} />
       ))}
     </>
+  );
+}
+
+// A scrollable list of whole years (native <select>, so mobile gets its own
+// real scroll-wheel picker for free) instead of NumberField's free-type
+// spinner box, which read as unnecessarily wide sitting on its own full-width
+// row (2026-09-16, Aditi: "age number is so big... should be smaller and
+// adjacent to gender").
+function AgeQuickSelect({ value, onChange }) {
+  return (
+    <FieldShell label="Age">
+      <div className="age-select-wrap">
+        <select className="age-select" value={value || ""} onChange={(e) => onChange(e.target.value)}>
+          <option value="">—</option>
+          {Array.from({ length: 110 }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+        <span className="combo-unit">yrs</span>
+      </div>
+    </FieldShell>
   );
 }
 
@@ -60,20 +87,19 @@ export function DemographicsSection({ data, setData }) {
     <>
       <SectionIntro icon="📋" title="Demographics" />
       <TextField label="Full name" value={d.name} onChange={(v) => set("name", v)} placeholder="Patient's full name" />
-      <NumberField label="Age" value={d.age} onChange={(v) => set("age", v)} unit="yrs" />
-      {/* Segmented (full-width pill row), not the SelectField combobox --
-          that combobox was squeezed into a row-2 half-width column here,
-          which truncated its "Type or select..." placeholder on mobile.
-          Same fixed-choice field orthoCommonSections.jsx's IPD/Post-op
-          Demographics already renders as Segmented; Outpatient was the
-          one inconsistent holdout. Matches Cardio's 3-option Gender field. */}
-      <Segmented label="Sex" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
-      <Segmented label="Hand dominance" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
+      {/* Age + Gender side by side (2026-09-16, Aditi) -- Age is the compact
+          scroll-select above, Gender the same 3-option Segmented as before,
+          just relabelled from "Sex" to read more naturally next to it. */}
+      <div className="row-2 age-gender-row">
+        <AgeQuickSelect value={d.age} onChange={(v) => set("age", v)} />
+        <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
+      </div>
       <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <div className="row-2">
         <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />
         <TextField label="Employer / industry" value={d.employer} onChange={(v) => set("employer", v)} />
       </div>
+      <Segmented label="Hand dominance" options={["Right", "Left", "Ambidextrous"]} value={d.dominant} onChange={(v) => set("dominant", v)} />
       <SelectField label="Work status" type="single" options={["Full time", "Part time", "Self employed", "Off work — injury", "Off work — illness", "Retired", "Unemployed", "Student", "Home duties"]} value={d.workStatus} onChange={(v) => set("workStatus", v)} />
       <SelectField label="Referred by" type="single" options={["Self referred", "GP", "Orthopaedic surgeon", "Rheumatologist", "Neurologist", "Emergency dept", "Employer", "Insurer", "Solicitor", "Other"]} value={d.referral} onChange={(v) => set("referral", v)} />
       <TextField label="GP name & practice" value={d.gp} onChange={(v) => set("gp", v)} />

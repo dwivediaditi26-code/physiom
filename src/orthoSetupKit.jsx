@@ -1,6 +1,56 @@
 import React, { useState } from "react";
 import { REGION_GROUPS, REGION_LABEL, regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 
+/* AI-assisted entry's 5-stage journey (Demographics / Region / Subjective /
+   AI Objective / Summary) -- shown instead of the manual wizard's own full
+   icon-strip + breadcrumb topbar, on both the pre-wizard screens
+   (OrthoAssessment.jsx) and the in-wizard screens that follow
+   (OrthoOutpatientAssessment.jsx), so a student sees one consistent header
+   the whole way through instead of the chrome changing underneath them.
+   Exported here (rather than living in just one of those two files) since
+   both need it. */
+export const AI_JOURNEY_STAGES = ["Demographics", "Region", "Subjective", "AI Objective", "Summary"];
+export function AiJourneyDots({ activeIndex }) {
+  return (
+    <div className="ai-journey-dots">
+      {AI_JOURNEY_STAGES.map((label, i) => (
+        <React.Fragment key={label}>
+          {i > 0 && <div className={"ai-journey-line" + (i <= activeIndex ? " done" : "")} />}
+          <div className="ai-journey-step">
+            <div className={"ai-journey-dot" + (i === activeIndex ? " active" : i < activeIndex ? " done" : "")} />
+            <div className={"ai-journey-label" + (i === activeIndex ? " active" : "")}>{label}</div>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+/* The "Summary" stage isn't one screen -- it's Problem List/Goals/
+   Treatment/Sessions/Progress/Techniques/Exercise Rx/Home Protocol/Final
+   Review, and Aditi doesn't want that cluster forced into a strict
+   Next-Next-Next order ("we can select it from anywhere... it's not like
+   it's stuck", 2026-09-16). This pill row is the non-linear nav for that
+   cluster -- every item always tappable, current one highlighted, so a
+   student can jump straight to Goals or back to Problems without walking
+   through everything in between. */
+export function AiHubNav({ items, activeId, visited, onJump }) {
+  return (
+    <div className="ai-hub-nav">
+      {items.map((it) => (
+        <button
+          key={it.id}
+          type="button"
+          className={"ai-hub-pill" + (it.id === activeId ? " active" : "") + (visited?.has(it.id) ? " visited" : "")}
+          onClick={() => onJump(it.id)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* Cardio-style picker list — big tappable rows with icon + label + desc.
    Used for the Pathway screen and the Condition screen so the whole Ortho
    module reads like one design system with the Cardiopulmonary module. */

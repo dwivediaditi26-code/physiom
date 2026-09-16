@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -92,34 +93,34 @@ const ORDERED_ALL = [
 ];
 
 const STEP_META = {
-  caseInfo: { icon: "📋", label: "Patient / Case Info" },
-  medicalReview: { icon: "🗂️", label: "Medical / Chart Review" },
-  precautions: { icon: "🚩", label: "Precautions & Safety" },
-  vitals: { icon: "❤️", label: "Vital Signs" },
-  subjective: { icon: "📝", label: "Subjective" },
-  pain: { icon: "😖", label: "Pain" },
-  observation: { icon: "👁️", label: "Observation" },
-  edema: { icon: "💧", label: "Edema" },
-  wound: { icon: "🩹", label: "Wound / Surgical Site" },
-  neurovascular: { icon: "🧠", label: "Neurovascular" },
-  neuroScreen: { icon: "⚡", label: "Neuro Screen" },
-  rom: { icon: "📐", label: "ROM" },
-  mmt: { icon: "💪", label: "MMT" },
-  jointMobility: { icon: "🦴", label: "Joint Mobility" },
-  specialTests: { icon: "🔬", label: "Special Tests" },
-  functionalMobility: { icon: "🛏️", label: "Functional Mobility" },
-  gait: { icon: "🚶", label: "Gait / Ambulation" },
-  balance: { icon: "⚖️", label: "Balance" },
-  activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
-  outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
-  impression: { icon: "🧠", label: "Clinical Impression" },
-  carePlanProblems: { icon: "🧩", label: "Problem List" },
-  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
-  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
-  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
-  carePlanSessions: { icon: "🗓️", label: "Sessions" },
-  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
-  review: { icon: "✅", label: "Final Review" },
+  caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
+  medicalReview: { icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  precautions: { icon: <Icon name="flag" />, label: "Precautions & Safety" },
+  vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
+  subjective: { icon: <Icon name="notes" />, label: "Subjective" },
+  pain: { icon: <Icon name="pain" />, label: "Pain" },
+  observation: { icon: <Icon name="eye" />, label: "Observation" },
+  edema: { icon: <Icon name="droplet" />, label: "Edema" },
+  wound: { icon: <Icon name="bandage" />, label: "Wound / Surgical Site" },
+  neurovascular: { icon: <Icon name="brain" />, label: "Neurovascular" },
+  neuroScreen: { icon: <Icon name="bolt" />, label: "Neuro Screen" },
+  rom: { icon: <Icon name="ruler" />, label: "ROM" },
+  mmt: { icon: <Icon name="muscle" />, label: "MMT" },
+  jointMobility: { icon: <Icon name="bone" />, label: "Joint Mobility" },
+  specialTests: { icon: <Icon name="microscope" />, label: "Special Tests" },
+  functionalMobility: { icon: <Icon name="bed" />, label: "Functional Mobility" },
+  gait: { icon: <Icon name="walk" />, label: "Gait / Ambulation" },
+  balance: { icon: <Icon name="scale" />, label: "Balance" },
+  activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
+  outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
+  impression: { icon: <Icon name="brain" />, label: "Clinical Impression" },
+  carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
+  carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
+  carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  carePlanSessions: { icon: <Icon name="calendar" />, label: "Sessions" },
+  carePlanProgress: { icon: <Icon name="trend" />, label: "Care Plan Progress" },
+  review: { icon: <Icon name="check" />, label: "Final Review" },
 };
 
 const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
@@ -144,7 +145,7 @@ function MedicalReviewSection({ data, setData, condition, selectedRegions }) {
   const showAmputation = condition === "amputation";
   return (
     <>
-      <SectionIntro icon="🗂️" title="Medical / Chart Review" />
+      <SectionIntro icon={<Icon name="folder" />} title="Medical / Chart Review" />
       <TextArea label="Medical record review" value={d.recordReview} onChange={(v) => set("recordReview", v)} placeholder="Relevant history, comorbidities, prior functional level..." />
       <TextField label="Mechanism of injury / onset" value={d.mechanism} onChange={(v) => set("mechanism", v)} />
       <DateField label="Date of injury / surgery" value={d.eventDate} onChange={(v) => set("eventDate", v)} />
@@ -174,7 +175,7 @@ function PrecautionsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "precautions");
   return (
     <>
-      <SectionIntro icon="🚩" title="Precautions & Safety" />
+      <SectionIntro icon={<Icon name="flag" />} title="Precautions & Safety" />
       <SelectField label="Precautions" type="multi" options={PRECAUTION_OPTIONS} value={d.selected} onChange={(v) => set("selected", v)} />
       <Segmented label="Movement restrictions in place?" options={["Yes", "No"]} value={d.restrictionsPresent} onChange={(v) => set("restrictionsPresent", v)} />
       {d.restrictionsPresent === "Yes" && <TextArea label="Movement restriction detail" value={d.restrictionDetail} onChange={(v) => set("restrictionDetail", v)} />}
@@ -187,7 +188,7 @@ function EdemaSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "edema");
   return (
     <>
-      <SectionIntro icon="💧" title="Edema" info="Press firmly over bone (shin/ankle) for a few seconds — pitting leaves a visible indentation. In bed-bound patients also check the sacrum, since fluid pools there instead of the ankles." />
+      <SectionIntro icon={<Icon name="droplet" />} title="Edema" info="Press firmly over bone (shin/ankle) for a few seconds — pitting leaves a visible indentation. In bed-bound patients also check the sacrum, since fluid pools there instead of the ankles." />
       <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={d.side} onChange={(v) => set("side", v)} />
       <SelectField label="Location" type="multi" options={["Ankle", "Foot", "Knee", "Lower leg", "Wrist", "Hand", "Generalized", "Sacral"]} value={d.location} onChange={(v) => set("location", v)} />
       <Segmented label="Severity" options={["None", "Mild", "Moderate", "Severe"]} value={d.severity} onChange={(v) => set("severity", v)} />
@@ -201,7 +202,7 @@ function WoundSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "wound");
   return (
     <>
-      <SectionIntro icon="🩹" title="Wound / Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
+      <SectionIntro icon={<Icon name="bandage" />} title="Wound / Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
       <YesNo label="Wound present?" value={d.present} onChange={(v) => set("present", v)} />
       {d.present === "Yes" && (
         <>
@@ -220,7 +221,7 @@ function NeurovascularSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "neurovascular");
   return (
     <>
-      <SectionIntro icon="🧠" title="Neurovascular" info="Compare distal to the injury/surgery site against the contralateral limb. Any acute deterioration (new numbness, pallor, absent pulse) is a medical emergency — escalate immediately." />
+      <SectionIntro icon={<Icon name="brain" />} title="Neurovascular" info="Compare distal to the injury/surgery site against the contralateral limb. Any acute deterioration (new numbness, pallor, absent pulse) is a medical emergency — escalate immediately." />
       <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={d.side} onChange={(v) => set("side", v)} />
       <Segmented label="Capillary refill" options={["Normal", "Delayed"]} value={d.capRefill} onChange={(v) => set("capRefill", v)} />
       <Segmented label="Distal pulse" options={["Present", "Reduced", "Absent", "Not assessed"]} value={d.pulse} onChange={(v) => set("pulse", v)} />
@@ -445,7 +446,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "review" && (
             <>
               <AssessmentSummary
-                icon="✅"
+                icon={<Icon name="check" />}
                 title="IPD Orthopedic Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}
@@ -495,7 +496,7 @@ function SubjectiveSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
   return (
     <>
-      <SectionIntro icon="📝" title="Subjective" />
+      <SectionIntro icon={<Icon name="notes" />} title="Subjective" />
       <SelectField label="Chief complaint" type="multi" options={["Pain", "Weakness", "Reduced mobility", "Swelling", "Stiffness", "Instability", "Numbness / tingling", "Other"]} value={d.chiefComplaint} onChange={(v) => set("chiefComplaint", v)} />
       <SelectField label="Aggravating activities" type="multi" options={["Walking", "Standing", "Sitting", "Stairs", "Transfers", "Lying down", "Movement of joint"]} value={d.aggravating} onChange={(v) => set("aggravating", v)} />
       <SelectField label="Relieving factors" type="multi" options={["Rest", "Position change", "Medication", "Ice / heat", "Elevation"]} value={d.relieving} onChange={(v) => set("relieving", v)} />

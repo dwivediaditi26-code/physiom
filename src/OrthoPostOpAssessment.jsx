@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Hint, TextField, DateField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { Icon } from "./StepIcons.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
@@ -107,32 +108,32 @@ const ORDERED_ALL = [
 ];
 
 const STEP_META = {
-  caseInfo: { icon: "📋", label: "Patient / Case Info" },
-  surgicalReview: { icon: "🩺", label: "Surgical Review" },
-  vitals: { icon: "❤️", label: "Vital Signs" },
-  pain: { icon: "😖", label: "Pain" },
-  observation: { icon: "👁️", label: "Observation" },
-  surgicalSite: { icon: "🩹", label: "Surgical Site" },
-  residualLimb: { icon: "🦵", label: "Residual Limb" },
-  prosthesis: { icon: "🦿", label: "Prosthesis" },
-  neuroScreen: { icon: "🧠", label: "Neurological Screen" },
-  rom: { icon: "📐", label: "ROM" },
-  mmt: { icon: "💪", label: "MMT / Muscle Activation" },
-  jointMobility: { icon: "🦴", label: "Joint Mobility" },
-  specialTests: { icon: "🔬", label: "Special Tests" },
-  functionalMobility: { icon: "🛏️", label: "Functional Mobility" },
-  gait: { icon: "🚶", label: "Gait / Ambulation" },
-  balance: { icon: "⚖️", label: "Balance" },
-  activityTolerance: { icon: "🏃", label: "Activity Tolerance" },
-  outcomeMeasure: { icon: "📊", label: "Outcome Measure" },
-  impression: { icon: "🧠", label: "Clinical Impression" },
-  carePlanProblems: { icon: "🧩", label: "Problem List" },
-  carePlanGoals: { icon: "🎯", label: "Care Plan Goals" },
-  carePlanTreatment: { icon: "🏋", label: "Care Plan Treatment" },
-  carePlanPlan: { icon: "📋", label: "Care Plan Summary" },
-  carePlanSessions: { icon: "🗓️", label: "Sessions" },
-  carePlanProgress: { icon: "📈", label: "Care Plan Progress" },
-  review: { icon: "✅", label: "Final Review" },
+  caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
+  surgicalReview: { icon: <Icon name="stethoscope" />, label: "Surgical Review" },
+  vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
+  pain: { icon: <Icon name="pain" />, label: "Pain" },
+  observation: { icon: <Icon name="eye" />, label: "Observation" },
+  surgicalSite: { icon: <Icon name="bandage" />, label: "Surgical Site" },
+  residualLimb: { icon: <Icon name="leg" />, label: "Residual Limb" },
+  prosthesis: { icon: <Icon name="prosthetic" />, label: "Prosthesis" },
+  neuroScreen: { icon: <Icon name="brain" />, label: "Neurological Screen" },
+  rom: { icon: <Icon name="ruler" />, label: "ROM" },
+  mmt: { icon: <Icon name="muscle" />, label: "MMT / Muscle Activation" },
+  jointMobility: { icon: <Icon name="bone" />, label: "Joint Mobility" },
+  specialTests: { icon: <Icon name="microscope" />, label: "Special Tests" },
+  functionalMobility: { icon: <Icon name="bed" />, label: "Functional Mobility" },
+  gait: { icon: <Icon name="walk" />, label: "Gait / Ambulation" },
+  balance: { icon: <Icon name="scale" />, label: "Balance" },
+  activityTolerance: { icon: <Icon name="run" />, label: "Activity Tolerance" },
+  outcomeMeasure: { icon: <Icon name="chart" />, label: "Outcome Measure" },
+  impression: { icon: <Icon name="brain" />, label: "Clinical Impression" },
+  carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
+  carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
+  carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  carePlanSessions: { icon: <Icon name="calendar" />, label: "Sessions" },
+  carePlanProgress: { icon: <Icon name="trend" />, label: "Care Plan Progress" },
+  review: { icon: <Icon name="check" />, label: "Final Review" },
 };
 
 const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
@@ -153,7 +154,7 @@ function SurgicalReviewSection({ data, setData, condition, selectedRegions }) {
   const [d, set] = useSectionData(data, setData, "surgicalReview");
   return (
     <>
-      <SectionIntro icon="🩺" title="Surgical Review" />
+      <SectionIntro icon={<Icon name="stethoscope" />} title="Surgical Review" />
       <Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>
       <DateField label="Date of surgery" value={d.surgeryDate} onChange={(v) => set("surgeryDate", v)} />
       <NumberField label="Post-operative day / week" value={d.postOpDay} onChange={(v) => set("postOpDay", v)} unit="POD" />
@@ -171,7 +172,7 @@ function SurgicalSiteSection({ data, setData, condition, selectedRegions }) {
   const incisionOptions = INCISION_TYPES_BY_CONDITION[condition] || GENERIC_INCISION_TYPES;
   return (
     <>
-      <SectionIntro icon="🩹" title="Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
+      <SectionIntro icon={<Icon name="bandage" />} title="Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
       <SelectField label="Surgical site" type="multi" options={siteOptions} value={d.site} onChange={(v) => set("site", v)} />
       <SelectField label="Incision type" type="single" options={incisionOptions} value={d.incisionType} onChange={(v) => set("incisionType", v)} />
       <div className="subheading">Incision / wound</div>
@@ -201,7 +202,7 @@ function ResidualLimbSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "residualLimb");
   return (
     <>
-      <SectionIntro icon="🦵" title="Residual Limb" />
+      <SectionIntro icon={<Icon name="leg" />} title="Residual Limb" />
       <TextField label="Shape" value={d.shape} onChange={(v) => set("shape", v)} placeholder="e.g. cylindrical, conical" />
       <Segmented label="Wound" options={["Healing well", "Delayed healing", "Dehiscence", "Not applicable"]} value={d.wound} onChange={(v) => set("wound", v)} />
       <Segmented label="Edema" options={["None", "Mild", "Moderate", "Severe"]} value={d.edema} onChange={(v) => set("edema", v)} />
@@ -217,7 +218,7 @@ function ProsthesisSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "prosthesis");
   return (
     <>
-      <SectionIntro icon="🦿" title="Prosthesis" />
+      <SectionIntro icon={<Icon name="prosthetic" />} title="Prosthesis" />
       <Segmented label="Prosthetic status" options={["Not yet fitted", "Temporary/preparatory", "Definitive", "Not applicable"]} value={d.status} onChange={(v) => set("status", v)} />
       <Segmented label="Prosthetic tolerance" options={["Good", "Fair", "Poor", "Not applicable"]} value={d.tolerance} onChange={(v) => set("tolerance", v)} />
       <TextArea label="Prosthetic training needs" value={d.trainingNeeds} onChange={(v) => set("trainingNeeds", v)} />
@@ -229,7 +230,7 @@ function NeuroScreenSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "neuroScreen");
   return (
     <>
-      <SectionIntro icon="🧠" title="Neurological Screen" info="A brief screen post spine surgery — full myotome/dermatome testing only if clinically indicated or per protocol." />
+      <SectionIntro icon={<Icon name="brain" />} title="Neurological Screen" info="A brief screen post spine surgery — full myotome/dermatome testing only if clinically indicated or per protocol." />
       <SelectField label="Motor screen" type="multi" options={["Grossly intact", "Weakness — upper limb", "Weakness — lower limb", "Not assessed"]} value={d.motor} onChange={(v) => set("motor", v)} />
       <SelectField label="Sensory screen" type="multi" options={["Grossly intact", "Numbness", "Tingling / paraesthesia", "Not assessed"]} value={d.sensory} onChange={(v) => set("sensory", v)} />
       <Segmented label="Reflexes" options={["Normal", "Diminished", "Absent", "Not tested"]} value={d.reflexes} onChange={(v) => set("reflexes", v)} />
@@ -493,7 +494,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           {current.id === "review" && (
             <>
               <AssessmentSummary
-                icon="✅"
+                icon={<Icon name="check" />}
                 title="Post-operative Rehab Assessment"
                 sub={`${regionsLabel} · ${conditionLabel}`}
                 steps={steps}

@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
-import { PickerList, ConditionPicker, RegionPicker, regionLabelList } from "./orthoSetupKit.jsx";
+import { PickerList, ConditionPicker, RegionPicker, regionLabelList, AiJourneyDots } from "./orthoSetupKit.jsx";
 import { getTemplates } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
 import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
 import OrthoPostOpAssessment, { POSTOP_CONDITIONS } from "./OrthoPostOpAssessment.jsx";
 import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS } from "./OrthoOutpatientAssessment.jsx";
 import OrthoAIIntakePanel from "./OrthoAIIntakePanel.jsx";
+import { DemographicsSection } from "./orthoOutpatientSections.jsx";
 
 /* ============================================================
    ORTHO ASSESSMENT — standalone entry point.
@@ -39,27 +40,6 @@ const PATHWAY_META = {
   postop: { Component: OrthoPostOpAssessment, conditions: POSTOP_CONDITIONS, label: "Post-operative Rehab" },
   outpatient: { Component: OrthoOutpatientAssessment, conditions: OUTPATIENT_CONDITIONS, label: "Outpatient / Musculoskeletal" },
 };
-
-// The AI-assisted entry's 5-stage journey — Subjective/Region happen here in
-// OrthoAssessment before the wizard even mounts; AI/Objective/Summary are
-// stages inside OrthoOutpatientAssessment itself. Shown as a dot-and-line
-// strip so a student sees the whole path on step 1, not just "Continue".
-const AI_JOURNEY_STAGES = ["Subjective", "Region", "AI", "Objective", "Summary"];
-function AiJourneyDots({ activeIndex }) {
-  return (
-    <div className="ai-journey-dots">
-      {AI_JOURNEY_STAGES.map((label, i) => (
-        <React.Fragment key={label}>
-          {i > 0 && <div className={"ai-journey-line" + (i <= activeIndex ? " done" : "")} />}
-          <div className="ai-journey-step">
-            <div className={"ai-journey-dot" + (i === activeIndex ? " active" : i < activeIndex ? " done" : "")} />
-            <div className={"ai-journey-label" + (i === activeIndex ? " active" : "")}>{label}</div>
-          </div>
-        </React.Fragment>
-      ))}
-    </div>
-  );
-}
 
 const OPD_MODES = [
   { id: "condition", icon: "🩺", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
@@ -98,30 +78,35 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   // "Start with AI" gives, just reachable without leaving this screen too.
   const [pickedAi, setPickedAi] = useState(false);
   const effectiveEntryMode = entryMode || (pickedAi ? "ai" : null);
-  // The AI-assisted path's actual front page: write/speak the assessment
-  // (or pull it forward from this patient's existing old-flow Subjective
-  // Assessment, or skip straight to manual) BEFORE ever asking "which
-  // region" -- region only comes after, since neither the AI narrative
-  // parser nor the old-flow import attempts to guess it (see
-  // orthoAiIntake.js's comment on why region import is deliberately out
-  // of scope). Reusing step===1 (previously always the region screen) for
-  // both sub-screens keeps the rest of the step machine unchanged.
+  // The AI-assisted path's actual front pages: Demographics, then Region,
+  // then Subjective (write/speak it, or skip to manual) -- all still under
+  // step===1 (previously just the region screen), switched between by
+  // aiSubStep so the rest of the step machine (0 pathway, 1 [demographics/
+  // region/subjective], 3 mount) stays unchanged. 2026-09-16, Aditi: "first
+  // show demographic data... then region then subjective... then the AI
+  // objective page... summary/problem list/goals/treatment" -- Demographics
+  // and Region collected here feed straight into the wizard's initial data
+  // (see mount call below and AI_ENTRY_SKIP_IDS in OrthoOutpatientAssessment.jsx),
+  // which is skipped past on mount instead of asking again.
+  const [aiSubStep, setAiSubStep] = useState(0); // 0 demographics, 1 region, 2 subjective
+  const [aiDemographicsData, setAiDemographicsData] = useState({});
   const [aiIntakeDone, setAiIntakeDone] = useState(false);
   const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
   const [aiSuggestedRegions, setAiSuggestedRegions] = useState([]);
   // Which of the Subjective screen's two equal-weight cards (🎙 AI Parse /
   // ✍ Manual) is showing -- null is the chooser itself; "ai" reveals the
-  // real intake panel inline. Manual has no sub-screen of its own here: its
-  // fields are the wizard's own Subjective step right after Demographics.
+  // real intake panel inline.
   const [subjectiveChoice, setSubjectiveChoice] = useState(null);
 
   // One path for both AI-intake sources (a parsed narrative and an imported
   // old record): seed Subjective/Pain, and pre-tick whatever region(s) that
   // source already names (2026-09-03, Aditi: "I already told about the
   // region... when we go to the next page we should be able to see that this
-  // region is selected"). Nothing is locked -- the next screen is the same
-  // RegionPicker as always, so an AI-suggested region can be unticked, given
-  // a different side, or joined by any other region.
+  // region is selected"). Nothing is locked -- the RegionPicker (already
+  // done by this point) lets an AI-suggested region be unticked, given a
+  // different side, or joined by any other region. Subjective is now the
+  // last pre-wizard phase (2026-09-16 reorder), so finishing it mounts the
+  // wizard immediately -- nothing left to ask before then.
   function applyIntakeUpdates(updates) {
     setPendingAiUpdates(updates);
     const suggested = (updates?.regions || []).filter((r) => r && r.id);
@@ -136,6 +121,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
       });
     }
     setAiIntakeDone(true);
+    setStep(3);
   }
 
   function restart() {
@@ -147,9 +133,10 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
     setPickedAi(false);
+    setAiSubStep(0);
+    setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
-    setOldDataOpen(false);
     setAiSuggestedRegions([]);
     setSubjectiveChoice(null);
   }
@@ -159,9 +146,10 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setCondition("general");
     setOpdMode("general");
     setPickedAi(true);
+    setAiSubStep(0);
+    setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
-    setOldDataOpen(false);
     setAiSuggestedRegions([]);
     setSubjectiveChoice(null);
     setStep(1);
@@ -183,7 +171,11 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         activePatientId={activePatientId}
         patientData={patientData}
         requireAuth={requireAuth}
-        initialAiUpdates={pendingAiUpdates}
+        initialAiUpdates={
+          effectiveEntryMode === "ai" && aiDemographicsData.demographics
+            ? { ...pendingAiUpdates, demographics: { ...pendingAiUpdates?.demographics, ...aiDemographicsData.demographics } }
+            : pendingAiUpdates
+        }
         entryMode={effectiveEntryMode}
         initialData={resume?.data}
         initialStep={resume ? resume.initialStep || "review" : undefined}
@@ -192,7 +184,9 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   }
 
   const canProceedPathway = step !== 0 || !!pathway;
-  const canProceedRegion = step !== 1 || selectedRegions.length > 0;
+  const canProceedRegion =
+    step !== 1 ||
+    (effectiveEntryMode === "ai" ? aiSubStep !== 1 || selectedRegions.length > 0 : selectedRegions.length > 0);
   const canProceedCondition =
     step !== 2 ||
     (isOutpatient
@@ -203,11 +197,15 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
   function goNext() {
-    if (effectiveEntryMode && step === 1) { setStep(3); return; } // region chosen -- condition/mode already forced above, skip straight in
+    // Demographics(0) -> Region(1) -> Subjective(2); Subjective mounts itself
+    // once done (applyIntakeUpdates / the Manual card), so this only ever
+    // advances the first two sub-phases.
+    if (effectiveEntryMode && step === 1) { setAiSubStep((s) => Math.min(s + 1, 2)); return; }
     if (step < 2) setStep(step + 1);
     else setStep(3);
   }
   function goBack() {
+    if (effectiveEntryMode && step === 1 && aiSubStep > 0) { setAiSubStep((s) => s - 1); return; }
     if (step > 0) setStep(step - 1);
   }
 
@@ -257,9 +255,68 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
             </>
           )}
 
-          {step === 1 && effectiveEntryMode === "ai" && !aiIntakeDone && (
+          {/* Plain (non-AI) entry never sets aiSubStep, so none of the three
+              aiSubStep-gated blocks below ever matched it -- this block was
+              dropped when those got split out of the single shared region
+              step, leaving step 1 blank for every ordinary IPD/Post-op/
+              Outpatient pick (2026-09-16, Aditi: "the regions is nothing
+              showing"). Restored as its own branch instead of folding back
+              into the aiSubStep machinery, since it isn't an AI sub-step at
+              all. */}
+          {step === 1 && !effectiveEntryMode && (
+            <>
+              <SectionIntro
+                icon="🧭"
+                title="Which region(s) are involved?"
+                sub="Select every region you plan to examine — you can always pull in another region later from within ROM, MMT, or Special Tests."
+              />
+              {aiSuggestedRegions.length > 0 && (
+                <Hint>
+                  ✨ Pre-selected from what you already told us: <b>{regionLabelList(aiSuggestedRegions)}</b> — check it's right, then add, remove, or change the side below.
+                </Hint>
+              )}
+              <RegionPicker
+                selectedRegions={selectedRegions}
+                setSelectedRegions={setSelectedRegions}
+                excludeIds={isOutpatient ? ["upperArm", "forearm", "thigh", "leg", "wholeBody", "multiple"] : undefined}
+              />
+            </>
+          )}
+
+          {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 0 && (
             <>
               <AiJourneyDots activeIndex={0} />
+              <DemographicsSection data={aiDemographicsData} setData={setAiDemographicsData} />
+            </>
+          )}
+
+          {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 1 && (
+            <>
+              <AiJourneyDots activeIndex={1} />
+              <SectionIntro
+                icon="🧭"
+                title="Body Region"
+                sub="What area are you assessing? Select up to 3 — you can always pull in another region later from within ROM, MMT, or Special Tests."
+              />
+              {aiSuggestedRegions.length > 0 && (
+                <Hint>
+                  ✨ Pre-selected from what you already told us: <b>{regionLabelList(aiSuggestedRegions)}</b> — check it's right, then add, remove, or change the side below.
+                </Hint>
+              )}
+              <RegionPicker
+                selectedRegions={selectedRegions}
+                setSelectedRegions={setSelectedRegions}
+                excludeIds={isOutpatient ? ["upperArm", "forearm", "thigh", "leg", "wholeBody", "multiple"] : undefined}
+              />
+              <div className="hint" style={{ marginTop: 12, fontStyle: "normal", fontWeight: 700, color: selectedRegions.length > 3 ? "#B45309" : undefined }}>
+                Selected {selectedRegions.length}/3{selectedRegions.length > 3 ? " — that's fine, just more than a quick screen usually needs" : ""}
+              </div>
+            </>
+          )}
+
+          {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
+            <>
+              <AiJourneyDots activeIndex={2} />
               <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
               {subjectiveChoice !== "ai" && (
                 <>
@@ -272,7 +329,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
                       </div>
                       <div className="ai-choice-cta">Start →</div>
                     </button>
-                    <button type="button" className="ai-choice-card" onClick={() => setAiIntakeDone(true)}>
+                    <button type="button" className="ai-choice-card" onClick={() => { setAiIntakeDone(true); setStep(3); }}>
                       <div className="ai-choice-icon">✍️</div>
                       <div className="ai-choice-body">
                         <div className="ai-choice-title">Manual</div>
@@ -295,35 +352,6 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
                     onApply={(updates) => { applyIntakeUpdates(updates); }}
                   />
                 </>
-              )}
-            </>
-          )}
-
-          {step === 1 && !(effectiveEntryMode === "ai" && !aiIntakeDone) && (
-            <>
-              {effectiveEntryMode === "ai" && <AiJourneyDots activeIndex={1} />}
-              <SectionIntro
-                icon="🧭"
-                title="Body Region"
-                sub={effectiveEntryMode === "ai" ? "What area are you assessing? Select up to 3 — you can always pull in another region later from within ROM, MMT, or Special Tests." : "Select every region you plan to examine — you can always pull in another region later from within ROM, MMT, or Special Tests."}
-              />
-              {aiSuggestedRegions.length > 0 && (
-                <Hint>
-                  ✨ Pre-selected from what you already told us: <b>{regionLabelList(aiSuggestedRegions)}</b> — check it's right, then add, remove, or change the side below.
-                </Hint>
-              )}
-              {/* Outpatient only (2026-09-16, Aditi): drop the in-between
-                  segment/general options -- IPD and Post-op Rehab keep the
-                  full list. */}
-              <RegionPicker
-                selectedRegions={selectedRegions}
-                setSelectedRegions={setSelectedRegions}
-                excludeIds={isOutpatient ? ["upperArm", "forearm", "thigh", "leg", "wholeBody", "multiple"] : undefined}
-              />
-              {effectiveEntryMode === "ai" && (
-                <div className="hint" style={{ marginTop: 12, fontStyle: "normal", fontWeight: 700, color: selectedRegions.length > 3 ? "#B45309" : undefined }}>
-                  Selected {selectedRegions.length}/3{selectedRegions.length > 3 ? " — that's fine, just more than a quick screen usually needs" : ""}
-                </div>
               )}
             </>
           )}
@@ -367,7 +395,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
           )}
         </div>
 
-        {!(step === 1 && effectiveEntryMode === "ai" && !aiIntakeDone) && (
+        {!(step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2) && (
           <div className="bottombar">
             {step > 0 && (
               <button className="ghost-btn" onClick={goBack}>

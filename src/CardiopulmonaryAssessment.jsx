@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
+import { Icon, IconPair } from "./StepIcons.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -74,17 +75,17 @@ function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
    5 settings × 3 systems = 15 pathway templates
    ============================================================ */
 const SETTINGS = [
-  { id: "inpatient", icon: "🏥", label: "Inpatient", desc: "Acute / ward patient" },
-  { id: "icu", icon: "🚨", label: "ICU", desc: "Critical care, closely monitored" },
-  { id: "postop", icon: "🛏️", label: "Post-operative", desc: "Recovery after surgery" },
-  { id: "outpatient", icon: "🚶", label: "Outpatient", desc: "OPD / clinic-based" },
-  { id: "rehab", icon: "🏃", label: "Rehabilitation", desc: "Structured cardiac / pulmonary / combined rehab" },
+  { id: "inpatient", icon: <Icon name="hospital" />, label: "Inpatient", desc: "Acute / ward patient" },
+  { id: "icu", icon: <Icon name="siren" />, label: "ICU", desc: "Critical care, closely monitored" },
+  { id: "postop", icon: <Icon name="bed" />, label: "Post-operative", desc: "Recovery after surgery" },
+  { id: "outpatient", icon: <Icon name="walk" />, label: "Outpatient", desc: "OPD / clinic-based" },
+  { id: "rehab", icon: <Icon name="run" />, label: "Rehabilitation", desc: "Structured cardiac / pulmonary / combined rehab" },
 ];
 
 const SYSTEMS = [
-  { id: "cardio", icon: "🫀", label: "Cardiovascular", desc: "Heart & circulation" },
-  { id: "resp", icon: "🫁", label: "Respiratory", desc: "Lungs & breathing" },
-  { id: "combined", icon: "🫀🫁", label: "Combined", desc: "Cardiovascular + respiratory" },
+  { id: "cardio", icon: <Icon name="heart" />, label: "Cardiovascular", desc: "Heart & circulation" },
+  { id: "resp", icon: <Icon name="lungs" />, label: "Respiratory", desc: "Lungs & breathing" },
+  { id: "combined", icon: <IconPair names={["heart", "lungs"]} />, label: "Combined", desc: "Cardiovascular + respiratory" },
 ];
 
 function rehabSubLabel(system) {
@@ -109,19 +110,19 @@ export function cardioAssessmentSubtitle(meta = {}) {
 const STEP_META = [
   { id: "setting", label: "Setting" },
   { id: "system", label: "System" },
-  { id: "demographics", icon: "📋", label: "Patient Information" },
-  { id: "safety", icon: "🚩", label: "Safety Screening" },
-  { id: "subjective", icon: "📝", label: "Subjective Assessment" },
-  { id: "chart", icon: "🗂️", label: "Medical / Chart Review" },
-  { id: "vitals", icon: "❤️", label: "Baseline Vitals" },
-  { id: "cardio", icon: "🫀", label: "Cardiovascular Examination" },
-  { id: "resp", icon: "🫁", label: "Respiratory Examination" },
-  { id: "functional", icon: "🚶", label: "Functional Capacity" },
-  { id: "exercise", icon: "🏃", label: "Exercise Response" },
-  { id: "outcomes", icon: "📊", label: "Outcome Measures" },
-  { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
-  { id: "precautions", icon: "⚠️", label: "Treatment Precautions" },
-  { id: "summary", icon: "✅", label: "Summary & Review" },
+  { id: "demographics", icon: <Icon name="clipboard" />, label: "Patient Information" },
+  { id: "safety", icon: <Icon name="flag" />, label: "Safety Screening" },
+  { id: "subjective", icon: <Icon name="notes" />, label: "Subjective Assessment" },
+  { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "vitals", icon: <Icon name="heart" />, label: "Baseline Vitals" },
+  { id: "cardio", icon: <Icon name="heart" />, label: "Cardiovascular Examination" },
+  { id: "resp", icon: <Icon name="lungs" />, label: "Respiratory Examination" },
+  { id: "functional", icon: <Icon name="walk" />, label: "Functional Capacity" },
+  { id: "exercise", icon: <Icon name="run" />, label: "Exercise Response" },
+  { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
+  { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  { id: "precautions", icon: <Icon name="warning" />, label: "Treatment Precautions" },
+  { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(2); // 13 steps shown in the step nav
 
@@ -572,27 +573,27 @@ function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
 const CT_LIBRARY = [
   {
     cat: "Cardiovascular",
-    icon: "🫀",
+    icon: <Icon name="heart" />,
     items: ["Pulse assessment", "Peripheral circulation", "Capillary refill", "Peripheral edema", "Orthostatic BP", "Heart rate response", "Blood pressure response", "Rhythm assessment", "Cardiac auscultation"],
   },
   {
     cat: "Respiratory",
-    icon: "🫁",
+    icon: <Icon name="lungs" />,
     items: ["Respiratory rate", "Breathing pattern", "Chest expansion", "Chest percussion", "Breath sounds / auscultation", "Cough assessment", "Sputum assessment", "Airway clearance assessment", "Dyspnea assessment"],
   },
   {
     cat: "Functional / Exercise",
-    icon: "🏃",
+    icon: <Icon name="run" />,
     items: ["6-Minute Walk Test", "2-Minute Walk Test", "1-Minute Sit-to-Stand", "5× Sit-to-Stand", "TUG", "Stair assessment", "Exercise tolerance"],
   },
   {
     cat: "Outcome Measures",
-    icon: "📈",
+    icon: <Icon name="trend" />,
     items: ["mMRC Dyspnea Scale", "Borg Dyspnea", "Borg RPE", "CAT", "Other cardiothoracic outcome"],
   },
   {
     cat: "Other Cardiothoracic",
-    icon: "🩺",
+    icon: <Icon name="stethoscope" />,
     items: ["Postural assessment", "Thoracic mobility", "Respiratory muscle assessment", "Inspiratory muscle strength", "Peak expiratory flow"],
   },
 ];
@@ -971,7 +972,7 @@ function DemographicsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "demographics");
   return (
     <>
-      <SectionIntro icon="📋" title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
+      <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
       <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" voice />
       <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} placeholder="yrs" voice />
       <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
@@ -1010,7 +1011,7 @@ function SafetySection({ data, setData, setting }) {
   }, [d.chest, d.neuro, d.cardiac, d.breathing, d.other]);
   return (
     <>
-      <SectionIntro icon="🚩" title="Safety Screening" sub="Screen for red flags before proceeding to exertional testing." />
+      <SectionIntro icon={<Icon name="flag" />} title="Safety Screening" sub="Screen for red flags before proceeding to exertional testing." />
       {flagCount > 0 && <Alert tone="red">⚠️ {flagCount} red-flag item(s) selected — correlate clinically before continuing to exercise / functional testing.</Alert>}
       {isICU && (
         <>
@@ -1069,7 +1070,7 @@ function SubjectiveSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
   return (
     <>
-      <SectionIntro icon="📝" title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses. Tap any row to fill it in." />
+      <SectionIntro icon={<Icon name="notes" />} title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses. Tap any row to fill it in." />
       <SelectField
         label="Chief complaint"
         type="multi"
@@ -1150,7 +1151,7 @@ function ChartSection({ data, setData, setting, system }) {
 
   return (
     <>
-      <SectionIntro icon="🗂️" title="Medical / Chart Review" />
+      <SectionIntro icon={<Icon name="folder" />} title="Medical / Chart Review" />
       {cardioDetail && <SelectField label="Cardiovascular history" type="multi" options={CARDIO_CONDITIONS} value={d.cardioHx} onChange={(v) => set("cardioHx", v)} />}
       {respDetail && <SelectField label="Respiratory history" type="multi" options={respHistoryOptions} value={d.respHx} onChange={(v) => set("respHx", v)} />}
       <SelectField label="Risk factors" type="multi" options={RISK_FACTORS} value={d.riskFactors} onChange={(v) => set("riskFactors", v)} />
@@ -1226,7 +1227,7 @@ function VitalsSection({ data, setData, system }) {
   }, []);
   return (
     <>
-      <SectionIntro icon="❤️" title="Baseline Physiological Parameters" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
+      <SectionIntro icon={<Icon name="heart" />} title="Baseline Physiological Parameters" sub="Opens at typical resting values — tap + to change whichever isn't normal for this patient." />
       <div className="vitals-grid">
         <VitalRow label="Heart rate" value={d.hr} onChange={(v) => set("hr", v)} unit="bpm" info={cardiovascularData.heartRate} max={220} />
         <VitalRow label="BP systolic" value={d.bpSys} onChange={(v) => set("bpSys", v)} unit="mmHg" info={cardiovascularData.bloodPressure} max={250} />
@@ -1268,7 +1269,7 @@ function CardioSection({ data, setData, system }) {
   }
   return (
     <>
-      <SectionIntro icon="🫀" title="Cardiovascular Examination" sub={(detailed ? "" : "Respiratory pathway — screening level only. ") + "Tap any row to fill it in."} />
+      <SectionIntro icon={<Icon name="heart" />} title="Cardiovascular Examination" sub={(detailed ? "" : "Respiratory pathway — screening level only. ") + "Tap any row to fill it in."} />
 
       <button type="button" className="quick-normal-btn" onClick={markAllNormal}>
         ✓ Mark all normal
@@ -1382,7 +1383,7 @@ function RespSection({ data, setData, system }) {
   const detailed = system === "resp" || system === "combined";
   return (
     <>
-      <SectionIntro icon="🫁" title="Respiratory Examination" sub={detailed ? undefined : "Cardiovascular pathway — screening level only."} />
+      <SectionIntro icon={<Icon name="lungs" />} title="Respiratory Examination" sub={detailed ? undefined : "Cardiovascular pathway — screening level only."} />
 
       <SelectField label="Breathing pattern" type="single" options={["Normal", "Tachypnea", "Bradypnea", "Laboured", "Shallow", "Irregular"]} value={d.pattern} onChange={(v) => set("pattern", v)} info={respiratoryData.respRate} />
 
@@ -1457,7 +1458,7 @@ function FunctionalSection({ data, setData, setting }) {
   const isICU = setting === "icu";
   return (
     <>
-      <SectionIntro icon="🚶" title="Functional Capacity" />
+      <SectionIntro icon={<Icon name="walk" />} title="Functional Capacity" />
       {isICU ? (
         <SelectField label="Mobility level" type="single" options={["Bed-bound", "Bed mobility", "Sitting", "Standing", "Transfer", "Walking"]} value={d.mobility} onChange={(v) => set("mobility", v)} />
       ) : (
@@ -1489,7 +1490,7 @@ function ExerciseSection({ data, setData, setting }) {
   const isRehab = setting === "rehab";
   return (
     <>
-      <SectionIntro icon="🏃" title="Exercise / Activity Response" sub={isRehab ? "Rehabilitation pathway — record every stage closely." : undefined} />
+      <SectionIntro icon={<Icon name="run" />} title="Exercise / Activity Response" sub={isRehab ? "Rehabilitation pathway — record every stage closely." : undefined} />
 
       {isRehab && (
         <>
@@ -1581,7 +1582,7 @@ function OutcomesSection({ data, setData, setting, system }) {
   const isICU = setting === "icu";
   return (
     <>
-      <SectionIntro icon="📊" title="Outcome Measures" />
+      <SectionIntro icon={<Icon name="chart" />} title="Outcome Measures" />
       {isICU && (
         <>
           <SelectField
@@ -1651,7 +1652,7 @@ function InterpretationSection({ data, setData }) {
 
   return (
     <>
-      <SectionIntro icon="🧠" title="Clinical Interpretation" sub="Synthesize subjective + objective findings into a problem list." />
+      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Synthesize subjective + objective findings into a problem list." />
       {flags.map((f, i) => (
         <Alert tone={f.tone} key={i}>
           {f.text}
@@ -1689,7 +1690,7 @@ function PrecautionsSection({ data, setData, setting, system }) {
   const options = [...base, ...(bySetting[setting] || [])];
   return (
     <>
-      <SectionIntro icon="⚠️" title="Treatment Precautions" />
+      <SectionIntro icon={<Icon name="warning" />} title="Treatment Precautions" />
       <SelectField label="Precautions" type="multi" options={options} value={d.selected} onChange={(v) => set("selected", v)} />
       <TextArea label="Additional precautions" value={d.additional} onChange={(v) => set("additional", v)} />
     </>
@@ -1716,7 +1717,7 @@ function fmtVal(v) {
 // the profile view sees the same section list/labels/icons the wizard did.
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🩺", label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
 // normally come from the big <style> block inside the default-exported
@@ -1776,7 +1777,7 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
 
   return (
     <>
-      <SectionIntro icon="✅" title="Summary & Review" sub={`${settingLabel} · ${systemLabel}`} />
+      <SectionIntro icon={<Icon name="check" />} title="Summary & Review" sub={`${settingLabel} · ${systemLabel}`} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
         const section = data[step.id] || {};
         const rows = Object.entries(section)
@@ -1971,7 +1972,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🩺", label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2052,25 +2053,15 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
         }
-        /* Fix (2026-08-20, Aditi): this screen is embedded inside
-           AppFull.jsx's own scroll container, which has its own sticky
-           mobile header (.pm-mobile-hdr, 64px tall, z-index 101) stuck to
-           the SAME top:0 -- without this offset the two sticky elements
-           collide and the title/icon renders overlapped/hidden behind the
-           app header once scrolled.
-           This offset is NOT viewport-relative -- sticky "top" is measured
-           from .pm-main's own padding box (64px header + 28px pm-main
-           padding-top = 92px), not from the visible viewport edge (which
-           looks 24px higher because AppFull.jsx negates that padding with
-           a -24px margin on this screen's own mount wrapper). A positive
-           64px here (viewport-relative thinking) actually pins the bar
-           92+64=156px down, way too low, leaving a large dead gap above it
-           (Aditi: "upper area is blank push all above little bit"). -28px
-           (92-28=64) pins it flush under the header once scrolled, while
-           its natural unscrolled position (68px) is already just 4px below
-           the header, so there's no dead gap either way. */
+        /* body is the real scrolling element on mobile (see utils.jsx),
+           and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
+           that same scroll -- without an offset here the two collide and
+           the title/icon renders overlapped/hidden behind the app header
+           once scrolled. --pm-mobile-hdr-h (utils.jsx) is that header's own
+           real height including the safe-area inset, so this always pins
+           flush under it with no dead gap, on notched phones too. */
         @media (max-width: 767px) {
-          .topbar { top: -28px; }
+          .topbar { top: var(--pm-mobile-hdr-h, 64px); }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
@@ -2284,7 +2275,17 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
             )}
             <div>
               <div className="topbar-title">
-                {step === 0 ? "🫀🫁 Cardiopulmonary Assessment" : current.icon ? `${current.icon} ${current.label}` : current.label}
+                {step === 0 ? (
+                  <>
+                    <IconPair names={["heart", "lungs"]} /> Cardiopulmonary Assessment
+                  </>
+                ) : current.icon ? (
+                  <>
+                    {current.icon} {current.label}
+                  </>
+                ) : (
+                  current.label
+                )}
               </div>
               {step >= 2 && (
                 <div className="topbar-breadcrumb">
@@ -2319,7 +2320,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         <div className="content">
           {step === 0 && (
             <>
-              <SectionIntro icon="🏥" title="Where is the patient being assessed?" sub="Select the patient setting to configure the assessment — 5 settings × 3 systems = 15 pathways." />
+              <SectionIntro icon={<Icon name="hospital" />} title="Where is the patient being assessed?" sub="Select the patient setting to configure the assessment — 5 settings × 3 systems = 15 pathways." />
               <div className="picker-grid">
                 {SETTINGS.map((s) => (
                   <button key={s.id} className={"picker-card" + (setting === s.id ? " selected" : "")} onClick={() => setSetting(s.id)}>
@@ -2336,7 +2337,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
 
           {step === 1 && (
             <>
-              <SectionIntro icon="🫀🫁" title="What are you primarily assessing?" sub="This determines how much detail each section shows." />
+              <SectionIntro icon={<IconPair names={["heart", "lungs"]} />} title="What are you primarily assessing?" sub="This determines how much detail each section shows." />
               <div className="picker-grid">
                 {SYSTEMS.map((s) => {
                   const desc = setting === "rehab" ? `→ ${rehabSubLabel(s.id)}` : s.desc;

@@ -7,6 +7,7 @@ import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSectio
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
+import { Icon } from "./StepIcons.jsx";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -103,40 +104,40 @@ function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
    condition is added on top rather than branching the whole form)
    ============================================================ */
 const SETTINGS = [
-  { id: "inpatient", icon: "🏥", label: "Inpatient", desc: "Acute / ward patient" },
-  { id: "icu", icon: "🚨", label: "ICU", desc: "Critical care, closely monitored" },
-  { id: "postop", icon: "🛏️", label: "Post-operative", desc: "Neurosurgical / spinal recovery" },
-  { id: "outpatient", icon: "🚶", label: "Outpatient", desc: "OPD / clinic-based" },
-  { id: "rehab", icon: "♿", label: "Neuro Rehabilitation", desc: "Structured inpatient/outpatient neuro rehab" },
+  { id: "inpatient", icon: <Icon name="hospital" />, label: "Inpatient", desc: "Acute / ward patient" },
+  { id: "icu", icon: <Icon name="siren" />, label: "ICU", desc: "Critical care, closely monitored" },
+  { id: "postop", icon: <Icon name="bed" />, label: "Post-operative", desc: "Neurosurgical / spinal recovery" },
+  { id: "outpatient", icon: <Icon name="walk" />, label: "Outpatient", desc: "OPD / clinic-based" },
+  { id: "rehab", icon: <Icon name="wheelchair" />, label: "Neuro Rehabilitation", desc: "Structured inpatient/outpatient neuro rehab" },
 ];
 
 const STEP_META = [
   { id: "setting", label: "Setting" },
-  { id: "demographics", icon: "📋", label: "Patient Information" },
-  { id: "safety", icon: "🚨", label: "Safety / Medical Stability" },
-  { id: "subjective", icon: "🗣️", label: "Subjective Assessment" },
-  { id: "chart", icon: "🗂️", label: "Medical / Chart Review" },
-  { id: "observation", icon: "👁️", label: "General Observation" },
-  { id: "cognition", icon: "🧠", label: "Mental Status / Cognition" },
-  { id: "cranial", icon: "👁️", label: "Cranial Nerve Screen" },
-  { id: "sensory", icon: "🖐️", label: "Sensory Examination" },
-  { id: "motor", icon: "💪", label: "Motor Examination" },
-  { id: "tone", icon: "⚡", label: "Tone / Reflexes" },
-  { id: "coordination", icon: "🎯", label: "Coordination" },
-  { id: "balance", icon: "⚖️", label: "Balance" },
-  { id: "gait", icon: "🚶", label: "Gait Assessment" },
-  { id: "functional", icon: "🛏️", label: "Functional Assessment" },
-  { id: "outcomes", icon: "📊", label: "Outcome Measures" },
-  { id: "interpretation", icon: "🧠", label: "Clinical Interpretation" },
-  { id: "carePlanProblems", icon: "🧩", label: "Problem List" },
-  { id: "carePlanGoals", icon: "🎯", label: "Care Plan Goals" },
-  { id: "carePlanTreatment", icon: "🏋", label: "Care Plan Treatment" },
-  { id: "carePlanPlan", icon: "📋", label: "Care Plan Summary" },
-  { id: "carePlanSessions", icon: "🗓️", label: "Sessions" },
-  { id: "carePlanProgress", icon: "📈", label: "Care Plan Progress" },
-  { id: "precautions", icon: "⚠️", label: "Precautions" },
-  { id: "exercisePrescription", icon: "🏋", label: "Exercise Prescription" },
-  { id: "summary", icon: "✅", label: "Summary & Review" },
+  { id: "demographics", icon: <Icon name="clipboard" />, label: "Patient Information" },
+  { id: "safety", icon: <Icon name="siren" />, label: "Safety / Medical Stability" },
+  { id: "subjective", icon: <Icon name="speech" />, label: "Subjective Assessment" },
+  { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "observation", icon: <Icon name="eye" />, label: "General Observation" },
+  { id: "cognition", icon: <Icon name="brain" />, label: "Mental Status / Cognition" },
+  { id: "cranial", icon: <Icon name="eye" />, label: "Cranial Nerve Screen" },
+  { id: "sensory", icon: <Icon name="hand" />, label: "Sensory Examination" },
+  { id: "motor", icon: <Icon name="muscle" />, label: "Motor Examination" },
+  { id: "tone", icon: <Icon name="bolt" />, label: "Tone / Reflexes" },
+  { id: "coordination", icon: <Icon name="target" />, label: "Coordination" },
+  { id: "balance", icon: <Icon name="scale" />, label: "Balance" },
+  { id: "gait", icon: <Icon name="walk" />, label: "Gait Assessment" },
+  { id: "functional", icon: <Icon name="bed" />, label: "Functional Assessment" },
+  { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
+  { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
+  { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
+  { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
+  { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
+  { id: "precautions", icon: <Icon name="warning" />, label: "Precautions" },
+  { id: "exercisePrescription", icon: <Icon name="dumbbell" />, label: "Exercise Prescription" },
+  { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(1); // 16 core steps shown in the step nav
 
@@ -634,7 +635,7 @@ const DERMATOME_ROW_INFO = Object.fromEntries(DERMATOME_ROWS.map((r) => [r, neur
 const NEURO_LIBRARY = [
   {
     cat: "Stroke",
-    icon: "🧠",
+    icon: <Icon name="brain" />,
     items: [
       "Higher mental function screen",
       "Neglect / inattention",
@@ -648,7 +649,7 @@ const NEURO_LIBRARY = [
   },
   {
     cat: "Parkinson's Disease",
-    icon: "🌀",
+    icon: <Icon name="spiral" />,
     items: [
       "Bradykinesia",
       "Rigidity type",
@@ -662,7 +663,7 @@ const NEURO_LIBRARY = [
   },
   {
     cat: "Spinal Cord Injury",
-    icon: "🦴",
+    icon: <Icon name="bone" />,
     items: [
       "Neurological level of injury",
       "Myotome grading (ASIA key muscles)",
@@ -676,7 +677,7 @@ const NEURO_LIBRARY = [
   },
   {
     cat: "Multiple Sclerosis",
-    icon: "🔥",
+    icon: <Icon name="flame" />,
     items: [
       "Fatigue screen",
       "Nystagmus / INO screen",
@@ -688,32 +689,32 @@ const NEURO_LIBRARY = [
   },
   {
     cat: "Traumatic Brain Injury",
-    icon: "💥",
+    icon: <Icon name="burst" />,
     items: ["Rancho Los Amigos level", "Post-traumatic amnesia screen", "Agitation / behaviour screen"],
   },
   {
     cat: "Vestibular Disorders",
-    icon: "🌀",
+    icon: <Icon name="spiral" />,
     items: ["Dix-Hallpike test", "Head impulse test", "Nystagmus assessment", "Dynamic Gait Index", "Dizziness Handicap Inventory screen"],
   },
   {
     cat: "Neuro-Respiratory",
-    icon: "🫁",
+    icon: <Icon name="lungs" />,
     items: ["Respiratory status", "Cough effectiveness", "Breathing pattern", "Secretion assessment"],
   },
   {
     cat: "Communication / Bulbar",
-    icon: "🗣️",
+    icon: <Icon name="speech" />,
     items: ["Dysarthria screen", "Voice / speech intelligibility", "Swallowing screen"],
   },
   {
     cat: "Peripheral Nerve",
-    icon: "🧬",
+    icon: <Icon name="dna" />,
     items: ["Neurodynamic / neural mobility testing", "Tinel's sign", "Muscle wasting", "Peripheral sensory/motor distribution"],
   },
   {
     cat: "Ataxia",
-    icon: "🧭",
+    icon: <Icon name="compass" />,
     items: ["SARA (Scale for Assessment and Rating of Ataxia)", "Truncal ataxia screen"],
   },
 ];
@@ -1118,7 +1119,7 @@ function DemographicsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "demographics");
   return (
     <>
-      <SectionIntro icon="📋" title="Patient Information" />
+      <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" />
       <div className="row-2">
         <div style={{ flex: 2 }}>
           <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} voice />
@@ -1163,7 +1164,7 @@ function SafetySection({ data, setData, setting }) {
   }, [d.redFlags, d.ad]);
   return (
     <>
-      <SectionIntro icon="🚨" title="Safety / Medical Stability" sub="Screen for red flags and confirm the patient is stable enough to proceed." />
+      <SectionIntro icon={<Icon name="siren" />} title="Safety / Medical Stability" sub="Screen for red flags and confirm the patient is stable enough to proceed." />
       {flagCount > 0 && <Alert tone="red">⚠️ {flagCount} red-flag item(s) selected — correlate clinically / notify the medical team before continuing.</Alert>}
       {isICU && (
         <>
@@ -1205,7 +1206,7 @@ function SubjectiveSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
   return (
     <>
-      <SectionIntro icon="🗣️" title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses." />
+      <SectionIntro icon={<Icon name="speech" />} title="Subjective Assessment" sub="Start open-ended, then narrow the focus as the interview progresses." />
       <SelectField
         label="Chief complaint"
         type="multi"
@@ -1238,7 +1239,7 @@ function ChartSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "chart");
   return (
     <>
-      <SectionIntro icon="🗂️" title="Medical / Chart Review" />
+      <SectionIntro icon={<Icon name="folder" />} title="Medical / Chart Review" />
       <TextField label="Confirmed diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} />
       <TextArea label="Relevant imaging findings" value={d.imaging} onChange={(v) => set("imaging", v)} placeholder="CT/MRI findings, lesion site/side, level of injury..." />
       <TextArea label="Relevant past medical history" value={d.pmh} onChange={(v) => set("pmh", v)} placeholder="Hypertension, diabetes, prior stroke/TIA, cardiac disease..." />
@@ -1279,7 +1280,7 @@ function ObservationSection({ data, setData, setting }) {
   const acute = setting === "icu" || setting === "inpatient" || setting === "postop";
   return (
     <>
-      <SectionIntro icon="👁️" title="General Observation" />
+      <SectionIntro icon={<Icon name="eye" />} title="General Observation" />
       <SelectField label="Body build" type="single" options={["Ectomorphic", "Mesomorphic", "Endomorphic"]} value={d.build} onChange={(v) => set("build", v)} />
       <SelectField label="General appearance" type="multi" options={["No acute distress", "In distress", "Guarded", "Alert & engaged", "Drowsy", "Confused", "Agitated"]} value={d.appearance} onChange={(v) => set("appearance", v)} />
       <LRGrid
@@ -1337,7 +1338,7 @@ function CognitionSection({ data, setData }) {
   const gcsTotal = gcsEye + gcsVerbal + gcsMotor;
   return (
     <>
-      <SectionIntro icon="🧠" title="Mental Status / Cognition" />
+      <SectionIntro icon={<Icon name="brain" />} title="Mental Status / Cognition" />
       <SelectField label="Level of consciousness" type="single" options={["Alert", "Drowsy", "Lethargic", "Obtunded", "Stuporous", "Comatose"]} value={d.loc} onChange={(v) => set("loc", v)} />
       <SelectField label="Eye opening (E)" type="single" options={["4 - Spontaneous", "3 - To voice", "2 - To pain", "1 - None"]} value={d.gcsEye} onChange={(v) => set("gcsEye", v)} info={neuroExamLibraryData.gcsEye} />
       <SelectField label="Verbal response (V)" type="single" options={["5 - Oriented", "4 - Confused", "3 - Inappropriate words", "2 - Incomprehensible sounds", "1 - None"]} value={d.gcsVerbal} onChange={(v) => set("gcsVerbal", v)} info={neuroExamLibraryData.gcsVerbal} />
@@ -1383,7 +1384,7 @@ function CranialNervesSection({ data, setData }) {
   const CN_OPTS = ["Intact", "Impaired", "Absent", "Not tested"];
   return (
     <>
-      <SectionIntro icon="👁️" title="Cranial Nerve Screen" sub="Quick bedside screen — refer for full assessment where a deficit is suspected." />
+      <SectionIntro icon={<Icon name="eye" />} title="Cranial Nerve Screen" sub="Quick bedside screen — refer for full assessment where a deficit is suspected." />
       <SelectField label="CN I - Olfactory (smell)" type="single" options={CN_OPTS} value={d.cn1} onChange={(v) => set("cn1", v)} info={neuroExamLibraryData.cn1} />
       <SelectField label="CN II - Optic (visual acuity/fields)" type="single" options={CN_OPTS} value={d.cn2} onChange={(v) => set("cn2", v)} info={neuroExamLibraryData.cn2} />
       <SelectField label="CN III, IV, VI - Eye movements / pupils" type="single" options={[...CN_OPTS, "Ptosis", "Diplopia", "Nystagmus"]} value={d.cn346} onChange={(v) => set("cn346", v)} info={neuroExamLibraryData.cn346} />
@@ -1418,7 +1419,7 @@ function SensorySection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "sensory");
   return (
     <>
-      <SectionIntro icon="🖐️" title="Sensory Examination" />
+      <SectionIntro icon={<Icon name="hand" />} title="Sensory Examination" />
       <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." info={neuroExamLibraryData.lightTouch} />
       <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." />
       <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
@@ -1475,7 +1476,7 @@ function MotorSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "motor");
   return (
     <>
-      <SectionIntro icon="💪" title="Motor Examination" />
+      <SectionIntro icon={<Icon name="muscle" />} title="Motor Examination" />
 
       <div className="subheading">Muscle bulk</div>
       <LRGrid
@@ -1525,7 +1526,7 @@ function ToneReflexSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "tone");
   return (
     <>
-      <SectionIntro icon="⚡" title="Tone / Reflexes" />
+      <SectionIntro icon={<Icon name="bolt" />} title="Tone / Reflexes" />
       <div className="subheading">Muscle tone</div>
       <LRGrid label="Overall tone type" rows={["UE", "LE"]} options={TONE_TYPES} value={d.toneType || {}} onChange={(v) => set("toneType", v)} info={neuroExamLibraryData.toneRigidity} />
       <LRGrid
@@ -1581,7 +1582,7 @@ function CoordinationSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "coordination");
   return (
     <>
-      <SectionIntro icon="🎯" title="Coordination" sub="Non-equilibrium (sitting) tests" />
+      <SectionIntro icon={<Icon name="target" />} title="Coordination" sub="Non-equilibrium (sitting) tests" />
       <LRGrid label="Finger-to-nose" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysmetria (past-pointing)", "Intention tremor", "Unable to perform"]} value={d.fingerNose || {}} onChange={(v) => set("fingerNose", v)} info={neuroExamLibraryData.fingerNose} />
       <LRGrid label="Heel-to-shin" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Ataxic/uncoordinated", "Unable to perform"]} value={d.heelShin || {}} onChange={(v) => set("heelShin", v)} info={neuroExamLibraryData.heelShin} />
       <LRGrid label="Rapid alternating movements" rows={["Right", "Left"]} columns={["Result"]} options={["Normal", "Dysdiadochokinesia (slow/irregular)", "Unable to perform"]} value={d.ram || {}} onChange={(v) => set("ram", v)} info={neuroExamLibraryData.ram} />
@@ -1616,7 +1617,7 @@ function BalanceSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "balance");
   return (
     <>
-      <SectionIntro icon="⚖️" title="Balance" />
+      <SectionIntro icon={<Icon name="scale" />} title="Balance" />
 
       <div className="subheading">Sensory orientation</div>
       <LRGrid
@@ -1678,7 +1679,7 @@ function GaitSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "gait");
   return (
     <>
-      <SectionIntro icon="🚶" title="Gait Assessment" />
+      <SectionIntro icon={<Icon name="walk" />} title="Gait Assessment" />
       <SelectField
         label="Gait pattern"
         type="single"
@@ -1711,7 +1712,7 @@ function FunctionalSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "functional");
   return (
     <>
-      <SectionIntro icon="🛏️" title="Functional Assessment" />
+      <SectionIntro icon={<Icon name="bed" />} title="Functional Assessment" />
       <SelectField label="Bed mobility" type="single" options={["Independent", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist", "Dependent"]} value={d.bedMobility} onChange={(v) => set("bedMobility", v)} />
       <SelectField label="Sit-to-stand transfer" type="single" options={["Independent", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist", "Dependent", "Requires hoist"]} value={d.sitStand} onChange={(v) => set("sitStand", v)} />
       <SelectField label="Bed-to-chair transfer" type="single" options={["Independent", "Supervision", "Minimal assist", "Moderate assist", "Maximal assist", "Dependent", "Requires hoist"]} value={d.bedChair} onChange={(v) => set("bedChair", v)} />
@@ -1746,7 +1747,7 @@ function OutcomesSection({ data, setData }) {
   const setField = (k, v) => setData((prev) => ({ ...prev, [k]: v }));
   return (
     <>
-      <SectionIntro icon="📊" title="Outcome Measures" sub="Full scale library, same guided question-by-question flow as Ortho -- search, start, or review any validated scale below." />
+      <SectionIntro icon={<Icon name="chart" />} title="Outcome Measures" sub="Full scale library, same guided question-by-question flow as Ortho -- search, start, or review any validated scale below." />
       <Suspense fallback={<div style={{ padding: 20, textAlign: "center", color: "#6B6B7A", fontSize: "0.8rem" }}>Loading outcome measures…</div>}>
         <LazyOutcomeMeasuresPro data={data} set={setField} />
       </Suspense>
@@ -1761,7 +1762,7 @@ function InterpretationSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "interpretation");
   return (
     <>
-      <SectionIntro icon="🧠" title="Clinical Interpretation" sub="Summarise findings using an impairment → activity → participation framework (ICF)." />
+      <SectionIntro icon={<Icon name="brain" />} title="Clinical Interpretation" sub="Summarise findings using an impairment → activity → participation framework (ICF)." />
       <SelectField label="Key impairments (body structure/function)" type="multi" options={IMPAIRMENTS} value={d.impairments} onChange={(v) => set("impairments", v)} />
       <TextArea label="Activity limitations" value={d.activityLimitations} onChange={(v) => set("activityLimitations", v)} placeholder="What the patient cannot currently do — e.g. walk >10m unaided, dress independently..." />
       <TextArea label="Participation restrictions" value={d.participationRestrictions} onChange={(v) => set("participationRestrictions", v)} placeholder="Impact on work, home role, social activity..." />
@@ -1777,7 +1778,7 @@ function PrecautionsSection({ data, setData, setting }) {
   const [d, set] = useSectionData(data, setData, "precautions");
   return (
     <>
-      <SectionIntro icon="⚠️" title="Precautions" />
+      <SectionIntro icon={<Icon name="warning" />} title="Precautions" />
       <SelectField label="Fall risk" type="single" options={["Low", "Moderate", "High"]} value={d.fallRisk} onChange={(v) => set("fallRisk", v)} />
       <SelectField label="Seizure precautions" type="single" options={["Not applicable", "Active - pad/clear environment, supervise closely"]} value={d.seizure} onChange={(v) => set("seizure", v)} />
       <SelectField label="Aspiration / swallow precautions" type="single" options={["Not applicable", "Upright positioning required", "Modified diet/thickened fluids", "Nil by mouth"]} value={d.aspiration} onChange={(v) => set("aspiration", v)} />
@@ -1808,7 +1809,7 @@ function fmtVal(v) {
 // CardiopulmonaryAssessment.jsx's matching export.
 export function buildNeuroAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🧠", label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="brain" />, label: customStepsMeta[id]?.label || "Assessment" });
 }
 // Same reasoning as CardiopulmonaryAssessment.jsx's matching export -- see
 // its comment.
@@ -1872,7 +1873,7 @@ export function SummarySection({ setting, data, assessSteps, formatters }) {
 
   return (
     <>
-      <SectionIntro icon="✅" title="Summary & Review" sub={settingLabel} />
+      <SectionIntro icon={<Icon name="check" />} title="Summary & Review" sub={settingLabel} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
         const rows = rowsForStep(step, data[step.id] || {}, formatters);
         if (!rows.length) return null;
@@ -1912,10 +1913,10 @@ export function SummarySection({ setting, data, assessSteps, formatters }) {
    local persistence for therapist-saved templates
    ============================================================ */
 const ENTRY_MODES = [
-  { id: "template", icon: "📋", label: "Use Template", desc: "Start with a ready-made neurological assessment" },
-  { id: "region", icon: "🧩", label: "Build by Region", desc: "Choose the body / neurological region you want to assess" },
-  { id: "individual", icon: "🧠", label: "Choose Assessments", desc: "Pick individual assessments from the Neuro library" },
-  { id: "mytemplates", icon: "⭐", label: "My Templates", desc: "Your saved custom assessment workflows" },
+  { id: "template", icon: <Icon name="clipboard" />, label: "Use Template", desc: "Start with a ready-made neurological assessment" },
+  { id: "region", icon: <Icon name="puzzle" />, label: "Build by Region", desc: "Choose the body / neurological region you want to assess" },
+  { id: "individual", icon: <Icon name="brain" />, label: "Choose Assessments", desc: "Pick individual assessments from the Neuro library" },
+  { id: "mytemplates", icon: <Icon name="star" />, label: "My Templates", desc: "Your saved custom assessment workflows" },
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
@@ -1959,28 +1960,28 @@ function ensureAlwaysSteps(savedOrder) {
 }
 
 const REGIONS = [
-  { id: "brain", icon: "🧠", label: "Brain / CNS", domainSteps: ["cognition", "cranial", "motor", "tone", "coordination"], libraryCats: [] },
-  { id: "spinalcord", icon: "🦴", label: "Spinal Cord", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryCats: ["Spinal Cord Injury"] },
-  { id: "peripheralnerve", icon: "🧬", label: "Peripheral Nerve", domainSteps: ["sensory", "motor", "tone"], libraryCats: ["Peripheral Nerve"] },
-  { id: "cranialvisual", icon: "👁️", label: "Cranial / Visual", domainSteps: ["cranial"], libraryCats: [] },
-  { id: "vestibular", icon: "🌀", label: "Vestibular", domainSteps: ["balance", "gait"], libraryCats: ["Vestibular Disorders"] },
-  { id: "neuromuscular", icon: "💪", label: "Neuromuscular", domainSteps: ["motor", "tone", "sensory"], libraryCats: ["Neuro-Respiratory"] },
-  { id: "gaitmobility", icon: "🚶", label: "Gait & Mobility", domainSteps: ["gait", "functional"], libraryCats: [] },
-  { id: "balance", icon: "⚖️", label: "Balance", domainSteps: ["balance"], libraryCats: [] },
-  { id: "sensory", icon: "🖐️", label: "Sensory", domainSteps: ["sensory"], libraryCats: [] },
-  { id: "motor", icon: "💪", label: "Motor", domainSteps: ["motor", "tone"], libraryCats: [] },
+  { id: "brain", icon: <Icon name="brain" />, label: "Brain / CNS", domainSteps: ["cognition", "cranial", "motor", "tone", "coordination"], libraryCats: [] },
+  { id: "spinalcord", icon: <Icon name="bone" />, label: "Spinal Cord", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryCats: ["Spinal Cord Injury"] },
+  { id: "peripheralnerve", icon: <Icon name="dna" />, label: "Peripheral Nerve", domainSteps: ["sensory", "motor", "tone"], libraryCats: ["Peripheral Nerve"] },
+  { id: "cranialvisual", icon: <Icon name="eye" />, label: "Cranial / Visual", domainSteps: ["cranial"], libraryCats: [] },
+  { id: "vestibular", icon: <Icon name="spiral" />, label: "Vestibular", domainSteps: ["balance", "gait"], libraryCats: ["Vestibular Disorders"] },
+  { id: "neuromuscular", icon: <Icon name="muscle" />, label: "Neuromuscular", domainSteps: ["motor", "tone", "sensory"], libraryCats: ["Neuro-Respiratory"] },
+  { id: "gaitmobility", icon: <Icon name="walk" />, label: "Gait & Mobility", domainSteps: ["gait", "functional"], libraryCats: [] },
+  { id: "balance", icon: <Icon name="scale" />, label: "Balance", domainSteps: ["balance"], libraryCats: [] },
+  { id: "sensory", icon: <Icon name="hand" />, label: "Sensory", domainSteps: ["sensory"], libraryCats: [] },
+  { id: "motor", icon: <Icon name="muscle" />, label: "Motor", domainSteps: ["motor", "tone"], libraryCats: [] },
 ];
 
 const NEURO_TEMPLATES = [
-  { id: "stroke", icon: "🧠", label: "Stroke", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Stroke", "Higher mental function screen"], ["Stroke", "Neglect / inattention"], ["Stroke", "Visual field screen"], ["Stroke", "Synergy pattern (UE/LE)"], ["Stroke", "Selective motor control"], ["Stroke", "Brunnstrom recovery stage"], ["Stroke", "Fugl-Meyer Assessment"], ["Stroke", "Modified Rankin Scale"]] },
-  { id: "parkinsons", icon: "🌀", label: "Parkinson's", domainSteps: ["cognition", "motor", "tone", "balance", "gait", "coordination", "functional"], libraryItems: [["Parkinson's Disease", "Bradykinesia"], ["Parkinson's Disease", "Rigidity type"], ["Parkinson's Disease", "Resting tremor"], ["Parkinson's Disease", "Postural instability (pull test)"], ["Parkinson's Disease", "Freezing of gait"], ["Parkinson's Disease", "Turning / axial rotation"], ["Parkinson's Disease", "Dual-task gait"], ["Parkinson's Disease", "Hoehn & Yahr staging"]] },
-  { id: "tbi", icon: "💥", label: "TBI", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Traumatic Brain Injury", "Rancho Los Amigos level"], ["Traumatic Brain Injury", "Post-traumatic amnesia screen"], ["Traumatic Brain Injury", "Agitation / behaviour screen"]] },
-  { id: "sci", icon: "🦴", label: "Spinal Cord Injury", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryItems: [["Spinal Cord Injury", "Neurological level of injury"], ["Spinal Cord Injury", "Myotome grading (ASIA key muscles)"], ["Spinal Cord Injury", "Dermatome grading (ASIA sensory)"], ["Spinal Cord Injury", "ASIA Impairment Scale (AIS)"], ["Spinal Cord Injury", "Sitting balance (SCI)"], ["Spinal Cord Injury", "Transfer ability"], ["Spinal Cord Injury", "Wheelchair mobility"], ["Spinal Cord Injury", "Autonomic dysreflexia screen"]] },
-  { id: "peripheralneuropathy", icon: "🧬", label: "Peripheral Neuropathy", domainSteps: ["sensory", "motor", "tone", "gait"], libraryItems: [["Peripheral Nerve", "Neurodynamic / neural mobility testing"], ["Peripheral Nerve", "Tinel's sign"], ["Peripheral Nerve", "Muscle wasting"], ["Peripheral Nerve", "Peripheral sensory/motor distribution"]] },
-  { id: "vestibulartemplate", icon: "🌀", label: "Vestibular", domainSteps: ["cranial", "balance", "gait"], libraryItems: [["Vestibular Disorders", "Dix-Hallpike test"], ["Vestibular Disorders", "Head impulse test"], ["Vestibular Disorders", "Nystagmus assessment"], ["Vestibular Disorders", "Dynamic Gait Index"], ["Vestibular Disorders", "Dizziness Handicap Inventory screen"]] },
-  { id: "ms", icon: "🔥", label: "Multiple Sclerosis", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Multiple Sclerosis", "Fatigue screen"], ["Multiple Sclerosis", "Nystagmus / INO screen"], ["Multiple Sclerosis", "Lhermitte's sign"], ["Multiple Sclerosis", "Uhthoff's phenomenon"], ["Multiple Sclerosis", "EDSS staging"], ["Multiple Sclerosis", "Bladder / bowel function"]] },
-  { id: "neuromusculartemplate", icon: "💪", label: "Neuromuscular", domainSteps: ["motor", "tone", "sensory", "gait"], libraryItems: [["Peripheral Nerve", "Muscle wasting"], ["Neuro-Respiratory", "Respiratory status"], ["Neuro-Respiratory", "Cough effectiveness"]] },
-  { id: "general", icon: "🧠", label: "General Neurological", domainSteps: DOMAIN_STEP_IDS, libraryItems: [] },
+  { id: "stroke", icon: <Icon name="brain" />, label: "Stroke", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Stroke", "Higher mental function screen"], ["Stroke", "Neglect / inattention"], ["Stroke", "Visual field screen"], ["Stroke", "Synergy pattern (UE/LE)"], ["Stroke", "Selective motor control"], ["Stroke", "Brunnstrom recovery stage"], ["Stroke", "Fugl-Meyer Assessment"], ["Stroke", "Modified Rankin Scale"]] },
+  { id: "parkinsons", icon: <Icon name="spiral" />, label: "Parkinson's", domainSteps: ["cognition", "motor", "tone", "balance", "gait", "coordination", "functional"], libraryItems: [["Parkinson's Disease", "Bradykinesia"], ["Parkinson's Disease", "Rigidity type"], ["Parkinson's Disease", "Resting tremor"], ["Parkinson's Disease", "Postural instability (pull test)"], ["Parkinson's Disease", "Freezing of gait"], ["Parkinson's Disease", "Turning / axial rotation"], ["Parkinson's Disease", "Dual-task gait"], ["Parkinson's Disease", "Hoehn & Yahr staging"]] },
+  { id: "tbi", icon: <Icon name="burst" />, label: "TBI", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Traumatic Brain Injury", "Rancho Los Amigos level"], ["Traumatic Brain Injury", "Post-traumatic amnesia screen"], ["Traumatic Brain Injury", "Agitation / behaviour screen"]] },
+  { id: "sci", icon: <Icon name="bone" />, label: "Spinal Cord Injury", domainSteps: ["motor", "sensory", "tone", "balance", "gait", "functional"], libraryItems: [["Spinal Cord Injury", "Neurological level of injury"], ["Spinal Cord Injury", "Myotome grading (ASIA key muscles)"], ["Spinal Cord Injury", "Dermatome grading (ASIA sensory)"], ["Spinal Cord Injury", "ASIA Impairment Scale (AIS)"], ["Spinal Cord Injury", "Sitting balance (SCI)"], ["Spinal Cord Injury", "Transfer ability"], ["Spinal Cord Injury", "Wheelchair mobility"], ["Spinal Cord Injury", "Autonomic dysreflexia screen"]] },
+  { id: "peripheralneuropathy", icon: <Icon name="dna" />, label: "Peripheral Neuropathy", domainSteps: ["sensory", "motor", "tone", "gait"], libraryItems: [["Peripheral Nerve", "Neurodynamic / neural mobility testing"], ["Peripheral Nerve", "Tinel's sign"], ["Peripheral Nerve", "Muscle wasting"], ["Peripheral Nerve", "Peripheral sensory/motor distribution"]] },
+  { id: "vestibulartemplate", icon: <Icon name="spiral" />, label: "Vestibular", domainSteps: ["cranial", "balance", "gait"], libraryItems: [["Vestibular Disorders", "Dix-Hallpike test"], ["Vestibular Disorders", "Head impulse test"], ["Vestibular Disorders", "Nystagmus assessment"], ["Vestibular Disorders", "Dynamic Gait Index"], ["Vestibular Disorders", "Dizziness Handicap Inventory screen"]] },
+  { id: "ms", icon: <Icon name="flame" />, label: "Multiple Sclerosis", domainSteps: DOMAIN_STEP_IDS, libraryItems: [["Multiple Sclerosis", "Fatigue screen"], ["Multiple Sclerosis", "Nystagmus / INO screen"], ["Multiple Sclerosis", "Lhermitte's sign"], ["Multiple Sclerosis", "Uhthoff's phenomenon"], ["Multiple Sclerosis", "EDSS staging"], ["Multiple Sclerosis", "Bladder / bowel function"]] },
+  { id: "neuromusculartemplate", icon: <Icon name="muscle" />, label: "Neuromuscular", domainSteps: ["motor", "tone", "sensory", "gait"], libraryItems: [["Peripheral Nerve", "Muscle wasting"], ["Neuro-Respiratory", "Respiratory status"], ["Neuro-Respiratory", "Cough effectiveness"]] },
+  { id: "general", icon: <Icon name="brain" />, label: "General Neurological", domainSteps: DOMAIN_STEP_IDS, libraryItems: [] },
 ];
 
 // Setting + region(s) + condition, joined for display -- e.g. "Inpatient ·
@@ -2160,7 +2161,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [saveName, setSaveName] = useState("");
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || "🧠", label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="brain" />, label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2224,7 +2225,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customMeta = {};
     t.libraryItems.forEach(([cat, label]) => {
       const g = NEURO_LIBRARY.find((x) => x.cat === cat);
-      customMeta[neuroId(cat, label)] = { icon: g?.icon || "🧠", label };
+      customMeta[neuroId(cat, label)] = { icon: g?.icon || <Icon name="brain" />, label };
     });
     setCondition(t.id);
     startAssessment(t.domainSteps, customIds, customMeta);
@@ -2265,7 +2266,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customIds = stepOrder.filter((id) => id.startsWith("nx-"));
     const customMeta = {};
     customIds.forEach((id) => {
-      customMeta[id] = customStepsMeta[id] || { icon: "🧠", label: "Assessment" };
+      customMeta[id] = customStepsMeta[id] || { icon: <Icon name="brain" />, label: "Assessment" };
     });
     const newTemplate = { id: `t-${Date.now()}`, name: saveName.trim(), domainSteps, customIds, customMeta };
     setMyTemplates((prev) => {
@@ -2332,20 +2333,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
         }
-        /* Fix (2026-08-20, Aditi: "overlaping is happeining with
-           neurological and cardio assessment name" then "upper area is
-           blank push all above little bit") -- offset below AppFull.jsx's
-           own sticky mobile header (.pm-mobile-hdr, 64px tall) instead of
-           both competing for the same top:0. -28px, not +64px: sticky
-           "top" here is measured from .pm-main's own padding box
-           (64px header + 28px pm-main padding-top = 92px), not the visible
-           viewport edge (which looks 24px higher because AppFull.jsx
-           negates that padding with a -24px margin on this screen's mount
-           wrapper) -- see CardiopulmonaryAssessment.jsx's matching rule
-           for the full measurement. +64 pinned the bar 92+64=156px down,
-           a large dead gap; -28 (92-28=64) pins it flush under the header. */
+        /* body is the real scrolling element on mobile (see utils.jsx),
+           and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
+           that same scroll -- without an offset here the two collide and
+           this topbar renders overlapped/hidden behind the app header once
+           scrolled. --pm-mobile-hdr-h (utils.jsx) is that header's own real
+           height including the safe-area inset, so this always pins flush
+           under it with no dead gap, on notched phones too. */
         @media (max-width: 767px) {
-          .topbar { top: -28px; }
+          .topbar { top: var(--pm-mobile-hdr-h, 64px); }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
@@ -2538,17 +2534,29 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
             )}
             <div>
               <div className="topbar-title">
-                {phase === "setting" || phase === "mode"
-                  ? "🧠 Neurological Assessment"
-                  : phase === "template"
-                  ? "📋 Use Template"
-                  : phase === "region"
-                  ? "🧩 Build by Region"
-                  : phase === "mytemplates"
-                  ? "⭐ My Templates"
-                  : current.icon
-                  ? `${current.icon} ${current.label}`
-                  : current.label}
+                {phase === "setting" || phase === "mode" ? (
+                  <>
+                    <Icon name="brain" /> Neurological Assessment
+                  </>
+                ) : phase === "template" ? (
+                  <>
+                    <Icon name="clipboard" /> Use Template
+                  </>
+                ) : phase === "region" ? (
+                  <>
+                    <Icon name="puzzle" /> Build by Region
+                  </>
+                ) : phase === "mytemplates" ? (
+                  <>
+                    <Icon name="star" /> My Templates
+                  </>
+                ) : current.icon ? (
+                  <>
+                    {current.icon} {current.label}
+                  </>
+                ) : (
+                  current.label
+                )}
               </div>
               {phase !== "setting" && (
                 <div className="topbar-breadcrumb">{SETTINGS.find((s) => s.id === setting)?.label}</div>
@@ -2581,7 +2589,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         <div className="content">
           {phase === "setting" && (
             <>
-              <SectionIntro icon="🏥" title="Where is the patient being assessed?" sub="Select the setting, then choose how you'd like to build the exam — from a template, by region, or item by item." />
+              <SectionIntro icon={<Icon name="hospital" />} title="Where is the patient being assessed?" sub="Select the setting, then choose how you'd like to build the exam — from a template, by region, or item by item." />
               <div className="picker-grid">
                 {SETTINGS.map((s) => (
                   <button key={s.id} className={"picker-card" + (setting === s.id ? " selected" : "")} onClick={() => setSetting(s.id)}>
@@ -2598,7 +2606,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
           {phase === "mode" && (
             <>
-              <SectionIntro icon="🧠" title="How would you like to start?" sub="Templates and regions are just a starting point — you can add or remove any assessment afterward." />
+              <SectionIntro icon={<Icon name="brain" />} title="How would you like to start?" sub="Templates and regions are just a starting point — you can add or remove any assessment afterward." />
               <div className="picker-grid">
                 {ENTRY_MODES.map((m) => (
                   <button
@@ -2619,7 +2627,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
           {phase === "template" && (
             <>
-              <SectionIntro icon="📋" title="Choose a template" sub="Preloads the relevant assessment cards for a condition — add or remove anything afterward." />
+              <SectionIntro icon={<Icon name="clipboard" />} title="Choose a template" sub="Preloads the relevant assessment cards for a condition — add or remove anything afterward." />
               <div className="picker-grid">
                 {NEURO_TEMPLATES.map((t) => (
                   <button key={t.id} className="picker-card" onClick={() => useTemplate(t)}>
@@ -2638,7 +2646,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
           {phase === "region" && (
             <>
-              <SectionIntro icon="🧩" title="What do you want to assess?" sub="Select one or more regions/systems, then continue." />
+              <SectionIntro icon={<Icon name="puzzle" />} title="What do you want to assess?" sub="Select one or more regions/systems, then continue." />
               <div className="picker-grid">
                 {REGIONS.map((r) => (
                   <button key={r.id} className={"picker-card" + (selectedRegions.includes(r.id) ? " selected" : "")} onClick={() => toggleRegion(r.id)}>
@@ -2658,7 +2666,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
           {phase === "mytemplates" && (
             <>
-              <SectionIntro icon="⭐" title="My Templates" sub="Your saved custom assessment workflows." />
+              <SectionIntro icon={<Icon name="star" />} title="My Templates" sub="Your saved custom assessment workflows." />
               {myTemplates.length === 0 ? (
                 <Alert tone="amber">No saved templates yet. Build an assessment, then tap "Save this assessment as a template" from the Summary step to create one.</Alert>
               ) : (

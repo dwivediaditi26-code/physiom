@@ -16,7 +16,7 @@ export function orthoStyles() {
         }
         .app-inner {
           width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column;
-          background: #fff; position: relative; overflow-x: hidden; overflow-y: visible;
+          background: #fff; position: relative; overflow-x: clip; overflow-y: visible;
         }
         @media (min-width: 860px) {
           .app-shell { align-items: flex-start; padding: 24px 0; }
@@ -40,18 +40,15 @@ export function orthoStyles() {
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
         }
-        /* Same reasoning as Cardio's identical rule: this screen mounts
-           inside AppFull.jsx's own scroll container (.pm-main), which has
-           its own sticky mobile header (.pm-mobile-hdr, 64px, z-index 101)
-           stuck to the same top:0 -- without this offset the two collide
-           and this topbar renders overlapped/hidden behind it once
-           scrolled. Not viewport-relative: sticky "top" is measured from
-           .pm-main's own padding box (64px header + 28px pm-main
-           padding-top = 92px), and this screen's own mount wrapper negates
-           that padding with a -24px margin, so -28px (92-28=64) pins it
-           flush under the header once scrolled with no dead gap either way. */
+        /* body is the real scrolling element on mobile (see utils.jsx),
+           and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
+           that same scroll -- without an offset here the two collide and
+           this topbar renders overlapped/hidden behind it once scrolled.
+           --pm-mobile-hdr-h (utils.jsx) is that header's own real height
+           including the safe-area inset, so this always pins flush under
+           it with no dead gap, on notched phones too. */
         @media (max-width: 767px) {
-          .topbar { top: -28px; }
+          .topbar { top: var(--pm-mobile-hdr-h, 64px); }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
         .back-btn {
@@ -376,6 +373,17 @@ export function orthoStyles() {
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
         .select-input { cursor: pointer; }
         .combo-unit { font-size: 12px; color: ${BRAND.gray}; padding: 0 6px; white-space: nowrap; }
+        .age-select-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 10px; min-height: 44px; }
+        .age-select { flex: 1; border: none; outline: none; font-size: 15px; font-weight: 600; padding: 8px 2px; background: transparent; min-width: 0; color: ${BRAND.ink}; }
+        /* Age fixed-width + Gender flexible, not an even 50/50 split -- at
+           50% the 3-pill Gender row had no room and wrapped to a 2nd line,
+           leaving Age's single-line box floating with empty space beside
+           it (2026-09-16, Aditi: "so much gap... make it compact"). A
+           narrow, content-sized Age column keeps both fields one line tall. */
+        .age-gender-row > *:first-child { flex: 0 0 104px; }
+        .age-gender-row > *:last-child { flex: 1 1 auto; min-width: 0; }
+        .age-gender-row .segmented { flex-wrap: nowrap; }
+        .age-gender-row .seg-btn { flex: 1 1 0; padding-left: 6px; padding-right: 6px; text-align: center; }
         .select-btn { flex-shrink: 0; border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 11px; font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer; white-space: nowrap; min-height: 36px; }
 
         .select-popover { position: absolute; top: calc(100% + 6px); right: 0; width: min(78%, 260px); background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; box-shadow: 0 10px 28px rgba(20,10,60,.16); z-index: 35; padding: 8px 10px 10px; display: flex; flex-direction: column; max-height: min(52vh, 320px); }
@@ -780,6 +788,43 @@ export function orthoStyles() {
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
         .writein-card { margin-top: 10px; border-style: dashed; border-color: ${BRAND.purple}; }
         .writein-card.selected { border-style: solid; }
+
+        /* AI-assisted entry's 5-stage journey indicator (Subjective / Region
+           / AI / Objective / Summary) -- shown on the pre-wizard Subjective
+           and Region screens so a student new to the app can see the whole
+           path ahead instead of wondering what comes after "Continue". */
+        .ai-journey-dots { display: flex; align-items: flex-start; margin: 2px 0 20px; }
+        .ai-journey-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 40px; }
+        .ai-journey-dot { width: 10px; height: 10px; border-radius: 50%; background: ${BRAND.border}; transition: all .15s; }
+        .ai-journey-dot.done { background: ${BRAND.purple}; }
+        .ai-journey-dot.active { background: ${BRAND.purple}; box-shadow: 0 0 0 4px ${BRAND.purpleFaint}; transform: scale(1.15); }
+        .ai-journey-label { font-size: 9px; color: ${BRAND.gray}; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; }
+        .ai-journey-label.active { color: ${BRAND.purple}; }
+        .ai-journey-line { flex: 1; height: 2px; background: ${BRAND.border}; margin: 4px 2px 0; }
+        .ai-journey-line.done { background: ${BRAND.purple}; }
+
+        /* AI-assisted entry's Subjective landing -- two equal-weight cards
+           (AI Parse / Manual) instead of an always-open panel + a throwaway
+           "skip" link, so both paths read as real, intentional choices. */
+        .ai-choice-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+        .ai-choice-card { display: flex; align-items: center; gap: 12px; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 16px; background: #fff; cursor: pointer; text-align: left; width: 100%; transition: all .15s; }
+        .ai-choice-card:active { transform: scale(0.98); }
+        .ai-choice-card.ai-choice-primary { border-color: ${BRAND.purple}; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); }
+        .ai-choice-icon { font-size: 26px; width: 42px; text-align: center; flex-shrink: 0; }
+        .ai-choice-body { flex: 1; min-width: 0; }
+        .ai-choice-title { font-weight: 700; font-size: 15px; color: ${BRAND.ink}; }
+        .ai-choice-desc { font-size: 12.5px; color: ${BRAND.gray}; margin-top: 2px; line-height: 1.4; }
+        .ai-choice-cta { font-weight: 700; font-size: 13px; color: ${BRAND.purple}; flex-shrink: 0; white-space: nowrap; }
+
+        /* AI-assisted entry's "Summary" stage (Problem List/Goals/Treatment/
+           Sessions/Progress/Techniques/Exercise Rx/Home Protocol/Final
+           Review) -- a non-linear pill nav instead of forced Next-Next-Next,
+           so every item is reachable from every other one. */
+        .ai-hub-nav { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin: -2px -2px 4px; scrollbar-width: none; -ms-overflow-style: none; }
+        .ai-hub-nav::-webkit-scrollbar { display: none; }
+        .ai-hub-pill { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; font-weight: 600; font-size: 12.5px; padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+        .ai-hub-pill.visited { border-color: #D7CFF5; color: ${BRAND.ink}; }
+        .ai-hub-pill.active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; }
 
         .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
         .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
