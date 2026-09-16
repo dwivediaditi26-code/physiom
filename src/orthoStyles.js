@@ -725,13 +725,12 @@ export function orthoStyles() {
            numbers, tapping never adds/removes anything); restyled from the
            old always-expanded LumbarDifferentialCard rows into a compact
            swipeable row so the reasoning is visible without owning the page. */
-        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; scrollbar-width: none; }
+        .obj-match-row { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; scrollbar-width: none; }
         .obj-match-row::-webkit-scrollbar { display: none; }
-        .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
-        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
-        .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
-        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
-        .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+        .obj-match-card { position: relative; flex: 1 1 0; min-width: 140px; max-width: 220px; text-align: left; border: 1.5px solid transparent; border-radius: 14px; padding: 14px; cursor: pointer; font-family: inherit; }
+        .obj-match-check { position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; }
+        .obj-match-pct { display: block; font-size: 12.5px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+        .obj-match-name { display: block; font-size: 15px; font-weight: 700; color: ${BRAND.ink}; margin-top: 4px; line-height: 1.3; padding-right: 26px; }
 
         /* Objective Assessment subtopic tab bar -- horizontal, scrollable row
            of individual "3D piano key" tiles; the active tile pops up solid
@@ -743,23 +742,15 @@ export function orthoStyles() {
            inactive-tab tint and inactive-tab text were all purple on top
            of each other). Matches .region-tab's own gray-resting/
            purple-active convention. */
-        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F6F5FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
-        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
-        .obj-subtopic-scroll-btn:active { opacity: 1; }
-        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 42px); }
-        .obj-subtopic-tab { scroll-snap-align: center; }
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; margin: 14px 0 12px; }
+        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.grayLight}; font-size: 18px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; }
+        .obj-subtopic-scroll-btn:active { color: ${BRAND.gray}; }
+        .obj-subtopic-tabs { flex: 1; display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; }
         .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
-        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
-          background: linear-gradient(180deg, #fff, #F7F7F9);
-          box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(20,10,45,.05), 0 4px 8px rgba(20,10,45,.06);
-          transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.gray}; }
-        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
-        .obj-subtopic-tab-active {
-          background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
-          transform: translateY(-2px);
-          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #4a339e, 0 6px 12px rgba(76,58,168,.4);
-        }
+        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 999px; cursor: pointer; border: 1.5px solid ${BRAND.border}; background: #fff; font-family: inherit; }
+        .obj-subtopic-tab i { font-size: 15px; color: ${BRAND.gray}; }
+        .obj-subtopic-tab span { font-size: 13px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
+        .obj-subtopic-tab-active { background: ${BRAND.purple}; border-color: ${BRAND.purple}; }
         .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
         .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 4px 2px 6px; margin-bottom: 12px; }
         .obj-subtopic-nav { display: flex; justify-content: space-between; gap: 10px; padding: 14px 4px 4px; }
