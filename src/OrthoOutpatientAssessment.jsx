@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, InfoButton, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields, BRAND } from "./orthoFieldKit.jsx";
 import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
@@ -746,17 +746,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                   to the Subjective answers they'd just filled in (2026-09-15,
                   Aditi: wants this "stepwise" and clear for students new to
                   the app). That explanation used to be a full SectionIntro
-                  (icon + big title + info button) -- but the AI-wizard's own
-                  sticky .topbar already shows this exact step's icon and
-                  "AI Objective Assessment" title right above, so the two
-                  stacked was the same heading twice plus its margins, eating
-                  a big chunk of the screen before any real content
-                  (2026-09-16, Aditi: "it's taking so much white space...
-                  wherever the written font is it should stop there only").
-                  Keeping just the (i) button preserves the explanation
-                  without repeating the heading. */}
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
-                <InfoButton text="This reads the Subjective answers you already entered — especially the ⭐ starred ones — and ranks which conditions best fit them, before you've done a single objective test. Pick a condition tab below to see its suggested ROM/MMT/Special Tests; performing those then sharpens the ranking further. If a region shows 'no Subjective data yet', go back to Subjective and fill in its region-specific checklist first." />
+                  (icon + big title + info button), then just an isolated (i)
+                  button floating with nothing beside it -- 2026-09-16, Aditi:
+                  "remove this... put description to click the button to show
+                  which match according to subjective... short and perfect".
+                  One short always-visible line instead of a tap-to-reveal
+                  sheet, so a new student doesn't have to discover the (i)
+                  button to know what this screen does. */}
+              <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 6 }}>
+                Matches conditions to your Subjective answers — tap to check or refresh.
               </div>
               <ConditionObjectiveAssessment
                 data={data}
