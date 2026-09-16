@@ -191,14 +191,36 @@ export const SUBJECTIVE_REGION_FIELDS = {
   hip: [
     { id: "location", label: "Pain location", type: "multi", options: ["Anterior groin", "Anterior hip / hip flexor region", "Lateral hip (greater trochanter)", "Posterior hip / deep buttock", "Ischial tuberosity", "Adductor / inner thigh", "Pubic symphysis", "SI joint"] },
     { id: "locationPattern", label: "Dominant pattern", type: "single", options: ["Groin-dominant", "Lateral hip-dominant", "Posterior / buttock-dominant", "Adductor-dominant", "Diffuse / mixed"] },
-    { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious / overuse", "Twisting / pivoting", "Fall", "Sprint / kicking", "Sudden lunge", "Return to sport after time off", "Post-partum", "Post hip replacement", "Age-related / degenerative"] },
-    { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["Combined flexion + rotation", "Sitting cross-legged", "Prolonged sitting", "Walking", "Stairs", "Getting out of a car"] },
+    // Wording matches orthoHipReasoning.js's runHipReasoningFromData()
+    // keyword checks exactly (e.g. "insidious onset", "kicking mechanism") --
+    // the original wording here used different phrasing ("Insidious /
+    // overuse", "Sprint / kicking") that never matched, silently leaving
+    // onsetInsidious/onsetTraumatic/kickingOrSprintMechanism unreachable
+    // from this checklist (2026-09-15, real gap found auditing Hip/Ankle
+    // alongside Shoulder's identical class of bug).
+    { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious onset / overuse", "Age-related degenerative", "Twisting / pivoting mechanism", "Fall", "Kicking mechanism", "Lunging mechanism", "High-speed sport", "Return to sport after time off", "Post-partum", "Post hip replacement"] },
+    // FADIR/FABER combined + sitting-on-hard-surface/lying-on-affected-side
+    // are real signals the engine checks (fadirAggravation,
+    // faberAggravation, ischialSittingPain, worseLyingOnAffectedSide) that
+    // had no matching option at all before.
+    { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["FADIR combined (flexion-adduction-internal rotation)", "FABER combined (flexion-abduction-external rotation)", "Sitting cross-legged", "Prolonged sitting", "Sitting on hard surface", "Lying on affected side", "Walking", "Stairs", "Getting out of a car"] },
     { id: "relieving", label: "Relieving factor", type: "multi", options: ["Rest", "Position change", "Heat", "Medication", "Reduced impact activity"] },
-    { id: "pattern", label: "24-hour pattern", type: "single", options: PATTERN_OPTIONS },
-    { id: "mechanical", label: "Mechanical symptoms", type: "multi", options: ["None", "Clicking (painless)", "Clicking with pain", "Catching", "Giving way", "Locking", "Grinding / crepitus"] },
+    // Bespoke options (not the shared PATTERN_OPTIONS) so night pain/
+    // constant/morning stiffness -- all real engine signals -- have
+    // something to actually match, same reasoning as Lumbar/Cervical's
+    // own bespoke pattern fields.
+    { id: "pattern", label: "24-hour pattern", type: "single", options: ["Intermittent — activity-related", "Constant — rarely eases", "Night pain", "Morning stiffness", "Improves through the day", "Worse through the day"] },
+    { id: "mechanical", label: "Mechanical symptoms", type: "multi", options: ["None", "Clicking — painless", "Clicking — with pain", "Catching sensation", "Giving way", "Locking — intermittent", "Internal snapping (anterior, iliopsoas)", "External snapping (lateral, IT band)", "Crepitus / grinding"] },
     { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
-    { id: "redFlags", label: "Red flags", type: "multi", options: ["Suspected fracture (elderly + fall, cannot weight bear)", "Acute hot swollen hip", "Constant progressive pain unrelated to loading", "Possible referred pain from abdomen / pelvis", "Cancer history", NONE_ABOVE] },
+    { id: "redFlags", label: "Red flags", type: "multi", options: ["Suspected fracture / cannot weight bear (elderly + fall)", "Suspected fracture neck of femur", "Acute hot swollen hip joint", "Avascular necrosis risk (steroid use, sickle cell, alcohol excess)", "Constant progressive pain unrelated to loading", "Referred pain from abdomen / pelvis", "Gynaecological referral suspected", "Testicular referral suspected", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Walking tolerance", "Stairs", "Getting up from low chairs", "Sport / running", "Sitting tolerance"] },
+    // The narrow sub-condition probes the engine reads (hp_c_sign,
+    // hp_piriformis, hp_meralgia, hp_hamstring_onset) had literally no
+    // checklist field at all before -- these four close that gap.
+    { id: "cSign", label: "C-sign (patient cups hand over hip/groin describing pain)", type: "single", options: ["Not assessed", "Yes — cups hand in C-shape over hip/groin", "No"] },
+    { id: "piriformisSigns", label: "Piriformis / deep gluteal signs", type: "multi", options: ["None", "Deep buttock pain", "Sciatica-like radiation down the leg", "Tenderness deep to gluteus (piriformis)"] },
+    { id: "meralgiaSigns", label: "Lateral thigh sensory symptoms", type: "single", options: ["None", "Lateral thigh burning / numbness (meralgia paresthetica pattern)"] },
+    { id: "hamstringOnsetPattern", label: "Proximal hamstring onset pattern", type: "single", options: ["Not applicable", "Sitting on ischial tuberosity painful", "Insidious tendinopathy pattern", "Acute tear (sprint/kick mechanism)"] },
   ],
   knee: [
     { id: "location", label: "Pain location", type: "multi", options: ["Anterior / diffuse", "Around the kneecap", "Below the kneecap (patellar tendon)", "Above the kneecap (quad tendon)", "Medial joint line", "Lateral joint line", "Behind the knee (popliteal)", "Below the joint line (tibial tuberosity)", "Diffuse"] },
@@ -214,16 +236,39 @@ export const SUBJECTIVE_REGION_FIELDS = {
     { id: "function", label: "Functional limitations", type: "multi", options: ["Stairs", "Squatting / kneeling", "Running", "Walking distance", "Sport participation"] },
   ],
   ankleFoot: [
-    { id: "location", label: "Pain location", type: "multi", options: ["Lateral ankle ligaments", "Medial ankle ligaments", "Achilles insertion", "Achilles mid-portion", "Plantar heel / arch", "1st big toe joint", "Forefoot / metatarsals", "Between the toes", "Top of the foot", "Shin"] },
-    { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Referred from the lower back", "Burning between the toes", "Into the sole of the foot"] },
-    { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious / overuse", "Inversion (rolled inward)", "Eversion (rolled outward)", "Direct impact", "Landing from a jump", "Change in footwear / surface", "Sudden increase in training"] },
-    { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["First steps in the morning", "Walking / running", "Downhill running", "Stairs", "Barefoot on a hard floor", "Tight / narrow footwear"] },
+    // Wording matches orthoAnkleFootReasoning.js's runAnkleFootDifferential()
+    // keyword checks exactly. Several of these (Achilles wording, "sprain"
+    // on inversion/eversion, "insidious onset") were previously phrased
+    // differently and never actually matched (2026-09-15, same class of bug
+    // as Hip/Shoulder). Anterior/Posterior ankle locations were missing
+    // outright.
+    { id: "location", label: "Pain location", type: "multi", options: ["Lateral ankle ligaments", "Medial ankle ligaments", "Anterior ankle", "Posterior ankle", "Achilles tendon — insertional", "Achilles tendon — mid-portion", "Plantar heel / arch", "1st big toe joint", "Forefoot / metatarsals", "Between the toes", "Top of the foot", "Shin"] },
+    { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Referred from the lower back", "Tarsal tunnel — burning into the sole/toes (posterior tibial nerve)", "Burning between the toes", "Into the sole of the foot"] },
+    { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious onset / overuse", "Inversion sprain (rolled inward)", "Eversion sprain (rolled outward)", "High ankle sprain (syndesmosis)", "Direct impact", "Fall from height", "Landing from a jump", "Change in footwear / surface", "Sudden increase in training"] },
+    { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["First steps in the morning", "Walking / running", "Downhill running", "Dorsiflexion (e.g. squatting, stairs down)", "Stairs", "Barefoot on a hard floor", "Tight / narrow footwear"] },
     { id: "relieving", label: "Relieving factor", type: "multi", options: ["Rest", "Ice", "Supportive footwear", "Stretching", "Taping / brace", "Medication"] },
-    { id: "pattern", label: "24-hour pattern", type: "single", options: PATTERN_OPTIONS },
-    { id: "swelling", label: "Swelling", type: "single", options: ["None", "Mild", "Moderate", "Severe"] },
+    // Bespoke options (not the shared PATTERN_OPTIONS) so night-dominant/
+    // constant/warms-up-then-worsens -- all real engine signals -- have
+    // something to actually match.
+    { id: "pattern", label: "24-hour pattern", type: "single", options: ["Intermittent — activity-related", "Constant — never fully eases", "Worse in morning, improves through day", "Warms up then worsens (tendinopathy pattern)", "Night dominant (screen for serious pathology)", "Burning / night pain"] },
+    { id: "swelling", label: "Swelling", type: "single", options: ["None", "Mild — settles same day", "Moderate — persistent low-grade swelling", "Severe / recurrent swelling after activity"] },
     { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
-    { id: "redFlags", label: "Red flags", type: "multi", options: ["Unable to bear weight for 4 steps", "Bone tenderness at the ankle malleolus", "Suspected Achilles rupture (unable to rise on toes)", "Hot red severely tender joint", NONE_ABOVE] },
+    { id: "redFlags", label: "Red flags", type: "multi", options: ["Ottawa rules — bony tenderness at malleolus", "Ottawa rules — cannot weight bear 4 steps", "Suspected Achilles rupture (unable to rise on toes)", "Suspected complete ATFL rupture", "Stress fracture suspected (focal tibial tenderness)", "Peroneal tendon subluxation", "Acute hot swollen joint", "Compartment syndrome / vascular compromise", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Walking distance", "Running", "Stairs", "Standing tolerance", "Sport participation"] },
+    // These 9 fields didn't exist anywhere in this checklist before --
+    // real engine signals (previous sprains, felt/heard a pop, immediate
+    // weight-bearing, instability, morning Achilles stiffness, and the
+    // dedicated Achilles-rupture/shin-pain/Lisfranc/peroneal screens) that
+    // could never fire from Subjective data at all until now.
+    { id: "previousSprains", label: "Previous ankle sprains", type: "single", options: ["First-time sprain", "1 previous sprain", "2–3 previous sprains", "4+ previous sprains (multiple sprains)"] },
+    { id: "poppingSound", label: "Pop felt or heard at time of injury", type: "single", options: ["No pop felt/heard", "Felt/heard a pop — Achilles insertion", "Felt/heard a pop — mid-Achilles", "Felt/heard a pop — lateral ankle (ligament)"] },
+    { id: "weightBearingAfterInjury", label: "Weight-bearing immediately after injury", type: "single", options: ["Continued activity normally", "Stopped activity immediately", "Required assistance to walk"] },
+    { id: "morningSymptoms", label: "Morning symptoms", type: "single", options: ["No morning symptoms", "Achilles stiff and sore in the morning", "General ankle stiffness — eases quickly"] },
+    { id: "instability", label: "Instability / giving way", type: "single", options: ["No instability", "Occasional giving way", "Frequent giving way / functional instability"] },
+    { id: "calfAchillesOnset", label: "Calf/Achilles onset (if relevant)", type: "single", options: ["Not applicable", "Felt like being shot in the back of the leg", "Cannot rise on tiptoe (suspected Achilles rupture)"] },
+    { id: "shinPain", label: "Shin pain (if relevant)", type: "multi", options: ["Not applicable", "Diffuse tibial pain — stress reaction (shin splints)", "Exertional pain that eases with rest", "Focal point tenderness over tibia (stress fracture screen)", "Pain at rest + activity (stress fracture screen)"] },
+    { id: "lisfrancScreen", label: "Midfoot / Lisfranc screen (if relevant)", type: "single", options: ["Not applicable", "High-energy mechanism (RTA, fall from height, crush injury)", "Cannot weight bear on toes (Lisfranc screen)"] },
+    { id: "peronealSymptoms", label: "Peroneal tendon symptoms (if relevant)", type: "single", options: ["Not applicable", "Snapping behind lateral malleolus (clicking)", "Sensation of tendon flick out of groove"] },
   ],
 };
 

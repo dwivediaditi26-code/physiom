@@ -43,16 +43,16 @@ function buildFlatHipData(data) {
 
   flat.hp_loc = joinMulti(regionData.location);
   flat.hp_loc_pattern = regionData.locationPattern || "";
-  flat.hp_c_sign = "";
   flat.hp_moi = joinMulti(regionData.mechanism);
   flat.hp_agg_mov = joinMulti(regionData.aggravating);
   flat.hp_agg_act = joinMulti(regionData.aggravating);
   flat.hp_pattern = regionData.pattern || "";
   flat.hp_mechanical = joinMulti(regionData.mechanical);
   flat.hp_rf = joinMulti(regionData.redFlags);
-  flat.hp_hamstring_onset = "";
-  flat.hp_piriformis = "";
-  flat.hp_meralgia = "";
+  flat.hp_hamstring_onset = regionData.hamstringOnsetPattern || "";
+  flat.hp_piriformis = joinMulti(regionData.piriformisSigns);
+  flat.hp_meralgia = regionData.meralgiaSigns || "";
+  flat.hp_c_sign = regionData.cSign || "";
 
   const romData = (data.rom && data.rom["Hip"]) || {};
   ROM_IDS.forEach((id) => {

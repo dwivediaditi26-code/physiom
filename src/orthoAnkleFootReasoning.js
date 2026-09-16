@@ -50,17 +50,17 @@ function buildFlatAnkleFootData(data) {
   flat.af_agg_mov = joinMulti(regionData.aggravating);
   flat.af_agg_act = joinMulti(regionData.aggravating);
   flat.af_pattern = regionData.pattern || "";
-  flat.af_morning = "";
+  flat.af_morning = regionData.morningSymptoms || "";
   flat.af_swelling = regionData.swelling || "";
-  flat.af_instability = "";
+  flat.af_instability = regionData.instability || "";
   flat.af_rf = joinMulti(regionData.redFlags);
-  flat.af_moi_pop = "";
-  flat.af_moi_weightbear = "";
-  flat.af_prev_sprains = "";
-  flat.af_calf_onset = "";
-  flat.af_shin_pain = "";
-  flat.af_lisfranc = "";
-  flat.af_peroneal = "";
+  flat.af_moi_pop = regionData.poppingSound || "";
+  flat.af_moi_weightbear = regionData.weightBearingAfterInjury || "";
+  flat.af_prev_sprains = regionData.previousSprains || "";
+  flat.af_calf_onset = regionData.calfAchillesOnset || "";
+  flat.af_shin_pain = joinMulti(regionData.shinPain);
+  flat.af_lisfranc = regionData.lisfrancScreen || "";
+  flat.af_peroneal = regionData.peronealSymptoms || "";
 
   const romData = (data.rom && data.rom["Ankle"]) || {};
   ROM_IDS.forEach((id) => {
