@@ -761,7 +761,7 @@ export function GradeField({ label, value, onChange, howTo }) {
    built-in MMT scale (0–3 red, 4 amber, 5 green), or pass an explicit
    `tone` ("normal" | "mild" | "severe") when the caller has its own
    comparison logic (e.g. ROM value vs textbook norm). */
-export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square }) {
+export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square, large }) {
   const num = value === undefined || value === "" ? null : Number(value);
   function bump(delta) {
     const base = num === null ? (min > 0 ? min : 0) : num;
@@ -801,7 +801,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
   }
 
   return (
-    <div className={"stepper" + tone}>
+    <div className={"stepper" + (large ? " stepper-lg" : "") + tone}>
       <input
         className="stepper-input"
         type="number"

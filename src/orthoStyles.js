@@ -39,24 +39,7 @@ export function orthoStyles() {
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
           padding: 14px 16px 6px;
-          /* Same GPU-compositor-layer promotion as AppFull.jsx's .pm-header
-             (2026-09-16, Aditi: "the header is shaking like an earthquake
-             when I am scrolling") -- this sticky topbar sits right below
-             that one and was repainted every scroll frame the same way,
-             which on the AI Objective Assessment screen (long content,
-             frequent scrolling) showed up as visible jitter and made the
-             journey dots/back button hard to tap accurately mid-scroll. */
           transform: translateZ(0); -webkit-transform: translateZ(0);
-          will-change: transform; backface-visibility: hidden;
-          /* Still vibrating after the above (2026-09-16, Aditi: "there is
-             still the problem"). Two independently-stuck position:sticky
-             elements (this one, right under .pm-mobile-hdr) recalculating
-             and repainting together every scroll frame is a known source
-             of visible flicker in WebKit even with each individually
-             GPU-promoted -- contain+isolation gives this one its own
-             paint/stacking context so the browser stops coupling the two
-             sticky elements' repaints. */
-          contain: paint; isolation: isolate;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
@@ -86,7 +69,7 @@ export function orthoStyles() {
            every step already carries a real label (STEP_META), this just
            makes it visible instead of tooltip-only. */
         .step-circle {
-          flex: 0 0 auto; width: 50px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 60px; display: flex; flex-direction: column; align-items: center;
           gap: 6px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -94,7 +77,7 @@ export function orthoStyles() {
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
         }
         .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; }
-        .step-circle-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px; }
+        .step-circle-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; color: inherit; max-width: 60px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
@@ -295,6 +278,13 @@ export function orthoStyles() {
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
         .stepper-arrow:first-child { border-bottom: 1px solid ${BRAND.border}; }
+        /* Larger variant for ROM's degree box (2026-09-16, Aditi: "make the
+           rom grade button larger then now") -- same !important escape
+           hatch .stepper-input already needs against the global mobile
+           input rule, just bigger numbers. */
+        .stepper-lg { width: 84px; border-radius: 10px; }
+        .stepper-lg .stepper-input { font-size: 16px !important; padding: 8px 2px !important; }
+        .stepper-lg .stepper-arrow { width: 22px; height: 19px; font-size: 9px; }
         .stepper-severe { border-color: #F4C6C6; background: ${BRAND.redBg}; }
         .stepper-severe .stepper-input { color: #B32424; background: transparent; }
         .stepper-mild { border-color: #F5DBA6; background: ${BRAND.amberBg}; }

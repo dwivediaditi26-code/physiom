@@ -581,9 +581,10 @@ const MOBILE_CSS = `
     :root { --pm-mobile-hdr-h: calc(max(10px, env(safe-area-inset-top)) + 54px); }
     .pm-mobile-hdr {
       display: flex; align-items: center; gap: 9px;
-      padding: max(10px, env(safe-area-inset-top)) 14px 10px; position: sticky; top: 0; z-index: 101;
+      padding: max(10px, env(safe-area-inset-top)) 14px 10px; position: fixed; top: 0; left: 0; right: 0; z-index: 101;
       min-height: 64px; flex-shrink: 0;
     }
+    .pm-mobile-hdr + * { margin-top: var(--pm-mobile-hdr-h, 64px); }
     .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
     /* Hide desktop header and both patient bars on mobile */
     .pm-header { display: none !important; }
@@ -597,7 +598,7 @@ const MOBILE_CSS = `
   @media (max-width: 767px) {
     .pm-mobile-search {
       display: flex; align-items: center; gap: 7px;
-      padding: 4px 10px; position: sticky; top: 42px; z-index: 100;
+      padding: 4px 10px; position: fixed; top: var(--pm-mobile-hdr-h, 64px); left: 0; right: 0; z-index: 100;
       border-bottom: 1px solid #e8dff8;
     }
     .pm-mobile-search input {
