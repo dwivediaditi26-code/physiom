@@ -37,7 +37,7 @@ const PC = {
   isDark: false,
 };
 
-export function HomeProtocolSection({ patientData, onSave }) {
+export function HomeProtocolSection({ patientData, onSave, selectedRegions }) {
   const shimData = {
     hep_programme: patientData?.hep_programme,
     hep_precautions: patientData?.hep_precautions,
@@ -47,5 +47,5 @@ export function HomeProtocolSection({ patientData, onSave }) {
     dem_name: patientData?.dem_name,
     dem_phone: patientData?.dem_phone,
   };
-  return <HomeProtocolTab data={shimData} set={onSave} PC={PC} />;
+  return <HomeProtocolTab data={shimData} set={onSave} PC={PC} selectedRegions={selectedRegions} />;
 }

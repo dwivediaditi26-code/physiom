@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { ALL_EXERCISES, EXERCISE_DB } from "./sharedClinicalData.js";
+import { matchRegionKey } from "./orthoClinicalData.js";
 
 function buildWAText(programme, precautions, clinicName, therapistName, phone, patientName) {
   if (!programme.length) return "";
@@ -41,7 +42,7 @@ function buildWAText(programme, precautions, clinicName, therapistName, phone, p
   return lines.join("\n");
 }
 
-export default function HomeProtocolTab({ data, set, PC }) {
+export default function HomeProtocolTab({ data, set, PC, selectedRegions = [] }) {
   const programme = Array.isArray(data.hep_programme) ? data.hep_programme : [];
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState(null);
@@ -53,17 +54,38 @@ export default function HomeProtocolTab({ data, set, PC }) {
   const patientName = data.dem_name || "Patient";
   const patientPhone = String(data.dem_phone || data.dem_mobile || "").replace(/[^0-9]/g, "");
 
-  const allExercises = useMemo(() => ALL_EXERCISES || [], []);
+  // Region-first browsing (2026-09-16, Aditi: "it's always showing ... [the]
+  // same exercise ... it should have the region wise ... region selection
+  // then from the list") -- this used to always show ALL_EXERCISES.slice(0,30),
+  // which is Cervical-first regardless of the patient's actual region, e.g.
+  // a lumbar-only case defaulting to "Chin Tucks". Now it defaults to the
+  // case's own assessed region (same matchRegionKey ROM/MMT/Exercise
+  // Prescription already use) and scopes browsing to that region, while
+  // still letting the therapist switch regions. Quick-apply/condition-wise
+  // protocol templates deliberately do NOT live here (2026-09-16, Aditi:
+  // "quick templates of protocol ... should be put in the evidence based
+  // protocol recommended in the treatment section, not in the home
+  // protocol") -- that lives in the Care Plan Treatment step's own
+  // "Evidence-Based Protocol" source tab instead (NeuroCarePlan.jsx).
+  const regionKeys = useMemo(() => Object.keys(EXERCISE_DB), []);
+  const defaultRegionKey = (selectedRegions.length && matchRegionKey(selectedRegions[0].id, regionKeys)) || regionKeys[0];
+  const [region, setRegion] = useState(defaultRegionKey);
+  const regionEntry = EXERCISE_DB[region];
+
+  const regionExercises = useMemo(
+    () => (regionEntry ? Object.values(regionEntry.categories).flat() : ALL_EXERCISES || []),
+    [regionEntry]
+  );
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return allExercises.slice(0, 30);
+    if (!search.trim()) return regionExercises.slice(0, 30);
     const q = search.toLowerCase();
-    return allExercises.filter(e =>
+    return regionExercises.filter(e =>
       e.name?.toLowerCase().includes(q) ||
       e.target?.toLowerCase().includes(q) ||
       e.id?.toLowerCase().includes(q)
     ).slice(0, 30);
-  }, [search, allExercises]);
+  }, [search, regionExercises]);
 
   const isSelected = (id) => programme.some(p => p.id === id);
 
@@ -154,10 +176,26 @@ export default function HomeProtocolTab({ data, set, PC }) {
       {/* ── LEFT: Exercise selector ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
 
+        {/* Region */}
+        <div style={card()}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 800, color: acc, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>
+            {regionEntry?.icon || "🧭"} Region
+          </div>
+          <select
+            style={{ ...inp, cursor: "pointer" }}
+            value={region}
+            onChange={e => setRegion(e.target.value)}
+          >
+            {regionKeys.map(k => (
+              <option key={k} value={k}>{EXERCISE_DB[k].label}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Search + library */}
         <div style={card()}>
           <div style={{ fontSize: "0.78rem", fontWeight: 800, color: acc, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>
-            🏋 Select exercises
+            🏋 Select exercises — {regionEntry?.label || "All regions"}
           </div>
           <input
             style={{ ...inp, marginBottom: 10 }}

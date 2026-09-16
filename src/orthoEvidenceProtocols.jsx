@@ -34,18 +34,52 @@ function PhasePill({ label, n, weeks, active, disabled, onClick }) {
   );
 }
 
+function regionKeyForLabel(label) {
+  return Object.keys(EXERCISE_DB).find((k) => EXERCISE_DB[k].label.includes(label) || label.includes(EXERCISE_DB[k].label)) || null;
+}
+
+const PHASE_KEYS_USED = new Set(EVIDENCE_PROTOCOLS.flatMap((o) => (o.phases || []).map((p) => p.key)));
+
+// Every PROGRAMME_TEMPLATES entry not already wrapped by a multi-phase
+// EVIDENCE_PROTOCOLS operation above becomes its own single-phase
+// "condition" entry, so the full region-wise condition library (Acute
+// LBP, Hip OA, PFPS, Frozen Shoulder phases, ...) is reachable from here
+// too (2026-09-16, Aditi: "quick templates of protocol ... should be put
+// in the evidence based protocol recommended in the treatment section,
+// not in the home protocol") -- previously only the 7 curated surgical/
+// operation entries above were reachable here; the ~30 other condition-
+// wise templates were reachable only from Exercise Prescription's own
+// "Quick-apply protocol", which is the wrong place per that feedback.
+const CONDITION_ENTRIES = Object.entries(PROGRAMME_TEMPLATES)
+  .filter(([key]) => !PHASE_KEYS_USED.has(key))
+  .map(([key, t]) => ({
+    id: `cond_${key}`,
+    label: t.label,
+    regionKey: regionKeyForLabel(t.region),
+    live: true,
+    phases: [{ key, label: t.label, weeks: "" }],
+  }));
+
+const ALL_OPERATIONS = [...EVIDENCE_PROTOCOLS, ...CONDITION_ENTRIES];
+
+// Grouped by region (native <optgroup>) so the dropdown reads condition-
+// wise AND region-wise, per the same feedback.
+const GROUPED_OPERATIONS = Object.keys(EXERCISE_DB)
+  .map((rk) => ({ regionKey: rk, label: EXERCISE_DB[rk].label, ops: ALL_OPERATIONS.filter((o) => o.regionKey === rk) }))
+  .filter((g) => g.ops.length);
+
 export function EvidenceProtocolBrowser({ initialOperationId, onAddExercise, isAdded }) {
-  const initialOp = EVIDENCE_PROTOCOLS.find((o) => o.id === initialOperationId && o.live) || EVIDENCE_PROTOCOLS.find((o) => o.live);
+  const initialOp = ALL_OPERATIONS.find((o) => o.id === initialOperationId && o.live) || ALL_OPERATIONS.find((o) => o.live);
   const [operationId, setOperationId] = useState(initialOp?.id || null);
   const [phaseKey, setPhaseKey] = useState(initialOp?.phases?.[0]?.key || null);
 
-  const operation = EVIDENCE_PROTOCOLS.find((o) => o.id === operationId);
+  const operation = ALL_OPERATIONS.find((o) => o.id === operationId);
   const phase = operation?.phases.find((p) => p.key === phaseKey) || operation?.phases?.[0];
   const template = phase ? PROGRAMME_TEMPLATES[phase.key] : null;
   const exercises = template ? template.exercises.map((id) => ALL_EXERCISES.find((e) => e.id === id)).filter(Boolean) : [];
 
   const selectOperation = (id) => {
-    const op = EVIDENCE_PROTOCOLS.find((o) => o.id === id);
+    const op = ALL_OPERATIONS.find((o) => o.id === id);
     setOperationId(id);
     setPhaseKey(op?.phases?.[0]?.key || null);
   };
@@ -58,21 +92,29 @@ export function EvidenceProtocolBrowser({ initialOperationId, onAddExercise, isA
         onChange={(e) => selectOperation(e.target.value)}
         style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${BRAND.border}`, background: "#fff", fontFamily: "inherit", fontSize: "0.85rem", fontWeight: 600, color: BRAND.ink }}
       >
-        {EVIDENCE_PROTOCOLS.map((op) => (
-          <option key={op.id} value={op.id} disabled={!op.live}>
-            {EXERCISE_DB[op.regionKey]?.icon || "🏋"} {op.label}{!op.live ? " — coming soon" : ""}
-          </option>
+        {GROUPED_OPERATIONS.map((g) => (
+          <optgroup key={g.regionKey} label={`${EXERCISE_DB[g.regionKey]?.icon || "🏋"} ${g.label}`}>
+            {g.ops.map((op) => (
+              <option key={op.id} value={op.id} disabled={!op.live}>
+                {op.label}{!op.live ? " — coming soon" : ""}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
 
       {operation && (
         <>
-          <div className="subheading" style={{ marginTop: 14 }}>Select phase</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {operation.phases.map((p, i) => (
-              <PhasePill key={p.key} n={i + 1} weeks={p.weeks} active={p.key === phaseKey} onClick={() => setPhaseKey(p.key)} />
-            ))}
-          </div>
+          {operation.phases.length > 1 && (
+            <>
+              <div className="subheading" style={{ marginTop: 14 }}>Select phase</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {operation.phases.map((p, i) => (
+                  <PhasePill key={p.key} n={i + 1} weeks={p.weeks} active={p.key === phaseKey} onClick={() => setPhaseKey(p.key)} />
+                ))}
+              </div>
+            </>
+          )}
 
           {template?.goals && (
             <div style={{ background: BRAND.purpleFaint, borderRadius: 10, padding: "10px 12px", marginTop: 10 }}>

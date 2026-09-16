@@ -805,7 +805,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           )}
           {current.id === "techniques" && <TreatmentTechniquesSection data={data} setData={setData} />}
           {current.id === "exercisePrescription" && <ExercisePrescriptionSection data={data} setData={setData} selectedRegions={selectedRegions} requireAuth={requireAuth} />}
-          {current.id === "homeProtocol" && <HomeProtocolSection patientData={patientData} onSave={onSave} />}
+          {current.id === "homeProtocol" && <HomeProtocolSection patientData={patientData} onSave={onSave} selectedRegions={selectedRegions} />}
           {current.id === "progress" && <ProgressFollowUpSection data={data} setData={setData} />}
           {current.id === "review" && (
             <>
