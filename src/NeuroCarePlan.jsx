@@ -349,19 +349,10 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
 // link-style rows the therapist had to tap into and then "← back" out of.
 function SourceTab({ icon, label, sub, active, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, textAlign: "center",
-        padding: "10px 6px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", minWidth: 0,
-        border: `1.5px solid ${active ? BRAND.purple : BRAND.border}`,
-        background: active ? BRAND.purple : "#fff",
-      }}
-    >
-      <span style={{ fontSize: 18 }}>{icon}</span>
-      <span style={{ fontWeight: 700, fontSize: 11, lineHeight: 1.25, color: active ? "#fff" : BRAND.ink }}>{label}</span>
-      {sub && <span style={{ fontSize: 9, fontWeight: 700, color: active ? "rgba(255,255,255,.85)" : BRAND.purple }}>{sub}</span>}
+    <button type="button" className={"source-tab" + (active ? " active" : "")} onClick={onClick}>
+      <span className="source-tab-icon">{icon}</span>
+      <span className="source-tab-label">{label}</span>
+      {sub && <span className="source-tab-sub">{sub}</span>}
     </button>
   );
 }
@@ -506,21 +497,17 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth }) {
             {!browseMode && !search.trim() && !cat && kind === "exercises" && (
               <div className="ct-group">
                 <div className="ct-group-title">TREATMENT TYPES</div>
-                <div className="picker-grid">
-                  <button type="button" className="picker-card" onClick={() => setCat(ALL_TYPES)}>
-                    <div className="picker-icon">🗂️</div>
-                    <div>
-                      <div className="picker-label">All</div>
-                      <div className="picker-desc">{all.length} exercise{all.length === 1 ? "" : "s"}</div>
-                    </div>
+                <div className="tile-grid-2">
+                  <button type="button" className="tile-card" onClick={() => setCat(ALL_TYPES)}>
+                    <div className="tile-card-icon">🗂️</div>
+                    <div className="tile-card-label">All</div>
+                    <div className="tile-card-desc">{all.length} exercise{all.length === 1 ? "" : "s"}</div>
                   </button>
                   {cats.map((c) => (
-                    <button key={c} type="button" className="picker-card" onClick={() => setCat(c)}>
-                      <div className="picker-icon">🏋</div>
-                      <div>
-                        <div className="picker-label">{c}</div>
-                        <div className="picker-desc">{activeCategories[c].length} exercise{activeCategories[c].length === 1 ? "" : "s"}</div>
-                      </div>
+                    <button key={c} type="button" className="tile-card" onClick={() => setCat(c)}>
+                      <div className="tile-card-icon">🏋</div>
+                      <div className="tile-card-label">{c}</div>
+                      <div className="tile-card-desc">{activeCategories[c].length} exercise{activeCategories[c].length === 1 ? "" : "s"}</div>
                     </button>
                   ))}
                 </div>

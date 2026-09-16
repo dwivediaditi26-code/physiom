@@ -213,21 +213,17 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
           </div>
         ))
       ) : activeCategory === null ? (
-        <div className="picker-grid" style={{ marginTop: 10 }}>
-          <button type="button" className="picker-card" onClick={() => setActiveCategory("All")}>
-            <div className="picker-icon">🗂️</div>
-            <div>
-              <div className="picker-label">All</div>
-              <div className="picker-desc">{Object.values(region?.categories || {}).flat().length} exercises</div>
-            </div>
+        <div className="tile-grid-2" style={{ marginTop: 10 }}>
+          <button type="button" className="tile-card" onClick={() => setActiveCategory("All")}>
+            <div className="tile-card-icon">🗂️</div>
+            <div className="tile-card-label">All</div>
+            <div className="tile-card-desc">{Object.values(region?.categories || {}).flat().length} exercises</div>
           </button>
           {Object.entries(region?.categories || {}).map(([cat, exs]) => (
-            <button type="button" key={cat} className="picker-card" onClick={() => setActiveCategory(cat)}>
-              <div className="picker-icon">🏋</div>
-              <div>
-                <div className="picker-label">{cat}</div>
-                <div className="picker-desc">{exs.length} exercise{exs.length === 1 ? "" : "s"}</div>
-              </div>
+            <button type="button" key={cat} className="tile-card" onClick={() => setActiveCategory(cat)}>
+              <div className="tile-card-icon">🏋</div>
+              <div className="tile-card-label">{cat}</div>
+              <div className="tile-card-desc">{exs.length} exercise{exs.length === 1 ? "" : "s"}</div>
             </button>
           ))}
         </div>

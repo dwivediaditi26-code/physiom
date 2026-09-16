@@ -810,6 +810,48 @@ export function orthoStyles() {
         .writein-card { margin-top: 10px; border-style: dashed; border-color: ${BRAND.purple}; }
         .writein-card.selected { border-style: solid; }
 
+        /* Compact 2-up tile grid -- treatment-type pickers (Exercise
+           Prescription's category tiles, Add Treatment's "TREATMENT TYPES")
+           (2026-09-16, Aditi: "you have presented this way [the chat mockup],
+           it should be this way" -- these used to reuse .picker-grid, which
+           is a single stacked column meant for the big Pathway/Condition
+           cards, not a real 2-column grid). Raised "3D" card: a soft resting
+           shadow that flattens under :active for tactile press feedback. */
+        .tile-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .tile-card {
+          display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+          padding: 12px; border-radius: 14px; border: 1px solid ${BRAND.border}; background: #fff;
+          cursor: pointer; font-family: inherit; width: 100%;
+          box-shadow: 0 2px 0 rgba(20,10,45,.06), 0 1px 5px rgba(20,10,45,.07);
+          transition: transform .08s ease, box-shadow .08s ease;
+        }
+        .tile-card:active { transform: translateY(1px) scale(.97); box-shadow: 0 0 0 rgba(0,0,0,0); }
+        .tile-card.selected { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; box-shadow: 0 2px 0 rgba(124,58,237,.14), 0 1px 5px rgba(124,58,237,.16); }
+        .tile-card-icon { font-size: 18px; color: ${BRAND.purple}; }
+        .tile-card-label { font-weight: 700; font-size: 13px; color: ${BRAND.ink}; line-height: 1.25; }
+        .tile-card.selected .tile-card-label { color: ${BRAND.purpleDark}; }
+        .tile-card-desc { font-size: 11px; color: ${BRAND.gray}; }
+
+        /* Compact "3D" source-picker row (General Library / Evidence-Based
+           Protocol / My Clinic Protocol) -- replaces the old chunky
+           solid-fill-when-active SourceTab with the same raised-card +
+           press-flattens language as .tile-card above, just sized for a
+           3-across row (2026-09-16, Aditi: "make these three buttons very
+           beautiful 3D but smaller... motion clicking"). */
+        .source-tab {
+          flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+          text-align: center; padding: 8px 4px; border-radius: 12px; cursor: pointer; font-family: inherit; min-width: 0;
+          border: 1px solid ${BRAND.border}; background: #fff;
+          box-shadow: 0 2px 0 rgba(20,10,45,.06), 0 1px 5px rgba(20,10,45,.07);
+          transition: transform .08s ease, box-shadow .08s ease;
+        }
+        .source-tab:active { transform: translateY(1px) scale(.96); box-shadow: 0 0 0 rgba(0,0,0,0); }
+        .source-tab.active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; box-shadow: 0 2px 0 rgba(124,58,237,.16), 0 1px 5px rgba(124,58,237,.18); }
+        .source-tab-icon { font-size: 15px; }
+        .source-tab-label { font-weight: 700; font-size: 10px; line-height: 1.2; color: ${BRAND.ink}; }
+        .source-tab.active .source-tab-label { color: ${BRAND.purpleDark}; }
+        .source-tab-sub { font-size: 8px; font-weight: 800; letter-spacing: .2px; color: ${BRAND.purple}; }
+
         /* AI-assisted entry's 5-stage journey indicator (Subjective / Region
            / AI / Objective / Summary) -- shown on the pre-wizard Subjective
            and Region screens so a student new to the app can see the whole
