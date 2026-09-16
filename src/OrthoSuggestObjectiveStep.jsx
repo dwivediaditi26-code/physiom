@@ -588,15 +588,15 @@ function MmtItemCard({ item, mmtData, setMmt, selectionData, onSelectItem }) {
   // "MMT after filling, it is showing gray color").
   return (
     <div className="movement-card">
-      <div className="movement-head">
-        <div className="movement-info">
+      <div className="mmt-row">
+        <div className="mmt-name-col">
           <div className="movement-name-row">
             <span className="movement-name">{meta.muscle || item.label}</span>
             <InfoButton title={meta.muscle || item.label} text={mmtInfoText(meta)} richItem={mmtRichItem(meta)} />
           </div>
           {(meta.nerve || meta.root) && <div className="muscle-subtitle">{[meta.nerve, meta.root].filter(Boolean).join(" · ")}</div>}
         </div>
-        <div className="movement-lr">
+        <div className="mmt-grades-row">
           <div className="movement-lr-col">
             <span className="movement-lr-tag">L</span>
             <GradeSelect value={val.left} onChange={(v) => setSide("left", v)} />

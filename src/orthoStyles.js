@@ -71,15 +71,27 @@ export function orthoStyles() {
 
         .step-nav { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 2px; scrollbar-width: none; -ms-overflow-style: none; }
         .step-nav::-webkit-scrollbar { display: none; }
+        /* Icon circle + label underneath, not a bare icon circle
+           (2026-09-16, Aditi: "for new or old person it['s] very difficult
+           to know which [icon] have what... I want it to be written") --
+           every step already carries a real label (STEP_META), this just
+           makes it visible instead of tooltip-only. */
         .step-circle {
-          flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
-          border: 1.5px solid ${BRAND.border}; background: #fff; font-size: 13px;
-          display: flex; align-items: center; justify-content: center; cursor: pointer;
-          color: ${BRAND.grayLight}; transition: all .15s;
+          flex: 0 0 auto; width: 50px; display: flex; flex-direction: column; align-items: center;
+          gap: 6px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
-        .step-active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; transform: scale(1.14); box-shadow: 0 4px 10px rgba(108,77,255,.35); }
-        .step-seen { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
-        .step-add { border-style: dashed; border-color: ${BRAND.purple}; color: ${BRAND.purple}; font-weight: 800; font-size: 16px; background: #fff; }
+        .step-circle-ring {
+          width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid ${BRAND.border}; background: #fff;
+          display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
+        }
+        .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; }
+        .step-circle-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px; }
+        .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
+        .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
+        .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
+        .step-seen .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
+        .step-add .step-circle-ring { border-style: dashed; border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
+        .step-add .step-circle-icon { font-size: 16px; }
         .stepnav-wrap { position: relative; }
 
         .ct-modal { position: absolute; inset: 0; background: #fff; z-index: 50; display: flex; flex-direction: column; border-radius: inherit; }
@@ -318,11 +330,18 @@ export function orthoStyles() {
            long ("External + Internal Obliques", "Transversus Abdominis") --
            .movement-info takes the min-width:0 + flex:1 a flex child needs
            to actually shrink/wrap its text instead of forcing the row wider
-           than its container. Still used by MMT (RomSection moved to the
-           .rom-row table layout below). */
+           than its container. Still used by orthoAdvancedTools.jsx's other
+           movement lists (RomSection moved to the .rom-row table layout
+           below; MMT moved to the .mmt-row layout just below --
+           2026-09-16, Aditi first wanted grades stacked under the name,
+           then tried it live and asked for L/R back beside the photo
+           instead, name top-aligned rather than centered). */
         .movement-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
         .movement-info { flex: 1 1 160px; min-width: 0; }
         .movement-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .mmt-row { display: flex; align-items: flex-start; gap: 10px; }
+        .mmt-name-col { flex: 1 1 auto; min-width: 0; padding-top: 2px; }
+        .mmt-grades-row { display: flex; gap: 10px; flex-shrink: 0; }
         /* Sub-row toggle for ROM's pain-quality/end-feel chips -- only that
            detail collapses, not the whole movement row (degree steppers
            stay visible since they're filled for every movement). */
@@ -818,6 +837,10 @@ export function orthoStyles() {
         .picker-card.selected { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
         .picker-card-ai { border: 1.5px solid ${BRAND.purple}; background: linear-gradient(135deg, ${BRAND.purpleFaint}, #fff 70%); }
         .picker-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
+        /* Tabler-glyph variant (2026-09-16, Aditi: "the ortho still have
+           emoji... make it like svg") -- a purple circle badge instead of
+           a bare emoji character, same slot in the row. */
+        .picker-icon-glyph { height: 40px; border-radius: 11px; background: ${BRAND.purpleFaint}; display: flex; align-items: center; justify-content: center; font-size: 20px; color: ${BRAND.purple}; }
         .picker-label { font-weight: 700; font-size: 15px; }
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
         .writein-card { margin-top: 10px; border-style: dashed; border-color: ${BRAND.purple}; }

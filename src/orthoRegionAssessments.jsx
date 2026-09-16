@@ -408,15 +408,13 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
           const val = entry[m.id] || {};
           return (
             <div className="movement-card" key={m.id}>
-              <div className="movement-head">
-                <div className="movement-info">
-                  <div className="movement-name-row">
-                    <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
-                    <span className="movement-name">{m.muscle}</span>
-                  </div>
+              <div className="mmt-row">
+                <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
+                <div className="mmt-name-col">
+                  <span className="movement-name">{m.muscle}</span>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}
                 </div>
-                <div className="movement-lr">
+                <div className="mmt-grades-row">
                   <div className="movement-lr-col">
                     <span className="movement-lr-tag">L</span>
                     <GradeSelect value={val.left} onChange={(v) => set(activeKey, { ...entry, [m.id]: { ...val, left: v } })} />
@@ -584,18 +582,6 @@ export function isPositiveResult(val) {
   return /positive|\+ve|grade|deficit|refer|rupture|tear|instability|severe/i.test(val);
 }
 
-/* No `category` field exists on SPECIAL_TESTS_DATA (that only lives on the
-   older, smaller orthoRegionLibrary.js dataset) — classify from label/
-   structure text so the category chip row still has something real to
-   filter on. */
-function categoryFor(test) {
-  const hay = `${test.label} ${test.structure || ""}`.toLowerCase();
-  if (/nerve root|radicul|disc|dermatom|neural/.test(hay)) return "Disc / Nerve";
-  if (/instabil|laxity|dislocat|subluxat/.test(hay)) return "Instability";
-  if (/ligament|meniscus|drawer|stress test|varus stress|valgus stress/.test(hay)) return "Ligament / Meniscus";
-  return "Other";
-}
-
 // Same field set/order as physiofeed/learn/SpecialStudy.jsx's toCard() --
 // the rich "How to perform" sheet content for a special test.
 export function specialRichItem(t) {
@@ -625,57 +611,44 @@ function defaultSideFor(activeKey, selectedRegions) {
 export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey = "specialTests" }) {
   const { d, set, activeKey, setActiveKey } = useSimpleRegionTab(data, setData, sectionKey, SPECIAL_TEST_REGION_KEYS, selectedRegions);
   const [q, setQ] = useState("");
-  const [category, setCategory] = useState("All");
-  const [showFilters, setShowFilters] = useState(false);
+  // 2026-09-16, Aditi: "remove this line 0 of 17 and put the magnifying
+  // glass beside special test and remove filter" -- drops the per-region
+  // answered-count progress bar and the category-filter chips, and moves
+  // search from its own always-visible row to a toggle beside the title.
+  const [showSearch, setShowSearch] = useState(false);
   const region = SPECIAL_TESTS_DATA[activeKey];
   const tests = region?.tests || [];
   const entry = d[activeKey] || {};
   const extraTests = entry.extraTests || [];
   const allTests = [...tests, ...extraTests.map((name, i) => ({ id: "extra_" + i, label: name, options: ["Negative", "Positive"] }))];
   const query = q.trim().toLowerCase();
-  const categories = ["All", ...Array.from(new Set(allTests.map(categoryFor)))];
-  const visibleTests = allTests.filter((t) => (!query || t.label.toLowerCase().includes(query) || (t.structure || "").toLowerCase().includes(query)) && (category === "All" || categoryFor(t) === category));
+  const visibleTests = allTests.filter((t) => !query || t.label.toLowerCase().includes(query) || (t.structure || "").toLowerCase().includes(query));
 
   const counts = {};
   SPECIAL_TEST_REGION_KEYS.forEach((k) => (counts[k] = specialTestCountFor(d[k], SPECIAL_TESTS_DATA[k]?.tests || [])));
 
   const isSideless = ALL_REGIONS.find((r) => r.id === activeKey)?.sideless;
   const defaultSide = defaultSideFor(activeKey, selectedRegions || []);
-  const answeredCount = allTests.filter((t) => testResultEntries(entry[t.id]).length).length;
-  const totalCount = allTests.length;
 
   return (
     <>
-      <SectionIntro icon="🔬" title="Special Tests" info="Perform tests appropriate to the clinical presentation only — a positive test supports, not confirms, a diagnosis." />
+      <SectionIntro
+        icon="🔬"
+        title="Special Tests"
+        info="Perform tests appropriate to the clinical presentation only — a positive test supports, not confirms, a diagnosis."
+        action={
+          <button type="button" className="info-btn" onClick={() => setShowSearch((s) => !s)} aria-label="Search tests" title="Search tests">
+            <i className="ti ti-search" aria-hidden="true"></i>
+          </button>
+        }
+      />
       <SimpleRegionTabs tabs={SPECIAL_TEST_REGION_KEYS} activeKey={activeKey} onSelect={setActiveKey} counts={counts} labelFor={(k) => SPECIAL_TESTS_DATA[k]?.label || k} />
 
-      {totalCount > 0 && (
-        <div className="test-progress-row">
-          <span className="test-progress-label">{region?.label || activeKey}</span>
-          <span className="test-progress-count">{answeredCount} of {totalCount}</span>
-        </div>
-      )}
-      {totalCount > 0 && (
-        <div className="test-progress-bar">
-          <div className="test-progress-fill" style={{ width: `${Math.round((answeredCount / totalCount) * 100)}%` }} />
-        </div>
-      )}
-
-      <div className="row-2" style={{ marginBottom: showFilters ? 8 : 12 }}>
-        <div className="text-input-wrap" style={{ flex: 1 }}>
-          <input className="text-input" placeholder="🔍 Search test..." value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-        <button type="button" className="select-btn" onClick={() => setShowFilters((s) => !s)} aria-label="Toggle category filters">
-          ▾ Filter
-        </button>
-      </div>
-      {showFilters && (
-        <div className="category-chip-row">
-          {categories.map((c) => (
-            <button type="button" key={c} className={"category-chip" + (category === c ? " category-chip-active" : "")} onClick={() => setCategory(c)}>
-              {c}
-            </button>
-          ))}
+      {showSearch && (
+        <div className="row-2" style={{ marginBottom: 12 }}>
+          <div className="text-input-wrap" style={{ flex: 1 }}>
+            <input className="text-input" placeholder="Search test..." value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+          </div>
         </div>
       )}
 

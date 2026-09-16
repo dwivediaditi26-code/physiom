@@ -2094,10 +2094,14 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
 }
 
 function OnboardingModal({ PC, onDismiss }) {
+  // iconGlyph = Tabler outline icon shown in the colored circle badge
+  // (2026-09-16, Aditi: "make it good not this font and this grey thing")
+  // -- replaces the giant standalone emoji + the flat grey PC.s2 disclaimer
+  // fill with a proper card built from each step's own accent color.
   const STEPS = [
-    { icon:"🩺", title:"Welcome to PhysioMind Pro", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
-    { icon:"👤", title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
-    { icon:"📋", title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests. Each module saves automatically as you type.",             color:"#059669" },
+    { iconGlyph:"ti-stethoscope", title:"Welcome to PhysioMind Pro", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
+    { iconGlyph:"ti-user-plus",   title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
+    { iconGlyph:"ti-list-check",  title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests. Each module saves automatically as you type.",             color:"#059669" },
   ];
   const [step, setStep] = React.useState(0);
   // Apple 5.1.1(v) / DPDP Act Sec 6: this acknowledgment is a mandatory
@@ -2108,17 +2112,19 @@ function OnboardingModal({ PC, onDismiss }) {
   const onLastStep = step === STEPS.length - 1;
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{background:PC.surface,borderRadius:20,padding:"28px 24px 22px",maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",border:`1px solid ${s.color}44`,textAlign:"center"}}>
+      <div style={{fontFamily:"'Inter',system-ui,-apple-system,'Segoe UI',sans-serif",background:PC.surface,borderRadius:20,padding:"28px 24px 22px",maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.45)",border:`1px solid ${s.color}44`,textAlign:"center"}}>
         {/* Step dots */}
         <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:20}}>
           {STEPS.map((_,i)=>(<div key={i} style={{width:i===step?20:7,height:7,borderRadius:99,background:i===step?s.color:PC.border,transition:"all 0.3s"}}/>))}
         </div>
-        <div style={{fontSize:"2.8rem",marginBottom:14,lineHeight:1}}>{s.icon}</div>
-        <div style={{fontWeight:900,fontSize:"1.15rem",color:PC.text,marginBottom:10,letterSpacing:"-0.3px"}}>{s.title}</div>
+        <div style={{width:56,height:56,borderRadius:"50%",background:`${s.color}17`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <i className={"ti "+s.iconGlyph} aria-hidden="true" style={{fontSize:26,color:s.color}}></i>
+        </div>
+        <div style={{fontWeight:800,fontSize:"1.2rem",color:PC.text,marginBottom:10,letterSpacing:"-0.3px"}}>{s.title}</div>
         <div style={{fontSize:"0.88rem",color:PC.muted,lineHeight:1.65,marginBottom:onLastStep?18:24}}>{s.desc}</div>
         {onLastStep && (
-          <label style={{display:"flex",gap:10,alignItems:"flex-start",textAlign:"left",marginBottom:20,cursor:"pointer",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:12,padding:12}}>
-            <input type="checkbox" checked={ackChecked} onChange={e=>setAckChecked(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0}}/>
+          <label style={{display:"flex",gap:10,alignItems:"flex-start",textAlign:"left",marginBottom:20,cursor:"pointer",background:`${s.color}0d`,border:`1px solid ${s.color}33`,borderRadius:12,padding:12}}>
+            <input type="checkbox" checked={ackChecked} onChange={e=>setAckChecked(e.target.checked)} style={{marginTop:2,width:16,height:16,flexShrink:0,accentColor:s.color}}/>
             <span style={{fontSize:"0.78rem",color:PC.text,lineHeight:1.5,fontWeight:600}}>
               I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
             </span>
@@ -2126,12 +2132,12 @@ function OnboardingModal({ PC, onDismiss }) {
         )}
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center"}}>
           {step > 0 && (
-            <button onClick={()=>setStep(n=>n-1)} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>← Back</button>
+            <button onClick={()=>setStep(n=>n-1)} style={{padding:"10px 18px",borderRadius:10,border:`1px solid ${PC.border}`,background:"#fff",color:PC.muted,fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>← Back</button>
           )}
           {!onLastStep ? (
             <button onClick={()=>setStep(n=>n+1)} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:s.color,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:"pointer"}}>Next →</button>
           ) : (
-            <button onClick={onDismiss} disabled={!ackChecked} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:ackChecked?s.color:`${s.color}55`,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:ackChecked?"pointer":"not-allowed"}}>Let's go 🚀</button>
+            <button onClick={onDismiss} disabled={!ackChecked} style={{flex:1,padding:"12px 20px",borderRadius:10,border:"none",background:ackChecked?s.color:`${s.color}55`,color:"#fff",fontWeight:800,fontSize:"0.88rem",cursor:ackChecked?"pointer":"not-allowed"}}>Let's go →</button>
           )}
         </div>
       </div>

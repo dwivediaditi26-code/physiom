@@ -890,26 +890,31 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
             onClick={() => onJump(i)}
             aria-label={required ? `${s.label} — required for this condition` : s.label}
             title={required ? `${s.label} — required for this condition` : s.label}
-            style={{ position: "relative" }}
           >
-            {s.icon}
-            {required && (
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%",
-                  background: "#DC2626", border: "1.5px solid #fff", fontSize: 7, lineHeight: "7px",
-                  color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >
-                ★
-              </span>
-            )}
+            <span className="step-circle-ring">
+              <span className="step-circle-icon">{s.icon}</span>
+              {required && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute", top: -2, right: -2, width: 10, height: 10, borderRadius: "50%",
+                    background: "#DC2626", border: "1.5px solid #fff", fontSize: 7, lineHeight: "7px",
+                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  ★
+                </span>
+              )}
+            </span>
+            <span className="step-circle-label">{s.label}</span>
           </button>
         );
       })}
       <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label="Add assessment" title="Add assessment">
-        +
+        <span className="step-circle-ring">
+          <span className="step-circle-icon">+</span>
+        </span>
+        <span className="step-circle-label">Add</span>
       </button>
     </div>
   );

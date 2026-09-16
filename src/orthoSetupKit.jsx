@@ -67,6 +67,20 @@ export function AiHubNav({ items, activeId, visited, onJump }) {
   );
 }
 
+/* Renders a picker's `icon` field -- a "ti-*" string draws a Tabler
+   outline glyph in a purple circle badge (2026-09-16, Aditi: "the ortho
+   still have emoji... make it like svg"), anything else (an emoji string,
+   the many condition-picker lists across the app) renders exactly as
+   before so those aren't touched by this. */
+export function PickerIcon({ icon }) {
+  const isGlyph = typeof icon === "string" && icon.startsWith("ti-");
+  return (
+    <div className={"picker-icon" + (isGlyph ? " picker-icon-glyph" : "")}>
+      {isGlyph ? <i className={"ti " + icon} aria-hidden="true"></i> : icon}
+    </div>
+  );
+}
+
 /* Cardio-style picker list — big tappable rows with icon + label + desc.
    Used for the Pathway screen and the Condition screen so the whole Ortho
    module reads like one design system with the Cardiopulmonary module. */
@@ -78,7 +92,7 @@ export function PickerList({ items, value, onSelect, multi }) {
         const isSel = multi ? selected.includes(it.id) : selected === it.id;
         return (
           <button key={it.id} type="button" className={"picker-card" + (isSel ? " selected" : "")} onClick={() => onSelect(it.id)}>
-            <div className="picker-icon">{it.icon}</div>
+            <PickerIcon icon={it.icon} />
             <div>
               <div className="picker-label">{it.label}</div>
               {it.desc && <div className="picker-desc">{it.desc}</div>}

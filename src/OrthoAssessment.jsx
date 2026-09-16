@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
-import { PickerList, ConditionPicker, RegionPicker, regionLabelList, AiJourneyDots } from "./orthoSetupKit.jsx";
+import { PickerList, PickerIcon, ConditionPicker, RegionPicker, regionLabelList, AiJourneyDots } from "./orthoSetupKit.jsx";
 import { getTemplates } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
 import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
@@ -30,9 +30,9 @@ import { DemographicsSection } from "./orthoOutpatientSections.jsx";
    ============================================================ */
 
 const PATHWAYS = [
-  { id: "ipd", icon: "🏥", label: "IPD", desc: "Inpatient ward assessment" },
-  { id: "postop", icon: "🛏️", label: "Post-operative Rehab", desc: "Structured post-surgical rehabilitation" },
-  { id: "outpatient", icon: "🚶", label: "Outpatient / Musculoskeletal", desc: "OPD / clinic-based MSK assessment" },
+  { id: "ipd", icon: "ti-building-hospital", label: "IPD", desc: "Inpatient ward assessment" },
+  { id: "postop", icon: "ti-bed", label: "Post-operative Rehab", desc: "Structured post-surgical rehabilitation" },
+  { id: "outpatient", icon: "ti-walk", label: "Outpatient / Musculoskeletal", desc: "OPD / clinic-based MSK assessment" },
 ];
 
 const PATHWAY_META = {
@@ -51,9 +51,9 @@ const PATHWAY_META = {
 const AI_PRE_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
 const OPD_MODES = [
-  { id: "condition", icon: "🩺", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
-  { id: "general", icon: "📋", label: "General Assessment", desc: "Standard OPD assessment — nothing pre-promoted, add whatever you need" },
-  { id: "templates", icon: "📁", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
+  { id: "condition", icon: "ti-stethoscope", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
+  { id: "general", icon: "ti-clipboard-list", label: "General Assessment", desc: "Standard OPD assessment — nothing pre-promoted, add whatever you need" },
+  { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
 export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode, patientData, resume } = {}) {
@@ -282,7 +282,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
               <SectionIntro icon="🦴" title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
               <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
               <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
-                <div className="picker-icon">✨</div>
+                <PickerIcon icon="ti-sparkles" />
                 <div>
                   <div className="picker-label">AI Assisted Assessment</div>
                   <div className="picker-desc">Say the assessment in your own words — AI fills Subjective and suggests Objective tests. Uses the Outpatient workflow.</div>
