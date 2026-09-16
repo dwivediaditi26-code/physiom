@@ -793,14 +793,26 @@ export function orthoStyles() {
            / AI / Objective / Summary) -- shown on the pre-wizard Subjective
            and Region screens so a student new to the app can see the whole
            path ahead instead of wondering what comes after "Continue". */
+        /* Fix: "DEMOGRAPHICS"/"AI OBJECTIVE" are wider than a 40px column --
+           with white-space:nowrap + align-items:center on the parent, each
+           label's own box rendered wider than its column and got centered
+           on top of it, overflowing evenly left/right. For the first stage
+           that left overflow ran past the screen edge and got clipped (the
+           "cutting the d" report); for every stage the overflow silently
+           overlapped the neighboring dot/line, so a tap could land on that
+           non-interactive overlap instead of the actual button underneath
+           it (2026-09-16, Aditi: labels clipped AND dots not jumping --
+           same root cause). Wrapping to 2 lines inside a fixed max-width
+           keeps every label's real box within its own column, so nothing
+           overflows or overlaps a neighbor. */
         .ai-journey-dots { display: flex; align-items: flex-start; margin: 2px 0 20px; }
-        .ai-journey-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 40px; }
-        .ai-journey-dot { width: 10px; height: 10px; border-radius: 50%; background: ${BRAND.border}; transition: all .15s; }
+        .ai-journey-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 56px; }
+        .ai-journey-dot { width: 10px; height: 10px; border-radius: 50%; background: ${BRAND.border}; transition: all .15s; flex-shrink: 0; }
         .ai-journey-dot.done { background: ${BRAND.purple}; }
         .ai-journey-dot.active { background: ${BRAND.purple}; box-shadow: 0 0 0 4px ${BRAND.purpleFaint}; transform: scale(1.15); }
-        .ai-journey-label { font-size: 9px; color: ${BRAND.gray}; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; }
+        .ai-journey-label { font-size: 8.5px; color: ${BRAND.gray}; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .02em; text-align: center; line-height: 1.2; max-width: 56px; }
         .ai-journey-label.active { color: ${BRAND.purple}; }
-        .ai-journey-label-btn { font-size: 9px; color: ${BRAND.purpleDark}; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
+        .ai-journey-label-btn { font-size: 8.5px; color: ${BRAND.purpleDark}; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .02em; text-align: center; line-height: 1.2; max-width: 56px; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
         .ai-journey-label-btn:active { text-decoration-color: currentColor; }
         .ai-journey-line { flex: 1; height: 2px; background: ${BRAND.border}; margin: 4px 2px 0; }
         .ai-journey-line.done { background: ${BRAND.purple}; }
