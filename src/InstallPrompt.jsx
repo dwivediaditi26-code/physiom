@@ -125,7 +125,7 @@ export default function InstallPrompt({ currentUser }) {
   return (
     <div
       role="dialog"
-      aria-label="Add PhysioMind Pro to your Home Screen"
+      aria-label="Add PhysioMind to your Home Screen"
       style={{
         position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 9998,
         maxWidth: 420, margin: "0 auto",
@@ -138,7 +138,7 @@ export default function InstallPrompt({ currentUser }) {
       <img src="/icon-192.png" alt="" width="36" height="36" style={{ borderRadius: 8, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: "#0D0D0D", marginBottom: 2 }}>
-          Add PhysioMind Pro to your Home Screen
+          Add PhysioMind to your Home Screen
         </div>
         {platform === "ios" ? (
           <div style={{ fontSize: 12.5, color: "#6B6B6B", lineHeight: 1.4 }}>

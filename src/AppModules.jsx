@@ -449,7 +449,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     const consent   = v("dem_consent");
     const therapist = v("therapist_name", "___________________");
     const ahpra     = v("therapist_qual", "___________________");
-    const clinicAddr = d.clinic_address || "PhysioMind Pro";
+    const clinicAddr = d.clinic_address || "PhysioMind";
 
     // ── real-time SOAP text -- single verified source for subjective +
     // objective field names (see import comment above for why) ─────────────
@@ -609,7 +609,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     const totalPages = 2 + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0);
     const pgFooter = (n, total) => `
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:8px;color:#94a3b8;">PhysioMind Pro · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
+        <span style="font-size:8px;color:#94a3b8;">PhysioMind · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
         <span style="font-size:8px;color:#94a3b8;">${today} · Page ${n} of ${total}</span>
       </div>`;
 
@@ -2099,7 +2099,7 @@ function OnboardingModal({ PC, onDismiss }) {
   // -- replaces the giant standalone emoji + the flat grey PC.s2 disclaimer
   // fill with a proper card built from each step's own accent color.
   const STEPS = [
-    { iconGlyph:"ti-stethoscope", title:"Welcome to PhysioMind Pro", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
+    { iconGlyph:"ti-stethoscope", title:"Welcome to PhysioMind", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
     { iconGlyph:"ti-user-plus",   title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
     { iconGlyph:"ti-list-check",  title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests. Each module saves automatically as you type.",             color:"#059669" },
   ];

@@ -1744,7 +1744,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"max(18px, env(safe-area-inset-top)) 14px 14px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <img src="/logo.svg" alt="PhysioMind" style={{height:26,width:"auto",flexShrink:0,display:"block"}}/>
-            <div style={{fontWeight:800,fontSize:"0.88rem",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+            <div style={{fontWeight:800,fontSize:"0.88rem",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap"}}>PhysioMind</div>
           </div>
           <button onClick={()=>setNavOpen(false)} aria-label="Close navigation" style={{width:30,height:30,borderRadius:8,border:`1px solid ${PC.border}`,background:PC.s2,color:PC.muted,fontSize:"0.9rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
         </div>
@@ -1769,7 +1769,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Logo */}
             <img src="/logo.svg" alt="PhysioMind" style={{height:48,width:"auto",flexShrink:0,display:"block"}} />
             <div style={{minWidth:0}}>
-              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind Pro</div>
+              <div style={{fontWeight:800,fontSize:"clamp(0.85rem,3vw,1.05rem)",letterSpacing:"-0.3px",background:`linear-gradient(90deg,${PC.accent},${PC.a2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",lineHeight:1.2}}>PhysioMind</div>
               <div className="pm-logo-sub" style={{fontSize:"0.75rem",color:PC.muted,letterSpacing:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textTransform:"uppercase",fontWeight:600,marginTop:1}}>Posture Screening & Education</div>
             </div>
             {/* Live patient chip */}
@@ -1834,17 +1834,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <img src="/logo.svg" alt="PhysioMind" style={{height:40,width:"auto",flexShrink:0}} />
         {/* Text */}
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-          <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind Pro</div>
+          <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind</div>
         </div>
-        {/* Messages */}
-        <button onClick={()=>navTo("physiofeed")} aria-label="Messages" title="Messages"
-          style={{minHeight:34,minWidth:34,padding:0,background:"transparent",
-            border:"none",borderRadius:8,color:PC.text,cursor:"pointer",flexShrink:0,
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-          </svg>
-        </button>
         {/* + New — solid accent */}
         <button onClick={createNewPatient}
           style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
