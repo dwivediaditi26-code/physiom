@@ -264,6 +264,9 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     if (dem.dem_name) caseInfo.name = dem.dem_name;
     if (dem.dem_age) caseInfo.age = dem.dem_age;
     if (dem.dem_sex) caseInfo.sex = dem.dem_sex;
+    if (dem.dem_phone) caseInfo.phone = dem.dem_phone;
+    if (dem.dem_address) caseInfo.address = dem.dem_address;
+    if (dem.dem_occupation) caseInfo.occupation = dem.dem_occupation;
     return Object.keys(caseInfo).length ? { caseInfo } : {};
   });
   const [visited, setVisited] = useState(new Set());
@@ -364,6 +367,10 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
     // assessed through this wizard.
     if (caseInfo.age) onSave("dem_age", caseInfo.age);
     if (caseInfo.sex) onSave("dem_sex", caseInfo.sex);
+    // Same gap for phone/address/occupation (2026-09-17, Aditi).
+    if (caseInfo.phone) onSave("dem_phone", caseInfo.phone);
+    if (caseInfo.address) onSave("dem_address", caseInfo.address);
+    if (caseInfo.occupation) onSave("dem_occupation", caseInfo.occupation);
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
     // top-level field directly.
     onSave("care_setting", "ipd");

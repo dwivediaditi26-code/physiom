@@ -431,21 +431,18 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
    ============================================================ */
 const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 
-// FMA tests already carry a real hand-drawn SVG stick-figure illustration
-// (t.svgNormal, from RegionalFunctionalScreens.jsx) -- no Cloudinary photo
-// id to hook into the usual SheetHero image slot, so the real illustration
-// renders inline in the Perform tab instead of being dropped.
+// FMA tests carry a hand-drawn SVG stick-figure illustration (t.svgNormal,
+// from RegionalFunctionalScreens.jsx) that used to render inline here in
+// the Perform tab -- dropped (2026-09-17, Aditi) from this info card and
+// from Learn's Functional Screen study mode (FunctionalStudy.jsx). The
+// underlying t.svgNormal/t.svgAbnormal data is untouched in case either
+// surface wants it back later.
 export function fmaRichItem(t) {
   return {
     title: t.label,
     subtitle: t.phase,
     perform: (
       <>
-        {t.svgNormal && (
-          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: 10, marginBottom: 10, display: "flex", justifyContent: "center" }}>
-            {t.svgNormal}
-          </div>
-        )}
         <InfoCard icon="👐" label="Setup & procedure" tint="violet">{t.setup}</InfoCard>
       </>
     ),

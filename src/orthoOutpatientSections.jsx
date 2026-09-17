@@ -93,6 +93,7 @@ export function DemographicsSection({ data, setData }) {
         <AgeQuickSelect value={d.age} onChange={(v) => set("age", v)} />
         <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.sex} onChange={(v) => set("sex", v)} />
       </div>
+      <TextField label="Phone" value={d.phone} onChange={(v) => set("phone", v)} placeholder="Contact number" />
       <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <div className="row-2">
         <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />

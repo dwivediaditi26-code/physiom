@@ -43,10 +43,12 @@ const ICONS = {
 // Real data from FUNCTIONAL_SCREEN_DATA (RegionalFunctionalScreens.jsx) --
 // the exact same LUMBAR_TESTS/SHOULDER_TESTS/etc. arrays the actual
 // Functional Screen clinical screen (FunctionalScreenHub) renders.
-// `grades` and `svgNormal`/`svgAbnormal` only exist on some regions'
-// items (e.g. Lumbar has hand-drawn normal/compensated SVGs, most don't)
-// -- all optional, guarded below, same "only show a section if the real
-// data has it" rule as every other study-mode card.
+// `grades` only exists on some regions' items -- optional, guarded below,
+// same "only show a section if the real data has it" rule as every other
+// study-mode card. (t.svgNormal/t.svgAbnormal, the hand-drawn stick-figure
+// diagrams some items carry, used to render below too -- dropped 2026-09-17
+// per Aditi from both this study-mode card and the live assessment's info
+// card (orthoAdvancedTools.jsx's fmaRichItem).)
 function toCard(t) {
   return {
     id: t.id,
@@ -58,16 +60,6 @@ function toCard(t) {
       <Fragment>
         {t.setup && <InfoBox icon="🧍" label="Setup" tint="blue">{t.setup}</InfoBox>}
         {t.normalDesc && <InfoBox icon="✅" label="Normal pattern" tint="green">{t.normalDesc}</InfoBox>}
-        {(t.svgNormal || t.svgAbnormal) && (
-          <div className="grid grid-cols-2 gap-3">
-            {t.svgNormal && (
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-2 flex items-center justify-center">{t.svgNormal}</div>
-            )}
-            {t.svgAbnormal && (
-              <div className="bg-rose-50 border border-rose-100 rounded-xl p-2 flex items-center justify-center">{t.svgAbnormal}</div>
-            )}
-          </div>
-        )}
         {t.observations && t.observations.length > 0 && (
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 mb-2">What to observe</div>

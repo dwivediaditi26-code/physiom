@@ -598,6 +598,11 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     // wizard, even though Demographics collects both (orthoOutpatientSections.jsx).
     if (data.demographics?.age) onSave("dem_age", data.demographics.age);
     if (data.demographics?.sex) onSave("dem_sex", data.demographics.sex);
+    // Same gap for phone/address/occupation (2026-09-17, Aditi: "why
+    // patient information not showing here" -- phone/address/occupation).
+    if (data.demographics?.phone) onSave("dem_phone", data.demographics.phone);
+    if (data.demographics?.address) onSave("dem_address", data.demographics.address);
+    if (data.demographics?.occupation) onSave("dem_occupation", data.demographics.occupation);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }

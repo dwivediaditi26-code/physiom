@@ -946,9 +946,11 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             {[
               ["Age", d.dem_age || cardioDem.age || neuroDem.age],
               ["Gender", d.dem_sex || d.dem_gender],
-              ["Phone", d.dem_phone],
+              ["Phone", d.dem_phone || cardioDem.phone || neuroDem.phone],
               ["Date of birth", d.dem_dob],
-            ].filter(([, v]) => v).slice(0, showFullProfile ? 4 : 3).map(([label, val]) => (
+              ["Occupation", d.dem_occupation || cardioDem.occupation || neuroDem.occupation],
+              ["Address", d.dem_address || cardioDem.address || neuroDem.address],
+            ].filter(([, v]) => v).slice(0, showFullProfile ? 6 : 3).map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
                 <span style={{ color: C.muted }}>{label}</span>
                 <span style={{ color: C.text, fontWeight: 600 }}>{val}</span>
