@@ -733,9 +733,9 @@ export function orthoStyles() {
         .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; scrollbar-width: none; }
         .obj-match-row::-webkit-scrollbar { display: none; }
         .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
-        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .obj-match-card-active { border-color: #B8863F; background: linear-gradient(155deg, #FCFAF6 0%, #F6F1E7 100%); }
         .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
-        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
+        .obj-match-card-active .obj-match-pct { color: #8C6D3F; }
         .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
 
         /* Objective Assessment subtopic tab bar -- horizontal, scrollable row
@@ -761,9 +761,9 @@ export function orthoStyles() {
         .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.gray}; }
         .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
         .obj-subtopic-tab-active {
-          background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
+          background: linear-gradient(180deg, #C9A15B, #8C6D3F);
           transform: translateY(-2px);
-          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #4a339e, 0 6px 12px rgba(76,58,168,.4);
+          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #6B5330, 0 6px 12px rgba(140,109,63,.4);
         }
         .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
         .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 4px 2px 6px; margin-bottom: 12px; }
@@ -778,13 +778,13 @@ export function orthoStyles() {
            raised fill + press-in feedback instead of the faint outline
            look, plus a brief "thinking" state (pulsing brain, shimmer
            sweep) between tap and the ranked conditions appearing. */
-        .obj-ai-suggest-btn { background: linear-gradient(180deg, #8B5CF6, ${BRAND.purple}); border: none; box-shadow: 0 4px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.25); transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 2px 6px rgba(124,58,237,.3), inset 0 1px 0 rgba(255,255,255,.15); }
-        .obj-ai-suggest-btn .obj-ai-suggest-title { color: #fff; }
-        .obj-ai-suggest-btn .obj-ai-suggest-sub { color: rgba(255,255,255,.82); }
-        .obj-ai-suggest-btn .obj-ai-suggest-cta { color: #fff; }
+        .obj-ai-suggest-btn { background: linear-gradient(165deg, #3A3630 0%, #2A2622 100%); border: none; box-shadow: 0 4px 14px rgba(40,35,25,.3), inset 0 1px 0 rgba(255,255,255,.08); transition: transform .12s ease, box-shadow .12s ease; }
+        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 2px 6px rgba(40,35,25,.28), inset 0 1px 0 rgba(255,255,255,.05); }
+        .obj-ai-suggest-btn .obj-ai-suggest-title { color: #F3E6C8; }
+        .obj-ai-suggest-btn .obj-ai-suggest-sub { color: rgba(243,230,200,.72); }
+        .obj-ai-suggest-btn .obj-ai-suggest-cta { color: #E4C486; }
         @keyframes objAiShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, ${BRAND.purple} 0%, #C4B5FD 50%, ${BRAND.purple} 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
+        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, #2A2622 0%, #8C6D3F 50%, #2A2622 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
