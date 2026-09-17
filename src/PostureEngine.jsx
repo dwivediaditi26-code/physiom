@@ -3182,13 +3182,16 @@ function applyFaceDeidentification(ctx, W, H, lm) {
   // used to blot out the entire head/hairline, which read as a cropped photo
   // rather than a redacted one and gave the clinician nothing to check frame
   // alignment against.
+  const visOk = p => p && (p.visibility === undefined || p.visibility >= 0.3);
   let box = null;
+  // Tier 1: the eyes/nose/mouth landmarks directly, when MediaPipe actually
+  // reports them with usable confidence (close-up captures/uploads).
   if (Array.isArray(lm) && lm.length > 10) {
     const idx = [0, 1, 2, 3, 4, 5, 6, 9, 10];
-    const pts = idx
-      .map(i => lm[i])
-      .filter(p => p && (p.visibility === undefined || p.visibility >= 0.3));
-    if (pts.length) {
+    const pts = idx.map(i => lm[i]).filter(visOk);
+    // Require a real cluster, not one stray low-confidence hit — a single
+    // point produces a zero-area box before padding, which is meaningless.
+    if (pts.length >= 3) {
       const xs = pts.map(p => p.x * W), ys = pts.map(p => p.y * H);
       const minX = Math.min(...xs), maxX = Math.max(...xs);
       const minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -3202,9 +3205,23 @@ function applyFaceDeidentification(ctx, W, H, lm) {
       };
     }
   }
+  // Tier 2: MediaPipe's facial keypoints are notoriously low-confidence in
+  // a full-body standing shot — the face is small and far from the camera,
+  // so nose/eyes/mouth routinely score below the visibility threshold even
+  // though the shoulders (11/12), which anchor every posture measurement,
+  // are detected reliably. Estimate the head region from shoulder
+  // width/midpoint instead of falling straight to a blind guess.
+  if (!box && Array.isArray(lm) && visOk(lm[11]) && visOk(lm[12])) {
+    const shW = Math.abs(lm[11].x - lm[12].x) * W;
+    const shMidX = ((lm[11].x + lm[12].x) / 2) * W;
+    const shTopY = Math.min(lm[11].y, lm[12].y) * H;
+    const headH = Math.max(shW * 0.95, 0.05 * H);
+    const headW = Math.max(shW * 0.8, headH * 0.8);
+    box = { x: shMidX - headW / 2, y: Math.max(0, shTopY - headH * 1.6), w: headW, h: headH };
+  }
   if (!box) {
-    // No usable face landmarks — mask a small region top-centre instead of
-    // guessing the whole head is there.
+    // No usable landmarks at all — mask a small region top-centre instead
+    // of guessing the whole head is there.
     const w = 0.24 * W, h = 0.14 * H;
     box = { x: (W - w) / 2, y: 0.05 * H, w, h };
   }
@@ -5302,6 +5319,15 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [uploadedImg,setUploadedImg]=useState(null);
   const [rawUploadedImg,setRawUploadedImg]=useState(null); // always the original file URL (never a canvas output)
   const [capturedImg,setCapturedImg]=useState(null);
+  // De-identified twin of capturedImg, baked once at capture time from the
+  // landmarks analysePhoto just returned (result.lm) — the single source of
+  // truth for "what should the masked version of this exact photo look
+  // like". generateReport() reuses this instead of re-deriving a mask from
+  // `landmarks` component state + a freshly reloaded Image at PDF-generation
+  // time, which can run seconds/minutes after capture and has no guarantee
+  // `landmarks` still matches capturedImg (tab switches, manual-mode
+  // toggles, etc. all reset it in between).
+  const [capturedImgMasked,setCapturedImgMasked]=useState(null);
   const [analysing,setAnalysing]=useState(false);
   // Landmark review gate. Automatic landmark placement is a PROPOSAL, not a
   // measurement: every published postural norm was established on palpated
@@ -6046,6 +6072,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     fctx.drawImage(video,0,0,W,H);
     const rawDataUrl=fc.toDataURL("image/jpeg",0.92);
     setCapturedImg(rawDataUrl);
+    setCapturedImgMasked(null);
     setAnalysing(true);
     const blobUrl=await new Promise(res=>{ fc.toBlob(b=>res(b?URL.createObjectURL(b):null),"image/jpeg",0.92); });
     if(blobUrl&&poseRef.current&&mpStatus==="ready"){
@@ -6068,6 +6095,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         const octxStore=ocStore.getContext("2d"); octxStore.drawImage(oc,0,0,W,H);
         applyFaceDeidentification(octxStore,W,H,result.lm);
         const storedImg=ocStore.toDataURL("image/jpeg",0.92);
+        setCapturedImgMasked(storedImg);
         const calib=computeCalibration(result.lm,patientHeightCm,H);
         processLandmarks(result.lm,currentView,H);
         if(currentView==="left"||currentView==="right"){
@@ -6135,12 +6163,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         // No usable pose in this frame -- resume live tracking instead of
         // leaving the operator stuck on a frozen dud frame; they can just
         // try Capture again once framing improves.
-        captureFrozenRef.current=false; setCapturedImg(null);
+        captureFrozenRef.current=false; setCapturedImg(null); setCapturedImgMasked(null);
         setError(`Could not detect a full body pose in this ${VIEWS[currentView]?.label||"view"} photo — step back so your full body (head to feet) is in frame, improve lighting, and try again.`);
         if(measurements&&findings&&scoreData) saveSession(buildLocalSession(currentView, rawDataUrl));
       }
     } else {
-      captureFrozenRef.current=false; setCapturedImg(null);
+      captureFrozenRef.current=false; setCapturedImg(null); setCapturedImgMasked(null);
       URL.revokeObjectURL(blobUrl||""); setAnalysing(false);
       setError(mpStatus!=="ready" ? "AI model is still loading — wait a moment and try again." : "Camera capture failed — please try again.");
       if(measurements&&findings&&scoreData) saveSession(buildLocalSession(currentView, rawDataUrl));
@@ -6151,7 +6179,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   // Discards the reviewed capture and resumes live tracking for another try.
   function retakePhoto(){
     captureFrozenRef.current=false;
-    setCapturedImg(null); setError(null);
+    setCapturedImg(null); setCapturedImgMasked(null); setError(null);
   }
 
   // ── Manual mode derived values ───────────────────────────────────────────────
@@ -8604,10 +8632,17 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       // de-identified copy baked in capturePhoto/saveMvResult. The
       // single-view fallback here used to embed the raw capturedImg/
       // uploadedImg straight into the PDF with no masking at all — hence
-      // faces showing up unobscured in single-view reports. Mask it the
-      // same way before it goes in the report.
+      // faces showing up unobscured in single-view reports.
+      // Prefer capturedImgMasked -- it was baked once, right at capture
+      // time, from the exact landmarks analysePhoto returned for THIS
+      // photo. Re-deriving a mask here from live `landmarks` component
+      // state is a fallback only (upload/manual paths that don't populate
+      // capturedImgMasked): `landmarks` can be stale or reset by the time
+      // the report is actually generated, silently producing an unmasked
+      // image with no visible error.
       const rawImg = uploadedImg || capturedImg || null;
-      const annotatedImg = rawImg ? await deidentifyImageSrc(rawImg, landmarks) : null;
+      const annotatedImg = (uploadedImg ? null : capturedImgMasked)
+        || (rawImg ? await deidentifyImageSrc(rawImg, landmarks) : null);
       // Build ordered array of all captured view images for dynamic photo grid
       const _viewOrderRpt = ["anterior","posterior","left","right"];
       const _viewLabelsRpt = { anterior:"Anterior — Front", posterior:"Posterior — Back", left:"Left Lateral", right:"Right Lateral" };
