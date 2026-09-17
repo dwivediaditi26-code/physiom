@@ -404,14 +404,12 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
               <div className="topbar-breadcrumb">
                 {regionsLabel} · {conditionLabel}
                 {patientHeader.length > 0 ? ` · ${patientHeader.join(" / ")}` : ""}
+                <span className="topbar-step-count"> · Step {step + 1}/{steps.length}</span>
               </div>
             </div>
           </div>
           <div className="stepnav-wrap">
             <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} />
-          </div>
-          <div className="progress-label">
-            Step {step + 1} of {steps.length}
           </div>
         </div>
 

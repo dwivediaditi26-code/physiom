@@ -638,6 +638,9 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               </div>
               <div className="topbar-breadcrumb">
                 {regionsLabel} · {conditionLabel}
+                {entryMode !== "ai" && (
+                  <span className="topbar-step-count"> · Step {step + 1}/{steps.length}</span>
+                )}
               </div>
             </div>
             {current.id !== "review" && (
@@ -680,9 +683,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
             <>
               <div className="stepnav-wrap">
                 <StepNav steps={steps} currentIndex={step} visited={visited} onJump={setStep} onAddClick={() => setAddOpen(true)} requiredIds={requiredStepIds} />
-              </div>
-              <div className="progress-label">
-                Step {step + 1} of {steps.length}
               </div>
             </>
           )}
