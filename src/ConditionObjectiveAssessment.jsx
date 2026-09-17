@@ -478,17 +478,18 @@ function ModuleCard({ label, color, defaultOpen = true, children }) {
 // Subtopics shown as a horizontal, scrollable "piano row" below the
 // condition selector — page-by-page assessment instead of every module
 // stacked on one long scroll (2026-09-11, approved chat mockup: purple
-// gradient bar, active tab pops up as a white card). Extra modules that
-// don't get their own tab fold into the nearest clinically-related one:
-// Posture + Fascia -> Observation; CPA-NKT -> Palpation; Kinetic Chain ->
-// Functional. Special Tests, STTT-Cyriax, and Outcome Measures each get
-// their own page (2026-09-11: "make sttt and special test and outcome
-// measure each page different").
+// gradient bar, active tab pops up as a white card). Posture + Fascia
+// still fold into Observation. CPA-NKT and Kinetic Chain used to fold
+// into Palpation/Functional too, but got their own pages (2026-09-17,
+// Aditi: "put the CPA functional and kinetic seprate in ai") -- each is
+// its own clinical module, not a sub-finding of the tab it was sharing.
 const SUBTOPICS = [
   { key: "observation", label: "Observation", icon: "ti-eye" },
   { key: "palpation", label: "Palpation", icon: "ti-hand-stop" },
+  { key: "cpa", label: "CPA / NKT", icon: "ti-brain" },
   { key: "rom", label: "ROM", icon: "ti-arrows-maximize" },
   { key: "functional", label: "Functional", icon: "ti-walk" },
+  { key: "kinetic", label: "Kinetic chain", icon: "ti-link" },
   { key: "special", label: "Special tests", icon: "ti-clipboard-check" },
   { key: "sttt", label: "STTT / Cyriax", icon: "ti-stethoscope" },
   { key: "outcome", label: "Outcome measures", icon: "ti-chart-line" },
@@ -1330,7 +1331,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
           </ModuleCard>
+          </>}
 
+          {activeSubtopic === "cpa" && <>
           <ModuleCard label="CPA — NKT" color="#D97706">
             {isV1 ? (
               <>
@@ -1614,7 +1617,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           )}
           </>}
 
-          {activeSubtopic === "functional" && <>
+          {activeSubtopic === "kinetic" && <>
           {isV1 ? (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -1657,7 +1660,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               )}
             </ModuleCard>
           )}
+          </>}
 
+          {activeSubtopic === "functional" && <>
           {isV1 ? (
             <ModuleCard label="Functional Screen" color="#16A34A">
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
