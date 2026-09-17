@@ -4272,12 +4272,14 @@ function SegmentAlignmentReport({ measurements: m, view, PC, photoUrl, landmarks
   const isFrontal = view === "anterior" || view === "posterior" || view === "back";
   if (!isFrontal) return null;
 
-  // Image-left is the patient's RIGHT when facing the camera, and their LEFT
-  // when viewed from behind. Mirrors the inversion already applied to
-  // trunkLateralShift so the two cannot report opposite sides for one photo.
-  const sideFor = (v) => v > 0
-    ? (view === "anterior" ? "Left" : "Right")
-    : (view === "anterior" ? "Right" : "Left");
+  // Same sign convention as everywhere else this angle is read (module F4,
+  // the annotated-photo overlay, buildFindings) -- positive = patient's own
+  // right side elevated/tilted. This row used to flip it for a supposed
+  // camera-mirror correction, which made it report the opposite side from
+  // the "Other Findings" card and the photo's own burned-in annotation for
+  // the same measurement (2026-09-17, Aditi: "finding shows left...result
+  // show right").
+  const sideFor = (v) => v > 0 ? "Right" : "Left";
 
   // Normalised anchor point for each row's thumbnail crop, from the landmarks
   // the row is actually derived from. Null when those landmarks aren't
