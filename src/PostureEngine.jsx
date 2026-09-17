@@ -7855,21 +7855,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       {/* ── Redesigned entry screen (2026-08-21) ─────────────────────────── */}
       <div style={{padding: isWide?"16px 20px":"14px 16px",display:"flex",flexDirection:"column",gap:14}}>
 
-        {/* Hero + Patient — side by side on real desktop widths (2026-08-25,
-            laptop redesign) instead of stacked, since 560px+ has the room and
-            stacking them wasted vertical space above the fold before the
-            Select Views grid was even visible. Stay stacked below that. */}
-        <div style={{display: isDesktop?"grid":"flex",gridTemplateColumns: isDesktop?"1fr 1fr":undefined,flexDirection: isDesktop?undefined:"column",gap:14}}>
-          {/* Hero card — "Start New Analysis" button removed (2026-08-25, user
-              feedback): redundant with the per-view "+ Add Photo" cards below,
-              and its full-reset (wiping every already-captured view) sitting
-              right above the patient picker was confusing, not a way to fix a
-              single wrong photo. */}
-          <div style={{padding:isWide?"18px":"16px",borderRadius:16,background:`${PC.accent}0d`,border:`1px solid ${PC.accent}25`,display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>🧍</div>
-            <div style={{fontSize:isWide?"0.85rem":"0.78rem",color:PC.muted,lineHeight:1.4}}>Capture patient images, get AI landmarks and clinical insights.</div>
-          </div>
-
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
           {/* Patient (2026-08-21, user feedback: a single row that silently
               opened the whole Clinical drawer wasn't clear that "add a new
               one" and "pick an existing one" are two different things).
