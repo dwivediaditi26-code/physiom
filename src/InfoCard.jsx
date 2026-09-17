@@ -119,15 +119,42 @@ function PerformPane({ perform }) {
   const [uploadingIdx, setUploadingIdx] = useState(null);
   const fileInputRef = useRef(null);
   const uploadTargetIdx = useRef(null);
-  useEffect(() => { setIdx(0); setFullscreen(false); setVersions({}); setUploadingIdx(null); }, [perform]);
+  // Cloudinary can take a moment to finish deriving the f_auto,q_auto
+  // transform for a brand-new upload -- the very first request for that
+  // freshly-versioned URL can still 404 even though the upload itself
+  // already succeeded. retryCountRef tracks per-slot retry attempts so a
+  // slot that was JUST uploaded to gets a few cache-busted retries before
+  // it's treated as a real failure, instead of permanently showing the
+  // upload placeholder for a photo that's actually sitting on Cloudinary
+  // (2026-09-17, Aditi: "I'm able to upload, but it's not showing... after
+  // uploading").
+  const retryCountRef = useRef({});
+  useEffect(() => { setIdx(0); setFullscreen(false); setVersions({}); setUploadingIdx(null); retryCountRef.current = {}; }, [perform]);
 
   const slots = baseSlots.map((sl, i) => ({
     ...sl,
     publicId: publicIdFromSrc(sl.src),
     src: sl.src && versions[i] ? `${sl.src}?v=${versions[i]}` : sl.src,
   }));
-  const active = slots[Math.min(idx, slots.length - 1)];
+  const activeIdx = Math.min(idx, slots.length - 1);
+  const active = slots[activeIdx];
   const activeSrc = active.src && !erroredSrcs.has(active.src) ? active.src : null;
+
+  // Retries a freshly-uploaded slot's image load a few times (cache-busted
+  // each time) before giving up and treating it as a genuine failure --
+  // see retryCountRef comment above for why this is needed.
+  function handleImgError(i, failedSrc) {
+    const justUploaded = versions[i] != null;
+    const retries = retryCountRef.current[i] || 0;
+    if (justUploaded && retries < 3) {
+      retryCountRef.current[i] = retries + 1;
+      setTimeout(() => {
+        setVersions((prev) => ({ ...prev, [i]: Date.now() }));
+      }, 900 * (retries + 1));
+    } else {
+      setErroredSrcs((prev) => new Set(prev).add(failedSrc));
+    }
+  }
 
   function triggerUpload(i) {
     uploadTargetIdx.current = i;
@@ -147,6 +174,13 @@ function PerformPane({ perform }) {
       fd.append("public_id", publicId);
       const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
+      retryCountRef.current[i] = 0;
+      // A previous failed load (e.g. the placeholder 404 before any photo
+      // existed) must not keep blocking this slot now that a real photo
+      // was just uploaded to it -- the new versioned URL below wouldn't
+      // match that old entry anyway, but clear the whole set so nothing
+      // stale can linger.
+      setErroredSrcs(new Set());
       setVersions((prev) => ({ ...prev, [i]: Date.now() }));
     } catch {
       alert("Photo upload failed — check your connection and try again.");
@@ -210,7 +244,7 @@ function PerformPane({ perform }) {
               src={activeSrc}
               alt={active.label || perform.caption || ""}
               style={s.illusImgTag}
-              onError={() => setErroredSrcs((prev) => new Set(prev).add(activeSrc))}
+              onError={() => handleImgError(activeIdx, activeSrc)}
             />
             {(active.label || perform.caption) && <div style={s.illusImgCap}>{active.label || perform.caption}</div>}
           </div>

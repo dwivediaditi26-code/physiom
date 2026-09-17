@@ -831,6 +831,85 @@ function findingPhotoId(category, label) {
   return `physiom_findings/${category}/${slugifyFinding(label)}`;
 }
 
+// Compact version of FindingCard's photo tile -- same upload-your-own-photo
+// behaviour (Cloudinary unsigned upload keyed to a deterministic public_id,
+// tap-to-zoom, tap-to-replace), just sized for an inline row instead of a
+// full 96px card tile. Used for ROM movements and Special Tests, which
+// previously only had the fixed reference-technique photo (InfoButton
+// imageTrigger) with no way for the clinician to attach the patient's own
+// photo the way Observation/Posture/Palpation findings already could
+// (2026-09-17, Aditi: "same thing... in ROM special test... like you have
+// done in AI observation section").
+function PatientPhotoTile({ photoId, size = 40 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const [imgVersion, setImgVersion] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const hasPhoto = !!(photoId && imgSrc && !imgFailed);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !photoId) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "ml_default");
+      fd.append("public_id", photoId);
+      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      setImgFailed(false);
+      setImgVersion(Date.now());
+    } catch (err) {
+      alert("Photo upload failed — check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  if (!photoId) return null;
+
+  return (
+    <>
+      {zoomOpen && hasPhoto && createPortal(
+        <div onClick={() => setZoomOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
+          <img src={zoomSrc} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", width: "auto", height: "auto", objectFit: "contain", borderRadius: 8 }} />
+          <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
+            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
+              <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+        </div>,
+        document.body
+      )}
+      <div
+        onClick={(e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); }}
+        title={hasPhoto ? "View patient photo" : "Add patient photo"}
+        style={{ position: "relative", flexShrink: 0, width: size, height: size, borderRadius: 10, background: "#F6F5FA", border: `1px solid ${HAIRLINE}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: hasPhoto ? "zoom-in" : "pointer" }}
+      >
+        {hasPhoto ? (
+          <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <i className="ti ti-camera-plus" style={{ fontSize: Math.round(size * 0.45), color: BRAND.grayLight }} aria-hidden="true"></i>
+        )}
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+        {uploading && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <i className="ti ti-loader-2" style={{ fontSize: Math.round(size * 0.4), color: BRAND.purple }} aria-hidden="true"></i>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 const FINDING_CATEGORY_ICON = { observation: "ti-eye", posture: "ti-walk", palpation: "ti-hand-stop" };
 
 // Standard-technique "how to check" lines for Observation and Palpation
@@ -1435,6 +1514,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", alignItems: "center", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                             <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
+                            <PatientPhotoTile photoId={findingPhotoId("rom", `${config.key} ${m.label}`)} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
                               <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
@@ -1471,6 +1551,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                           <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
+                          <PatientPhotoTile photoId={findingPhotoId("rom", `${config.key} ${m.label}`)} />
                           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
                             <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
@@ -1507,6 +1588,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                         <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={specialRichItemFor(config.key, t)} />
+                        <PatientPhotoTile photoId={findingPhotoId("special", `${config.key} ${t}`)} />
                         <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
                       </div>
                       <CategoryLabel>Side</CategoryLabel>
