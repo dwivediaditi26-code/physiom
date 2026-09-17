@@ -355,7 +355,16 @@ export function FieldShell({ label, hint, howTo, children }) {
 // Ortho's neuro screen doesn't have to cross-import a component styled for
 // a different module's CSS. rows="Bicep (C5-6)" etc, one <select> per row x
 // column, value keyed "row__column".
-export function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo }) {
+// rowInfo (optional): { [rowLabel]: richItem } -- same idea as Neuro's own
+// LRGrid's rowInfo/InfoCardButton (each row is really its own distinct
+// test, e.g. a DTR or dermatome, not one shared technique), rendered via
+// Ortho's own InfoButton imageTrigger + richItem sheet -- the same real
+// reference-photo info card ROM/MMT movements already show, not a second,
+// separately-authored info system (2026-09-17, Aditi: after a plain-text
+// ⓘ pass, "in neuro clinical assessment this have in sensory and reflex
+// examination take reference of image and info card from there and put it
+// images like rom").
+export function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, rowInfo }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
       <div className="lr-grid">
@@ -367,7 +376,10 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
         </div>
         {rows.map((r) => (
           <div className="lr-row" key={r}>
-            <div className="lr-cell lr-zone">{r}</div>
+            <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { gap: 6 } : undefined}>
+              {rowInfo?.[r] && <InfoButton imageTrigger small fallbackIcon="ti-photo" title={r} richItem={rowInfo[r]} />}
+              <span>{r}</span>
+            </div>
             {columns.map((c) => {
               const key = `${r}__${c}`;
               return (

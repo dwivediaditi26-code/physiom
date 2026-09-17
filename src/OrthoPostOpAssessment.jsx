@@ -13,6 +13,7 @@ import {
   BalanceSection,
   ActivityToleranceSection,
   ImpressionSection,
+  NeuroScreenSection,
 } from "./orthoCommonSections.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
@@ -226,20 +227,6 @@ function ProsthesisSection({ data, setData }) {
   );
 }
 
-function NeuroScreenSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "neuroScreen");
-  return (
-    <>
-      <SectionIntro icon={<Icon name="brain" />} title="Neurological Screen" info="A brief screen post spine surgery — full myotome/dermatome testing only if clinically indicated or per protocol." />
-      <SelectField label="Motor screen" type="multi" options={["Grossly intact", "Weakness — upper limb", "Weakness — lower limb", "Not assessed"]} value={d.motor} onChange={(v) => set("motor", v)} />
-      <SelectField label="Sensory screen" type="multi" options={["Grossly intact", "Numbness", "Tingling / paraesthesia", "Not assessed"]} value={d.sensory} onChange={(v) => set("sensory", v)} />
-      <Segmented label="Reflexes" options={["Normal", "Diminished", "Absent", "Not tested"]} value={d.reflexes} onChange={(v) => set("reflexes", v)} />
-      <SelectField label="Neural symptoms" type="multi" options={["None", "Radiating pain", "Numbness", "Tingling"]} value={d.neuralSymptoms} onChange={(v) => set("neuralSymptoms", v)} />
-      <TextArea label="Functional neurological status" value={d.functionalStatus} onChange={(v) => set("functionalStatus", v)} />
-    </>
-  );
-}
-
 /* ============================================================
    ADD ASSESSMENT MODAL
    ============================================================ */
@@ -315,6 +302,9 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
     if (dem.dem_name) caseInfo.name = dem.dem_name;
     if (dem.dem_age) caseInfo.age = dem.dem_age;
     if (dem.dem_sex) caseInfo.sex = dem.dem_sex;
+    if (dem.dem_phone) caseInfo.phone = dem.dem_phone;
+    if (dem.dem_address) caseInfo.address = dem.dem_address;
+    if (dem.dem_occupation) caseInfo.occupation = dem.dem_occupation;
     return Object.keys(caseInfo).length ? { caseInfo } : {};
   });
   const [visited, setVisited] = useState(new Set());
@@ -409,6 +399,10 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
     // for the full explanation.
     if (caseInfo.age) onSave("dem_age", caseInfo.age);
     if (caseInfo.sex) onSave("dem_sex", caseInfo.sex);
+    // Same gap for phone/address/occupation (2026-09-17, Aditi).
+    if (caseInfo.phone) onSave("dem_phone", caseInfo.phone);
+    if (caseInfo.address) onSave("dem_address", caseInfo.address);
+    if (caseInfo.occupation) onSave("dem_occupation", caseInfo.occupation);
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
     // top-level field directly.
     onSave("care_setting", "postop");

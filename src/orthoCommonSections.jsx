@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField, InfoButton, InfoCard } from "./orthoFieldKit.jsx";
+import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 
 // Typical resting adult values -- Vitals now opens already filled with
 // these instead of blank, since most patients most of the time are within
@@ -38,6 +39,9 @@ export function CaseInfoSection({ data, setData }) {
         <TextField label="Case / UHID" value={d.caseId} onChange={(v) => set("caseId", v)} placeholder="ID number" />
         <TextField label="Ward / Bed" value={d.ward} onChange={(v) => set("ward", v)} placeholder="e.g. Ortho-3 / Bed 12" />
       </div>
+      <TextField label="Phone" value={d.phone} onChange={(v) => set("phone", v)} placeholder="Contact number" />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} />
       <TextField label="Admitting diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
       <DateField label="Date of admission" value={d.admitDate} onChange={(v) => set("admitDate", v)} />
       <TextField label="Referring physician" value={d.referrer} onChange={(v) => set("referrer", v)} />
@@ -156,6 +160,89 @@ export function BalanceSection({ data, setData }) {
 // an ortho exam actually screens (cervical and lumbar nerve roots), so a
 // spine-condition MSK case doesn't need to leave Ortho to rule out nerve
 // involvement.
+// Reuses the exact same rich "Perform / Reference / Interpret" content and
+// real Cloudinary reference photos NeurologicalAssessment.jsx's own myotome/
+// dermatome/reflex grids already show via neuroExamLibraryData.js -- not
+// separately-authored text (2026-09-17, Aditi, after a first pass added a
+// plain-text ⓘ: "in neuro clinical assessment this have in sensory and
+// reflex examination take reference of image and info card from there and
+// put it images like rom" -- same imageTrigger info-card pattern ROM/MMT
+// movements already use, sourced from the one real library instead of a
+// second copy of the same clinical facts).
+// neuroExamLibraryData.js's own images are already-built absolute URLs
+// (CLOUDINARY_BASE + raw id); InfoButton's richItem.image instead wants
+// just the raw id, since it builds its own thumbnail/full-size URLs --
+// strip that known prefix back off.
+const NEURO_LIB_IMG_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
+function rawImgId(url) {
+  return url ? url.replace(NEURO_LIB_IMG_PREFIX, "") : null;
+}
+// Converts one neuroExamLibraryData entry (its own {perform:{images,boxes},
+// scale, interpret} shape, built for NeurologicalAssessment.jsx's sheet) into
+// Ortho's InfoButton richItem shape ({image, perform, reference, interpret}
+// as JSX, same shape romRichItem/mmtRichItem build in orthoRegionAssessments.jsx).
+function neuroLibToRichItem(entry) {
+  if (!entry) return null;
+  return {
+    image: rawImgId(entry.perform?.images?.[0]),
+    title: entry.title,
+    subtitle: entry.perform?.caption,
+    perform: (
+      <>
+        {(entry.perform?.boxes || []).map((b, i) => (
+          <InfoCard key={i} label={b.label} tint={b.tone === "purple" ? "violet" : b.tone || "gray"}>{b.text}</InfoCard>
+        ))}
+      </>
+    ),
+    reference: entry.scale && (
+      <InfoCard label={entry.scaleLabel || "Grading"} tint="blue">
+        {entry.scale.rows?.map((r) => <div key={r.k}><b>{r.k}:</b> {r.v}</div>)}
+      </InfoCard>
+    ),
+    interpret: (entry.interpret?.normal || entry.interpret?.abnormal || entry.interpret?.note) && (
+      <>
+        {entry.interpret.normal && <InfoCard icon="✅" label="Normal" tint="green">{entry.interpret.normal.join("; ")}</InfoCard>}
+        {entry.interpret.abnormal && <InfoCard icon="⚠️" label="Abnormal" tint="amber">{entry.interpret.abnormal.join("; ")}</InfoCard>}
+        {entry.interpret.note && <InfoCard icon="📝" label="Note" tint="gray">{entry.interpret.note}</InfoCard>}
+      </>
+    ),
+  };
+}
+// Keyed by nerve root, not exact row text -- this screen's own movement
+// picked per level (e.g. C5 = shoulder abduction) doesn't always match
+// NeurologicalAssessment.jsx's ASIA-exam convention (e.g. its C5 = elbow
+// flexors) for the same root, but the reference photo/technique for that
+// root is still the right clinical reference either way.
+const MYOTOME_ROW_INFO = {
+  "C5 Shoulder abduction": neuroLibToRichItem(neuroExamLibraryData["myoC5 Elbow flexors"]),
+  "C6 Elbow flexion / wrist ext.": neuroLibToRichItem(neuroExamLibraryData["myoC6 Wrist extensors"]),
+  "C7 Elbow extension": neuroLibToRichItem(neuroExamLibraryData["myoC7 Elbow extensors"]),
+  "C8 Finger flexion": neuroLibToRichItem(neuroExamLibraryData["myoC8 Finger flexors"]),
+  "T1 Finger abduction": neuroLibToRichItem(neuroExamLibraryData["myoT1 Finger abductors"]),
+  "L2 Hip flexion": neuroLibToRichItem(neuroExamLibraryData["myoL2 Hip flexors"]),
+  "L3 Knee extension": neuroLibToRichItem(neuroExamLibraryData["myoL3 Knee extensors"]),
+  "L4 Ankle dorsiflexion": neuroLibToRichItem(neuroExamLibraryData["myoL4 Ankle dorsiflexors"]),
+  "L5 Great toe extension": neuroLibToRichItem(neuroExamLibraryData["myoL5 Great toe extensors"]),
+  "S1 Ankle plantarflexion": neuroLibToRichItem(neuroExamLibraryData["myoS1 Ankle plantarflexors"]),
+};
+const DERMATOME_ROW_INFO = {
+  C5: neuroLibToRichItem(neuroExamLibraryData.dermC5),
+  C6: neuroLibToRichItem(neuroExamLibraryData.dermC6),
+  C7: neuroLibToRichItem(neuroExamLibraryData.dermC7),
+  C8: neuroLibToRichItem(neuroExamLibraryData.dermC8),
+  T1: neuroLibToRichItem(neuroExamLibraryData.dermT1),
+  L3: neuroLibToRichItem(neuroExamLibraryData.dermL3),
+  L4: neuroLibToRichItem(neuroExamLibraryData.dermL4),
+  L5: neuroLibToRichItem(neuroExamLibraryData.dermL5),
+  S1: neuroLibToRichItem(neuroExamLibraryData.dermS1),
+};
+const DTR_ROW_INFO = {
+  "Biceps (C5-6)": neuroLibToRichItem(neuroExamLibraryData.reflexBiceps),
+  "Brachioradialis (C5-6)": neuroLibToRichItem(neuroExamLibraryData.reflexBrachioradialis),
+  "Triceps (C7-8)": neuroLibToRichItem(neuroExamLibraryData.reflexTriceps),
+  "Patellar (L3-4)": neuroLibToRichItem(neuroExamLibraryData.reflexPatellar),
+  "Achilles (S1-2)": neuroLibToRichItem(neuroExamLibraryData.reflexAchilles),
+};
 export function NeuroScreenSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "neuroScreen");
   return (
@@ -168,6 +255,7 @@ export function NeuroScreenSection({ data, setData }) {
         options={["5", "4", "3", "2", "1", "0"]}
         value={d.myotomes || {}}
         onChange={(v) => set("myotomes", v)}
+        rowInfo={MYOTOME_ROW_INFO}
       />
       <div className="subheading">Dermatomes (sensation)</div>
       <LRGrid
@@ -176,6 +264,7 @@ export function NeuroScreenSection({ data, setData }) {
         options={["Normal", "Reduced", "Absent", "Hyperaesthesia"]}
         value={d.dermatomes || {}}
         onChange={(v) => set("dermatomes", v)}
+        rowInfo={DERMATOME_ROW_INFO}
       />
       <div className="subheading">Deep tendon reflexes</div>
       <LRGrid
@@ -184,6 +273,7 @@ export function NeuroScreenSection({ data, setData }) {
         options={["0 - Absent", "1+ - Diminished", "2+ - Normal", "3+ - Brisk", "4+ - Clonus"]}
         value={d.dtr || {}}
         onChange={(v) => set("dtr", v)}
+        rowInfo={DTR_ROW_INFO}
       />
       <div className="subheading">Pathological reflexes</div>
       <SelectField label="Plantar response (Babinski)" type="single" options={["Flexor (normal/downgoing)", "Extensor (Babinski positive/upgoing)", "Equivocal", "Not tested"]} value={d.babinski} onChange={(v) => set("babinski", v)} />
