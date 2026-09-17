@@ -790,13 +790,13 @@ export function orthoStyles() {
            raised fill + press-in feedback instead of the faint outline
            look, plus a brief "thinking" state (pulsing brain, shimmer
            sweep) between tap and the ranked conditions appearing. */
-        .obj-ai-suggest-btn { background: linear-gradient(180deg, #8B5CF6, ${BRAND.purple}); border: none; box-shadow: 0 4px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.25); transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 2px 6px rgba(124,58,237,.3), inset 0 1px 0 rgba(255,255,255,.15); }
-        .obj-ai-suggest-btn .obj-ai-suggest-title { color: #fff; }
-        .obj-ai-suggest-btn .obj-ai-suggest-sub { color: rgba(255,255,255,.82); }
-        .obj-ai-suggest-btn .obj-ai-suggest-cta { color: #fff; }
+        .obj-ai-suggest-btn { background: linear-gradient(165deg, #F5F2FF 0%, #ECE5FD 100%); border: 1px solid rgba(124,58,237,.18); box-shadow: 0 2px 8px rgba(124,58,237,.1), inset 0 1px 0 rgba(255,255,255,.6); transition: transform .12s ease, box-shadow .12s ease; }
+        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 1px 4px rgba(124,58,237,.12), inset 0 1px 0 rgba(255,255,255,.5); }
+        .obj-ai-suggest-btn .obj-ai-suggest-title { color: ${BRAND.purpleDark}; }
+        .obj-ai-suggest-btn .obj-ai-suggest-sub { color: ${BRAND.purple}; opacity: .8; }
+        .obj-ai-suggest-btn .obj-ai-suggest-cta { color: ${BRAND.purpleDark}; }
         @keyframes objAiShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, ${BRAND.purple} 0%, #C4B5FD 50%, ${BRAND.purple} 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
+        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, #ECE5FD 0%, #F5F2FF 50%, #ECE5FD 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
