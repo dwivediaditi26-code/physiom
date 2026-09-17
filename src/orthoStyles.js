@@ -790,13 +790,16 @@ export function orthoStyles() {
            raised fill + press-in feedback instead of the faint outline
            look, plus a brief "thinking" state (pulsing brain, shimmer
            sweep) between tap and the ranked conditions appearing. */
-        .obj-ai-suggest-btn { background: linear-gradient(165deg, #F5F2FF 0%, #ECE5FD 100%); border: 1px solid rgba(124,58,237,.18); box-shadow: 0 2px 8px rgba(124,58,237,.1), inset 0 1px 0 rgba(255,255,255,.6); transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: 0 1px 4px rgba(124,58,237,.12), inset 0 1px 0 rgba(255,255,255,.5); }
+        /* Glossy/skeuomorphic pick (2026-09-17, Aditi: "3rd" of 5 button-style
+           mockups) -- top highlight + darker base + soft drop shadow,
+           classic raised-glass button instead of a flat tint. */
+        .obj-ai-suggest-btn { background: linear-gradient(180deg, #EDE7FE 0%, #D9CFFB 100%); border: 1px solid #B7A9EE; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 6px rgba(124,58,237,.25); transition: transform .12s ease, box-shadow .12s ease; }
+        .obj-ai-suggest-btn:active { transform: scale(0.97); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 3px rgba(124,58,237,.2); }
         .obj-ai-suggest-btn .obj-ai-suggest-title { color: ${BRAND.purpleDark}; }
         .obj-ai-suggest-btn .obj-ai-suggest-sub { color: ${BRAND.purple}; opacity: .8; }
         .obj-ai-suggest-btn .obj-ai-suggest-cta { color: ${BRAND.purpleDark}; }
         @keyframes objAiShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, #ECE5FD 0%, #F5F2FF 50%, #ECE5FD 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
+        .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, #D9CFFB 0%, #EDE7FE 50%, #D9CFFB 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
 
