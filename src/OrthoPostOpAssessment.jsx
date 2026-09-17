@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Hint, TextField, DateField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
+import { Hint, TextField, DateField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { Icon } from "./StepIcons.jsx";
+import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
@@ -24,6 +25,17 @@ import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
+}
+
+// Same as Outpatient/IPD's formatPainSection -- Pain carries a JSON-blob body
+// chart field that the generic formatter would otherwise dump raw.
+function formatPainSection(section) {
+  const { body_chart_pro, ...rest } = section;
+  const restRows = Object.entries(rest)
+    .filter(([k]) => !k.startsWith("__"))
+    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .filter((r) => r.value);
+  return [...formatBodyChartSummary(body_chart_pro), ...restRows];
 }
 
 /* ============================================================
@@ -509,7 +521,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 onEdit={jumpTo}
                 exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
                 extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
-                formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, outcomeMeasure: formatOutcomeMeasureSection }}
+                formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
