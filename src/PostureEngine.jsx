@@ -5344,7 +5344,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
   const [showHeatmap]=useState(true);
   const [showGrid,setShowGrid]=useState(true);
   const {sessions,save:saveSession,clear:clearHistory}=useHistory();
-  const [showHistory,setShowHistory]=useState(false);
   const [motionWarning,setMotionWarning]=useState(false);
   const prevLmRef=useRef(null);
   // Freezes the live mediapipe handler once a photo is captured -- without
@@ -9472,23 +9471,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         document.body
       )}
 
-      {/* ── History modal ── */}
-      {showHistory&&(
-        <div onClick={()=>setShowHistory(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:50,display:"flex",alignItems:isWide?"center":"flex-end",justifyContent:"center"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:isWide?560:600,margin:isWide?"auto":"0 auto",background:PC.surface,borderRadius:isWide?"16px":"16px 16px 0 0",padding:"24px 20px",maxHeight:"70vh",overflowY:"auto"}}>
-            <div style={{fontWeight:800,fontSize:"0.95rem",color:PC.text,marginBottom:14}}>▤ Session History ({sessions.length})</div>
-            {sessions.length===0&&<div style={{color:PC.muted,fontSize:"0.82rem"}}>No sessions yet.</div>}
-            {[...sessions].reverse().map((s,i)=>(
-              <div key={i} style={{padding:"11px 14px",borderRadius:11,border:`1px solid ${PC.border}`,marginBottom:8}}>
-                <div style={{fontWeight:700,fontSize:"0.75rem"}}>{VIEWS[s.view]?.label}</div>
-                <div style={{fontSize:"0.75rem",color:PC.muted,marginTop:2}}>{new Date(s.time).toLocaleString()} · {s.findings} finding{s.findings!==1?"s":""}</div>
-              </div>
-            ))}
-            <button onClick={()=>setShowHistory(false)} style={{marginTop:14,width:"100%",padding:"13px",background:`${PC.accent}15`,border:`1px solid ${PC.accent}30`,borderRadius:10,color:PC.accent,fontWeight:700,cursor:"pointer"}}>Close</button>
-          </div>
-        </div>
-      )}
-
       {/* ── Patient picker modal (2026-08-21) — dedicated name/age/condition
           list, replacing the old "open the whole Clinical drawer" behaviour
           so switching patients from Posture Analysis doesn't navigate away. */}
@@ -9556,16 +9538,6 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         </div>
       )}
 
-      {/* ── Floating History button ── */}
-      <button onClick={()=>setShowHistory(h=>!h)}
-        style={{position:"fixed",right:isWide?28:16,bottom:isWide?28:88,zIndex:30,
-          width:56,height:56,borderRadius:"50%",border:"none",
-          background:`linear-gradient(135deg,${PC.accent},${PC.a2})`,color:"#fff",
-          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,
-          boxShadow:"0 6px 18px rgba(124,58,237,0.4)",cursor:"pointer"}}>
-        <span style={{fontSize:"1.1rem",lineHeight:1}}>▤</span>
-        <span style={{fontSize:"0.5rem",fontWeight:700,lineHeight:1}}>History</span>
-      </button>
     </div>
   );
 }
