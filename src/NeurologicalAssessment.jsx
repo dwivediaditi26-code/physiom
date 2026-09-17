@@ -2330,14 +2330,14 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .app-shell {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
           background: linear-gradient(180deg, ${BRAND.purpleFaint} 0%, #FFFFFF 220px);
-          min-height: 100vh;
+          min-height: 100vh; min-height: 100dvh;
           color: ${BRAND.ink};
           display: flex;
           justify-content: center;
           touch-action: pan-y;
           overscroll-behavior-y: contain;
         }
-        .app-inner { width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; background: #fff; position: relative; }
+        .app-inner { width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: #fff; position: relative; }
         .topbar {
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};

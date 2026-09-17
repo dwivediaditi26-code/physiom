@@ -9,13 +9,13 @@ export function orthoStyles() {
         .app-shell {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
           background: linear-gradient(180deg, ${BRAND.purpleFaint} 0%, #FFFFFF 220px);
-          min-height: 100vh;
+          min-height: 100vh; min-height: 100dvh;
           color: ${BRAND.ink};
           display: flex;
           justify-content: center;
         }
         .app-inner {
-          width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column;
+          width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
           background: #fff; position: relative; overflow-x: clip; overflow-y: visible;
         }
         @media (min-width: 860px) {
@@ -38,7 +38,7 @@ export function orthoStyles() {
         .topbar {
           position: sticky; top: 0; z-index: 20; background: #fff;
           border-bottom: 1px solid ${BRAND.border};
-          padding: 14px 16px 6px;
+          padding: 9px 16px 5px;
           transform: translateZ(0); -webkit-transform: translateZ(0);
           contain: paint; isolation: isolate;
         }
@@ -58,27 +58,32 @@ export function orthoStyles() {
           width: 32px; height: 32px; border-radius: 10px; font-size: 16px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .topbar-title { font-weight: 700; font-size: 16px; flex: 1; }
-        .topbar-breadcrumb { font-size: 12px; color: ${BRAND.gray}; margin-top: 2px; }
+        .topbar-title { font-weight: 700; font-size: 15px; line-height: 1.25; flex: 1; }
+        .topbar-breadcrumb { font-size: 11.5px; color: ${BRAND.gray}; margin-top: 1px; }
+        .topbar-step-count { color: ${BRAND.purple}; font-weight: 700; }
         .progress-label { font-size: 11px; color: ${BRAND.gray}; padding: 2px 2px 8px; }
 
-        .step-nav { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 2px; scrollbar-width: none; -ms-overflow-style: none; }
+        .step-nav { display: flex; gap: 4px; overflow-x: auto; padding: 5px 2px 0; scrollbar-width: none; -ms-overflow-style: none; }
         .step-nav::-webkit-scrollbar { display: none; }
         /* Icon circle + label underneath, not a bare icon circle
            (2026-09-16, Aditi: "for new or old person it['s] very difficult
            to know which [icon] have what... I want it to be written") --
            every step already carries a real label (STEP_META), this just
-           makes it visible instead of tooltip-only. */
+           makes it visible instead of tooltip-only. Shrunk (2026-09-16,
+           Aditi: "not able to see the screen when I'm filling the
+           assessment" -- this strip plus the two lines above it and the
+           progress row below it were eating a third of the viewport) --
+           label text kept, just smaller and tighter, not removed. */
         .step-circle {
-          flex: 0 0 auto; width: 60px; display: flex; flex-direction: column; align-items: center;
-          gap: 6px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
+          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
-          width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid ${BRAND.border}; background: #fff;
+          width: 27px; height: 27px; border-radius: 50%; border: 1.5px solid ${BRAND.border}; background: #fff;
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
         }
-        .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; }
-        .step-circle-label { font-size: 11px; font-weight: 600; line-height: 1.15; text-align: center; color: inherit; max-width: 60px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
@@ -967,7 +972,7 @@ export function orthoStyles() {
            utils.jsx, added for the notch/home-indicator safe area), so this
            offset must grow by the same amount or the button sits behind the
            taller bar on notched devices. */
-        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(60px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(60px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
           flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
