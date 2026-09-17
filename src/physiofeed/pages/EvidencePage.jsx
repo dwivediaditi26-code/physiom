@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Search } from "lucide-react";
 import ResearchCard from "../components/evidence/ResearchCard.jsx";
 import LiveSearchPanel from "../components/evidence/LiveSearchPanel.jsx";
@@ -14,6 +15,18 @@ export default function EvidencePage() {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("oldest");
+  // Arriving here from a Home-screen article preview (PhysioFeedEntry.jsx's
+  // JumpBridge) carries which article was tapped in router state, so this
+  // opens straight onto its actual summary/conclusion instead of just
+  // dropping the clinician on the Evidence tab to go find it themselves
+  // (2026-09-17, Aditi: "opening the article means... open the article
+  // about the conclusion and result").
+  const highlightId = useLocation().state?.articleId;
+  const cardRefs = useRef({});
+  useEffect(() => {
+    if (!highlightId) return;
+    cardRefs.current[highlightId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightId, evidence]);
 
   const filtered = evidence
     .filter((e) => {
@@ -73,7 +86,11 @@ export default function EvidencePage() {
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-slate-400 text-sm">No research matches that search.</div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">{filtered.map((a) => <ResearchCard key={a.id} article={a} />)}</div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {filtered.map((a) => (
+                <ResearchCard key={a.id} article={a} highlighted={a.id === highlightId} ref={(el) => { cardRefs.current[a.id] = el; }} />
+              ))}
+            </div>
           )}
         </>
       )}

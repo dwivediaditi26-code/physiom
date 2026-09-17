@@ -2280,7 +2280,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="PHYSIOFEED_MODULE"?(
                 <div className="pm-bleed">
                   <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
-                    <LazyPhysioFeedEntry/>
+                    <LazyPhysioFeedEntry jumpTo={active==="physiofeed"?navContext:undefined}/>
                   </Suspense>
                 </div>
               ):tests==="LEARN_MODULE"?(

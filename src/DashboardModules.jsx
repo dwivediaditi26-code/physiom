@@ -523,7 +523,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   ];
 
   const QUICK_ACCESS = [
-    { key:"evidence", icon:"📚", bg:"#EFF6FF", title:"Evidence", sub:"Latest research and papers",   action:()=>onNav("physiofeed") },
+    { key:"evidence", icon:"📚", bg:"#EFF6FF", title:"Evidence", sub:"Latest research and papers",   action:()=>onNav("physiofeed",{pfTab:"evidence"}) },
     { key:"explore",  icon:"🧭", bg:"#ECFEFF", title:"Explore",  sub:"Topics, tools & resources",     action:()=>onNav("physiofeed") },
     { key:"learn",    icon:"🎓", bg:"#F5F3FF", title:"Learn",    sub:"Assessments, techniques & more",action:()=>onNav("learn") },
     { key:"saved",    icon:"🔖", bg:"#FFF7ED", title:"Saved",    sub:"Your saved content",            action:()=>onNav("physiofeed") },
@@ -574,13 +574,13 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
               <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Latest research and papers</div>
             </div>
           </div>
-          <button onClick={()=>onNav("physiofeed")} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
+          <button onClick={()=>onNav("physiofeed",{pfTab:"evidence"})} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
         </div>
 
         {latestEvidence.length ? (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {latestEvidence.map((a,i)=>(
-              <div key={a.id} onClick={()=>onNav("physiofeed")} style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"11px 13px", cursor:"pointer"}}>
+              <div key={a.id} onClick={()=>onNav("physiofeed",{pfTab:"evidence",pfArticleId:a.id})} style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"11px 13px", cursor:"pointer"}}>
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
                   <div style={{fontSize:12.5,fontWeight:800,color:"#111827",lineHeight:1.35}}>{a.title}</div>
                   {i===0 && <span style={{flexShrink:0,fontSize:9,fontWeight:800,color:"#059669",background:"#ECFDF5",borderRadius:99,padding:"2.5px 8px",whiteSpace:"nowrap"}}>NEW</span>}

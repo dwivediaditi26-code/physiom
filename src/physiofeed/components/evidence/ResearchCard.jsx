@@ -1,13 +1,18 @@
+import { forwardRef } from "react";
 import { Bookmark, ExternalLink, Share2 } from "lucide-react";
 import GradientTile from "../shared/GradientTile.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
 const LEVEL_TONE = { "Level 1": "bg-emerald-50 text-emerald-700", "Level 2": "bg-amber-50 text-amber-700", "Level 3": "bg-slate-100 text-slate-600" };
 
-export default function ResearchCard({ article }) {
+// highlighted + the forwarded ref exist for one caller: EvidencePage.jsx
+// scrolling straight to (and briefly ringing) whichever article a Home-
+// screen preview card was clicked for, instead of just landing on the
+// Evidence tab and leaving the clinician to hunt for it themselves.
+const ResearchCard = forwardRef(function ResearchCard({ article, highlighted }, ref) {
   const { saveEvidence } = useAppData();
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div ref={ref} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow ${highlighted ? "border-violet-400 ring-2 ring-violet-300" : "border-slate-200"}`}>
       <GradientTile grad={article.grad} className="h-2" />
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-2">
@@ -49,4 +54,6 @@ export default function ResearchCard({ article }) {
       </div>
     </div>
   );
-}
+});
+
+export default ResearchCard;
