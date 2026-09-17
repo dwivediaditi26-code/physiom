@@ -274,6 +274,9 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
               </button>
             )}
           </div>
+          {step === 1 && effectiveEntryMode === "ai" && (
+            <AiJourneyDots activeIndex={aiSubStep} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+          )}
         </div>
 
         <div className="content">
@@ -321,14 +324,12 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 0 && (
             <>
-              <AiJourneyDots activeIndex={0} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <DemographicsSection data={aiDemographicsData} setData={setAiDemographicsData} />
             </>
           )}
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 1 && (
             <>
-              <AiJourneyDots activeIndex={1} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro
                 icon="🧭"
                 title="Body Region"
@@ -352,7 +353,6 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
             <>
-              <AiJourneyDots activeIndex={2} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
               <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
               {subjectiveChoice !== "ai" && (
                 <>
