@@ -70,7 +70,7 @@ import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./Das
 import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
 import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
-import { PdfReportsModal, QuickVisitForm, IntakeForm, OnboardingModal } from "./AppModules.jsx";
+import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
@@ -671,8 +671,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   useEffect(() => {
     if (active === "clinical" && navContext?.clinicalSubTab) setClinicalSubTab(navContext.clinicalSubTab);
   }, [active, navContext]);
-  const [showIntake, setShowIntake] = useState(false);
-  const [intakeData, setIntakeData] = useState({});
   // Clinical tab landing: "+ New Assessment" opens a minimal 5-question
   // intake (name, age, sex, phone, region) instead of asking AI-vs-Template
   // first (2026-09-10, Aditi: "i want patient small 5 ques minimal data
@@ -849,39 +847,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setActivePatientId(newP.id);
   }, [data.dem_name, data.ortho_outpatient_assessment, activePatientId, active]);
 
+  // Every "+ New"/"+ New Patient" entry point (header, patient bar, no-
+  // active-patient banner) now opens the exact same minimal 5-question
+  // intake as "+ New Assessment" (2026-09-16, Aditi: "I want it to be the
+  // same. I don't want it to be different.") -- there used to be a second,
+  // separate "New patient" modal (IntakeForm/showIntake, AppModules.jsx)
+  // with extra Occupation/Address fields, a tab layout, and its own consent
+  // checkbox; retired in favor of one consistent flow everywhere.
   const createNewPatient = () => {
-    setIntakeData({});
-    setShowIntake(true);
+    setShowSpecialtyPicker(true);
     setShowPatientDb(false);
-  };
-  const finaliseNewPatient = (intake) => {
-    const name = intake.dem_name || "New Patient";
-    // Stamp which specialty stream this assessment was started under. The
-    // intake form's own step 2 now asks this outright (2026-08-31), so its
-    // answer wins; the `stream` fallback still covers the older entry points
-    // that set the specialty before calling createNewPatient(). Patients
-    // created before this field existed simply have no value here, so they
-    // show up under "All" in the Clinical patient list's specialty filter
-    // rather than a guessed/fabricated specialty.
-    const chosenSpecialty = intake.assessment_specialty || stream;
-    const intakeWithSpecialty = { ...intake, assessment_specialty: chosenSpecialty };
-    const newP = { id: genId(), name, data: intakeWithSpecialty, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: intake.cc_main||"" };
-    const updated = [newP, ...patients];
-    setPatients(updated);
-    savePatientDB(updated, currentUser?.id);
-    setData(intakeWithSpecialty);
-    setActivePatientId(newP.id);
-    setShowIntake(false);
-    // Land in the flow the clinician actually picked on step 2, instead of
-    // always dropping into the ortho Subjective wizard. navTo() snaps
-    // `stream` back to "ortho" itself, and both of these are ortho-flow
-    // `active` keys (the same ones startSpecialty() uses), so no extra
-    // setStream() is needed here.
-    navTo(chosenSpecialty === "cardio" ? "cardio_assessment"
-        : chosenSpecialty === "neuro"  ? "neuro_assessment"
-        : "ortho_new_assessment");
-    setJsonMsg({ type:"success", text:`✅ Patient created: ${name}` });
-    setTimeout(() => setJsonMsg(null), 2500);
   };
 
   const selectPatient = (p) => {
@@ -1620,16 +1595,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 ← Back
               </button>
             </>)}
-          </div>
-        </div>
-      )}
-
-      {showIntake && (
-        <div data-testid="intake-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{width:"100%",maxWidth:420,maxHeight:"90vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",WebkitOverflowScrolling:"touch"}}>
-            <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New patient</div>
-            <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:20}}>Fill the basics — you can add more detail later</div>
-            <IntakeForm PC={PC} currentUser={currentUser} onCancel={()=>setShowIntake(false)} onSubmit={finaliseNewPatient}/>
           </div>
         </div>
       )}
