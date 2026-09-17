@@ -113,7 +113,7 @@ class ErrorBoundary extends Component {
 // ─── Global Mobile-Responsive Styles ─────────────────────────────────────────
 const MOBILE_CSS = `
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { overflow-x: hidden; max-width: 100vw; }
+  html, body { overflow-x: clip; max-width: 100vw; }
   body { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
   /* ── Layout shell ── */
