@@ -403,6 +403,12 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
       customConditionLabel,
     }));
     if (caseInfo.name) onSave("dem_name", caseInfo.name);
+    // Age/sex mirrored the same way (2026-09-17, Aditi: "patient
+    // information" card on the profile Overview showing empty except for
+    // the Show-less toggle) -- see OrthoIPDAssessment.jsx's identical fix
+    // for the full explanation.
+    if (caseInfo.age) onSave("dem_age", caseInfo.age);
+    if (caseInfo.sex) onSave("dem_sex", caseInfo.sex);
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
     // top-level field directly.
     onSave("care_setting", "postop");

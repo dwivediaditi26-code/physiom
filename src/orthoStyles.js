@@ -451,7 +451,19 @@ export function orthoStyles() {
         .popover-head { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: ${BRAND.gray}; padding: 2px 2px 6px; flex-shrink: 0; }
         .popover-close { border: none; background: transparent; color: ${BRAND.grayLight}; cursor: pointer; font-size: 13px; padding: 4px; line-height: 1; }
         .popover-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 10px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; min-height: 0; }
+        /* flex-shrink:0 (2026-09-17, Aditi: multi-select checklists like
+           "Mechanism type" showing every row's text overlapping the next)
+           -- min-height:0 above (added so rows aren't forced to a touch-
+           target height) also strips flexbox's default protection against
+           shrinking a flex item below its own content size. With enough
+           options to exceed .select-popover's capped max-height, every
+           row's flex-shrink:1 default let the column collapse each button
+           down to one line's height even when its label actually wraps to
+           2-3 lines, so the extra lines painted straight over the next
+           row instead of the list just scrolling (which .popover-list's
+           own overflow-y:auto already supports). Pinning shrink to 0 keeps
+           every row at its real, correctly-wrapped height. */
+        .popover-item { display: flex; align-items: center; gap: 9px; border: none; border-bottom: 1px solid ${BRAND.border}; background: transparent; color: ${BRAND.ink}; padding: 10px 2px; border-radius: 0; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.3; min-height: 0; flex-shrink: 0; }
         .popover-item:last-child { border-bottom: none; }
         .popover-item-label { flex: 1; }
         .popover-check-icon { flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid ${BRAND.border}; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }

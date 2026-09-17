@@ -2066,7 +2066,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
               <div>
                 <div style={{fontSize:"clamp(1rem,3vw,1.25rem)",fontWeight:800,letterSpacing:"-0.3px",color:PC.text,lineHeight:1.1}}>{currentSection.label}</div>
-                <div style={{fontSize:"0.82rem",fontWeight:600,letterSpacing:"0.8px",textTransform:"uppercase",color:PC.muted,marginTop:2}}>{currentSection.desc||"Posture Screening & Education"}</div>
+                {/* No hardcoded fallback here (2026-09-17, Aditi: "this
+                    session page is old type") -- this was defaulting to
+                    the literal string "Posture Screening & Education" for
+                    EVERY section that doesn't define its own `desc` in
+                    ALL_TESTS (sharedClinicalData.js), e.g. tx_sessions
+                    (Session Log) and several others -- a leftover
+                    placeholder that only ever made sense for the actual
+                    Posture module, not a sensible generic default. Just
+                    omit the line when there's nothing real to show. */}
+                {currentSection.desc && (
+                  <div style={{fontSize:"0.82rem",fontWeight:600,letterSpacing:"0.8px",textTransform:"uppercase",color:PC.muted,marginTop:2}}>{currentSection.desc}</div>
+                )}
               </div>
             </div>
             <div style={{height:"1px",background:`linear-gradient(90deg,${PC.accent}50,${PC.a2}30,transparent)`}}/>

@@ -353,6 +353,17 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
       customConditionLabel,
     }));
     if (caseInfo.name) onSave("dem_name", caseInfo.name);
+    // Age/sex mirrored the same way (2026-09-17, Aditi: "patient
+    // information" card on the profile Overview showing empty except for
+    // the Show-less toggle) -- name was already mirrored here, but age/sex
+    // never were, despite this same save() reading them back FROM these
+    // exact dem_age/dem_sex keys above (line 265-266) to pre-fill caseInfo
+    // on a returning patient. SpecialtyPatientProfile.jsx's Patient
+    // Information card reads patient.data.dem_age/dem_sex directly, so
+    // without this they stayed permanently blank for every patient
+    // assessed through this wizard.
+    if (caseInfo.age) onSave("dem_age", caseInfo.age);
+    if (caseInfo.sex) onSave("dem_sex", caseInfo.sex);
     // PatientDatabase.jsx's IPD/Outpatient/Post-op filter pills read this
     // top-level field directly.
     onSave("care_setting", "ipd");

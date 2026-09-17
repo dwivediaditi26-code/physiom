@@ -589,6 +589,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     // (AppFull.jsx) never had anything to fire on -- Outpatient could
     // never actually create/persist a patient at all, autosave or not.
     if (demographicsName) onSave("dem_name", demographicsName);
+    // Age/sex mirrored the same way (2026-09-17, Aditi: "patient
+    // information" card on the profile Overview showing empty except for
+    // the Show-less toggle) -- name was already mirrored here, but age/sex
+    // never were. SpecialtyPatientProfile.jsx's Patient Information card
+    // reads patient.data.dem_age/dem_sex directly, so without this they
+    // stayed permanently blank for every patient assessed through this
+    // wizard, even though Demographics collects both (orthoOutpatientSections.jsx).
+    if (data.demographics?.age) onSave("dem_age", data.demographics.age);
+    if (data.demographics?.sex) onSave("dem_sex", data.demographics.sex);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
