@@ -1213,26 +1213,6 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggested]);
 
-  // Auto-select every suggested problem the first time it's derived, so
-  // Goals already has something to show instead of sitting empty until
-  // the therapist manually ticks boxes on Problem List first (2026-09-16,
-  // Aditi: "the goal in the orthopedic... should show the goals already
-  // presented, not when we select the problem list"). autoSeededIds
-  // remembers which sourceIds have already been auto-added so a problem
-  // the therapist deliberately unchecks/removes doesn't keep reappearing
-  // -- it's only ever auto-added once per unique suggestion.
-  const autoSeededIds = Array.isArray(d.autoSeededIds) ? d.autoSeededIds : [];
-  useEffect(() => {
-    if (!suggested.length) return;
-    const existingSourceIds = new Set(problems.map((p) => p.sourceId).filter(Boolean));
-    const fresh = suggested.filter((s) => !existingSourceIds.has(s.id) && !autoSeededIds.includes(s.id));
-    if (!fresh.length) return;
-    const toAdd = fresh.map((s) => ({ id: uid(), sourceId: s.id, name: s.name, category: s.category, findings: s.findings, baseline: s.baseline, treatmentCategories: s.treatmentCategories, refs: s.refs, evidence: s.evidence, manual: false }));
-    set("problems", [...problems, ...toAdd]);
-    set("autoSeededIds", [...autoSeededIds, ...fresh.map((s) => s.id)]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggested]);
-
   return (
     <KBContext.Provider value={knowledge}>
       {/* Hide the horizontal scrollbar on scrollable rows — cleaner look
