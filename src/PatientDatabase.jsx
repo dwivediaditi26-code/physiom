@@ -14,6 +14,7 @@ import BodyChartPro from "./BodyChartPro.jsx";
 import { LazyTab } from "./utils.jsx";
 import HowToPerformDrawer, { romInfoSections, mmtInfoSections } from "./HowToPerformDrawer.jsx";
 import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { MuscleImbalanceCard, ExercisePlanTab } from "./PostureEngine.jsx";
 // Dynamic import (not a static one) so each module's code stays in its own
 // lazy chunk instead of bloating the main bundle -- matches how AppFull.jsx
 // already lazy-loads the same files for the full-page nav flow.
@@ -2179,6 +2180,7 @@ function TreatmentCaseloadPanel({ patients=[], onContinue, onProfile, onDeleteTr
 // ── PostureSessionsView (used by SpecialtyPatientProfile.jsx) ──
 function PostureSessionsView({ d, C, onNav }) {
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [detailSession, setDetailSession] = useState(null);
   let postureSessions = [];
   try { postureSessions = JSON.parse(d.posture_sessions||"[]"); } catch {}
   let compositeReports = [];
@@ -2206,6 +2208,10 @@ function PostureSessionsView({ d, C, onNav }) {
         </div>,
         document.body
       )}
+      {detailSession&&createPortal(
+        <PostureSessionDetailModal session={detailSession} C={C} onClose={()=>setDetailSession(null)} onZoomImg={setLightboxImg}/>,
+        document.body
+      )}
       <button onClick={()=>onNav&&onNav("posture")}
         style={{width:"100%",padding:"10px",marginBottom:12,borderRadius:10,
           background:C.primaryBg,border:`1.5px solid ${C.primary}30`,
@@ -2226,7 +2232,8 @@ function PostureSessionsView({ d, C, onNav }) {
             return(
               <div key={i} style={{background:C.white,borderRadius:12,marginBottom:10,
                 boxShadow:"0 1px 6px rgba(0,0,0,0.06)",border:`1.5px solid ${C.primary}35`,overflow:"hidden"}}>
-                <div style={{padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:`${C.primary}08`}}>
+                <div onClick={()=>setDetailSession({label:`Composite — ${(cr.views||[]).map(v=>VLABELS_MV[v]||v).join(" + ")}`,dateStr,score:cr.compositeScore,band:cr.compositeBand,img:Object.values(cr.thumbnails||{}).find(Boolean)||null,findings:cr.mergedFindings||[]})}
+                  style={{padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:`${C.primary}08`,cursor:"pointer"}}>
                   <div>
                     <div style={{fontSize:12,fontWeight:800,color:C.primary}}>⬡ Composite — {(cr.views||[]).map(v=>VLABELS_MV[v]||v).join(" + ")}</div>
                     <div style={{fontSize:10,color:C.muted,marginTop:1}}>{dateStr} · {cr.compositeBand}{confirmedCount>0?` · ${confirmedCount} confirmed across views`:""}</div>
@@ -2252,6 +2259,10 @@ function PostureSessionsView({ d, C, onNav }) {
                     })}
                   </div>
                 )}
+                <div onClick={()=>setDetailSession({label:`Composite — ${(cr.views||[]).map(v=>VLABELS_MV[v]||v).join(" + ")}`,dateStr,score:cr.compositeScore,band:cr.compositeBand,img:Object.values(cr.thumbnails||{}).find(Boolean)||null,findings:cr.mergedFindings||[]})}
+                  style={{padding:"7px 12px",borderTop:`1px solid ${C.border}`,fontSize:10.5,fontWeight:700,color:C.primary,cursor:"pointer",textAlign:"center"}}>
+                  View summary & exercise suggestions →
+                </div>
               </div>
             );
           })}
@@ -2316,6 +2327,10 @@ function PostureSessionsView({ d, C, onNav }) {
                     {(ps.findings||[]).length>8&&<div style={{fontSize:10,color:C.muted,marginLeft:11}}>+{(ps.findings||[]).length-8} more findings</div>}
                   </div>
                 )}
+                <div onClick={()=>setDetailSession({label:ps._label,dateStr,timeStr,score:ps.score,band:ps.band,img:ps.img,findings:ps.findings||[]})}
+                  style={{padding:"7px 12px",borderTop:`1px solid ${C.border}`,fontSize:10.5,fontWeight:700,color:C.primary,cursor:"pointer",textAlign:"center"}}>
+                  View summary & exercise suggestions →
+                </div>
               </div>
             );
           })}
@@ -2338,6 +2353,44 @@ function PostureSessionsView({ d, C, onNav }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── PostureSessionDetailModal — full summary + exercise suggestions for a
+// saved posture capture/composite, reusing the same result components the
+// live Posture Analysis screen shows right after analysing a photo, so a
+// clinician re-opening a patient's Posture tab later sees the same detail
+// instead of just a thumbnail + finding list. ──
+function PostureSessionDetailModal({ session, C, onClose, onZoomImg }) {
+  const { label, dateStr, timeStr, score, band, img, findings=[] } = session;
+  const col = (score||0)>=78?C.green:(score||0)>=62?C.orange:"#dc2626";
+  return (
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:99998,background:"rgba(15,23,42,0.55)",
+      display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:560,maxHeight:"88vh",overflowY:"auto",
+        background:C.bg||"#fff",borderRadius:"18px 18px 0 0",boxShadow:"0 -8px 40px rgba(0,0,0,0.25)"}}>
+        <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"14px 16px",background:C.white,borderBottom:`1px solid ${C.border}`}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:C.text}}>{label}</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:1}}>{dateStr}{timeStr?` · ${timeStr}`:""}{band?` · ${band}`:""}</div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {score!=null&&<div style={{fontSize:18,fontWeight:900,color:col,lineHeight:1}}>{score}<span style={{fontSize:8,color:C.muted,fontWeight:400}}>/100</span></div>}
+            <div onClick={onClose} style={{fontSize:20,color:C.muted,cursor:"pointer",padding:"0 4px"}}>✕</div>
+          </div>
+        </div>
+        {img&&(
+          <div onClick={()=>onZoomImg&&onZoomImg(img)} style={{padding:"12px 16px 0",cursor:"zoom-in"}}>
+            <img src={img} alt="posture capture" style={{width:"100%",maxHeight:260,objectFit:"cover",borderRadius:10,border:`1px solid ${C.border}`}}/>
+          </div>
+        )}
+        <div style={{padding:"10px 16px 0"}}>
+          <MuscleImbalanceCard findings={findings} isWide={false}/>
+        </div>
+        <ExercisePlanTab findings={findings} isWide={false}/>
+      </div>
     </div>
   );
 }

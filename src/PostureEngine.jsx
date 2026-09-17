@@ -6111,7 +6111,23 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             } : null,
           };
           saveSession(_pe1);
-          if(setPatientField&&activePatient){try{const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");setPatientField("posture_sessions",JSON.stringify([..._ex,_pe1]));}catch(e){}}
+          // _pe1.findings is just a count (all the in-screen sparkline/trend
+          // needs), but the patient-record copy has to carry the full
+          // findings array — PostureSessionsView (Patient Profile → Posture
+          // tab) and its summary/exercise-suggestions detail both expect the
+          // same {severity,text,region,...} shape the single-view save path
+          // writes, not a bare number.
+          if(setPatientField&&activePatient){try{
+            const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");
+            const _vLabel={anterior:"Frontal",posterior:"Posterior",left:"Left Lateral",right:"Right Lateral"}[currentView]||currentView;
+            const _sameView=_ex.filter(x=>x.view===currentView).length+1;
+            const _persistEntry={
+              ..._pe1, findings:f,
+              viewLabel:_vLabel, sessionLabel:`${_vLabel} Session ${_sameView}`,
+              capturedAt:_pe1.time, source:"camera",
+            };
+            setPatientField("posture_sessions",JSON.stringify([..._ex,_persistEntry]));
+          }catch(e){}}
         } else {
           saveSession(buildLocalSession(currentView, annotated));
         }
@@ -9614,4 +9630,5 @@ function useVerifiedLandmarks() {
 
 export { PostureAnalysisModule, PC, vec3Angle, dist2D, classifySeverity, POSTURE_THRESHOLDS,
   getLandmarkConfidence, checkLandmarkReliability, checkAnatomicalOrder,
-  measureLandmarks, buildFindings };
+  measureLandmarks, buildFindings,
+  MuscleImbalanceCard, ExercisePlanTab };
