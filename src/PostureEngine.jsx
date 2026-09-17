@@ -3177,24 +3177,88 @@ function drawLevelLine(ctx, x1, y1, x2, y2, color, label) {
 // clinician needs unobstructed to verify frame alignment.
 function applyFaceDeidentification(ctx, W, H, lm) {
   if (!ctx || !W || !H) return;
-  let barBottom = null;
-  if (Array.isArray(lm) && lm.length > 8) {
-    const ys = [0, 2, 5, 7, 8]
+  // Mask only eyes/nose/mouth (MediaPipe Pose indices 1-6 eyes, 0 nose, 9/10
+  // mouth corners) — NOT the whole head down to the jaw. A full black bar
+  // used to blot out the entire head/hairline, which read as a cropped photo
+  // rather than a redacted one and gave the clinician nothing to check frame
+  // alignment against.
+  let box = null;
+  if (Array.isArray(lm) && lm.length > 10) {
+    const idx = [0, 1, 2, 3, 4, 5, 6, 9, 10];
+    const pts = idx
       .map(i => lm[i])
-      .filter(p => p && (p.visibility === undefined || p.visibility >= 0.3))
-      .map(p => p.y * H);
-    if (ys.length) {
-      // Cover down to just below the lowest of nose/eyes/ears, plus a small
-      // margin so the jaw/chin is masked too (still above the clinically
-      // relevant neck/shoulder line used for posture scoring).
-      barBottom = Math.min(H, Math.max(...ys) + 0.06 * H);
+      .filter(p => p && (p.visibility === undefined || p.visibility >= 0.3));
+    if (pts.length) {
+      const xs = pts.map(p => p.x * W), ys = pts.map(p => p.y * H);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const padX = (maxX - minX) * 0.5 + 0.03 * W;
+      const padY = (maxY - minY) * 0.6 + 0.03 * H;
+      const x = Math.max(0, minX - padX), y = Math.max(0, minY - padY);
+      box = {
+        x, y,
+        w: Math.min(W, maxX + padX) - x,
+        h: Math.min(H, maxY + padY) - y,
+      };
     }
   }
-  if (barBottom === null) barBottom = 0.22 * H; // fallback: top ~22% of frame
-  ctx.save();
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, W, barBottom);
-  ctx.restore();
+  if (!box) {
+    // No usable face landmarks — mask a small region top-centre instead of
+    // guessing the whole head is there.
+    const w = 0.24 * W, h = 0.14 * H;
+    box = { x: (W - w) / 2, y: 0.05 * H, w, h };
+  }
+  const bx = Math.max(0, Math.round(box.x)), by = Math.max(0, Math.round(box.y));
+  const bw = Math.max(1, Math.min(W - bx, Math.round(box.w)));
+  const bh = Math.max(1, Math.min(H - by, Math.round(box.h)));
+  try {
+    // Pixelate (downscale then upscale with no smoothing) rather than a
+    // solid fill, so the region reads as intentionally obscured rather than
+    // as missing/cut-off image data.
+    const region = ctx.getImageData(bx, by, bw, bh);
+    const tmp = document.createElement("canvas");
+    tmp.width = bw; tmp.height = bh;
+    tmp.getContext("2d").putImageData(region, 0, 0);
+    const small = document.createElement("canvas");
+    const scale = 0.08;
+    small.width = Math.max(1, Math.round(bw * scale));
+    small.height = Math.max(1, Math.round(bh * scale));
+    small.getContext("2d").drawImage(tmp, 0, 0, small.width, small.height);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, small.width, small.height, bx, by, bw, bh);
+    ctx.restore();
+  } catch (e) {
+    // getImageData can throw on a tainted canvas — fall back to a solid box
+    // sized to just the facial-feature region (still not the whole head).
+    ctx.save(); ctx.fillStyle = "#000"; ctx.fillRect(bx, by, bw, bh); ctx.restore();
+  }
+}
+
+// Loads a data-URL/blob-URL image, redraws it onto a canvas with
+// applyFaceDeidentification applied, and resolves the masked data URL.
+// Used wherever a photo is about to leave the live capture screen and land
+// somewhere persisted or shareable (PDF report, patient record) that hasn't
+// already been through the masking pass.
+function deidentifyImageSrc(src, lm) {
+  return new Promise(resolve => {
+    if (!src) { resolve(null); return; }
+    const im = new Image();
+    const fallback = () => resolve(src);
+    im.onload = () => {
+      try {
+        const W = im.naturalWidth || im.width, H = im.naturalHeight || im.height;
+        if (!W || !H) { fallback(); return; }
+        const oc = document.createElement("canvas"); oc.width = W; oc.height = H;
+        const octx = oc.getContext("2d");
+        octx.drawImage(im, 0, 0, W, H);
+        applyFaceDeidentification(octx, W, H, lm);
+        resolve(oc.toDataURL("image/jpeg", 0.9));
+      } catch (e) { fallback(); }
+    };
+    im.onerror = fallback;
+    im.src = src;
+  });
 }
 
 function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
@@ -6047,7 +6111,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
             } : null,
           };
           saveSession(_pe1);
-          if(set&&activePatient){try{const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");set("posture_sessions",JSON.stringify([..._ex,_pe1]));}catch(e){}}
+          if(setPatientField&&activePatient){try{const _ex=JSON.parse(activePatient?.data?.posture_sessions||"[]");setPatientField("posture_sessions",JSON.stringify([..._ex,_pe1]));}catch(e){}}
         } else {
           saveSession(buildLocalSession(currentView, annotated));
         }
@@ -7485,9 +7549,9 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
           }
           // Patient facial de-identification (DPDP Act Sec 3 / Apple 1.4.1) --
           // this is the copy that gets persisted into posture_sessions, so
-          // black-bar the face above the nose bridge before baking it. Uses
-          // the pose landmarks already computed for this result when
-          // available; falls back to a fixed top-frame bar otherwise.
+          // pixelate the eyes/nose/mouth before baking it. Uses the pose
+          // landmarks already computed for this result when available;
+          // falls back to a small top-frame region otherwise.
           try{applyFaceDeidentification(octx,W,H,landmarks);}catch(_){}
           resolve(oc.toDataURL("image/jpeg",0.8));
         }catch(e){fallback();}};
@@ -8507,7 +8571,7 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 
-  function generateReport() {
+  async function generateReport() {
     // In multi-view mode, use composite data if available; fall back to single-view
     const isMultiRpt = assessMode === "multi" && mvComposite && Object.keys(mvResults||{}).length >= 2;
     const rptFindings_src  = isMultiRpt ? mvComposite.mergedFindings : findings;
@@ -8520,7 +8584,14 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
     // reportable outcome, not a reason to refuse to generate anything.
     if(!rptScoreData_src) return;
     try {
-      const annotatedImg = uploadedImg || capturedImg || null;
+      // mvResults[vk].img (used below for multi-view) is already the
+      // de-identified copy baked in capturePhoto/saveMvResult. The
+      // single-view fallback here used to embed the raw capturedImg/
+      // uploadedImg straight into the PDF with no masking at all — hence
+      // faces showing up unobscured in single-view reports. Mask it the
+      // same way before it goes in the report.
+      const rawImg = uploadedImg || capturedImg || null;
+      const annotatedImg = rawImg ? await deidentifyImageSrc(rawImg, landmarks) : null;
       // Build ordered array of all captured view images for dynamic photo grid
       const _viewOrderRpt = ["anterior","posterior","left","right"];
       const _viewLabelsRpt = { anterior:"Anterior — Front", posterior:"Posterior — Back", left:"Left Lateral", right:"Right Lateral" };
