@@ -39,6 +39,8 @@ import { createPortal } from "react-dom";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
+import { kcRichItem, cpaRichItem, fmaRichItem } from "./orthoAdvancedTools.jsx";
+import { KC_REGIONS, NKT_REGIONS, FMA_DATA } from "./orthoAdvancedLibrary.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -178,6 +180,52 @@ function specialRichItemFor(regionKey, testName) {
 function normalizeName(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
+
+// Kinetic Chain / CPA-NKT / Functional Screen already have full "how to
+// perform" reference content (setup, images/SVGs, meaning of Facilitated/
+// Inhibited/Overactive) via KC_REGIONS/NKT_REGIONS/FMA_DATA and their
+// existing kcRichItem/cpaRichItem/fmaRichItem builders (orthoAdvancedTools.
+// jsx) -- previously only wired into that module's own standalone Kinetic
+// Chain/CPA/FMA screens, not here, so the AI Objective path showed just a
+// bare test name and chips with no way to see how to actually perform the
+// test (2026-09-16, Aditi: "it's not the detailed version that I've already
+// in the web as a reference... it should have the how to perform area").
+// The condition library's own test names ("Knee Valgus Stress Test") don't
+// always match those datasets' labels verbatim ("Knee Valgus Stress Test —
+// Kinetic Chain"), so match by substring on normalized text rather than
+// requiring an exact match, falling back to null (InfoButton's own
+// placeholder icon) when nothing lines up closely enough to trust.
+function findByNormalizedLabel(tests, name, key) {
+  const target = normalizeName(name);
+  if (!target) return null;
+  let best = null, bestLen = -1;
+  for (const t of tests) {
+    const label = normalizeName(t[key]);
+    if (!label) continue;
+    if (label === target) return t;
+    if ((label.includes(target) || target.includes(label)) && label.length > bestLen) {
+      best = t; bestLen = label.length;
+    }
+  }
+  return best;
+}
+const ALL_KC_TESTS = Object.values(KC_REGIONS).flatMap((r) => r.tests || []);
+const ALL_NKT_TESTS = Object.values(NKT_REGIONS).flatMap((r) => r.tests || []);
+const ALL_FMA_TESTS = Object.values(FMA_DATA).flat();
+
+function kcRichItemFor(testName) {
+  const t = findByNormalizedLabel(ALL_KC_TESTS, testName, "label");
+  return t ? kcRichItem(t) : null;
+}
+function nktRichItemFor(muscleName) {
+  const t = findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "muscle") || findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "label");
+  return t ? cpaRichItem(t) : null;
+}
+function fmaRichItemFor(testName) {
+  const t = findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
+  return t ? fmaRichItem(t) : null;
+}
+
 function idByName(conditions) {
   return Object.fromEntries(Object.values(conditions).map((c) => [normalizeName(c.name), c.id]));
 }
@@ -1286,7 +1334,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           <ModuleCard label="CPA — NKT" color="#D97706">
             {isV1 ? (
               <>
-                {condition.cpaNkt.muscle && <SubLabel>{condition.cpaNkt.muscle}</SubLabel>}
+                {condition.cpaNkt.muscle && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                    <SubLabel>{condition.cpaNkt.muscle}</SubLabel>
+                    <InfoButton imageTrigger fallbackIcon="ti-brain" title={condition.cpaNkt.muscle} richItem={nktRichItemFor(condition.cpaNkt.muscle)} />
+                  </div>
+                )}
                 <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5, marginBottom: 10 }}>{condition.cpaNkt.narrative}</div>
                 <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={v("cpaNkt", "state")} onToggle={(o) => toggleSingle("cpaNkt", "state", o)} multi={false} />
               </>
@@ -1298,7 +1351,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   const sel = v("cpa", "m" + i);
                   return (
                     <div key={i} style={{ marginBottom: 12 }}>
-                      <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
+                        <InfoButton imageTrigger fallbackIcon="ti-brain" title={m.name} richItem={nktRichItemFor(m.name)} />
+                      </div>
                       <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
                     </div>
                   );
@@ -1561,7 +1617,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {activeSubtopic === "functional" && <>
           {isV1 ? (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
-              <div style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink, marginBottom: 10 }}>{condition.kineticChain.testName}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
+                <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.testName} richItem={kcRichItemFor(condition.kineticChain.testName)} />
+              </div>
               {condition.kineticChain.notApplicable ? (
                 <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic" }}>{condition.kineticChain.chainEffect}</div>
               ) : (
@@ -1580,7 +1639,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <EmptyNote>{condition.kineticChain.reason}</EmptyNote>
               ) : (
                 <>
-                  <div style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink, marginBottom: 10 }}>{condition.kineticChain.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
+                    <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcRichItemFor(condition.kineticChain.name)} />
+                  </div>
                   {condition.kineticChain.fields.map((f, i) => (
                     <div key={i} style={{ marginBottom: 12 }}>
                       <SubLabel>{f.label}</SubLabel>
@@ -1600,6 +1662,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             <ModuleCard label="Functional Screen" color="#16A34A">
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
+                <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={fmaRichItemFor(condition.functionalScreen.testName)} />
                 {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.testName} text={condition.functionalScreen.note} eyebrow="NOTE" />}
               </div>
               {condition.functionalScreen.measure.type === "number" && (
@@ -1646,6 +1709,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
                     <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
+                    <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={fmaRichItemFor(condition.functionalScreen.name)} />
                     {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.name} text={condition.functionalScreen.note} eyebrow="NOTE" />}
                   </div>
                   {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
