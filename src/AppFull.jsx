@@ -1401,6 +1401,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     </>
   );
 
+  // Ortho (incl. AI-assisted, same `active` value, entryMode just differs),
+  // Neuro, and Cardio each render their own full-screen wizard with its own
+  // sticky .topbar (back button, title, step nav) directly under .pm-main --
+  // still nested below .pm-mobile-hdr, which is ALSO position:sticky at
+  // top:0 in that same scroll (body). Two independent sticky elements
+  // stacked in one scroll container is a known iOS WebKit jitter trigger;
+  // contain:paint/isolation:isolate on both (2026-09-16/17) cut it down but
+  // Aditi confirmed on video it's still visibly vibrating on a real device.
+  // Removing one of the two stickies removes the mechanism outright instead
+  // of continuing to paper over it -- the assessment's own topbar already
+  // has back/close, so pm-mobile-hdr is redundant chrome while one of these
+  // is open, not lost functionality.
+  const isFullScreenAssessment = active === "ortho_new_assessment" || active === "neuro_assessment" || active === "cardio_assessment";
+
   return(
     <div className="pm-shell" style={{background:PC.bg,color:PC.text,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",transition:"background 0.2s,color 0.15s"}}>
       <MobileStyleInjector/>
@@ -1769,6 +1783,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       {/* ── MOBILE COMPACT HEADER (≤767px only, replaces pm-header + patient bars) ── */}
       {/* ── MOBILE HEADER — Option B: gradient accent bar ── */}
+      {/* Hidden while a full-screen assessment (Ortho/AI/Neuro/Cardio) is
+          open -- see isFullScreenAssessment above. That screen has its own
+          sticky back/title bar, so this was a second sticky element
+          stacked in the same scroll, the actual cause of the header
+          jitter CSS containment alone couldn't fully fix. */}
+      {!isFullScreenAssessment && (
       <div className="pm-mobile-hdr" style={{
         background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
@@ -1814,6 +1834,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           + New
         </button>
       </div>
+      )}
 
       {/* ── GUEST MODE BANNER — always visible, never lets a guest mistake
           this for a real saved session. Sign in / Create account here exits
@@ -1893,7 +1914,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             their sticky topbar bound to this inert box instead of body.
             overflow-x:clip (not hidden) so the visible y-axis doesn't get
             forced back to auto by the browser's overflow axis-pairing rule. */}
-        <div className="pm-main" ref={mainScrollRef} style={{flex:1,overflowY:"visible",overflowX:"clip",minWidth:0}}>
+        <div className="pm-main" ref={mainScrollRef} style={{flex:1,overflowY:"visible",overflowX:"clip",minWidth:0,
+          /* pm-mobile-hdr is hidden during a full-screen assessment (see
+             isFullScreenAssessment) -- the assessment's own .topbar reads
+             this same custom property to offset itself below that header
+             (utils.jsx :root default, ~64px). With the header gone there's
+             nothing to sit under, so this override zeroes it here so the
+             topbar sticks flush to the real top instead of leaving a dead
+             64px gap. */
+          ...(isFullScreenAssessment ? {"--pm-mobile-hdr-h":"0px"} : {})
+        }}>
 
           {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
               live:true -- config (streams/neuro.js) is Step-2-complete (all
