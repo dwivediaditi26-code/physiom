@@ -335,6 +335,25 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // its top. navTo (the one place every nav path funnels through) resets it.
   const mainScrollRef = useRef(null);
 
+  // .pm-bnav's real rendered height (icons row + its own safe-area padding)
+  // varies by device -- the assessment wizards' .bottombar (Back/Next) used
+  // to guess this with a hardcoded "60px", which left a visible gap of the
+  // page's grey background between the two bars on devices where the guess
+  // ran short (looked like the Back/Next bar "floating" above the tab bar).
+  // Measuring the real box and exposing it as --pm-bnav-h lets .bottombar
+  // sit flush against it on every device, the same pattern already used for
+  // --pm-mobile-hdr-h above.
+  const bnavRef = useRef(null);
+  useEffect(() => {
+    const el = bnavRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const setH = () => document.documentElement.style.setProperty("--pm-bnav-h", `${el.offsetHeight}px`);
+    setH();
+    const ro = new ResizeObserver(setH);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // ── Guest Mode auth gate ─────────────────────────────────────────────
   // Guests can browse and use the whole real workflow (nothing they do
   // writes to Supabase -- every save path already guards on currentUser?.id
@@ -2708,7 +2727,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           still reachable via the full section drawer (SidebarItems), which
           "Clinical" now opens directly. Nothing is actually removed from the
           app, just this one redundant quick-access bar. ── */}
-      <nav className="pm-bnav" aria-label="Main navigation">
+      <nav className="pm-bnav" ref={bnavRef} aria-label="Main navigation">
         <div className="pm-bnav-tabs">
           {(()=>{
             const NavIcon = ({name}) => {
