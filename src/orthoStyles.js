@@ -730,13 +730,25 @@ export function orthoStyles() {
            numbers, tapping never adds/removes anything); restyled from the
            old always-expanded LumbarDifferentialCard rows into a compact
            swipeable row so the reasoning is visible without owning the page. */
-        .obj-match-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin-bottom: 4px; scrollbar-width: none; }
+        .obj-match-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; margin-bottom: 4px; scrollbar-width: none; }
         .obj-match-row::-webkit-scrollbar { display: none; }
-        .obj-match-card { flex: 0 0 auto; min-width: 148px; max-width: 190px; text-align: left; border: 1.5px solid ${BRAND.border}; background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-family: inherit; }
-        .obj-match-card-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
-        .obj-match-pct { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: ${BRAND.grayLight}; }
-        .obj-match-card-active .obj-match-pct { color: ${BRAND.purpleDark}; }
-        .obj-match-name { display: block; font-size: 12px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.25; }
+        /* Compact + a distinct color per card, cycling through a fixed
+           6-color palette by list position (2026-09-17, Aditi: "can you
+           make it compact and colorful each one should be colorful of
+           different color") -- tinted background + matching border/%
+           color, so conditions are visually distinguishable at a glance
+           instead of every card reading identically until tapped. */
+        .obj-match-card { flex: 0 0 auto; min-width: 112px; max-width: 138px; text-align: left; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 9px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
+        .obj-match-card:active { transform: scale(0.97); }
+        .obj-match-pct { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.01em; }
+        .obj-match-name { display: block; font-size: 10.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 1px; line-height: 1.2; }
+        .obj-match-card-active { box-shadow: 0 3px 10px rgba(20,10,45,.14); }
+        .obj-match-c0 { background: #EFF6FF; } .obj-match-c0 .obj-match-pct { color: #2563EB; } .obj-match-c0.obj-match-card-active { border-color: #2563EB; }
+        .obj-match-c1 { background: #ECFDF5; } .obj-match-c1 .obj-match-pct { color: #059669; } .obj-match-c1.obj-match-card-active { border-color: #059669; }
+        .obj-match-c2 { background: #FFFBEB; } .obj-match-c2 .obj-match-pct { color: #D97706; } .obj-match-c2.obj-match-card-active { border-color: #D97706; }
+        .obj-match-c3 { background: #FDF2F8; } .obj-match-c3 .obj-match-pct { color: #DB2777; } .obj-match-c3.obj-match-card-active { border-color: #DB2777; }
+        .obj-match-c4 { background: #F0FDFA; } .obj-match-c4 .obj-match-pct { color: #0D9488; } .obj-match-c4.obj-match-card-active { border-color: #0D9488; }
+        .obj-match-c5 { background: #EEF2FF; } .obj-match-c5 .obj-match-pct { color: #4F46E5; } .obj-match-c5.obj-match-card-active { border-color: #4F46E5; }
 
         /* Objective Assessment subtopic tab bar -- horizontal, scrollable row
            of individual "3D piano key" tiles; the active tile pops up solid

@@ -428,7 +428,7 @@ function conditionMatchPct(m) {
 function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
   return (
     <div className="obj-match-row">
-      {order.map((id) => {
+      {order.map((id, i) => {
         const c = conditions[id];
         if (!c) return null;
         const m = matchById[id];
@@ -438,7 +438,7 @@ function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
           <button
             key={id}
             type="button"
-            className={"obj-match-card" + (isActive ? " obj-match-card-active" : "")}
+            className={"obj-match-card obj-match-c" + (i % 6) + (isActive ? " obj-match-card-active" : "")}
             onClick={() => onSelect(id)}
           >
             {pct != null ? (
