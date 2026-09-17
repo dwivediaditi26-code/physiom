@@ -1549,7 +1549,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   )}
                   {(condition.sttt.resisted || []).length > 0 && (
                     <>
-                      <CategoryLabel>Resisted</CategoryLabel>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <CategoryLabel>Resisted</CategoryLabel>
+                        <div style={{ width: 160, marginBottom: 6 }}>
+                          <InfoButton label="How to perform" title="Resisted Tests — How to Perform" text={STTT_RESISTED_HOWTO} />
+                        </div>
+                      </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {condition.sttt.resisted.map((f, i) => {
                           const sel = v("sttt", "r" + i);
@@ -1567,7 +1572,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   )}
                   {(condition.sttt.passive || []).length > 0 && (
                     <>
-                      <div style={{ marginTop: 16 }}><CategoryLabel>Passive</CategoryLabel></div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 16 }}>
+                        <CategoryLabel>Passive</CategoryLabel>
+                        <div style={{ width: 160, marginBottom: 6 }}>
+                          <InfoButton label="How to perform" title="Passive Tests — How to Perform" text={STTT_PASSIVE_HOWTO} />
+                        </div>
+                      </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {condition.sttt.passive.map((f, i) => {
                           const sel = v("sttt", "p" + i);
@@ -1819,6 +1829,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 // Cyriax strong/weak x painful/painless vocabulary CYRIAX_REGIONS_DATA
 // already uses elsewhere in the app).
 const RESISTED_TEST_OPTIONS_V1 = ["Strong + Painless", "Strong + Painful", "Weak + Painless", "Weak + Painful"];
+
+// One shared "how to perform" per category (Resisted / Passive) instead of
+// repeating it for every individual movement direction (2026-09-17, Aditi:
+// "as in my webapp it whole for movement have only 4 option it is not
+// seperatinly present") -- the Cyriax technique itself doesn't change
+// between flexion/extension/side flexion/rotation, only which movement is
+// being loaded, so one combined explanation per category covers all of them.
+const STTT_RESISTED_HOWTO = "Position the joint in mid-range (neutral, resting position) so only the contractile unit is being tested, not the joint capsule or ligaments. Stabilise proximally, then ask the patient to hold firmly against your resistance in each direction in turn (flexion, extension, side flexion, rotation) while the joint itself stays still — an isometric contraction, no movement should occur. Grade each direction Strong or Weak (force produced) and Painless or Painful (symptom reproduced). Strong + Painless = normal contractile tissue. Weak and/or Painful implicates the muscle/tendon unit being tested in that direction.";
+const STTT_PASSIVE_HOWTO = "With the patient fully relaxed, passively move the joint through its full available range in each direction, feeling the quality of resistance at end-range (the end-feel) rather than just the range itself. A normal end-feel (bony, capsular, or soft-tissue approximation depending on the joint/direction) with no pain is negative. Pain before end-range, a muscle-spasm end-feel (sudden, guarded stop with pain), or an abnormal/empty end-feel implicates the inert structures (capsule, ligament, joint surfaces) rather than the contractile unit.";
 
 // The textbook Cyriax reading of the classic Strong/Weak x Painful/Painless
 // resisted-test combo — exact per standard selective tension testing
