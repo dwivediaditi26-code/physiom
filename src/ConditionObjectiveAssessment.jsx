@@ -486,11 +486,11 @@ function ModuleCard({ label, color, defaultOpen = true, children }) {
 const SUBTOPICS = [
   { key: "observation", label: "Observation", icon: "ti-eye" },
   { key: "palpation", label: "Palpation", icon: "ti-hand-stop" },
-  { key: "cpa", label: "CPA / NKT", icon: "ti-brain" },
   { key: "rom", label: "ROM", icon: "ti-arrows-maximize" },
-  { key: "functional", label: "Functional", icon: "ti-walk" },
-  { key: "kinetic", label: "Kinetic chain", icon: "ti-link" },
   { key: "special", label: "Special tests", icon: "ti-clipboard-check" },
+  { key: "cpa", label: "CPA / NKT", icon: "ti-brain" },
+  { key: "kinetic", label: "Kinetic chain", icon: "ti-link" },
+  { key: "functional", label: "Functional", icon: "ti-walk" },
   { key: "sttt", label: "STTT / Cyriax", icon: "ti-stethoscope" },
   { key: "outcome", label: "Outcome measures", icon: "ti-chart-line" },
 ];
@@ -1338,9 +1338,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             {isV1 ? (
               <>
                 {condition.cpaNkt.muscle && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                    <SubLabel>{condition.cpaNkt.muscle}</SubLabel>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                     <InfoButton imageTrigger fallbackIcon="ti-brain" title={condition.cpaNkt.muscle} richItem={nktRichItemFor(condition.cpaNkt.muscle)} />
+                    <SubLabel>{condition.cpaNkt.muscle}</SubLabel>
                   </div>
                 )}
                 <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5, marginBottom: 10 }}>{condition.cpaNkt.narrative}</div>
@@ -1354,9 +1354,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   const sel = v("cpa", "m" + i);
                   return (
                     <div key={i} style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <InfoButton imageTrigger fallbackIcon="ti-brain" title={m.name} richItem={nktRichItemFor(m.name)} />
+                        <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
                       </div>
                       <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
                     </div>
@@ -1630,9 +1630,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {activeSubtopic === "kinetic" && <>
           {isV1 ? (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                 <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.testName} richItem={kcRichItemFor(condition.kineticChain.testName)} />
+                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
               </div>
               {condition.kineticChain.notApplicable ? (
                 <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic" }}>{condition.kineticChain.chainEffect}</div>
@@ -1652,9 +1652,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <EmptyNote>{condition.kineticChain.reason}</EmptyNote>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcRichItemFor(condition.kineticChain.name)} />
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
                   </div>
                   {condition.kineticChain.fields.map((f, i) => (
                     <div key={i} style={{ marginBottom: 12 }}>
@@ -1675,9 +1675,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {activeSubtopic === "functional" && <>
           {isV1 ? (
             <ModuleCard label="Functional Screen" color="#16A34A">
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                 <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={fmaRichItemFor(condition.functionalScreen.testName)} />
+                <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
                 {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.testName} text={condition.functionalScreen.note} eyebrow="NOTE" />}
               </div>
               {condition.functionalScreen.measure.type === "number" && (
@@ -1722,9 +1722,9 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                 <EmptyNote>{condition.functionalScreen.reason}</EmptyNote>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={fmaRichItemFor(condition.functionalScreen.name)} />
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
                     {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.name} text={condition.functionalScreen.note} eyebrow="NOTE" />}
                   </div>
                   {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
