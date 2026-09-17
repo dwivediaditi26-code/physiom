@@ -40,7 +40,7 @@ import { BRAND, useSectionData, Stepper, Segmented, InfoButton, CLOUDINARY_BASE 
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem } from "./orthoAdvancedTools.jsx";
-import { KC_REGIONS, NKT_REGIONS, FMA_DATA } from "./orthoAdvancedLibrary.js";
+import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -225,6 +225,20 @@ function fmaRichItemFor(testName) {
   const t = findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
   return t ? fmaRichItem(t) : null;
 }
+
+// Maps this screen's own region config keys (config.key) onto
+// CYRIAX_REGIONS_DATA's keys, which are split slightly differently
+// (elbow/wrist_hand vs. this screen's combined elbowWristHand). Thoracic
+// has no dedicated Cyriax catalogue in the source data at all.
+const CYRIAX_REGION_KEYS_FOR = {
+  cervical: ["cervical"], lumbar: ["lumbar"], shoulder: ["shoulder"],
+  hip: ["hip"], knee: ["knee"], ankleFoot: ["ankle_foot"],
+  elbowWristHand: ["elbow", "wrist_hand"], thoracic: [],
+};
+function cyriaxTestsFor(configKey, field) {
+  return (CYRIAX_REGION_KEYS_FOR[configKey] || []).flatMap((k) => CYRIAX_REGIONS_DATA[k]?.[field] || []);
+}
+const STTT_DEFAULT_ENDFEEL = ["Normal/Capsular", "Muscle Spasm", "Empty (No End-Feel)", "Hard (Osteophyte)"];
 
 function idByName(conditions) {
   return Object.fromEntries(Object.values(conditions).map((c) => [normalizeName(c.name), c.id]));
@@ -1221,6 +1235,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const matchedCondition = matchById[selectedId];
   const specialTestItems = isV1 ? condition.keyExams : condition.specialTests;
   const rankedCount = rankedIds.length;
+  const cyriaxResistedTests = cyriaxTestsFor(config.key, "resistedTests");
+  const cyriaxPassiveTests = cyriaxTestsFor(config.key, "passiveROM");
+  const hasCyriaxCatalogue = cyriaxResistedTests.length > 0 || cyriaxPassiveTests.length > 0;
+  const resistedTests = hasCyriaxCatalogue ? cyriaxResistedTests : (condition.sttt?.resisted || []).map((f, i) => ({ ...f, id: "r" + i }));
+  const passiveTests = hasCyriaxCatalogue ? cyriaxPassiveTests : (condition.sttt?.passive || []).map((f, i) => ({ ...f, id: "p" + i }));
 
   return (
     <div>
@@ -1547,7 +1566,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       ⚠ {condition.sttt.naText}
                     </div>
                   )}
-                  {(condition.sttt.resisted || []).length > 0 && (
+                  {resistedTests.length > 0 && (
                     <>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <CategoryLabel>Resisted</CategoryLabel>
@@ -1556,13 +1575,13 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {condition.sttt.resisted.map((f, i) => {
-                          const sel = v("sttt", "r" + i);
+                        {resistedTests.map((f) => {
+                          const sel = v("sttt", f.id);
                           const line = interpretSttOption(sel);
                           return (
-                            <div key={i}>
+                            <div key={f.id}>
                               <SubLabel>{f.label}</SubLabel>
-                              <ChipGroup options={f.options} selected={sel} onToggle={(o) => toggleSingle("sttt", "r" + i, o)} multi={false} />
+                              <ChipGroup options={RESISTED_TEST_OPTIONS_V1} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} />
                               {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
                             </div>
                           );
@@ -1570,7 +1589,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       </div>
                     </>
                   )}
-                  {(condition.sttt.passive || []).length > 0 && (
+                  {passiveTests.length > 0 && (
                     <>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 16 }}>
                         <CategoryLabel>Passive</CategoryLabel>
@@ -1579,13 +1598,13 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {condition.sttt.passive.map((f, i) => {
-                          const sel = v("sttt", "p" + i);
+                        {passiveTests.map((f) => {
+                          const sel = v("sttt", f.id);
                           const line = interpretSttOption(sel);
                           return (
-                            <div key={i}>
+                            <div key={f.id}>
                               <SubLabel>{f.label}</SubLabel>
-                              <ChipGroup options={f.options} selected={sel} onToggle={(o) => toggleSingle("sttt", "p" + i, o)} multi={false} />
+                              <ChipGroup options={f.endfeel_options || f.options || STTT_DEFAULT_ENDFEEL} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} />
                               {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
                             </div>
                           );
@@ -1594,12 +1613,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     </>
                   )}
                   {(() => {
-                    const resistedSelections = (condition.sttt.resisted || []).map((_, i) => v("sttt", "r" + i));
-                    const passiveSelections = (condition.sttt.passive || []).map((_, i) => v("sttt", "p" + i));
+                    const resistedSelections = resistedTests.map((f) => v("sttt", f.id));
+                    const passiveSelections = passiveTests.map((f) => v("sttt", f.id));
                     const anySelected = [...resistedSelections, ...passiveSelections].some(Boolean);
                     const findingsRows = [
-                      ...(condition.sttt.resisted || []).map((f, i) => resistedSelections[i] && { label: f.label, value: resistedSelections[i] }),
-                      ...(condition.sttt.passive || []).map((f, i) => passiveSelections[i] && { label: f.label, value: passiveSelections[i] }),
+                      ...resistedTests.map((f, i) => resistedSelections[i] && { label: f.label, value: resistedSelections[i] }),
+                      ...passiveTests.map((f, i) => passiveSelections[i] && { label: f.label, value: passiveSelections[i] }),
                     ].filter(Boolean);
                     const overall = sttOverallInterpretation(resistedSelections, passiveSelections);
                     return (
