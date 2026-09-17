@@ -603,6 +603,73 @@ export function specialRichItem(t) {
   };
 }
 
+/* Tests with more than 2 options (e.g. SLR's "Negative" / four graded
+   "Positive ..." variants) used to dump every option as a wrapped, stacked
+   pill -- a wall of text. Collapse to Negative/Positive up front; tapping
+   Positive reveals the specific variants in a grid. The stored value is
+   still the exact original option string, so summaries/formatters are
+   untouched. Simple Negative/Positive tests (the common case) render
+   exactly as before. */
+export function SpecialTestOptionPicker({ options, value, onChange }) {
+  const isSplit = options.length > 2;
+  const [manualExpanded, setManualExpanded] = useState(false);
+
+  if (!isSplit) {
+    return (
+      <div className="test-radio-row">
+        {options.map((o) => {
+          const active = value === o;
+          const positive = isPositiveResult(o);
+          return (
+            <button type="button" key={o} className={"test-radio" + (active ? (positive ? " test-radio-selected-red" : " test-radio-selected") : "")} onClick={() => onChange(active ? "" : o)}>
+              {o}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const negLabel = options[0];
+  const variants = options.slice(1);
+  const tier2Label = /^(positive|bilateral|both)/i.test(variants[0] || "") ? "Positive" : "Other findings";
+  const hasVariantValue = !!value && value !== negLabel;
+  const expanded = manualExpanded || hasVariantValue;
+
+  return (
+    <>
+      <div className="test-radio-row">
+        <button
+          type="button"
+          className={"test-radio" + (value === negLabel ? " test-radio-selected" : "")}
+          onClick={() => { onChange(value === negLabel ? "" : negLabel); setManualExpanded(false); }}
+        >
+          {negLabel}
+        </button>
+        <button
+          type="button"
+          className={"test-radio" + (hasVariantValue ? " test-radio-selected-red" : "")}
+          onClick={() => setManualExpanded((e) => !e)}
+        >
+          {tier2Label}
+        </button>
+      </div>
+      {expanded && (
+        <div className="test-radio-grid">
+          {variants.map((o) => {
+            const active = value === o;
+            return (
+              <button type="button" key={o} className={"test-radio-sub" + (active ? " test-radio-sub-selected" : "")} onClick={() => onChange(active ? "" : o)}>
+                {o}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 function defaultSideFor(activeKey, selectedRegions) {
   const match = selectedRegions.find((r) => r.id === activeKey);
   const s = (match?.side || "").toLowerCase();
@@ -693,22 +760,11 @@ export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey
                 {t.sensitivity && <> · Sens: {t.sensitivity} · Spec: {t.specificity}</>}
               </div>
             )}
-            <div className="test-radio-row">
-              {(t.options || ["Negative", "Positive"]).map((o) => {
-                const active = currentValue === o;
-                const positive = isPositiveResult(o);
-                return (
-                  <button
-                    type="button"
-                    key={o}
-                    className={"test-radio" + (active ? (positive ? " test-radio-selected-red" : " test-radio-selected") : "")}
-                    onClick={() => setResult(active ? "" : o)}
-                  >
-                    {o}
-                  </button>
-                );
-              })}
-            </div>
+            <SpecialTestOptionPicker
+              options={t.options || ["Negative", "Positive"]}
+              value={currentValue}
+              onChange={setResult}
+            />
           </div>
         );
       })}

@@ -635,6 +635,9 @@ export function orthoStyles() {
         .test-radio-selected { border-color: ${BRAND.green}; background: ${BRAND.greenBg}; color: #12603A; }
         .test-radio-selected-red { border-color: #F4C6C6; background: ${BRAND.redBg}; color: #8A1F1F; }
         .test-radio-dot { font-size: 11px; font-weight: 800; }
+        .test-radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .test-radio-sub { border: 1.5px solid #F4C6C6; background: ${BRAND.redBg}; color: #8A1F1F; padding: 8px 6px; border-radius: 10px; font-weight: 600; font-size: 11.5px; text-align: center; line-height: 1.3; cursor: pointer; }
+        .test-radio-sub-selected { border-color: ${BRAND.red}; box-shadow: 0 0 0 1.5px ${BRAND.red} inset; }
 
         /* Special Tests — progress bar + count above the test list */
         .test-progress-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }

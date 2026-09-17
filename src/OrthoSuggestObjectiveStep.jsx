@@ -28,7 +28,7 @@ function groupByRegion(items, selectedRegions) {
 // it is normally presented"). Everything visual here is now imported from
 // orthoRegionAssessments.jsx rather than re-implemented, so the two screens
 // cannot drift apart again.
-import { RomMovementCard, GradeSelect, romInfoText, romRichItem, mmtInfoText, mmtRichItem, specialRichItem, isPositiveResult } from "./orthoRegionAssessments.jsx";
+import { RomMovementCard, GradeSelect, romInfoText, romRichItem, mmtInfoText, mmtRichItem, specialRichItem, SpecialTestOptionPicker } from "./orthoRegionAssessments.jsx";
 import { PalpationSection } from "./orthoOutpatientSections.jsx";
 import { palpationFocusZoneIds, palpationZonesForRegions } from "./orthoPalpationData.js";
 import { InfoButton } from "./orthoFieldKit.jsx";
@@ -658,22 +658,7 @@ function SpecialTestItemCard({ item, specialData, setSpecial, selectedRegions, i
           ))}
         </div>
       )}
-      <div className="test-radio-row">
-        {options.map((o) => {
-          const isActive = currentValue === o;
-          const positive = isPositiveResult(o);
-          return (
-            <button
-              type="button"
-              key={o}
-              className={"test-radio" + (isActive ? (positive ? " test-radio-selected-red" : " test-radio-selected") : "")}
-              onClick={() => setResult(isActive ? "" : o)}
-            >
-              {o}
-            </button>
-          );
-        })}
-      </div>
+      <SpecialTestOptionPicker options={options} value={currentValue} onChange={setResult} />
     </div>
   );
 }
