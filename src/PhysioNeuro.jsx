@@ -157,6 +157,87 @@ function MuscleBadge({ id, title, size=40 }) {
 }
 
 
+// Same slug-from-label scheme ConditionObjectiveAssessment.jsx's ROM/Special
+// Tests tabs use for patient-photo upload (physiom_findings/<category>/<slug>,
+// no DB write needed -- the deterministic Cloudinary public_id IS the
+// persistence). Reused here so the standalone ROM/MMT modules (which never
+// had any patient-photo capability, only the fixed reference illustration
+// via ClinicalImage/MuscleBadge above) get the same upload-your-own-photo
+// tile, sitting right next to the reference image rather than replacing it.
+function slugifyFinding(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+function findingPhotoId(category, label) {
+  return `physiom_findings/${category}/${slugifyFinding(label)}`;
+}
+
+function PatientPhotoTile({ photoId, size = 36 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const [imgVersion, setImgVersion] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
+  const hasPhoto = !!(photoId && imgSrc && !imgFailed);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !photoId) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "ml_default");
+      fd.append("public_id", photoId);
+      const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      setImgFailed(false);
+      setImgVersion(Date.now());
+    } catch (err) {
+      alert("Photo upload failed — check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  if (!photoId) return null;
+
+  return (
+    <>
+      {zoomOpen && hasPhoto && (
+        <div onClick={() => setZoomOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
+          <img src={zoomSrc} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", width: "auto", height: "auto", objectFit: "contain", borderRadius: 8 }} />
+          <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
+            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              📷 Replace photo
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
+              style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
+          </div>
+        </div>
+      )}
+      <div
+        onClick={(e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); }}
+        title={hasPhoto ? "View patient photo" : "Add patient photo"}
+        style={{ position: "relative", flexShrink: 0, width: size, height: size, borderRadius: 9, background: C.s2, border: `1px dashed ${hasPhoto ? "transparent" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: hasPhoto ? "zoom-in" : "pointer" }}
+      >
+        {hasPhoto ? (
+          <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontSize: Math.round(size * 0.5), lineHeight: 1 }}>📷</span>
+        )}
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+        {uploading && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.4) }}>⏳</div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // Deep-link highlight animation — injected once globally
 if (typeof document !== "undefined" && !document.getElementById("physio-hl-style")) {
   const st = document.createElement("style");
@@ -360,6 +441,7 @@ function ROMModule({data,set,navContext={},compact=false,onShowInfo}){
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                   <div style={{flex:1,display:"flex",alignItems:"center",gap:8}}>
                     <ClinicalImage name={m.id} title={`${m.mv} — ${region}`} size={44}/>
+                    <PatientPhotoTile photoId={findingPhotoId("rom", `${region} ${m.mv}`)} />
                     <div>
                       <div style={{fontWeight:700,fontSize:"0.82rem",color:hasAnyVal?C.text:C.muted}}>{m.mv}</div>
                       <div className="pm-test-card-sub" style={{fontSize:"0.6rem",color:C.muted,marginTop:1}}>{m.plane} · N={m.normal}{m.unit}</div>
@@ -682,6 +764,7 @@ function MMTModule({data,set,navContext={},compact=false,onShowInfo}){
               <div onClick={()=>setSelected(isOpen?null:m.id)} style={{padding:"14px 16px",cursor:"pointer"}}>
                 <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                   <MuscleBadge id={m.id} title={m.muscle}/>
+                  <PatientPhotoTile photoId={findingPhotoId("mmt", `${region} ${m.muscle}`)} />
                   <div style={{minWidth:0,flex:1,paddingTop:1}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
                       <div style={{minWidth:0,flex:1}}>

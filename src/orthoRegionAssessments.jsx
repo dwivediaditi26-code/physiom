@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper } from "./orthoFieldKit.jsx";
+import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper, PatientPhotoTile, findingPhotoId } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
 
@@ -146,7 +146,7 @@ function romCountFor(entry, movements) {
    than a blank box demanding an exact number typed from scratch -- typing
    the exact value directly still works, the Stepper's box is a real,
    always-editable number field. */
-export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta }) {
+export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta, region }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
   // 2026-09-02, Aditi: "when I click on the collapsible button... it is
@@ -164,6 +164,7 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
       <div className="rom-row-grid">
         <div className="rom-row-name">
           <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.mv} richItem={romRichItem(m)} />
+          <PatientPhotoTile photoId={findingPhotoId("rom", `${region || ""} ${m.mv}`)} size={36} />
           <span className="movement-name">{m.mv}</span>
           {norm && <span className="rom-norm">{norm}</span>}
         </div>
@@ -288,6 +289,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
               norm={norm}
               onSetVal={setVal}
               onSetMeta={setMeta}
+              region={activeKey}
             />
           );
         })}
@@ -410,6 +412,7 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
             <div className="movement-card" key={m.id}>
               <div className="mmt-row">
                 <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
+                <PatientPhotoTile photoId={findingPhotoId("mmt", `${activeKey} ${m.muscle}`)} size={36} />
                 <div className="mmt-name-col">
                   <span className="movement-name">{m.muscle}</span>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}
