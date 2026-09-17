@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper, PatientPhotoTile, findingPhotoId } from "./orthoFieldKit.jsx";
+import { SectionIntro, Segmented, TextArea, AddMovementRow, Hint, InfoButton, InfoCard, InfoCardGrid, AnatomyGrid, ProtocolList, useSectionData, Stepper } from "./orthoFieldKit.jsx";
 import { ALL_REGIONS, regionDisplayLabel } from "./orthoRegionLibrary.js";
 import { ROM_DATA, ROM_REGION_KEYS, RESTRICTION_GRADE, MMT_DATA, MMT_REGION_KEYS, MMT_GRADES, MMT_GRADE_OPTIONS, SPECIAL_TESTS_DATA, SPECIAL_TEST_REGION_KEYS, matchRegionKey, gradeColor } from "./orthoClinicalData.js";
 
@@ -164,7 +164,6 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
       <div className="rom-row-grid">
         <div className="rom-row-name">
           <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.mv} richItem={romRichItem(m)} />
-          <PatientPhotoTile photoId={findingPhotoId("rom", `${region || ""} ${m.mv}`)} size={36} />
           <span className="movement-name">{m.mv}</span>
           {norm && <span className="rom-norm">{norm}</span>}
         </div>
@@ -412,7 +411,6 @@ export function MmtSection({ data, setData, selectedRegions, sectionKey = "mmt" 
             <div className="movement-card" key={m.id}>
               <div className="mmt-row">
                 <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
-                <PatientPhotoTile photoId={findingPhotoId("mmt", `${activeKey} ${m.muscle}`)} size={36} />
                 <div className="mmt-name-col">
                   <span className="movement-name">{m.muscle}</span>
                   {(m.nerve || m.root) && <div className="muscle-subtitle">{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>}

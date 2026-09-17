@@ -38,68 +38,40 @@ export function Hint({ children }) {
 // location; same convention StudyImage.jsx itself already uses.
 export const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 
+// `name` is always a deterministic Cloudinary public_id (ROM_DATA/MMT_DATA/
+// SPECIAL_TESTS_DATA/neuroExamLibraryData assign one to every movement,
+// muscle, test and nerve-root level up front -- id known before any photo
+// is actually uploaded there, same "id known up front" scheme
+// ConditionObjectiveAssessment.jsx's own patient-photo tiles and Cardio/
+// Neuro's InfoCard.jsx use). `failed` just means nothing has been uploaded
+// to that slot YET, not that it can't be -- so upload-in-place here builds
+// out Ortho's own reference-photo library the same way InfoCard.jsx does
+// for Cardio/Neuro (2026-09-17, Aditi, pointing at Neuro's camera badge:
+// "we can upload image from here and replace... i think we should do in
+// ortho also in rom mmt and neuro and special test").
 function SheetHero({ name }) {
   const [failed, setFailed] = useState(false);
   const [zoomed, setZoomed] = useState(false);
-  if (!name || failed) return <div className="sheet-hero"><span className="sheet-hero-fallback">No reference photo</span></div>;
-  const src = `${CLOUDINARY_BASE}/f_auto,q_auto/${name}`;
-  return (
-    <>
-      <div className="sheet-hero" onClick={() => setZoomed(true)} role="button" aria-label="Enlarge photo">
-        <img src={src} alt="" onError={() => setFailed(true)} />
-        <span className="sheet-hero-zoom">⤢</span>
-      </div>
-      {zoomed && (
-        <div className="lightbox-backdrop" onClick={() => setZoomed(false)}>
-          <img src={src} alt="" className="lightbox-img" />
-          <button type="button" className="lightbox-close" onClick={() => setZoomed(false)} aria-label="Close">✕</button>
-        </div>
-      )}
-    </>
-  );
-}
-
-// Same slug-from-label scheme ConditionObjectiveAssessment.jsx's ROM/Special
-// Tests tabs use for patient-photo upload (physiom_findings/<category>/<slug>,
-// no DB write needed -- the deterministic Cloudinary public_id IS the
-// persistence: whoever uploads a photo for a given label and whoever later
-// views that label compute the identical URL). Exported here, rather than
-// duplicated a third time, so orthoRegionAssessments.jsx's RomSection/
-// MmtSection (the step-wizard "General Assessment" ROM/MMT, which only ever
-// had the fixed reference-technique photo via InfoButton) can offer the
-// same upload-your-own-patient-photo tile (2026-09-17, Aditi: "put upload
-// photos in webapp of rom mmt").
-export function slugifyFinding(s) {
-  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
-export function findingPhotoId(category, label) {
-  return `physiom_findings/${category}/${slugifyFinding(label)}`;
-}
-
-export function PatientPhotoTile({ photoId, size = 40 }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [zoomOpen, setZoomOpen] = useState(false);
+  const [version, setVersion] = useState(0);
   const fileInputRef = useRef(null);
-  const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
-  const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
-  const hasPhoto = !!(photoId && imgSrc && !imgFailed);
+  if (!name) return <div className="sheet-hero"><span className="sheet-hero-fallback">No reference photo</span></div>;
+  const src = `${CLOUDINARY_BASE}/f_auto,q_auto/${name}${version ? `?v=${version}` : ""}`;
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !photoId) return;
+    if (!file) return;
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", "ml_default");
-      fd.append("public_id", photoId);
+      fd.append("public_id", name);
       const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
-      setImgFailed(false);
-      setImgVersion(Date.now());
+      setFailed(false);
+      setVersion(Date.now());
     } catch (err) {
       alert("Photo upload failed — check your connection and try again.");
     } finally {
@@ -107,41 +79,31 @@ export function PatientPhotoTile({ photoId, size = 40 }) {
     }
   }
 
-  if (!photoId) return null;
-
   return (
     <>
-      {zoomOpen && hasPhoto && createPortal(
-        <div onClick={() => setZoomOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out" }}>
-          <img src={zoomSrc} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "80vh", width: "auto", height: "auto", objectFit: "contain", borderRadius: 8 }} />
-          <div style={{ position: "absolute", top: 16, right: 16, display: "flex", gap: 10 }}>
-            <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              style={{ padding: "8px 16px", borderRadius: 20, border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>
-              <i className="ti ti-camera-plus" aria-hidden="true"></i> Replace photo
-            </button>
-            <button type="button" onClick={(e) => { e.stopPropagation(); setZoomOpen(false); }}
-              style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
-          </div>
-        </div>,
-        document.body
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+      {failed ? (
+        <div className="sheet-hero sheet-hero-empty" onClick={() => fileInputRef.current?.click()} role="button" aria-label="Add a reference photo">
+          <span className="sheet-hero-fallback">{uploading ? "Uploading…" : "📷 Tap to add a reference photo"}</span>
+        </div>
+      ) : (
+        <div className="sheet-hero" onClick={() => setZoomed(true)} role="button" aria-label="Enlarge photo">
+          <img src={src} alt="" onError={() => setFailed(true)} />
+          <span className="sheet-hero-zoom">⤢</span>
+          <button type="button" className="sheet-hero-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} title="Replace photo" aria-label="Replace photo" disabled={uploading}>
+            {uploading ? "…" : "📷"}
+          </button>
+        </div>
       )}
-      <div
-        onClick={(e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); }}
-        title={hasPhoto ? "View patient photo" : "Add patient photo"}
-        style={{ position: "relative", flexShrink: 0, width: size, height: size, borderRadius: 10, background: "#F6F5FA", border: `1px solid ${BRAND.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: hasPhoto ? "zoom-in" : "pointer" }}
-      >
-        {hasPhoto ? (
-          <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <i className="ti ti-camera-plus" style={{ fontSize: Math.round(size * 0.45), color: BRAND.grayLight }} aria-hidden="true"></i>
-        )}
-        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
-        {uploading && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <i className="ti ti-loader-2" style={{ fontSize: Math.round(size * 0.4), color: BRAND.purple }} aria-hidden="true"></i>
-          </div>
-        )}
-      </div>
+      {zoomed && (
+        <div className="lightbox-backdrop" onClick={() => setZoomed(false)}>
+          <img src={src} alt="" className="lightbox-img" />
+          <button type="button" className="lightbox-replace" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} disabled={uploading}>
+            📷 {uploading ? "Uploading…" : "Replace photo"}
+          </button>
+          <button type="button" className="lightbox-close" onClick={() => setZoomed(false)} aria-label="Close">✕</button>
+        </div>
+      )}
     </>
   );
 }

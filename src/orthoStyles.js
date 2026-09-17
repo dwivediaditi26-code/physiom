@@ -215,12 +215,21 @@ export function orthoStyles() {
         .sheet-hero img { width: 100%; height: 100%; object-fit: contain; display: block; }
         .sheet-hero-fallback { color: ${BRAND.grayLight}; font-size: 12px; padding: 40px 0; }
         .sheet-hero-zoom { position: absolute; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(20,10,45,.55); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+        /* Upload/replace straight into this reference-photo slot -- same
+           deterministic-Cloudinary-id scheme Cardio/Neuro's InfoCard.jsx
+           already uses, now on Ortho's own ROM/MMT/Special Test/Neuro
+           Screen sheets too. */
+        .sheet-hero-empty { cursor: pointer; }
+        .sheet-hero-replace { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(20,10,45,.55); color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .sheet-hero-replace:disabled { opacity: 0.6; cursor: default; }
 
         /* Full-screen lightbox for the reference photo -- tap the hero to
            enlarge, tap anywhere to dismiss. */
         .lightbox-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(10,5,25,.9); display: flex; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }
         .lightbox-img { max-width: 100%; max-height: 100%; border-radius: 10px; object-fit: contain; }
         .lightbox-close { position: absolute; top: 18px; right: 18px; width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 15px; cursor: pointer; }
+        .lightbox-replace { position: absolute; top: 18px; right: 62px; padding: 8px 14px; border-radius: 20px; border: none; background: rgba(255,255,255,.15); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .lightbox-replace:disabled { opacity: 0.6; cursor: default; }
 
         /* Perform / Reference / Interpret tab strip -- splits a rich item's
            content across screens instead of one long scroll. */
