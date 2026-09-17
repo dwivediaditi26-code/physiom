@@ -577,12 +577,14 @@ function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
             aria-label={s.label}
             title={s.label}
           >
-            {s.icon}
+            <span className="step-circle-ring">{s.icon}</span>
+            <span className="step-circle-label">{s.label}</span>
           </button>
         );
       })}
       <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label="Add a neuro assessment" title="Add a neuro assessment">
-        +
+        <span className="step-circle-ring">+</span>
+        <span className="step-circle-label">Add</span>
       </button>
     </div>
   );
@@ -2348,9 +2350,14 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
              when I am scrolling") -- without this the browser repaints
              this sticky topbar from scratch every scroll frame instead of
              compositing it on its own GPU layer, which showed up as
-             visible jitter. */
+             visible jitter. transform/will-change alone turned out not to
+             be enough on iOS (2026-09-17, Aditi: still vibrating on the
+             real device, video attached) -- contain:paint + isolation:
+             isolate is the piece that actually fixed it on Ortho's own
+             .topbar; added here to match. */
           transform: translateZ(0); -webkit-transform: translateZ(0);
           will-change: transform; backface-visibility: hidden;
+          contain: paint; isolation: isolate;
         }
         /* body is the real scrolling element on mobile (see utils.jsx),
            and .pm-mobile-hdr (64px, z-index 101) is sticky at top:0 within
@@ -2372,17 +2379,29 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .topbar-breadcrumb { font-size: 12px; color: ${BRAND.gray}; margin-top: 2px; }
         .progress-label { font-size: 11px; color: ${BRAND.gray}; padding: 2px 2px 8px; }
 
-        .step-nav { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 2px; scrollbar-width: none; -ms-overflow-style: none; }
+        .step-nav { display: flex; gap: 4px; overflow-x: auto; padding: 5px 2px 0; scrollbar-width: none; -ms-overflow-style: none; }
         .step-nav::-webkit-scrollbar { display: none; }
+        /* Icon circle + label underneath, not a bare icon circle (2026-09-17,
+           Aditi: "there is not written header... it's only the symbols is
+           present" -- Ortho's step strip already shows the label under each
+           icon (orthoStyles.js), this brought Neuro's own step nav in line
+           with it instead of icon-only. */
         .step-circle {
-          flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
-          border: 1.5px solid ${BRAND.border}; background: #fff; font-size: 13px;
-          display: flex; align-items: center; justify-content: center; cursor: pointer;
-          color: ${BRAND.grayLight}; transition: all .15s;
+          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
-        .step-active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; transform: scale(1.14); box-shadow: 0 4px 10px rgba(108,77,255,.35); }
-        .step-seen { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
-        .step-add { border-style: dashed; border-color: ${BRAND.purple}; color: ${BRAND.purple}; font-weight: 800; font-size: 16px; background: #fff; }
+        .step-circle-ring {
+          width: 27px; height: 27px; border-radius: 50%; border: 1.5px solid ${BRAND.border}; background: #fff;
+          display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
+          font-size: 13px;
+        }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
+        .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
+        .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purpleDark}; }
+        .step-seen .step-circle-label { color: ${BRAND.purpleDark}; font-weight: 800; }
+        .step-add .step-circle-ring { border-style: dashed; border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
+        .step-add .step-circle-ring { font-size: 16px; }
         .stepnav-wrap { position: relative; }
         .ct-modal { position: absolute; inset: 0; background: #fff; z-index: 50; display: flex; flex-direction: column; }
         .ct-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 10px; border-bottom: 1px solid ${BRAND.border}; }
