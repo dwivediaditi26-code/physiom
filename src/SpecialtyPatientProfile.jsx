@@ -837,6 +837,20 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   })();
+  // Ortho's equivalent of cardioDem/neuroDem above -- Cardio/Neuro can read
+  // d.cardio.demographics/d.neuro.demographics directly since their whole
+  // wizard `data` lives flat on patient.data, but Ortho only has the
+  // JSON-stringified snapshot, plus a best-effort mirror onto flat
+  // dem_age/dem_sex/etc. fields that saveAssessment() writes (2026-09-17
+  // patches, several rounds -- name, then age/sex, then phone/address/
+  // occupation, each only after Aditi reported the Overview card empty
+  // again). That mirror only ever fires once, inside saveAssessment(), so
+  // any record saved before a given patch -- or where the therapist never
+  // reached Final Review -- stays permanently blank with no way to show
+  // real data that IS sitting in the parsed snapshot. Reading it here
+  // directly, same as Cardio/Neuro, means display no longer depends on
+  // that mirror succeeding at all.
+  const orthoDem = orthoParsed?.data?.demographics || {};
   // 2026-09-02, Aditi: "edit assessment... should take us to last page of
   // assessment summary and review, not to pathway selection or region
   // selection" -- orthoParsed.selectedRegions/rawCondition/customConditionLabel
@@ -907,7 +921,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.02em" }}>{name || "Patient"}</div>
           <div style={{ fontSize: 12, color: C.faint }}>
-            {[(d.dem_age || cardioDem.age) && `${d.dem_age || cardioDem.age} yrs`, (d.dem_sex || d.dem_gender)].filter(Boolean).join(" · ")}
+            {[(d.dem_age || cardioDem.age || orthoDem.age) && `${d.dem_age || cardioDem.age || orthoDem.age} yrs`, (d.dem_sex || d.dem_gender || orthoDem.sex)].filter(Boolean).join(" · ")}
           </div>
           {specialtyChips.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, maxWidth: "100%" }}>
@@ -947,12 +961,12 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
           <Card>
             <CardTitle>Patient Information</CardTitle>
             {[
-              ["Age", d.dem_age || cardioDem.age || neuroDem.age],
-              ["Gender", d.dem_sex || d.dem_gender],
-              ["Phone", d.dem_phone || cardioDem.phone || neuroDem.phone],
-              ["Date of birth", d.dem_dob],
-              ["Occupation", d.dem_occupation || cardioDem.occupation || neuroDem.occupation],
-              ["Address", d.dem_address || cardioDem.address || neuroDem.address],
+              ["Age", d.dem_age || cardioDem.age || neuroDem.age || orthoDem.age],
+              ["Gender", d.dem_sex || d.dem_gender || orthoDem.sex],
+              ["Phone", d.dem_phone || cardioDem.phone || neuroDem.phone || orthoDem.phone],
+              ["Date of birth", d.dem_dob || orthoDem.dob],
+              ["Occupation", d.dem_occupation || cardioDem.occupation || neuroDem.occupation || orthoDem.occupation],
+              ["Address", d.dem_address || cardioDem.address || neuroDem.address || orthoDem.address],
             ].filter(([, v]) => v).slice(0, showFullProfile ? 6 : 3).map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid #f1f5f9`, fontSize: 13.5 }}>
                 <span style={{ color: C.muted }}>{label}</span>

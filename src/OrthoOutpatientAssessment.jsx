@@ -627,6 +627,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     if (data.demographics?.phone) onSave("dem_phone", data.demographics.phone);
     if (data.demographics?.address) onSave("dem_address", data.demographics.address);
     if (data.demographics?.occupation) onSave("dem_occupation", data.demographics.occupation);
+    if (data.demographics?.dob) onSave("dem_dob", data.demographics.dob);
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
