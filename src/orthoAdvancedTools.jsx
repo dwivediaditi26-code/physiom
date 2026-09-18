@@ -628,6 +628,68 @@ function fmaCount(entry, tests) {
   return tests.filter((t) => entry[t.id + "_grade"]).length;
 }
 
+/* One-line "what this test helps find" per functional test id, shown at
+   the top of an opened test. Draft clinical wording -- review before relying on it. */
+const FMA_HELPS = {
+  lfs_sts: "Weak glutes/quads, poor hip hinge, and whether the spine or the hips take the load when rising. Shows compensation that overloads the low back.",
+  lfs_fwd: "Painful or restricted lumbar flexion, a lateral shift, and whether symptoms centralise or peripheralise. Helps separate a disc/flexion-intolerant pattern from hip or hamstring tightness.",
+  lfs_sls: "Weak gluteus medius and poor lumbopelvic or SIJ control. A pelvic drop or trunk lean points to hip abductor weakness (Trendelenburg).",
+  lfs_squat: "Poor hip–lumbar rhythm, early lumbar flexion, or pelvic tilt at depth. Shows whether the back is compensating for stiff hips or ankles.",
+  lfs_step: "Glute weakness and poor single-leg stability under load. Shows pelvic drop, trunk lean or knee collapse when driving up.",
+  fms_aslr: "Hamstring and hip-flexor tightness on one side versus core stability. Tells you whether limited leg raise is a flexibility or a control problem.",
+  fms_tspu: "Anterior core stability. A sagging low back or lagging hips means the trunk can't stay rigid while the limbs move.",
+  fms_rs: "Multi-plane trunk control and hip–shoulder coordination. Shows rotational instability that loads the spine during reaching or walking.",
+  sfs_flex: "Scapulohumeral rhythm and early shrugging or arching. Helps find subacromial pinching, weak upward rotators, or a stiff thoracic spine.",
+  sfs_abd: "A painful arc, which separates subacromial problems (around 60–120°) from AC joint pain (near the top of the range).",
+  sfs_ir: "Restricted internal rotation, typically posterior capsule or cuff tightness. Compare sides for a side-to-side difference.",
+  sfs_er: "Restricted external rotation and abduction, typically anterior capsule or lat/pec tightness. Compare sides.",
+  sfs_scap: "Serratus anterior and lower trapezius weakness. Shows winging or the blade lifting off the wall during the slide.",
+  fms_sm: "Combined shoulder and thoracic mobility. A gap between fists longer than the normal hand-length suggests restriction.",
+  hfs_sls: "Weak gluteus medius, dynamic knee valgus and poor pelvic control on one leg. The main frontal-plane screen for the hip.",
+  hfs_hinge: "Posterior chain tightness and glute max activation. Shows whether the movement comes from the hips or from the lumbar spine.",
+  hfs_ext: "Glute max firing order. If the hamstrings or low back fire first, the glute is under-recruited (Janda pattern).",
+  hfs_rot: "Restricted hip internal/external rotation from FAI or capsular tightness. A loss of internal rotation is the classic early hip sign.",
+  hfs_step: "Eccentric glute med control while lowering. Shows pelvic drop and knee valgus when decelerating.",
+  fms_sq: "Whole lower-chain mobility and control in one movement. Shows which link (ankle, hip, thoracic or shoulder) limits depth and form.",
+  fms_hs: "Single-leg stance control and hip hinge quality while the other leg moves. Shows pelvic drop, trunk lean or loss of balance.",
+  fms_il: "Sagittal control and frontal stability through hip, knee and ankle. Shows asymmetry between sides and poor hip–core stability.",
+  kfs_squat: "Patellofemoral loading and knee valgus in a basic squat. Shows pain-provoking depth and quad/glute weakness.",
+  kfs_lunge: "Patellofemoral compression and terminal knee extension control. Shows front-knee pain, IT band tightness and quad weakness.",
+  kfs_step: "Eccentric VMO control, patellar tracking and valgus while lowering. Provokes patellofemoral pain at speed.",
+  kfs_hop: "Landing mechanics, dynamic valgus and neuromuscular control, and so ACL injury risk. Common return-to-sport screen.",
+  kfs_tke: "Patellofemoral contact pain through the range. The angle where pain starts shows which part of the joint is loaded.",
+  afs_hr: "Calf endurance, tibialis posterior and Achilles load tolerance. Fewer reps than the other side means plantarflexor weakness.",
+  afs_df: "Ankle dorsiflexion restriction from posterior capsule tightness or anterior impingement. Common in chronic ankle instability.",
+  afs_bal: "Ankle proprioception and lateral stability. Poor balance after a sprain suggests chronic ankle instability.",
+  afs_hop: "Dynamic ankle stability, Achilles loading and limb symmetry. Used to decide readiness to return to sport.",
+  afs_arch: "Tibialis posterior function and excessive pronation. A large navicular drop shows a collapsing medial arch.",
+  cfs_arom: "Which neck motions are limited or painful, and whether the cause is joint, capsular or muscular. A first screen before any specific test.",
+  cfs_dnf: "Deep neck flexor endurance and control. A short hold time is linked to forward head posture and neck pain.",
+  cfs_post: "Forward head posture using the craniovertebral angle. Fits the upper crossed pattern (Janda).",
+  cfs_diz: "Dizziness that comes from the neck rather than the inner ear, plus a vertebrobasilar (VBI) safety check before neck treatment.",
+  cfs_ulnt: "Neural tension in the median nerve. Reproducing arm symptoms points to a C6/C7 radiculopathy or a sensitised nerve.",
+  tfs_arom: "Which thoracic movements are stiff or painful and at which level. Shows segmental hypomobility.",
+  tfs_rib: "Rib joint stiffness that limits breathing and rotation. Checks the costovertebral and costotransverse joints.",
+  tfs_ext: "Poor thoracic extension that pushes the neck or shoulders to compensate. Common in slumped, desk-bound posture.",
+  tfs_t4: "T4 syndrome: hand/arm tingling with no clear neck cause. A sympathetic-type referral from the upper thoracic spine.",
+  tfs_scap: "Scapular winging or dyskinesis from weak lower trapezius/serratus. Explains shoulder and upper-back pain with overhead use.",
+  efs_arom: "Elbow and forearm range: what is restricted, what is painful, and the end-feel.",
+  efs_lat: "Tennis elbow (lateral epicondylalgia). Pain on resisted wrist extension confirms extensor origin tendinopathy.",
+  efs_med: "Golfer's elbow, UCL strain and ulnar nerve irritation. Common in throwers and overhead athletes.",
+  efs_stab: "Elbow ligament stability, especially posterolateral rotatory instability. Important after dislocation or repeated injections.",
+  efs_neural: "Radial or median nerve tension, and cubital tunnel irritation. Separates a nerve source from a muscle or joint one.",
+  wfs_arom: "Wrist range and grip capacity. Lower grip strength points to tendon, joint or nerve involvement.",
+  wfs_cts: "Carpal tunnel syndrome. Reproducing night tingling in the thumb-to-ring finger points to median nerve compression.",
+  wfs_tfcc: "Ulnar-sided wrist pain from the TFCC, DRUJ instability or ECU. Common after a fall on the hand or with twisting.",
+  wfs_scaph: "Scaphoid fracture or scapholunate ligament injury after a fall on an outstretched hand. Snuffbox tenderness is a red flag.",
+  wfs_fingers: "Finger joint range, tendon integrity and collateral ligament stability.",
+  tmj_arom: "Jaw opening range, deviation and protrusion. A deviating or limited opening suggests disc displacement.",
+  tmj_click: "Whether clicking is a disc that reduces or one that doesn't. Crepitus suggests joint surface change.",
+  tmj_muscle: "Muscle guarding around the jaw. Tender masseter/temporalis point to a myofascial (muscle) source.",
+  tmj_cerv: "How neck posture and upper cervical joints feed jaw and head pain.",
+  tmj_head: "Which headache type it is: cervicogenic, tension-type or TMD-related. Guides what to treat first."
+};
+
 export function FmaSection({ data, setData, sectionKey = "fma" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, FMA_REGION_KEYS);
   const [openId, setOpenId] = useState(null);
@@ -679,7 +741,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
             </div>
             <div className="muscle-subtitle">{t.subtitle}</div>
 
-            <InfoCard icon="🔎" label="Helps find" tint="violet">{t.phase}. {t.subtitle}.</InfoCard>
+            <InfoCard icon="🔎" label="Helps find" tint="violet">{FMA_HELPS[t.id] || `${t.phase}. ${t.subtitle}.`}</InfoCard>
             <InfoCard icon="👐" label="How to do it" tint="gray">{t.setup}</InfoCard>
 
             <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 2px" }}>What to observe</div>
