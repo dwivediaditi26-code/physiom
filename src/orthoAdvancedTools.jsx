@@ -131,9 +131,9 @@ function optionTint(val) {
   if (/normal|facilitat/i.test(val)) return "green";
   return "blue";
 }
-function optionMeaningCards(options) {
+function optionMeaningCards(options, icon = "📊") {
   return (options || []).filter((o) => o && o.meaning).map((o, i) => (
-    <InfoCard key={i} icon="📊" label={o.val} tint={optionTint(o.val)}>{o.meaning}</InfoCard>
+    <InfoCard key={i} icon={icon} label={o.val} tint={optionTint(o.val)}>{o.meaning}</InfoCard>
   ));
 }
 
@@ -212,8 +212,8 @@ export function cpaRichItem(t) {
     reference: <InfoCard icon="🔀" label="Common compensators" tint="amber">{t.compensator}</InfoCard>,
     interpret: (
       <>
-        {optionMeaningCards(t.options)}
-        <InfoCard icon="🎯" label="Treatment protocol" tint="green">{t.treatment}</InfoCard>
+        {optionMeaningCards(t.options, null)}
+        <InfoCard label="Treatment protocol" tint="green">{t.treatment}</InfoCard>
       </>
     ),
   };
@@ -462,7 +462,7 @@ export function fmaRichItem(t) {
   const obsCards = (t.observations || []).map((obs) => {
     const rows = (obs.opts || []).map((opt, i) => ({ opt, clue: obs.clues?.[i] }));
     return (
-      <InfoCard key={obs.id} icon="👁" label={obs.q} tint="blue">
+      <InfoCard key={obs.id} label={obs.q} tint="blue">
         {rows.map((r, i) => (
           <div key={i} style={{ marginTop: i ? 8 : 0 }}>
             <div style={{ fontWeight: 700, color: r.opt.startsWith("✗") ? "#dc2626" : r.opt.startsWith("⚠") ? "#d97706" : "#059669" }}>{r.opt}</div>
@@ -485,7 +485,7 @@ export function fmaRichItem(t) {
       <>
         {obsCards}
         {(t.grades || []).length > 0 && (
-          <InfoCard icon="📊" label="Grading" tint="amber">
+          <InfoCard label="Grading" tint="amber">
             {t.grades.map((g, i) => <div key={i} style={{ marginTop: i ? 6 : 0 }}>{g}</div>)}
           </InfoCard>
         )}
