@@ -61,7 +61,7 @@ export const IPD_CONDITIONS = [
 ];
 const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTolerance"];
 
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
 const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
@@ -117,7 +117,7 @@ const STEP_META = {
   carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
   carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
   carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
-  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan" },
   carePlanSessions: { icon: <Icon name="calendar" />, label: "Sessions" },
   carePlanProgress: { icon: <Icon name="trend" />, label: "Care Plan Progress" },
   review: { icon: <Icon name="check" />, label: "Final Review" },
@@ -297,6 +297,15 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
   function goNext() {
     if (step < steps.length - 1) setStep(step + 1);
   }
+  // The Care Plan's own landing page (OrthoCarePlanStep's "plan" phase)
+  // jumps straight to Problems/Goals/Treatment via this instead of stepping
+  // forward one at a time (2026-09-18, Aditi: "click on goal it should
+  // [show] what goals we have put").
+  function goToCarePlanPhase(phaseId) {
+    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
+    const idx = stepId ? steps.findIndex((s) => s.id === stepId) : -1;
+    if (idx !== -1) setStep(idx);
+  }
   function goBack() {
     if (step > 0) setStep(step - 1);
     else onExit?.();
@@ -465,6 +474,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
                 pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
                 phase={CAREPLAN_PHASE_BY_STEP[current.id]}
                 onAdvance={goNext}
+                onJumpToPhase={goToCarePlanPhase}
               />
             </>
           )}

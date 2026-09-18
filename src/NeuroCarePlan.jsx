@@ -170,9 +170,45 @@ function PrecautionsBanner({ condition, setting }) {
   );
 }
 
+// Compact card for an already-selected problem -- the Problem List phase's
+// default view (2026-09-18, Aditi: "I just want to see what problems I
+// have selected without opening the whole problem list"). Works for both
+// auto-derived and manual problems: removing an auto-derived one just
+// deselects it (same effect as unticking it in the picker), since `problems`
+// IS the selected set either way.
+function SelectedProblemCard({ p, categoryLabel, onRemove }) {
+  return (
+    <div className="tech-card" style={{ borderColor: BRAND.purple }}>
+      <div className="tech-card-head">
+        <div className="tech-card-title" style={{ fontSize: 13.5 }}>
+          {p.name} <span style={chip(BRAND.purpleFaint, BRAND.purpleDark)}>{categoryLabel(p.category)}</span>
+          {p.manual && <span style={chip("#f1f5f9", "#64748b")}>Manual</span>}
+        </div>
+        <div className="tech-card-actions">
+          <button type="button" className="tech-card-del" onClick={onRemove} aria-label="Remove">✕</button>
+        </div>
+      </div>
+      {p.findings?.length > 0 && (
+        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 2 }}>
+          {p.findings.map((f, i) => (
+            <div key={i} style={{ fontSize: 11.5, color: BRAND.gray }}>
+              <span style={{ fontWeight: 600 }}>{f.label}:</span> {renderVal(f.value)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting, floatingCTA }) {
   const kb = useKB();
   const { categoryLabel, conditionLabel, settingLabel, PROBLEM_CATEGORIES } = kb;
+  // Two views in one phase (2026-09-18, Aditi: "just put the add button ...
+  // when we click on it then open that page"): compact by default (just
+  // what's already selected, with ✕ to remove), the full suggested/manual
+  // picker only behind "+ Add problem".
+  const [adding, setAdding] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [mCat, setMCat] = useState("");
   const [mName, setMName] = useState("");
@@ -188,9 +224,28 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
     setMName(""); setMCat(""); setManualOpen(false);
   };
 
+  if (!adding) {
+    return (
+      <>
+        <SectionIntro icon="🧩" title="Problem list" sub="What you've selected for this care plan." />
+        {problems.length === 0 && <div className="summary-empty">No problems selected yet. Tap "+ Add problem" to choose from suggested findings or add your own.</div>}
+        {problems.map((p) => (
+          <SelectedProblemCard key={p.id} p={p} categoryLabel={categoryLabel} onRemove={() => setProblems(problems.filter((x) => x.id !== p.id))} />
+        ))}
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setAdding(true)}>＋ Add problem</button>
+        {problems.length > 0 && (
+          <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={onNext}>
+            Continue to Goals ({problems.length}) →
+          </button>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
-      <SectionIntro icon="🧩" title="Problem list" sub="Suggested from the findings you already recorded — select the ones you want to treat." />
+      <SectionIntro icon="🧩" title="Add problems" sub="Suggested from the findings you already recorded — select the ones you want to treat."
+        action={<button type="button" className="ghost-btn" style={{ padding: "6px 14px", fontSize: 12.5 }} onClick={() => setAdding(false)}>Done</button>} />
       <PrecautionsBanner condition={condition} setting={setting} />
 
       {suggested.length === 0 && (
@@ -227,19 +282,6 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
         );
       })}
 
-      {problems.filter((p) => p.manual).map((p) => (
-        <div key={p.id} className="tech-card" style={{ borderColor: BRAND.purple }}>
-          <div className="tech-card-head">
-            <div className="tech-card-title" style={{ fontSize: 13.5 }}>
-              {p.name} <span style={chip(BRAND.purpleFaint, BRAND.purpleDark)}>{categoryLabel(p.category)}</span> <span style={chip("#f1f5f9", "#64748b")}>Manual</span>
-            </div>
-            <div className="tech-card-actions">
-              <button type="button" className="tech-card-del" onClick={() => setProblems(problems.filter((x) => x.id !== p.id))} aria-label="Remove">✕</button>
-            </div>
-          </div>
-        </div>
-      ))}
-
       {!manualOpen ? (
         <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setManualOpen(true)}>＋ Add problem manually</button>
       ) : (
@@ -253,11 +295,9 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
         </div>
       )}
 
-      {problems.length > 0 && (
-        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={onNext}>
-          Continue to Goals ({problems.length}) →
-        </button>
-      )}
+      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={() => setAdding(false)}>
+        Done ({problems.length} selected)
+      </button>
     </>
   );
 }
@@ -300,10 +340,48 @@ function GoalEditor({ goal, onChange, onRemove }) {
 
 function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA }) {
   const { buildGoalsForProblem } = useKB();
+  // Compact by default -- just the goals already set, grouped by problem;
+  // suggestions/custom-add only behind "+ Add goal" (2026-09-18, Aditi:
+  // "I just want to see what problems I have selected without opening the
+  // whole ... goal list").
+  const [adding, setAdding] = useState(false);
+
+  if (!adding) {
+    return (
+      <>
+        <SectionIntro icon="🎯" title="Goals" sub="What you've set for this care plan." />
+        {problems.length === 0 && <div className="summary-empty">Select at least one problem first.</div>}
+        {problems.length > 0 && goals.length === 0 && <div className="summary-empty">No goals added yet. Tap "+ Add goal" to choose a suggested goal or write your own.</div>}
+        {problems.map((p) => {
+          const mine = goals.filter((g) => g.problemId === p.id);
+          if (!mine.length) return null;
+          return (
+            <div key={p.id} style={{ marginBottom: 18 }}>
+              <div className="subheading" style={{ marginTop: 10 }}>{p.name}</div>
+              {mine.map((g) => (
+                <GoalEditor key={g.id} goal={g}
+                  onChange={(next) => setGoals(goals.map((x) => (x.id === g.id ? next : x)))}
+                  onRemove={() => setGoals(goals.filter((x) => x.id !== g.id))} />
+              ))}
+            </div>
+          );
+        })}
+        {problems.length > 0 && (
+          <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setAdding(true)}>＋ Add goal</button>
+        )}
+        {goals.length > 0 && (
+          <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
+            Continue to Treatment ({goals.length}) →
+          </button>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
-      <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal." />
-      {problems.length === 0 && <div className="summary-empty">Select at least one problem first.</div>}
+      <SectionIntro icon="🎯" title="Add goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal."
+        action={<button type="button" className="ghost-btn" style={{ padding: "6px 14px", fontSize: 12.5 }} onClick={() => setAdding(false)}>Done</button>} />
 
       {problems.map((p) => {
         const mine = goals.filter((g) => g.problemId === p.id);
@@ -348,11 +426,9 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
         );
       })}
 
-      {goals.length > 0 && (
-        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
-          Continue to Treatment ({goals.length}) →
-        </button>
-      )}
+      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={() => setAdding(false)}>
+        Done ({goals.length} goals)
+      </button>
     </>
   );
 }
@@ -761,10 +837,17 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
   // AddTreatmentPanel's floating "Add to plan" bar is showing -- both are
   // position:fixed at the same spot, so only one can be on screen at once.
   const [doseEditing, setDoseEditing] = useState(false);
+  // The picker used to always sit on the page (2026-09-11, Aditi: "I don't
+  // want my treatment section to have the add to treatment page"), but that
+  // reads as "the whole treatment list" once this phase is reached from the
+  // Care Plan hub instead of built fresh step-by-step -- now behind "+ Add
+  // treatment" like Problems/Goals (2026-09-18, Aditi: "I just want to see
+  // what ... I have selected without opening the whole ... treatment list").
+  const [adding, setAdding] = useState(false);
 
   return (
     <>
-      <SectionIntro icon="🏋" title="Treatment" action={!searchOpen && (
+      <SectionIntro icon="🏋" title="Treatment" action={adding && !searchOpen && (
         <button type="button" aria-label="Search treatments" onClick={() => setSearchOpen(true)}
           style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.purpleDark, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >🔍</button>
@@ -821,45 +904,64 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         </div>
       )}
 
-      {treatments.length > 0 && !doseEditing && (
-        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginBottom: 18 })} onClick={onNext}>Review treatment plan →</button>
+      {!treatments.length && !adding && <div className="summary-empty">No treatments added yet. Tap "+ Add treatment" to browse exercises and techniques.</div>}
+
+      {!adding && (
+        <>
+          <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setAdding(true)}>＋ Add treatment</button>
+          {treatments.length > 0 && (
+            <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 10 })} onClick={onNext}>Review treatment plan →</button>
+          )}
+        </>
       )}
 
-      {/* The picker itself -- always on the page, not behind an "Add
-          treatment" button/modal (2026-09-11, Aditi: "I don't want my
-          treatment section to have the add to treatment page ... I want
-          this page ... to be presented already there"). */}
-      <AddTreatmentPanel
-        allGoals={goals}
-        existing={new Set(treatments.map((t) => t.exerciseId))}
-        requireAuth={requireAuth}
-        floatingCTA={floatingCTA}
-        onDoseEditingChange={setDoseEditing}
-        search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
-        onAdd={(t) => {
-          // If this exercise is already in the plan (added under another
-          // goal), just link the existing record to the newly picked goals too.
-          const dup = treatments.find((x) => x.exerciseId && x.exerciseId === t.exerciseId);
-          if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
-          else setTreatments([...treatments, t]);
-        }}
-      />
+      {adding && (
+        <>
+          {!doseEditing && (
+            <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 14 }} onClick={() => setAdding(false)}>Done adding</button>
+          )}
+          <AddTreatmentPanel
+            allGoals={goals}
+            existing={new Set(treatments.map((t) => t.exerciseId))}
+            requireAuth={requireAuth}
+            floatingCTA={floatingCTA}
+            onDoseEditingChange={setDoseEditing}
+            search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
+            onAdd={(t) => {
+              // If this exercise is already in the plan (added under another
+              // goal), just link the existing record to the newly picked goals too.
+              const dup = treatments.find((x) => x.exerciseId && x.exerciseId === t.exerciseId);
+              if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
+              else setTreatments([...treatments, t]);
+            }}
+          />
+        </>
+      )}
     </>
   );
 }
 
 /* ─── 4. PLAN OVERVIEW ────────────────────────────────────── */
-function PlanPhase({ problems, goals, treatments }) {
+// Also the Care Plan's landing page (2026-09-18, Aditi: "the care plan
+// should open like this page ... when we click on goal it should [show]
+// what goals we have put ... edit button we can add more or remove ... same
+// if click on problem list"). Each stat tile is a doorway into that phase's
+// OWN existing UI -- Problems already lets you toggle suggestions and
+// remove manual entries, Goals already has Edit/✕ per goal, Treatment
+// already lists everything added with ✕ and the always-on picker below it
+// -- so no new edit surface was needed, just a way in from here.
+function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
   const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
   return (
     <>
-      <SectionIntro icon="📋" title="Treatment plan" sub="What you intend to do. Sessions record what actually happened." />
+      <SectionIntro icon="📋" title="Care plan" sub="What you intend to do. Tap a card to review or edit it." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(70px,1fr))", gap: 8, marginBottom: 16 }}>
-        {[["Problems", problems.length], ["Goals", goals.length], ["Treatments", treatments.length]].map(([l, v]) => (
-          <div key={l} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
+        {[["Problems", problems.length, "problems"], ["Goals", goals.length, "goals"], ["Treatments", treatments.length, "treatment"]].map(([l, v, phaseId]) => (
+          <button key={l} type="button" onClick={() => onGoToPhase?.(phaseId)}
+            style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: BRAND.purpleDark }}>{v}</div>
             <div style={{ fontSize: 10.5, color: BRAND.gray, fontWeight: 600 }}>{l}</div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -1175,16 +1277,25 @@ function ProgressPhase({ goals, sessions }) {
 // Omitting `phase` keeps the original single-page, tabbed behaviour
 // (SpecialtyPatientProfile.jsx's live profile view, where a wizard-style
 // step sequence doesn't apply).
-export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance }) {
+export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance, onJumpToPhase }) {
   const [d, set] = useSectionData(data, setData, sectionKey);
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
   const treatments = Array.isArray(d.treatments) ? d.treatments : [];
   const sessions = Array.isArray(d.sessions) ? d.sessions : [];
   const controlled = controlledPhase != null;
-  const [internalPhase, setInternalPhase] = useState(initialPhase || "problems");
+  // Opens on the Plan overview instead of Problem List (2026-09-18, Aditi:
+  // "the care plan should open like this page ... when we click on goal it
+  // should [show] what goals we have put ... same if click on problem list").
+  const [internalPhase, setInternalPhase] = useState(initialPhase || "plan");
   const phase = controlled ? controlledPhase : internalPhase;
   const goNextPhase = (next) => (controlled ? onAdvance?.() : setInternalPhase(next));
+  // Arbitrary jump (not just "next") -- the Plan overview's Problems/Goals/
+  // Treatment tiles use this to open that phase directly. Uncontrolled
+  // (patient profile, tabbed) just flips the internal tab; controlled (one
+  // phase per wizard step) hands off to the host wizard's own `onJumpToPhase`,
+  // which moves its step counter to the matching step.
+  const goToPhase = (id) => (controlled ? onJumpToPhase?.(id) : setInternalPhase(id));
 
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
@@ -1218,11 +1329,16 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
       {/* Hide the horizontal scrollbar on scrollable rows — cleaner look
           (2026-09-03, Aditi: "this grey sliding thing i dont like"). */}
       <style>{`.cp-scroll-x::-webkit-scrollbar{display:none}`}</style>
-      {!controlled && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />}
+      {/* Hidden on the Plan hub itself -- its own tiles already do the
+          navigating (2026-09-18, Aditi: "noo" -- the old pill strip and the
+          new tile cards were showing the same Problems/Goals/Treatment
+          counts on top of each other). Reappears once you're inside a
+          phase, "Plan" included, so there's still a way back to the hub. */}
+      {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />}
       {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => goNextPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => goNextPhase("plan")} floatingCTA={floatingCTA} requireAuth={requireAuth} />}
-      {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} />}
+      {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} onGoToPhase={goToPhase} />}
       {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
       {phase === "progress" && <ProgressPhase goals={goals} sessions={sessions} />}
     </KBContext.Provider>
@@ -1230,8 +1346,8 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
 }
 
 // Thin wrapper: the Neuro Care Plan is CarePlanSection + neuro knowledge.
-export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance }) {
-  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} />;
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance, onJumpToPhase }) {
+  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} onJumpToPhase={onJumpToPhase} />;
 }
 
 /* formatters[stepId] contract for a specialty's SummarySection. Shape is

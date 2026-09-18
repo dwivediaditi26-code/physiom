@@ -106,7 +106,7 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 // specialTests moved from OPTIONAL_IDS to BASE_IDS (2026-09-16, Aditi:
 // "why the special test is not showing constantly? It should show") -- it
@@ -197,7 +197,7 @@ const STEP_META = {
   carePlanProblems: { icon: <Icon name="puzzle" />, label: "Problem List" },
   carePlanGoals: { icon: <Icon name="target" />, label: "Care Plan Goals" },
   carePlanTreatment: { icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
-  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  carePlanPlan: { icon: <Icon name="clipboard" />, label: "Care Plan" },
   carePlanSessions: { icon: <Icon name="calendar" />, label: "Sessions" },
   carePlanProgress: { icon: <Icon name="trend" />, label: "Care Plan Progress" },
   techniques: { icon: <Icon name="handshake" />, label: "Treatment Techniques" },
@@ -438,6 +438,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
 
   function goNext() {
     if (step < steps.length - 1) setStep(step + 1);
+  }
+  // The Care Plan's own landing page (OrthoCarePlanStep's "plan" phase)
+  // jumps straight to Problems/Goals/Treatment via this instead of stepping
+  // forward one at a time (2026-09-18, Aditi: "click on goal it should
+  // [show] what goals we have put").
+  function goToCarePlanPhase(phaseId) {
+    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
+    const idx = stepId ? steps.findIndex((s) => s.id === stepId) : -1;
+    if (idx !== -1) setStep(idx);
   }
   function goBack() {
     if (step > 0) { setStep(step - 1); return; }
@@ -812,6 +821,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 requireAuth={requireAuth}
                 phase={CAREPLAN_PHASE_BY_STEP[current.id]}
                 onAdvance={goNext}
+                onJumpToPhase={goToCarePlanPhase}
               />
             </>
           )}

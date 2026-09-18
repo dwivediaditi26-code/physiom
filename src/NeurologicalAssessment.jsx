@@ -129,10 +129,10 @@ const STEP_META = [
   { id: "functional", icon: <Icon name="bed" />, label: "Functional Assessment" },
   { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
   { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
   { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
   { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
   { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
-  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
   { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
   { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
   { id: "precautions", icon: <Icon name="warning" />, label: "Precautions" },
@@ -1922,7 +1922,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
@@ -2196,6 +2196,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
   function goNext() {
     if (step < total - 1) setStep(step + 1);
+  }
+  // The Care Plan's own landing page (NeuroCarePlanSection's "plan" phase)
+  // jumps straight to Problems/Goals/Treatment via this instead of stepping
+  // forward one at a time (2026-09-18, Aditi: "click on goal it should
+  // [show] what goals we have put").
+  function goToCarePlanPhase(phaseId) {
+    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
+    const idx = stepId ? assessSteps.findIndex((s) => s.id === stepId) : -1;
+    if (idx !== -1) setStep(1 + idx);
   }
   function goBack() {
     if (phase === "assess" && step === 1) {
@@ -2756,7 +2765,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                       Prescription step below -- NeuroCarePlan.jsx is built
                       on the Ortho field kit's classes. */}
                   <style>{orthoStyles()}</style>
-                  <NeuroCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
+                  <NeuroCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} onJumpToPhase={goToCarePlanPhase} />
                 </>
               )}
               {current.id === "exercisePrescription" && (

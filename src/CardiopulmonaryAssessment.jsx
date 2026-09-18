@@ -128,17 +128,17 @@ const STEP_META = [
   // library and session and progress and plan"), same shared CarePlanSection
   // Ortho/Neuro already use (CardioCarePlan.jsx / cardioClinicalKnowledge.js)
   // -- one phase per step so each gets its own page instead of a crowded tab.
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
   { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
   { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
   { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
-  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
   { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
   { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
   { id: "precautions", icon: <Icon name="warning" />, label: "Treatment Precautions" },
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
 const ASSESS_STEPS = STEP_META.slice(2); // 19 steps shown in the step nav
-const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 
 // Migration for patients assessed before the Care Plan steps existed: their
@@ -2096,6 +2096,15 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   function goBack() {
     if (step > 0) setStep(step - 1);
   }
+  // The Care Plan's own landing page (CardioCarePlanSection's "plan" phase)
+  // jumps straight to Problems/Goals/Treatment via this instead of stepping
+  // forward one at a time (2026-09-18, Aditi: "click on goal it should
+  // [show] what goals we have put").
+  function goToCarePlanPhase(phaseId) {
+    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
+    const idx = stepId ? assessSteps.findIndex((s) => s.id === stepId) : -1;
+    if (idx !== -1) setStep(2 + idx);
+  }
   function restart() {
     setStep(0);
     setSetting(null);
@@ -2499,7 +2508,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
-            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
+            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} onJumpToPhase={goToCarePlanPhase} />
           )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />}

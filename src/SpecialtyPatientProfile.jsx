@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
+import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
 import { goalProgress } from "./neuroClinicalKnowledge.js";
 import { buildOrthoKnowledge } from "./orthoClinicalKnowledge.js";
 import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle, cardioSummaryFormatters, withCarePlanSummaryAlias as withCardioCarePlanSummaryAlias } from "./CardiopulmonaryAssessment.jsx";
@@ -237,6 +238,32 @@ function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
       <NeuroCarePlanSection data={neuro} setData={setData} initialPhase={initialPhase} floatingCTA />
     </>
   );
+}
+
+// The Cardio Care Plan, same role as NeuroCarePlanPanel above -- the exact
+// editable component the Cardiopulmonary assessment wizard uses, mounted
+// here so it can be viewed/edited from the profile (2026-09-18, Aditi: "the
+// care plan should open like this page in ortho neuro cardio"). One data
+// store: patient.data.cardio.cardioCarePlan, written by both the wizard and
+// here, via the profile's own onSaveField.
+function CardioCarePlanPanel({ patient, onSaveField, initialPhase }) {
+  const [cardio, setCardio] = useState(patient?.data?.cardio || {});
+  const cardioRef = useRef(cardio);
+  cardioRef.current = cardio;
+  const pid = patient?.id;
+  useEffect(() => {
+    const next = patient?.data?.cardio || {};
+    cardioRef.current = next;
+    setCardio(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pid]);
+  const setData = (updater) => {
+    const next = typeof updater === "function" ? updater(cardioRef.current) : updater;
+    cardioRef.current = next;
+    setCardio(next);
+    onSaveField?.(patient.id, { cardio: next });
+  };
+  return <CardioCarePlanSection data={cardio} setData={setData} initialPhase={initialPhase} floatingCTA />;
 }
 
 // Compact snapshot for the Overview tab: counts + average goal progress.
@@ -1192,7 +1219,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {tab === "progress" && hasOrtho && (
         <OrthoCarePlanPanel key="ocp-progress" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="progress" />
       )}
-      {tab === "progress" && !hasNeuro && !hasOrtho && (
+      {tab === "progress" && hasCardio && (
+        <CardioCarePlanPanel key="ccp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
+      )}
+      {tab === "progress" && !hasNeuro && !hasOrtho && !hasCardio && (
         <>
           <Card>
             <CardTitle>Pain Progress (NPRS)</CardTitle>
@@ -1239,7 +1269,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
       {tab === "treatment" && hasOrtho && (
         <ClinicalPlanPage key="plan-treatment-ortho" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
       )}
-      {tab === "treatment" && !hasNeuro && !hasOrtho && (
+      {tab === "treatment" && hasCardio && (
+        <CardioCarePlanPanel key="plan-treatment-cardio" patient={patient} onSaveField={onSaveField} />
+      )}
+      {tab === "treatment" && !hasNeuro && !hasOrtho && !hasCardio && (
         <>
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
