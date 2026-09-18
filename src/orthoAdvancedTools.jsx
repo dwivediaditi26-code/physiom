@@ -630,65 +630,92 @@ function fmaCount(entry, tests) {
 
 export function FmaSection({ data, setData, sectionKey = "fma" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, FMA_REGION_KEYS);
+  const [openId, setOpenId] = useState(null);
   const tests = FMA_DATA[activeKey] || [];
   const entry = d[activeKey] || {};
   const counts = {};
   FMA_REGION_KEYS.forEach((k) => (counts[k] = fmaCount(d[k], FMA_DATA[k])));
+  const openTest = openId ? tests.find((t) => t.id === openId) : null;
+  const doneCount = (t) => t.observations.filter((o) => entry[t.id + "_" + o.id]).length + (entry[t.id + "_grade"] ? 1 : 0);
 
   return (
     <>
       <SectionIntro icon="🏃" title="Functional Movement Screen" info="Fundamental movement patterns, screened for compensation strategy rather than a pass/fail score — grade each pattern Normal, Compensated, or Abnormal, and note which specific fault was observed." />
-      <ColorRegionTabs tabs={FMA_REGION_KEYS} activeKey={activeKey} onSelect={setActiveKey} counts={counts} labelFor={(k) => k} regionsData={undefined} />
+      <ColorRegionTabs tabs={FMA_REGION_KEYS} activeKey={activeKey} onSelect={(k) => { setOpenId(null); setActiveKey(k); }} counts={counts} labelFor={(k) => k} regionsData={undefined} />
 
-      <div className="rom-card">
-        <div className="rom-card-title">{activeKey}</div>
-        {tests.map((t) => {
-          const grade = entry[t.id + "_grade"];
-          const gradeIdx = grade ? t.grades.indexOf(grade) : -1;
-          return (
-            <div className="movement-card" key={t.id}>
-              <div className="movement-name-row">
-                <span className="movement-name">
-                  {t.icon} {t.label}
-                </span>
-                <InfoButton title={t.label} richItem={fmaRichItem(t)} />
-              </div>
-              <div className="muscle-subtitle">{t.subtitle}</div>
+      {!openTest && (
+        <div className="rom-card">
+          <div className="rom-card-title">{activeKey}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {tests.map((t) => {
+              const done = doneCount(t);
+              const total = t.observations.length + 1;
+              return (
+                <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
+                  style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{t.icon}</span>
+                  <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
+                  <span style={{ fontSize: "0.7rem", color: "#6b7280", lineHeight: 1.3 }}>{t.subtitle}</span>
+                  <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
+                    {done ? `${done} of ${total} done` : "Not done"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-              {t.observations.map((obs) => {
-                const val = entry[t.id + "_" + obs.id];
-                const idx = obs.opts.indexOf(val);
-                const clue = idx > 0 ? obs.clues[idx] : "";
+      {openTest && (() => {
+        const t = openTest;
+        const grade = entry[t.id + "_grade"];
+        const gradeIdx = grade ? t.grades.indexOf(grade) : -1;
+        return (
+          <div className="rom-card">
+            <button type="button" onClick={() => setOpenId(null)} style={{ background: "none", border: "none", padding: 0, marginBottom: 10, color: "#6D28D9", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit" }}>‹ Back to all {activeKey} tests</button>
+            <div className="movement-name-row">
+              <span className="movement-name">{t.icon} {t.label}</span>
+              <InfoButton title={t.label} richItem={fmaRichItem(t)} />
+            </div>
+            <div className="muscle-subtitle">{t.subtitle}</div>
+
+            <InfoCard icon="🔎" label="Helps find" tint="violet">{t.phase}. {t.subtitle}.</InfoCard>
+            <InfoCard icon="👐" label="How to do it" tint="gray">{t.setup}</InfoCard>
+
+            <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 2px" }}>What to observe</div>
+            {t.observations.map((obs) => {
+              const val = entry[t.id + "_" + obs.id];
+              const idx = obs.opts.indexOf(val);
+              const clue = idx > 0 ? obs.clues[idx] : "";
+              return (
+                <div key={obs.id} style={{ marginTop: 8 }}>
+                  <GradeSelect style={{ width: "100%" }} value={val || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_" + obs.id]: e.target.value })}>
+                    <option value="">{obs.q}</option>
+                    {obs.opts.map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </GradeSelect>
+                  {clue && <Hint>{clue}</Hint>}
+                </div>
+              );
+            })}
+
+            <div className="chip-mini-row" style={{ marginTop: 12 }}>
+              {t.grades.map((g, i) => {
+                const selected = grade === g;
+                const color = FMA_GRADE_COLOR[i];
+                const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
                 return (
-                  <div key={obs.id} style={{ marginTop: 8 }}>
-                    <GradeSelect style={{ width: "100%" }} value={val || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_" + obs.id]: e.target.value })}>
-                      <option value="">{obs.q}</option>
-                      {obs.opts.map((o) => (
-                        <option key={o} value={o}>{o}</option>
-                      ))}
-                    </GradeSelect>
-                    {clue && <Hint>{clue}</Hint>}
-                  </div>
+                  <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => set(activeKey, { ...entry, [t.id + "_grade"]: selected ? "" : g })}>
+                    {["Normal", "Compensated", "Abnormal"][i] || g}
+                  </button>
                 );
               })}
-
-              <div className="chip-mini-row" style={{ marginTop: 10 }}>
-                {t.grades.map((g, i) => {
-                  const selected = grade === g;
-                  const color = FMA_GRADE_COLOR[i];
-                  const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
-                  return (
-                    <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => set(activeKey, { ...entry, [t.id + "_grade"]: selected ? "" : g })}>
-                      {["Normal", "Compensated", "Abnormal"][i] || g}
-                    </button>
-                  );
-                })}
-              </div>
-              {gradeIdx >= 0 && <Hint>{grade}</Hint>}
             </div>
-          );
-        })}
-      </div>
+            {gradeIdx >= 0 && <Hint>{grade}</Hint>}
+          </div>
+        );
+      })()}
     </>
   );
 }
