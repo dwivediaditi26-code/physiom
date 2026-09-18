@@ -340,7 +340,6 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
               </div>
               <div className="muscle-subtitle">{t.joint}</div>
               <InfoCard icon="🔎" label="Helps find" tint="violet">{kcHelpsFind(t)}</InfoCard>
-              <InfoCard icon="👐" label="How to do it" tint="gray">{t.how}</InfoCard>
               <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 6px" }}>Result</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {t.options.map((o) => {
@@ -792,7 +791,6 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
             <div className="muscle-subtitle">{t.subtitle}</div>
 
             <InfoCard icon="🔎" label="Helps find" tint="violet">{FMA_HELPS[t.id] || `${t.phase}. ${t.subtitle}.`}</InfoCard>
-            <InfoCard icon="👐" label="How to do it" tint="gray">{t.setup}</InfoCard>
 
             <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 2px" }}>What to observe</div>
             {t.observations.map((obs) => {
