@@ -913,8 +913,8 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   const TABS = [
     { k: "overview", label: "Overview" },
     { k: "assessment", label: "Assessment" },
-    { k: "progress", label: "Progress" },
-    { k: "treatment", label: "Plan & Progress" },
+    { k: "treatment", label: "Care Plan" },
+    { k: "sessions", label: "Session & Progress" },
     { k: "home", label: "Home" },
     { k: "documents", label: "Docs" },
     { k: "posture", label: "Posture" },
@@ -1212,17 +1212,37 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
         </>
       )}
 
-      {/* ═══ PROGRESS ═══ */}
-      {tab === "progress" && hasNeuro && (
-        <NeuroCarePlanPanel key="cp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
+      {/* ═══ CARE PLAN ═══ */}
+      {tab === "treatment" && hasNeuro && (
+        <ClinicalPlanPage key="plan-treatment-neuro" patient={patient} onSaveField={onSaveField} isNeuro />
       )}
-      {tab === "progress" && hasOrtho && (
-        <OrthoCarePlanPanel key="ocp-progress" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="progress" />
+      {tab === "treatment" && hasOrtho && (
+        <ClinicalPlanPage key="plan-treatment-ortho" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
       )}
-      {tab === "progress" && hasCardio && (
-        <CardioCarePlanPanel key="ccp-progress" patient={patient} onSaveField={onSaveField} initialPhase="progress" />
+      {tab === "treatment" && hasCardio && (
+        <CardioCarePlanPanel key="plan-treatment-cardio" patient={patient} onSaveField={onSaveField} />
       )}
-      {tab === "progress" && !hasNeuro && !hasOrtho && !hasCardio && (
+      {tab === "treatment" && !hasNeuro && !hasOrtho && !hasCardio && (
+        <Card><EmptyRow>Complete an Ortho, Neuro, or Cardio assessment for this patient to start a care plan.</EmptyRow></Card>
+      )}
+
+      {/* ═══ SESSION & PROGRESS ═══ (2026-09-18, Aditi: "session and
+          progress" as one tab -- reuses the exact Sessions/Progress phases
+          from the Care Plan wizard, PhaseNav included, instead of a
+          separate hand-rolled session list. A session here is seeded from
+          the Care Plan's own Treatment list, same as inside the
+          assessment, so it shows the treatments already selected rather
+          than starting blank. */}
+      {tab === "sessions" && hasNeuro && (
+        <NeuroCarePlanPanel key="cp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" />
+      )}
+      {tab === "sessions" && hasOrtho && (
+        <OrthoCarePlanPanel key="ocp-sessions" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="sessions" />
+      )}
+      {tab === "sessions" && hasCardio && (
+        <CardioCarePlanPanel key="ccp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" />
+      )}
+      {tab === "sessions" && !hasNeuro && !hasOrtho && !hasCardio && (
         <>
           <Card>
             <CardTitle>Pain Progress (NPRS)</CardTitle>
@@ -1259,21 +1279,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               ))}
             </Card>
           )}
-        </>
-      )}
 
-      {/* ═══ PLAN & PROGRESS ═══ */}
-      {tab === "treatment" && hasNeuro && (
-        <ClinicalPlanPage key="plan-treatment-neuro" patient={patient} onSaveField={onSaveField} isNeuro />
-      )}
-      {tab === "treatment" && hasOrtho && (
-        <ClinicalPlanPage key="plan-treatment-ortho" patient={patient} onSaveField={onSaveField} isNeuro={false} orthoPathway={orthoPathway} orthoParsed={orthoParsed} />
-      )}
-      {tab === "treatment" && hasCardio && (
-        <CardioCarePlanPanel key="plan-treatment-cardio" patient={patient} onSaveField={onSaveField} />
-      )}
-      {tab === "treatment" && !hasNeuro && !hasOrtho && !hasCardio && (
-        <>
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Session Progress</div>
@@ -1320,6 +1326,10 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
             );
           })}
 
+          {/* No specialty Care Plan exists for this patient, so there's no
+              Treatment list to seed a session from -- falls back to the
+              old generic session form rather than offering a broken/empty
+              "seeded from plan" screen. */}
           <GhostBtn onClick={() => onNav?.("tx_sessions")} style={{ width: "100%", marginTop: 4 }}>+ Add New Session</GhostBtn>
         </>
       )}

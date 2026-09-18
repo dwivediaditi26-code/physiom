@@ -1382,7 +1382,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 👤 Profile
               </button>
               <button
-                onClick={()=>navTo("tx_sessions")}
+                onClick={()=>openPatientProfile(activePatient,"sessions")}
                 style={{padding:"7px 6px",background:"linear-gradient(135deg,#065f46,#059669)",border:"none",borderRadius:7,color:"#fff",fontWeight:700,fontSize:"0.7rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4,boxShadow:"0 1px 6px rgba(5,150,105,0.3)"}}>
                 ▶️ Start Session
               </button>
@@ -2391,7 +2391,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                               <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                             ) : clinicalSubTab==="treatment" ? (
                               <TreatmentCaseloadPanel patients={patients}
-                                onContinue={(p)=>{ selectPatient(p); navTo("tx_sessions"); }}
+                                onContinue={(p)=>openPatientProfile(p, "sessions")}
                                 onProfile={(p)=>openPatientProfile(p, "treatment")}
                                 // 2026-09-02, Aditi: "in treatment we can remove the
                                 // old treatments... delete if we want to delete" --
