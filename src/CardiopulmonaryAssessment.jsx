@@ -2231,7 +2231,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .step-add .step-circle-ring { border-style: dashed; border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
         .step-add .step-circle-ring { font-size: 16px; }
         .stepnav-wrap { position: relative; }
-        .ct-modal { position: absolute; inset: 0; background: #fff; z-index: 50; display: flex; flex-direction: column; }
+        .ct-modal { position: fixed; inset: 0; height: 100vh; height: 100dvh; background: #fff; z-index: 200; display: flex; flex-direction: column; }
         .ct-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 10px; border-bottom: 1px solid ${BRAND.border}; }
         .ct-modal-title { font-weight: 800; font-size: 16px; }
         .ct-modal-close { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purple}; width: 30px; height: 30px; border-radius: 10px; font-size: 14px; cursor: pointer; flex-shrink: 0; }
