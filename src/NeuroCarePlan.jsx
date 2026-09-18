@@ -130,10 +130,11 @@ const ctaStyle = (floating, base) => ({ ...base, ...(floating ? FLOATING_CTA : F
 // Extra bottom padding so the last card isn't hidden behind the fixed bar.
 const FLOATING_PAD = { paddingBottom: 84 };
 
-function PhaseNav({ phase, setPhase, counts }) {
+function PhaseNav({ phase, setPhase, counts, phases }) {
+  const shown = phases ? PHASES.filter((p) => phases.includes(p.id)) : PHASES;
   return (
     <div className="cp-scroll-x" style={{ display: "flex", gap: 6, marginBottom: 16, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-      {PHASES.map((p) => {
+      {shown.map((p) => {
         const active = phase === p.id;
         const c = counts[p.id];
         return (
@@ -1302,7 +1303,7 @@ function ProgressPhase({ goals, sessions }) {
 // Omitting `phase` keeps the original single-page, tabbed behaviour
 // (SpecialtyPatientProfile.jsx's live profile view, where a wizard-style
 // step sequence doesn't apply).
-export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance }) {
+export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance, restrictPhases }) {
   const [d, set] = useSectionData(data, setData, sectionKey);
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
@@ -1375,7 +1376,7 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
           new tile cards were showing the same Problems/Goals/Treatment
           counts on top of each other). Reappears once you're inside a
           phase, "Plan" included, so there's still a way back to the hub. */}
-      {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />}
+      {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} phases={restrictPhases} />}
       {/* Only shown when a Plan tile opened this phase in place (viewOverride)
           -- the wizard's own step never moved, so this is the only way back
           to the hub (2026-09-18, Aditi: "click on the problem in that page
@@ -1394,8 +1395,8 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
 }
 
 // Thin wrapper: the Neuro Care Plan is CarePlanSection + neuro knowledge.
-export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance }) {
-  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} />;
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance, restrictPhases }) {
+  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} restrictPhases={restrictPhases} />;
 }
 
 /* formatters[stepId] contract for a specialty's SummarySection. Shape is

@@ -215,7 +215,7 @@ const hepDose = (e) => {
 // the assessment both write patient.data.neuro.neuroCarePlan, so they stay in
 // sync. `setData` computes the next neuro object from a ref (no side-effect in
 // a setState updater) and persists via the profile's onSaveField.
-function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
+function NeuroCarePlanPanel({ patient, onSaveField, initialPhase, restrictPhases }) {
   const [neuro, setNeuro] = useState(patient?.data?.neuro || {});
   const neuroRef = useRef(neuro);
   neuroRef.current = neuro;
@@ -235,7 +235,7 @@ function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
   return (
     <>
       <style>{orthoStyles()}</style>
-      <NeuroCarePlanSection data={neuro} setData={setData} initialPhase={initialPhase} floatingCTA />
+      <NeuroCarePlanSection data={neuro} setData={setData} initialPhase={initialPhase} floatingCTA restrictPhases={restrictPhases} />
     </>
   );
 }
@@ -246,7 +246,7 @@ function NeuroCarePlanPanel({ patient, onSaveField, initialPhase }) {
 // care plan should open like this page in ortho neuro cardio"). One data
 // store: patient.data.cardio.cardioCarePlan, written by both the wizard and
 // here, via the profile's own onSaveField.
-function CardioCarePlanPanel({ patient, onSaveField, initialPhase }) {
+function CardioCarePlanPanel({ patient, onSaveField, initialPhase, restrictPhases }) {
   const [cardio, setCardio] = useState(patient?.data?.cardio || {});
   const cardioRef = useRef(cardio);
   cardioRef.current = cardio;
@@ -263,7 +263,7 @@ function CardioCarePlanPanel({ patient, onSaveField, initialPhase }) {
     setCardio(next);
     onSaveField?.(patient.id, { cardio: next });
   };
-  return <CardioCarePlanSection data={cardio} setData={setData} initialPhase={initialPhase} floatingCTA />;
+  return <CardioCarePlanSection data={cardio} setData={setData} initialPhase={initialPhase} floatingCTA restrictPhases={restrictPhases} />;
 }
 
 // Compact snapshot for the Overview tab: counts + average goal progress.
@@ -300,7 +300,7 @@ const orthoCarePlanSnapshot = (pd) => carePlanCounts(pd?.ortho_care_plan);
 // live nested object like neuro), persisted via onSaveField. One store:
 // editable here and, once wired, in the ortho assessment.
 const orthoRegionLabel = (r) => [r.side, r.label || r.name || String(r.id || "").replace(/[_/-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())].filter(Boolean).join(" ");
-function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, initialPhase }) {
+function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, initialPhase, restrictPhases }) {
   const pid = patient?.id;
   const pd = patient?.data || {};
   const setting = orthoPathway || null;
@@ -327,7 +327,7 @@ function OrthoCarePlanPanel({ patient, onSaveField, orthoPathway, orthoParsed, i
   return (
     <>
       <style>{orthoStyles()}</style>
-      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA />
+      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA restrictPhases={restrictPhases} />
     </>
   );
 }
@@ -1210,13 +1210,13 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
           assessment, so it shows the treatments already selected rather
           than starting blank. */}
       {tab === "sessions" && hasNeuro && (
-        <NeuroCarePlanPanel key="cp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" />
+        <NeuroCarePlanPanel key="cp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" restrictPhases={["sessions", "progress"]} />
       )}
       {tab === "sessions" && hasOrtho && (
-        <OrthoCarePlanPanel key="ocp-sessions" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="sessions" />
+        <OrthoCarePlanPanel key="ocp-sessions" patient={patient} onSaveField={onSaveField} orthoPathway={orthoPathway} orthoParsed={orthoParsed} initialPhase="sessions" restrictPhases={["sessions", "progress"]} />
       )}
       {tab === "sessions" && hasCardio && (
-        <CardioCarePlanPanel key="ccp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" />
+        <CardioCarePlanPanel key="ccp-sessions" patient={patient} onSaveField={onSaveField} initialPhase="sessions" restrictPhases={["sessions", "progress"]} />
       )}
       {tab === "sessions" && !hasNeuro && !hasOrtho && !hasCardio && (
         <>
