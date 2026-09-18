@@ -100,3 +100,111 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* PhysioFeed mobile section nav -- premium tactile 3D tiles
+   (2026-09-18, Aditi: "premium, modern 3D UI... LinkedIn's credibility,
+   Instagram's polish, Apple-level spacing... subtle 3D depth, not
+   childish", with a reference screenshot of soft-glass cards + a
+   circular icon pod). Plain CSS with real :hover/:active here rather
+   than inline JSX style objects (used for the tiles' first pass) --
+   the spec's hover-lift / click-compress states need real pseudo-
+   classes, not a mouseover/mousedown handler pair.
+   Label size is 13px rather than the spec's 15-16px: this strip holds
+   7 items (Feed/Evidence/Explore/Groups/People/Messages/Saved), not
+   the 5 in the reference image, and 15px labels widened each tile
+   enough to push most of the row off-screen on a phone before any
+   scrolling -- the premium visual language carries at 13px, the extra
+   3px doesn't. */
+.pf-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 76px;
+  height: 90px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(50, 45, 70, 0.08), 0 2px 4px rgba(50, 45, 70, 0.05);
+  transform: translateY(0);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.pf-tile::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -6px;
+  height: 14px;
+  border-radius: 22px;
+  background: rgba(50, 45, 70, 0.05);
+  z-index: -1;
+}
+.pf-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(50, 45, 70, 0.12), 0 3px 6px rgba(50, 45, 70, 0.07);
+}
+.pf-tile:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(50, 45, 70, 0.1), 0 1px 2px rgba(50, 45, 70, 0.06);
+}
+.pf-tile-active {
+  background: rgba(238, 234, 249, 0.85);
+  border-color: rgba(110, 90, 166, 0.25);
+  box-shadow: 0 10px 22px rgba(110, 90, 166, 0.16), 0 2px 5px rgba(110, 90, 166, 0.1);
+  transform: translateY(-2px);
+}
+.pf-tile-active:hover {
+  transform: translateY(-4px);
+}
+.pf-tile-pod {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 8px rgba(50, 45, 70, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: #777681;
+  transition: transform 200ms ease, background 200ms ease, color 200ms ease;
+}
+.pf-tile:hover .pf-tile-pod {
+  transform: translateY(-1.5px);
+}
+.pf-tile-active .pf-tile-pod {
+  background: #2f2a45;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(50, 45, 70, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.pf-tile-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b4a54;
+  letter-spacing: -0.01em;
+}
+.pf-tile-active .pf-tile-label {
+  font-weight: 700;
+  color: #1e1e24;
+}
+.pf-tile-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c9c7d1;
+}
+.pf-tile-active .pf-tile-dot {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: #6e5aa6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-tile,
+  .pf-tile-pod {
+    transition: none;
+  }
+}

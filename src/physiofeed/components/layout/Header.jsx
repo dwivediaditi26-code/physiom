@@ -98,22 +98,30 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-slate-200">
-      {/* Mobile-only section nav: square, lightly-3D tiles (Feed/Evidence/
-          Explore/Communities/People/Messages/Saved), replacing the old
-          rounded violet pill row (2026-09-17, Aditi, circling the pills:
-          "redesign this... square buttons in 3D buttons... light blue"
-          then "indigo" then "the clicking on it that color should be
-          light" -- the active tile stays light too, told apart by its
-          border/ring rather than an inverted dark fill). The back-chevron
-          (was in the logo/icon row below) lives here now, since that row
-          -- previously just a bare unlabeled logo square on mobile once
-          the search/bell/message icons moved to physiom's own top header
-          -- is dropped entirely on mobile: "PhysioMind" already has its
-          own name+logo up there, so this was a second one saying nothing,
-          with a dead gap of empty header height around it ("there is a
-          space is left... remove it"). Kept for desktop below unchanged. */}
-      <div className="md:hidden relative border-t border-slate-200">
-        <div className="flex items-center gap-2.5 px-3 py-2.5 overflow-x-auto no-scrollbar">
+      {/* Mobile-only section nav: premium tactile 3D tiles (Feed/Evidence/
+          Explore/Communities/People/Messages/Saved) (2026-09-18, Aditi,
+          with a reference screenshot of soft-glass cards: "premium,
+          modern 3D UI... LinkedIn's credibility, Instagram's polish,
+          Apple-level spacing... subtle 3D depth, not childish" --
+          upgrading the flat-ish square tiles from the previous pass
+          (2026-09-17: "square buttons in 3D... light blue" -> "indigo"
+          -> "the clicking on it that color should be light"). Styling
+          lives in .pf-tile* (physiofeed.css) since the spec's hover-lift/
+          click-compress states need real :hover/:active, not inline
+          JSX style objects. The warm off-white strip background is
+          "Layer 2" in the spec's 3-layer depth system -- the tiles
+          (Layer 3) read as floating objects sitting just above it,
+          rather than sitting directly on the page's plain white.
+          The back-chevron (was in the logo/icon row below) lives here
+          now, since that row -- previously just a bare unlabeled logo
+          square on mobile once the search/bell/message icons moved to
+          physiom's own top header -- is dropped entirely on mobile:
+          "PhysioMind" already has its own name+logo up there, so this
+          was a second one saying nothing, with a dead gap of empty
+          header height around it ("there is a space is left... remove
+          it"). Kept for desktop below unchanged. */}
+      <div className="md:hidden relative border-t border-slate-200" style={{ background: "#FAFAF8" }}>
+        <div className="flex items-center gap-3 px-4 py-3 overflow-x-auto no-scrollbar">
           {location.pathname !== "/feed" && (
             <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
               <ChevronLeft size={22} />
@@ -123,30 +131,22 @@ export default function Header() {
             <NavLink
               key={item.path}
               to={item.path}
-              className="shrink-0 focus:outline-none"
-              style={({ isActive }) => ({
-                width: 64, height: 64, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                gap: 5, borderRadius: 16,
-                background: isActive ? "#E4DEF7" : "#FAF9FE",
-                border: isActive ? "1.5px solid #8F6FD4" : "none",
-                boxShadow: isActive
-                  ? "inset 0 1px 0 rgba(255,255,255,0.9), 0 3px 0 #D2C4EE, 0 5px 8px rgba(91,63,160,0.14)"
-                  : "inset 0 1px 0 rgba(255,255,255,0.9), 0 3px 0 #EDEAF9, 0 5px 8px rgba(91,63,160,0.08)",
-              })}
+              className={({ isActive }) => "pf-tile shrink-0 focus:outline-none" + (isActive ? " pf-tile-active" : "")}
             >
-              {({ isActive }) => (
-                <>
-                  <Icon name={item.icon} size={20} style={{ color: isActive ? "#453084" : "#6B5B9A" }} />
-                  <span style={{ fontSize: 10, fontWeight: 500, color: isActive ? "#453084" : "#6B5B9A", textAlign: "center", lineHeight: 1.2 }}>
-                    {item.label === "Physio Feed" ? "Feed" : item.label === "Communities" ? "Groups" : item.label}
-                  </span>
-                </>
-              )}
+              <span className="pf-tile-pod">
+                <Icon name={item.icon} size={20} />
+              </span>
+              <span className="pf-tile-label">
+                {item.label === "Physio Feed" ? "Feed" : item.label === "Communities" ? "Groups" : item.label}
+              </span>
+              <span className="pf-tile-dot" />
             </NavLink>
           ))}
         </div>
-        {/* Fade hint that there's more to scroll to. */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent" />
+        {/* Fade hint that there's more to scroll to -- matches the strip's
+            own #FAFAF8 now rather than pure white, so the fade doesn't
+            show a visible seam against it. */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8" style={{ background: "linear-gradient(to left, #FAFAF8, transparent)" }} />
       </div>
 
       {/* Logo/icon row -- desktop only now (see comment above). */}
