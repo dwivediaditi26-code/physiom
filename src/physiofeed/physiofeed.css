@@ -131,6 +131,12 @@
   box-shadow: 0 6px 14px rgba(50, 45, 70, 0.08), 0 2px 3px rgba(50, 45, 70, 0.05);
   transform: translateY(0);
   transition: transform 200ms ease, box-shadow 200ms ease;
+  /* .pf-tile is a NavLink (an <a>) -- Preflight is off for this whole
+     folder (see the big comment atop this file), so nothing was ever
+     resetting the browser's native link underline. It rendered under
+     every label, visible against the reference screenshot's clean
+     glass look (2026-09-18, Aditi: "these are not same"). */
+  text-decoration: none;
 }
 .pf-tile::after {
   content: "";
