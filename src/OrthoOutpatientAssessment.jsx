@@ -113,6 +113,13 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // used to only appear when a condition's `promote` list named it (Spine,
 // Sports/Overuse) or the therapist added it manually; now it's a standard
 // step like ROM/MMT for every Outpatient entry.
+// neuroScreen moved the same way (2026-09-18, Aditi: "there is neuro
+// screen in the ortho outpatient. It's not showing in this assessment
+// list. It should show permanently") -- it used to only appear when the
+// Spine Condition complaint promoted it or the therapist added it
+// manually via "Add assessment"; its findings now also feed the Care
+// Plan's Problem List (orthoClinicalKnowledge.js's NEURO_SCREEN_PROBLEMS),
+// so it needs to be available on every entry, not just Spine ones.
 // "techniques" (Treatment Techniques) dropped from the default step list
 // (2026-09-16, Aditi: "remove the treatment techniques as it's already in
 // the care plan treatment") -- Care Plan Treatment (carePlanTreatment,
@@ -120,7 +127,7 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // duplicate entry screen. Kept out of OPTIONAL_IDS too (not offered via
 // "Add assessment"); still in ORDERED_ALL/STEP_META so a patient record
 // saved before this change still renders correctly in Review/Summary.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -130,7 +137,7 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // before Region, and feeds it in via initialAiUpdates.demographics exactly
 // like an AI-parsed narrative already did.
 const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests"];
-const OPTIONAL_IDS = ["vitals", "edema", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
@@ -438,15 +445,6 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
 
   function goNext() {
     if (step < steps.length - 1) setStep(step + 1);
-  }
-  // The Care Plan's own landing page (OrthoCarePlanStep's "plan" phase)
-  // jumps straight to Problems/Goals/Treatment via this instead of stepping
-  // forward one at a time (2026-09-18, Aditi: "click on goal it should
-  // [show] what goals we have put").
-  function goToCarePlanPhase(phaseId) {
-    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
-    const idx = stepId ? steps.findIndex((s) => s.id === stepId) : -1;
-    if (idx !== -1) setStep(idx);
   }
   function goBack() {
     if (step > 0) { setStep(step - 1); return; }
@@ -818,10 +816,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 condition={condition}
                 setting="outpatient"
                 pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
+                neuroScreen={data.neuroScreen}
                 requireAuth={requireAuth}
                 phase={CAREPLAN_PHASE_BY_STEP[current.id]}
                 onAdvance={goNext}
-                onJumpToPhase={goToCarePlanPhase}
               />
             </>
           )}

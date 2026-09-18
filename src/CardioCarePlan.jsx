@@ -25,7 +25,7 @@ import { orthoStyles } from "./orthoStyles.js";
    `setData(prev => ...)`, never through this passed-in `data` reference, so
    the alias never leaks into the saved record.
    ============================================================ */
-export function CardioCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance, onJumpToPhase }) {
+export function CardioCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance }) {
   const aliased = useMemo(() => ({ ...data, meta: { ...data.meta, condition: data.meta?.system } }), [data]);
   return (
     <>
@@ -47,7 +47,6 @@ export function CardioCarePlanSection({ data, setData, initialPhase, floatingCTA
         floatingCTA={floatingCTA}
         phase={phase}
         onAdvance={onAdvance}
-        onJumpToPhase={onJumpToPhase}
       />
     </>
   );

@@ -38,6 +38,7 @@ export const PROBLEM_CATEGORIES = [
   { id: "function", label: "Functional / ADL", icon: "🛠️" },
   { id: "gait", label: "Gait / weight-bearing", icon: "🚶" },
   { id: "stability", label: "Joint stability", icon: "🔗" },
+  { id: "neuro", label: "Neurological", icon: "⚡" },
   { id: "other", label: "Other", icon: "📋" },
 ];
 
@@ -195,6 +196,46 @@ export const CONDITION_PROBLEMS = [
     ],
   },
 ];
+
+/* ============================================================
+   NEURO SCREEN PROBLEM (objective) — gated by the neuroScreen section's
+   own findings (myotomes/dermatomes/DTRs/Babinski/clonus), not by a
+   condition/setting pick. Positive findings suggest nerve root / peripheral
+   nerve involvement, so they should flow into Problem List -> Goals ->
+   Treatment -> Care Plan exactly like the pain/ROM/strength impairments
+   above -- previously the neuro screen's findings went nowhere once
+   recorded (2026-09-18, Aditi: "put the neurological screen content in
+   the ortho constant... problem list goals and treatment then there
+   should be care plan"). Same shape as CONDITION_PROBLEMS/SETTING_PROBLEMS
+   so it slots into the existing lookup chains below.
+   ============================================================ */
+export const NEURO_SCREEN_PROBLEMS = [
+  {
+    id: "neuro_screen_deficit", name: "Suspected nerve involvement (positive neuro screen)",
+    category: "neuro", refs: ["magee"], evidence: "B", treatmentCategories: [],
+    finding: "Positive neurological screen — reduced myotome strength, dermatomal sensory change, or abnormal reflex, suggesting nerve root / peripheral nerve involvement (Magee: neurological examination, nerve root screening)",
+    goals: [
+      g("ns_resolve", "Resolve / improve neurological signs", "long", 6, "Neuro screen (myotome / dermatome / reflex)", "Positive findings", "Findings resolved or improving; escalate if progressive or new red flags"),
+    ],
+  },
+];
+
+// Pull the specific abnormal rows out of the neuroScreen section's data
+// (NeuroScreenSection in orthoCommonSections.jsx) so the problem's
+// "findings" list shows exactly which myotome/dermatome/reflex triggered
+// it, same as how the pain impairment shows its own recorded NRS values.
+function collectNeuroFindings(neuro) {
+  if (!neuro) return [];
+  const out = [];
+  Object.entries(neuro.myotomes || {}).forEach(([row, grade]) => { if (grade && grade !== "5") out.push({ label: `Myotome — ${row}`, value: `${grade}/5` }); });
+  Object.entries(neuro.dermatomes || {}).forEach(([row, v]) => { if (v && v !== "Normal") out.push({ label: `Dermatome — ${row}`, value: v }); });
+  Object.entries(neuro.dtr || {}).forEach(([row, v]) => { if (v && !/normal/i.test(v)) out.push({ label: `Reflex — ${row}`, value: v }); });
+  if (neuro.babinski && /extensor/i.test(neuro.babinski)) out.push({ label: "Plantar response (Babinski)", value: neuro.babinski });
+  (Array.isArray(neuro.clonus) ? neuro.clonus : neuro.clonus ? [neuro.clonus] : [])
+    .filter((c) => c && !/^absent$/i.test(c))
+    .forEach((c) => out.push({ label: "Clonus", value: c }));
+  return out;
+}
 
 // condition id -> precaution lines (shown in the banner). Grounded in Brotzman.
 const CONDITION_PRECAUTIONS = {
@@ -389,6 +430,15 @@ export function buildOrthoKnowledge(ctx = {}) {
         out.push({ id: p.id, name: p.name, category: p.category, refs: p.refs, evidence: p.evidence, treatmentCategories: p.treatmentCategories || [], findings: [{ label: "Setting priority", value: p.finding }], baseline: { impKey: null, settingId: setting }, settingSpecific: true, _goals: p.goals });
       }
     }
+
+    // Neuro screen (objective) — only when the myotome/dermatome/reflex/
+    // Babinski/clonus screen actually has a positive finding recorded.
+    const neuroFindings = collectNeuroFindings(data?.neuroScreen);
+    if (neuroFindings.length) {
+      const p = NEURO_SCREEN_PROBLEMS[0];
+      const neuroCats = uniq(regs.flatMap((r) => { const rk = exKeyFor(r.id); return rk ? matchedCats(rk, /neural|nerve/i) : []; }));
+      out.push({ id: p.id, name: p.name, category: p.category, refs: p.refs, evidence: p.evidence, treatmentCategories: neuroCats, findings: neuroFindings, baseline: { impKey: null }, _goals: p.goals });
+    }
     return out;
   }
 
@@ -396,8 +446,8 @@ export function buildOrthoKnowledge(ctx = {}) {
   // region label / impairment key so we can rebuild the right template.
   function buildGoalsForProblem(problemId, baseline, setting) {
     const scale = SETTING_PROFILES[setting]?.timeframeScale ?? 1;
-    // Condition / setting problems carry their own goal templates.
-    const cond = CONDITION_PROBLEMS.find((p) => p.id === problemId) || SETTING_PROBLEMS.find((p) => p.id === problemId);
+    // Condition / setting / neuro-screen problems carry their own goal templates.
+    const cond = CONDITION_PROBLEMS.find((p) => p.id === problemId) || SETTING_PROBLEMS.find((p) => p.id === problemId) || NEURO_SCREEN_PROBLEMS.find((p) => p.id === problemId);
     if (cond) {
       return (cond.goals || []).map((g) => ({ templateId: g.id, label: g.label, term: g.term, weeks: scaleWeeks(g.weeks, scale), problemId, ...g.build() }));
     }
@@ -412,7 +462,7 @@ export function buildOrthoKnowledge(ctx = {}) {
 
   // Ranked, book-referenced exercise suggestions for a problem.
   function recommendInterventions(problemId) {
-    const cond = CONDITION_PROBLEMS.find((p) => p.id === problemId) || SETTING_PROBLEMS.find((p) => p.id === problemId);
+    const cond = CONDITION_PROBLEMS.find((p) => p.id === problemId) || SETTING_PROBLEMS.find((p) => p.id === problemId) || NEURO_SCREEN_PROBLEMS.find((p) => p.id === problemId);
     if (cond && cond.interventions) {
       return cond.interventions.map((r) => ({ ...r })).filter((r) => allExercises.some((e) => e.id === r.exId));
     }
@@ -436,7 +486,7 @@ export function buildOrthoKnowledge(ctx = {}) {
   }
 
   function problemById(id) {
-    const cond = CONDITION_PROBLEMS.find((p) => p.id === id) || SETTING_PROBLEMS.find((p) => p.id === id);
+    const cond = CONDITION_PROBLEMS.find((p) => p.id === id) || SETTING_PROBLEMS.find((p) => p.id === id) || NEURO_SCREEN_PROBLEMS.find((p) => p.id === id);
     if (cond) return cond;
     const impKey = id === "pain" ? "pain" : String(id).split("__")[0];
     const imp = impByKey(impKey);

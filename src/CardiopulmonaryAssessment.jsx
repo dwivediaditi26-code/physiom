@@ -2096,15 +2096,6 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   function goBack() {
     if (step > 0) setStep(step - 1);
   }
-  // The Care Plan's own landing page (CardioCarePlanSection's "plan" phase)
-  // jumps straight to Problems/Goals/Treatment via this instead of stepping
-  // forward one at a time (2026-09-18, Aditi: "click on goal it should
-  // [show] what goals we have put").
-  function goToCarePlanPhase(phaseId) {
-    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
-    const idx = stepId ? assessSteps.findIndex((s) => s.id === stepId) : -1;
-    if (idx !== -1) setStep(2 + idx);
-  }
   function restart() {
     setStep(0);
     setSetting(null);
@@ -2508,7 +2499,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
-            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} onJumpToPhase={goToCarePlanPhase} />
+            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
           )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />}

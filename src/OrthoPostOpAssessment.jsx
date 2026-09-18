@@ -347,15 +347,6 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   function goNext() {
     if (step < steps.length - 1) setStep(step + 1);
   }
-  // The Care Plan's own landing page (OrthoCarePlanStep's "plan" phase)
-  // jumps straight to Problems/Goals/Treatment via this instead of stepping
-  // forward one at a time (2026-09-18, Aditi: "click on goal it should
-  // [show] what goals we have put").
-  function goToCarePlanPhase(phaseId) {
-    const stepId = Object.keys(CAREPLAN_PHASE_BY_STEP).find((k) => CAREPLAN_PHASE_BY_STEP[k] === phaseId);
-    const idx = stepId ? steps.findIndex((s) => s.id === stepId) : -1;
-    if (idx !== -1) setStep(idx);
-  }
   function goBack() {
     if (step > 0) setStep(step - 1);
     else onExit?.();
@@ -516,7 +507,6 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 pain={{ now: data.pain?.nrs_now ?? data.pain?.now, worst: data.pain?.nrs_worst ?? data.pain?.worst }}
                 phase={CAREPLAN_PHASE_BY_STEP[current.id]}
                 onAdvance={goNext}
-                onJumpToPhase={goToCarePlanPhase}
               />
             </>
           )}

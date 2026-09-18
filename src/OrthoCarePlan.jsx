@@ -22,7 +22,7 @@ const orthoRegionLabel = (r) =>
     .filter(Boolean)
     .join(" ");
 
-export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condition, setting, pain, initialPhase, floatingCTA, requireAuth, phase, onAdvance, onJumpToPhase }) {
+export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condition, setting, pain, neuroScreen, initialPhase, floatingCTA, requireAuth, phase, onAdvance }) {
   const regions = (selectedRegions || []).map((r) => ({ id: r.id, side: r.side, label: orthoRegionLabel(r) }));
   // Pain drives the (global) pain problem; fall back to the app-wide NRS
   // fields the profile also reads so both views agree.
@@ -36,9 +36,9 @@ export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condit
   const cpRef = useRef(cp);
   cpRef.current = cp;
 
-  const data = { meta, pain: painCtx, orthoCarePlan: cp };
+  const data = { meta, pain: painCtx, orthoCarePlan: cp, neuroScreen };
   const setData = (updater) => {
-    const prev = { meta, pain: painCtx, orthoCarePlan: cpRef.current };
+    const prev = { meta, pain: painCtx, orthoCarePlan: cpRef.current, neuroScreen };
     const next = typeof updater === "function" ? updater(prev) : updater;
     cpRef.current = next.orthoCarePlan;
     setCp(next.orthoCarePlan);
@@ -48,7 +48,7 @@ export function OrthoCarePlanStep({ patientData, onSave, selectedRegions, condit
   return (
     <>
       <style>{orthoStyles()}</style>
-      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} requireAuth={requireAuth} phase={phase} onAdvance={onAdvance} onJumpToPhase={onJumpToPhase} />
+      <CarePlanSection data={data} setData={setData} knowledge={knowledge} sectionKey="orthoCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} requireAuth={requireAuth} phase={phase} onAdvance={onAdvance} />
     </>
   );
 }

@@ -966,7 +966,29 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
       </div>
 
       {problems.length === 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet. Tap "Problems" above to get started.</div>}
-      {problems.length > 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">{problems.length} problem{problems.length > 1 ? "s" : ""} selected — tap "Goals" above to set a target.</div>}
+
+      {/* The written-out problem list itself -- previously a problem with no
+          goal yet was invisible here (only its count showed, e.g. "1 problem
+          selected"), which read as "it doesn't show what I picked" even
+          though the selection had saved fine (2026-09-18, Aditi: "when I
+          pick problem ... it doesn't show what problem I have selected").
+          Every selected problem now prints by name, with a nudge for the
+          ones that don't have a goal attached yet. */}
+      {problems.length > 0 && (
+        <div className="summary-card" style={{ cursor: "default" }}>
+          <div className="summary-title">🧩 Problem list</div>
+          {problems.map((p) => {
+            const hasGoal = goals.some((g) => g.problemId === p.id);
+            return (
+              <div key={p.id} className="summary-row">
+                <span className="summary-key">{p.name}</span>
+                {!hasGoal && <span className="summary-val" style={{ color: BRAND.grayLight, fontStyle: "italic" }}>No goal yet</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {goals.map((g) => {
         const p = problems.find((x) => x.id === g.problemId);
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
@@ -1278,7 +1300,7 @@ function ProgressPhase({ goals, sessions }) {
 // Omitting `phase` keeps the original single-page, tabbed behaviour
 // (SpecialtyPatientProfile.jsx's live profile view, where a wizard-style
 // step sequence doesn't apply).
-export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance, onJumpToPhase }) {
+export function CarePlanSection({ data, setData, knowledge, sectionKey, initialPhase, floatingCTA, requireAuth, phase: controlledPhase, onAdvance }) {
   const [d, set] = useSectionData(data, setData, sectionKey);
   const problems = Array.isArray(d.problems) ? d.problems : [];
   const goals = Array.isArray(d.goals) ? d.goals : [];
@@ -1289,14 +1311,30 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
   // "the care plan should open like this page ... when we click on goal it
   // should [show] what goals we have put ... same if click on problem list").
   const [internalPhase, setInternalPhase] = useState(initialPhase || "plan");
-  const phase = controlled ? controlledPhase : internalPhase;
-  const goNextPhase = (next) => (controlled ? onAdvance?.() : setInternalPhase(next));
-  // Arbitrary jump (not just "next") -- the Plan overview's Problems/Goals/
-  // Treatment tiles use this to open that phase directly. Uncontrolled
-  // (patient profile, tabbed) just flips the internal tab; controlled (one
-  // phase per wizard step) hands off to the host wizard's own `onJumpToPhase`,
-  // which moves its step counter to the matching step.
-  const goToPhase = (id) => (controlled ? onJumpToPhase?.(id) : setInternalPhase(id));
+  // In the wizard (controlled), each phase is its own step -- tapping a Plan
+  // tile used to move the wizard's real step counter to reach it, which read
+  // as leaving the Care Plan for "a different tab" of the assessment
+  // (2026-09-18, Aditi: "why are you taking me to the problem list of the
+  // different tab"). `viewOverride` shows that phase IN PLACE instead,
+  // without moving the host wizard's step at all -- the header/step-count
+  // stays on "Care Plan" the whole time. Cleared whenever the host wizard's
+  // own step actually changes (real Back/Next/step-nav navigation), so a
+  // stale override can never survive a real step change.
+  const [viewOverride, setViewOverride] = useState(null);
+  useEffect(() => { setViewOverride(null); }, [controlledPhase]);
+  const phase = controlled ? (viewOverride || controlledPhase) : internalPhase;
+  // "Continue"/"Done" inside a phase: normal sequential build (no override)
+  // still advances the host wizard to its next real step (`next` unused
+  // there -- the wizard's own step order decides what's next); opened via a
+  // Plan tile (override active) just closes the override and returns to the
+  // hub, since jumping in from the hub shouldn't also silently walk the
+  // wizard forward through steps the therapist never asked to visit.
+  // Uncontrolled (patient profile) keeps switching straight to `next`, same
+  // as always.
+  const goNextPhase = (next) => (controlled ? (viewOverride ? setViewOverride(null) : onAdvance?.()) : setInternalPhase(next));
+  // The Plan overview's Problems/Goals/Treatment tiles use this to open that
+  // phase directly, in place.
+  const goToPhase = (id) => (controlled ? setViewOverride(id) : setInternalPhase(id));
 
   // Recomputed from the live assessment data every render, so editing an
   // assessment value immediately changes what's suggested here.
@@ -1336,6 +1374,13 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
           counts on top of each other). Reappears once you're inside a
           phase, "Plan" included, so there's still a way back to the hub. */}
       {!controlled && phase !== "plan" && <PhaseNav phase={phase} setPhase={setInternalPhase} counts={{ problems: problems.length, goals: goals.length, treatment: treatments.length, plan: 0, sessions: sessions.length, progress: 0 }} />}
+      {/* Only shown when a Plan tile opened this phase in place (viewOverride)
+          -- the wizard's own step never moved, so this is the only way back
+          to the hub (2026-09-18, Aditi: "click on the problem in that page
+          only it should show the problem list" -- no real step change). */}
+      {controlled && viewOverride && (
+        <button type="button" className="ghost-btn" style={{ marginBottom: 14 }} onClick={() => setViewOverride(null)}>← Back to Care Plan</button>
+      )}
       {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => goNextPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => goNextPhase("plan")} floatingCTA={floatingCTA} requireAuth={requireAuth} />}
@@ -1347,8 +1392,8 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
 }
 
 // Thin wrapper: the Neuro Care Plan is CarePlanSection + neuro knowledge.
-export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance, onJumpToPhase }) {
-  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} onJumpToPhase={onJumpToPhase} />;
+export function NeuroCarePlanSection({ data, setData, initialPhase, floatingCTA, phase, onAdvance }) {
+  return <CarePlanSection data={data} setData={setData} knowledge={NEURO_KNOWLEDGE} sectionKey="neuroCarePlan" initialPhase={initialPhase} floatingCTA={floatingCTA} phase={phase} onAdvance={onAdvance} />;
 }
 
 /* formatters[stepId] contract for a specialty's SummarySection. Shape is
