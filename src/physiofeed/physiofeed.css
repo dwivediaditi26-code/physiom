@@ -101,6 +101,26 @@
   overflow: hidden;
 }
 
+/* PhysioFeed's own header (search/section-nav/tiles) is sticky inside
+   the same scroll as physiom's own outer app header (AppFull.jsx's
+   pm-mobile-hdr, also sticky, ~64px + safe-area on mobile) -- both
+   pinned to `top: 0` meant this one stuck directly BEHIND that one on
+   scroll, so only its bottom half peeked out below the app header
+   instead of sitting cleanly under it (2026-09-18, Aditi: "when we
+   scrolling it showing here half half things are showing"). Same fix
+   already used for the Ortho wizard's own sticky topbar
+   (CardiopulmonaryAssessment.jsx / NeurologicalAssessment.jsx): offset
+   by --pm-mobile-hdr-h (utils.jsx) on mobile only -- desktop has no
+   second sticky header above this one, so top:0 stays correct there. */
+.pf-header {
+  top: 0;
+}
+@media (max-width: 767px) {
+  .pf-header {
+    top: var(--pm-mobile-hdr-h, 64px);
+  }
+}
+
 /* PhysioFeed mobile section nav -- premium tactile 3D tiles
    (2026-09-18, Aditi: "premium, modern 3D UI... LinkedIn's credibility,
    Instagram's polish, Apple-level spacing... subtle 3D depth, not
@@ -190,9 +210,16 @@
   transform: translateY(-1.5px);
 }
 .pf-tile-active .pf-tile-pod {
-  background: #2f2a45;
-  color: #ffffff;
-  box-shadow: 0 0 0 5px rgba(110, 90, 166, 0.16), 0 4px 10px rgba(50, 45, 70, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  /* Was a solid dark/near-black fill, matching the reference image's
+     active pod -- but Aditi's earlier, more specific instruction for
+     this tile set overrides that: "the clicking on it that color
+     should be light" (2026-09-17). Re-drifted dark when the pod got
+     its own glow treatment; corrected back to light purplish
+     (2026-09-18: "light purplish... when we click on it it is
+     becoming black make it light purplish the color we decided"). */
+  background: #d9cdf2;
+  color: #453084;
+  box-shadow: 0 0 0 5px rgba(110, 90, 166, 0.16), 0 4px 10px rgba(110, 90, 166, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 .pf-tile-label {
   font-size: 11px;

@@ -97,7 +97,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-20 bg-white border-b border-slate-200">
+    <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
       {/* Mobile-only section nav: premium tactile 3D tiles (Feed/Evidence/
           Explore/Communities/People/Messages/Saved) (2026-09-18, Aditi,
           with a reference screenshot of soft-glass cards: "premium,
