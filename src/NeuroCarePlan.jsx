@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, createContext, useContext } from "react";
+import React, { useState, useMemo, useEffect, useRef, createContext, useContext } from "react";
 import { SectionIntro, TextField, TextArea, SelectField, Segmented, Stepper, useSectionData, BRAND, InfoButton } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB } from "./sharedClinicalData.js";
 import { exerciseRichItem } from "./exerciseCardKit.jsx";
@@ -204,15 +204,17 @@ function SelectedProblemCard({ p, categoryLabel, onRemove }) {
 function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, setting, floatingCTA }) {
   const kb = useKB();
   const { categoryLabel, conditionLabel, settingLabel, PROBLEM_CATEGORIES } = kb;
-  // Two views in one phase (2026-09-18, Aditi: "just put the add button ...
-  // when we click on it then open that page"): compact by default (just
-  // what's already selected, with ✕ to remove), the full suggested/manual
-  // picker only behind "+ Add problem".
-  const [adding, setAdding] = useState(false);
+  // Single always-open view (2026-09-18, Aditi: "in the problem list it
+  // should show which problems are there normally... why it is asking me
+  // to select one problem at least it is wrong") -- reverts the same-day
+  // "compact list, suggestions hidden behind + Add problem" change: the
+  // suggested findings should be visible and selectable immediately, and
+  // reaching Goals must never require picking a problem first.
   const [manualOpen, setManualOpen] = useState(false);
   const [mCat, setMCat] = useState("");
   const [mName, setMName] = useState("");
   const chosenIds = new Set(problems.map((p) => p.sourceId || p.id));
+  const manualProblems = problems.filter((p) => p.manual);
 
   const toggle = (s) => {
     if (chosenIds.has(s.id)) setProblems(problems.filter((p) => (p.sourceId || p.id) !== s.id));
@@ -224,31 +226,16 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
     setMName(""); setMCat(""); setManualOpen(false);
   };
 
-  if (!adding) {
-    return (
-      <>
-        <SectionIntro icon="🧩" title="Problem list" sub="What you've selected for this care plan." />
-        {problems.length === 0 && <div className="summary-empty">No problems selected yet. Tap "+ Add problem" to choose from suggested findings or add your own.</div>}
-        {problems.map((p) => (
-          <SelectedProblemCard key={p.id} p={p} categoryLabel={categoryLabel} onRemove={() => setProblems(problems.filter((x) => x.id !== p.id))} />
-        ))}
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setAdding(true)}>＋ Add problem</button>
-        {problems.length > 0 && (
-          <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={onNext}>
-            Continue to Goals ({problems.length}) →
-          </button>
-        )}
-      </>
-    );
-  }
-
   return (
     <>
-      <SectionIntro icon="🧩" title="Add problems" sub="Suggested from the findings you already recorded — select the ones you want to treat."
-        action={<button type="button" className="ghost-btn" style={{ padding: "6px 14px", fontSize: 12.5 }} onClick={() => setAdding(false)}>Done</button>} />
+      <SectionIntro icon="🧩" title="Problem list" sub="Suggested from the findings you already recorded — select the ones you want to treat, or add your own." />
       <PrecautionsBanner condition={condition} setting={setting} />
 
-      {suggested.length === 0 && (
+      {manualProblems.map((p) => (
+        <SelectedProblemCard key={p.id} p={p} categoryLabel={categoryLabel} onRemove={() => setProblems(problems.filter((x) => x.id !== p.id))} />
+      ))}
+
+      {suggested.length === 0 && !manualProblems.length && (
         <div className="summary-empty">No problems could be suggested yet — record findings in the assessment steps (motor, tone, balance, gait, functional) and they'll appear here. You can still add problems manually below.</div>
       )}
 
@@ -295,8 +282,11 @@ function ProblemsPhase({ suggested, problems, setProblems, onNext, condition, se
         </div>
       )}
 
-      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={() => setAdding(false)}>
-        Done ({problems.length} selected)
+      {/* Always reachable -- Goals/Treatment/Plan must not be gated behind
+          picking at least one problem; a therapist who genuinely has none
+          to record here still needs a way forward. */}
+      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 16 })} onClick={onNext}>
+        Continue to Goals{problems.length > 0 ? ` (${problems.length})` : ""} →
       </button>
     </>
   );
@@ -340,48 +330,20 @@ function GoalEditor({ goal, onChange, onRemove }) {
 
 function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA }) {
   const { buildGoalsForProblem } = useKB();
-  // Compact by default -- just the goals already set, grouped by problem;
-  // suggestions/custom-add only behind "+ Add goal" (2026-09-18, Aditi:
-  // "I just want to see what problems I have selected without opening the
-  // whole ... goal list").
-  const [adding, setAdding] = useState(false);
-
-  if (!adding) {
-    return (
-      <>
-        <SectionIntro icon="🎯" title="Goals" sub="What you've set for this care plan." />
-        {problems.length === 0 && <div className="summary-empty">Select at least one problem first.</div>}
-        {problems.length > 0 && goals.length === 0 && <div className="summary-empty">No goals added yet. Tap "+ Add goal" to choose a suggested goal or write your own.</div>}
-        {problems.map((p) => {
-          const mine = goals.filter((g) => g.problemId === p.id);
-          if (!mine.length) return null;
-          return (
-            <div key={p.id} style={{ marginBottom: 18 }}>
-              <div className="subheading" style={{ marginTop: 10 }}>{p.name}</div>
-              {mine.map((g) => (
-                <GoalEditor key={g.id} goal={g}
-                  onChange={(next) => setGoals(goals.map((x) => (x.id === g.id ? next : x)))}
-                  onRemove={() => setGoals(goals.filter((x) => x.id !== g.id))} />
-              ))}
-            </div>
-          );
-        })}
-        {problems.length > 0 && (
-          <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setAdding(true)}>＋ Add goal</button>
-        )}
-        {goals.length > 0 && (
-          <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
-            Continue to Treatment ({goals.length}) →
-          </button>
-        )}
-      </>
-    );
-  }
+  // Single always-open view (2026-09-18, Aditi: "goals should already
+  // present... why it is asking me to select one problem at least it is
+  // wrong") -- reverts the same-day "compact list, suggestions hidden
+  // behind + Add goal" change: each selected problem's suggested goal
+  // templates show immediately, and Treatment must stay reachable even
+  // with zero problems/goals -- there's nothing to force here.
 
   return (
     <>
-      <SectionIntro icon="🎯" title="Add goals" sub="Pre-filled from this patient's own recorded values — edit anything. A problem can have both a short-term and a long-term goal."
-        action={<button type="button" className="ghost-btn" style={{ padding: "6px 14px", fontSize: 12.5 }} onClick={() => setAdding(false)}>Done</button>} />
+      <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything, or add your own. A problem can have both a short-term and a long-term goal." />
+
+      {problems.length === 0 && (
+        <div className="summary-empty">No problems selected yet, so there's nothing to set a goal for -- go back to Problem List first, or continue on without one.</div>
+      )}
 
       {problems.map((p) => {
         const mine = goals.filter((g) => g.problemId === p.id);
@@ -426,8 +388,8 @@ function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA })
         );
       })}
 
-      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={() => setAdding(false)}>
-        Done ({goals.length} goals)
+      <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
+        Continue to Treatment{goals.length > 0 ? ` (${goals.length})` : ""} →
       </button>
     </>
   );
@@ -837,17 +799,15 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
   // AddTreatmentPanel's floating "Add to plan" bar is showing -- both are
   // position:fixed at the same spot, so only one can be on screen at once.
   const [doseEditing, setDoseEditing] = useState(false);
-  // The picker used to always sit on the page (2026-09-11, Aditi: "I don't
-  // want my treatment section to have the add to treatment page"), but that
-  // reads as "the whole treatment list" once this phase is reached from the
-  // Care Plan hub instead of built fresh step-by-step -- now behind "+ Add
-  // treatment" like Problems/Goals (2026-09-18, Aditi: "I just want to see
-  // what ... I have selected without opening the whole ... treatment list").
-  const [adding, setAdding] = useState(false);
+  // The picker sits permanently on the page again (2026-09-18, Aditi:
+  // "care plan treatment should open normally it should not say add to
+  // treatment") -- reverts the same-day "+ Add treatment" gate back to
+  // the 2026-09-11 design (general library / evidence protocol / clinic
+  // protocol presented directly, no button-press to reveal it).
 
   return (
     <>
-      <SectionIntro icon="🏋" title="Treatment" action={adding && !searchOpen && (
+      <SectionIntro icon="🏋" title="Treatment" action={!searchOpen && (
         <button type="button" aria-label="Search treatments" onClick={() => setSearchOpen(true)}
           style={{ width: 34, height: 34, flexShrink: 0, borderRadius: "50%", border: `1.5px solid ${BRAND.border}`, background: "#fff", color: BRAND.purpleDark, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >🔍</button>
@@ -904,39 +864,31 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
         </div>
       )}
 
-      {!treatments.length && !adding && <div className="summary-empty">No treatments added yet. Tap "+ Add treatment" to browse exercises and techniques.</div>}
+      {!treatments.length && <div className="summary-empty">No treatments added yet -- browse and add from the library below, or continue on without any.</div>}
 
-      {!adding && (
-        <>
-          <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setAdding(true)}>＋ Add treatment</button>
-          {treatments.length > 0 && (
-            <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 10 })} onClick={onNext}>Review treatment plan →</button>
-          )}
-        </>
+      {/* Always reachable, same reasoning as Problems/Goals -- an empty
+          treatment list must not block moving on. Hidden only while a dose
+          is actively being edited below, so the two fixed-position bars
+          don't stack on top of each other. */}
+      {!doseEditing && (
+        <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 10, marginBottom: 14 })} onClick={onNext}>Review treatment plan →</button>
       )}
 
-      {adding && (
-        <>
-          {!doseEditing && (
-            <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 14 }} onClick={() => setAdding(false)}>Done adding</button>
-          )}
-          <AddTreatmentPanel
-            allGoals={goals}
-            existing={new Set(treatments.map((t) => t.exerciseId))}
-            requireAuth={requireAuth}
-            floatingCTA={floatingCTA}
-            onDoseEditingChange={setDoseEditing}
-            search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
-            onAdd={(t) => {
-              // If this exercise is already in the plan (added under another
-              // goal), just link the existing record to the newly picked goals too.
-              const dup = treatments.find((x) => x.exerciseId && x.exerciseId === t.exerciseId);
-              if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
-              else setTreatments([...treatments, t]);
-            }}
-          />
-        </>
-      )}
+      <AddTreatmentPanel
+        allGoals={goals}
+        existing={new Set(treatments.map((t) => t.exerciseId))}
+        requireAuth={requireAuth}
+        floatingCTA={floatingCTA}
+        onDoseEditingChange={setDoseEditing}
+        search={search} setSearch={setSearch} searchOpen={searchOpen} setSearchOpen={setSearchOpen}
+        onAdd={(t) => {
+          // If this exercise is already in the plan (added under another
+          // goal), just link the existing record to the newly picked goals too.
+          const dup = treatments.find((x) => x.exerciseId && x.exerciseId === t.exerciseId);
+          if (dup) setTreatments(treatments.map((x) => (x.id === dup.id ? { ...x, goalIds: [...new Set([...x.goalIds, ...t.goalIds])] } : x)));
+          else setTreatments([...treatments, t]);
+        }}
+      />
     </>
   );
 }
@@ -952,23 +904,26 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
 // -- so no new edit surface was needed, just a way in from here.
 function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
   const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
+  // The count tiles used to either jump to a whole other editor screen (too
+  // far) or do nothing at all (too far the other way -- 2026-09-18, Aditi:
+  // "if I click on two goals I don't have to scroll down" -- she still
+  // wants tapping "2 Goals" to land her on the goals right away, just
+  // without leaving this page). scrollIntoView jumps straight to that
+  // section further down THIS SAME page instead of switching views.
+  const problemsRef = useRef(null);
+  const goalsRef = useRef(null);
+  const treatmentRef = useRef(null);
+  const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <>
-      {/* Plain counts now, not buttons -- these used to jump straight to
-          that phase's full editor on tap, which read as "why is tapping
-          the treatment number taking me to a whole other page" once
-          Problems/Goals/Treatment were all written out below anyway
-          (2026-09-18, Aditi: "when i click on the treatment it's taking
-          me to the treatment section i don't want it i want it to be
-          listed"). Everything lives on this one page now; each section
-          below has its own explicit "+ Add" link for editing. */}
-      <SectionIntro icon="📋" title="Care plan" sub="What you intend to do." />
+      <SectionIntro icon="📋" title="Care plan" sub="What you intend to do. Tap a number to jump straight to that list." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(70px,1fr))", gap: 8, marginBottom: 16 }}>
-        {[["Problems", problems.length], ["Goals", goals.length], ["Treatments", treatments.length]].map(([l, v]) => (
-          <div key={l} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
+        {[["Problems", problems.length, problemsRef], ["Goals", goals.length, goalsRef], ["Treatments", treatments.length, treatmentRef]].map(([l, v, ref]) => (
+          <button key={l} type="button" onClick={() => scrollTo(ref)}
+            style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: BRAND.purpleDark }}>{v}</div>
             <div style={{ fontSize: 10.5, color: BRAND.gray, fontWeight: 600 }}>{l}</div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -981,55 +936,59 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
           pick problem ... it doesn't show what problem I have selected").
           Every selected problem now prints by name, with a nudge for the
           ones that don't have a goal attached yet. */}
-      {problems.length > 0 && (
-        <div className="summary-card" style={{ cursor: "default" }}>
-          <div className="summary-title">🧩 Problem list</div>
-          {problems.map((p) => {
-            const hasGoal = goals.some((g) => g.problemId === p.id);
-            return (
-              <div key={p.id} className="summary-row">
-                <span className="summary-key">{p.name}</span>
-                {!hasGoal && <span className="summary-val" style={{ color: BRAND.grayLight, fontStyle: "italic" }}>No goal yet</span>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("problems")}>＋ Add problem</button>
+      <div ref={problemsRef} style={{ scrollMarginTop: 12 }}>
+        {problems.length > 0 && (
+          <div className="summary-card" style={{ cursor: "default" }}>
+            <div className="summary-title">🧩 Problem list</div>
+            {problems.map((p) => {
+              const hasGoal = goals.some((g) => g.problemId === p.id);
+              return (
+                <div key={p.id} className="summary-row">
+                  <span className="summary-key">{p.name}</span>
+                  {!hasGoal && <span className="summary-val" style={{ color: BRAND.grayLight, fontStyle: "italic" }}>No goal yet</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("problems")}>＋ Add problem</button>
+      </div>
 
-      {goals.map((g) => {
-        const p = problems.find((x) => x.id === g.problemId);
-        const mine = treatments.filter((t) => t.goalIds.includes(g.id));
-        return (
-          <div key={g.id} className="summary-card" style={{ cursor: "default" }}>
-            <div className="summary-title">🎯 {g.measure}</div>
-            <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 8 }}>
-              {p ? `${p.name} · ` : ""}{g.baseline} → {g.target} · {g.weeks} weeks · {g.term === "short" ? "STG" : "LTG"}
+      <div ref={goalsRef} style={{ scrollMarginTop: 12 }}>
+        {goals.map((g) => {
+          const p = problems.find((x) => x.id === g.problemId);
+          const mine = treatments.filter((t) => t.goalIds.includes(g.id));
+          return (
+            <div key={g.id} className="summary-card" style={{ cursor: "default" }}>
+              <div className="summary-title">🎯 {g.measure}</div>
+              <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 8 }}>
+                {p ? `${p.name} · ` : ""}{g.baseline} → {g.target} · {g.weeks} weeks · {g.term === "short" ? "STG" : "LTG"}
+              </div>
+              {mine.length === 0 && <div style={{ fontSize: 12, color: BRAND.grayLight, fontStyle: "italic" }}>No treatments added for this goal.</div>}
+              {mine.map((t) => (
+                <div key={t.id} className="summary-row">
+                  <span className="summary-key">{t.name}</span>
+                  <span className="summary-val">{doseLine(t)}</span>
+                </div>
+              ))}
             </div>
-            {mine.length === 0 && <div style={{ fontSize: 12, color: BRAND.grayLight, fontStyle: "italic" }}>No treatments added for this goal.</div>}
-            {mine.map((t) => (
+          );
+        })}
+        {general.length > 0 && (
+          <div className="summary-card" style={{ cursor: "default" }}>
+            <div className="summary-title">General (not linked to a goal)</div>
+            {general.map((t) => (
               <div key={t.id} className="summary-row">
                 <span className="summary-key">{t.name}</span>
                 <span className="summary-val">{doseLine(t)}</span>
               </div>
             ))}
           </div>
-        );
-      })}
-      {general.length > 0 && (
-        <div className="summary-card" style={{ cursor: "default" }}>
-          <div className="summary-title">General (not linked to a goal)</div>
-          {general.map((t) => (
-            <div key={t.id} className="summary-row">
-              <span className="summary-key">{t.name}</span>
-              <span className="summary-val">{doseLine(t)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {problems.length > 0 && (
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("goals")}>＋ Add goal</button>
-      )}
+        )}
+        {problems.length > 0 && (
+          <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("goals")}>＋ Add goal</button>
+        )}
+      </div>
 
       {/* A flat, always-visible Treatment list -- before this, a treatment
           only showed up nested inside whichever goal card it was linked to,
@@ -1038,28 +997,30 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
           treatment showing on this page). Same Problem List / Goals /
           Treatment as their own written-out subtopics the assessment's own
           read-only Care Plan page already uses, just editable here. */}
-      {treatments.length > 0 && (
-        <div className="summary-card" style={{ cursor: "default" }}>
-          <div className="summary-title">🏋 Treatment list</div>
-          {treatments.map((t) => {
-            const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
-            return (
-              <div key={t.id} style={{ padding: "8px 0", borderTop: `1px solid ${BRAND.border}` }}>
-                <div className="summary-row" style={{ padding: 0 }}>
-                  <span className="summary-key">{t.name}</span>
-                  <span className="summary-val">{doseLine(t)}</span>
+      <div ref={treatmentRef} style={{ scrollMarginTop: 12 }}>
+        {treatments.length > 0 && (
+          <div className="summary-card" style={{ cursor: "default" }}>
+            <div className="summary-title">🏋 Treatment list</div>
+            {treatments.map((t) => {
+              const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
+              return (
+                <div key={t.id} style={{ padding: "8px 0", borderTop: `1px solid ${BRAND.border}` }}>
+                  <div className="summary-row" style={{ padding: 0 }}>
+                    <span className="summary-key">{t.name}</span>
+                    <span className="summary-val">{doseLine(t)}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
+                    {myGoals.length ? `For: ${myGoals.map((g) => g.measure).join(", ")}` : "General (not linked to a goal)"}
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
-                  {myGoals.length ? `For: ${myGoals.map((g) => g.measure).join(", ")}` : "General (not linked to a goal)"}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {problems.length > 0 && (
-        <button type="button" className="ghost-btn" style={{ width: "100%" }} onClick={() => onGoToPhase?.("treatment")}>＋ Add treatment</button>
-      )}
+              );
+            })}
+          </div>
+        )}
+        {problems.length > 0 && (
+          <button type="button" className="ghost-btn" style={{ width: "100%" }} onClick={() => onGoToPhase?.("treatment")}>＋ Add treatment</button>
+        )}
+      </div>
     </>
   );
 }
