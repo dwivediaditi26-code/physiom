@@ -36,7 +36,7 @@
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BRAND, useSectionData, Stepper, Segmented, InfoButton, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
+import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem } from "./orthoAdvancedTools.jsx";
@@ -220,6 +220,16 @@ function kcRichItemFor(testName) {
 function nktRichItemFor(muscleName) {
   const t = findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "muscle") || findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "label");
   return t ? cpaRichItem(t) : null;
+}
+// note (the condition's own line on why this screen matters) goes into the
+// info card too, so the how-to/why lives in one place; tests with no match
+// in the Functional Movement Screen library still get a card from it.
+function functionalRichItem(testName, note) {
+  const base = fmaRichItemFor(testName);
+  if (!note) return base;
+  const noteCard = <InfoCard icon="📝" label="Why it's screened here" tint="amber">{note}</InfoCard>;
+  if (!base) return { title: testName, perform: noteCard };
+  return { ...base, perform: <>{base.perform}{noteCard}</> };
 }
 function fmaRichItemFor(testName) {
   const t = findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
@@ -1777,7 +1787,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {isV1 ? (
             <ModuleCard label="Functional Screen" color="#16A34A">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={fmaRichItemFor(condition.functionalScreen.testName)} />
+                <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
                 {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.testName} text={condition.functionalScreen.note} eyebrow="NOTE" />}
               </div>
@@ -1824,7 +1834,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               ) : (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={fmaRichItemFor(condition.functionalScreen.name)} />
+                    <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note)} />
                     <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
                     {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.name} text={condition.functionalScreen.note} eyebrow="NOTE" />}
                   </div>
