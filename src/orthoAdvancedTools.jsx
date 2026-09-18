@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { FmaIcon } from "./fmaIcons.jsx";
+import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { SectionIntro, TextArea, InfoButton, InfoCard, InfoCardGrid, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
@@ -281,17 +281,25 @@ export function kcRichItem(t) {
   };
 }
 
+function kcHelpsFind(t) {
+  const m = /^.*?[.!?](\s|$)/.exec(String(t.chainEffect || ""));
+  const first = m ? m[0].trim() : String(t.chainEffect || "");
+  return `Screens ${t.joint || "this joint"} (${String(t.role || "").toLowerCase()}). ${first}`.trim();
+}
+
 export function KineticChainSection({ data, setData, sectionKey = "kineticChain" }) {
   const { d, set, activeKey, setActiveKey } = useAdvActiveRegion(data, setData, sectionKey, KC_REGION_KEYS);
+  const [openId, setOpenId] = useState(null);
   const region = KC_REGIONS[activeKey];
   const entry = d[activeKey] || {};
   const counts = {};
   KC_REGION_KEYS.forEach((k) => (counts[k] = kcCount(d[k], KC_REGIONS[k].tests)));
+  const openTest = openId ? region.tests.find((t) => t.id === openId) : null;
 
   return (
     <>
       <SectionIntro icon="⛓️" title="Kinetic Chain" info="Joint-by-joint theory (Cook & Boyle): each region alternates between needing mobility and needing stability. A restriction or instability at one link commonly shows up as compensation further along the chain." />
-      <ColorRegionTabs tabs={KC_REGION_KEYS} activeKey={activeKey} onSelect={setActiveKey} regionsData={KC_REGIONS} counts={counts} />
+      <ColorRegionTabs tabs={KC_REGION_KEYS} activeKey={activeKey} onSelect={(k) => { setOpenId(null); setActiveKey(k); }} regionsData={KC_REGIONS} counts={counts} />
       <div className="rom-card">
         <div className="rom-card-title">
           {region.label}
@@ -299,16 +307,57 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
             {region.role}
           </span>
         </div>
-        {region.tests.map((t) => (
-          <div className="movement-card" key={t.id}>
-            <div className="movement-name-row">
-              <span className="movement-name">{t.label}</span>
-              <InfoButton title={t.label} richItem={kcRichItem(t)} />
-            </div>
-            <div className="muscle-subtitle">{t.joint}</div>
-            <OptionChips options={t.options} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
+
+        {!openTest && (
+          <div className="tile-grid-2" style={{ gap: 10 }}>
+            {region.tests.map((t) => {
+              const done = !!entry[t.id];
+              return (
+                <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
+                  style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center" }}><FmaIcon pose={poseForJoint(t.joint)} size={28} /></span>
+                  <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
+                  <span style={{ fontSize: "0.7rem", color: "#6b7280", lineHeight: 1.3 }}>{t.joint}</span>
+                  <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
+                    {done ? "Done" : "Not done"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        ))}
+        )}
+
+        {openTest && (() => {
+          const t = openTest;
+          const val = entry[t.id];
+          const selOpt = t.options.find((o) => o.val === val);
+          return (
+            <div>
+              <button type="button" onClick={() => setOpenId(null)} style={{ background: "none", border: "none", padding: 0, marginBottom: 10, color: "#6D28D9", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit" }}>‹ Back to all {region.label} tests</button>
+              <div className="movement-name-row">
+                <span className="movement-name" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><FmaIcon pose={poseForJoint(t.joint)} size={26} />{t.label}</span>
+                <InfoButton title={t.label} richItem={kcRichItem(t)} />
+              </div>
+              <div className="muscle-subtitle">{t.joint}</div>
+              <InfoCard icon="🔎" label="Helps find" tint="violet">{kcHelpsFind(t)}</InfoCard>
+              <InfoCard icon="👐" label="How to do it" tint="gray">{t.how}</InfoCard>
+              <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: "#6b7280", margin: "12px 0 6px" }}>Result</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {t.options.map((o) => {
+                  const sel = val === o.val;
+                  return (
+                    <button type="button" key={o.val} onClick={() => set(activeKey, { ...entry, [t.id]: sel ? "" : o.val })}
+                      style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", fontFamily: "inherit", cursor: "pointer", padding: "10px 12px", borderRadius: 10, background: sel ? `${o.color}18` : "#fff", border: `1.5px solid ${sel ? o.color : "#E5E7EB"}` }}>
+                      <span style={{ width: 14, height: 14, borderRadius: "50%", flexShrink: 0, border: `2px solid ${o.color}`, background: sel ? o.color : "transparent" }} />
+                      <span style={{ fontSize: "0.82rem", fontWeight: sel ? 700 : 500, color: "#1f2937", lineHeight: 1.3 }}>{o.val}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selOpt?.meaning && <Hint>{selOpt.meaning}</Hint>}
+            </div>
+          );
+        })()}
       </div>
     </>
   );

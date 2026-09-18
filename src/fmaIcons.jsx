@@ -85,8 +85,25 @@ const MAP = {
 
 const GLYPH_KEYS = new Set(Object.keys(GLYPHS));
 
-export function FmaIcon({ id, size = 24 }) {
-  const key = MAP[id] || "sls";
+// Kinetic chain tests are keyed by joint, not by movement.
+const JOINT_POSE = [
+  [/first mtp|foot|ankle|subtalar|talo/i, "foot"],
+  [/knee|patello|tibiofemoral/i, "squat"],
+  [/hip/i, "hinge"],
+  [/lumbar/i, "fwd"],
+  [/costo|rib/i, "ribs"],
+  [/thoracic|cervicothoracic/i, "spine"],
+  [/scapul/i, "scapula"],
+  [/glenohumeral|shoulder/i, "reach"],
+  [/cervical|neck/i, "neck"],
+];
+export function poseForJoint(joint) {
+  const hit = JOINT_POSE.find(([re]) => re.test(joint || ""));
+  return hit ? hit[1] : "sls";
+}
+
+export function FmaIcon({ id, pose, size = 24 }) {
+  const key = pose || MAP[id] || "sls";
   const def = GLYPH_KEYS.has(key) ? GLYPHS[key] : POSES[key];
   const stroke = { fill: "none", stroke: INK, strokeWidth: 2.4, strokeLinecap: "round", strokeLinejoin: "round" };
   const soft = { fill: "none", stroke: SOFT, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" };
