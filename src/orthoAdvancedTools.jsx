@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { FmaIcon } from "./fmaIcons.jsx";
 import { SectionIntro, TextArea, InfoButton, InfoCard, InfoCardGrid, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
@@ -715,7 +716,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
               return (
                 <button type="button" key={t.id} onClick={() => setOpenId(t.id)}
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{t.icon}</span>
+                  <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}><FmaIcon id={t.id} size={28} /></span>
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
                   <span style={{ fontSize: "0.7rem", color: "#6b7280", lineHeight: 1.3 }}>{t.subtitle}</span>
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
@@ -736,7 +737,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
           <div className="rom-card">
             <button type="button" onClick={() => setOpenId(null)} style={{ background: "none", border: "none", padding: 0, marginBottom: 10, color: "#6D28D9", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit" }}>‹ Back to all {activeKey} tests</button>
             <div className="movement-name-row">
-              <span className="movement-name">{t.icon} {t.label}</span>
+              <span className="movement-name" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><FmaIcon id={t.id} size={26} />{t.label}</span>
               <InfoButton title={t.label} richItem={fmaRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.subtitle}</div>
