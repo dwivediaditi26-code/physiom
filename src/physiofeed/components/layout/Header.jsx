@@ -121,10 +121,10 @@ export default function Header() {
           header height around it ("there is a space is left... remove
           it"). Kept for desktop below unchanged. */}
       <div className="md:hidden relative border-t border-slate-200" style={{ background: "#FAFAF8" }}>
-        <div className="flex items-center gap-2.5 px-3 py-2.5 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 px-2.5 py-2 overflow-x-auto no-scrollbar">
           {location.pathname !== "/feed" && (
             <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
           )}
           {PRO_NAV.map((item) => (
@@ -134,7 +134,7 @@ export default function Header() {
               className={({ isActive }) => "pf-tile shrink-0 focus:outline-none" + (isActive ? " pf-tile-active" : "")}
             >
               <span className="pf-tile-pod">
-                <Icon name={item.icon} size={18} />
+                <Icon name={item.icon} size={13} />
               </span>
               <span className="pf-tile-label">
                 {item.label === "Physio Feed" ? "Feed" : item.label === "Communities" ? "Groups" : item.label}
