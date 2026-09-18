@@ -303,7 +303,13 @@ export const TECHNIQUE_TYPES = [
   { key: "taping", label: "Taping", icon: "🎗️" },
   { key: "us", label: "Ultrasound", icon: "〰️" },
   { key: "electro", label: "Electrotherapy", icon: "⚡" },
-  { key: "other", label: "Other", icon: "➕" },
+  // Labelled explicitly rather than just "Other" (2026-09-18, Aditi: "add
+  // option to add manually your treatment") -- this is the one tile of the
+  // seven whose form (techniqueEntryForm's default case) is a genuinely
+  // freeform "Technique / intervention" text box instead of a fixed
+  // dropdown list, so it needs to read as the manual-entry option, not get
+  // lost as a vague catch-all at the end of the row.
+  { key: "other", label: "Add manually", icon: "✍️" },
 ];
 const MAITLAND_GRADES = [
   { grade: "I", desc: "Small amplitude, beginning of range — pain control, acute" },
