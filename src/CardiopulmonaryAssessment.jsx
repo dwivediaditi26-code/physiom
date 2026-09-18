@@ -4,6 +4,8 @@ import InfoCard from "./InfoCard.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 import { Icon, IconPair } from "./StepIcons.jsx";
+import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
+import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -121,10 +123,41 @@ const STEP_META = [
   { id: "exercise", icon: <Icon name="run" />, label: "Exercise Response" },
   { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
   { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
+  // Care Plan — Problem List / Goals / Treatment / Plan / Sessions / Progress
+  // (2026-09-17, Aditi: "do the same for the cardio ... goals, treatment ...
+  // library and session and progress and plan"), same shared CarePlanSection
+  // Ortho/Neuro already use (CardioCarePlan.jsx / cardioClinicalKnowledge.js)
+  // -- one phase per step so each gets its own page instead of a crowded tab.
+  { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
+  { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
+  { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan Summary" },
+  { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
+  { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
   { id: "precautions", icon: <Icon name="warning" />, label: "Treatment Precautions" },
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
-const ASSESS_STEPS = STEP_META.slice(2); // 13 steps shown in the step nav
+const ASSESS_STEPS = STEP_META.slice(2); // 19 steps shown in the step nav
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
+
+// Migration for patients assessed before the Care Plan steps existed: their
+// saved meta.stepOrder predates CAREPLAN_STEP_IDS, so reopening them would
+// silently hide the new steps entirely. Inserts any missing ones right after
+// "interpretation" (their canonical STEP_META position), preserving whatever
+// custom steps the therapist already added otherwise. Mirrors
+// NeurologicalAssessment.jsx's own ensureAlwaysSteps for the same reason.
+function ensureCarePlanSteps(order) {
+  if (!Array.isArray(order) || !order.length) return order;
+  const present = new Set(order);
+  const missing = CAREPLAN_STEP_IDS.filter((id) => !present.has(id));
+  if (!missing.length) return order;
+  const interpIdx = order.indexOf("interpretation");
+  const insertAt = interpIdx === -1 ? order.length : interpIdx + 1;
+  const out = [...order];
+  out.splice(insertAt, 0, ...missing);
+  return out;
+}
 
 /* ============================================================
    GENERIC FIELD COMPONENTS
@@ -1751,7 +1784,45 @@ export function SummaryStyles() {
     `}</style>
   );
 }
-export function SummarySection({ setting, system, data, setData, assessSteps }) {
+// A step's own formatter (currently only Care Plan Summary, whose section
+// holds arrays -- problems/goals/treatments -- not flat key/value fields)
+// wins; otherwise fall back to the generic Object.entries flattener every
+// other step already used. Same formatters[stepId] contract as
+// NeurologicalAssessment.jsx's own SummarySection/rowsForStep, so
+// formatCarePlanSection (NeuroCarePlan.jsx) can be reused as-is instead of
+// showing "[object Object]" for the Care Plan's array-shaped section.
+function rowsForStep(step, section, formatters) {
+  const formatter = formatters?.[step.id];
+  if (formatter) return formatter(section);
+  return Object.entries(section)
+    .map(([k, v]) => [k, fmtVal(v)])
+    .filter(([, v]) => v);
+}
+const isGroupedResult = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
+
+// carePlanPlan: formatCarePlanSection -- the six Care Plan steps
+// (carePlanProblems/Goals/Treatment/Plan/Sessions/Progress) all share ONE
+// underlying record at data.cardioCarePlan (CardioCarePlanSection's own
+// sectionKey), not one store per step id, so only the "Care Plan Summary"
+// step is ever asked to render it -- the other five stay intermediate
+// working pages with nothing of their own to show here. Exported so
+// SpecialtyPatientProfile.jsx's embedded CardioSummarySection can pass the
+// same formatter, matching NeurologicalAssessment.jsx's own
+// neuroSummaryFormatters pattern.
+export const cardioSummaryFormatters = { carePlanPlan: formatCarePlanSection };
+
+// Both the Care Plan record's own key (cardioCarePlan) and the summary's
+// per-step lookup key (carePlanPlan, from `step.id`) need to agree for
+// cardioSummaryFormatters to find it -- data[step.id] is what rowsForStep
+// reads, but the Care Plan itself is saved at data.cardioCarePlan
+// (CardioCarePlanSection.jsx). Aliasing it onto data.carePlanPlan here
+// keeps that one field in sync everywhere SummarySection is handed `data`,
+// same trick NeurologicalAssessment.jsx's own reviewData uses.
+export function withCarePlanSummaryAlias(data) {
+  return { ...data, carePlanPlan: data?.cardioCarePlan };
+}
+
+export function SummarySection({ setting, system, data, setData, assessSteps, formatters }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
@@ -1764,34 +1835,58 @@ export function SummarySection({ setting, system, data, setData, assessSteps }) 
   const exportText = useMemo(() => {
     let lines = [`CARDIOPULMONARY ASSESSMENT`, `Setting: ${settingLabel}   Pathway: ${systemLabel}`, ""];
     steps.filter((s) => s.id !== "summary").forEach((step) => {
-      const section = data[step.id] || {};
-      const rows = Object.entries(section)
-        .map(([k, v]) => [k, fmtVal(v)])
-        .filter(([, v]) => v);
-      if (rows.length) {
+      const result = rowsForStep(step, data[step.id] || {}, formatters);
+      if (isGroupedResult(result)) {
+        result.groups.forEach(({ heading, rows }) => {
+          if (!rows.length) return;
+          lines.push(`— ${step.label}: ${heading} —`);
+          rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
+          lines.push("");
+        });
+        return;
+      }
+      if (result.length) {
         lines.push(`— ${step.label} —`);
-        rows.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
         lines.push("");
       }
     });
     return lines.join("\n");
-  }, [data, settingLabel, systemLabel, steps]);
+  }, [data, settingLabel, systemLabel, steps, formatters]);
 
   return (
     <>
       <SectionIntro icon={<Icon name="check" />} title="Summary & Review" sub={`${settingLabel} · ${systemLabel}`} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
-        const section = data[step.id] || {};
-        const rows = Object.entries(section)
-          .map(([k, v]) => [k, fmtVal(v)])
-          .filter(([, v]) => v);
-        if (!rows.length) return null;
+        const result = rowsForStep(step, data[step.id] || {}, formatters);
+        if (isGroupedResult(result)) {
+          if (!result.groups.some((g) => g.rows.length)) return null;
+          return (
+            <div className="summary-card" key={step.id}>
+              <div className="summary-title">
+                {step.icon} {step.label}
+              </div>
+              {result.groups.map(({ heading, rows }) => rows.length > 0 && (
+                <div key={heading} style={{ marginTop: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.purpleDark, margin: "6px 0 2px" }}>{heading}</div>
+                  {rows.map((r, i) => (
+                    <div className="summary-row" key={i}>
+                      <span className="summary-key">{r.label}</span>
+                      <span className="summary-val">{r.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          );
+        }
+        if (!result.length) return null;
         return (
           <div className="summary-card" key={step.id}>
             <div className="summary-title">
               {step.icon} {step.label}
             </div>
-            {rows.map(([k, v]) => (
+            {result.map(([k, v]) => (
               <div className="summary-row" key={k}>
                 <span className="summary-key">{k}</span>
                 <span className="summary-val">{v}</span>
@@ -1877,7 +1972,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [system, setSystem] = useState(() => (hasExisting ? seed.meta?.system || "combined" : null));
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? seed.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
+  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? ensureCarePlanSteps(seed.meta?.stepOrder) || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1904,7 +1999,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
-    setStepOrder(existing ? s.meta?.stepOrder || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(existing ? ensureCarePlanSteps(s.meta?.stepOrder) || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id));
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
@@ -2403,8 +2498,11 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "exercise" && <ExerciseSection data={data} setData={setData} setting={setting} />}
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
+          {CAREPLAN_STEP_IDS.includes(current.id) && (
+            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
+          )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
-          {current.id === "summary" && <SummarySection setting={setting} system={system} data={data} setData={setData} assessSteps={assessSteps} />}
+          {current.id === "summary" && <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />}
           {current.id.startsWith("ct-") && <CustomSection id={current.id} meta={current} data={data} setData={setData} />}
         </div>
 
@@ -2464,7 +2562,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
               </button>
             </div>
             <div className="ct-modal-body">
-              <SummarySection setting={setting} system={system} data={data} assessSteps={assessSteps} />
+              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />
             </div>
           </div>
         )}

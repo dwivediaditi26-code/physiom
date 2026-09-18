@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { goalProgress } from "./neuroClinicalKnowledge.js";
 import { buildOrthoKnowledge } from "./orthoClinicalKnowledge.js";
-import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle } from "./CardiopulmonaryAssessment.jsx";
+import { SummarySection as CardioSummarySection, SummaryStyles as CardioSummaryStyles, buildCardioAssessSteps, cardioAssessmentSubtitle, cardioSummaryFormatters, withCarePlanSummaryAlias as withCardioCarePlanSummaryAlias } from "./CardiopulmonaryAssessment.jsx";
 import { SummarySection as NeuroSummarySection, SummaryStyles as NeuroSummaryStyles, buildNeuroAssessSteps, neuroSummaryFormatters, neuroAssessmentSubtitle } from "./NeurologicalAssessment.jsx";
 import { AssessmentSummary as OrthoAssessmentSummary } from "./orthoSummary.jsx";
 import { orthoStyles } from "./orthoStyles.js";
@@ -1125,7 +1125,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                 <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {cardioAssessmentSubtitle(d.cardio.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{cardioAssessmentSubtitle(d.cardio.meta)}</div>}
-              <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={d.cardio} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} />
+              <CardioSummarySection setting={d.cardio.meta?.setting} system={d.cardio.meta?.system} data={withCardioCarePlanSummaryAlias(d.cardio)} assessSteps={buildCardioAssessSteps(d.cardio.meta?.stepOrder, d.cardio.meta?.customStepsMeta)} formatters={cardioSummaryFormatters} />
             </Card>
           )}
 
