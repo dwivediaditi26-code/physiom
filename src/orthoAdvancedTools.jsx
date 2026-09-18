@@ -119,6 +119,24 @@ function kcCount(entry, tests) {
 // Special Tests. image uses the test's own real id -- present on
 // Cloudinary for the foot/ankle and hip regions today; falls back to
 // InfoButton's own placeholder for regions not yet photographed.
+// Shows EVERY selectable result with its clinical meaning (Normal /
+// Facilitated / Inhibited / Overactive variants...), matching the older
+// NKT and Kinetic Chain screens ("Select Finding — What Each Result Means")
+// -- the first version of this filtered to inhibit/overactive only, so
+// Normal/Facilitated and the other overactive variants were missing.
+function optionTint(val) {
+  if (/inhibit/i.test(val)) return "red";
+  if (/overactive|hyper/i.test(val)) return "amber";
+  if (/bilateral/i.test(val)) return "violet";
+  if (/normal|facilitat/i.test(val)) return "green";
+  return "blue";
+}
+function optionMeaningCards(options) {
+  return (options || []).filter((o) => o && o.meaning).map((o, i) => (
+    <InfoCard key={i} icon="📊" label={o.val} tint={optionTint(o.val)}>{o.meaning}</InfoCard>
+  ));
+}
+
 export function kcRichItem(t) {
   return {
     image: t.id,
@@ -126,7 +144,12 @@ export function kcRichItem(t) {
     subtitle: t.joint,
     perform: <InfoCard icon="👐" label="How to perform" tint="violet">{t.how}</InfoCard>,
     reference: <InfoCard icon="⛓️" label="Kinetic chain effect" tint="blue">{t.chainEffect}</InfoCard>,
-    interpret: <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>,
+    interpret: (
+      <>
+        {optionMeaningCards(t.options)}
+        <InfoCard icon="🎯" label="Treatment protocol" tint="green">{t.treatment}</InfoCard>
+      </>
+    ),
   };
 }
 
@@ -181,7 +204,6 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
 // he wants to assess it or not") so it's read before the exam, not just
 // after picking a result.
 export function cpaRichItem(t) {
-  const consequences = (t.options || []).filter((o) => /inhibit|overactive/i.test(o.val));
   return {
     image: t.id,
     title: t.label,
@@ -190,12 +212,8 @@ export function cpaRichItem(t) {
     reference: <InfoCard icon="🔀" label="Common compensators" tint="amber">{t.compensator}</InfoCard>,
     interpret: (
       <>
-        {consequences.map((o, i) => (
-          <InfoCard key={i} icon={/inhibit/i.test(o.val) ? "🔻" : "🔺"} label={`If ${o.val}`} tint={/inhibit/i.test(o.val) ? "red" : "amber"}>
-            {o.meaning}
-          </InfoCard>
-        ))}
-        <InfoCard icon="🎯" label="Treatment" tint="green">{t.treatment}</InfoCard>
+        {optionMeaningCards(t.options)}
+        <InfoCard icon="🎯" label="Treatment protocol" tint="green">{t.treatment}</InfoCard>
       </>
     ),
   };
