@@ -88,6 +88,74 @@ function useAdvActiveRegion(data, setData, sectionKey_, keys) {
    red = inhibited/severe...), tapped to select, tap again to
    clear.
    ============================================================ */
+/* Two-step CPA result picker: pick the state (Normal / Facilitated /
+   Overactive / Inhibited), then -- only when that state has more than one
+   pattern (e.g. several "Overactive — X compensation" variants) -- pick the
+   pattern. The stored value is still the full option `val`, so saved data
+   and every reader of it are unchanged. */
+const CPA_STATE_ORDER = ["Normal", "Facilitated", "Overactive", "Inhibited"];
+const CPA_STATE_COLOR = { Normal: "#059669", Facilitated: "#059669", Overactive: "#dc2626", Inhibited: "#2563eb", Other: "#6b7280" };
+function cpaStateOf(val) {
+  const m = /^(normal|facilitat|overactive|inhibit)/i.exec(val || "");
+  if (!m) return "Other";
+  const k = m[1].toLowerCase();
+  return k === "normal" ? "Normal" : k.startsWith("facil") ? "Facilitated" : k === "overactive" ? "Overactive" : "Inhibited";
+}
+function cpaPatternOf(val) {
+  const parts = String(val || "").split(/\s[—–-]\s/);
+  return parts.length > 1 ? parts.slice(1).join(" — ") : val;
+}
+export function CpaOptionPicker({ options, value, onChange }) {
+  const groups = {};
+  options.forEach((o) => { (groups[cpaStateOf(o.val)] ||= []).push(o); });
+  const states = [...CPA_STATE_ORDER, "Other"].filter((k) => groups[k]);
+  const currentState = value ? cpaStateOf(value) : null;
+  const [pending, setPending] = useState(null);
+  const openState = currentState || pending;
+  const selectedOpt = options.find((o) => o.val === value);
+  function pickState(st) {
+    if (openState === st) { setPending(null); onChange(""); return; }
+    const g = groups[st];
+    if (g.length === 1) { setPending(null); onChange(g[0].val); }
+    else { setPending(st); onChange(""); }
+  }
+  const col = openState ? CPA_STATE_COLOR[openState] : null;
+  return (
+    <div>
+      <div style={{ display: "flex", border: "1px solid #E5E7EB", borderRadius: 10, overflow: "hidden" }}>
+        {states.map((st, i) => {
+          const on = openState === st;
+          return (
+            <button type="button" key={st} onClick={() => pickState(st)}
+              style={{ flex: 1, padding: "10px 4px", border: "none", borderLeft: i ? "1px solid #E5E7EB" : "none", cursor: "pointer", fontFamily: "inherit", fontSize: "0.8rem", fontWeight: on ? 700 : 500, background: on ? `${CPA_STATE_COLOR[st]}18` : "#fff", color: on ? CPA_STATE_COLOR[st] : "#6b7280" }}>
+              {st}
+            </button>
+          );
+        })}
+      </div>
+      {openState && groups[openState].length > 1 && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: "0.7rem", color: "#6b7280", marginBottom: 2 }}>Which pattern?</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {groups[openState].map((o) => {
+              const sel = value === o.val;
+              return (
+                <button type="button" key={o.val} onClick={() => onChange(sel ? "" : o.val)}
+                  style={{ padding: "5px 11px", borderRadius: 16, fontSize: "0.76rem", cursor: "pointer", fontFamily: "inherit", border: `1px solid ${sel ? col : "#D1D5DB"}`, background: sel ? `${col}18` : "#fff", color: sel ? col : "#6b7280", fontWeight: sel ? 700 : 500 }}>
+                  {cpaPatternOf(o.val)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {selectedOpt?.meaning && (
+        <div style={{ marginTop: 8, fontSize: "0.76rem", lineHeight: 1.5, color: "#374151" }}>{selectedOpt.meaning}</div>
+      )}
+    </div>
+  );
+}
+
 export function OptionChips({ options, value, onChange }) {
   return (
     <div className="chip-mini-row">
@@ -240,7 +308,7 @@ export function CpaSection({ data, setData, sectionKey = "cpa" }) {
               <InfoButton title={t.label} richItem={cpaRichItem(t)} />
             </div>
             <div className="muscle-subtitle">{t.muscle}</div>
-            <OptionChips options={t.options} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
+            <CpaOptionPicker options={t.options} value={entry[t.id]} onChange={(v) => set(activeKey, { ...entry, [t.id]: v })} />
           </div>
         ))}
       </div>
