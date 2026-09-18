@@ -45,9 +45,9 @@ const C = {
 // page (2026-09-03, Aditi: "white 3d section", "good font"). Hairline border
 // keeps edges crisp; the shadow does the lifting.
 const CARD_SHADOW = "0 1px 2px rgba(16,24,40,0.04), 0 6px 16px rgba(16,24,40,0.06)";
-function Card({ children, style }) {
+function Card({ children, style, onClick }) {
   return (
-    <div style={{ background: C.white, border: "1px solid #eef1f6", borderRadius: 18, padding: "18px 20px", marginBottom: 14, boxShadow: CARD_SHADOW, ...style }}>
+    <div onClick={onClick} style={{ background: C.white, border: "1px solid #eef1f6", borderRadius: 18, padding: "18px 20px", marginBottom: 14, boxShadow: CARD_SHADOW, cursor: onClick ? "pointer" : undefined, ...style }}>
       {children}
     </div>
   );
@@ -777,7 +777,11 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
         <ReassessModal cp={cp} planLabel={planLabel} onClose={() => setReassessing(false)} onConfirm={confirmReassess} />
       )}
 
-      <Card>
+      {/* Whole card opens Edit Plan now, not just the button (2026-09-18,
+          Aditi: "the current plan should open when we click on it not only
+          by clicking edit plan") -- Close Plan & Reassess stops the click
+          from bubbling up to the card so it still only opens its own modal. */}
+      <Card onClick={() => setEditing(true)}>
         <CardTitle action={<PrimaryBtn onClick={() => setEditing(true)}>✏️ Edit Plan</PrimaryBtn>}>Current Plan</CardTitle>
         <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 2 }}>{planLabel} — Active</div>
         <div style={{ fontSize: 12, color: C.faint, marginBottom: 10 }}>Started {fmtPlanDate(cp.startedAt || patient.createdAt) || "—"}</div>
@@ -788,7 +792,7 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
           <span>{counts.sessions} Session{counts.sessions === 1 ? "" : "s"}</span>
           {counts.avgProgress != null && <span style={{ color: C.primary, fontWeight: 700 }}>{counts.avgProgress}% avg progress</span>}
         </div>
-        {counts.any && <GhostBtn onClick={() => setReassessing(true)} style={{ width: "100%" }}>Close Plan & Reassess</GhostBtn>}
+        {counts.any && <GhostBtn onClick={(e) => { e.stopPropagation(); setReassessing(true); }} style={{ width: "100%" }}>Close Plan & Reassess</GhostBtn>}
       </Card>
 
       {!counts.any && <Card><EmptyRow>No problems, goals or treatment added yet. Tap Edit Plan to get started.</EmptyRow></Card>}
