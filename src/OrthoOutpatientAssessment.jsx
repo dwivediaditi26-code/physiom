@@ -823,7 +823,13 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
           {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} condition={condition} jumpTo={jumpTo} />}
           {current.id === "clinicalAssessment" && <ClinicalAssessmentSection data={data} setData={setData} />}
-          {CAREPLAN_STEP_IDS.includes(current.id) && (
+          {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
+              trimmed to the active default steps (Progress removed,
+              2026-09-18), but a record saved before that still has
+              carePlanProgress in its own stepOrder, and it must still
+              mount the shared Care Plan component when its turn comes up
+              in the step nav, not render blank. */}
+          {CAREPLAN_PHASE_BY_STEP[current.id] != null && (
             <>
               <style>{orthoStyles()}</style>
               <OrthoCarePlanStep

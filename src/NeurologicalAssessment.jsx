@@ -129,17 +129,30 @@ const STEP_META = [
   { id: "functional", icon: <Icon name="bed" />, label: "Functional Assessment" },
   { id: "outcomes", icon: <Icon name="chart" />, label: "Outcome Measures" },
   { id: "interpretation", icon: <Icon name="brain" />, label: "Clinical Interpretation" },
-  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
+  // Order: Problems -> Goals -> Treatment -> Plan -> Sessions (2026-09-18,
+  // Aditi: "do in neuro and cardio the care plan do the same the serial
+  // number" -- matches the reorder already done for Ortho's own step nav.
+  // Care Plan Progress dropped from CAREPLAN_STEP_IDS below (same request),
+  // kept here so a record saved before this change still renders it.
   { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
   { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
   { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
   { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
   { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
   { id: "precautions", icon: <Icon name="warning" />, label: "Precautions" },
   { id: "exercisePrescription", icon: <Icon name="dumbbell" />, label: "Exercise Prescription" },
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
-const ASSESS_STEPS = STEP_META.slice(1); // 16 core steps shown in the step nav
+const ASSESS_STEPS = STEP_META.slice(1); // full canonical list, including retired ids (label/icon lookup + legacy stepOrder rendering)
+// Several call sites fall back to "every step in ASSESS_STEPS" before a
+// domain/region/template choice has run buildStepOrder -- that raw fallback
+// must exclude retired ids too, or Care Plan Progress reappears via those
+// paths even though buildStepOrder/ensureAlwaysSteps already correctly drop
+// it (2026-09-18, Aditi: "do in neuro and cardio the care plan do the same
+// the serial number").
+const RETIRED_STEP_IDS = ["carePlanProgress"];
+const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 /* ============================================================
    GENERIC FIELD COMPONENTS — same widgets/interaction pattern
@@ -1810,7 +1823,7 @@ function fmtVal(v) {
 // assessment section") -- same reasoning as
 // CardiopulmonaryAssessment.jsx's matching export.
 export function buildNeuroAssessSteps(stepOrder, customStepsMeta = {}) {
-  const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
+  const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
   return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="brain" />, label: customStepsMeta[id]?.label || "Assessment" });
 }
 // Same reasoning as CardiopulmonaryAssessment.jsx's matching export -- see
@@ -1922,7 +1935,7 @@ const ENTRY_MODES = [
 ];
 
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
-const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
@@ -2062,7 +2075,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [condition, setCondition] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.condition || null : null));
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id)));
+  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -2097,7 +2110,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
-    setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || FULL_STEP_ORDER) : ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS);
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);
@@ -2220,7 +2233,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setSetting(null);
     setData({});
     setVisited(new Set());
-    setStepOrder(ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(DEFAULT_ASSESS_STEP_IDS);
     setCustomStepsMeta({});
     setPhase("setting");
     setSelectedRegions([]);
@@ -2750,7 +2763,12 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} onNav={onNav} />}
               {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
               {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} />}
-              {CAREPLAN_STEP_IDS.includes(current.id) && (
+              {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter
+                  is trimmed to the active default steps (Progress removed,
+                  2026-09-18), but a record saved before that still has
+                  carePlanProgress in its own stepOrder and must still mount
+                  the shared Care Plan component, not render blank. */}
+              {CAREPLAN_PHASE_BY_STEP[current.id] != null && (
                 <>
                   {/* Same scoped-stylesheet reason as the Exercise
                       Prescription step below -- NeuroCarePlan.jsx is built

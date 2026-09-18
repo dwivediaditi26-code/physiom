@@ -128,18 +128,32 @@ const STEP_META = [
   // library and session and progress and plan"), same shared CarePlanSection
   // Ortho/Neuro already use (CardioCarePlan.jsx / cardioClinicalKnowledge.js)
   // -- one phase per step so each gets its own page instead of a crowded tab.
-  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
+  // Order changed / Progress dropped (2026-09-18, Aditi: "do in neuro and
+  // cardio the care plan do the same the serial number") -- matches Ortho's
+  // own reorder: Problems -> Goals -> Treatment -> Plan -> Sessions. Progress
+  // removed from CAREPLAN_STEP_IDS below but kept here so a record saved
+  // before this change still renders it.
   { id: "carePlanProblems", icon: <Icon name="puzzle" />, label: "Problem List" },
   { id: "carePlanGoals", icon: <Icon name="target" />, label: "Care Plan Goals" },
   { id: "carePlanTreatment", icon: <Icon name="dumbbell" />, label: "Care Plan Treatment" },
+  { id: "carePlanPlan", icon: <Icon name="clipboard" />, label: "Care Plan" },
   { id: "carePlanSessions", icon: <Icon name="calendar" />, label: "Sessions" },
   { id: "carePlanProgress", icon: <Icon name="trend" />, label: "Care Plan Progress" },
   { id: "precautions", icon: <Icon name="warning" />, label: "Treatment Precautions" },
   { id: "summary", icon: <Icon name="check" />, label: "Summary & Review" },
 ];
-const ASSESS_STEPS = STEP_META.slice(2); // 19 steps shown in the step nav
-const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
+const ASSESS_STEPS = STEP_META.slice(2); // full canonical list, including retired ids (label/icon lookup + legacy stepOrder rendering)
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
+// Cardio has no domain/region filtering step (unlike Ortho/Neuro), so a
+// brand-new assessment's stepOrder is simply every id in ASSESS_STEPS --
+// meaning removing a step from CAREPLAN_STEP_IDS alone has no effect here;
+// it has to be excluded from the list actually used to seed a new
+// assessment's steps. 18 steps shown in the step nav (2026-09-18, Aditi:
+// "do in neuro and cardio the care plan do the same the serial number" --
+// Care Plan Progress dropped, matching Ortho's own reorder).
+const RETIRED_STEP_IDS = ["carePlanProgress"];
+const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.includes(s.id)).map((s) => s.id);
 
 // Migration for patients assessed before the Care Plan steps existed: their
 // saved meta.stepOrder predates CAREPLAN_STEP_IDS, so reopening them would
@@ -1751,7 +1765,7 @@ function fmtVal(v) {
 // content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
 // the profile view sees the same section list/labels/icons the wizard did.
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
-  const order = stepOrder || ASSESS_STEPS.map((s) => s.id);
+  const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
   return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
@@ -1972,7 +1986,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [system, setSystem] = useState(() => (hasExisting ? seed.meta?.system || "combined" : null));
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? ensureCarePlanSteps(seed.meta?.stepOrder) || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id)));
+  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? ensureCarePlanSteps(seed.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS));
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1999,7 +2013,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSetting(existing ? s.meta?.setting || "outpatient" : null);
     setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
-    setStepOrder(existing ? ensureCarePlanSteps(s.meta?.stepOrder) || ASSESS_STEPS.map((s) => s.id) : ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(existing ? ensureCarePlanSteps(s.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS);
     setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
@@ -2102,7 +2116,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSystem(null);
     setData({});
     setVisited(new Set());
-    setStepOrder(ASSESS_STEPS.map((s) => s.id));
+    setStepOrder(DEFAULT_ASSESS_STEP_IDS);
     setCustomStepsMeta({});
   }
   function toggleCtItem(id, label, icon) {
@@ -2498,7 +2512,12 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "exercise" && <ExerciseSection data={data} setData={setData} setting={setting} />}
           {current.id === "outcomes" && <OutcomesSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "interpretation" && <InterpretationSection data={data} setData={setData} />}
-          {CAREPLAN_STEP_IDS.includes(current.id) && (
+          {/* CAREPLAN_PHASE_BY_STEP, not CAREPLAN_STEP_IDS -- the latter is
+              trimmed to the active default steps (Progress removed,
+              2026-09-18), but a record saved before that still has
+              carePlanProgress in its own stepOrder and must still mount
+              the shared Care Plan component, not render blank. */}
+          {CAREPLAN_PHASE_BY_STEP[current.id] != null && (
             <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
           )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
