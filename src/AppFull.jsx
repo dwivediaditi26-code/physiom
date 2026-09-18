@@ -3,7 +3,8 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
-import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding } from "lucide-react";
+import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
+import { getNotifications as getPfNotifications } from "./physiofeed/data/db.js";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
@@ -319,6 +320,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
   const [active, setActive] = useState("home");
   const [navContext, setNavContext] = useState({});
+  // Unread dot for the relocated bell icon in the mobile header (see
+  // pm-mobile-hdr below) -- fetched the same standalone way Home's
+  // Evidence preview already reads PhysioFeed data (getEvidence()) without
+  // needing to be mounted inside PhysioFeed's own AppDataProvider/router.
+  const [pfUnread, setPfUnread] = useState(false);
+  useEffect(() => { getPfNotifications().then((n) => setPfUnread(n.some((x) => !x.read))).catch(() => {}); }, []);
   // ── Back navigation (in-app Back button + real browser/hardware back) ──
   // activeRef mirrors `active` synchronously so navTo (a stable useCallback)
   // can tell whether a nav call is actually going somewhere new, without
@@ -1836,13 +1843,46 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
           <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind</div>
         </div>
-        {/* + New — solid accent */}
-        <button onClick={createNewPatient}
-          style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
-            color:"#fff",fontSize:"0.72rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
-            boxShadow:`0 2px 6px ${PC.accent}50`}}>
-          + New
-        </button>
+        {/* Right side: swaps by tab instead of always showing "+ New" --
+            PhysioFeed and Profile don't create patients, they have their
+            own search/notifications/messages, which used to live in a
+            second sticky row inside PhysioFeed's own Header.jsx, stacked
+            right below this one. Relocated up here instead of duplicated
+            (2026-09-17, Aditi: "search notification and message should go
+            up there when we open the physio feed... if we open the
+            clinical it should be the new patient button... and normally"
+            -- "normally" being every other tab, which keeps "+ New"). */}
+        {active==="physiofeed"||active==="profile" ? (
+          <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+            <button onClick={()=>navTo("physiofeed",{pfTab:"people"})} aria-label="Search"
+              style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <SearchIcon size={18}/>
+            </button>
+            <button onClick={()=>navTo("physiofeed",{pfTab:"notifications"})} aria-label="Notifications"
+              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <BellIcon size={18}/>
+              {pfUnread && <span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#f43f5e"}}/>}
+            </button>
+            <button onClick={()=>navTo("physiofeed",{pfTab:"messages"})} aria-label="Messages"
+              style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <MessageSquareIcon size={18}/>
+            </button>
+          </div>
+        ) : active==="clinical" ? (
+          <button onClick={createNewPatient}
+            style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
+              color:"#fff",fontSize:"0.72rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
+              boxShadow:`0 2px 6px ${PC.accent}50`}}>
+            + New Patient
+          </button>
+        ) : (
+          <button onClick={createNewPatient}
+            style={{padding:"5px 12px",minHeight:30,background:PC.accent,border:"none",borderRadius:7,
+              color:"#fff",fontSize:"0.72rem",fontWeight:700,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
+              boxShadow:`0 2px 6px ${PC.accent}50`}}>
+            + New
+          </button>
+        )}
       </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, X } from "lucide-react";
+import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { Icon } from "../shared/icons.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
@@ -62,12 +62,6 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
 // row takes you to the People list rather than a profile you can't reach.
 export default function Header() {
   const [query, setQuery] = useState("");
-  // Mobile search (2026-08-27): the search bar above is `hidden md:block`,
-  // so on phones there was no way to search physios at all -- not even a
-  // hidden-behind-a-tap entry point. This toggles a full-width search row
-  // in its place, reusing the exact same query/matches/selfMatches state
-  // and result dropdown as the desktop bar.
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { notifications, profile, people } = useAppData();
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,12 +90,10 @@ export default function Header() {
   const goToPeople = (q) => {
     navigate(`/people?q=${encodeURIComponent(q)}`);
     setQuery("");
-    setMobileSearchOpen(false);
   };
   const goToOwnProfile = () => {
     navigate("/profile");
     setQuery("");
-    setMobileSearchOpen(false);
   };
 
   return (
@@ -174,18 +166,16 @@ export default function Header() {
         </div>
 
         {/* Icon cluster (2026-08-27, Aditi's request): pinned at the row's
-            end on every breakpoint -- not part of the swipeable strip
-            below, which is reserved for PhysioFeed's own section pills
-            only. The search toggle only exists here on mobile; desktop
-            already has the always-visible inline search bar above. */}
-        <div className="flex items-center gap-1 sm:gap-3 ml-auto shrink-0">
-          <button
-            onClick={() => setMobileSearchOpen((v) => !v)}
-            aria-label="Search"
-            className="md:hidden p-2 rounded-lg hover:bg-slate-50 focus:outline-none"
-          >
-            {mobileSearchOpen ? <X size={19} className="text-slate-500" /> : <Search size={19} className="text-slate-500" />}
-          </button>
+            end. Bell/Messages are md:-only now -- on mobile these live in
+            physiom's own top app header instead (AppFull.jsx's
+            pm-mobile-hdr), which stays visible while this whole header
+            scrolls away, so duplicating a second copy here just stacked
+            two sticky bars showing the same three icons (2026-09-17,
+            Aditi: "search notification and message should go up there
+            when we open the physio feed"). The mobile search toggle this
+            row used to also hold is gone for the same reason -- that
+            header's search icon takes you to People instead. */}
+        <div className="hidden md:flex items-center gap-1 sm:gap-3 ml-auto shrink-0">
           {/* Own page, not a dropdown (2026-08-27, Aditi's request): the old
               bell dropdown had no reliable close behaviour, especially once
               it lived inside the horizontally-scrolling mobile strip. A
@@ -219,30 +209,6 @@ export default function Header() {
       {/* Fade hint that there's more to scroll to (mobile only). */}
       <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent" />
       </div>
-
-      {mobileSearchOpen && (
-        <div className="md:hidden px-4 pb-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-10">
-            <Search size={15} className="text-slate-400 shrink-0" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && trimmedQuery) goToPeople(trimmedQuery);
-                if (e.key === "Escape") setMobileSearchOpen(false);
-              }}
-              placeholder="Search physios by name, specialty, or city…"
-              className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
-            />
-          </div>
-          {trimmedQuery && (
-            <div className="mt-2">
-              <SearchResults trimmedQuery={trimmedQuery} selfMatches={selfMatches} matches={matches} profile={profile} goToOwnProfile={goToOwnProfile} goToPeople={goToPeople} />
-            </div>
-          )}
-        </div>
-      )}
     </header>
   );
 }
