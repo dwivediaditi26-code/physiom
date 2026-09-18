@@ -779,7 +779,8 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
 
       <Card>
         <CardTitle action={<PrimaryBtn onClick={() => setEditing(true)}>✏️ Edit Plan</PrimaryBtn>}>Current Plan</CardTitle>
-        <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 6 }}>{planLabel} — Active</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 2 }}>{planLabel} — Active</div>
+        <div style={{ fontSize: 12, color: C.faint, marginBottom: 10 }}>Started {fmtPlanDate(cp.startedAt || patient.createdAt) || "—"}</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 14, fontSize: 12.5, color: C.muted, marginBottom: counts.any ? 12 : 0 }}>
           <span>{counts.problems} Problem{counts.problems === 1 ? "" : "s"}</span>
           <span>{counts.goals} Goal{counts.goals === 1 ? "" : "s"}</span>
@@ -791,31 +792,6 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
       </Card>
 
       {!counts.any && <Card><EmptyRow>No problems, goals or treatment added yet. Tap Edit Plan to get started.</EmptyRow></Card>}
-
-      <PlanDocument problems={problems} goals={goals} treatments={treatments} sessions={sessions} exerciseRows={exerciseRows} />
-
-      <Card>
-        <CardTitle>Care History</CardTitle>
-        {history.length === 0 && <EmptyRow>No previous plans yet — this is the patient's first care plan.</EmptyRow>}
-        {[...history].reverse().map((h) => {
-          const hc = carePlanCounts(h);
-          return (
-            <button key={h.id} onClick={() => setViewingPlanId(h.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", textAlign: "left", padding: "10px 0", borderTop: `1px solid ${C.border}`, background: "none", border: "none", borderTopWidth: 1, cursor: "pointer" }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.label}</div>
-                <div style={{ fontSize: 11.5, color: C.muted }}>{fmtPlanDate(h.startedAt)} – {fmtPlanDate(h.closedAt)} · {hc.problems} Problems · {hc.goals} Goals</div>
-              </div>
-              <span style={{ color: C.primary, fontWeight: 700, fontSize: 12 }}>View →</span>
-            </button>
-          );
-        })}
-      </Card>
-
-      <ClinicalJourney
-        cp={cp} history={history} planLabel={planLabel}
-        onViewPlan={(id) => setViewingPlanId(id)}
-        onViewSession={(planId, session) => setViewingSession({ planId, session })}
-      />
     </>
   );
 }
