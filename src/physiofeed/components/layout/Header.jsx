@@ -98,26 +98,50 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-slate-200">
-      {/* Mobile-only section strip: PhysioFeed's own pages only (Feed/
-          Evidence/Explore/Communities/People/Messages/Saved) -- moved
-          above the logo/icon row (2026-08-27, Aditi's request: section
-          pills on top, search/bell/message row below). Renders before the
-          row below in DOM/visual order on mobile; invisible on desktop
-          (md:hidden) so it doesn't affect desktop's layout at all. */}
+      {/* Mobile-only section nav: square, lightly-3D tiles (Feed/Evidence/
+          Explore/Communities/People/Messages/Saved), replacing the old
+          rounded violet pill row (2026-09-17, Aditi, circling the pills:
+          "redesign this... square buttons in 3D buttons... light blue"
+          then "indigo" then "the clicking on it that color should be
+          light" -- the active tile stays light too, told apart by its
+          border/ring rather than an inverted dark fill). The back-chevron
+          (was in the logo/icon row below) lives here now, since that row
+          -- previously just a bare unlabeled logo square on mobile once
+          the search/bell/message icons moved to physiom's own top header
+          -- is dropped entirely on mobile: "PhysioMind" already has its
+          own name+logo up there, so this was a second one saying nothing,
+          with a dead gap of empty header height around it ("there is a
+          space is left... remove it"). Kept for desktop below unchanged. */}
       <div className="md:hidden relative border-t border-slate-200">
-        <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 overflow-x-auto no-scrollbar">
+          {location.pathname !== "/feed" && (
+            <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
+              <ChevronLeft size={22} />
+            </button>
+          )}
           {PRO_NAV.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-300 ${
-                  isActive ? "bg-violet-600 text-white" : "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                }`
-              }
+              className="shrink-0 focus:outline-none"
+              style={({ isActive }) => ({
+                width: 64, height: 64, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                gap: 5, borderRadius: 16,
+                background: isActive ? "#E4DEF7" : "#FAF9FE",
+                border: isActive ? "1.5px solid #8F6FD4" : "none",
+                boxShadow: isActive
+                  ? "inset 0 1px 0 rgba(255,255,255,0.9), 0 3px 0 #D2C4EE, 0 5px 8px rgba(91,63,160,0.14)"
+                  : "inset 0 1px 0 rgba(255,255,255,0.9), 0 3px 0 #EDEAF9, 0 5px 8px rgba(91,63,160,0.08)",
+              })}
             >
-              <Icon name={item.icon} size={14} />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <Icon name={item.icon} size={20} style={{ color: isActive ? "#453084" : "#6B5B9A" }} />
+                  <span style={{ fontSize: 10, fontWeight: 500, color: isActive ? "#453084" : "#6B5B9A", textAlign: "center", lineHeight: 1.2 }}>
+                    {item.label === "Physio Feed" ? "Feed" : item.label === "Communities" ? "Groups" : item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </div>
@@ -125,17 +149,9 @@ export default function Header() {
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent" />
       </div>
 
-      {/* Logo/icon row -- horizontally scrollable on mobile too (2026-08-27,
-          Aditi's request: "swipe the two rows") -- matches the section-pill
-          strip above instead of being the odd one out that's pinned/fixed.
-          Desktop keeps its normal non-scrolling layout via md:overflow-visible. */}
-      <div className="relative">
-      <div className="max-w-[1200px] mx-auto flex items-center gap-3 px-4 sm:px-6 h-16 overflow-x-auto no-scrollbar md:overflow-visible">
-        {location.pathname !== "/feed" && (
-          <button onClick={() => navigate(-1)} className="md:hidden p-1 -ml-1 text-slate-500 shrink-0">
-            <ChevronLeft size={22} />
-          </button>
-        )}
+      {/* Logo/icon row -- desktop only now (see comment above). */}
+      <div className="relative hidden md:block">
+      <div className="max-w-[1200px] mx-auto flex items-center gap-3 px-4 sm:px-6 h-16">
         <Link to="/feed" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600" />
           <div className="hidden sm:block leading-tight">
@@ -206,8 +222,6 @@ export default function Header() {
           )}
         </div>
       </div>
-      {/* Fade hint that there's more to scroll to (mobile only). */}
-      <div className="md:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent" />
       </div>
     </header>
   );
