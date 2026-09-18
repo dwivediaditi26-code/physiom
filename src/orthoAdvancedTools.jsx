@@ -456,15 +456,41 @@ const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 // underlying t.svgNormal/t.svgAbnormal data is untouched in case either
 // surface wants it back later.
 export function fmaRichItem(t) {
+  // Same content the older Functional Screen carries: what to observe, what
+  // each option means clinically (obs.clues), and the grading scale -- the
+  // first version only had setup + normal pattern.
+  const obsCards = (t.observations || []).map((obs) => {
+    const rows = (obs.opts || []).map((opt, i) => ({ opt, clue: obs.clues?.[i] }));
+    return (
+      <InfoCard key={obs.id} icon="👁" label={obs.q} tint="blue">
+        {rows.map((r, i) => (
+          <div key={i} style={{ marginTop: i ? 8 : 0 }}>
+            <div style={{ fontWeight: 700, color: r.opt.startsWith("✗") ? "#dc2626" : r.opt.startsWith("⚠") ? "#d97706" : "#059669" }}>{r.opt}</div>
+            {r.clue && <div>{r.clue}</div>}
+          </div>
+        ))}
+      </InfoCard>
+    );
+  });
   return {
     title: t.label,
     subtitle: t.phase,
     perform: (
       <>
         <InfoCard icon="👐" label="Setup & procedure" tint="violet">{t.setup}</InfoCard>
+        <InfoCard icon="✅" label="Normal pattern" tint="green">{t.normalDesc}</InfoCard>
       </>
     ),
-    interpret: <InfoCard icon="✅" label="Normal pattern" tint="green">{t.normalDesc}</InfoCard>,
+    interpret: (
+      <>
+        {obsCards}
+        {(t.grades || []).length > 0 && (
+          <InfoCard icon="📊" label="Grading" tint="amber">
+            {t.grades.map((g, i) => <div key={i} style={{ marginTop: i ? 6 : 0 }}>{g}</div>)}
+          </InfoCard>
+        )}
+      </>
+    ),
   };
 }
 
