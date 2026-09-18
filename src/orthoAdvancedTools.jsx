@@ -206,6 +206,7 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
 export function cpaRichItem(t) {
   return {
     image: t.id,
+    hideHeroOn: ["interpret"],
     title: t.label,
     subtitle: t.muscle,
     perform: <InfoCard icon="👐" label="How to test" tint="violet">{t.how}</InfoCard>,
@@ -473,6 +474,7 @@ export function fmaRichItem(t) {
     );
   });
   return {
+    hideHeroOn: ["interpret"],
     title: t.label,
     subtitle: t.phase,
     perform: (

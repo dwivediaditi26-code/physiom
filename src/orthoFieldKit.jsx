@@ -244,7 +244,7 @@ export function InfoButton(props) {
             <div className="sheet-scroll">
               {richItem ? (
                 <>
-                  <SheetHero name={richItem.image} />
+                  {!(richItem.hideHeroOn || []).includes(activeTab) && <SheetHero name={richItem.image} />}
                   {richItem[activeTab]}
                 </>
               ) : (
