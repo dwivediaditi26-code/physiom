@@ -965,7 +965,8 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
         ))}
       </div>
 
-      {goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet.</div>}
+      {problems.length === 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet. Tap "Problems" above to get started.</div>}
+      {problems.length > 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">{problems.length} problem{problems.length > 1 ? "s" : ""} selected — tap "Goals" above to set a target.</div>}
       {goals.map((g) => {
         const p = problems.find((x) => x.id === g.problemId);
         const mine = treatments.filter((t) => t.goalIds.includes(g.id));
