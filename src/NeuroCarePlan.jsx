@@ -1019,6 +1019,33 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
           ))}
         </div>
       )}
+
+      {/* A flat, always-visible Treatment list -- before this, a treatment
+          only showed up nested inside whichever goal card it was linked to,
+          so it read as "missing" from the hub at a glance (2026-09-18,
+          Aditi: "isme treatment kyu nahi dikh raha hai" -- why isn't
+          treatment showing on this page). Same Problem List / Goals /
+          Treatment as their own written-out subtopics the assessment's own
+          read-only Care Plan page already uses, just editable here. */}
+      {treatments.length > 0 && (
+        <div className="summary-card" style={{ cursor: "default" }}>
+          <div className="summary-title">🏋 Treatment list</div>
+          {treatments.map((t) => {
+            const myGoals = goals.filter((g) => (t.goalIds || []).includes(g.id));
+            return (
+              <div key={t.id} style={{ padding: "8px 0", borderTop: `1px solid ${BRAND.border}` }}>
+                <div className="summary-row" style={{ padding: 0 }}>
+                  <span className="summary-key">{t.name}</span>
+                  <span className="summary-val">{doseLine(t)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
+                  {myGoals.length ? `For: ${myGoals.map((g) => g.measure).join(", ")}` : "General (not linked to a goal)"}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
