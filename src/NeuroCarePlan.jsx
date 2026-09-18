@@ -954,18 +954,25 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
   const general = treatments.filter((t) => !t.goalIds || t.goalIds.length === 0);
   return (
     <>
-      <SectionIntro icon="📋" title="Care plan" sub="What you intend to do. Tap a card to review or edit it." />
+      {/* Plain counts now, not buttons -- these used to jump straight to
+          that phase's full editor on tap, which read as "why is tapping
+          the treatment number taking me to a whole other page" once
+          Problems/Goals/Treatment were all written out below anyway
+          (2026-09-18, Aditi: "when i click on the treatment it's taking
+          me to the treatment section i don't want it i want it to be
+          listed"). Everything lives on this one page now; each section
+          below has its own explicit "+ Add" link for editing. */}
+      <SectionIntro icon="📋" title="Care plan" sub="What you intend to do." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(70px,1fr))", gap: 8, marginBottom: 16 }}>
-        {[["Problems", problems.length, "problems"], ["Goals", goals.length, "goals"], ["Treatments", treatments.length, "treatment"]].map(([l, v, phaseId]) => (
-          <button key={l} type="button" onClick={() => onGoToPhase?.(phaseId)}
-            style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center", cursor: "pointer", fontFamily: "inherit" }}>
+        {[["Problems", problems.length], ["Goals", goals.length], ["Treatments", treatments.length]].map(([l, v]) => (
+          <div key={l} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 6px", textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: BRAND.purpleDark }}>{v}</div>
             <div style={{ fontSize: 10.5, color: BRAND.gray, fontWeight: 600 }}>{l}</div>
-          </button>
+          </div>
         ))}
       </div>
 
-      {problems.length === 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet. Tap "Problems" above to get started.</div>}
+      {problems.length === 0 && goals.length === 0 && general.length === 0 && <div className="summary-empty">Nothing planned yet. Tap "+ Add problem" below to get started.</div>}
 
       {/* The written-out problem list itself -- previously a problem with no
           goal yet was invisible here (only its count showed, e.g. "1 problem
@@ -988,6 +995,7 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
           })}
         </div>
       )}
+      <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("problems")}>＋ Add problem</button>
 
       {goals.map((g) => {
         const p = problems.find((x) => x.id === g.problemId);
@@ -1019,6 +1027,9 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
           ))}
         </div>
       )}
+      {problems.length > 0 && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => onGoToPhase?.("goals")}>＋ Add goal</button>
+      )}
 
       {/* A flat, always-visible Treatment list -- before this, a treatment
           only showed up nested inside whichever goal card it was linked to,
@@ -1045,6 +1056,9 @@ function PlanPhase({ problems, goals, treatments, onGoToPhase }) {
             );
           })}
         </div>
+      )}
+      {problems.length > 0 && (
+        <button type="button" className="ghost-btn" style={{ width: "100%" }} onClick={() => onGoToPhase?.("treatment")}>＋ Add treatment</button>
       )}
     </>
   );
