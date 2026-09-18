@@ -329,64 +329,98 @@ function GoalEditor({ goal, onChange, onRemove }) {
   );
 }
 
-function GoalsPhase({ problems, goals, setGoals, onNext, setting, floatingCTA }) {
+function GoalsPhase({ suggested, problems, setProblems, goals, setGoals, onNext, setting, floatingCTA }) {
   const { buildGoalsForProblem } = useKB();
-  // Single always-open view (2026-09-18, Aditi: "goals should already
-  // present... why it is asking me to select one problem at least it is
-  // wrong") -- reverts the same-day "compact list, suggestions hidden
-  // behind + Add goal" change: each selected problem's suggested goal
-  // templates show immediately, and Treatment must stay reachable even
-  // with zero problems/goals -- there's nothing to force here.
+  // Driven straight from `suggested` now, same as Problem List and
+  // Treatment -- a goal must not wait on a separate trip to Problem List
+  // to "select" the problem first (2026-09-18, Aditi: "goal should
+  // normally present... not depended on problem list selected or not").
+  // Picking a goal for a not-yet-selected suggestion silently adds that
+  // problem too (ensureProblem below), so Problem List and Goals can never
+  // drift out of sync with each other.
+  const suggestedIds = new Set(suggested.map((s) => s.id));
+  // Anything the `suggested` loop below won't cover: added manually, or a
+  // prior selection whose originating finding no longer qualifies (data
+  // changed since) -- still shown, using its own last-known baseline for
+  // template suggestions.
+  const otherProblems = problems.filter((p) => p.manual || !suggestedIds.has(p.sourceId));
+
+  const ensureProblem = (s) => {
+    const existing = problems.find((p) => (p.sourceId || p.id) === s.id);
+    if (existing) return existing;
+    const created = { id: uid(), sourceId: s.id, name: s.name, category: s.category, findings: s.findings, baseline: s.baseline, treatmentCategories: s.treatmentCategories, refs: s.refs, evidence: s.evidence, manual: false };
+    setProblems([...problems, created]);
+    return created;
+  };
+
+  // Plain function, not a nested component -- a `<GoalGroup/>` JSX tag
+  // defined inside this render would get a fresh identity every render,
+  // remounting GoalEditor underneath (and losing its own open/closed
+  // state) on every keystroke elsewhere on the page.
+  const renderGoalGroup = (key, title, findings, mine, suggestions, onAdd) => (
+    <div key={key} style={{ marginBottom: 18 }}>
+      <div className="subheading" style={{ marginTop: 10 }}>{title}</div>
+      {findings?.length > 0 && (
+        <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 8 }}>
+          Current: {findings.map((f) => `${f.label} ${renderVal(f.value)}`).join(" · ")}
+        </div>
+      )}
+
+      {mine.map((g) => (
+        <GoalEditor key={g.id} goal={g}
+          onChange={(next) => setGoals(goals.map((x) => (x.id === g.id ? next : x)))}
+          onRemove={() => setGoals(goals.filter((x) => x.id !== g.id))} />
+      ))}
+
+      {suggestions.map((s) => (
+        <button key={s.templateId} type="button" className="template-row" style={{ width: "100%" }}
+          // `...s` must come BEFORE problemId: buildGoalsForProblem()
+          // stamps the knowledge-base problem id on each template, and
+          // spreading it last silently overwrote the local problem id,
+          // breaking every goal->problem lookup (relevant treatment
+          // categories, plan grouping).
+          onClick={() => onAdd(s)}>
+          <div>
+            <div className="template-row-label">{s.label}</div>
+            <div className="template-row-note">{s.baseline} → {s.target} · {s.weeks} weeks · {s.term === "short" ? "STG" : "LTG"}</div>
+          </div>
+          <span className="template-row-arrow">+</span>
+        </button>
+      ))}
+
+      <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }}
+        onClick={() => onAdd({ templateId: null, label: "Custom goal", measure: "Custom goal", unit: "", baseline: "", target: "", term: "short", weeks: 4, baselineValue: null, targetValue: null })}>
+        ＋ Add custom goal
+      </button>
+    </div>
+  );
 
   return (
     <>
       <SectionIntro icon="🎯" title="Goals" sub="Pre-filled from this patient's own recorded values — edit anything, or add your own. A problem can have both a short-term and a long-term goal." />
 
-      {problems.length === 0 && (
-        <div className="summary-empty">No problems selected yet, so there's nothing to set a goal for -- go back to Problem List first, or continue on without one.</div>
+      {suggested.length === 0 && otherProblems.length === 0 && (
+        <div className="summary-empty">No goals could be suggested yet — record findings in the assessment steps and they'll appear here. You can still add a problem manually in Problem List.</div>
       )}
 
-      {problems.map((p) => {
+      {suggested.map((s) => {
+        const local = problems.find((p) => (p.sourceId || p.id) === s.id);
+        const mine = local ? goals.filter((g) => g.problemId === local.id) : [];
+        const chosenTemplates = new Set(mine.map((g) => g.templateId).filter(Boolean));
+        const suggestions = buildGoalsForProblem(s.id, s.baseline, setting).filter((t) => !chosenTemplates.has(t.templateId));
+        const onAdd = (goalObj) => {
+          const p = local || ensureProblem(s);
+          setGoals([...goals, { id: uid(), ...goalObj, problemId: p.id }]);
+        };
+        return renderGoalGroup(s.id, s.name, s.findings, mine, suggestions, onAdd);
+      })}
+
+      {otherProblems.map((p) => {
         const mine = goals.filter((g) => g.problemId === p.id);
         const chosenTemplates = new Set(mine.map((g) => g.templateId).filter(Boolean));
-        const suggestions = p.sourceId ? buildGoalsForProblem(p.sourceId, p.baseline, setting).filter((s) => !chosenTemplates.has(s.templateId)) : [];
-        return (
-          <div key={p.id} style={{ marginBottom: 18 }}>
-            <div className="subheading" style={{ marginTop: 10 }}>{p.name}</div>
-            {p.findings.length > 0 && (
-              <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 8 }}>
-                Current: {p.findings.map((f) => `${f.label} ${renderVal(f.value)}`).join(" · ")}
-              </div>
-            )}
-
-            {mine.map((g) => (
-              <GoalEditor key={g.id} goal={g}
-                onChange={(next) => setGoals(goals.map((x) => (x.id === g.id ? next : x)))}
-                onRemove={() => setGoals(goals.filter((x) => x.id !== g.id))} />
-            ))}
-
-            {suggestions.map((s) => (
-              <button key={s.templateId} type="button" className="template-row" style={{ width: "100%" }}
-                // `...s` must come BEFORE problemId: buildGoalsForProblem()
-                // stamps the knowledge-base problem id on each template, and
-                // spreading it last silently overwrote the local problem id,
-                // breaking every goal->problem lookup (relevant treatment
-                // categories, plan grouping).
-                onClick={() => setGoals([...goals, { id: uid(), ...s, problemId: p.id }])}>
-                <div>
-                  <div className="template-row-label">{s.label}</div>
-                  <div className="template-row-note">{s.baseline} → {s.target} · {s.weeks} weeks · {s.term === "short" ? "STG" : "LTG"}</div>
-                </div>
-                <span className="template-row-arrow">+</span>
-              </button>
-            ))}
-
-            <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }}
-              onClick={() => setGoals([...goals, { id: uid(), problemId: p.id, templateId: null, label: "Custom goal", measure: "Custom goal", unit: "", baseline: "", target: "", term: "short", weeks: 4, baselineValue: null, targetValue: null }])}>
-              ＋ Add custom goal
-            </button>
-          </div>
-        );
+        const suggestions = p.sourceId ? buildGoalsForProblem(p.sourceId, p.baseline, setting).filter((t) => !chosenTemplates.has(t.templateId)) : [];
+        const onAdd = (goalObj) => setGoals([...goals, { id: uid(), ...goalObj, problemId: p.id }]);
+        return renderGoalGroup(p.id, p.name, p.findings, mine, suggestions, onAdd);
       })}
 
       <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 8 })} onClick={onNext}>
@@ -1385,7 +1419,7 @@ export function CarePlanSection({ data, setData, knowledge, sectionKey, initialP
         <button type="button" className="ghost-btn" style={{ marginBottom: 14 }} onClick={() => setViewOverride(null)}>← Back to Care Plan</button>
       )}
       {phase === "problems" && <ProblemsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} onNext={() => goNextPhase("goals")} condition={condition} setting={setting} floatingCTA={floatingCTA} />}
-      {phase === "goals" && <GoalsPhase problems={problems} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
+      {phase === "goals" && <GoalsPhase suggested={suggested} problems={problems} setProblems={(v) => set("problems", v)} goals={goals} setGoals={(v) => set("goals", v)} onNext={() => goNextPhase("treatment")} setting={setting} floatingCTA={floatingCTA} />}
       {phase === "treatment" && <TreatmentPhase problems={problems} goals={goals} treatments={treatments} setTreatments={(v) => set("treatments", v)} onNext={() => goNextPhase("plan")} floatingCTA={floatingCTA} requireAuth={requireAuth} />}
       {phase === "plan" && <PlanPhase problems={problems} goals={goals} treatments={treatments} onGoToPhase={goToPhase} />}
       {phase === "sessions" && <SessionsPhase problems={problems} treatments={treatments} goals={goals} sessions={sessions} setSessions={(v) => set("sessions", v)} />}
