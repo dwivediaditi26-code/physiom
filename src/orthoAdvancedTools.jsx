@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { SectionIntro, TextArea, InfoButton, InfoCard, InfoCardGrid, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
@@ -153,6 +154,64 @@ export function CpaOptionPicker({ options, value, onChange }) {
         <div style={{ marginTop: 8, fontSize: "0.76rem", lineHeight: 1.5, color: "#374151" }}>{selectedOpt.meaning}</div>
       )}
     </div>
+  );
+}
+
+/* Drop-in replacement for <GradeSelect> with the same
+   <option> children and an e.target.value-style onChange -- but its list is
+   our own white popover instead of the browser/OS-native picker, which
+   renders as a grey system menu on desktop (2026-09-18, Aditi: "white,
+   make white not grey"). */
+export function GradeSelect({ value, onChange, children, style, className = "grade-select" }) {
+  const opts = React.Children.toArray(children)
+    .filter((c) => c && c.type === "option")
+    .map((c) => ({ value: c.props.value ?? "", label: c.props.children }));
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btnRef = React.useRef(null);
+  const current = opts.find((o) => o.value === (value || ""));
+  const placeholder = opts.find((o) => o.value === "");
+  React.useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => { window.removeEventListener("scroll", close, true); window.removeEventListener("resize", close); };
+  }, [open]);
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      const maxH = Math.min(280, Math.max(140, Math.max(below, r.top) - 16));
+      const up = below < 200 && r.top > below;
+      setPos({ left: r.left, width: Math.max(r.width, 160), maxH, top: up ? undefined : r.bottom + 4, bottom: up ? window.innerHeight - r.top + 4 : undefined });
+    }
+    setOpen((o) => !o);
+  }
+  return (
+    <>
+      <button ref={btnRef} type="button" className={className} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, textAlign: "left", fontFamily: "inherit", ...style }} onClick={toggle}>
+        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: value ? undefined : "#6b7280", fontWeight: value ? 700 : 500 }}>{value ? (current?.label ?? value) : (placeholder?.label ?? "Select")}</span>
+        <span aria-hidden="true" style={{ fontSize: 10, color: "#6b7280" }}>▾</span>
+      </button>
+      {open && pos && createPortal(
+        <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100000 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.maxH, overflowY: "auto", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, boxShadow: "0 10px 28px rgba(20,10,60,.18)", padding: 4 }}>
+            {opts.map((o) => {
+              const sel = (value || "") === o.value;
+              return (
+                <button type="button" key={o.value || "__none"} onClick={() => { onChange({ target: { value: o.value } }); setOpen(false); }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderRadius: 8, background: sel ? "#F3EFFF" : "#fff", color: o.value ? "#1f2937" : "#6b7280", fontWeight: sel ? 700 : 500, fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit", lineHeight: 1.35 }}>
+                  <span style={{ width: 14, color: "#6D28D9" }}>{sel ? "✓" : ""}</span>
+                  <span>{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -421,18 +480,18 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
                   </div>
                 </div>
                 <div className="row-2" style={{ marginTop: 6 }}>
-                  <select className="grade-select" value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
+                  <GradeSelect value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
                     <option value="">Pain?</option>
                     {CYRIAX_PAIN_OPTIONS.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
-                  </select>
-                  <select className="grade-select" value={entry[t.id + "_limited"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_limited"]: e.target.value })}>
+                  </GradeSelect>
+                  <GradeSelect value={entry[t.id + "_limited"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_limited"]: e.target.value })}>
                     <option value="">Range?</option>
                     {CYRIAX_LIMITED_OPTIONS.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
-                  </select>
+                  </GradeSelect>
                 </div>
               </div>
             );
@@ -446,18 +505,18 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
                 <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="row-2" style={{ marginTop: 6 }}>
-                <select className="grade-select" value={entry[t.id + "_ef"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_ef"]: e.target.value })}>
+                <GradeSelect value={entry[t.id + "_ef"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_ef"]: e.target.value })}>
                   <option value="">End-feel?</option>
                   {(t.endfeel_options || CYRIAX_DEFAULT_ENDFEEL).map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
-                </select>
-                <select className="grade-select" value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
+                </GradeSelect>
+                <GradeSelect value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
                   <option value="">Pain?</option>
                   {CYRIAX_PAIN_OPTIONS.map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
-                </select>
+                </GradeSelect>
               </div>
             </div>
           ))}
@@ -470,12 +529,12 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
                 <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="muscle-subtitle">{t.muscle}</div>
-              <select className="grade-select" style={{ marginTop: 6, width: "100%" }} value={entry[t.id + "_result"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_result"]: e.target.value })}>
+              <GradeSelect style={{ marginTop: 6, width: "100%" }} value={entry[t.id + "_result"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_result"]: e.target.value })}>
                 <option value="">Select result...</option>
                 {CYRIAX_RESISTED_RESULTS.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
-              </select>
+              </GradeSelect>
             </div>
           ))}
 
@@ -487,18 +546,18 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
                 <InfoButton title={t.label} richItem={cyriaxTestRichItem(t)} />
               </div>
               <div className="row-2" style={{ marginTop: 6 }}>
-                <select className="grade-select" value={entry[t.id + "_grade"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_grade"]: e.target.value })}>
+                <GradeSelect value={entry[t.id + "_grade"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_grade"]: e.target.value })}>
                   <option value="">Kaltenborn grade...</option>
                   {KALTENBORN_GRADES.map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
-                </select>
-                <select className="grade-select" value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
+                </GradeSelect>
+                <GradeSelect value={entry[t.id + "_pain"] || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_pain"]: e.target.value })}>
                   <option value="">Pain?</option>
                   {CYRIAX_PAIN_OPTIONS.map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
-                </select>
+                </GradeSelect>
               </div>
             </div>
           ))}
@@ -602,12 +661,12 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
                 const clue = idx > 0 ? obs.clues[idx] : "";
                 return (
                   <div key={obs.id} style={{ marginTop: 8 }}>
-                    <select className="grade-select" style={{ width: "100%" }} value={val || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_" + obs.id]: e.target.value })}>
+                    <GradeSelect style={{ width: "100%" }} value={val || ""} onChange={(e) => set(activeKey, { ...entry, [t.id + "_" + obs.id]: e.target.value })}>
                       <option value="">{obs.q}</option>
                       {obs.opts.map((o) => (
                         <option key={o} value={o}>{o}</option>
                       ))}
-                    </select>
+                    </GradeSelect>
                     {clue && <Hint>{clue}</Hint>}
                   </div>
                 );
