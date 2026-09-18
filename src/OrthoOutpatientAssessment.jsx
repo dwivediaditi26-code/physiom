@@ -136,7 +136,15 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // duplicate entry screen. Kept out of OPTIONAL_IDS too (not offered via
 // "Add assessment"); still in ORDERED_ALL/STEP_META so a patient record
 // saved before this change still renders correctly in Review/Summary.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
+// "exercisePrescription" retired the same way (2026-09-18, Aditi: "remove
+// this exercise prescription that is present duplicate okay before the
+// home protocol") -- Care Plan Treatment's own General Library tab already
+// browses the full EXERCISE_DB by region (orthoClinicalKnowledge.js's
+// fullExerciseLibrary flag, added 2026-09-11 specifically so it wasn't a
+// narrower subset of this step's data), so this standalone step was a
+// second, redundant exercise browser. Same backward-compat treatment: kept
+// in ORDERED_ALL/STEP_META for old saved records.
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -150,7 +158,7 @@ const OPTIONAL_IDS = ["vitals", "edema", "kineticChain", "cpa", "sttt", "fma", "
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
-const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "exercisePrescription", "homeProtocol", "review"];
+const AI_HUB_IDS = ["functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
 // Demographics(0)/Region(1) already happened pre-wizard for AI entry, so
 // this component's own stages start at Subjective(2); anything in
 // AI_HUB_IDS collapses onto the single "Summary" dot (4).
