@@ -106,7 +106,16 @@ export const OUTPATIENT_CONDITIONS = [
 ];
 const FALLBACK_PROMOTE = ["activityTolerance", "outcomeMeasure"];
 
-const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
+// Order changed (2026-09-18, Aditi: "put the care plan after the problem
+// list, care plan goal, care plan treatment then it should come the care
+// plan and the care plan progress remove that") -- Care Plan (the plan
+// overview) used to lead the group, ahead of Problem List; now it reads
+// as the natural clinical sequence Problems -> Goals -> Treatment -> Plan
+// -> Sessions. Care Plan Progress dropped from the active step list per
+// the same request -- kept in STEP_META (below) so a record saved before
+// this change still renders its old Progress step in Review/Summary,
+// same as how "techniques" was retired.
+const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 // specialTests moved from OPTIONAL_IDS to BASE_IDS (2026-09-16, Aditi:
 // "why the special test is not showing constantly? It should show") -- it
