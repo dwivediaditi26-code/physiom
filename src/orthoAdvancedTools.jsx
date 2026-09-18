@@ -709,7 +709,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
       {!openTest && (
         <div className="rom-card">
           <div className="rom-card-title">{activeKey}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div className="tile-grid-2" style={{ gap: 10 }}>
             {tests.map((t) => {
               const done = doneCount(t);
               const total = t.observations.length + 1;
