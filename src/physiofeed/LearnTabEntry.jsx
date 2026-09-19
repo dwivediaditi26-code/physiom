@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import {
-  Search, Bell, PersonStanding, Hand, Move,
+  Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
   Waves, GraduationCap, Activity, ChevronLeft, ChevronRight,
   BookOpen, ClipboardCheck, Stethoscope, Target,
@@ -29,7 +29,6 @@ const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinet
 // desktop sidebar and old bottom nav already used. Nothing fabricated:
 // every card here opens the exact same real screen those did.
 const ASSESSMENT_LIBRARY = [
-  { key: "posture", label: "Posture Analysis", desc: "AI posture screening", icon: PersonStanding, tint: "teal" },
   { key: "palpation", label: "Palpation", desc: "Tissue assessment", icon: Hand, tint: "rose" },
   { key: "rom", label: "ROM", desc: "Range of motion", icon: Move, tint: "violet" },
   { key: "mmt", label: "MMT", desc: "Muscle testing", icon: Dumbbell, tint: "green" },
