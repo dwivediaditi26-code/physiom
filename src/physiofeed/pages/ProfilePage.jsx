@@ -81,7 +81,7 @@ export default function ProfilePage() {
         )}
       </main>
 
-      <aside className="hidden lg:block w-72 shrink-0 space-y-4">
+      <aside className="hidden xl:block w-72 shrink-0 space-y-4">
         <AboutCard /><EducationCard /><AchievementsCard />
       </aside>
     </>

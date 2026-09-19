@@ -41,7 +41,7 @@ function NavSection({ title, items }) {
 export default function Sidebar() {
   const { profile } = useAppData();
   return (
-    <aside className="hidden md:block w-60 shrink-0">
+    <aside className="hidden lg:block w-60 shrink-0">
       <NavSection title="PhysioFeed" items={PRO_NAV} />
       {profile?.isAdmin && (
         <NavSection title="Admin" items={[

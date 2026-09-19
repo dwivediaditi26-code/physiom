@@ -115,7 +115,7 @@
 .pf-header {
   top: 0;
 }
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .pf-header {
     top: var(--pm-mobile-hdr-h, 64px);
   }

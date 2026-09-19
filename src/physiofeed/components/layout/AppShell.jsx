@@ -32,14 +32,14 @@ export default function AppShell({ children }) {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <DemoBanner/>
       <Header />
-      {/* pb-24 (not py-6's plain bottom-6) below 768px: physiom's own
+      {/* pb-24 (not py-6's plain bottom-6) below 1024px: physiom's own
           outer bottom nav bar (.pm-bnav in src/utils.jsx) is
           position:fixed;bottom:0 and sits OUTSIDE this component tree, so
           nothing here knew to leave room for it -- the last ~59px of
           every PhysioFeed page (most visibly the message composer on
           MessagesPage.jsx, and the compose bar on FeedPostCard.jsx) was
           rendering right underneath it, unclickable and mostly hidden. */}
-      <div className="max-w-[1200px] mx-auto flex gap-6 px-4 sm:px-6 pt-6 pb-24 md:pb-6">
+      <div className="max-w-[1200px] mx-auto flex gap-6 px-4 sm:px-6 pt-6 pb-24 lg:pb-6">
         <Sidebar />
         {children}
       </div>

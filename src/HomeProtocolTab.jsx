@@ -168,7 +168,7 @@ export default function HomeProtocolTab({ data, set, PC, selectedRegions = [] })
     letterSpacing: "0.5px",
   };
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
 
   return (
     <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 14, alignItems: "flex-start" }}>

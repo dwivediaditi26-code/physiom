@@ -149,6 +149,10 @@ const MOBILE_CSS = `
     box-shadow: 4px 0 24px rgba(0,0,0,0.12);
   }
   .pm-nav-drawer.open { transform: translateX(0); }
+  /* The 24px shadow is drawn to the drawer's right, which is on-screen even
+     when the drawer itself is translated off to the left -- it showed up as
+     a faint grey gradient down the left edge of every phone/tablet screen. */
+  .pm-nav-drawer:not(.open) { box-shadow: none; }
 
   /* ── How-to-Perform drawer (inline assessment help) ──
      Bottom sheet on mobile, right-side drawer on desktop -- an overlay on
@@ -164,7 +168,7 @@ const MOBILE_CSS = `
   }
   @keyframes pmHowToUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   @keyframes pmHowToRight { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .pm-howto-overlay { align-items: stretch; justify-content: flex-end; background: rgba(0,0,0,0.35); }
     .pm-howto-sheet {
       max-width: 420px; max-height: 100vh; height: 100%; border-radius: 0;
@@ -178,7 +182,7 @@ const MOBILE_CSS = `
     border-right: 1px solid #E0E0E2; background: #EBEBED;
     position: sticky; top: 54px; height: calc(100vh - 54px); overflow-y: auto;
   }
-  @media (max-width: 767px) { .pm-sidebar { display: none !important; } }
+  @media (max-width: 1023px) { .pm-sidebar { display: none !important; } }
 
   /* ── Hamburger ── */
   .pm-hamburger {
@@ -187,7 +191,7 @@ const MOBILE_CSS = `
     font-size: 1.1rem; line-height: 1; flex-shrink: 0; min-height: 40px; min-width: 40px;
     align-items: center; justify-content: center;
   }
-  @media (max-width: 767px) { .pm-hamburger { display: flex; } }
+  @media (max-width: 1023px) { .pm-hamburger { display: flex; } }
 
   /* ── Main content ── */
   /* --pm-pad-x/--pm-pad-top track the actual padding at each breakpoint so
@@ -246,7 +250,7 @@ const MOBILE_CSS = `
   @media (min-width: 640px) { .pm-card { padding: 22px 24px !important; } }
 
   /* ── Global touch targets — EVERY button/input gets 44px min ── */
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     /* .ai-journey-label-btn (orthoSetupKit.jsx) is an 8.5px text label
        under a breadcrumb dot, sized to match its sibling non-jumpable
        step's plain <div> label exactly -- forcing it to 40px here left it
@@ -351,8 +355,8 @@ const MOBILE_CSS = `
     max-height: 75vh;
     padding-bottom: env(safe-area-inset-bottom);
   }
-  @media (max-width: 767px) { .pm-bnav { display: flex; } }
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) { .pm-bnav { display: flex; } }
+  @media (max-width: 1023px) {
     .pm-live-chip { display: none !important; }
     .pm-patients-btn { display: none !important; }
     .pm-header { padding: 0 12px !important; }
@@ -424,7 +428,7 @@ const MOBILE_CSS = `
   }
 
   /* ── Safe area ── */
-  @media (max-width: 767px) { .pm-main { padding-bottom: calc(68px + env(safe-area-inset-bottom) + 10px) !important; } }
+  @media (max-width: 1023px) { .pm-main { padding-bottom: calc(68px + env(safe-area-inset-bottom) + 10px) !important; } }
 
   /* ── Landscape mobile ── */
   @media (orientation: landscape) and (max-width: 900px) {
@@ -556,20 +560,20 @@ const MOBILE_CSS = `
      to be excluded here too (2026-09-16, Aditi: AI-journey breadcrumb
      labels rendering 40px tall instead of matching their sibling's
      natural ~10px). */
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     button:not(.pm-rom-qual-btn):not(.info-btn-sm):not(.popover-item):not(.popover-close):not(.stepper-arrow):not(.ai-journey-label-btn) { min-height: 40px !important; }
   }
 
   /* ── Show/hide helpers ── */
   .pm-mobile-only { display: none; }
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     .pm-mobile-only { display: block; }
     .pm-desktop-only { display: none !important; }
   }
 
   /* ── Mobile-only compact header ── */
   .pm-mobile-hdr { display: none; }
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     /* Exposed so any other sticky element on mobile (e.g. an assessment
        screen's own .topbar) can offset itself by exactly this header's
        real rendered height -- including the safe-area inset on notched
@@ -593,7 +597,7 @@ const MOBILE_CSS = `
   .pm-mobile-search {
     display: none;
   }
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     .pm-mobile-search {
       display: flex; align-items: center; gap: 7px;
       padding: 4px 10px; position: sticky; top: 42px; z-index: 100;
@@ -636,6 +640,10 @@ const MOBILE_CSS = `
   }
 
   /* ── Compact test cards on mobile ── */
+  /* Phone widths only (still 767, not the 1023 tablet cut-off): these rules
+     shrink steppers to 22px dots with 7px labels and hide group headings to
+     save room on a ~390px screen. A tablet has the room, and 768-1023px
+     always got the roomier non-compact versions before the tiers change. */
   @media (max-width: 767px) {
     .pm-test-card-hdr { padding: 8px 10px !important; }
     .pm-stepper-wrap { padding: 7px 10px 5px !important; margin-bottom: 10px !important; border-radius: 10px !important; }
@@ -669,6 +677,69 @@ const MOBILE_CSS = `
 
     /* Group section headings (FULL ROM / MMT / NEURO ASSESSMENT) — hide on mobile */
     .pm-group-head { display: none !important; }
+  }
+
+  /* ════════════════════════════════════════════════════
+     SCREEN TIERS (2026-09-18, Aditi: "each screen should be laptop ready
+     and tablet ready... tablet should be the same as the mobile UI, but
+     look like a bigger mobile screen")
+
+       phone   < 768px     the phone UI
+       tablet  768-1023px  the SAME phone UI (bottom nav, compact header,
+                           drawer, bottom sheets) in a centred, wider column
+       laptop  >= 1024px   header + 210px sidebar shell
+
+     Every "mobile" media query in the app now switches at 1023/1024 rather
+     than 767/768, so an iPad in portrait no longer gets a 210px sidebar
+     squeezed beside a ~550px content pane.
+     --pm-col-w is the width of the centred wizard column (Ortho / Neuro /
+     Cardio assessments); --pm-side-w is the sidebar those wizards' fixed
+     Back/Next bar has to shift right by to stay under their own column.
+  ════════════════════════════════════════════════════ */
+  :root { --pm-col-w: 480px; --pm-side-w: 0px; }
+  @media (min-width: 768px) { :root { --pm-col-w: 700px; } }
+  @media (min-width: 1024px) { :root { --pm-side-w: 210px; } }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .pm-main { flex: 0 1 760px !important; width: 100%; margin: 0 auto; }
+    .pm-mobile-hdr { padding-left: max(14px, calc((100% - 760px) / 2 + 14px)); padding-right: max(14px, calc((100% - 760px) / 2 + 14px)); }
+    .pm-howto-sheet { max-width: 560px; }
+    /* Bottom nav: the five tabs share one centred bar instead of the two
+       capped 80px tab pairs hugging the screen edges around a stretched
+       PhysioFeed bubble. */
+    .pm-bnav-tabs { width: 100%; max-width: 640px; margin: 0 auto; }
+    .pm-bnav-tab { max-width: none; flex: 1 1 0; }
+    .pm-bnav-tabs > button:not(.pm-bnav-tab) { flex: 1 1 0 !important; }
+  }
+  /* Only a real tablet gets the roomier nav -- a phone held sideways is also
+     768px+ wide but only ~400px tall, where the nav has to stay slim. */
+  @media (min-width: 768px) and (max-width: 1023px) and (min-height: 600px) {
+    .pm-bnav-tab { min-height: 60px; }
+    .pm-bnav-tab-icon svg { width: 24px; height: 24px; }
+    .pm-bnav-tab-label { font-size: 0.66rem; }
+  }
+
+  @media (min-width: 1024px) {
+    /* The header scrolls away on a laptop instead of pinning. Every sticky
+       bar inside a screen (wizard title/step strip, PhysioFeed header,
+       Posture tabs, Outcome/Subjective headers) pins at top:0, which
+       slid them UNDER a pinned header and collided with its logo row. The
+       sidebar pins to the real top to match. */
+    .pm-header { position: static !important; }
+    .pm-sidebar { top: 0 !important; height: 100vh !important; }
+
+    /* Active-patient bar: one row instead of two stacked ones (name/profile
+       left, saved status + New/Switch right). On a 768px-tall laptop the
+       header + guest banner + this bar was 155px of chrome above the
+       content; this hands ~30px of it back. */
+    .pm-patient-bar { flex-direction: row !important; align-items: center !important; gap: 16px !important; }
+    .pm-patient-bar > div:last-child:not(:first-child) { margin-left: auto; }
+  }
+
+  /* Wider than the 1400px shell: keep the patient bar's contents in line
+     with the header and sidebar instead of hugging the screen edges. */
+  @media (min-width: 1424px) {
+    .pm-patient-bar { padding-left: calc((100% - 1400px) / 2 + 16px) !important; padding-right: calc((100% - 1400px) / 2 + 16px) !important; }
   }
 `;
 

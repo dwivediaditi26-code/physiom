@@ -9,7 +9,7 @@ export default function FeedRightRail() {
   const suggestions = people.filter((p) => !p.following).slice(0, 3);
 
   return (
-    <aside className="hidden lg:block w-64 shrink-0 space-y-4">
+    <aside className="hidden xl:block w-64 shrink-0 space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
         <p className="text-sm font-semibold text-slate-900 mb-3">People you may know</p>
         <div className="space-y-3">

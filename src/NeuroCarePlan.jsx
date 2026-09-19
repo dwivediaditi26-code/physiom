@@ -115,7 +115,14 @@ const chip = (bg, color) => ({ fontSize: 10.5, fontWeight: 700, padding: "2px 8p
 // bottom) for the iOS home-indicator safe area, making it taller on notched
 // devices -- this offset must grow by the same amount or the CTA sits
 // behind the nav bar instead of above it.
-const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "calc(74px + env(safe-area-inset-bottom))", width: "min(680px, calc(100vw - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
+// bottom/left/width read the shared screen-tier variables (utils.jsx) instead
+// of a phone-only 74px/50%/100vw guess: --pm-bnav-h is the bottom nav's real
+// height (0 on a laptop, where there is no bottom nav), --pm-side-w the 210px
+// laptop sidebar the wizard column is centred beside, --pm-col-w the wizard
+// column width (2026-09-18, tablet/laptop pass -- on a laptop this bar was
+// floating ~70px above the wizard's Back/Next bar, centred on the window
+// rather than on the wizard column).
+const FLOATING_CTA = { position: "fixed", left: "calc(50% + var(--pm-side-w, 0px) / 2)", transform: "translateX(-50%)", bottom: "calc(var(--pm-bnav-h, calc(59px + env(safe-area-inset-bottom))) + 15px)", width: "min(calc(var(--pm-col-w, 480px) - 20px), calc(100vw - var(--pm-side-w, 0px) - 28px))", zIndex: 40, marginTop: 0, boxShadow: "0 8px 26px rgba(109,40,217,0.42)" };
 // .bottombar (orthoStyles.js) itself grows with the safe area TWICE over --
 // once in its own `bottom: calc(60px + env(safe-area-inset-bottom))` offset,
 // again in its `padding-bottom: calc(12px + env(safe-area-inset-bottom))` --
@@ -125,7 +132,7 @@ const FLOATING_CTA = { position: "fixed", left: "50%", transform: "translateX(-5
 // wizard's own Back/Next bar) that missing second term was ~34px short,
 // enough to visibly overlap; a desktop/no-notch preview has safe-area 0 so
 // the bug never showed there.
-const FLOATING_CTA_WIZARD = { ...FLOATING_CTA, bottom: "calc(143px + (2 * env(safe-area-inset-bottom)))" };
+const FLOATING_CTA_WIZARD = { ...FLOATING_CTA, bottom: "calc(var(--pm-bnav-h, calc(59px + env(safe-area-inset-bottom))) + 84px + env(safe-area-inset-bottom))" };
 const ctaStyle = (floating, base) => ({ ...base, ...(floating ? FLOATING_CTA : FLOATING_CTA_WIZARD) });
 // Extra bottom padding so the last card isn't hidden behind the fixed bar.
 const FLOATING_PAD = { paddingBottom: 84 };

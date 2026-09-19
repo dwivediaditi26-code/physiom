@@ -5290,7 +5290,12 @@ function useBreakpoint() {
     window.addEventListener("resize", fn);
     return () => window.removeEventListener("resize", fn);
   }, []);
-  return { isMobile: w < 900, isTablet: w >= 900 && w < 1100, isDesktop: w >= 1100, w };
+  // isMobile now runs up to 1023px (was 899): the app shell keeps the phone UI
+  // (bottom nav, no sidebar) for every tablet width, so Posture has to stay
+  // in its stacked single-column layout there too -- the two-panel isWide
+  // layout was designed to sit beside the 210px laptop sidebar, not inside
+  // a phone-shell column (2026-09-18, tablet/laptop pass).
+  return { isMobile: w < 1024, isTablet: w >= 1024 && w < 1100, isDesktop: w >= 1100, w };
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────

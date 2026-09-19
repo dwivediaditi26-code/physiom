@@ -120,7 +120,7 @@ export default function Header() {
           was a second one saying nothing, with a dead gap of empty
           header height around it ("there is a space is left... remove
           it"). Kept for desktop below unchanged. */}
-      <div className="md:hidden relative border-t border-slate-200" style={{ background: "#FAFAF8" }}>
+      <div className="lg:hidden relative border-t border-slate-200" style={{ background: "#FAFAF8" }}>
         <div className="flex items-center gap-2 px-2.5 py-2 overflow-x-auto no-scrollbar">
           {location.pathname !== "/feed" && (
             <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
@@ -150,7 +150,7 @@ export default function Header() {
       </div>
 
       {/* Logo/icon row -- desktop only now (see comment above). */}
-      <div className="relative hidden md:block">
+      <div className="relative hidden lg:block">
       <div className="max-w-[1200px] mx-auto flex items-center gap-3 px-4 sm:px-6 h-16">
         <Link to="/feed" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600" />
@@ -160,7 +160,7 @@ export default function Header() {
           </div>
         </Link>
 
-        <div className="hidden md:block relative flex-1 max-w-md">
+        <div className="hidden lg:block relative flex-1 max-w-md">
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-9">
             <Search size={15} className="text-slate-400" />
             <input
@@ -182,7 +182,7 @@ export default function Header() {
         </div>
 
         {/* Icon cluster (2026-08-27, Aditi's request): pinned at the row's
-            end. Bell/Messages are md:-only now -- on mobile these live in
+            end. Bell/Messages are lg:-only now -- on mobile these live in
             physiom's own top app header instead (AppFull.jsx's
             pm-mobile-hdr), which stays visible while this whole header
             scrolls away, so duplicating a second copy here just stacked
@@ -191,7 +191,7 @@ export default function Header() {
             when we open the physio feed"). The mobile search toggle this
             row used to also hold is gone for the same reason -- that
             header's search icon takes you to People instead. */}
-        <div className="hidden md:flex items-center gap-1 sm:gap-3 ml-auto shrink-0">
+        <div className="hidden lg:flex items-center gap-1 sm:gap-3 ml-auto shrink-0">
           {/* Own page, not a dropdown (2026-08-27, Aditi's request): the old
               bell dropdown had no reliable close behaviour, especially once
               it lived inside the horizontally-scrolling mobile strip. A

@@ -15,13 +15,14 @@ export function orthoStyles() {
           justify-content: center;
         }
         .app-inner {
-          width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+          width: 100%; max-width: var(--pm-col-w, 480px); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
           background: #fff; position: relative; overflow-x: clip; overflow-y: visible;
         }
+        /* Column width now comes from --pm-col-w (utils.jsx screen tiers:
+           480 phone / 700 tablet+laptop), shared with the Back/Next bar
+           below so the two can no longer disagree. */
         @media (min-width: 860px) {
           .app-shell { align-items: flex-start; padding: 24px 0; }
-          .app-inner { max-width: 640px; }
-          .bottombar { max-width: 640px; }
           .condition-grid { grid-template-columns: 1fr 1fr 1fr; }
         }
         /* Fix: was position:fixed with height:calc(100dvh - Npx) -- on
@@ -49,7 +50,7 @@ export function orthoStyles() {
            --pm-mobile-hdr-h (utils.jsx) is that header's own real height
            including the safe-area inset, so this always pins flush under
            it with no dead gap, on notched phones too. */
-        @media (max-width: 767px) {
+        @media (max-width: 1023px) {
           .topbar { top: var(--pm-mobile-hdr-h, 64px); }
         }
         .topbar-row { display: flex; align-items: center; gap: 10px; }
@@ -1035,7 +1036,7 @@ export function orthoStyles() {
            "60px" guess here left a visible gap of the page's grey background
            between the two bars on devices where the guess ran short (looked
            like this bar was "floating" above the tab bar on real iPhones). */
-        .bottombar { position: fixed; left: 50%; transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: 480px; z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
           flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;

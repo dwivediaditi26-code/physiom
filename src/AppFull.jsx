@@ -2684,7 +2684,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               ):tests==="TREATMENT_MODULE"?(
                 <>
                 {(()=>{
-                  const isMobile=window.innerWidth<768;
+                  const isMobile=window.innerWidth<1024;
                   if(isMobile){
                     return(
                       <div>
