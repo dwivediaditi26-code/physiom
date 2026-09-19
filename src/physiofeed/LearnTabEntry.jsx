@@ -9,11 +9,10 @@ import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
 import "./physiofeed.css";
 
-// These 7 Assessment Library / Advanced Assessment items have real,
+// These Assessment Library / Advanced Assessment items have real,
 // structured per-item data (technique/position/finding fields in
-// sharedClinicalData.js or RegionalFunctionalScreens.jsx), so they get a
-// second "Study" entry point into the read-only big-image study mode,
-// alongside their existing card that opens the real clinical screen.
+// sharedClinicalData.js or RegionalFunctionalScreens.jsx), so their Learn row
+// opens the read-only big-image study mode.
 // Outcome Measures/Kinetic Chain/Functional Movement joined ROM/MMT/
 // Special/Neuro here 2026-08-19 (Aditi's request: same grid treatment).
 // Palpation joined 2026-08-29 (Aditi: "Learn -> Palpation should be a
@@ -27,8 +26,8 @@ const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinet
 
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
-// desktop sidebar and old bottom nav already used. Nothing fabricated:
-// every card here opens the exact same real screen those did.
+// desktop sidebar and old bottom nav already used. Nothing fabricated. Rows
+// with no study mode (STTT, Exercise Prescription) still open that real screen.
 const ASSESSMENT_LIBRARY = [
   { key: "palpation", label: "Palpation", desc: "Tissue assessment", icon: Hand, tint: "rose" },
   { key: "rom", label: "ROM", desc: "Range of motion", icon: Move, tint: "violet" },
@@ -38,10 +37,10 @@ const ASSESSMENT_LIBRARY = [
   { key: "outcome", label: "Outcome Measures", desc: "Validated scales", icon: BarChart3, tint: "teal" },
   // Cardio has no single-screen navTo() target of its own (the real
   // Cardiopulmonary Assessment is reached via the Clinical tab's specialty
-  // picker, not a direct ALL_TESTS key) -- studyOnly routes its whole card
-  // straight into study mode instead of onNav, same reference library
-  // CardiopulmonaryAssessment.jsx's own ⓘ InfoCards already pull from.
-  { key: "cardio", label: "Cardio & Respiratory", desc: "Cardiopulmonary reference library", icon: Activity, tint: "rose", studyOnly: true },
+  // picker, not a direct ALL_TESTS key), so study mode is its only entry --
+  // same reference library CardiopulmonaryAssessment.jsx's own ⓘ InfoCards
+  // already pull from.
+  { key: "cardio", label: "Cardio & Respiratory", desc: "Cardiopulmonary reference library", icon: Activity, tint: "rose" },
 ];
 
 const ADVANCED_ASSESSMENT = [
@@ -67,8 +66,10 @@ const TINTS = {
 
 // Grouped list rows (2026-09-18, Aditi: "build as shown") -- a coloured icon,
 // name, short description, and a Study pill. Tapping the row opens study mode
-// when the item has one (Learn is for learning), otherwise the real tool;
-// "Tool" opens the real tool for items that have both.
+// when the item has one (Learn is for learning), otherwise the real tool.
+// The small "Tool" link that used to sit beside the Study pill, opening the
+// live assessment screen from here, was removed (2026-09-19, Aditi: "when we
+// click on tool written it opens... so normal study mode open").
 function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
   const studyable = STUDY_TYPES.has(item.key);
@@ -84,9 +85,6 @@ function Row({ item, onNav, onStudy }) {
           <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
       </button>
-      {studyable && !item.studyOnly && (
-        <button type="button" onClick={() => onNav(item.key)} className="text-[11px] font-medium text-slate-500 hover:text-violet-700 px-1.5 shrink-0">Tool</button>
-      )}
       {studyable
         ? <button type="button" onClick={() => onStudy(item.key)} className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 shrink-0"><GraduationCap size={12}/> Study</button>
         : <ChevronRight size={16} className="text-slate-300 shrink-0"/>}
