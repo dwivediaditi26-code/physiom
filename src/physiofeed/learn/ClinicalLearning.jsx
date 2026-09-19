@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, BookOpen, UserRound, Bell, Lock, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ChevronLeft, ChevronRight, BookOpen, UserRound, Bell, Lock, RotateCcw, Bone, Brain, Trophy, HeartPulse, Baby, PersonStanding,
+  MessageCircle, History, MessageSquareText, Stethoscope, ClipboardCheck, Lightbulb, ListChecks, TrendingUp, Sparkles,
+} from "lucide-react";
 import InfoBox from "./InfoBox.jsx";
 import { QuickCheck } from "./SpecialTestDetail.jsx";
 import { CLINICAL_CASES, CASE_SPECIALTIES, DIFFICULTY } from "./clinicalCases.js";
@@ -40,9 +43,48 @@ const MSK_REGIONS = [
   { key: "ankle", label: "Ankle / foot", data: ankleRaw },
 ];
 
-function Chip({ active, onClick, children }) {
+// Colour themes (literal class names so Tailwind picks them up).
+const SPEC_THEME = {
+  msk:    { label: "MSK",        Icon: Bone,           soft: "bg-violet-50", softer: "bg-violet-100", text: "text-violet-700", solid: "bg-violet-600", grad: "from-violet-600 via-violet-500 to-fuchsia-500", border: "border-violet-200", dot: "bg-violet-500" },
+  neuro:  { label: "Neuro",      Icon: Brain,          soft: "bg-sky-50",    softer: "bg-sky-100",    text: "text-sky-700",    solid: "bg-sky-600",    grad: "from-sky-600 via-sky-500 to-indigo-500",       border: "border-sky-200",    dot: "bg-sky-500" },
+  sports: { label: "Sports",     Icon: Trophy,         soft: "bg-orange-50", softer: "bg-orange-100", text: "text-orange-700", solid: "bg-orange-500", grad: "from-orange-500 via-orange-400 to-amber-400",  border: "border-orange-200", dot: "bg-orange-500" },
+  cardio: { label: "Cardio",     Icon: HeartPulse,     soft: "bg-rose-50",   softer: "bg-rose-100",   text: "text-rose-700",   solid: "bg-rose-600",   grad: "from-rose-600 via-rose-500 to-pink-500",       border: "border-rose-200",   dot: "bg-rose-500" },
+  paeds:  { label: "Pediatrics", Icon: Baby,           soft: "bg-pink-50",   softer: "bg-pink-100",   text: "text-pink-700",   solid: "bg-pink-500",   grad: "from-pink-500 via-fuchsia-500 to-purple-500",  border: "border-pink-200",   dot: "bg-pink-500" },
+  geri:   { label: "Geriatrics", Icon: PersonStanding, soft: "bg-amber-50",  softer: "bg-amber-100",  text: "text-amber-700",  solid: "bg-amber-500",  grad: "from-amber-500 via-amber-400 to-yellow-400",   border: "border-amber-200",  dot: "bg-amber-500" },
+};
+const STEP_THEME = {
+  profile:    { Icon: UserRound,         head: "bg-violet-50",  icon: "bg-violet-500",  text: "text-violet-700",  cell: "border-violet-100" },
+  complaint:  { Icon: MessageCircle,     head: "bg-rose-50",    icon: "bg-rose-500",    text: "text-rose-700",    cell: "border-rose-100" },
+  history:    { Icon: History,           head: "bg-amber-50",   icon: "bg-amber-500",   text: "text-amber-700",   cell: "border-amber-100" },
+  subjective: { Icon: MessageSquareText, head: "bg-sky-50",     icon: "bg-sky-500",     text: "text-sky-700",     cell: "border-sky-100" },
+  objective:  { Icon: Stethoscope,       head: "bg-cyan-50",    icon: "bg-cyan-500",    text: "text-cyan-700",    cell: "border-cyan-100" },
+  assessment: { Icon: ClipboardCheck,    head: "bg-indigo-50",  icon: "bg-indigo-500",  text: "text-indigo-700",  cell: "border-indigo-100" },
+  reasoning:  { Icon: Lightbulb,         head: "bg-fuchsia-50", icon: "bg-fuchsia-500", text: "text-fuchsia-700", cell: "border-fuchsia-100" },
+  plan:       { Icon: ListChecks,        head: "bg-orange-50",  icon: "bg-orange-500",  text: "text-orange-700",  cell: "border-orange-100" },
+  followup:   { Icon: TrendingUp,        head: "bg-blue-50",    icon: "bg-blue-500",    text: "text-blue-700",    cell: "border-blue-100" },
+};
+const LEVEL_THEME = {
+  beginner:     { label: "Beginner",     chip: "bg-emerald-100 text-emerald-700", solid: "bg-emerald-500", dot: "bg-emerald-500" },
+  intermediate: { label: "Intermediate", chip: "bg-amber-100 text-amber-700",     solid: "bg-amber-500",   dot: "bg-amber-500" },
+  advanced:     { label: "Advanced",     chip: "bg-rose-100 text-rose-700",       solid: "bg-rose-500",    dot: "bg-rose-500" },
+};
+
+// A rounded display face for headings (body stays on the app's Inter).
+function useDisplayFont() {
+  useEffect(() => {
+    if (document.getElementById("cl-display-font")) return;
+    const l = document.createElement("link");
+    l.id = "cl-display-font";
+    l.rel = "stylesheet";
+    l.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap";
+    document.head.appendChild(l);
+  }, []);
+}
+const DISPLAY_CSS = ".cl-display{font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;letter-spacing:-0.01em}";
+
+function Chip({ active, onClick, children, solid = "bg-violet-600" }) {
   return (
-    <button type="button" onClick={onClick} className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${active ? "bg-violet-600 text-white" : "bg-white border border-slate-200 text-slate-600"}`}>
+    <button type="button" onClick={onClick} className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${active ? `${solid} text-white shadow-sm` : "bg-white border border-slate-200 text-slate-600"}`}>
       {children}
     </button>
   );
@@ -56,7 +98,7 @@ function Header({ title, subtitle, onBack }) {
           <ChevronLeft size={22} className="text-slate-600"/>
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-slate-900 leading-tight">{title}</h1>
+          <h1 className="cl-display text-2xl font-extrabold text-slate-900 leading-tight">{title}</h1>
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
       </div>
@@ -190,17 +232,17 @@ function ConditionsView({ onBack, onOpenCase }) {
     <div>
       <Header title="Conditions" subtitle="Learn condition-wise clinical knowledge" onBack={onBack}/>
       <div className="flex gap-2 overflow-x-auto no-scrollbar my-4">
-        {SPECIALTIES.map((s) => <Chip key={s.key} active={spec === s.key} onClick={() => setSpec(s.key)}>{s.label}</Chip>)}
+        {SPECIALTIES.map((sp) => <Chip key={sp.key} active={spec === sp.key} onClick={() => setSpec(sp.key)} solid={SPEC_THEME[sp.key].solid}>{sp.label}</Chip>)}
       </div>
       {spec !== "msk" ? (
         <SoonNote text={`${SPECIALTIES.find((s) => s.key === spec).label} conditions are coming soon`}/>
       ) : (
         groups.map((g) => (
           <div key={g.key} className="mb-5">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-0.5">{g.label}</div>
+            <div className="cl-display flex items-center gap-2 text-[13px] font-extrabold text-violet-700 mb-2 px-0.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500"/>{g.label}<span className="text-[11px] font-bold text-violet-400">{g.list.length}</span></div>
             {g.list.map((c) => (
-              <button key={c.id} type="button" onClick={() => setSelected({ c, regionLabel: g.label })} className="w-full flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-3.5 py-3 mb-2 text-left hover:border-violet-300">
-                <span className="flex-1 text-sm font-semibold text-slate-900 leading-snug">{c.name}</span>
+              <button key={c.id} type="button" onClick={() => setSelected({ c, regionLabel: g.label })} className="w-full flex items-center gap-3 bg-white border border-violet-100 border-l-4 border-l-violet-500 rounded-2xl px-3.5 py-3 mb-2 text-left shadow-sm hover:shadow-md">
+                <span className="cl-display flex-1 text-sm font-bold text-slate-900 leading-snug">{c.name}</span>
                 <ChevronRight size={16} className="text-slate-300 shrink-0"/>
               </button>
             ))}
@@ -213,25 +255,35 @@ function ConditionsView({ onBack, onOpenCase }) {
 
 /* ---------------- Clinical cases ---------------- */
 
-function StepCard({ step, index, isLast, onQuizDone }) {
+function StepCard({ step, index }) {
+  const t = STEP_THEME[step.key] || STEP_THEME.profile;
+  const Icon = t.Icon;
   return (
-    <div className="border border-slate-200 rounded-2xl bg-white p-3.5">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold flex items-center justify-center">{index + 1}</span>
-        <div className="text-sm font-bold text-slate-900">{step.title}</div>
+    <div className={`rounded-2xl bg-white border ${t.cell} shadow-sm overflow-hidden`}>
+      <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${t.head}`}>
+        <span className={`w-8 h-8 rounded-xl ${t.icon} text-white flex items-center justify-center shadow-sm`}><Icon size={17} strokeWidth={2.2}/></span>
+        <div className={`cl-display text-[15px] font-extrabold ${t.text}`}>{step.title}</div>
+        <span className={`ml-auto text-[11px] font-bold ${t.text} opacity-60`}>Step {index + 1}</span>
       </div>
-      {step.text && <p className="text-sm text-slate-700 leading-relaxed">{step.text}</p>}
-      {step.items && (
-        <div className="space-y-1.5">
-          {step.items.map(([k, v]) => (
-            <div key={k} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{k}</div>
-              <div className="text-sm text-slate-700 mt-0.5 leading-snug">{v}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      {step.quiz && <div className="mt-3 pt-3 border-t border-slate-100"><div className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 mb-2">Check your reasoning</div><QuickCheck key={step.key} quiz={step.quiz}/></div>}
+      <div className="p-3.5">
+        {step.text && <p className="text-[15px] text-slate-800 leading-relaxed">{step.text}</p>}
+        {step.items && (
+          <div className="space-y-2">
+            {step.items.map(([k, v]) => (
+              <div key={k} className={`rounded-xl bg-white border ${t.cell} px-3 py-2 bg-white`}>
+                <div className={`text-[10.5px] font-bold uppercase tracking-wider ${t.text}`}>{k}</div>
+                <div className="text-sm text-slate-800 mt-0.5 leading-snug">{v}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {step.quiz && (
+          <div className="mt-3 pt-3 border-t border-dashed border-fuchsia-200">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-fuchsia-600 mb-2"><Sparkles size={13}/> Check your reasoning</div>
+            <QuickCheck key={step.key} quiz={step.quiz}/>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -239,33 +291,39 @@ function StepCard({ step, index, isLast, onQuizDone }) {
 function CasePlayer({ c, onBack }) {
   const [shown, setShown] = useState(1);
   const total = c.steps.length;
-  const d = DIFFICULTY[c.difficulty];
+  const d = LEVEL_THEME[c.difficulty];
+  const th = SPEC_THEME[c.specialty] || SPEC_THEME.msk;
+  const SpecIcon = th.Icon;
   const next = c.steps[shown];
   return (
     <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-slate-500 mb-3 -ml-1"><ChevronLeft size={18}/> Back</button>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1">Case {c.number}</span>
-        <span className={`text-[11px] font-semibold rounded-full px-2.5 py-1 ${d.chip}`}>{d.label}</span>
-      </div>
-      <h2 className="text-xl font-bold text-slate-900 leading-tight">{c.title}</h2>
-      <p className="text-sm text-slate-500 mt-1 mb-3">{c.stem}</p>
+      <button onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-slate-500 mb-3 -ml-1"><ChevronLeft size={18}/> Back</button>
 
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div className="h-full bg-violet-500 rounded-full transition-all" style={{ width: `${(shown / total) * 100}%` }}/></div>
-        <div className="text-[11px] font-semibold text-slate-400">{shown} / {total}</div>
+      <div className={`rounded-3xl bg-gradient-to-br ${th.grad} text-white p-4 shadow-md relative overflow-hidden`}>
+        <SpecIcon size={120} strokeWidth={1.2} className="absolute -right-4 -bottom-5 opacity-15" aria-hidden="true"/>
+        <div className="flex items-center gap-2 mb-2 relative">
+          <span className="text-[11px] font-bold bg-white/25 rounded-full px-2.5 py-1">Case {c.number}</span>
+          <span className="text-[11px] font-bold bg-white text-slate-800 rounded-full px-2.5 py-1 flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${d.dot}`}/>{d.label}</span>
+          <span className="text-[11px] font-bold bg-white/25 rounded-full px-2.5 py-1">{th.label}</span>
+        </div>
+        <h2 className="cl-display text-2xl font-extrabold leading-tight relative">{c.title}</h2>
+        <p className="text-sm text-white/90 mt-1.5 leading-snug relative">{c.stem}</p>
+        <div className="flex items-center gap-2 mt-3 relative">
+          <div className="flex-1 h-2 rounded-full bg-white/25 overflow-hidden"><div className="h-full bg-white rounded-full transition-all" style={{ width: `${(shown / total) * 100}%` }}/></div>
+          <div className="text-[11px] font-bold">{shown}/{total}</div>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {c.steps.slice(0, shown).map((s, i) => <StepCard key={s.key} step={s} index={i} isLast={i === shown - 1}/>)}
+      <div className="space-y-3 mt-4">
+        {c.steps.slice(0, shown).map((st, i) => <StepCard key={st.key} step={st} index={i}/>)}
       </div>
 
       {next ? (
-        <button type="button" onClick={() => setShown((n) => n + 1)} className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 text-white py-3 text-sm font-semibold">
-          Next: {next.title} <ChevronRight size={16}/>
+        <button type="button" onClick={() => setShown((n) => n + 1)} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r ${th.grad} text-white py-3.5 text-sm font-bold shadow-md active:scale-[0.99] transition`}>
+          Next: {next.title} <ChevronRight size={17}/>
         </button>
       ) : (
-        <button type="button" onClick={() => { setShown(1); window.scrollTo({ top: 0 }); }} className="mt-4 w-full flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 py-3 text-sm font-semibold">
+        <button type="button" onClick={() => { setShown(1); window.scrollTo({ top: 0 }); }} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl border-2 ${th.border} ${th.soft} ${th.text} py-3 text-sm font-bold`}>
           <RotateCcw size={15}/> Restart case
         </button>
       )}
@@ -274,37 +332,54 @@ function CasePlayer({ c, onBack }) {
 }
 
 function CasesView({ onBack, initialCase }) {
+  useDisplayFont();
   const [spec, setSpec] = useState("all");
   const [level, setLevel] = useState("all");
   const [selected, setSelected] = useState(initialCase || null);
   if (selected) return <CasePlayer c={selected} onBack={() => setSelected(null)}/>;
   const list = CLINICAL_CASES.filter((c) => (spec === "all" || c.specialty === spec) && (level === "all" || c.difficulty === level));
+  const countFor = (key) => CLINICAL_CASES.filter((c) => key === "all" || c.specialty === key).length;
   return (
     <div>
       <Header title="Clinical Cases" subtitle="Learn through real-life patient cases" onBack={onBack}/>
       <div className="flex gap-2 overflow-x-auto no-scrollbar my-4">
-        {CASE_SPECIALTIES.map((s) => <Chip key={s.key} active={spec === s.key} onClick={() => setSpec(s.key)}>{s.label}</Chip>)}
+        {CASE_SPECIALTIES.map((sp) => (
+          <Chip key={sp.key} active={spec === sp.key} onClick={() => setSpec(sp.key)} solid={sp.key === "all" ? "bg-slate-800" : SPEC_THEME[sp.key].solid}>
+            {sp.label} <span className="opacity-70">{countFor(sp.key)}</span>
+          </Chip>
+        ))}
       </div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-2">
-        <Chip active={level === "all"} onClick={() => setLevel("all")}>Any level</Chip>
-        {Object.entries(DIFFICULTY).map(([k, d]) => (
-          <Chip key={k} active={level === k} onClick={() => setLevel(k)}><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${d.dot}`}/>{d.label}</Chip>
+        <Chip active={level === "all"} onClick={() => setLevel("all")} solid="bg-slate-800">Any level</Chip>
+        {Object.entries(LEVEL_THEME).map(([k, d]) => (
+          <Chip key={k} active={level === k} onClick={() => setLevel(k)} solid={d.solid}>
+            <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${level === k ? "bg-white" : d.dot}`}/>{d.label}
+          </Chip>
         ))}
       </div>
       <div className="text-[11px] text-slate-400 mb-3">{level === "all" ? "Beginner: straightforward · Intermediate: multiple findings · Advanced: complex, conflicting findings" : DIFFICULTY[level].hint}</div>
       {list.length === 0 ? (
-        <SoonNote text="No cases in this specialty yet"/>
+        <SoonNote text="No cases match these filters"/>
       ) : (
         list.map((c) => {
-          const d = DIFFICULTY[c.difficulty];
+          const d = LEVEL_THEME[c.difficulty];
+          const th = SPEC_THEME[c.specialty] || SPEC_THEME.msk;
+          const SpecIcon = th.Icon;
           return (
-            <button key={c.id} type="button" onClick={() => setSelected(c)} className="w-full text-left bg-white border border-slate-200 rounded-2xl p-3.5 mb-2.5 hover:border-violet-300">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2 py-0.5">Case {c.number}</span>
-                <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${d.chip}`}>{d.label}</span>
-              </div>
-              <div className="text-sm font-bold text-slate-900">{c.title}</div>
-              <div className="text-xs text-slate-500 mt-0.5 leading-snug">{c.stem}</div>
+            <button key={c.id} type="button" onClick={() => setSelected(c)} className={`w-full text-left rounded-2xl bg-white border ${th.border} mb-3 overflow-hidden flex shadow-sm hover:shadow-md active:scale-[0.99] transition`}>
+              <span className={`w-16 shrink-0 bg-gradient-to-b ${th.grad} flex flex-col items-center justify-center gap-1 text-white`}>
+                <SpecIcon size={22} strokeWidth={2}/>
+                <span className="cl-display text-lg font-extrabold leading-none">{c.number}</span>
+              </span>
+              <span className="flex-1 min-w-0 p-3">
+                <span className="flex items-center gap-1.5 mb-1">
+                  <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${th.softer} ${th.text}`}>{th.label}</span>
+                  <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${d.chip}`}>{d.label}</span>
+                </span>
+                <span className="cl-display block text-[15px] font-extrabold text-slate-900 leading-snug">{c.title}</span>
+                <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{c.stem}</span>
+              </span>
+              <ChevronRight size={18} className="text-slate-300 self-center mr-2 shrink-0"/>
             </button>
           );
         })
@@ -316,35 +391,42 @@ function CasesView({ onBack, initialCase }) {
 /* ---------------- Hub ---------------- */
 
 export default function ClinicalLearning({ onBack }) {
+  useDisplayFont();
   const [view, setView] = useState("hub");
   const [caseToOpen, setCaseToOpen] = useState(null);
 
-  if (view === "conditions") return <ConditionsView onBack={() => setView("hub")} onOpenCase={(c) => { setCaseToOpen(c); setView("cases"); }}/>;
-  if (view === "cases") return <CasesView key={caseToOpen?.id || "list"} initialCase={caseToOpen} onBack={() => { setCaseToOpen(null); setView("hub"); }}/>;
-
-  return (
-    <div>
-      <Header title="Clinical Learning" subtitle="Understand the condition, then apply it to a real patient." onBack={onBack}/>
-      <div className="grid grid-cols-1 gap-3 mt-4">
-        <button type="button" onClick={() => setView("conditions")} className="text-left rounded-2xl bg-rose-50 p-4 flex items-center gap-3 active:scale-[0.99] transition">
-          <span className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-rose-600 shrink-0"><BookOpen size={22}/></span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-base font-bold text-slate-900">Conditions</span>
-            <span className="block text-xs text-slate-600 mt-0.5">Learn condition-wise clinical knowledge</span>
-            <span className="block text-[11px] text-slate-500 mt-1">MSK · Neuro · Sports · Cardio · Pediatrics · Geriatrics</span>
-          </span>
-          <ChevronRight size={18} className="text-slate-400 shrink-0"/>
-        </button>
-        <button type="button" onClick={() => setView("cases")} className="text-left rounded-2xl bg-indigo-50 p-4 flex items-center gap-3 active:scale-[0.99] transition">
-          <span className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-indigo-600 shrink-0"><UserRound size={22}/></span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-base font-bold text-slate-900">Clinical Cases</span>
-            <span className="block text-xs text-slate-600 mt-0.5">Learn through real-life patient cases</span>
-            <span className="block text-[11px] text-slate-500 mt-1">Beginner · Intermediate · Advanced</span>
-          </span>
-          <ChevronRight size={18} className="text-slate-400 shrink-0"/>
-        </button>
+  let body;
+  if (view === "conditions") body = <ConditionsView onBack={() => setView("hub")} onOpenCase={(c) => { setCaseToOpen(c); setView("cases"); }}/>;
+  else if (view === "cases") body = <CasesView key={caseToOpen?.id || "list"} initialCase={caseToOpen} onBack={() => { setCaseToOpen(null); setView("hub"); }}/>;
+  else {
+    const conditionCount = MSK_REGIONS.reduce((n, r) => n + Object.values(r.data).filter((c) => c && c.name).length, 0);
+    body = (
+      <div>
+        <Header title="Clinical Learning" subtitle="Understand the condition, then apply it to a real patient." onBack={onBack}/>
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          <button type="button" onClick={() => setView("conditions")} className="text-left rounded-3xl bg-gradient-to-br from-rose-500 via-pink-500 to-orange-400 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition">
+            <BookOpen size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
+            <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><BookOpen size={24}/></span>
+            <span className="cl-display block text-xl font-extrabold">Conditions</span>
+            <span className="block text-sm text-white/90 mt-0.5">Learn condition-wise clinical knowledge</span>
+            <span className="flex flex-wrap gap-1.5 mt-3 relative">
+              {Object.values(SPEC_THEME).map((t) => <span key={t.label} className="text-[10.5px] font-bold bg-white/25 rounded-full px-2.5 py-1">{t.label}</span>)}
+            </span>
+            <span className="block text-[11px] text-white/80 mt-2">{conditionCount} MSK conditions to start</span>
+          </button>
+          <button type="button" onClick={() => setView("cases")} className="text-left rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-500 to-fuchsia-500 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition">
+            <UserRound size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
+            <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><UserRound size={24}/></span>
+            <span className="cl-display block text-xl font-extrabold">Clinical Cases</span>
+            <span className="block text-sm text-white/90 mt-0.5">Learn through real-life patient cases</span>
+            <span className="flex flex-wrap gap-1.5 mt-3 relative">
+              {Object.values(LEVEL_THEME).map((l) => <span key={l.label} className="text-[10.5px] font-bold bg-white rounded-full px-2.5 py-1 text-slate-800 flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${l.dot}`}/>{l.label}</span>)}
+            </span>
+            <span className="block text-[11px] text-white/80 mt-2">{CLINICAL_CASES.length} cases across {Object.keys(SPEC_THEME).length} specialties</span>
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+  return <div><style>{DISPLAY_CSS}</style>{body}</div>;
 }
