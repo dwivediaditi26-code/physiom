@@ -4,6 +4,7 @@ import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+import MmtMuscleDetail from "./MmtMuscleDetail.jsx";
 
 // Real data from MMT_DATA/MMT_REGIONS -- same source the actual MMT
 // clinical screen uses. Detail sections mirror that real screen's own
@@ -23,6 +24,7 @@ function toCard(m) {
 
   return {
     id: m.id,
+    raw: m,
     image: m.id,
     title: m.muscle,
     subtitle: m.action,
@@ -74,7 +76,18 @@ export default function MmtStudy({ onBack }) {
   const [selected, setSelected] = useState(null);
   const cards = useMemo(() => (MMT_DATA[region] || []).map(toCard), [region]);
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
+  if (selected) {
+    return (
+      <MmtMuscleDetail
+        muscle={selected.raw}
+        region={region}
+        list={MMT_DATA[region] || []}
+        allMuscles={Object.values(MMT_DATA).flat()}
+        onBack={() => setSelected(null)}
+        onNext={(m) => { setSelected(toCard(m)); window.scrollTo({ top: 0 }); }}
+      />
+    );
+  }
 
   return (
     <StudyShell
