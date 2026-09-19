@@ -183,6 +183,7 @@ export default function LearnTabEntry({ onNav }) {
   if (studyType) {
     return (
       <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
+        <style>{".pm-shell{background:#fff !important}"}</style>
         <StudyMode type={studyType} onBack={() => setStudyType(null)}/>
       </div>
     );
@@ -195,6 +196,7 @@ export default function LearnTabEntry({ onNav }) {
 
   return (
     <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
+      <style>{".pm-shell{background:#fff !important}"}</style>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5 min-w-0">
           {!atHome && (
@@ -212,7 +214,7 @@ export default function LearnTabEntry({ onNav }) {
         </button>
       </div>
 
-      <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-3.5 h-11 my-4">
+      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 h-11 my-4">
         <Search size={16} className="text-slate-400 shrink-0"/>
         <input
           value={query}
