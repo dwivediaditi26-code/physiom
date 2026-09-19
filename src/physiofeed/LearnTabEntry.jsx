@@ -108,13 +108,12 @@ function Section({ title, items, onNav, onStudy }) {
 // Learning have real content today -- they open the existing study/
 // assessment library, filtered; BPT / Test / Exam Ready are marked Soon
 // instead of pretending to have content.
-const CLINICAL_KEYS = new Set(["neuro", "cardio", "special", "outcome", "kinetic", "nkt"]);
 const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
-  { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
-  { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
-  { id: "clinical", label: "Clinical Learning", desc: "Neuro • Cardio • Special tests", icon: Stethoscope, tint: "rose", count: ALL_ITEMS.filter((i) => CLINICAL_KEYS.has(i.key)).length },
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
+  { id: "clinical", label: "Clinical Learning", desc: "MSK • Neuro • Sports • Cardio • Paeds", icon: Stethoscope, tint: "rose", soon: true },
+  { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
+  { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
 ];
 
@@ -171,12 +170,11 @@ export default function LearnTabEntry({ onNav }) {
     return items.filter((i) => i.label.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q));
   };
 
-  const inView = (items) => (view === "clinical" ? items.filter((i) => CLINICAL_KEYS.has(i.key)) : items);
   const filtered = useMemo(() => ({
-    assess: filter(inView(ASSESSMENT_LIBRARY)),
-    adv: filter(inView(ADVANCED_ASSESSMENT)),
-    exercise: filter(view === "clinical" ? [] : EXERCISE),
-  }), [query, view]);
+    assess: filter(ASSESSMENT_LIBRARY),
+    adv: filter(ADVANCED_ASSESSMENT),
+    exercise: filter(EXERCISE),
+  }), [query]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
 
@@ -190,8 +188,8 @@ export default function LearnTabEntry({ onNav }) {
   }
 
   const atHome = view === "home";
-  const title = view === "clinical" ? "Clinical Learning" : view === "practical" ? "Practical Skills" : "Learn";
-  const subtitle = atHome ? `${greeting()} — what do you want to learn today?` : view === "clinical" ? "Learn from real cases. Build clinical confidence." : "Hands-on skills for real practice.";
+  const title = view === "practical" ? "Practical Skills" : "Learn";
+  const subtitle = atHome ? `${greeting()} — what do you want to learn today?` : "Hands-on skills for real practice.";
   const showCards = atHome && !query.trim();
 
   return (
