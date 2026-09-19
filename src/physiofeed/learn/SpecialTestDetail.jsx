@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Video as VideoIcon } from "lucide-react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
 
@@ -91,8 +91,8 @@ function QuickCheck({ quiz }) {
         })}
       </div>
       {!done ? (
-        <button type="button" disabled={!picked} onClick={() => setDone(true)} className={`w-full rounded-xl py-3 text-sm font-semibold ${picked ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-400"}`}>
-          Submit answer
+        <button type="button" disabled={!picked} onClick={() => setDone(true)} className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-center transition-colors ${picked ? "bg-violet-600 text-white shadow-sm active:scale-[0.99]" : "bg-slate-100 text-slate-400"}`}>
+          <Check size={16}/> Submit answer
         </button>
       ) : (
         <div className={`rounded-xl border p-3 ${right ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
