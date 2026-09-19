@@ -66,26 +66,31 @@ const TINTS = {
   indigo: "bg-indigo-50 text-indigo-600",
 };
 
-function Card({ item, onNav, onStudy }) {
+// Grouped list rows (2026-09-18, Aditi: "build as shown") -- a coloured icon,
+// name, short description, and a Study pill. Tapping the row opens study mode
+// when the item has one (Learn is for learning), otherwise the real tool;
+// "Tool" opens the real tool for items that have both.
+function Row({ item, onNav, onStudy }) {
   const Icon = item.icon;
   const studyable = STUDY_TYPES.has(item.key);
+  const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
-    <div className="relative bg-white border border-slate-200 rounded-2xl hover:border-violet-200 transition-colors">
-      <button onClick={() => (item.studyOnly ? onStudy(item.key) : onNav(item.key))} className="text-left w-full p-4">
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[item.tint]}`}>
-          <Icon size={20} strokeWidth={2}/>
-        </div>
-        <div className="font-semibold text-sm text-slate-900">{item.label}</div>
-        <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
+    <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-3 py-2.5 mb-2 hover:border-violet-300 transition-colors">
+      <button type="button" onClick={main} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+        <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${TINTS[item.tint]}`}>
+          <Icon size={19} strokeWidth={2}/>
+        </span>
+        <span className="min-w-0">
+          <span className="block font-semibold text-sm text-slate-900 leading-tight">{item.label}</span>
+          <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
+        </span>
       </button>
       {studyable && !item.studyOnly && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onStudy(item.key); }}
-          className="flex items-center gap-1 mx-4 mb-3.5 -mt-1 text-[11px] font-semibold text-violet-600 bg-violet-50 rounded-full px-2.5 py-1 w-fit"
-        >
-          <GraduationCap size={12}/> Study mode
-        </button>
+        <button type="button" onClick={() => onNav(item.key)} className="text-[11px] font-medium text-slate-500 hover:text-violet-700 px-1.5 shrink-0">Tool</button>
       )}
+      {studyable
+        ? <button type="button" onClick={() => onStudy(item.key)} className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 shrink-0"><GraduationCap size={12}/> Study</button>
+        : <ChevronRight size={16} className="text-slate-300 shrink-0"/>}
     </div>
   );
 }
@@ -93,30 +98,31 @@ function Card({ item, onNav, onStudy }) {
 function Section({ title, items, onNav, onStudy }) {
   if (items.length === 0) return null;
   return (
-    <div className="mb-6">
-      <div className="font-semibold text-slate-900 mb-3">{title}</div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        {items.map((item) => <Card key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
-      </div>
+    <div className="mb-5">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-0.5">{title}</div>
+      {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
     </div>
   );
 }
-
 
 // Learn Home: five entry cards in a grid (2026-09-18, Aditi's design brief:
 // "make it grid wise and not green"). Only Practical Skills and Clinical
 // Learning have real content today -- they open the existing study/
 // assessment library, filtered; BPT / Test / Exam Ready are marked Soon
 // instead of pretending to have content.
+const CLINICAL_KEYS = new Set(["neuro", "cardio", "special", "outcome", "kinetic", "nkt"]);
+const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
-  { id: "bpt", label: "BPT", desc: "1st Year • 2nd Year • 3rd Year • 4th Year", icon: BookOpen, tint: "violet", soon: true },
-  { id: "test", label: "Test", desc: "MCQs • Image Questions • Clinical Cases", icon: ClipboardCheck, tint: "blue", soon: true },
-  { id: "clinical", label: "Clinical Learning", desc: "MSK • Neuro • Sports • Cardio • Paeds", icon: Stethoscope, tint: "rose" },
-  { id: "practical", label: "Practical Skills", desc: "Assessment • ROM • MMT • Special Tests • Techniques", icon: Hand, tint: "amber" },
-  { id: "exam", label: "Exam Ready", desc: "Important Topics • Previous Questions • Rapid Revision • Mock Tests", icon: Target, tint: "indigo", soon: true },
+  { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
+  { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
+  { id: "clinical", label: "Clinical Learning", desc: "Neuro • Cardio • Special tests", icon: Stethoscope, tint: "rose", count: ALL_ITEMS.filter((i) => CLINICAL_KEYS.has(i.key)).length },
+  { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
+  { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
 ];
 
-const CLINICAL_KEYS = new Set(["neuro", "cardio", "special", "outcome", "kinetic", "nkt"]);
+const PASTEL = {
+  violet: "bg-violet-50", blue: "bg-blue-50", rose: "bg-rose-50", amber: "bg-amber-50", indigo: "bg-indigo-50", teal: "bg-teal-50",
+};
 
 function HomeCard({ card, onOpen, wide }) {
   const Icon = card.icon;
@@ -125,17 +131,27 @@ function HomeCard({ card, onOpen, wide }) {
       type="button"
       disabled={card.soon}
       onClick={() => onOpen(card.id)}
-      className={`relative flex flex-col justify-start items-stretch text-left bg-white border border-slate-200 rounded-2xl p-4 transition-colors ${card.soon ? "opacity-70 cursor-not-allowed" : "hover:border-violet-300 active:scale-[0.99]"} ${wide ? "col-span-2" : ""}`}
+      className={`relative text-left rounded-2xl p-3.5 transition ${PASTEL[card.tint]} ${card.soon ? "opacity-75 cursor-not-allowed" : "active:scale-[0.98] hover:shadow-sm"} ${wide ? "col-span-2 flex items-center gap-3" : "flex flex-col justify-start items-stretch min-h-[108px]"}`}
     >
-      {card.soon && <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">SOON</span>}
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[card.tint]}`}>
+      {card.soon && <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-slate-500">Soon</span>}
+      {card.count != null && <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white text-slate-700">{card.count} topics</span>}
+      <span className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 ${wide ? "" : "mb-2.5"} ${TINTS[card.tint].split(" ")[1]}`}>
         <Icon size={20} strokeWidth={2}/>
-      </div>
-      <div className="font-semibold text-[15px] text-slate-900">{card.label}</div>
-      <div className="text-xs text-slate-500 mt-0.5 leading-snug">{card.desc}</div>
-      {!card.soon && <ChevronRight size={16} className="absolute bottom-4 right-4 text-slate-300"/>}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold text-[15px] text-slate-900 leading-tight">{card.label}</span>
+        <span className="block text-xs text-slate-600 mt-0.5 leading-snug">{card.desc}</span>
+      </span>
     </button>
   );
+}
+
+const LAST_KEY = "physiom_learn_last_study";
+function readLast() {
+  try { return JSON.parse(localStorage.getItem(LAST_KEY) || "null"); } catch { return null; }
+}
+function saveLast(key) {
+  try { localStorage.setItem(LAST_KEY, JSON.stringify({ key, at: Date.now() })); } catch { /* storage blocked */ }
 }
 
 function greeting() {
@@ -147,6 +163,9 @@ export default function LearnTabEntry({ onNav }) {
   const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [studyType, setStudyType] = useState(null);
+  const [last, setLast] = useState(readLast);
+  const openStudy = (key) => { saveLast(key); setLast({ key }); setStudyType(key); };
+  const lastItem = last && ALL_ITEMS.find((i) => i.key === last.key);
 
   const filter = (items) => {
     if (!query.trim()) return items;
@@ -205,6 +224,15 @@ export default function LearnTabEntry({ onNav }) {
         />
       </div>
 
+      {showCards && lastItem && (
+        <button type="button" onClick={() => openStudy(lastItem.key)} className="w-full flex items-center justify-between gap-3 bg-violet-50 rounded-2xl px-4 py-3 mb-3 text-left">
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold text-violet-900">Pick up where you left off</span>
+            <span className="block text-xs text-violet-700 truncate">{lastItem.label} · {lastItem.desc}</span>
+          </span>
+          <span className="text-[11px] font-semibold bg-white text-violet-800 rounded-full px-3 py-1.5 shrink-0">Continue</span>
+        </button>
+      )}
       {showCards ? (
         <div className="grid grid-cols-2 gap-3">
           {HOME_CARDS.map((c, i) => (
@@ -215,9 +243,9 @@ export default function LearnTabEntry({ onNav }) {
         <div className="text-center py-14 text-slate-400 text-sm">No matches for "{query}".</div>
       ) : (
         <>
-          <Section title="Assessment Library" items={filtered.assess} onNav={onNav} onStudy={setStudyType}/>
-          <Section title="Advanced Assessment" items={filtered.adv} onNav={onNav} onStudy={setStudyType}/>
-          <Section title="Exercise Prescription" items={filtered.exercise} onNav={onNav} onStudy={setStudyType}/>
+          <Section title="Assessment" items={filtered.assess} onNav={onNav} onStudy={openStudy}/>
+          <Section title="Advanced" items={filtered.adv} onNav={onNav} onStudy={openStudy}/>
+          <Section title="Exercise" items={filtered.exercise} onNav={onNav} onStudy={openStudy}/>
         </>
       )}
     </div>
