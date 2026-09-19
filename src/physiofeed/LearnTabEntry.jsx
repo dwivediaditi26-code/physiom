@@ -45,7 +45,6 @@ const ASSESSMENT_LIBRARY = [
 
 const ADVANCED_ASSESSMENT = [
   { key: "fma", label: "Functional Movement", desc: "Movement analysis", icon: Footprints, tint: "violet" },
-  { key: "gait", label: "Gait Analysis", desc: "Full gait assessment", icon: Footprints, tint: "green" },
   { key: "cyriax_full", label: "STTT", desc: "Selective tissue tension", icon: Bone, tint: "rose" },
   { key: "kinetic", label: "Kinetic Chain", desc: "Joint-by-joint", icon: Link2, tint: "blue" },
   { key: "nkt", label: "CPA", desc: "Compensation pattern analysis", icon: Brain, tint: "amber" },
