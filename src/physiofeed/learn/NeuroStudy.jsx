@@ -7,7 +7,8 @@ import { DERMATOMES, MYOTOMES, REFLEXES, CRANIAL_NERVES } from "../../sharedClin
 import { neuroConditionLibraryData } from "../../neuroConditionLibraryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
-import StudyDetail from "./StudyDetail.jsx";
+import StudyImage from "./StudyImage.jsx";
+import TabbedDetail, { makeChoiceQuiz } from "./TabbedDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
 
 // One default icon per condition category, replaced by a more specific
@@ -63,19 +64,16 @@ const CONDITION_REGIONS = [...new Set(Object.values(neuroConditionLibraryData).m
 function conditionCard(id, d) {
   const [, label] = id.split("|||");
   const region = conditionRegionOf(d);
+  const Icon = CONDITION_LABEL_ICON[label] || CONDITION_CATEGORY_ICON[region] || Brain;
   return {
     id,
-    Icon: CONDITION_LABEL_ICON[label] || CONDITION_CATEGORY_ICON[region] || Brain,
+    Icon,
     title: d.title,
     subtitle: d.category.replace("Learn · Neuro · ", ""),
-    sections: (
+    badge: `Conditions • ${region}`,
+    media: <div className="py-6 text-violet-500"><Icon size={72} strokeWidth={1.25} aria-hidden="true"/></div>,
+    learn: (
       <Fragment>
-        {d.perform?.caption && (
-          <InfoBox icon="🖐" label="How to perform" tint="blue">{d.perform.caption}</InfoBox>
-        )}
-        {(d.perform?.boxes || []).map((b, i) => (
-          <InfoBox key={i} label={b.label} tint={CONDITION_BOX_TINTS[b.tone] || "gray"}>{b.text}</InfoBox>
-        ))}
         {d.scale && (
           <InfoBox icon="📊" label={d.scaleLabel || "Scale"} tint="violet">
             <div className="space-y-1.5">
@@ -107,11 +105,18 @@ function conditionCard(id, d) {
             <ul className="list-disc pl-4 space-y-0.5">{d.interpret.redFlags.map((x, i) => <li key={i}>{x}</li>)}</ul>
           </InfoBox>
         )}
-        {d.interpret?.note && (
-          <InfoBox label="Clinical note" tint="gray">{d.interpret.note}</InfoBox>
-        )}
+        {d.interpret?.note && <InfoBox label="Clinical note" tint="gray">{d.interpret.note}</InfoBox>}
       </Fragment>
     ),
+    technique: (
+      <Fragment>
+        {d.perform?.caption && <InfoBox icon="🖐" label="How to perform" tint="blue">{d.perform.caption}</InfoBox>}
+        {(d.perform?.boxes || []).map((b, i) => (
+          <InfoBox key={i} label={b.label} tint={CONDITION_BOX_TINTS[b.tone] || "gray"}>{b.text}</InfoBox>
+        ))}
+      </Fragment>
+    ),
+    quiz: null,
   };
 }
 
@@ -149,43 +154,67 @@ function bulletize(text) {
   return parts.length > 1 ? parts : [text];
 }
 
+const imgMedia = (name) => <StudyImage name={name} full/>;
+
 function reflexCard(r) {
   return {
     id: r.id, image: r.id, title: r.label, subtitle: r.level,
-    sections: (
+    badge: `Reflexes • ${r.group}`,
+    media: imgMedia(r.id),
+    learn: (
       <Fragment>
-        {r.technique && <InfoBox icon="📋" label="Technique" tint="violet">{r.technique}</InfoBox>}
+        <InfoBox icon="🎯" label="Root level / nerve" tint="violet">{r.level}</InfoBox>
         {r.finding && <InfoBox icon="⚕" label="Clinical finding" tint="amber">{r.finding}</InfoBox>}
       </Fragment>
     ),
+    technique: r.technique ? <InfoBox icon="📋" label="Technique" tint="violet">{r.technique}</InfoBox> : null,
+    quiz: makeChoiceQuiz({
+      id: r.id, question: `Which root level or nerve is tested by the ${r.label} reflex?`, answer: r.level,
+      pool: REFLEXES.map((x) => x.level),
+      explanation: `${r.label}: ${r.level}.${r.finding ? " " + r.finding : ""}`,
+    }),
   };
 }
 function dermatomeCard(d) {
   return {
     id: d.id, image: d.id, title: d.level, subtitle: d.region,
     tags: d.disc ? [d.disc] : [],
-    sections: (
-      <Fragment>
-        <InfoBox label="Reference guide" tint="gray">
-          {d.disc && <div><span className="font-semibold text-amber-600">Disc level:</span> {d.disc}</div>}
-          {d.myotome && <div className="mt-1"><span className="font-semibold text-violet-600">Myotome:</span> {d.myotome}</div>}
-          {d.reflex && <div className="mt-1"><span className="font-semibold text-emerald-600">Reflex:</span> {d.reflex}</div>}
-          <div className="mt-2 text-slate-600">{DERMATOME_TEST_METHOD}</div>
-        </InfoBox>
-      </Fragment>
+    badge: "Dermatomes",
+    media: imgMedia(d.id),
+    learn: (
+      <InfoBox label="Reference guide" tint="gray">
+        {d.region && <div><span className="font-semibold text-slate-600">Region:</span> {d.region}</div>}
+        {d.disc && <div className="mt-1"><span className="font-semibold text-amber-600">Disc level:</span> {d.disc}</div>}
+        {d.myotome && <div className="mt-1"><span className="font-semibold text-violet-600">Myotome:</span> {d.myotome}</div>}
+        {d.reflex && <div className="mt-1"><span className="font-semibold text-emerald-600">Reflex:</span> {d.reflex}</div>}
+      </InfoBox>
     ),
+    technique: <InfoBox icon="👆" label="How to test" tint="violet">{DERMATOME_TEST_METHOD}</InfoBox>,
+    quiz: makeChoiceQuiz({
+      id: d.id, question: `Which myotome shares the ${d.level} root level?`, answer: d.myotome,
+      pool: DERMATOMES.map((x) => x.myotome),
+      explanation: `${d.level} supplies the dermatome for ${d.region || "this region"}; its myotome is ${d.myotome}.`,
+    }),
   };
 }
 function myotomeCard(m) {
   const id = `myo_${m.level.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}`;
   return {
     id, image: id, title: m.level, subtitle: m.action,
-    sections: (
+    badge: "Myotomes",
+    media: imgMedia(id),
+    learn: <InfoBox icon="💪" label="Movement tested" tint="violet">{m.action}</InfoBox>,
+    technique: (m.test || m.compensation) ? (
       <Fragment>
         {m.test && <InfoBox icon="🔬" label="Test" tint="violet">{m.test}</InfoBox>}
         {m.compensation && <InfoBox icon="⚠" label="Compensation" tint="amber">{m.compensation}</InfoBox>}
       </Fragment>
-    ),
+    ) : null,
+    quiz: makeChoiceQuiz({
+      id, question: `Which movement tests the ${m.level} myotome?`, answer: m.action,
+      pool: MYOTOMES.map((x) => x.action),
+      explanation: `${m.level}: ${m.action}.`,
+    }),
   };
 }
 // CRANIAL_NERVES.id (sharedClinicalData.js) is a bare short id ("cn1",
@@ -200,20 +229,29 @@ const CRANIAL_IMAGE_ID = {
 };
 
 function cranialCard(cn) {
+  const image = CRANIAL_IMAGE_ID[cn.id] || cn.id;
   return {
-    id: cn.id, image: CRANIAL_IMAGE_ID[cn.id] || cn.id, title: `CN ${cn.numeral} — ${cn.name}`,
-    sections: (
+    id: cn.id, image, title: `CN ${cn.numeral} — ${cn.name}`,
+    badge: "Cranial nerves",
+    media: imgMedia(image),
+    learn: (
       <Fragment>
-        {cn.test && (
-          <InfoBox icon="👐" label="How to perform" tint="violet">
-            <ul className="list-disc pl-4 space-y-1">
-              {bulletize(cn.test).map((b, i) => <li key={i}>{b}</li>)}
-            </ul>
-          </InfoBox>
-        )}
+        <InfoBox icon="🧠" label="Nerve" tint="violet">CN {cn.numeral} — {cn.name}</InfoBox>
         {cn.note && <InfoBox label="Note" tint="gray">{cn.note}</InfoBox>}
       </Fragment>
     ),
+    technique: cn.test ? (
+      <InfoBox icon="👐" label="How to perform" tint="violet">
+        <ul className="list-disc pl-4 space-y-1">
+          {bulletize(cn.test).map((b, i) => <li key={i}>{b}</li>)}
+        </ul>
+      </InfoBox>
+    ) : null,
+    quiz: makeChoiceQuiz({
+      id: cn.id, question: `What is the name of cranial nerve ${cn.numeral}?`, answer: cn.name,
+      pool: CRANIAL_NERVES.map((x) => x.name),
+      explanation: `CN ${cn.numeral} is the ${cn.name}.${cn.test ? " Tested by: " + bulletize(cn.test)[0] + "." : ""}`,
+    }),
   };
 }
 
@@ -239,7 +277,25 @@ export default function NeuroStudy({ onBack }) {
     [conditionRegion]
   );
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
+  if (selected) {
+    const activeCards = subTab === "reflexes" ? reflexCards : subTab === "dermatomes" ? dermatomeCards : subTab === "myotomes" ? myotomeCards : subTab === "cranial" ? cranialCards : conditionCards;
+    const idx = activeCards.findIndex((c) => c.id === selected.id);
+    const nextCard = idx >= 0 && idx < activeCards.length - 1 ? activeCards[idx + 1] : null;
+    return (
+      <TabbedDetail
+        id={selected.id}
+        badge={selected.badge}
+        title={selected.title}
+        subtitle={selected.subtitle}
+        media={selected.media}
+        learn={selected.learn}
+        technique={selected.technique}
+        quiz={selected.quiz}
+        next={nextCard ? { label: `Next: ${nextCard.title}`, onClick: () => { setSelected(nextCard); window.scrollTo({ top: 0 }); } } : null}
+        onBack={() => setSelected(null)}
+      />
+    );
+  }
 
   return (
     <StudyShell
