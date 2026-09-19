@@ -680,7 +680,7 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
                 header normally does. Now shows the real signed-in
                 therapist's initials and opens their own Profile tab. */}
             <div style={{width:38,height:38,borderRadius:11,
-              background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
+              background:"linear-gradient(135deg,#8f63f0 0%,#bb6be3 52%,#e77fc0 100%)",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:13,fontWeight:800,color:"white",cursor:"pointer"}}
               onClick={()=>onNav("profile")}>
@@ -717,16 +717,16 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
 
         {/* ── START ASSESSMENT CTA ── */}
         <div className="dc" style={{
-          background:"linear-gradient(135deg,#6D28D9,#8B5CF6)",
+          background:"linear-gradient(135deg,#8f63f0 0%,#bb6be3 52%,#e77fc0 100%)",
           borderRadius:20,padding:"20px",
-          boxShadow:"0 4px 20px rgba(109,40,217,0.25)",
+          boxShadow:"0 4px 20px rgba(187,107,227,0.3)",
           animationDelay:"0.35s",
           display:"flex",justifyContent:"space-between",alignItems:"center",
           cursor:"pointer",
         }} onClick={()=>onNav("clinical",{clinicalSubTab:"assessment"})}>
           <div>
             <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>Start Assessment</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:3}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",marginTop:3}}>
               Ortho, Neuro, Cardio, Pedia, Sports
             </div>
           </div>

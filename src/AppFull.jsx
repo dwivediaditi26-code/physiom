@@ -2350,11 +2350,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     ];
                     return (
                       <div style={{background:"#fff",padding:"14px 14px 0"}}>
-                        <div style={{borderRadius:20,boxShadow:"0 14px 30px rgba(76,29,149,.35)",overflow:"hidden"}}>
-                          <div style={{background:"linear-gradient(150deg,#8B5CF6 0%,#6D28D9 45%,#3B0F8C 100%)",padding:"16px 16px 0"}}>
+                        <div style={{borderRadius:20,boxShadow:"0 14px 30px rgba(187,107,227,.35)",overflow:"hidden"}}>
+                          <div style={{background:"linear-gradient(135deg,#8f63f0 0%,#bb6be3 52%,#e77fc0 100%)",padding:"16px 16px 0"}}>
                             <div style={{marginBottom:14}}>
                               <div style={{fontSize:"1.05rem",fontWeight:800,color:"#fff"}}>Clinical <span style={{fontWeight:400,opacity:0.7}}>›</span></div>
-                              <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,.72)",marginTop:2}}>
+                              <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,.9)",marginTop:2}}>
                                 {firstName ? `Dr ${firstName} · ` : ""}{todayCount} patient{todayCount===1?"":"s"} today
                               </div>
                             </div>
