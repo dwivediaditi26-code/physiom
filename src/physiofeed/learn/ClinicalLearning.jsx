@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft, ChevronRight, BookOpen, UserRound, Bell, Lock, RotateCcw, Bone, Brain, Trophy, HeartPulse, Baby, PersonStanding,
-  MessageCircle, History, MessageSquareText, Stethoscope, ClipboardCheck, Lightbulb, ListChecks, TrendingUp, Sparkles,
+  MessageCircle, History, MessageSquareText, Stethoscope, ClipboardCheck, Lightbulb, ListChecks, TrendingUp, Sparkles, Check,
 } from "lucide-react";
 import InfoBox from "./InfoBox.jsx";
 import { QuickCheck } from "./SpecialTestDetail.jsx";
@@ -45,12 +45,12 @@ const MSK_REGIONS = [
 
 // Colour themes (literal class names so Tailwind picks them up).
 const SPEC_THEME = {
-  msk:    { label: "MSK",        Icon: Bone,           soft: "bg-violet-50", softer: "bg-violet-100", text: "text-violet-700", solid: "bg-violet-600", grad: "from-violet-600 via-violet-500 to-fuchsia-500", border: "border-violet-200", dot: "bg-violet-500" },
-  neuro:  { label: "Neuro",      Icon: Brain,          soft: "bg-sky-50",    softer: "bg-sky-100",    text: "text-sky-700",    solid: "bg-sky-600",    grad: "from-sky-600 via-sky-500 to-indigo-500",       border: "border-sky-200",    dot: "bg-sky-500" },
-  sports: { label: "Sports",     Icon: Trophy,         soft: "bg-orange-50", softer: "bg-orange-100", text: "text-orange-700", solid: "bg-orange-500", grad: "from-orange-500 via-orange-400 to-amber-400",  border: "border-orange-200", dot: "bg-orange-500" },
-  cardio: { label: "Cardio",     Icon: HeartPulse,     soft: "bg-rose-50",   softer: "bg-rose-100",   text: "text-rose-700",   solid: "bg-rose-600",   grad: "from-rose-600 via-rose-500 to-pink-500",       border: "border-rose-200",   dot: "bg-rose-500" },
-  paeds:  { label: "Pediatrics", Icon: Baby,           soft: "bg-pink-50",   softer: "bg-pink-100",   text: "text-pink-700",   solid: "bg-pink-500",   grad: "from-pink-500 via-fuchsia-500 to-purple-500",  border: "border-pink-200",   dot: "bg-pink-500" },
-  geri:   { label: "Geriatrics", Icon: PersonStanding, soft: "bg-amber-50",  softer: "bg-amber-100",  text: "text-amber-700",  solid: "bg-amber-500",  grad: "from-amber-500 via-amber-400 to-yellow-400",   border: "border-amber-200",  dot: "bg-amber-500" },
+  msk:    { label: "MSK",        Icon: Bone,           soft: "bg-violet-50", softer: "bg-violet-100", text: "text-violet-700", solid: "bg-violet-600", grad: "from-violet-600 via-violet-500 to-fuchsia-500", border: "border-violet-200", dot: "bg-violet-500", bord: "border-violet-500", ring: "ring-violet-100", line: "bg-violet-400" },
+  neuro:  { label: "Neuro",      Icon: Brain,          soft: "bg-sky-50",    softer: "bg-sky-100",    text: "text-sky-700",    solid: "bg-sky-600",    grad: "from-sky-600 via-sky-500 to-indigo-500",       border: "border-sky-200",    dot: "bg-sky-500", bord: "border-sky-500", ring: "ring-sky-100", line: "bg-sky-400" },
+  sports: { label: "Sports",     Icon: Trophy,         soft: "bg-orange-50", softer: "bg-orange-100", text: "text-orange-700", solid: "bg-orange-500", grad: "from-orange-500 via-orange-400 to-amber-400",  border: "border-orange-200", dot: "bg-orange-500", bord: "border-orange-500", ring: "ring-orange-100", line: "bg-orange-400" },
+  cardio: { label: "Cardio",     Icon: HeartPulse,     soft: "bg-rose-50",   softer: "bg-rose-100",   text: "text-rose-700",   solid: "bg-rose-600",   grad: "from-rose-600 via-rose-500 to-pink-500",       border: "border-rose-200",   dot: "bg-rose-500", bord: "border-rose-500", ring: "ring-rose-100", line: "bg-rose-400" },
+  paeds:  { label: "Pediatrics", Icon: Baby,           soft: "bg-pink-50",   softer: "bg-pink-100",   text: "text-pink-700",   solid: "bg-pink-500",   grad: "from-pink-500 via-fuchsia-500 to-purple-500",  border: "border-pink-200",   dot: "bg-pink-500", bord: "border-pink-500", ring: "ring-pink-100", line: "bg-pink-400" },
+  geri:   { label: "Geriatrics", Icon: PersonStanding, soft: "bg-amber-50",  softer: "bg-amber-100",  text: "text-amber-700",  solid: "bg-amber-500",  grad: "from-amber-500 via-amber-400 to-yellow-400",   border: "border-amber-200",  dot: "bg-amber-500", bord: "border-amber-500", ring: "ring-amber-100", line: "bg-amber-400" },
 };
 const STEP_THEME = {
   profile:    { Icon: UserRound,         head: "bg-violet-50",  icon: "bg-violet-500",  text: "text-violet-700",  cell: "border-violet-100" },
@@ -63,6 +63,8 @@ const STEP_THEME = {
   plan:       { Icon: ListChecks,        head: "bg-orange-50",  icon: "bg-orange-500",  text: "text-orange-700",  cell: "border-orange-100" },
   followup:   { Icon: TrendingUp,        head: "bg-blue-50",    icon: "bg-blue-500",    text: "text-blue-700",    cell: "border-blue-100" },
 };
+// Short names for the step chips in the case header (the full titles are on the cards).
+const STEP_SHORT = { profile: "Patient", complaint: "Complaint", history: "History", subjective: "Subjective", objective: "Exam", assessment: "Assess", reasoning: "Reason", plan: "Plan", followup: "Follow-up" };
 const LEVEL_THEME = {
   beginner:     { label: "Beginner",     chip: "bg-emerald-100 text-emerald-700", solid: "bg-emerald-500", dot: "bg-emerald-500" },
   intermediate: { label: "Intermediate", chip: "bg-amber-100 text-amber-700",     solid: "bg-amber-500",   dot: "bg-amber-500" },
@@ -255,7 +257,7 @@ function ConditionsView({ onBack, onOpenCase }) {
 
 /* ---------------- Clinical cases ---------------- */
 
-function StepCard({ step, index }) {
+function StepCard({ step, index, total }) {
   const t = STEP_THEME[step.key] || STEP_THEME.profile;
   const Icon = t.Icon;
   return (
@@ -263,7 +265,7 @@ function StepCard({ step, index }) {
       <div className={`flex items-center gap-2.5 px-3.5 py-2.5 ${t.head}`}>
         <span className={`w-8 h-8 rounded-xl ${t.icon} text-white flex items-center justify-center shadow-sm`}><Icon size={17} strokeWidth={2.2}/></span>
         <div className={`cl-display text-[15px] font-extrabold ${t.text}`}>{step.title}</div>
-        <span className={`ml-auto text-[11px] font-bold ${t.text} opacity-60`}>Step {index + 1}</span>
+        <span className={`ml-auto text-[11px] font-bold ${t.text} opacity-60`}>Step {index + 1} of {total}</span>
       </div>
       <div className="p-3.5">
         {step.text && <p className="text-[15px] text-slate-800 leading-relaxed">{step.text}</p>}
@@ -288,45 +290,140 @@ function StepCard({ step, index }) {
   );
 }
 
+// Case player layout (2026-09-19, Aditi: "in this page i have scroll down to go
+// to next ... a header should present step wise"). Before, every revealed step
+// piled up as a card and the Next button sat under the pile. Now: a header
+// pinned under the app bar (case, n / 9, numbered step chips), ONE step per
+// screen, and a Back / Next bar fixed just above the bottom tabs -- the same
+// pinned-bar pattern the Ortho / Neuro / Cardio wizards use (.topbar offset by
+// --pm-mobile-hdr-h; .bottombar sitting on --pm-bnav-h). On a laptop the app
+// header scrolls away, so the header pins at top:0 there.
+const CASE_CSS = `
+.cp-head{position:sticky;top:0;z-index:30;background:#fff;padding:4px 0 8px}
+@media (max-width:1023px){.cp-head{top:var(--pm-mobile-hdr-h,64px)}}
+.cp-bar{position:fixed;left:calc(50% + var(--pm-side-w,0px)/2);transform:translateX(-50%);bottom:var(--pm-bnav-h,calc(60px + env(safe-area-inset-bottom)));width:100%;max-width:672px;z-index:25;background:#fff;border-top:1px solid #e2e8f0;padding:8px 16px;display:flex;gap:10px}
+@media (min-width:1024px){.cp-bar{max-width:896px}}
+.cp-step{animation:cp-in .22s ease-out}
+@keyframes cp-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.cp-step{animation:none}}
+`;
+
+// Which element scrolls the page depends on the layout (the viewport, <body> or
+// .pm-main -- see AppFull.navTo) and window.scrollTo is a no-op against some of
+// them, so scroll whichever ancestor actually moves. Only scrolls up, and only
+// when the case has slid under the pinned bar -- if it is already in view,
+// leave the page alone.
+function keepCaseInView(root, head) {
+  if (!root || !head) return;
+  try {
+    const pinAt = parseFloat(getComputedStyle(head).top) || 0;
+    const delta = root.getBoundingClientRect().top - pinAt;
+    if (delta >= 0) return;
+    for (let p = root; p; p = p.parentElement) {
+      const before = p.scrollTop;
+      p.scrollTop = before + delta;
+      if (p.scrollTop !== before) return;
+    }
+    window.scrollBy(0, delta);
+  } catch { /* scrolling is a nicety, never break the case over it */ }
+}
+
 function CasePlayer({ c, onBack }) {
-  const [shown, setShown] = useState(1);
+  const [cur, setCur] = useState(0);
+  const [max, setMax] = useState(0);
+  const rootRef = useRef(null);
+  const headRef = useRef(null);
+  const stripRef = useRef(null);
+  const moved = useRef(false);
   const total = c.steps.length;
   const d = LEVEL_THEME[c.difficulty];
   const th = SPEC_THEME[c.specialty] || SPEC_THEME.msk;
-  const SpecIcon = th.Icon;
-  const next = c.steps[shown];
+  const step = c.steps[cur];
+  const next = c.steps[cur + 1];
+
+  // After every step change: centre its chip in the header and bring the case back into view.
+  useEffect(() => {
+    const strip = stripRef.current;
+    const chip = strip && strip.children[cur];
+    if (strip && chip && typeof strip.scrollTo === "function") strip.scrollTo({ left: chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
+    if (moved.current) keepCaseInView(rootRef.current, headRef.current);
+    moved.current = true;
+  }, [cur]);
+
+  const openStep = (i) => { setCur(i); setMax((m) => Math.max(m, i)); };
+  const restart = () => { setMax(0); setCur(0); };
+
   return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-slate-500 mb-3 -ml-1"><ChevronLeft size={18}/> Back</button>
+    <div ref={rootRef}>
+      <style>{CASE_CSS}</style>
 
-      <div className={`rounded-3xl bg-gradient-to-br ${th.grad} text-white p-4 shadow-md relative overflow-hidden saturate-[.78]`}>
-        <SpecIcon size={120} strokeWidth={1.2} className="absolute -right-4 -bottom-5 opacity-15" aria-hidden="true"/>
-        <div className="flex items-center gap-2 mb-2 relative">
-          <span className="text-[11px] font-bold bg-white/25 rounded-full px-2.5 py-1">Case {c.number}</span>
-          <span className="text-[11px] font-bold bg-white text-slate-800 rounded-full px-2.5 py-1 flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${d.dot}`}/>{d.label}</span>
-          <span className="text-[11px] font-bold bg-white/25 rounded-full px-2.5 py-1">{th.label}</span>
-        </div>
-        <h2 className="cl-display text-2xl font-extrabold leading-tight relative">{c.title}</h2>
-        <p className="text-sm text-white/90 mt-1.5 leading-snug relative">{c.stem}</p>
-        <div className="flex items-center gap-2 mt-3 relative">
-          <div className="flex-1 h-2 rounded-full bg-white/25 overflow-hidden"><div className="h-full bg-white rounded-full transition-all" style={{ width: `${(shown / total) * 100}%` }}/></div>
-          <div className="text-[11px] font-bold">{shown}/{total}</div>
+      <div ref={headRef} className="cp-head">
+        <div className={`rounded-2xl overflow-hidden border ${th.border} bg-white shadow-sm`}>
+          <div className={`flex items-center gap-2.5 px-3 py-2.5 text-white bg-gradient-to-br ${th.grad} saturate-[.78]`}>
+            <button type="button" onClick={onBack} aria-label="Back to clinical cases" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 active:bg-white/30">
+              <ChevronLeft size={19}/>
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-semibold text-white/90 truncate">Case {c.number} · {d.label} · {th.label}</div>
+              <div className="cl-display text-[17px] font-extrabold leading-tight truncate">{c.title}</div>
+            </div>
+            <span className="text-xs font-bold bg-white/20 rounded-full px-2.5 py-1 shrink-0">{cur + 1} / {total}</span>
+          </div>
+          <div ref={stripRef} className="relative flex overflow-x-auto no-scrollbar px-1 pt-2.5 pb-2">
+            {c.steps.map((st, i) => {
+              const state = i === cur ? "cur" : i <= max ? "done" : "lock";
+              const label = STEP_SHORT[st.key] || st.title;
+              return (
+                <button
+                  key={st.key}
+                  type="button"
+                  onClick={() => { if (state !== "lock") openStep(i); }}
+                  aria-current={state === "cur" ? "step" : undefined}
+                  aria-disabled={state === "lock" ? "true" : undefined}
+                  aria-label={`Step ${i + 1}: ${label}${state === "lock" ? " (locked)" : ""}`}
+                  className={`relative shrink-0 grow basis-[62px] flex flex-col items-center ${state === "lock" ? "cursor-default" : ""}`}
+                >
+                  {i > 0 && <span aria-hidden="true" className={`absolute top-[13px] right-1/2 w-full h-[2px] ${i <= max ? th.line : "bg-slate-200"}`}/>}
+                  <span className={`relative z-10 w-[26px] h-[26px] rounded-full flex items-center justify-center text-[12px] font-bold border-[1.5px] transition-colors ${
+                    state === "done" ? `${th.solid} border-transparent text-white` : state === "cur" ? `bg-white ${th.bord} ${th.text} ring-4 ${th.ring}` : "bg-white border-slate-200 text-slate-400"
+                  }`}>
+                    {state === "done" ? <Check size={14} strokeWidth={3}/> : i + 1}
+                  </span>
+                  <span className={`mt-1 text-[11px] leading-none whitespace-nowrap ${state === "cur" ? `${th.text} font-bold` : state === "done" ? `${th.text} font-semibold` : "text-slate-400 font-medium"}`}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="space-y-3 mt-4">
-        {c.steps.slice(0, shown).map((st, i) => <StepCard key={st.key} step={st} index={i}/>)}
+      <div className="mt-2 pb-14">
+        {cur === 0 && c.stem && (
+          <div className={`rounded-2xl ${th.soft} border ${th.border} px-3.5 py-2.5 mb-3 text-[13.5px] ${th.text} leading-snug`}>
+            <span className="font-bold">Scenario: </span>{c.stem}
+          </div>
+        )}
+        <div key={step.key} className="cp-step">
+          <StepCard step={step} index={cur} total={total}/>
+        </div>
       </div>
 
-      {next ? (
-        <button type="button" onClick={() => setShown((n) => n + 1)} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r ${th.grad} text-white py-3.5 text-sm font-bold shadow-md active:scale-[0.99] transition saturate-[.8]`}>
-          Next: {next.title} <ChevronRight size={17}/>
-        </button>
-      ) : (
-        <button type="button" onClick={() => { setShown(1); window.scrollTo({ top: 0 }); }} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl border-2 ${th.border} ${th.soft} ${th.text} py-3 text-sm font-bold`}>
-          <RotateCcw size={15}/> Restart case
-        </button>
-      )}
+      <div className="cp-bar">
+        {cur > 0 && (
+          <button type="button" onClick={() => openStep(cur - 1)} className={`shrink-0 flex items-center justify-center text-center gap-1 rounded-2xl border-2 ${th.border} ${th.soft} ${th.text} px-4 min-h-[46px] text-sm font-bold`}>
+            <ChevronLeft size={17}/> Back
+          </button>
+        )}
+        {next ? (
+          <button type="button" onClick={() => openStep(cur + 1)} className={`flex-1 flex items-center justify-center text-center gap-1.5 rounded-2xl bg-gradient-to-r ${th.grad} text-white min-h-[46px] text-sm font-bold shadow-md active:scale-[0.99] transition saturate-[.8]`}>
+            Next: {STEP_SHORT[next.key] || next.title} <ChevronRight size={17}/>
+          </button>
+        ) : (
+          <button type="button" onClick={restart} className={`flex-1 flex items-center justify-center text-center gap-1.5 rounded-2xl border-2 ${th.border} ${th.soft} ${th.text} min-h-[46px] text-sm font-bold`}>
+            <RotateCcw size={15}/> Restart case
+          </button>
+        )}
+      </div>
     </div>
   );
 }
