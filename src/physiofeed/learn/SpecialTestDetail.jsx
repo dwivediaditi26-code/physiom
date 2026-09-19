@@ -30,7 +30,7 @@ function splitHow(how) {
   return { positions, steps };
 }
 
-function hash(str) {
+export function hash(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
   return Math.abs(h);
@@ -42,11 +42,7 @@ function buildQuiz(test, regionTests) {
   const others = [...new Set(regionTests.filter((x) => x.id !== test.id && x.structure && x.structure !== test.structure).map((x) => x.structure))];
   if (others.length < 3) return null;
   const seed = hash(test.id);
-  const picks = [];
-  for (let i = 0; picks.length < 3 && i < others.length * 2; i++) {
-    const c = others[(seed + i * 7) % others.length];
-    if (!picks.includes(c)) picks.push(c);
-  }
+  const picks = others.map((v) => ({ v, k: hash(test.id + ":" + v) })).sort((a, b) => a.k - b.k).slice(0, 3).map((o) => o.v);
   if (picks.length < 3) return null;
   const options = [...picks, test.structure];
   const ordered = options.map((text, i) => ({ text, k: (seed + i * 13) % 97 })).sort((a, b) => a.k - b.k).map((o, i) => ({ id: "ABCD"[i], text: o.text }));
@@ -59,7 +55,7 @@ function buildQuiz(test, regionTests) {
   };
 }
 
-function QuickCheck({ quiz }) {
+export function QuickCheck({ quiz }) {
   const [picked, setPicked] = useState(null);
   const [done, setDone] = useState(false);
   if (!quiz) return <div className="text-sm text-slate-500 py-6 text-center">No quick check for this test yet.</div>;

@@ -4,6 +4,7 @@ import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+import RomMovementDetail from "./RomMovementDetail.jsx";
 
 // Real data straight from ROM_DATA/ROM_REGIONS (same source the actual ROM
 // clinical screen uses). Detail sections mirror that real screen's own
@@ -12,6 +13,7 @@ import InfoBox from "./InfoBox.jsx";
 function toCard(m) {
   return {
     id: m.id,
+    raw: m,
     image: m.id,
     title: m.mv,
     tags: [m.plane, `Normal ${m.normal}${m.unit}`].filter(Boolean),
@@ -61,7 +63,17 @@ export default function RomStudy({ onBack }) {
   const [selected, setSelected] = useState(null);
   const cards = useMemo(() => (ROM_DATA[region] || []).map(toCard), [region]);
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
+  if (selected) {
+    return (
+      <RomMovementDetail
+        movement={selected.raw}
+        region={region}
+        list={ROM_DATA[region] || []}
+        onBack={() => setSelected(null)}
+        onNext={(m) => { setSelected(toCard(m)); window.scrollTo({ top: 0 }); }}
+      />
+    );
+  }
 
   return (
     <StudyShell
