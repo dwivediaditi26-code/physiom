@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
 import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // ROM movement detail: hero photo, then Learn / Technique / Video / Quiz tabs
 // (same layout as the Special Test screen). All content is the ROM data the
@@ -49,25 +49,9 @@ export default function RomMovementDetail({ movement: m, region, list, onBack, o
 
   return (
     <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-slate-500 mb-3 -ml-1">
-        <ChevronLeft size={18}/> Back
-      </button>
-
-      <span className="inline-block text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 mb-2">{region} • Range of motion</span>
-      <h2 className="text-xl font-bold text-slate-900 leading-tight">{m.mv}</h2>
-      <p className="text-sm text-slate-500 mt-1">{[m.plane, m.normal != null && `Normal ${m.normal}${unit}`].filter(Boolean).join(" · ")}</p>
-
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
-        <StudyImage name={m.id} full/>
-      </div>
-
-      <div className="flex mt-4 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 -mb-px ${tab === t ? "border-violet-600 text-violet-700" : "border-transparent text-slate-400"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
+      <DetailHeader onBack={onBack} badge={`${region} • Range of motion`} title={m.mv} subtitle={[m.plane, m.normal != null && `Normal ${m.normal}${unit}`].filter(Boolean).join(" · ")} theme="violet"/>
+      <MediaFrame><StudyImage name={m.id} full/></MediaFrame>
+      <DetailTabs tab={tab} setTab={setTab}/>
 
       <div className="mt-4 space-y-3">
         {tab === "Learn" && (
@@ -106,22 +90,12 @@ export default function RomMovementDetail({ movement: m, region, list, onBack, o
           </>
         )}
 
-        {tab === "Video" && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 px-4 text-center">
-            <VideoIcon size={28} className="mx-auto text-slate-300 mb-2"/>
-            <div className="text-sm font-semibold text-slate-600">Video coming soon</div>
-            <div className="text-xs text-slate-400 mt-1">A demonstration of {m.mv} will appear here.</div>
-          </div>
-        )}
+        {tab === "Video" && <VideoTab name={m.mv}/>}
 
         {tab === "Quiz" && <QuickCheck key={m.id} quiz={quiz}/>}
       </div>
 
-      {next && (
-        <button type="button" onClick={() => onNext(next)} className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 py-3 text-sm font-semibold text-violet-700">
-          Next movement: {next.mv} <ChevronRight size={16}/>
-        </button>
-      )}
+      {next && <NextButton label={`Next movement: ${next.mv}`} onClick={() => onNext(next)} theme="violet"/>}
     </div>
   );
 }

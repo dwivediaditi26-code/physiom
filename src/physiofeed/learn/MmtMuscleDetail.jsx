@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
 import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // MMT muscle detail: hero photo, then Learn / Technique / Video / Quiz tabs
 // (same layout as Special Tests and ROM). Content is the MMT data the app
@@ -48,25 +48,9 @@ export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, o
 
   return (
     <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-slate-500 mb-3 -ml-1">
-        <ChevronLeft size={18}/> Back
-      </button>
-
-      <span className="inline-block text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 mb-2">{region} • Manual muscle testing</span>
-      <h2 className="text-xl font-bold text-slate-900 leading-tight">{m.muscle}</h2>
-      {m.action && <p className="text-sm text-slate-500 mt-1">{m.action}</p>}
-
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
-        <StudyImage name={m.id} full/>
-      </div>
-
-      <div className="flex mt-4 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 -mb-px ${tab === t ? "border-violet-600 text-violet-700" : "border-transparent text-slate-400"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
+      <DetailHeader onBack={onBack} badge={`${region} • Manual muscle testing`} title={m.muscle} subtitle={m.action} theme="orange"/>
+      <MediaFrame><StudyImage name={m.id} full/></MediaFrame>
+      <DetailTabs tab={tab} setTab={setTab}/>
 
       <div className="mt-4 space-y-3">
         {tab === "Learn" && (
@@ -114,22 +98,12 @@ export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, o
           </>
         )}
 
-        {tab === "Video" && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 px-4 text-center">
-            <VideoIcon size={28} className="mx-auto text-slate-300 mb-2"/>
-            <div className="text-sm font-semibold text-slate-600">Video coming soon</div>
-            <div className="text-xs text-slate-400 mt-1">A demonstration of testing {m.muscle} will appear here.</div>
-          </div>
-        )}
+        {tab === "Video" && <VideoTab name={`testing ${m.muscle}`}/>}
 
         {tab === "Quiz" && <QuickCheck key={m.id} quiz={quiz}/>}
       </div>
 
-      {next && (
-        <button type="button" onClick={() => onNext(next)} className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 py-3 text-sm font-semibold text-violet-700">
-          Next muscle: {next.muscle} <ChevronRight size={16}/>
-        </button>
-      )}
+      {next && <NextButton label={`Next muscle: ${next.muscle}`} onClick={() => onNext(next)} theme="orange"/>}
     </div>
   );
 }

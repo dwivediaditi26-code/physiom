@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
+
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
 import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // Full detail page for one palpation structure. Same chrome as
 // StudyDetail.jsx (back button, white rounded-2xl card) but with a
@@ -59,29 +60,15 @@ export default function PalpationDetail({ item, region, list, onBack, onNext }) 
 
   return (
     <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-slate-500 mb-3 -ml-1">
-        <ChevronLeft size={18}/> Back
-      </button>
-
-      {region && <span className="inline-block text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 mb-2">{region} • Palpation</span>}
-      <h2 className="text-xl font-bold text-slate-900 leading-tight">{item.name}</h2>
-      <p className="text-sm text-slate-500 mt-1">{item.type}{item.position ? ` · ${item.position}` : ""}</p>
-
-      <div className="mt-3 rounded-2xl border border-slate-200 overflow-hidden">
-        <div className="grid grid-cols-3 gap-0.5 bg-slate-100">
+      <DetailHeader onBack={onBack} badge={region ? `${region} • Palpation` : "Palpation"} title={item.name} subtitle={`${item.type}${item.position ? ` · ${item.position}` : ""}`} theme="rose"/>
+      <MediaFrame>
+        <div className="grid grid-cols-3 gap-0.5 bg-slate-100 w-full">
           {(item.images || [null, null, null]).slice(0, 3).map((img, i) => (
             <StudyImage key={i} name={img} square/>
           ))}
         </div>
-      </div>
-
-      <div className="flex mt-4 border-b border-slate-200">
-        {TABS.map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 -mb-px ${tab === t ? "border-violet-600 text-violet-700" : "border-transparent text-slate-400"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
+      </MediaFrame>
+      <DetailTabs tab={tab} setTab={setTab}/>
 
       <div className="mt-4 space-y-3">
         {tab === "Learn" && (
@@ -142,22 +129,12 @@ export default function PalpationDetail({ item, region, list, onBack, onNext }) 
           </>
         )}
 
-        {tab === "Video" && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 px-4 text-center">
-            <VideoIcon size={28} className="mx-auto text-slate-300 mb-2"/>
-            <div className="text-sm font-semibold text-slate-600">Video coming soon</div>
-            <div className="text-xs text-slate-400 mt-1">A demonstration of palpating {item.name} will appear here.</div>
-          </div>
-        )}
+        {tab === "Video" && <VideoTab name={`palpating ${item.name}`}/>}
 
         {tab === "Quiz" && <QuickCheck key={item.id} quiz={quiz}/>}
       </div>
 
-      {next && onNext && (
-        <button type="button" onClick={() => onNext(next)} className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 py-3 text-sm font-semibold text-violet-700">
-          Next structure: {next.name} <ChevronRight size={16}/>
-        </button>
-      )}
+      {next && onNext && <NextButton label={`Next structure: ${next.name}`} onClick={() => onNext(next)} theme="rose"/>}
     </div>
   );
 }

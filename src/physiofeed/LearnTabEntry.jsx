@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
+import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
 
 // These Assessment Library / Advanced Assessment items have real,
@@ -64,6 +65,19 @@ const TINTS = {
   indigo: "bg-indigo-50 text-indigo-600",
 };
 
+// Solid gradient badges for list rows and home cards (literal class names).
+const TINT_GRAD = {
+  violet: "from-violet-600 to-fuchsia-500", blue: "from-sky-600 to-indigo-500", green: "from-cyan-500 to-blue-500",
+  amber: "from-amber-500 to-orange-400", rose: "from-rose-600 to-pink-500", teal: "from-cyan-500 to-sky-500", indigo: "from-indigo-600 to-violet-500",
+};
+const TINT_PILL = {
+  violet: "bg-violet-100 text-violet-700", blue: "bg-sky-100 text-sky-700", green: "bg-cyan-100 text-cyan-700",
+  amber: "bg-amber-100 text-amber-700", rose: "bg-rose-100 text-rose-700", teal: "bg-cyan-100 text-cyan-700", indigo: "bg-indigo-100 text-indigo-700",
+};
+const TINT_BORDER = {
+  violet: "border-violet-200", blue: "border-sky-200", green: "border-cyan-200", amber: "border-amber-200", rose: "border-rose-200", teal: "border-cyan-200", indigo: "border-indigo-200",
+};
+
 // Grouped list rows (2026-09-18, Aditi: "build as shown") -- a coloured icon,
 // name, short description, and a Study pill. Tapping the row opens study mode
 // when the item has one (Learn is for learning), otherwise the real tool.
@@ -75,18 +89,18 @@ function Row({ item, onNav, onStudy }) {
   const studyable = STUDY_TYPES.has(item.key);
   const main = () => (studyable ? onStudy(item.key) : onNav(item.key));
   return (
-    <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-3 py-2.5 mb-2 hover:border-violet-300 transition-colors">
+    <div className={`flex items-center gap-3 bg-white border ${TINT_BORDER[item.tint]} rounded-2xl px-3 py-2.5 mb-2.5 shadow-sm hover:shadow-md transition`}>
       <button type="button" onClick={main} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${TINTS[item.tint]}`}>
-          <Icon size={19} strokeWidth={2}/>
+        <span className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br ${TINT_GRAD[item.tint]} text-white shadow-sm`}>
+          <Icon size={20} strokeWidth={2.2}/>
         </span>
         <span className="min-w-0">
-          <span className="block font-semibold text-sm text-slate-900 leading-tight">{item.label}</span>
+          <span className="cl-display block font-extrabold text-[15px] text-slate-900 leading-tight">{item.label}</span>
           <span className="block text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</span>
         </span>
       </button>
       {studyable
-        ? <button type="button" onClick={() => onStudy(item.key)} className="flex items-center gap-1 text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 shrink-0"><GraduationCap size={12}/> Study</button>
+        ? <button type="button" onClick={() => onStudy(item.key)} className={`flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1.5 shrink-0 ${TINT_PILL[item.tint]}`}><GraduationCap size={12}/> Study</button>
         : <ChevronRight size={16} className="text-slate-300 shrink-0"/>}
     </div>
   );
@@ -96,7 +110,7 @@ function Section({ title, items, onNav, onStudy }) {
   if (items.length === 0) return null;
   return (
     <div className="mb-5">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 px-0.5">{title}</div>
+      <div className="cl-display flex items-center gap-2 text-[13px] font-extrabold text-slate-700 mb-2.5 px-0.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500"/>{title}</div>
       {items.map((item) => <Row key={item.key} item={item} onNav={onNav} onStudy={onStudy}/>)}
     </div>
   );
@@ -116,10 +130,6 @@ const HOME_CARDS = [
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
 ];
 
-const PASTEL = {
-  violet: "bg-violet-50", blue: "bg-blue-50", rose: "bg-rose-50", amber: "bg-amber-50", indigo: "bg-indigo-50", teal: "bg-teal-50",
-};
-
 function HomeCard({ card, onOpen, wide }) {
   const Icon = card.icon;
   return (
@@ -127,16 +137,17 @@ function HomeCard({ card, onOpen, wide }) {
       type="button"
       disabled={card.soon}
       onClick={() => onOpen(card.id)}
-      className={`relative text-left rounded-2xl p-3.5 transition ${PASTEL[card.tint]} ${card.soon ? "opacity-75 cursor-not-allowed" : "active:scale-[0.98] hover:shadow-sm"} ${wide ? "col-span-2 flex items-center gap-3" : "flex flex-col justify-start items-stretch min-h-[108px]"}`}
+      className={`relative text-left rounded-3xl p-4 transition overflow-hidden text-white bg-gradient-to-br ${TINT_GRAD[card.tint]} shadow-md ${card.tint === "amber" || card.tint === "rose" ? "saturate-[.68]" : ""} ${card.soon ? "opacity-70 cursor-not-allowed" : "active:scale-[0.98] hover:shadow-lg"} ${wide ? "col-span-2 flex items-center gap-3" : "flex flex-col justify-start items-stretch min-h-[132px]"}`}
     >
-      {card.soon && <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-slate-500">Soon</span>}
-      {card.count != null && <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white text-slate-700">{card.count} topics</span>}
-      <span className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 ${wide ? "" : "mb-2.5"} ${TINTS[card.tint].split(" ")[1]}`}>
-        <Icon size={20} strokeWidth={2}/>
+      <Icon size={90} strokeWidth={1.2} className="absolute -right-3 -bottom-3 opacity-15" aria-hidden="true"/>
+      {card.soon && <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/25">Soon</span>}
+      {card.count != null && <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-700">{card.count} topics</span>}
+      <span className={`w-11 h-11 rounded-2xl bg-white/25 flex items-center justify-center shrink-0 ${wide ? "" : "mb-3"}`}>
+        <Icon size={22} strokeWidth={2.2}/>
       </span>
-      <span className="min-w-0">
-        <span className="block font-semibold text-[15px] text-slate-900 leading-tight">{card.label}</span>
-        <span className="block text-xs text-slate-600 mt-0.5 leading-snug">{card.desc}</span>
+      <span className="min-w-0 relative">
+        <span className="cl-display block font-extrabold text-[17px] leading-tight">{card.label}</span>
+        <span className="block text-xs text-white/90 mt-0.5 leading-snug">{card.desc}</span>
       </span>
     </button>
   );
@@ -181,6 +192,7 @@ export default function LearnTabEntry({ onNav }) {
     return (
       <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
         <style>{".pm-shell{background:#fff !important}"}</style>
+      <DisplayFont/>
         <ClinicalLearning onBack={() => setView("home")}/>
       </div>
     );
@@ -190,6 +202,7 @@ export default function LearnTabEntry({ onNav }) {
     return (
       <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
         <style>{".pm-shell{background:#fff !important}"}</style>
+      <DisplayFont/>
         <StudyMode type={studyType} onBack={() => setStudyType(null)}/>
       </div>
     );
@@ -211,7 +224,7 @@ export default function LearnTabEntry({ onNav }) {
             </button>
           )}
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+            <h1 className="cl-display text-2xl font-extrabold text-slate-900">{title}</h1>
             <p className="text-sm text-slate-500">{subtitle}</p>
           </div>
         </div>
@@ -231,12 +244,12 @@ export default function LearnTabEntry({ onNav }) {
       </div>
 
       {showCards && lastItem && (
-        <button type="button" onClick={() => openStudy(lastItem.key)} className="w-full flex items-center justify-between gap-3 bg-violet-50 rounded-2xl px-4 py-3 mb-3 text-left">
+        <button type="button" onClick={() => openStudy(lastItem.key)} className="w-full flex items-center justify-between gap-3 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white rounded-2xl px-4 py-3 mb-3 text-left shadow-md">
           <span className="min-w-0">
-            <span className="block text-[13px] font-semibold text-violet-900">Pick up where you left off</span>
-            <span className="block text-xs text-violet-700 truncate">{lastItem.label} · {lastItem.desc}</span>
+            <span className="cl-display block text-[14px] font-extrabold">Pick up where you left off</span>
+            <span className="block text-xs text-white/85 truncate">{lastItem.label} · {lastItem.desc}</span>
           </span>
-          <span className="text-[11px] font-semibold bg-white text-violet-800 rounded-full px-3 py-1.5 shrink-0">Continue</span>
+          <span className="text-[11px] font-bold bg-white text-violet-700 rounded-full px-3 py-1.5 shrink-0">Continue</span>
         </button>
       )}
       {showCards ? (

@@ -299,7 +299,7 @@ function CasePlayer({ c, onBack }) {
     <div>
       <button onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-slate-500 mb-3 -ml-1"><ChevronLeft size={18}/> Back</button>
 
-      <div className={`rounded-3xl bg-gradient-to-br ${th.grad} text-white p-4 shadow-md relative overflow-hidden`}>
+      <div className={`rounded-3xl bg-gradient-to-br ${th.grad} text-white p-4 shadow-md relative overflow-hidden saturate-[.78]`}>
         <SpecIcon size={120} strokeWidth={1.2} className="absolute -right-4 -bottom-5 opacity-15" aria-hidden="true"/>
         <div className="flex items-center gap-2 mb-2 relative">
           <span className="text-[11px] font-bold bg-white/25 rounded-full px-2.5 py-1">Case {c.number}</span>
@@ -319,7 +319,7 @@ function CasePlayer({ c, onBack }) {
       </div>
 
       {next ? (
-        <button type="button" onClick={() => setShown((n) => n + 1)} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r ${th.grad} text-white py-3.5 text-sm font-bold shadow-md active:scale-[0.99] transition`}>
+        <button type="button" onClick={() => setShown((n) => n + 1)} className={`mt-4 w-full flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r ${th.grad} text-white py-3.5 text-sm font-bold shadow-md active:scale-[0.99] transition saturate-[.8]`}>
           Next: {next.title} <ChevronRight size={17}/>
         </button>
       ) : (
@@ -367,7 +367,7 @@ function CasesView({ onBack, initialCase }) {
           const SpecIcon = th.Icon;
           return (
             <button key={c.id} type="button" onClick={() => setSelected(c)} className={`w-full text-left rounded-2xl bg-white border ${th.border} mb-3 overflow-hidden flex shadow-sm hover:shadow-md active:scale-[0.99] transition`}>
-              <span className={`w-16 shrink-0 bg-gradient-to-b ${th.grad} flex flex-col items-center justify-center gap-1 text-white`}>
+              <span className={`w-16 shrink-0 bg-gradient-to-b ${th.grad} flex flex-col items-center justify-center gap-1 text-white saturate-[.78]`}>
                 <SpecIcon size={22} strokeWidth={2}/>
                 <span className="cl-display text-lg font-extrabold leading-none">{c.number}</span>
               </span>
@@ -404,7 +404,7 @@ export default function ClinicalLearning({ onBack }) {
       <div>
         <Header title="Clinical Learning" subtitle="Understand the condition, then apply it to a real patient." onBack={onBack}/>
         <div className="grid grid-cols-1 gap-4 mt-4">
-          <button type="button" onClick={() => setView("conditions")} className="text-left rounded-3xl bg-gradient-to-br from-rose-500 via-pink-500 to-orange-400 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition">
+          <button type="button" onClick={() => setView("conditions")} className="text-left rounded-3xl bg-gradient-to-br from-rose-500 via-pink-500 to-orange-400 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition saturate-[.68]">
             <BookOpen size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
             <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><BookOpen size={24}/></span>
             <span className="cl-display block text-xl font-extrabold">Conditions</span>
@@ -414,7 +414,7 @@ export default function ClinicalLearning({ onBack }) {
             </span>
             <span className="block text-[11px] text-white/80 mt-2">{conditionCount} MSK conditions to start</span>
           </button>
-          <button type="button" onClick={() => setView("cases")} className="text-left rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-500 to-fuchsia-500 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition">
+          <button type="button" onClick={() => setView("cases")} className="text-left rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-500 to-fuchsia-500 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition saturate-[.78]">
             <UserRound size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
             <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><UserRound size={24}/></span>
             <span className="cl-display block text-xl font-extrabold">Clinical Cases</span>
