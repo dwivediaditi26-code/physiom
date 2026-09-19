@@ -144,7 +144,14 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // narrower subset of this step's data), so this standalone step was a
 // second, redundant exercise browser. Same backward-compat treatment: kept
 // in ORDERED_ALL/STEP_META for old saved records.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
+// kineticChain / cpa / sttt / fma moved from OPTIONAL_IDS to BASE_IDS
+// (2026-09-18, Aditi: "put the functional screen, kinetic chain, CPA, STTT,
+// make it constant in the outpatient orthopedic assessment") -- same move
+// specialTests/neuroScreen got: standard steps on every Outpatient entry
+// instead of only when a condition promoted them or the therapist added
+// them. AI-assisted entry skips them (AI_ENTRY_SKIP_IDS) since AI Objective
+// already has CPA / Kinetic chain / Functional / STTT tabs inline.
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -153,8 +160,8 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // data") -- OrthoAssessment.jsx now collects it pre-wizard, one screen
 // before Region, and feeds it in via initialAiUpdates.demographics exactly
 // like an AI-parsed narrative already did.
-const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests"];
-const OPTIONAL_IDS = ["vitals", "edema", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma"];
+const OPTIONAL_IDS = ["vitals", "edema", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
