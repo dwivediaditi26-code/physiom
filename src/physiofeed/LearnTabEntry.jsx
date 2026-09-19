@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import {
   Search, Bell, PersonStanding, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
-  Waves, GraduationCap, Activity,
+  Waves, GraduationCap, Activity, ChevronLeft, ChevronRight,
+  BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import "./physiofeed.css";
@@ -63,6 +64,7 @@ const TINTS = {
   amber: "bg-amber-50 text-amber-600",
   rose: "bg-rose-50 text-rose-600",
   teal: "bg-teal-50 text-teal-600",
+  indigo: "bg-indigo-50 text-indigo-600",
 };
 
 function Card({ item, onNav, onStudy }) {
@@ -101,7 +103,49 @@ function Section({ title, items, onNav, onStudy }) {
   );
 }
 
+
+// Learn Home: five entry cards in a grid (2026-09-18, Aditi's design brief:
+// "make it grid wise and not green"). Only Practical Skills and Clinical
+// Learning have real content today -- they open the existing study/
+// assessment library, filtered; BPT / Test / Exam Ready are marked Soon
+// instead of pretending to have content.
+const HOME_CARDS = [
+  { id: "bpt", label: "BPT", desc: "1st Year • 2nd Year • 3rd Year • 4th Year", icon: BookOpen, tint: "violet", soon: true },
+  { id: "test", label: "Test", desc: "MCQs • Image Questions • Clinical Cases", icon: ClipboardCheck, tint: "blue", soon: true },
+  { id: "clinical", label: "Clinical Learning", desc: "MSK • Neuro • Sports • Cardio • Paeds", icon: Stethoscope, tint: "rose" },
+  { id: "practical", label: "Practical Skills", desc: "Assessment • ROM • MMT • Special Tests • Techniques", icon: Hand, tint: "amber" },
+  { id: "exam", label: "Exam Ready", desc: "Important Topics • Previous Questions • Rapid Revision • Mock Tests", icon: Target, tint: "indigo", soon: true },
+];
+
+const CLINICAL_KEYS = new Set(["neuro", "cardio", "special", "outcome", "kinetic", "nkt"]);
+
+function HomeCard({ card, onOpen, wide }) {
+  const Icon = card.icon;
+  return (
+    <button
+      type="button"
+      disabled={card.soon}
+      onClick={() => onOpen(card.id)}
+      className={`relative flex flex-col justify-start items-stretch text-left bg-white border border-slate-200 rounded-2xl p-4 transition-colors ${card.soon ? "opacity-70 cursor-not-allowed" : "hover:border-violet-300 active:scale-[0.99]"} ${wide ? "col-span-2" : ""}`}
+    >
+      {card.soon && <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">SOON</span>}
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${TINTS[card.tint]}`}>
+        <Icon size={20} strokeWidth={2}/>
+      </div>
+      <div className="font-semibold text-[15px] text-slate-900">{card.label}</div>
+      <div className="text-xs text-slate-500 mt-0.5 leading-snug">{card.desc}</div>
+      {!card.soon && <ChevronRight size={16} className="absolute bottom-4 right-4 text-slate-300"/>}
+    </button>
+  );
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+}
+
 export default function LearnTabEntry({ onNav }) {
+  const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [studyType, setStudyType] = useState(null);
 
@@ -111,11 +155,12 @@ export default function LearnTabEntry({ onNav }) {
     return items.filter((i) => i.label.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q));
   };
 
+  const inView = (items) => (view === "clinical" ? items.filter((i) => CLINICAL_KEYS.has(i.key)) : items);
   const filtered = useMemo(() => ({
-    assess: filter(ASSESSMENT_LIBRARY),
-    adv: filter(ADVANCED_ASSESSMENT),
-    exercise: filter(EXERCISE),
-  }), [query]);
+    assess: filter(inView(ASSESSMENT_LIBRARY)),
+    adv: filter(inView(ADVANCED_ASSESSMENT)),
+    exercise: filter(view === "clinical" ? [] : EXERCISE),
+  }), [query, view]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
 
@@ -127,12 +172,24 @@ export default function LearnTabEntry({ onNav }) {
     );
   }
 
+  const atHome = view === "home";
+  const title = view === "clinical" ? "Clinical Learning" : view === "practical" ? "Practical Skills" : "Learn";
+  const subtitle = atHome ? `${greeting()} — what do you want to learn today?` : view === "clinical" ? "Learn from real cases. Build clinical confidence." : "Hands-on skills for real practice.";
+  const showCards = atHome && !query.trim();
+
   return (
     <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-1">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Learn</h1>
-          <p className="text-sm text-slate-500">Explore. Learn. Grow.</p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {!atHome && (
+            <button type="button" aria-label="Back to Learn" onClick={() => { setView("home"); setQuery(""); }} className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-50">
+              <ChevronLeft size={22} className="text-slate-600"/>
+            </button>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+            <p className="text-sm text-slate-500">{subtitle}</p>
+          </div>
         </div>
         <button aria-label="Notifications" className="p-2 rounded-lg hover:bg-slate-50">
           <Bell size={20} className="text-slate-400"/>
@@ -144,12 +201,18 @@ export default function LearnTabEntry({ onNav }) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search assessments, tests…"
+          placeholder="Search topics, skills, tests…"
           className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
         />
       </div>
 
-      {noResults ? (
+      {showCards ? (
+        <div className="grid grid-cols-2 gap-3">
+          {HOME_CARDS.map((c, i) => (
+            <HomeCard key={c.id} card={c} wide={i === HOME_CARDS.length - 1} onOpen={setView}/>
+          ))}
+        </div>
+      ) : noResults ? (
         <div className="text-center py-14 text-slate-400 text-sm">No matches for "{query}".</div>
       ) : (
         <>
