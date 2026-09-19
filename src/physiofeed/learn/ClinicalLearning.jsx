@@ -275,20 +275,23 @@ function CasePlayer({ c, onBack }) {
 
 function CasesView({ onBack, initialCase }) {
   const [spec, setSpec] = useState("all");
+  const [level, setLevel] = useState("all");
   const [selected, setSelected] = useState(initialCase || null);
   if (selected) return <CasePlayer c={selected} onBack={() => setSelected(null)}/>;
-  const list = CLINICAL_CASES.filter((c) => spec === "all" || c.specialty === spec);
+  const list = CLINICAL_CASES.filter((c) => (spec === "all" || c.specialty === spec) && (level === "all" || c.difficulty === level));
   return (
     <div>
       <Header title="Clinical Cases" subtitle="Learn through real-life patient cases" onBack={onBack}/>
       <div className="flex gap-2 overflow-x-auto no-scrollbar my-4">
         {CASE_SPECIALTIES.map((s) => <Chip key={s.key} active={spec === s.key} onClick={() => setSpec(s.key)}>{s.label}</Chip>)}
       </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
-        {Object.values(DIFFICULTY).map((d) => (
-          <span key={d.label} className="flex items-center gap-1.5 text-[11px] text-slate-500"><span className={`w-2 h-2 rounded-full ${d.dot}`}/>{d.label} — {d.hint}</span>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-2">
+        <Chip active={level === "all"} onClick={() => setLevel("all")}>Any level</Chip>
+        {Object.entries(DIFFICULTY).map(([k, d]) => (
+          <Chip key={k} active={level === k} onClick={() => setLevel(k)}><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${d.dot}`}/>{d.label}</Chip>
         ))}
       </div>
+      <div className="text-[11px] text-slate-400 mb-3">{level === "all" ? "Beginner: straightforward · Intermediate: multiple findings · Advanced: complex, conflicting findings" : DIFFICULTY[level].hint}</div>
       {list.length === 0 ? (
         <SoonNote text="No cases in this specialty yet"/>
       ) : (
