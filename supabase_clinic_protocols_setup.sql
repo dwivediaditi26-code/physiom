@@ -51,3 +51,11 @@ CREATE POLICY "Users can delete own clinic protocols"
 -- DONE. Run the query, then test by signing in, building a small exercise
 -- programme in Clinical → an Ortho assessment → Exercise Prescription
 -- step, and tapping "💾 Save as Clinic Protocol".
+
+-- ============================================================
+-- STEP 5 (2026-09-19): add a `techniques` column so a protocol can bundle
+-- manual/other techniques (Joint Mob, Dry Needling, ...) alongside its
+-- exercises -- not just exercises. Existing rows default to '[]', so old
+-- protocols keep working unchanged. Safe to re-run.
+-- ============================================================
+ALTER TABLE clinic_protocols ADD COLUMN IF NOT EXISTS techniques JSONB NOT NULL DEFAULT '[]'::jsonb;

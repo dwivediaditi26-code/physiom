@@ -4,7 +4,7 @@ import { EXERCISE_DB } from "./sharedClinicalData.js";
 import { exerciseRichItem } from "./exerciseCardKit.jsx";
 import { TECHNIQUE_TYPES, BLANK_TECHNIQUE, techniqueEntryForm, techniqueLabel } from "./orthoOutpatientSections.jsx";
 import { EvidenceProtocolBrowser } from "./orthoEvidenceProtocols.jsx";
-import { listClinicProtocols } from "./clinicProtocols.js";
+import { listClinicProtocols, saveClinicProtocol } from "./clinicProtocols.js";
 import {
   deriveNeuroProblems, buildGoalsForProblem, PROBLEM_CATEGORIES, categoryLabel,
   REFERENCES, ASSIST_LADDER, problemById,
@@ -586,7 +586,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
               <div className="ct-group">
                 {savedProtocolsLoading && <div className="summary-empty">Loading…</div>}
                 {!savedProtocolsLoading && savedProtocols.length === 0 && (
-                  <div className="summary-empty">No saved protocols yet — build one from the Exercise Prescription step and save it there.</div>
+                  <div className="summary-empty">No saved protocols yet — build one from the Treatment list below (or the Exercise Prescription step) and save it there.</div>
                 )}
                 {savedProtocols.map((p) => (
                   <div key={p.id} style={{ marginBottom: 14 }}>
@@ -600,6 +600,28 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
                         <span style={{ color: BRAND.purple, fontWeight: 700, fontSize: 12 }}>＋ Add</span>
                       </button>
                     ))}
+                    {/* Techniques saved onto a protocol (2026-09-19) reopen the
+                        SAME techniqueEntryForm screen manual add already uses,
+                        pre-filled from the saved record -- so the therapist can
+                        still adjust grade/laterality/etc. for this patient
+                        before it's actually added, same as exercises going
+                        through startDose() first. `name`/`category` are
+                        stripped back out since techForm only carries the raw
+                        per-type fields; techniqueLabel(techForm) recomputes
+                        the display name on Add. */}
+                    {(p.techniques || []).map((t, i) => {
+                      const { name, category, ...techFields } = t;
+                      return (
+                        <button key={"tech" + i} type="button" className="ct-item"
+                          onClick={() => { setBrowseMode(null); setTechType(t.type); setTechForm({ ...BLANK_TECHNIQUE, ...techFields, response: "" }); }}>
+                          <span style={{ flex: 1, textAlign: "left" }}>
+                            <span style={{ fontWeight: 600 }}>{name}</span>
+                            <span style={{ display: "block", fontSize: 11, color: BRAND.gray }}>{TECHNIQUE_TYPES.find((tt) => tt.key === t.type)?.label}</span>
+                          </span>
+                          <span style={{ color: BRAND.purple, fontWeight: 700, fontSize: 12 }}>＋ Add</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -847,6 +869,42 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
   // the 2026-09-11 design (general library / evidence protocol / clinic
   // protocol presented directly, no button-press to reveal it).
 
+  // Save as Clinic Protocol, straight from this list (2026-09-19) -- until
+  // now the only save path was the separate Exercise Prescription step,
+  // and it only captured exercises. This list already has the full,
+  // already-built plan (exercises AND manual techniques together), so
+  // saving from here bundles both into one reusable protocol instead of
+  // needing two different screens to build one template.
+  const techniqueCount = treatments.filter((t) => t.category === "Technique").length;
+  const exerciseCount = treatments.length - techniqueCount;
+  const [saveProtocolOpen, setSaveProtocolOpen] = useState(false);
+  const [saveProtocolName, setSaveProtocolName] = useState("");
+  const [saveProtocolMsg, setSaveProtocolMsg] = useState("");
+  const saveProtocol = () => {
+    if (requireAuth && !requireAuth("Clinic Protocols", "Clinic Protocols are saved to your account so you can reuse them across patients and devices — sign in to save and access yours.")) return;
+    if (!treatments.length) return;
+    setSaveProtocolOpen(true);
+  };
+  const confirmSaveProtocol = async () => {
+    try {
+      // Strip patient-specific bits before saving as a reusable template:
+      // `id` is a per-add uid, `goalIds` links to THIS patient's goals, and
+      // a technique's `response` ("Patient response during technique") is
+      // clinical documentation for this visit, not a sane default for the
+      // next patient.
+      const exercises = treatments.filter((t) => t.category !== "Technique").map(({ id, goalIds, ...rest }) => rest);
+      const techniques = treatments.filter((t) => t.category === "Technique").map(({ id, goalIds, response, ...rest }) => rest);
+      await saveClinicProtocol({ name: saveProtocolName, exercises, techniques });
+      setSaveProtocolOpen(false);
+      setSaveProtocolName("");
+      setSaveProtocolMsg("Saved to My Clinic Protocols.");
+      setTimeout(() => setSaveProtocolMsg(""), 3000);
+    } catch (e) {
+      setSaveProtocolMsg("Couldn't save -- " + (e.message || "try again."));
+      setTimeout(() => setSaveProtocolMsg(""), 4000);
+    }
+  };
+
   return (
     <>
       <SectionIntro icon="🏋" title="Treatment" action={!searchOpen && (
@@ -908,12 +966,42 @@ function TreatmentPhase({ problems, goals, treatments, setTreatments, onNext, fl
 
       {!treatments.length && <div className="summary-empty">No treatments added yet -- browse and add from the library below, or continue on without any.</div>}
 
+      {treatments.length > 0 && !doseEditing && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4, marginBottom: 10 }} onClick={saveProtocol}>
+          💾 Save as Clinic Protocol
+        </button>
+      )}
+      {saveProtocolMsg && <div className="hint" style={{ color: saveProtocolMsg.startsWith("Couldn't") ? "#dc2626" : "#059669", fontWeight: 600, marginBottom: 8 }}>{saveProtocolMsg}</div>}
+
       {/* Always reachable, same reasoning as Problems/Goals -- an empty
           treatment list must not block moving on. Hidden only while a dose
           is actively being edited below, so the two fixed-position bars
           don't stack on top of each other. */}
       {!doseEditing && (
         <button type="button" className="primary-btn" style={ctaStyle(floatingCTA, { width: "100%", marginTop: 10, marginBottom: 14 })} onClick={onNext}>Review treatment plan →</button>
+      )}
+
+      {saveProtocolOpen && (
+        <div className="ct-modal" style={{ position: "fixed", inset: 0, zIndex: 3100 }}>
+          <div className="ct-modal-header">
+            <div className="ct-modal-title">Save as Clinic Protocol</div>
+            <button type="button" className="ct-modal-close" onClick={() => setSaveProtocolOpen(false)} aria-label="Close">✕</button>
+          </div>
+          <div className="ct-modal-body">
+            <TextField label="Protocol name" value={saveProtocolName} onChange={setSaveProtocolName} placeholder="e.g. Frozen shoulder — mob + exercise" />
+            <div className="hint">
+              Saves {exerciseCount > 0 ? `${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"}` : ""}
+              {exerciseCount > 0 && techniqueCount > 0 ? " and " : ""}
+              {techniqueCount > 0 ? `${techniqueCount} technique${techniqueCount === 1 ? "" : "s"}` : ""}
+              {" "}from this plan for reuse on future patients.
+            </div>
+          </div>
+          <div className="ct-modal-footer">
+            <button type="button" className="primary-btn" style={{ width: "100%" }} disabled={!saveProtocolName.trim()} onClick={confirmSaveProtocol}>
+              Save
+            </button>
+          </div>
+        </div>
       )}
 
       <AddTreatmentPanel

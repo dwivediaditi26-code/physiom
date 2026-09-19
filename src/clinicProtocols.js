@@ -19,7 +19,7 @@ export async function listClinicProtocols() {
   return data || [];
 }
 
-export async function saveClinicProtocol({ id, name, region, exercises }) {
+export async function saveClinicProtocol({ id, name, region, exercises, techniques }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
   const row = {
@@ -28,6 +28,7 @@ export async function saveClinicProtocol({ id, name, region, exercises }) {
     name: (name || "").trim() || "Untitled protocol",
     region: region || "",
     exercises: exercises || [],
+    techniques: techniques || [],
     updated_at: new Date().toISOString(),
   };
   const { data, error } = await supabase.from("clinic_protocols").upsert(row, { onConflict: "id" }).select().single();
