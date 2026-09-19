@@ -3,7 +3,7 @@ import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, laz
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
-import { Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
+import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
 import { getNotifications as getPfNotifications } from "./physiofeed/data/db.js";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
@@ -1619,6 +1619,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                         borderRadius:16,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
                         border:`1.5px solid ${clickable?PC.border:"#E5E7EB"}`,
                         background:PC.surface,padding:"14px 12px",opacity:clickable?1:0.6}}>
+                      {st.id==="ortho_new" && <span style={{position:"absolute",top:10,right:10,display:"inline-flex",alignItems:"center",gap:3,fontSize:"0.6rem",fontWeight:800,padding:"3px 7px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#a855f7)",color:"#fff",letterSpacing:"0.03em"}}><Sparkles size={10} strokeWidth={2.2}/>AI</span>}
                       {!clickable && <span style={{position:"absolute",top:10,right:10,fontSize:"0.58rem",fontWeight:800,padding:"2px 6px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
                       <div style={{width:38,height:38,borderRadius:12,background:bg,
                         display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -2435,6 +2436,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                           borderRadius:18,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
                                           border:`1.5px solid ${clickable?"#EEEDF5":"#E5E7EB"}`,
                                           background:"#fff",padding:"16px 14px",opacity:clickable?1:0.6}}>
+                                        {st.id==="ortho_new" && <span style={{position:"absolute",top:12,right:12,display:"inline-flex",alignItems:"center",gap:3,fontSize:"0.6rem",fontWeight:800,padding:"3px 7px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#a855f7)",color:"#fff",letterSpacing:"0.03em"}}><Sparkles size={10} strokeWidth={2.2}/>AI</span>}
                                         {!clickable && <span style={{position:"absolute",top:12,right:12,fontSize:"0.6rem",fontWeight:800,padding:"2px 7px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
                                         <div style={{width:44,height:44,borderRadius:14,background:bg,
                                           display:"flex",alignItems:"center",justifyContent:"center"}}>
