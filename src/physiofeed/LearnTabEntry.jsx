@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
-  Waves, GraduationCap, Activity, ChevronLeft, ChevronRight,
+  GraduationCap, Activity, ChevronLeft, ChevronRight,
   BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
@@ -48,7 +48,6 @@ const ADVANCED_ASSESSMENT = [
   { key: "cyriax_full", label: "STTT", desc: "Selective tissue tension", icon: Bone, tint: "rose" },
   { key: "kinetic", label: "Kinetic Chain", desc: "Joint-by-joint", icon: Link2, tint: "blue" },
   { key: "nkt", label: "CPA", desc: "Compensation pattern analysis", icon: Brain, tint: "amber" },
-  { key: "fascia", label: "Fascia Integration", desc: "Fascial assessment", icon: Waves, tint: "teal" },
 ];
 
 const EXERCISE = [
