@@ -6,6 +6,7 @@ import {
   BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
+import ClinicalLearning from "./learn/ClinicalLearning.jsx";
 import "./physiofeed.css";
 
 // These 7 Assessment Library / Advanced Assessment items have real,
@@ -111,7 +112,7 @@ function Section({ title, items, onNav, onStudy }) {
 const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
-  { id: "clinical", label: "Clinical Learning", desc: "MSK • Neuro • Sports • Cardio • Paeds", icon: Stethoscope, tint: "rose", soon: true },
+  { id: "clinical", label: "Clinical Learning", desc: "Conditions • Clinical cases", icon: Stethoscope, tint: "rose" },
   { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
   { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
@@ -177,6 +178,15 @@ export default function LearnTabEntry({ onNav }) {
   }), [query]);
 
   const noResults = filtered.assess.length === 0 && filtered.adv.length === 0 && filtered.exercise.length === 0;
+
+  if (view === "clinical") {
+    return (
+      <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
+        <style>{".pm-shell{background:#fff !important}"}</style>
+        <ClinicalLearning onBack={() => setView("home")}/>
+      </div>
+    );
+  }
 
   if (studyType) {
     return (
