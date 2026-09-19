@@ -61,7 +61,18 @@ export default function PalpationStudy({ onBack }) {
     }));
   }, [region]);
 
-  if (selected) return <PalpationDetail item={selected} onBack={() => setSelected(null)}/>;
+  if (selected) {
+    const regionLabel = PALPATION_REGIONS.find((r) => r.key === region)?.label;
+    return (
+      <PalpationDetail
+        item={selected}
+        region={regionLabel}
+        list={PALPATION_DATA[region] || []}
+        onBack={() => setSelected(null)}
+        onNext={(s) => { setSelected(s); window.scrollTo({ top: 0 }); }}
+      />
+    );
+  }
   if (introTopic) return <PalpationIntroDetail topic={introTopic} onBack={() => setIntroTopic(null)}/>;
 
   const availableRegions = PALPATION_REGIONS.filter((r) => r.available);

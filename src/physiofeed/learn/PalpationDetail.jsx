@@ -1,6 +1,8 @@
-import { ChevronLeft } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Video as VideoIcon } from "lucide-react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
+import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
 
 // Full detail page for one palpation structure. Same chrome as
 // StudyDetail.jsx (back button, white rounded-2xl card) but with a
@@ -22,86 +24,140 @@ function Row({ label, icon, children }) {
   );
 }
 
-export default function PalpationDetail({ item, onBack }) {
+const TABS = ["Learn", "Technique", "Video", "Quiz"];
+
+// Quick Check: "Where does X originate?" from the other structures' origins
+// (falls back to insertion, then nothing).
+function buildQuiz(item, list) {
+  const field = item.attachments?.origin ? "origin" : item.attachments?.insertion ? "insertion" : null;
+  if (!field) return null;
+  const answer = item.attachments[field];
+  const pool = [...new Set((list || []).filter((x) => x.id !== item.id && x.attachments?.[field] && x.attachments[field] !== answer).map((x) => x.attachments[field]))];
+  const picks = pool.map((v) => ({ v, k: hash(item.id + ":" + v) })).sort((a, b) => a.k - b.k).slice(0, 3).map((o) => o.v);
+  if (picks.length < 3) return null;
+  const ordered = [...picks, answer]
+    .map((v, i) => ({ v, k: hash(item.id + "#" + v + i) }))
+    .sort((a, b) => a.k - b.k)
+    .map((o, i) => ({ id: "ABCD"[i], text: o.v }));
+  const correct = ordered.find((o) => o.text === answer).id;
+  return {
+    question: field === "origin" ? `Where does the ${item.name} originate?` : `Where does the ${item.name} insert?`,
+    options: ordered,
+    correctOptionId: correct,
+    explanation: `${item.name}: ${field} — ${answer}.${item.actions ? ` Action: ${item.actions}.` : ""}`,
+  };
+}
+
+export default function PalpationDetail({ item, region, list, onBack, onNext }) {
+  const [tab, setTab] = useState("Learn");
   const a = item.attachments || {};
+  const quiz = useMemo(() => buildQuiz(item, list || []), [item.id]);
+  const next = useMemo(() => {
+    const i = (list || []).findIndex((x) => x.id === item.id);
+    return i >= 0 && i < list.length - 1 ? list[i + 1] : null;
+  }, [item.id, list]);
+
   return (
     <div>
       <button onClick={onBack} className="flex items-center gap-1 text-sm font-medium text-slate-500 mb-3 -ml-1">
         <ChevronLeft size={18}/> Back
       </button>
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+
+      {region && <span className="inline-block text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full px-2.5 py-1 mb-2">{region} • Palpation</span>}
+      <h2 className="text-xl font-bold text-slate-900 leading-tight">{item.name}</h2>
+      <p className="text-sm text-slate-500 mt-1">{item.type}{item.position ? ` · ${item.position}` : ""}</p>
+
+      <div className="mt-3 rounded-2xl border border-slate-200 overflow-hidden">
         <div className="grid grid-cols-3 gap-0.5 bg-slate-100">
           {(item.images || [null, null, null]).slice(0, 3).map((img, i) => (
             <StudyImage key={i} name={img} square/>
           ))}
         </div>
-
-        <div className="p-4 space-y-3">
-          <div>
-            <div className="text-xl font-semibold text-slate-900">{item.name}</div>
-            <div className="text-sm font-medium text-violet-600 mt-1">{item.type}{item.position ? ` · ${item.position}` : ""}</div>
-          </div>
-
-          {(a.origin || a.insertion) && (
-            <div className="grid grid-cols-2 gap-2">
-              {a.origin && (
-                <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Origin</div>
-                  <div className="text-xs text-slate-700 mt-0.5">{a.origin}</div>
-                </div>
-              )}
-              {a.insertion && (
-                <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Insertion</div>
-                  <div className="text-xs text-slate-700 mt-0.5">{a.insertion}</div>
-                </div>
-              )}
-            </div>
-          )}
-          {item.actions && (
-            <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Action</div>
-              <div className="text-xs text-slate-700 mt-0.5">{item.actions}</div>
-            </div>
-          )}
-
-          {(item.patientPosition || item.therapistPosition || item.handPlacement) && (
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 mb-2">Starting position</div>
-              <div className="space-y-1.5">
-                <Row label="Patient" icon="👤">{item.patientPosition}</Row>
-                <Row label="Therapist" icon="🙌">{item.therapistPosition}</Row>
-                <Row label="Hand placement" icon="👆">{item.handPlacement}</Row>
-              </div>
-            </div>
-          )}
-
-          {item.steps?.length > 0 && (
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 mb-2">How to palpate</div>
-              <ol className="list-decimal list-outside pl-4 space-y-1.5">
-                {item.steps.map((s, i) => (
-                  <li key={i} className="text-xs text-slate-700 leading-relaxed">{s}</li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {item.feelFor && (
-            <InfoBox icon="🔎" label="What you're feeling for" tint="green">{item.feelFor}</InfoBox>
-          )}
-
-          {item.notes?.length > 0 && (
-            <InfoBox icon="📝" label="Palpation notes" tint="blue">
-              {item.notes.map((n, i) => <div key={i} className={i > 0 ? "mt-1" : ""}>{n}</div>)}
-            </InfoBox>
-          )}
-
-          {item.clinicalConsiderations && (
-            <InfoBox icon="⚠️" label="Clinical considerations" tint="amber">{item.clinicalConsiderations}</InfoBox>
-          )}
-        </div>
       </div>
+
+      <div className="flex mt-4 border-b border-slate-200">
+        {TABS.map((t) => (
+          <button key={t} type="button" onClick={() => setTab(t)} className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 -mb-px ${tab === t ? "border-violet-600 text-violet-700" : "border-transparent text-slate-400"}`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {tab === "Learn" && (
+          <>
+            {(a.origin || a.insertion) && (
+              <div className="grid grid-cols-2 gap-2">
+                {a.origin && (
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Origin</div>
+                    <div className="text-xs text-slate-700 mt-0.5">{a.origin}</div>
+                  </div>
+                )}
+                {a.insertion && (
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Insertion</div>
+                    <div className="text-xs text-slate-700 mt-0.5">{a.insertion}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {item.actions && (
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-2.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Action</div>
+                <div className="text-xs text-slate-700 mt-0.5">{item.actions}</div>
+              </div>
+            )}
+            {item.feelFor && <InfoBox icon="🔎" label="What you're feeling for" tint="green">{item.feelFor}</InfoBox>}
+            {item.clinicalConsiderations && <InfoBox icon="⚠️" label="Clinical considerations" tint="amber">{item.clinicalConsiderations}</InfoBox>}
+          </>
+        )}
+
+        {tab === "Technique" && (
+          <>
+            {(item.patientPosition || item.therapistPosition || item.handPlacement) && (
+              <InfoBox icon="👤" label="Starting position" tint="violet">
+                <div className="space-y-1.5">
+                  <Row label="Patient" icon="👤">{item.patientPosition}</Row>
+                  <Row label="Therapist" icon="🙌">{item.therapistPosition}</Row>
+                  <Row label="Hand placement" icon="👆">{item.handPlacement}</Row>
+                </div>
+              </InfoBox>
+            )}
+            {item.steps?.length > 0 && (
+              <InfoBox icon="📋" label="How to palpate" tint="amber">
+                <ol className="space-y-1.5 list-none p-0 m-0">
+                  {item.steps.map((st, i) => (
+                    <li key={i} className="flex gap-2"><span className="font-semibold text-amber-700 shrink-0">{i + 1}.</span><span>{st}</span></li>
+                  ))}
+                </ol>
+              </InfoBox>
+            )}
+            {item.notes?.length > 0 && (
+              <InfoBox icon="📝" label="Palpation notes" tint="blue">
+                {item.notes.map((n, i) => <div key={i} className={i > 0 ? "mt-1" : ""}>{n}</div>)}
+              </InfoBox>
+            )}
+            {!item.steps?.length && !item.patientPosition && <div className="text-sm text-slate-500 py-4 text-center">Technique not added yet.</div>}
+          </>
+        )}
+
+        {tab === "Video" && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 px-4 text-center">
+            <VideoIcon size={28} className="mx-auto text-slate-300 mb-2"/>
+            <div className="text-sm font-semibold text-slate-600">Video coming soon</div>
+            <div className="text-xs text-slate-400 mt-1">A demonstration of palpating {item.name} will appear here.</div>
+          </div>
+        )}
+
+        {tab === "Quiz" && <QuickCheck key={item.id} quiz={quiz}/>}
+      </div>
+
+      {next && onNext && (
+        <button type="button" onClick={() => onNext(next)} className="mt-5 w-full flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 py-3 text-sm font-semibold text-violet-700">
+          Next structure: {next.name} <ChevronRight size={16}/>
+        </button>
+      )}
     </div>
   );
 }
