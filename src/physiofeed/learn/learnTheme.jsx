@@ -62,7 +62,7 @@ export function DetailTabs({ tab, setTab }) {
   return (
     <div className="grid grid-cols-4 gap-1.5 mt-4">
       {["Learn", "Technique", "Video", "Quiz"].map((t) => (
-        <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-xl py-2 text-[13px] font-bold transition-colors ${tab === t ? TAB_STYLE[t].on : TAB_STYLE[t].off}`}>
+        <button key={t} type="button" onClick={() => setTab(t)} className={`flex items-center justify-center text-center rounded-xl py-2.5 text-[13px] font-bold transition-colors ${tab === t ? TAB_STYLE[t].on : TAB_STYLE[t].off}`}>
           {t}
         </button>
       ))}
