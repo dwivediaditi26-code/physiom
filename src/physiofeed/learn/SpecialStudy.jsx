@@ -4,6 +4,7 @@ import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+import SpecialTestDetail from "./SpecialTestDetail.jsx";
 
 const REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 
@@ -15,6 +16,7 @@ const REGION_KEYS = Object.keys(SPECIAL_TESTS_DATA);
 function toCard(t) {
   return {
     id: t.id,
+    raw: t,
     image: t.id,
     title: t.label,
     subtitle: t.structure,
@@ -44,7 +46,17 @@ export default function SpecialStudy({ onBack }) {
   const bucket = SPECIAL_TESTS_DATA[region];
   const cards = useMemo(() => (bucket?.tests || []).map(toCard), [bucket]);
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
+  if (selected) {
+    return (
+      <SpecialTestDetail
+        test={selected.raw}
+        regionLabel={bucket?.label}
+        regionTests={bucket?.tests || []}
+        onBack={() => setSelected(null)}
+        onNext={(t) => { setSelected(toCard(t)); window.scrollTo({ top: 0 }); }}
+      />
+    );
+  }
 
   return (
     <StudyShell
