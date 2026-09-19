@@ -281,6 +281,19 @@ export function kcRichItem(t) {
   };
 }
 
+function firstSentence(str) {
+  const m = /^.*?[.!?](\s|$)/.exec(String(str || ""));
+  return m ? m[0].trim() : String(str || "");
+}
+function HelpsFindLine({ text }) {
+  return (
+    <span style={{ fontSize: "0.7rem", color: "#4C1D95", lineHeight: 1.35, marginTop: 2 }}>
+      <b style={{ fontWeight: 800 }}>Helps find: </b>
+      <span style={{ display: "inline", color: "#4b5563" }}>{text}</span>
+    </span>
+  );
+}
+
 function kcHelpsFind(t) {
   const m = /^.*?[.!?](\s|$)/.exec(String(t.chainEffect || ""));
   const first = m ? m[0].trim() : String(t.chainEffect || "");
@@ -317,7 +330,8 @@ export function KineticChainSection({ data, setData, sectionKey = "kineticChain"
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center" }}><FmaIcon pose={poseForJoint(t.joint)} size={28} /></span>
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
-                  <span style={{ fontSize: "0.7rem", color: "#6b7280", lineHeight: 1.3 }}>{t.joint}</span>
+                  <span style={{ fontSize: "0.68rem", color: "#6b7280", lineHeight: 1.3 }}>{t.joint}</span>
+                  <HelpsFindLine text={firstSentence(t.chainEffect)} />
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
                     {done ? "Done" : "Not done"}
                   </span>
@@ -766,7 +780,7 @@ export function FmaSection({ data, setData, sectionKey = "fma" }) {
                   style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: "#fff", borderRadius: 14, padding: "12px 12px 10px", border: done ? "1.5px solid #34D399" : "1px solid #E5E7EB", display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ width: 38, height: 38, borderRadius: 11, background: "#F3EFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}><FmaIcon id={t.id} size={28} /></span>
                   <span style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1f2937", lineHeight: 1.25 }}>{t.label}</span>
-                  <span style={{ fontSize: "0.7rem", color: "#6b7280", lineHeight: 1.3 }}>{t.subtitle}</span>
+                  <HelpsFindLine text={firstSentence(FMA_HELPS[t.id]) || t.subtitle} />
                   <span style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.68rem", padding: "1px 8px", borderRadius: 10, background: done ? "#DCFCE7" : "#F3F4F6", color: done ? "#166534" : "#6b7280", fontWeight: 600 }}>
                     {done ? `${done} of ${total} done` : "Not done"}
                   </span>
