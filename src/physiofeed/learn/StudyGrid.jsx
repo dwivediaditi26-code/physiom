@@ -36,7 +36,17 @@ const CARD_COLORS = [
 // hasn't actually been uploaded yet (404) instead of item.Icon silently
 // hiding a real photo, or a bare "broken image" glyph showing for photos
 // that just aren't uploaded yet.
+//
+// 2026-09-19 (Aditi: "uneven"): cards in a row are stretched to the tallest
+// one, and a <button> vertically centres its content by default -- so the
+// shorter card floated its colour bar, image and text down by half the
+// difference. Cards are now a top-down flex column (justify-start), and the
+// title gets a fixed two-line band (when any title in the list is long enough
+// to wrap) and the subtitle a fixed one-line band, so a one-line title next to
+// a two-line one no longer pushes its subtitle and tags out of line.
 export default function StudyGrid({ items, onSelect }) {
+  const reserveTitle = items.some((i) => String(i.title || "").length > 12);
+  const reserveSubtitle = items.some((i) => i.subtitle);
   return (
     <div className="grid grid-cols-2 gap-3">
       <DisplayFont/>
@@ -52,10 +62,10 @@ export default function StudyGrid({ items, onSelect }) {
           key={item.id}
           onClick={() => onSelect(item)}
           aria-label={`Open ${item.title}`}
-          className={`text-left bg-white border ${c.border} rounded-2xl p-3 pt-0 overflow-hidden shadow-sm hover:shadow-md active:scale-[0.99] transition`}
+          className={`flex flex-col items-stretch justify-start text-left bg-white border ${c.border} rounded-2xl p-3 pt-0 overflow-hidden shadow-sm hover:shadow-md active:scale-[0.99] transition`}
         >
-          <div className={`h-1.5 -mx-3 mb-3 ${c.bar}`}/>
-          <div className={`h-32 w-full rounded-xl overflow-hidden ${c.img} mb-2.5 flex items-center justify-center`}>
+          <div className={`h-1.5 -mx-3 mb-3 shrink-0 ${c.bar}`}/>
+          <div className={`h-32 w-full shrink-0 rounded-xl overflow-hidden ${c.img} mb-2.5 flex items-center justify-center`}>
             {item.image ? (
               <StudyImage name={item.image} size={128} fallback={fallback}/>
             ) : fallback ? (
@@ -64,8 +74,8 @@ export default function StudyGrid({ items, onSelect }) {
               <StudyImage name={item.image} size={128}/>
             )}
           </div>
-          <div className="cl-display text-sm font-extrabold text-slate-900 leading-tight line-clamp-2">{item.title}</div>
-          {item.subtitle && <div className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</div>}
+          <div className={`cl-display text-sm font-extrabold text-slate-900 leading-tight line-clamp-2 break-words ${reserveTitle ? "min-h-[2.5em]" : ""}`}>{item.title}</div>
+          {(item.subtitle || reserveSubtitle) && <div className="text-xs text-slate-500 mt-1 truncate min-h-[1rem]">{item.subtitle}</div>}
           {item.tags && item.tags.length > 0 && (
             <div className="flex gap-1.5 mt-2 flex-wrap">
               {item.tags.map((tag, i) => (
