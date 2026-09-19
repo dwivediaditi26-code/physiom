@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Search, Bell, Hand, Move,
-  Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Bone, Link2,
+  Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
   GraduationCap, Activity, ChevronLeft, ChevronRight,
   BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
@@ -28,7 +28,10 @@ const STUDY_TYPES = new Set(["rom", "mmt", "special", "neuro", "outcome", "kinet
 // Real section keys, pulled straight from physiom's own ALL_TESTS (see
 // src/sharedClinicalData.js) -- same labels, same navTo(key) targets the
 // desktop sidebar and old bottom nav already used. Nothing fabricated. Rows
-// with no study mode (STTT, Exercise Prescription) still open that real screen.
+// with no study mode (Exercise Prescription) still open that real screen. STTT
+// has no row here any more -- it is a fixed step of the Outpatient ortho
+// assessment, and its old standalone page is no longer linked from Learn or
+// the Objective hub (2026-09-19).
 const ASSESSMENT_LIBRARY = [
   { key: "palpation", label: "Palpation", desc: "Tissue assessment", icon: Hand, tint: "rose" },
   { key: "rom", label: "ROM", desc: "Range of motion", icon: Move, tint: "violet" },
@@ -46,7 +49,6 @@ const ASSESSMENT_LIBRARY = [
 
 const ADVANCED_ASSESSMENT = [
   { key: "fma", label: "Functional Movement", desc: "Movement analysis", icon: Footprints, tint: "violet" },
-  { key: "cyriax_full", label: "STTT", desc: "Selective tissue tension", icon: Bone, tint: "rose" },
   { key: "kinetic", label: "Kinetic Chain", desc: "Joint-by-joint", icon: Link2, tint: "blue" },
   { key: "nkt", label: "CPA", desc: "Compensation pattern analysis", icon: Brain, tint: "amber" },
 ];
