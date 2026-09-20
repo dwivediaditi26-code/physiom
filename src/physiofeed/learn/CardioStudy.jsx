@@ -8,8 +8,10 @@ import { cardiovascularData } from "../../cardiovascularData.js";
 import { respiratoryData } from "../../respiratoryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
-import StudyDetail from "./StudyDetail.jsx";
+import { ImageGallery } from "./StudyDetail.jsx";
+import TabbedDetail from "./TabbedDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+import { buildAssessmentQuiz } from "./assessmentQuiz.js";
 
 // Per-item icon, keyed by the same object keys cardiovascularData.js/
 // respiratoryData.js use -- replaces each entry's emoji with a lucide-react
@@ -39,9 +41,10 @@ const ICONS = {
 // InfoCard buttons already pull from (see e.g. info={cardiovascularData.pulses}
 // there). Unlike ROM/MMT's flat fields, these use the richer InfoCard
 // perform/scale/interpret shape, so toCard() here maps that shape into the
-// same InfoBox sections RomStudy/OutcomeStudy use, instead of reusing their
-// field names directly.
+// Learn / Technique / Quiz sections of the same tabbed detail screen ROM,
+// MMT, Special Tests and Neurological use.
 const ALL = { ...cardiovascularData, ...respiratoryData };
+const ENTRIES = Object.entries(ALL);
 
 // Region pills = the category string's last "·"-segment ("Basic
 // Examination", "Auscultation", ... ) with a flat "Respiratory" fallback
@@ -51,6 +54,7 @@ function regionOf(d) {
   return parts.length > 2 ? parts[2] : parts[parts.length - 1];
 }
 const REGIONS = [...new Set(Object.values(ALL).map(regionOf))];
+const QUIZ_POOL = ENTRIES.map(([id, d]) => ({ id, region: regionOf(d), d }));
 
 const BOX_TINTS = { "": "gray", blue: "blue", amber: "amber", purple: "violet" };
 
@@ -65,11 +69,10 @@ const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_a
 function stripPrefix(src) {
   return typeof src === "string" && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
 }
-// 2026-09-02, Aditi: "cardio study mode doesn't show the same three images
-// as the live cardio info cards" -- the live InfoCard.jsx popup pages
-// through up to 3 photos per item (perform.images), but this only ever
-// passed the first one through, so StudyDetail had nothing left to page
-// between. Returns every real (uploaded) photo id, up to 3, in order.
+// 2026-09-02, Aditi: "cardio study mode doesn't show the same three
+// images as the live cardio info cards" -- the live InfoCard.jsx popup pages
+// through up to 3 photos per item (perform.images), so the detail screen's
+// gallery does too. Returns every real (uploaded) photo id, up to 3, in order.
 function realImages(d) {
   const raw = Array.isArray(d.perform?.images) && d.perform.images.length
     ? d.perform.images.slice(0, 3).map((it) => (it && typeof it === "object" ? it.src : it))
@@ -77,32 +80,28 @@ function realImages(d) {
   return raw.map(stripPrefix).filter(Boolean);
 }
 
+// 2026-09-19, Aditi: "do neurological and cardio same as rom mmt is shown" --
+// Cardio's detail was still the old single scrolling page; it now gets the
+// same header, photo, Learn / Technique / Video / Quiz tabs and Next button as
+// ROM and MMT. The photo (or, until it's uploaded, the item's icon) is tried
+// first exactly as before; the tabs just split the same real content up.
 function toCard(id, d) {
-  // 2026-09-01, Aditi: "learn study mode doesn't show the same photos as
-  // the live cardio infocards" -- pass through the real photo (same
-  // Cloudinary asset the live InfoCard.jsx popup already shows) alongside
-  // the icon; StudyGrid/StudyDetail try the photo first and only fall
-  // back to Icon if it hasn't actually been uploaded yet (404), so this
-  // no longer has to guess whether a photo will load before choosing.
-  // 2026-09-02: `images` (all up to 3 real photos) drives StudyDetail's
-  // full gallery; `image` (just the first) still drives StudyGrid's single
-  // list thumbnail, unchanged.
+  const Icon = ICONS[id] || Stethoscope;
   const images = realImages(d);
+  const region = regionOf(d);
+  const system = d.category.includes("Respiratory") ? "Respiratory" : "Cardiovascular";
+  const noPhoto = <Icon size={88} strokeWidth={1.25} className="text-rose-500 py-6" aria-hidden="true"/>;
+  const boxes = d.perform?.boxes || [];
   return {
     id,
-    Icon: ICONS[id] || Stethoscope,
+    Icon,
     image: images[0] || null,
-    images,
     title: d.title,
-    subtitle: d.category.replace("Learn · ", ""),
-    sections: (
+    subtitle: d.perform?.caption,
+    badge: region === system ? system : `${region} • ${system}`,
+    media: images.length ? <ImageGallery names={images} fallback={noPhoto}/> : noPhoto,
+    learn: (
       <Fragment>
-        {d.perform?.caption && (
-          <InfoBox icon="🖐" label="How to perform" tint="blue">{d.perform.caption}</InfoBox>
-        )}
-        {(d.perform?.boxes || []).map((b, i) => (
-          <InfoBox key={i} label={b.label} tint={BOX_TINTS[b.tone] || "gray"}>{b.text}</InfoBox>
-        ))}
         {d.scale && (
           <InfoBox icon="📊" label={d.scaleLabel || "Scale"} tint="violet">
             <div className="space-y-1.5">
@@ -139,6 +138,14 @@ function toCard(id, d) {
         )}
       </Fragment>
     ),
+    technique: boxes.length > 0 ? (
+      <Fragment>
+        {boxes.map((b, i) => (
+          <InfoBox key={i} label={b.label} tint={BOX_TINTS[b.tone] || "gray"}>{b.text}</InfoBox>
+        ))}
+      </Fragment>
+    ) : null,
+    quiz: buildAssessmentQuiz(id, d.title, d, region, QUIZ_POOL),
   };
 }
 
@@ -146,11 +153,29 @@ export default function CardioStudy({ onBack }) {
   const [region, setRegion] = useState(REGIONS[0]);
   const [selected, setSelected] = useState(null);
   const cards = useMemo(
-    () => Object.entries(ALL).filter(([, d]) => regionOf(d) === region).map(([id, d]) => toCard(id, d)),
+    () => ENTRIES.filter(([, d]) => regionOf(d) === region).map(([id, d]) => toCard(id, d)),
     [region]
   );
 
-  if (selected) return <StudyDetail item={selected} onBack={() => setSelected(null)}>{selected.sections}</StudyDetail>;
+  if (selected) {
+    const idx = cards.findIndex((c) => c.id === selected.id);
+    const nextCard = idx >= 0 && idx < cards.length - 1 ? cards[idx + 1] : null;
+    return (
+      <TabbedDetail
+        id={selected.id}
+        badge={selected.badge}
+        title={selected.title}
+        subtitle={selected.subtitle}
+        media={selected.media}
+        learn={selected.learn}
+        technique={selected.technique}
+        quiz={selected.quiz}
+        theme="rose"
+        next={nextCard ? { label: `Next: ${nextCard.title}`, onClick: () => { setSelected(nextCard); window.scrollTo({ top: 0 }); } } : null}
+        onBack={() => setSelected(null)}
+      />
+    );
+  }
 
   return (
     <StudyShell

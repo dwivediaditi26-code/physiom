@@ -52,7 +52,7 @@ export default function StudyDetail({ item, onBack, children }) {
 // Pages through up to 3 real photos, same swipe-or-tap-dot interaction as
 // InfoCard.jsx's PerformPane so study mode matches the live info-card
 // gallery it's mirroring instead of only ever showing the first photo.
-function ImageGallery({ names, fallback }) {
+export function ImageGallery({ names, fallback }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => { setIdx(0); }, [names]);
   const active = Math.min(idx, names.length - 1);

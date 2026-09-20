@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA } from "../sharedClinicalData.js";
 import { PALPATION_DATA } from "../palpationData.js";
-import { hash, tooSimilar, rootsNested, rootSet, midOf, splitHow, makeQuestion, clean } from "../physiofeed/learn/quizKit.js";
+import { hash, tooSimilar, rootsNested, rootSet, midOf, splitHow, makeQuestion, clean, leadText, readable, softCaps } from "../physiofeed/learn/quizKit.js";
 import { romQuestions, mmtQuestions, specialQuestions, palpationQuestions } from "../physiofeed/learn/quizBuilders.js";
 
 const romAll = Object.values(ROM_DATA).flat();
@@ -62,6 +62,42 @@ describe("quizKit helpers", () => {
     expect(makeQuestion({ ...args, tiers: [["Beta", "Gamma"]] })).toBeNull();
     expect(makeQuestion({ ...args, tiers: [["alpha", "Alpha (x)", "Beta", "Gamma"]] })).toBeNull();
     expect(makeQuestion({ ...args, answer: "x".repeat(300) })).toBeNull();
+  });
+
+  it("takes a paragraph's first sentences without splitting on abbreviations, brackets or decimals", () => {
+    expect(leadText("Tap the tendon. Observe the jerk.", 200)).toBe("Tap the tendon. Observe the jerk.");
+    expect(leadText("Use a blunt object, e.g. a key. Stroke firmly.", 40)).toBe("Use a blunt object, e.g. a key.");
+    expect(leadText("Compare with a known-normal area (e.g. the other hand). Then repeat.", 200)).toBe("Compare with a known-normal area (e.g. the other hand). Then repeat.");
+    expect(leadText("Grade 0.5 is trace. Grade 1 is mild.", 20)).toBe("Grade 0.5 is trace.");
+    expect(leadText("Combine with Wells' criteria, i.e. Wells score. Then decide.", 200)).toBe("Combine with Wells' criteria, i.e. Wells score. Then decide.");
+    expect(leadText("x".repeat(300) + ".", 200)).toHaveLength(301); // a long first sentence is kept whole
+    expect(leadText("", 200)).toBe("");
+    expect(leadText(null)).toBe("");
+  });
+
+  it("softens SHOUTED words, keeping acronyms and a capital at the start of a sentence", () => {
+    expect(softCaps("Percuss POSTERIOR TIBIAL NERVE with an ACL check")).toBe("Percuss posterior tibial nerve with an ACL check");
+    expect(softCaps("INVERTED reflex. URGENT now")).toBe("Inverted reflex. Urgent now");
+    expect(readable("POSITIVE = great toe extends. NEGATIVE = toes curl down.", 200)).toBe("Positive = great toe extends. Negative = toes curl down");
+    expect(readable("tap thumb with hammer.", 200)).toBe("Tap thumb with hammer");
+    expect(readable("pH 7.4 is normal.", 200)).toBe("pH 7.4 is normal");
+    expect(readable(undefined, 200)).toBe("");
+  });
+
+  it("lets a caller tighten how alike two answers may be", () => {
+    expect(tooSimilar("Seated, arm supported at heart level", "Seated with arm supported")).toBe(false);
+    expect(tooSimilar("Seated, arm supported at heart level", "Seated with arm supported", 0.4)).toBe(true);
+    const args = { id: "o", topic: "T", question: "Q?", answer: "Seated, arm supported at heart level", tiers: [["Seated with arm supported", "Prone", "Supine", "Standing"]], explanation: "E" };
+    expect(makeQuestion({ ...args, overlap: 0.4 }).options.map((o) => o.text)).not.toContain("Seated with arm supported");
+  });
+
+  it("treats a closed list of labels as different unless they are exact repeats ('CN I' sits inside 'CN II')", () => {
+    const args = { id: "c", topic: "T", question: "Q?", answer: "CN I", tiers: [["CN II", "CN III", "CN V", "CN VII"]], explanation: "E" };
+    expect(makeQuestion(args)).toBeNull(); // "CN II" and "CN III" contain "CN I"
+    const closed = makeQuestion({ ...args, closed: true });
+    expect(closed.options).toHaveLength(4);
+    expect(closed.options.find((o) => o.id === closed.correctOptionId).text).toBe("CN I");
+    expect(makeQuestion({ ...args, closed: true, tiers: [["CN I", "CN V", "CN VII", "CN XII"]] }).options.map((o) => o.text).filter((t) => t === "CN I")).toHaveLength(1);
   });
 
   it("hashes the same string to the same number", () => {

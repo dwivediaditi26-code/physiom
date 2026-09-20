@@ -32,12 +32,16 @@ const words = (s) => new Set(norm(s).split(/[^a-z0-9]+/).filter((w) => w.length 
 // Some data is written with SHOUTED words ("Percuss POSTERIOR TIBIAL NERVE").
 // Soften those for options; short acronyms (ACL, SLR, PA) are left alone.
 export function softCaps(text) {
-  return String(text ?? "").replace(/\b[A-Z]{5,}\b/g, (w) => w.toLowerCase());
+  return String(text ?? "").replace(/\b[A-Z]{5,}\b/g, (w, at, whole) => {
+    const lower = w.toLowerCase();
+    // A shouted word that opens a sentence keeps its capital ("INVERTED reflex: ..." -> "Inverted reflex: ...").
+    return at === 0 || /[.!?]\s+$/.test(whole.slice(0, at)) ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
+  });
 }
 
 // True when two answers are close enough that a student could fairly pick
-// either: identical, one inside the other, or mostly the same words.
-export function tooSimilar(a, b) {
+// either: identical, one inside the other, or sharing `limit` of their words.
+export function tooSimilar(a, b, limit = 0.6) {
   const x = norm(a);
   const y = norm(b);
   if (!x || !y) return false;
@@ -47,7 +51,7 @@ export function tooSimilar(a, b) {
   if (!A.size || !B.size) return false;
   let shared = 0;
   A.forEach((w) => { if (B.has(w)) shared++; });
-  return shared / (A.size + B.size - shared) >= 0.6;
+  return shared / (A.size + B.size - shared) >= limit;
 }
 
 // Spinal segments in order, so "C5–C7" can be expanded to C5, C6, C7.
@@ -88,6 +92,55 @@ export function midOf(s) {
 
 // ---- How-to text ------------------------------------------------------------
 
+// A sentence ends at . ! or ? followed by a space and a capital or digit, outside
+// brackets, and not after "e.g." / "i.e." / "vs." -- so "0.5", "2–3cm",
+// "(e.g. a key)" and "e.g. Wells' criteria" stay in one piece.
+const ABBREVIATION = /(?:^|[\s(])(?:e\.g|i\.e|vs|approx|incl|cf)$/i;
+function splitSentences(text) {
+  const s = String(text ?? "").replace(/\s+/g, " ").trim();
+  const parts = [];
+  let start = 0;
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (depth === 0 && (ch === "." || ch === "!" || ch === "?")) {
+      let end = i;
+      while (/[.!?]/.test(s[end + 1] || "")) end++;
+      if (/^\s+["“'(]?[A-Z0-9]/.test(s.slice(end + 1)) && !ABBREVIATION.test(s.slice(start, i))) {
+        parts.push(s.slice(start, end + 1).trim());
+        start = end + 1;
+      }
+      i = end;
+    }
+  }
+  if (start < s.length) parts.push(s.slice(start).trim());
+  return parts.filter(Boolean);
+}
+
+// A long paragraph as an answer option: its first sentence(s), up to `budget`
+// characters. A first sentence over the budget is kept whole (and then left out
+// of the quiz by makeQuestion if it is too long for a phone).
+export function leadText(text, budget = 200) {
+  const parts = splitSentences(text);
+  let out = "";
+  for (const p of parts) {
+    const next = out ? `${out} ${p}` : p;
+    if (out && next.length > budget) break;
+    out = next;
+  }
+  return out;
+}
+
+// Option text for a data paragraph: its lead sentences, SHOUTED words softened
+// and a lower-case first word capitalised ("pH", "eGFR" are left alone).
+// "" when there is no text.
+export function readable(text, budget) {
+  const t = clean(softCaps(leadText(text, budget)));
+  return /^[a-z]+(?![A-Za-z])/.test(t) ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+}
+
 export function sentences(text) {
   return (String(text || "").match(/[^.!?]+(?:[.!?]+|$)/g) || []).map((x) => x.trim()).filter(Boolean);
 }
@@ -110,9 +163,12 @@ export function splitHow(how) {
 // A multiple-choice question whose wrong answers are drawn from `tiers` (arrays
 // of candidate strings, best source first -- e.g. the same region, then
 // everything). Wrong answers are ranked by a stable hash, and any that could
-// fairly be argued correct (see tooSimilar / `distinct`) are dropped. Returns
-// null when there are not enough left.
-export function makeQuestion({ id, topic, question, answer, tiers, explanation, wrong = 3, distinct }) {
+// fairly be argued correct (see tooSimilar / `distinct`) are dropped. `overlap`
+// is how much word overlap counts as "too similar" (lower = stricter); `closed`
+// is for a fixed list of labels (root levels, cranial nerve numbers), where "CN I"
+// sitting inside "CN II" does not make them alike, so only exact repeats and
+// `distinct` apply. Returns null when there are not enough left.
+export function makeQuestion({ id, topic, question, answer, tiers, explanation, wrong = 3, distinct, overlap = 0.6, closed = false }) {
   const correct = clean(answer);
   if (!correct || correct.length > MAX_OPTION) return null;
   // Wrong answers about as long as the right one, so length is not a giveaway.
@@ -121,7 +177,7 @@ export function makeQuestion({ id, topic, question, answer, tiers, explanation, 
   const seen = new Set([norm(correct)]);
   for (const tier of tiers || []) {
     const ranked = [...new Set((tier || []).map(clean).filter(Boolean))]
-      .filter((c) => c.length <= MAX_OPTION && !seen.has(norm(c)) && !tooSimilar(c, correct) && (!distinct || distinct(correct, c)))
+      .filter((c) => c.length <= MAX_OPTION && !seen.has(norm(c)) && (closed || !tooSimilar(c, correct, overlap)) && (!distinct || distinct(correct, c)))
       .map((v) => ({ v, b: Math.floor(gap(v) / 0.35), k: hash(`${id}:${v}`) }))
       .sort((a, b) => a.b - b.b || a.k - b.k);
     for (const { v } of ranked) {

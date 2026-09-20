@@ -8,8 +8,10 @@ import { neuroConditionLibraryData } from "../../neuroConditionLibraryData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
 import StudyImage from "./StudyImage.jsx";
-import TabbedDetail, { makeChoiceQuiz } from "./TabbedDetail.jsx";
+import TabbedDetail from "./TabbedDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
+import { buildAssessmentQuiz } from "./assessmentQuiz.js";
+import { reflexQuestions, dermatomeQuestions, myotomeQuestions, cranialQuestions } from "./neuroQuizBuilders.js";
 
 // One default icon per condition category, replaced by a more specific
 // icon below for individual items where a closer match exists -- lucide
@@ -61,6 +63,7 @@ function conditionRegionOf(d) {
   return d.category.split("·").pop().trim();
 }
 const CONDITION_REGIONS = [...new Set(Object.values(neuroConditionLibraryData).map(conditionRegionOf))];
+const CONDITION_POOL = Object.entries(neuroConditionLibraryData).map(([id, d]) => ({ id, region: conditionRegionOf(d), d }));
 function conditionCard(id, d) {
   const [, label] = id.split("|||");
   const region = conditionRegionOf(d);
@@ -116,7 +119,10 @@ function conditionCard(id, d) {
         ))}
       </Fragment>
     ),
-    quiz: null,
+    // Same multi-question quiz Cardio uses (2026-09-19, Aditi: "do neurological
+    // and cardio same as rom mmt is shown") -- these used to end on "No quick
+    // check for this test yet"; 2026-09-20: several questions from the item's own data.
+    quiz: buildAssessmentQuiz(id, d.title, d, region, CONDITION_POOL),
   };
 }
 
@@ -168,11 +174,7 @@ function reflexCard(r) {
       </Fragment>
     ),
     technique: r.technique ? <InfoBox icon="📋" label="Technique" tint="violet">{r.technique}</InfoBox> : null,
-    quiz: makeChoiceQuiz({
-      id: r.id, question: `Which root level or nerve is tested by the ${r.label} reflex?`, answer: r.level,
-      pool: REFLEXES.map((x) => x.level),
-      explanation: `${r.label}: ${r.level}.${r.finding ? " " + r.finding : ""}`,
-    }),
+    quiz: reflexQuestions(r, REFLEXES),
   };
 }
 function dermatomeCard(d) {
@@ -190,11 +192,7 @@ function dermatomeCard(d) {
       </InfoBox>
     ),
     technique: <InfoBox icon="👆" label="How to test" tint="violet">{DERMATOME_TEST_METHOD}</InfoBox>,
-    quiz: makeChoiceQuiz({
-      id: d.id, question: `Which myotome shares the ${d.level} root level?`, answer: d.myotome,
-      pool: DERMATOMES.map((x) => x.myotome),
-      explanation: `${d.level} supplies the dermatome for ${d.region || "this region"}; its myotome is ${d.myotome}.`,
-    }),
+    quiz: dermatomeQuestions(d, DERMATOMES),
   };
 }
 function myotomeCard(m) {
@@ -210,11 +208,7 @@ function myotomeCard(m) {
         {m.compensation && <InfoBox icon="⚠" label="Compensation" tint="amber">{m.compensation}</InfoBox>}
       </Fragment>
     ) : null,
-    quiz: makeChoiceQuiz({
-      id, question: `Which movement tests the ${m.level} myotome?`, answer: m.action,
-      pool: MYOTOMES.map((x) => x.action),
-      explanation: `${m.level}: ${m.action}.`,
-    }),
+    quiz: myotomeQuestions(m, MYOTOMES),
   };
 }
 // CRANIAL_NERVES.id (sharedClinicalData.js) is a bare short id ("cn1",
@@ -247,12 +241,24 @@ function cranialCard(cn) {
         </ul>
       </InfoBox>
     ) : null,
-    quiz: makeChoiceQuiz({
-      id: cn.id, question: `What is the name of cranial nerve ${cn.numeral}?`, answer: cn.name,
-      pool: CRANIAL_NERVES.map((x) => x.name),
-      explanation: `CN ${cn.numeral} is the ${cn.name}.${cn.test ? " Tested by: " + bulletize(cn.test)[0] + "." : ""}`,
-    }),
+    quiz: cranialQuestions(cn, CRANIAL_NERVES),
   };
+}
+
+// Second-level filter row under the main chips (reflex group, spinal level,
+// condition category). Same pill shape and white/bordered resting state as
+// StudyShell's chips, a step smaller, so it reads as a child of that row.
+function SubChips({ options, value, onChange }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
+      {options.map((o) => (
+        <button key={o.key} onClick={() => onChange(o.key)}
+          className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${value === o.key ? "bg-violet-100 text-violet-700 border border-violet-300" : "bg-white border border-slate-200 text-slate-500"}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 // All four datasets are real -- DERMATOMES/MYOTOMES/REFLEXES/CRANIAL_NERVES
@@ -307,42 +313,21 @@ export default function NeuroStudy({ onBack }) {
     >
       {subTab === "reflexes" && (
         <>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-            {REFLEX_GROUPS.map((g) => (
-              <button key={g} onClick={() => setReflexGroup(g)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold ${reflexGroup === g ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
-                {g}
-              </button>
-            ))}
-          </div>
+          <SubChips options={REFLEX_GROUPS.map((g) => ({ key: g, label: g }))} value={reflexGroup} onChange={setReflexGroup}/>
           <StudyGrid items={reflexCards} onSelect={setSelected}/>
         </>
       )}
 
       {subTab === "dermatomes" && (
         <>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-            {LEVEL_GROUPS.map((g) => (
-              <button key={g.key} onClick={() => setLevelGroup(g.key)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold ${levelGroup === g.key ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
-                {g.label}
-              </button>
-            ))}
-          </div>
+          <SubChips options={LEVEL_GROUPS} value={levelGroup} onChange={setLevelGroup}/>
           <StudyGrid items={dermatomeCards} onSelect={setSelected}/>
         </>
       )}
 
       {subTab === "myotomes" && (
         <>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-            {LEVEL_GROUPS.map((g) => (
-              <button key={g.key} onClick={() => setLevelGroup(g.key)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold ${levelGroup === g.key ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
-                {g.label}
-              </button>
-            ))}
-          </div>
+          <SubChips options={LEVEL_GROUPS} value={levelGroup} onChange={setLevelGroup}/>
           <StudyGrid items={myotomeCards} onSelect={setSelected}/>
         </>
       )}
@@ -351,14 +336,7 @@ export default function NeuroStudy({ onBack }) {
 
       {subTab === "conditions" && (
         <>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
-            {CONDITION_REGIONS.map((r) => (
-              <button key={r} onClick={() => setConditionRegion(r)}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold ${conditionRegion === r ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
-                {r}
-              </button>
-            ))}
-          </div>
+          <SubChips options={CONDITION_REGIONS.map((r) => ({ key: r, label: r }))} value={conditionRegion} onChange={setConditionRegion}/>
           <StudyGrid items={conditionCards} onSelect={setSelected}/>
         </>
       )}
