@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
-import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import QuizTab from "./QuizTab.jsx";
+import { palpationQuestions } from "./quizBuilders.js";
+import { PALPATION_DATA } from "../../palpationData.js";
 import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // Full detail page for one palpation structure. Same chrome as
@@ -27,32 +29,15 @@ function Row({ label, icon, children }) {
 
 const TABS = ["Learn", "Technique", "Video", "Quiz"];
 
-// Quick Check: "Where does X originate?" from the other structures' origins
-// (falls back to insertion, then nothing).
-function buildQuiz(item, list) {
-  const field = item.attachments?.origin ? "origin" : item.attachments?.insertion ? "insertion" : null;
-  if (!field) return null;
-  const answer = item.attachments[field];
-  const pool = [...new Set((list || []).filter((x) => x.id !== item.id && x.attachments?.[field] && x.attachments[field] !== answer).map((x) => x.attachments[field]))];
-  const picks = pool.map((v) => ({ v, k: hash(item.id + ":" + v) })).sort((a, b) => a.k - b.k).slice(0, 3).map((o) => o.v);
-  if (picks.length < 3) return null;
-  const ordered = [...picks, answer]
-    .map((v, i) => ({ v, k: hash(item.id + "#" + v + i) }))
-    .sort((a, b) => a.k - b.k)
-    .map((o, i) => ({ id: "ABCD"[i], text: o.v }));
-  const correct = ordered.find((o) => o.text === answer).id;
-  return {
-    question: field === "origin" ? `Where does the ${item.name} originate?` : `Where does the ${item.name} insert?`,
-    options: ordered,
-    correctOptionId: correct,
-    explanation: `${item.name}: ${field} — ${answer}.${item.actions ? ` Action: ${item.actions}.` : ""}`,
-  };
-}
+// The Quiz tab asks several questions built from the structure's own data
+// (origin, insertion, action, position, what you feel for, hand placement --
+// see quizBuilders.js).
+const ALL_PALPATION = Object.values(PALPATION_DATA).flat();
 
 export default function PalpationDetail({ item, region, list, onBack, onNext }) {
   const [tab, setTab] = useState("Learn");
   const a = item.attachments || {};
-  const quiz = useMemo(() => buildQuiz(item, list || []), [item.id]);
+  const quiz = useMemo(() => palpationQuestions(item, list || [], ALL_PALPATION), [item.id]);
   const next = useMemo(() => {
     const i = (list || []).findIndex((x) => x.id === item.id);
     return i >= 0 && i < list.length - 1 ? list[i + 1] : null;
@@ -131,7 +116,7 @@ export default function PalpationDetail({ item, region, list, onBack, onNext }) 
 
         {tab === "Video" && <VideoTab name={`palpating ${item.name}`}/>}
 
-        {tab === "Quiz" && <QuickCheck key={item.id} quiz={quiz}/>}
+        {tab === "Quiz" && <QuizTab key={item.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
       {next && onNext && <NextButton label={`Next structure: ${next.name}`} onClick={() => onNext(next)} theme="rose"/>}

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import QuizTab from "./QuizTab.jsx";
+import { hash } from "./quizKit.js";
 import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // Generic Learn / Technique / Video / Quiz detail screen for study datasets
@@ -37,7 +38,7 @@ export default function TabbedDetail({ badge, title, subtitle, media, learn, tec
         {tab === "Learn" && (learn || <div className="text-sm text-slate-500 py-4 text-center">Nothing added yet.</div>)}
         {tab === "Technique" && (technique || <div className="text-sm text-slate-500 py-4 text-center">Technique not added yet.</div>)}
         {tab === "Video" && <VideoTab name={videoName || title}/>}
-        {tab === "Quiz" && <QuickCheck key={id || title} quiz={quiz}/>}
+        {tab === "Quiz" && <QuizTab key={id || title} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
       {next && <NextButton label={next.label} onClick={next.onClick} theme={theme}/>}

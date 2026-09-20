@@ -1,39 +1,19 @@
 import { useMemo, useState } from "react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
-import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import QuizTab from "./QuizTab.jsx";
+import { mmtQuestions } from "./quizBuilders.js";
 import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // MMT muscle detail: hero photo, then Learn / Technique / Video / Quiz tabs
 // (same layout as Special Tests and ROM). Content is the MMT data the app
-// already has. The Quick Check asks which nerve supplies the muscle, with
-// the other choices taken from other muscles' nerves.
-
-const TABS = ["Learn", "Technique", "Video", "Quiz"];
-
-function buildQuiz(m, list, allMuscles) {
-  if (!m.nerve) return null;
-  const pool = (arr) => [...new Set(arr.filter((x) => x.id !== m.id && x.nerve && x.nerve !== m.nerve).map((x) => x.nerve))];
-  let others = pool(list);
-  if (others.length < 3) others = [...new Set([...others, ...pool(allMuscles)])];
-  const picks = others.map((v) => ({ v, k: hash(m.id + ":" + v) })).sort((a, b) => a.k - b.k).slice(0, 3).map((o) => o.v);
-  if (picks.length < 3) return null;
-  const ordered = [...picks, m.nerve]
-    .map((v, i) => ({ v, k: hash(m.id + "#" + v + i) }))
-    .sort((a, b) => a.k - b.k)
-    .map((o, i) => ({ id: "ABCD"[i], text: o.v }));
-  const correct = ordered.find((o) => o.text === m.nerve).id;
-  return {
-    question: `Which nerve supplies ${m.muscle}?`,
-    options: ordered,
-    correctOptionId: correct,
-    explanation: `${m.muscle} is supplied by the ${m.nerve}${m.root ? ` (${m.root})` : ""}.${m.action ? ` Action: ${m.action}.` : ""}`,
-  };
-}
+// already has. The Quiz tab asks several questions built from that same data
+// (nerve, root, action, origin, insertion, testing position, resistance,
+// substitution -- see quizBuilders.js).
 
 export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, onBack, onNext }) {
   const [tab, setTab] = useState("Learn");
-  const quiz = useMemo(() => buildQuiz(m, list || [], allMuscles || []), [m.id]);
+  const quiz = useMemo(() => mmtQuestions(m, list || [], allMuscles || []), [m.id]);
   const next = useMemo(() => {
     const i = (list || []).findIndex((x) => x.id === m.id);
     return i >= 0 && i < list.length - 1 ? list[i + 1] : null;
@@ -100,7 +80,7 @@ export default function MmtMuscleDetail({ muscle: m, region, list, allMuscles, o
 
         {tab === "Video" && <VideoTab name={`testing ${m.muscle}`}/>}
 
-        {tab === "Quiz" && <QuickCheck key={m.id} quiz={quiz}/>}
+        {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
       {next && <NextButton label={`Next muscle: ${next.muscle}`} onClick={() => onNext(next)} theme="orange"/>}

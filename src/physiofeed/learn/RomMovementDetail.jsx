@@ -1,46 +1,22 @@
 import { useMemo, useState } from "react";
 import StudyImage from "./StudyImage.jsx";
 import InfoBox from "./InfoBox.jsx";
-import { QuickCheck, hash } from "./SpecialTestDetail.jsx";
+import QuizTab from "./QuizTab.jsx";
+import { romQuestions } from "./quizBuilders.js";
+import { ROM_DATA } from "../../sharedClinicalData.js";
 import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./learnTheme.jsx";
 
 // ROM movement detail: hero photo, then Learn / Technique / Video / Quiz tabs
 // (same layout as the Special Test screen). All content is the ROM data the
-// app already has; the Quick Check asks for the movement's normal range,
-// built from the other movements in the same region.
+// app already has; the Quiz tab asks several questions built from that same
+// data (normal range, plane, axis, end feel, muscles, starting position,
+// goniometer placement, compensation -- see quizBuilders.js).
 
-const TABS = ["Learn", "Technique", "Video", "Quiz"];
-
-function buildQuiz(m, list) {
-  if (m.normal == null) return null;
-  const others = [...new Set(list.filter((x) => x.id !== m.id && x.normal != null && x.normal !== m.normal).map((x) => x.normal))];
-  // Regions with few distinct normals (e.g. cervical, where several
-  // movements share 45) pad the choices with plausible nearby values.
-  const step = m.normal >= 60 ? 20 : m.normal >= 20 ? 15 : 5;
-  [m.normal - step, m.normal + step, m.normal + 2 * step, m.normal - 2 * step, m.normal + 3 * step].forEach((v) => {
-    if (v > 0 && v !== m.normal && !others.includes(v)) others.push(v);
-  });
-  if (others.length < 3) return null;
-  const seed = hash(m.id);
-  const picks = others.map((v) => ({ v, k: hash(m.id + ":" + v) })).sort((a, b) => a.k - b.k).slice(0, 3).map((o) => o.v);
-  if (picks.length < 3) return null;
-  const unit = m.unit || "°";
-  const ordered = [...picks, m.normal]
-    .map((v, i) => ({ v, k: (seed + i * 11) % 89 }))
-    .sort((a, b) => a.k - b.k)
-    .map((o, i) => ({ id: "ABCD"[i], v: o.v, text: `${o.v}${unit}` }));
-  const correct = ordered.find((o) => o.v === m.normal).id;
-  return {
-    question: `What is the normal range for ${m.mv}?`,
-    options: ordered.map(({ id, text }) => ({ id, text })),
-    correctOptionId: correct,
-    explanation: `Normal ${m.mv} is ${m.normal}${unit}.${m.endfeel?.normal ? ` The normal end feel is ${m.endfeel.normal.toLowerCase().replace(/\.$/, "")}.` : ""}${m.muscles ? ` Muscles: ${m.muscles}.` : ""}`,
-  };
-}
+const ALL_ROM = Object.values(ROM_DATA).flat();
 
 export default function RomMovementDetail({ movement: m, region, list, onBack, onNext }) {
   const [tab, setTab] = useState("Learn");
-  const quiz = useMemo(() => buildQuiz(m, list || []), [m.id]);
+  const quiz = useMemo(() => romQuestions(m, list || [], ALL_ROM, region), [m.id]);
   const next = useMemo(() => {
     const i = (list || []).findIndex((x) => x.id === m.id);
     return i >= 0 && i < list.length - 1 ? list[i + 1] : null;
@@ -92,7 +68,7 @@ export default function RomMovementDetail({ movement: m, region, list, onBack, o
 
         {tab === "Video" && <VideoTab name={m.mv}/>}
 
-        {tab === "Quiz" && <QuickCheck key={m.id} quiz={quiz}/>}
+        {tab === "Quiz" && <QuizTab key={m.id} quiz={quiz} onReview={() => setTab("Learn")}/>}
       </div>
 
       {next && <NextButton label={`Next movement: ${next.mv}`} onClick={() => onNext(next)} theme="violet"/>}

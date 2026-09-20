@@ -4,7 +4,9 @@ import {
   MessageCircle, History, MessageSquareText, Stethoscope, ClipboardCheck, Lightbulb, ListChecks, TrendingUp, Sparkles, Check,
 } from "lucide-react";
 import InfoBox from "./InfoBox.jsx";
-import { QuickCheck } from "./SpecialTestDetail.jsx";
+import { QuickCheck } from "./QuickCheck.jsx";
+import { PINNED_BAR_CSS } from "./pinnedBar.js";
+import { keepInView } from "./scrollKit.js";
 import { CLINICAL_CASES, CASE_SPECIALTIES, DIFFICULTY } from "./clinicalCases.js";
 import cervicalRaw from "../../cervicalConditions.json";
 import thoracicRaw from "../../thoracicConditions.json";
@@ -301,32 +303,11 @@ function StepCard({ step, index, total }) {
 const CASE_CSS = `
 .cp-head{position:sticky;top:0;z-index:30;background:#fff;padding:4px 0 8px}
 @media (max-width:1023px){.cp-head{top:var(--pm-mobile-hdr-h,64px)}}
-.cp-bar{position:fixed;left:calc(50% + var(--pm-side-w,0px)/2);transform:translateX(-50%);bottom:var(--pm-bnav-h,calc(60px + env(safe-area-inset-bottom)));width:100%;max-width:672px;z-index:25;background:#fff;border-top:1px solid #e2e8f0;padding:8px 16px;display:flex;gap:10px}
-@media (min-width:1024px){.cp-bar{max-width:896px}}
+${PINNED_BAR_CSS}
 .cp-step{animation:cp-in .22s ease-out}
 @keyframes cp-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.cp-step{animation:none}}
 `;
-
-// Which element scrolls the page depends on the layout (the viewport, <body> or
-// .pm-main -- see AppFull.navTo) and window.scrollTo is a no-op against some of
-// them, so scroll whichever ancestor actually moves. Only scrolls up, and only
-// when the case has slid under the pinned bar -- if it is already in view,
-// leave the page alone.
-function keepCaseInView(root, head) {
-  if (!root || !head) return;
-  try {
-    const pinAt = parseFloat(getComputedStyle(head).top) || 0;
-    const delta = root.getBoundingClientRect().top - pinAt;
-    if (delta >= 0) return;
-    for (let p = root; p; p = p.parentElement) {
-      const before = p.scrollTop;
-      p.scrollTop = before + delta;
-      if (p.scrollTop !== before) return;
-    }
-    window.scrollBy(0, delta);
-  } catch { /* scrolling is a nicety, never break the case over it */ }
-}
 
 function CasePlayer({ c, onBack }) {
   const [cur, setCur] = useState(0);
@@ -346,7 +327,7 @@ function CasePlayer({ c, onBack }) {
     const strip = stripRef.current;
     const chip = strip && strip.children[cur];
     if (strip && chip && typeof strip.scrollTo === "function") strip.scrollTo({ left: chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
-    if (moved.current) keepCaseInView(rootRef.current, headRef.current);
+    if (moved.current) keepInView(rootRef.current, parseFloat(getComputedStyle(headRef.current).top) || 0, 0);
     moved.current = true;
   }, [cur]);
 
@@ -408,7 +389,7 @@ function CasePlayer({ c, onBack }) {
         </div>
       </div>
 
-      <div className="cp-bar">
+      <div className="pin-bar">
         {cur > 0 && (
           <button type="button" onClick={() => openStep(cur - 1)} className={`shrink-0 flex items-center justify-center text-center gap-1 rounded-2xl border-2 ${th.border} ${th.soft} ${th.text} px-4 min-h-[46px] text-sm font-bold`}>
             <ChevronLeft size={17}/> Back
