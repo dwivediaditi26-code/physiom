@@ -12,20 +12,20 @@ export const NB_BG = "#F6F3EA";
 
 const NB_CSS = `
 .nb-root{
-  --nb-bg:#F6F3EA; --nb-paper:#FFFEFB; --nb-ink:#221C10; --nb-ink-soft:#5A5340; --nb-ink-faint:#948B70;
+  --nb-bg:#FFFFFF; --nb-paper:#FFFFFF; --nb-ink:#221C10; --nb-ink-soft:#5A5340; --nb-ink-faint:#948B70;
   --nb-line:#D9E0E8; --nb-line-strong:#C7B8A0;
   --nb-red:#B23B32; --nb-red-bg:#FBEBE8;
   --nb-sage:#4C8C3C; --nb-sage-bg:#E7EFDD;
   --nb-mark:#F5DE4A;
   background:var(--nb-bg); color:var(--nb-ink);
-  font-family:'Shantell Sans','Comic Sans MS',cursive; font-weight:500; line-height:1.5;
+  font-family:'Itim','Comic Sans MS',cursive; font-weight:400; line-height:1.5;
 }
 .nb-root, .nb-root *{ box-sizing:border-box; }
-.nb-h1{ font-size:24px; font-weight:700; line-height:1.25; }
-.nb-h2{ font-size:19px; font-weight:700; line-height:1.3; }
-.nb-h3{ font-size:16px; font-weight:700; }
+.nb-h1{ font-size:24px; font-weight:400; line-height:1.25; }
+.nb-h2{ font-size:19px; font-weight:400; line-height:1.3; }
+.nb-h3{ font-size:16px; font-weight:400; }
 .nb-sub{ font-size:14.5px; color:var(--nb-ink-soft); }
-.nb-label{ font-size:12.5px; font-weight:700; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
+.nb-label{ font-size:12.5px; font-weight:400; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
 .nb-body{ font-size:15.5px; color:var(--nb-ink); }
 .nb-note{ font-size:13px; color:var(--nb-ink-soft); }
 .nb-mark{ background:linear-gradient(180deg,transparent 55%,var(--nb-mark) 55%,var(--nb-mark) 90%,transparent 90%); padding:0 2px; }
@@ -57,7 +57,7 @@ export function useNotebookFont() {
     const l = document.createElement("link");
     l.id = "nb-font";
     l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@500;700;800&display=swap";
+    l.href = "https://fonts.googleapis.com/css2?family=Itim&display=swap";
     document.head.appendChild(l);
   }, []);
 }
