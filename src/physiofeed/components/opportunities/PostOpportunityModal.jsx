@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, ImagePlus, Folder } from "lucide-react";
 import { SPECIALTIES, LOCATION_TYPES } from "../../data/opportunitiesMock.js";
 import { GRADIENTS } from "../shared/constants.js";
 
@@ -29,6 +29,66 @@ function Field({ label, children }) {
 const inputCls = "h-11 w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm";
 const textareaCls = "w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm resize-none";
 
+const BANNER_HINT = {
+  workshop: "Upload workshop schedule or CME banner",
+  default: "Upload clinic photo, logo, or rehab facility",
+};
+
+// Optional cover image/flyer for the listing (2026-09-21, Aditi's spec).
+// Never uploaded anywhere -- object URL held in memory only, same "demo,
+// no backend table yet" scope as the rest of this board.
+function BannerUpload({ type, bannerUrl, onPick, onClear }) {
+  const fileRef = useRef(null);
+  const hint = BANNER_HINT[type] || BANNER_HINT.default;
+
+  if (bannerUrl) {
+    return (
+      <div className="mb-4">
+        <div className="relative rounded-xl overflow-hidden aspect-[16/9] bg-slate-100">
+          <img src={bannerUrl} alt="Cover preview" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Remove cover image"
+            className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80"
+          >
+            <X size={14} />
+          </button>
+          <span className="absolute bottom-2 left-2 text-[10px] font-semibold text-white bg-black/60 px-2 py-0.5 rounded-full">Cover Image</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4">
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-50 transition-colors"
+      >
+        <ImagePlus size={22} className="mx-auto mb-1.5" color="#4F46E5" />
+        <p className="text-xs font-semibold text-slate-700">{hint}</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 mb-2.5">PNG, JPG up to 5MB</p>
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg px-3 py-1.5">
+          <Folder size={13} /> Browse File
+        </span>
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onPick(URL.createObjectURL(file));
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 export default function PostOpportunityModal({ onClose, onPublish }) {
   const [type, setType] = useState("job");
   const [title, setTitle] = useState("");
@@ -39,6 +99,7 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
   const [workMode, setWorkMode] = useState(LOCATION_TYPES[0]);
   const [pay, setPay] = useState("");
   const [description, setDescription] = useState("");
+  const [bannerUrl, setBannerUrl] = useState(null);
 
   const canPublish = title.trim() && org.trim();
   const payLabel = type === "internship" ? "Monthly Stipend" : type === "job" ? "Salary / CTC" : "Fee";
@@ -65,6 +126,7 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
       time: type === "workshop" ? "TBA" : undefined,
       mode: type === "workshop" ? workMode : undefined,
       tags: [specialty, practiceSetting],
+      bannerUrl: bannerUrl || undefined,
       mentor: { name: org.trim() || "Program lead", role: `${specialty} lead`, initials, gradient: "violet", bio: "" },
       instructor: type === "workshop" ? { name: org.trim() || "Instructor", role: `${specialty} instructor`, initials, gradient: "blue" } : undefined,
       syllabus: type === "workshop" ? [] : undefined,
@@ -72,8 +134,8 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4">
-      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 sticky top-0 bg-white z-10">
           <div>
             <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">Step 1 of 2</p>
@@ -83,6 +145,7 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
         </div>
 
         <div className="px-5 pb-10">
+          <span className="block text-xs font-semibold text-slate-600 mb-1.5">Select Type</span>
           <div className="flex gap-1.5 mb-5">
             {TYPE_PILLS.map((t) => (
               <button
@@ -95,6 +158,8 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
               </button>
             ))}
           </div>
+
+          <BannerUpload type={type} bannerUrl={bannerUrl} onPick={setBannerUrl} onClear={() => setBannerUrl(null)} />
 
           <Field label="Opportunity Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Sports Physiotherapy Intern" className={inputCls} />
