@@ -568,7 +568,18 @@ export function orthoStyles() {
         .region-chip-block { display: flex; flex-direction: column; gap: 6px; }
         .region-chip { border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; min-height: 44px; }
         .region-chip-active { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; }
-        .side-row { display: flex; gap: 6px; }
+        /* 2-column region card grid (2026-09-20) -- icon + label + trailing
+           chevron/check, replacing the wrapping-pill layout above (still kept
+           for the "write in a region" row, which isn't part of this redesign). */
+        .region-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .region-card-block { display: flex; flex-direction: column; gap: 6px; }
+        .region-card { display: flex; align-items: center; gap: 10px; border: 1.5px solid ${BRAND.border}; border-radius: 16px; padding: 10px 12px; background: #fff; cursor: pointer; text-align: left; width: 100%; min-height: 60px; transition: all .15s; }
+        .region-card:active { transform: scale(0.98); }
+        .region-card.selected { border-color: ${BRAND.purple}; background: ${BRAND.purpleFaint}; }
+        .region-card-label { flex: 1; font-weight: 700; font-size: 13.5px; color: ${BRAND.ink}; line-height: 1.2; }
+        .region-card-trail { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: ${BRAND.gray}; font-size: 15px; }
+        .region-card-trail.region-card-check { background: ${BRAND.purple}; color: #fff; font-size: 12px; }
+        .side-row { display: flex; gap: 6px; flex-wrap: wrap; }
         .side-chip { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.gray}; padding: 6px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
         .side-chip-active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; }
 

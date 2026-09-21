@@ -144,7 +144,11 @@ export function ConditionPicker({ conditions, condition, setCondition, customLab
 
 /* Region multi-select with per-region Right/Left/Bilateral side chips, plus
    a write-in row for a region that isn't in the standard list — used
-   identically by every Ortho module (IPD, Post-op Rehab, Outpatient, ...). */
+   identically by every Ortho module (IPD, Post-op Rehab, Outpatient, ...).
+   Cards (2-column, icon + label + trailing chevron/check) instead of
+   wrapping text chips (2026-09-20, Aditi: reference screenshot of a
+   "Select Assessment Region" screen) -- same selected/unselected states as
+   before, same multi-select + side-chip behaviour, just restyled to match. */
 export function RegionPicker({ selectedRegions, setSelectedRegions, excludeIds }) {
   const [customText, setCustomText] = useState("");
   const groups = excludeIds
@@ -172,14 +176,17 @@ export function RegionPicker({ selectedRegions, setSelectedRegions, excludeIds }
       {groups.map((g) => (
         <div key={g.group} className="region-group">
           <div className="region-group-title">{g.group.toUpperCase()}</div>
-          <div className="region-chip-wrap">
+          <div className="region-grid">
             {g.items.map((it) => {
               const sel = selectedRegions.find((r) => r.id === it.id);
               return (
-                <div key={it.id} className="region-chip-block">
-                  <button type="button" className={"region-chip" + (sel ? " region-chip-active" : "")} onClick={() => toggleRegion(it.id)}>
-                    {sel ? "✓ " : ""}
-                    {it.label}
+                <div key={it.id} className="region-card-block">
+                  <button type="button" className={"region-card" + (sel ? " selected" : "")} onClick={() => toggleRegion(it.id)}>
+                    <PickerIcon icon="ti-bone" />
+                    <div className="region-card-label">{it.label}</div>
+                    <div className={"region-card-trail" + (sel ? " region-card-check" : "")}>
+                      <i className={"ti " + (sel ? "ti-check" : "ti-chevron-right")} aria-hidden="true"></i>
+                    </div>
                   </button>
                   {sel && !g.sideless && (
                     <div className="side-row">
