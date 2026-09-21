@@ -18,25 +18,29 @@ const NB_CSS = `
   --nb-sage:#4C8C3C; --nb-sage-bg:#E7EFDD;
   --nb-mark:#F5DE4A;
   background:var(--nb-bg); color:var(--nb-ink);
-  font-family:'Caveat','Comic Sans MS',cursive; font-weight:600; line-height:1.55;
+  font-family:'Shantell Sans','Comic Sans MS',cursive; font-weight:500; line-height:1.5;
 }
 .nb-root, .nb-root *{ box-sizing:border-box; }
-.nb-h1{ font-size:30px; font-weight:700; line-height:1.2; }
-.nb-h2{ font-size:23px; font-weight:700; line-height:1.25; }
-.nb-h3{ font-size:19px; font-weight:700; text-transform:uppercase; letter-spacing:.01em; }
-.nb-sub{ font-size:17px; color:var(--nb-ink-soft); }
-.nb-label{ font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
-.nb-body{ font-size:19px; color:var(--nb-ink); }
-.nb-note{ font-size:15.5px; color:var(--nb-ink-soft); }
+.nb-h1{ font-size:24px; font-weight:700; line-height:1.25; }
+.nb-h2{ font-size:19px; font-weight:700; line-height:1.3; }
+.nb-h3{ font-size:16px; font-weight:700; }
+.nb-sub{ font-size:14.5px; color:var(--nb-ink-soft); }
+.nb-label{ font-size:12.5px; font-weight:700; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
+.nb-body{ font-size:15.5px; color:var(--nb-ink); }
+.nb-note{ font-size:13px; color:var(--nb-ink-soft); }
 .nb-mark{ background:linear-gradient(180deg,transparent 55%,var(--nb-mark) 55%,var(--nb-mark) 90%,transparent 90%); padding:0 2px; }
-.nb-pill{ display:inline-flex; align-items:center; gap:5px; font-size:14px; font-weight:700; border-radius:999px; padding:3px 11px; border:1px solid var(--nb-line-strong); background:var(--nb-paper); color:var(--nb-ink-soft); }
-.nb-badge{ position:absolute; top:0; right:0; background:var(--nb-ink); color:var(--nb-paper); font-size:14px; font-weight:700; border-radius:999px; padding:2px 12px; }
-.nb-link{ font-family:inherit; font-weight:700; font-size:18px; color:var(--nb-red); background:none; border:none; padding:4px 0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+.nb-mark-block{ background:var(--nb-mark); padding:1px 5px; border-radius:2px; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:4px; }
+.nb-table{ width:100%; border-collapse:collapse; margin:10px 0; background:var(--nb-paper); font-size:14.5px; }
+.nb-table th,.nb-table td{ border:1.5px solid var(--nb-ink); padding:7px 9px; text-align:left; }
+.nb-table th{ font-weight:700; background:var(--nb-sage-bg); }
+.nb-pill{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; border-radius:999px; padding:3px 10px; border:1px solid var(--nb-line-strong); background:var(--nb-paper); color:var(--nb-ink-soft); }
+.nb-badge{ position:absolute; top:0; right:0; background:var(--nb-ink); color:var(--nb-paper); font-size:12px; font-weight:700; border-radius:999px; padding:2px 11px; }
+.nb-link{ font-family:inherit; font-weight:700; font-size:14.5px; color:var(--nb-red); background:none; border:none; padding:4px 0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
 .nb-notes{
-  position:relative; background-color:var(--nb-paper); border-radius:8px; padding:20px 18px 20px 30px; border:1px solid var(--nb-line-strong);
+  position:relative; background-color:var(--nb-paper); border-radius:8px; padding:18px 16px 18px 28px; border:1px solid var(--nb-line-strong);
   background-image:
     linear-gradient(to right, transparent 12px, var(--nb-red) 12px, var(--nb-red) 13px, transparent 13px),
-    repeating-linear-gradient(to bottom, transparent, transparent 32px, var(--nb-line) 33px);
+    repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--nb-line) 28px);
 }
 .nb-box{ border:1.5px solid var(--nb-ink); border-radius:4px; padding:10px 13px; margin:12px 0; background:var(--nb-paper); }
 .nb-box-red{ border-color:var(--nb-red); }
@@ -53,7 +57,7 @@ export function useNotebookFont() {
     const l = document.createElement("link");
     l.id = "nb-font";
     l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap";
+    l.href = "https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@500;700;800&display=swap";
     document.head.appendChild(l);
   }, []);
 }

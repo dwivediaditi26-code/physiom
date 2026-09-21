@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, Check } from "lucide-react";
-import { NotebookFont, EvidenceBadge, DoodleConnector, DoodleCircle, Underline } from "./notebookTheme.jsx";
+import { NotebookFont, EvidenceBadge, DoodleConnector, DoodleCircle } from "./notebookTheme.jsx";
 import { CLINICAL_CASES } from "./clinicalCases.js";
 
 // Low back pain, note-wise (2026-09-20, Aditi shared a real handwritten
@@ -45,14 +45,22 @@ function H3({ children, reset }) {
   if (reset) n3 = 0;
   n3 += 1;
   return (
-    <div style={{ marginTop: 18 }}>
-      <div className="nb-h3">{n3}. {children}</div>
-      <Underline width={Math.min(220, 30 + String(children).length * 7)} />
+    <div className="nb-h3" style={{ marginTop: 18 }}>
+      {n3}. <span className="nb-mark-block">{children}</span>
     </div>
   );
 }
 
 function Mark({ children }) { return <mark className="nb-mark">{children}</mark>; }
+
+function Table({ rows, cols }) {
+  return (
+    <table className="nb-table">
+      <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+      <tbody>{rows.map((r, i) => <tr key={i}>{r.map((cell, j) => <td key={j}>{cell}</td>)}</tr>)}</tbody>
+    </table>
+  );
+}
 
 function Notes({ items }) {
   return (
@@ -194,7 +202,7 @@ function PageBody({ data, pageKey }) {
           <P><em>{cp.note}</em></P>
           <H3>Differential diagnosis</H3>
           <P>{dd.intro}</P>
-          <DefNotes items={dd.items} get={(x) => ({ label: x.name, note: x.clue })} />
+          <Table cols={["Condition", "Clue"]} rows={dd.items.map((x) => [x.name, x.clue])} />
           <P><em>{dd.caution}</em></P>
         </>
       );
@@ -246,7 +254,7 @@ function PageBody({ data, pageKey }) {
           <H3>Patient education</H3><Notes items={m.patientEducation} />
           <H3>Prognosis</H3><P>{m.prognosis}</P>
           <H3>Outcome measures</H3>
-          <DefNotes items={m.outcomeMeasures} get={(x) => ({ label: x.name, note: x.use })} />
+          <Table cols={["Measure", "Use"]} rows={m.outcomeMeasures.map((x) => [x.name, x.use])} />
         </>
       );
     }
@@ -305,9 +313,8 @@ function NotePage({ data, index, onBack, onNext, onOpenCase }) {
   return (
     <div className="nb-step-in">
       <button type="button" className="nb-link" onClick={onBack} style={{ marginBottom: 6 }}><ChevronLeft size={16} /> Contents</button>
-      <div className="nb-h1">{meta.icon} {meta.title}</div>
-      <Underline width={160} />
-      <div className="nb-sub" style={{ marginTop: 4 }}>"{meta.sub}"</div>
+      <div className="nb-h1">{meta.icon} <span className="nb-mark-block">{meta.title}</span></div>
+      <div className="nb-sub" style={{ marginTop: 6 }}>"{meta.sub}"</div>
 
       <div className="nb-notes" style={{ marginTop: 14 }}>
         <span className="nb-badge">{index + 1}/{PAGES.length}</span>
@@ -342,9 +349,8 @@ export default function LowBackPainJourney({ data, onBack, onOpenCase }) {
         <div className="nb-step-in">
           <button type="button" className="nb-link" onClick={onBack} style={{ marginBottom: 6 }}><ChevronLeft size={16} /> Back</button>
           <div className="nb-note">{data.region} · {data.level}</div>
-          <div className="nb-h1" style={{ marginTop: 4 }}>{data.name}</div>
-          <Underline width={170} />
-          <div className="nb-sub" style={{ marginTop: 4 }}>"{data.tagline}"</div>
+          <div className="nb-h1" style={{ marginTop: 4 }}><span className="nb-mark-block">{data.name}</span></div>
+          <div className="nb-sub" style={{ marginTop: 6 }}>"{data.tagline}"</div>
           <P>{data.overview}</P>
 
           <div className="nb-label" style={{ marginTop: 20, marginBottom: 4 }}>Contents — {done.size} / {PAGES.length} learned</div>
