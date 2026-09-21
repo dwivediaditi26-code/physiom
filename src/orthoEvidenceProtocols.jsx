@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { BRAND } from "./orthoFieldKit.jsx";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, EVIDENCE_PROTOCOLS } from "./sharedClinicalData.js";
 import { ExerciseLibraryCard } from "./exerciseCardKit.jsx";
@@ -63,17 +63,26 @@ const CONDITION_ENTRIES = Object.entries(PROGRAMME_TEMPLATES)
 const ALL_OPERATIONS = [...EVIDENCE_PROTOCOLS, ...CONDITION_ENTRIES];
 
 // Grouped by region (native <optgroup>) so the dropdown reads condition-
-// wise AND region-wise, per the same feedback.
-const GROUPED_OPERATIONS = Object.keys(EXERCISE_DB)
-  .map((rk) => ({ regionKey: rk, label: EXERCISE_DB[rk].label, ops: ALL_OPERATIONS.filter((o) => o.regionKey === rk) }))
-  .filter((g) => g.ops.length);
+// wise AND region-wise, per the same feedback. `regionKeys`, when given
+// (2026-09-21, threaded from knowledge.evidenceProtocolRegions), scopes
+// this to just that specialty's own EXERCISE_DB regions -- without it, a
+// Cardio therapist would see every Ortho condition mixed into the same
+// list, since this component/data is shared app-wide, not per-specialty.
+function groupedOperations(regionKeys) {
+  const keys = regionKeys?.length ? regionKeys.filter((rk) => EXERCISE_DB[rk]) : Object.keys(EXERCISE_DB);
+  return keys
+    .map((rk) => ({ regionKey: rk, label: EXERCISE_DB[rk].label, ops: ALL_OPERATIONS.filter((o) => o.regionKey === rk) }))
+    .filter((g) => g.ops.length);
+}
 
-export function EvidenceProtocolBrowser({ initialOperationId, onAddExercise, isAdded }) {
-  const initialOp = ALL_OPERATIONS.find((o) => o.id === initialOperationId && o.live) || ALL_OPERATIONS.find((o) => o.live);
+export function EvidenceProtocolBrowser({ initialOperationId, onAddExercise, isAdded, regionKeys }) {
+  const GROUPED_OPERATIONS = useMemo(() => groupedOperations(regionKeys), [regionKeys]);
+  const scopedOperations = useMemo(() => GROUPED_OPERATIONS.flatMap((g) => g.ops), [GROUPED_OPERATIONS]);
+  const initialOp = scopedOperations.find((o) => o.id === initialOperationId && o.live) || scopedOperations.find((o) => o.live);
   const [operationId, setOperationId] = useState(initialOp?.id || null);
   const [phaseKey, setPhaseKey] = useState(initialOp?.phases?.[0]?.key || null);
 
-  const operation = ALL_OPERATIONS.find((o) => o.id === operationId);
+  const operation = scopedOperations.find((o) => o.id === operationId);
   const phase = operation?.phases.find((p) => p.key === phaseKey) || operation?.phases?.[0];
   const template = phase ? PROGRAMME_TEMPLATES[phase.key] : null;
   const exercises = template ? template.exercises.map((id) => ALL_EXERCISES.find((e) => e.id === id)).filter(Boolean) : [];

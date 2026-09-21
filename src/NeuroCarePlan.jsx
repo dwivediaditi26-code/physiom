@@ -462,7 +462,7 @@ function SourceTab({ icon, label, sub, active, onClick }) {
 // flow already supported.
 function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, setSearch, searchOpen, setSearchOpen, floatingCTA, onDoseEditingChange }) {
   const kb = useKB();
-  const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
+  const { ASSIST_LADDER, exerciseCategories, manualTechniques, evidenceProtocols, evidenceProtocolRegions, clinicProtocols, fullExerciseLibrary, defaultRegionKey } = kb;
   // Full region switcher (2026-09-11, Aditi: "exercise prescription have
   // all data of general library... add whole page to general library") --
   // ortho-only; General Library browses the SAME EXERCISE_DB region picker
@@ -579,6 +579,7 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
                 <EvidenceProtocolBrowser
                   isAdded={(ex) => existing.has(ex.id)}
                   onAddExercise={(ex) => { setBrowseMode(null); startDose({ ...ex, _cat: "Evidence-Based Protocol" }); }}
+                  regionKeys={evidenceProtocolRegions}
                 />
               </div>
             )}

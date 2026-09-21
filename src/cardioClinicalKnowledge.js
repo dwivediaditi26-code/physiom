@@ -466,4 +466,16 @@ export const CARDIO_KNOWLEDGE = {
   PROBLEM_CATEGORIES, REFERENCES, ASSIST_LADDER, goalProgress,
   conditionLabel, settingLabel, conditionSettingPrecautions,
   exerciseCategories: { ...(EXERCISE_DB.respiratory?.categories || {}), ...(EXERCISE_DB.cardiac?.categories || {}) },
+  // Evidence-Based Protocol picker + saved Clinic Protocols in "Add
+  // treatment" (2026-09-21) -- previously ortho-only per the exact comment
+  // in orthoClinicalKnowledge.js ("Neuro's Care Plan stays exercise-
+  // library-only until Neuro protocols exist"); now that real cardio/
+  // pulmonary condition protocols exist (COPD, CHF, post-MI, post-CABG,
+  // ...), the same reasoning flips to enabling it here. evidenceProtocolRegions
+  // scopes EvidenceProtocolBrowser's dropdown to just this specialty's own
+  // EXERCISE_DB regions -- without it, a cardio therapist would see every
+  // ortho condition (knee, shoulder, ...) mixed into the same list.
+  evidenceProtocols: true,
+  evidenceProtocolRegions: ["respiratory", "cardiac"],
+  clinicProtocols: true,
 };

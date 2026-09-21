@@ -5707,6 +5707,35 @@ const EXERCISE_DB = {
       "Respiratory Strengthening": [
         { id:"resp_imst",           name:"Inspiratory Muscle Training (IMT)",        target:"Diaphragm, intercostals — inspiratory strength",   desc:"Threshold IMT device. 30% PImax. 30 breaths once daily.",                   sets:1, reps:30, hold:0,  freq:"Daily",    phase:"Phase 2", evidence:"Strong",    cues:"Breathe hard in against resistance. Exhale normally.",   progression:"Increase resistance 5% weekly → Sport integration" },
         { id:"resp_acbt",           name:"Active Cycle of Breathing Technique",      target:"Secretion clearance — chest physiotherapy",        desc:"Breathing control → 3–4 thoracic expansion exercises → forced expirations.", sets:3, reps:1, hold:0,  freq:"2–3×/day", phase:"Phase 1", evidence:"Strong",    cues:"Relaxed breathing first. Sniff and huff — not cough.",   progression:"Add postural drainage → Percussions → Autogenic drainage" },
+        { id:"resp_periph_resistance", name:"Peripheral Muscle Resistance Training (Pulmonary)", target:"Quadriceps, major muscle groups — COPD-specific dosing", desc:"Circuit training, major muscle groups, 60–70% 1RM (higher than the standard cardiac circuit) -- quadriceps weakness/sarcopenia is a primary determinant of exercise limitation in COPD, distinct from the cardiac-load rationale.", sets:3, reps:10, hold:0, freq:"2-3×/week", phase:"Phase 2", evidence:"Strong", cues:"Strictly avoid Valsalva -- breath-holding risks dynamic hyperinflation/air-trapping in obstructive disease.", progression:"Increase load → Add functional/closed-chain variants" },
+      ],
+      // Airway clearance techniques (2026-09-21) -- previously only
+      // name-dropped inside ACBT's own "progression" text ("Add postural
+      // drainage → Percussions → Autogenic drainage") without any of the
+      // three actually existing as their own entries. Built out as full
+      // entries since technique CHOICE (not superiority of one over
+      // another -- evidence says none is reliably better) is the core of
+      // bronchiectasis management, and each has a genuinely different
+      // skill/equipment/adherence profile worth a therapist picking
+      // deliberately rather than defaulting to whichever is best-known.
+      "Airway Clearance Techniques": [
+        { id:"resp_postural_drainage", name:"Postural Drainage",                     target:"Bronchiectasis, CF, secretion retention — gravity-assisted clearance", desc:"Position the patient so the affected bronchopulmonary segment is uppermost, draining toward central airways. Modern practice favours modified (non-tipped) positions over full head-down tipping.", sets:1, reps:1, hold:600, freq:"1-2×/day", phase:"Phase 1", evidence:"Moderate", cues:"5-10 min per position, relaxed diaphragmatic breathing throughout. Avoid head-down tipping in reflux-prone or cardiac patients.", progression:"Add percussion/vibration → Increase to 2-4×/day during exacerbation" },
+        { id:"resp_percussion_vibration", name:"Manual Percussion & Vibration",       target:"Secretion mobilisation — adjunct to postural drainage", desc:"Rhythmic cupped-hand clapping (or mechanical percussor) over the affected segment, plus manual vibration/shaking during exhalation, usually combined with postural drainage.", sets:1, reps:1, hold:0, freq:"1-2×/day", phase:"Phase 1", evidence:"Weak — no high-quality evidence of added benefit as a standalone technique (be honest with the patient about this)", cues:"3-5 min percussion per segment; vibration during 4-6 exhalations. Avoid over osteoporotic/fractured ribs, active hemoptysis, or coagulopathy.", progression:"Usually paired with postural drainage rather than progressed alone" },
+        { id:"resp_autogenic_drainage", name:"Autogenic Drainage",                  target:"Self-administered secretion clearance — no equipment", desc:"Three-phase controlled breathing at graded lung volumes: 'unstick' (low volume, peripheral secretions), 'collect' (mid volume), 'evacuate' (high volume, finish with a huff/cough).", sets:1, reps:1, hold:0, freq:"1-2×/day", phase:"Phase 2", evidence:"Moderate — equivalent clearance to other ACTs, with better long-term patient adherence in comparative trials", cues:"Requires real training and body awareness -- not suited to young children or during acute breathless exacerbations when secretions are very heavy.", progression:"Build volume-control precision over several coached sessions before full independence" },
+        { id:"resp_pep_therapy",    name:"PEP / Oscillating PEP Therapy",           target:"Airway splinting + secretion mobilisation via device", desc:"Exhale through a fixed-orifice resistor device at 10-20 cmH2O for 10-15 breaths, then remove the device and huff/cough. Oscillating PEP devices (Flutter, Acapella, Aerobika) add a mechanical oscillation on top of the same splinting effect.", sets:3, reps:12, hold:0, freq:"1-2×/day", phase:"Phase 1", evidence:"Strong — one of the better-evidenced individual ACTs; some signal of extra benefit in COPD specifically", cues:"Active, not forceful, exhalation. Caution with pneumothorax, significant hemoptysis, or severe bullous disease.", progression:"Increase cycles during exacerbation → Trial oscillating vs. plain device for patient preference" },
+        { id:"resp_huff_fet",       name:"Huff Coughing (Forced Expiration Technique)", target:"Final clearance step — mobilised secretions", desc:"Open-glottis forced exhalation ('fog a mirror') -- distinct from a closed-glottis cough. 1-2 huffs at medium lung volume to move peripheral secretions, then 1-2 at high volume to clear central airways.", sets:1, reps:2, hold:0, freq:"As needed", phase:"Phase 1", evidence:"Strong — probably the single most effective clearance component when taught properly; it's the active step inside ACBT", cues:"Open throat, not a hard cough. In neuromuscular weak-cough patients, huffing alone is often insufficient -- manually assisted cough / MI-E is the better fit there.", progression:"Combine as the finishing step after any other ACT" },
+      ],
+      // Pulmonary rehabilitation programme components (2026-09-21) --
+      // COPD and ILD need genuinely different dosing/monitoring logic here,
+      // not just the same walking programme relabelled: COPD training is
+      // titrated to Borg dyspnoea (ventilation-limited), ILD to SpO2
+      // (desaturation-limited, and often more severely/unpredictably so).
+      "Pulmonary Rehabilitation": [
+        { id:"resp_energy_conserve", name:"Energy Conservation & Work Simplification", target:"Reduce O2 cost of daily activity — COPD", desc:"Structured technique training: pacing, body mechanics, activity modification and adaptive tool use for ADLs, so the same tasks cost less oxygen.", sets:1, reps:1, hold:0, freq:"Weekly session", phase:"Phase 1", evidence:"Moderate", cues:"This is an educational/coaching block, not a physical exercise -- practise a specific ADL the patient actually struggles with.", progression:"Apply principles to progressively harder/less-familiar tasks" },
+        { id:"resp_interval_copd",  name:"Symptom-Titrated Interval Training (COPD)", target:"Exercise capacity — severely deconditioned/ventilation-limited COPD", desc:"Short work bouts (30s-3min) at 100-150% of a previously-determined constant work rate, matched rest intervals, titrated to Borg dyspnoea 4-6/10 -- not %HRmax, since COPD patients are typically ventilation- not heart-rate-limited.", sets:4, reps:1, hold:120, freq:"2-3×/week", phase:"Phase 2", evidence:"Moderate", cues:"Stop the work bout at the target dyspnoea score, not a fixed clock -- adjust bout length session to session.", progression:"Lengthen work bouts → Shorten rest → Transition to continuous training" },
+        { id:"resp_early_mobil_exac", name:"Early Mobilisation — Post-Exacerbation", target:"Prevent deconditioning spiral after a COPD exacerbation", desc:"Very-low intensity, closely monitored activity progression (SpO2, RPE, symptom limits) started once medically stable during/after a hospitalised exacerbation.", sets:1, reps:1, hold:0, freq:"2-3×/day", phase:"Phase 1", evidence:"Moderate — timing is genuinely debated, see protocol notes", cues:"This is deliberately gentler than standard Phase 2 training -- one trial found pushing structured exercise too early during acute illness was associated with worse outcomes. Confirm medical stability first.", progression:"Transition to standard Progressive Training phase once tolerance improves" },
+        { id:"resp_o2_titration",   name:"Exertional Desaturation Assessment / O2 Titration", target:"Establish a safe, individualised exercise O2 prescription — ILD", desc:"Stepwise supplemental O2 titration (typically 2L/min increments) during a monitored walk test until SpO2 stabilises -- there is no single consensus threshold (commonly ~88-90%, extrapolated from COPD long-term-oxygen research, not ILD-specific trials).", sets:1, reps:1, hold:0, freq:"Once at program start, re-check periodically", phase:"Phase 1", evidence:"Moderate", cues:"Continuous SpO2 monitoring throughout, not a spot-check. Re-titrate as the disease progresses -- ILD's O2 needs are less stable over time than COPD's.", progression:"Re-assess at each disease-progression milestone, not just once" },
+        { id:"resp_interval_ild",  name:"Short-Bout Interval Training (ILD)", target:"Exercise capacity within a tighter safety margin — ILD", desc:"Shorter work:rest bouts than the COPD interval protocol, titrated primarily to SpO2 stability rather than dyspnoea/heart rate alone, reflecting ILD's more severe and less predictable desaturation pattern.", sets:4, reps:1, hold:60, freq:"2-3×/week", phase:"Phase 2", evidence:"Weak-Moderate — feasibility-level evidence only, not yet a standard-of-care default", cues:"Continuous SpO2 monitoring is mandatory, not optional, for this population.", progression:"Only lengthen bouts if SpO2 stays stable at the current bout length across multiple sessions" },
       ],
     }
   },
@@ -5861,6 +5890,26 @@ const EXERCISE_DB = {
         { id:"card_resistance",     name:"Cardiac Resistance Training",              target:"Peripheral muscle — cardiac load reduction",       desc:"Circuit training at 40–60% 1RM. 8–10 exercises. No Valsalva.",              sets:2, reps:12, hold:0,  freq:"2–3×/week", phase:"Phase 2", evidence:"Strong",   cues:"No breath-holding. Exhale on exertion. Monitor HR/BP.",  progression:"Increase reps → Increase load → Reduce rest time" },
         { id:"card_interval",       name:"High Intensity Interval Training (HIIT)", target:"VO2 max — Phase 3 cardiac (supervised only)",      desc:"4×4 min at 85–95% HRmax with 3 min active recovery. Supervised.",           sets:4, reps:1,  hold:240,freq:"3×/week",  phase:"Phase 3", evidence:"Strongest — superior VO2 gains vs MICT", cues:"Supervised only. ECG monitored. Stop if symptoms.",       progression:"Increase sessions → Unsupervised home program" },
         { id:"card_stretching",     name:"Cool-Down Stretching",                    target:"Flexibility, autonomic recovery — post-cardiac exercise", desc:"Major muscle groups. Gentle static stretching post exercise.",       sets:1, reps:1,  hold:30, freq:"5×/week",  phase:"Phase 1", evidence:"Moderate", cues:"Never skip cool-down. Gentle only. Breathe.",             progression:"Increase hold → Add mindfulness breathing" },
+      ],
+      // Phase I inpatient + post-cardiac-surgery items (2026-09-21) --
+      // the existing 4 exercises above are all written for the Phase
+      // II/III outpatient setting; nothing was dosed for the inpatient
+      // days-1-5 window or for sternal-precaution-compliant technique,
+      // which post-CABG genuinely needs and post-MI/HF inpatients don't.
+      "Post-Op / Inpatient Phase I": [
+        { id:"card_early_mobil",    name:"Inpatient Early Mobilisation Progression", target:"Prevent deconditioning — Phase I inpatient (MI, CABG, HF)", desc:"Bed mobility → dangling → sit-to-stand → room ambulation → short hallway walks, very low intensity, symptom-limited.", sets:1, reps:1, hold:0, freq:"2-3×/day", phase:"Phase 1", evidence:"Strong", cues:"RPE ≤11-13, HR rise <20bpm over resting, no chest pain/dyspnoea/arrhythmia. Stop and reassess if any symptom appears.", progression:"Increase distance/frequency → Transition to Supervised Walking Programme once stable" },
+        { id:"card_sternal_transfer", name:"Sternal-Precaution-Safe Transfers",      target:"Bed mobility/transfers without loading the sternum — post-CABG", desc:"Log-roll for bed mobility; 'elbows-in' technique to rise from sitting; no push-off through the arms.", sets:1, reps:1, hold:0, freq:"As needed for every transfer", phase:"Phase 1", evidence:"Moderate — traditional teaching; current evidence increasingly questions how strict this needs to be (see protocol notes)", cues:"No unsupported bilateral overhead reach, no pushing/pulling through the arms during this phase.", progression:"Relax technique strictness only once the surgeon confirms sternal stability" },
+        { id:"card_sternal_breathing", name:"Post-Sternotomy Breathing & Splinted Cough", target:"Pulmonary toilet without stressing the sternal wound — post-CABG", desc:"Deep breathing and coughing with the sternum manually splinted (pillow hugged to chest) to reduce wound stress during the cough.", sets:3, reps:5, hold:0, freq:"Hourly while awake, early days", phase:"Phase 1", evidence:"Moderate", cues:"Splint firmly before coughing. Note: incentive spirometry specifically has weak evidence of added benefit over deep breathing + early mobilisation alone -- don't oversell the device.", progression:"Reduce frequency as pain and secretion load settle" },
+        { id:"card_sternal_ue",     name:"Sternal-Precaution-Safe UE Progression", target:"Restore upper-extremity strength without wide-arc/bilateral sternal loading — post-CABG", desc:"Unilateral, controlled-range UE strengthening that avoids bilateral overhead resistance and wide-arc/trunk-loading positions early on.", sets:2, reps:10, hold:0, freq:"3×/week", phase:"Phase 2", evidence:"Moderate", cues:"One arm at a time, moderate range only, until sternal precautions are relaxed.", progression:"Bridge to the standard bilateral Cardiac Resistance Training circuit once cleared" },
+      ],
+      // HFpEF's exercise-capacity limitation is more peripheral/metabolic
+      // (obesity, sarcopenia, deconditioning) than in HFrEF -- this pairs
+      // resistance training with the weight-management conversation, a
+      // genuinely different rationale from the general cardiac circuit
+      // above (which is dosed for cardiac load reduction, not lean-mass
+      // preservation during weight loss).
+      "Heart Failure — HFpEF": [
+        { id:"card_hfpef_combined", name:"Combined Aerobic + Resistance Circuit (HFpEF)", target:"Preserve lean mass during weight management — HFpEF", desc:"Lower-extremity-focused resistance circuit (leg press-style movements) paired with aerobic walking, alongside any physician/dietitian-led weight-management plan.", sets:2, reps:12, hold:0, freq:"3×/week", phase:"Phase 2", evidence:"Moderate", cues:"Prescribing caloric targets is outside PT scope -- reinforce activity/energy-balance education and coordinate referral, don't prescribe a diet.", progression:"Increase resistance load in step with aerobic volume increases" },
       ],
     }
   },
@@ -6101,7 +6150,46 @@ const PROGRAMME_TEMPLATES = {
   stress_incont:  { region:"Pelvic Floor & Continence", label:"Stress Incontinence",         exercises:["pf_kegel","pf_quick_flick","pf_functional","lb_glute_bridge","hp_clam"] },
   pelvic_pain:    { region:"Pelvic Floor & Continence", label:"Pelvic Girdle Pain",          exercises:["pf_sij_bridge","pf_abductor_iso","pf_kegel","lb_bird_dog","lb_tva"] },
   // Respiratory
-  copd:           { region:"Respiratory", label:"COPD Breathing",              exercises:["resp_pursed_lip","resp_diaphragm","resp_lateral_costal","resp_imst","card_walk_prog"] },
+  copd_phase1: { region:"Respiratory", label:"COPD Pulmonary Rehab — Foundation (1-2wks)",
+    note:"Establish breathing control and energy conservation before progressive training begins. Screen for exertional desaturation here.",
+    goals:"Comfortable with pursed-lip/diaphragmatic breathing during activity; energy conservation principles applied to at least one daily task; baseline 6MWT/mMRC/Borg recorded.",
+    exercises:["resp_pursed_lip","resp_diaphragm","resp_lateral_costal","resp_energy_conserve"] },
+  copd_phase2: { region:"Respiratory", label:"COPD Pulmonary Rehab — Progressive Training (6-12wks)",
+    note:"Standard supervised programme length is 8-12 weeks minimum. Interval training is a genuine first-line option -- not just a fallback -- for patients too deconditioned to sustain continuous work; dose it to Borg dyspnoea, not %HRmax, since COPD is usually ventilation- not heart-rate-limited.",
+    goals:"Increasing 6MWT distance; improved mMRC/Borg at a matched workload; peripheral strength gains.",
+    exercises:["card_walk_prog","resp_periph_resistance","resp_imst","resp_interval_copd","resp_acbt"] },
+  copd_phase3: { region:"Respiratory", label:"COPD Pulmonary Rehab — Post-Exacerbation Recovery",
+    note:"A genuine branch, not a linear next step -- only applies after a hospitalised exacerbation. Optimal timing is unresolved: one trial found very-early in-hospital structured rehab was associated with worse 12-month outcomes than usual care, so confirm medical stability before progressing beyond gentle mobilisation.",
+    goals:"Return to pre-exacerbation activity tolerance without triggering another admission; symptom-recognition action plan understood.",
+    exercises:["resp_early_mobil_exac","resp_diaphragm","resp_pursed_lip"] },
+  copd_phase4: { region:"Respiratory", label:"COPD Pulmonary Rehab — Maintenance",
+    note:"In-person supervised training has the strongest evidence of any single programme component -- don't let 'maintenance' quietly become 'nothing.'",
+    goals:"Sustained activity level without supervision; relapse-prevention action plan in place.",
+    exercises:["card_walk_prog","resp_periph_resistance"] },
+  ild_phase1: { region:"Respiratory", label:"ILD / Pulmonary Fibrosis Rehab — Baseline & O2 Titration",
+    note:"There is no consensus SpO2 threshold for exercise oxygen titration in ILD -- commonly used targets (~88-90%) are extrapolated from COPD long-term-oxygen-therapy research, not ILD-specific exercise trials.",
+    goals:"Individualised O2 flow rate established via a monitored walk test; safe starting intensity determined.",
+    exercises:["resp_o2_titration"] },
+  ild_phase2: { region:"Respiratory", label:"ILD / Pulmonary Fibrosis Rehab — Supervised Training",
+    note:"Programmes run shorter and more cautiously than COPD's (6-10wks vs. up to 12), with continuous SpO2 monitoring every session -- a structural difference, not an oversight. Whether IPF specifically benefits is genuinely inconsistent across systematic reviews (some find real gains, one major Cochrane review found none in IPF specifically) -- present this as an open question, not settled either way.",
+    goals:"Improved 6MWT distance and Borg dyspnoea at a matched workload, achieved without desaturating below the individualised safe threshold.",
+    exercises:["card_walk_prog","resp_interval_ild","resp_diaphragm"] },
+  ild_phase3: { region:"Respiratory", label:"ILD / Pulmonary Fibrosis Rehab — Maintenance & Re-Titration",
+    note:"Unlike COPD, O2 needs in ILD often aren't stable over time -- re-titrate periodically as the disease progresses, not just once at programme start.",
+    goals:"Sustained activity tolerance; O2 prescription re-titrated to match current disease state.",
+    exercises:["card_walk_prog","resp_o2_titration"] },
+  bronchiectasis_phase1: { region:"Respiratory", label:"Bronchiectasis — Technique Selection & Training",
+    note:"No single airway clearance technique has been shown superior to another on hard outcomes -- selection should be individualised around patient preference, dexterity, and disease phase, since adherence (not technique choice) is the dominant driver of effectiveness. Real-world use is surprisingly low: registry data found only ~52% of patients report regular airway clearance use.",
+    goals:"Patient independently performs at least one airway clearance technique correctly, matched to their own preference/ability rather than defaulted to whichever the therapist knows best.",
+    exercises:["resp_pep_therapy","resp_autogenic_drainage","resp_postural_drainage","resp_huff_fet"] },
+  bronchiectasis_phase2: { region:"Respiratory", label:"Bronchiectasis — Stable Maintenance",
+    note:"Pair the chosen airway clearance technique with an exercise-based pulmonary rehab component -- these are the two named non-pharmacological pillars in current guidance, not clearance alone.",
+    goals:"Reduced sputum retention; maintained exercise capacity; sustained technique adherence.",
+    exercises:["card_walk_prog","resp_imst","resp_huff_fet"] },
+  bronchiectasis_phase3: { region:"Respiratory", label:"Bronchiectasis — Exacerbation Management",
+    note:"Increase airway clearance frequency and cycle count during an exacerbation rather than switching technique -- the technique doesn't need to change, the dose does.",
+    goals:"Return to baseline sputum volume/colour and exercise tolerance without a repeat exacerbation.",
+    exercises:["resp_pep_therapy","resp_huff_fet","resp_early_mobil_exac"] },
   // Older adult
   falls_prev:     { region:"Older Adult / Frailty", label:"Falls Prevention",            exercises:["oa_otago_ankle","oa_otago_knee","oa_stepping","oa_tug","oa_otago_walk","neuro_foam_balance"] },
   frailty:        { region:"Older Adult / Frailty", label:"Frailty / Sarcopenia",        exercises:["oa_resistance","oa_power_training","oa_otago_ankle","kn_sit_to_stand","lb_glute_bridge"] },
@@ -6115,6 +6203,54 @@ const PROGRAMME_TEMPLATES = {
   neuro_balance:  { region:"Neuro", label:"Neurological Balance",        exercises:["neuro_tandem","neuro_romberg","neuro_foam_balance","neuro_dual_task","oa_stepping"] },
   // Cardiac
   cardiac_phase2: { region:"Cardiac", label:"Cardiac Rehab Phase 2",       exercises:["card_walk_prog","card_resistance","card_stretching","resp_diaphragm"] },
+  hfref_phase1: { region:"Cardiac", label:"HFrEF Exercise Rehab — Inpatient",
+    note:"Early mobilisation, hemodynamic tolerance check, and self-monitoring education (daily weight, symptoms) started during hospitalisation/diagnosis workup.",
+    goals:"Tolerates short supervised mobility without symptom escalation; baseline walk distance and vitals recorded.",
+    exercises:["card_early_mobil","resp_diaphragm"] },
+  hfref_phase2: { region:"Cardiac", label:"HFrEF Exercise Rehab — Early Outpatient (Supervised)",
+    note:"HIIT is NOT a superior default here despite its reputation -- multiple trials (SMARTEX-HF and others) found no consistent advantage over standard continuous training for HFrEF; protocol design details (interval length/volume) seem to matter more than \"HIIT vs. continuous\" as a binary. For ICD/CRT patients, cap training HR ~20bpm below the device's arrhythmia-detection zone and anchor intensity to Borg RPE rather than %HRmax, since beta-blockade and pacing blunt the HR response.",
+    goals:"Improved 6MWT/peak VO2; NYHA class improvement; combined aerobic+resistance tolerated; exercise self-efficacy established.",
+    exercises:["card_walk_prog","card_resistance","resp_imst","card_interval"] },
+  hfref_phase3: { region:"Cardiac", label:"HFrEF Exercise Rehab — Community Maintenance",
+    note:"Transition to a less-supervised/community setting with periodic reassessment (6MWT, NYHA).",
+    goals:"Sustained independent aerobic+resistance activity; long-term adherence.",
+    exercises:["card_walk_prog","card_resistance"] },
+  hfpef_phase1: { region:"Cardiac", label:"HFpEF Exercise Rehab — Inpatient",
+    note:"Applies only to the subset hospitalised for HFpEF decompensation -- reuses the same early-mobilisation approach as HFrEF's Phase I.",
+    goals:"Tolerates short supervised mobility without symptom escalation.",
+    exercises:["card_early_mobil"] },
+  hfpef_phase2: { region:"Cardiac", label:"HFpEF Exercise Rehab — Early Outpatient (Supervised)",
+    note:"Current best evidence (a 2025 secondary analysis of the OptimEx-Clin trial) favours increasing total weekly exercise VOLUME AND FREQUENCY over increasing intensity -- higher %HRR intensity was actually associated with SMALLER improvement in that analysis. This is emerging, well-evidenced but not yet guideline-codified -- don't present it as settled doctrine. Resistance training deserves earlier emphasis than in HFrEF given the obesity/sarcopenia phenotype common in HFpEF, where a meaningful share of exercise-capacity limitation is peripheral/metabolic rather than purely cardiac.",
+    goals:"Increased weekly exercise duration/frequency (the primary lever, not just intensity); combined aerobic+resistance tolerated; peak VO2/6MWT gains; weight-management conversation initiated where relevant (referral, not PT-prescribed caloric targets).",
+    exercises:["card_walk_prog","card_hfpef_combined","card_resistance"] },
+  hfpef_phase3: { region:"Cardiac", label:"HFpEF Exercise Rehab — Community Maintenance",
+    note:"HFpEF skews older/frailer than HFrEF -- keep goals function/ADL-focused, not just cardiovascular metrics.",
+    goals:"Sustained aerobic+resistance volume; maintained functional independence.",
+    exercises:["card_walk_prog","card_hfpef_combined"] },
+  post_mi_phase1: { region:"Cardiac", label:"Post-MI Cardiac Rehab — Phase I Inpatient",
+    note:"Current evidence supports mobilisation within 24-72 hours of PCI for hemodynamically stable patients -- not the prolonged bed rest of older practice. A 2026 study even investigated pre-PCI ambulation in NSTEMI as safe in selected patients, though that remains investigational, not standard of care.",
+    goals:"Progressive mobilisation to short supervised corridor walks by discharge; risk-factor and symptom-recognition education delivered.",
+    exercises:["card_early_mobil","resp_diaphragm"] },
+  post_mi_phase2: { region:"Cardiac", label:"Post-MI Cardiac Rehab — Phase II Early Outpatient",
+    note:"Real-world Phase II start ranges 1-4 weeks post-discharge -- this variability reflects programme access/scheduling as much as a specific evidence-based cutoff; there's no single evidence-mandated \"day X.\" Resistance training is typically introduced after an initial aerobic-only stabilisation period, a programme convention more than an RCT-defined rule.",
+    goals:"Progressive monitored aerobic conditioning; resistance training introduced once stable; self-monitoring (HR, Borg) skill built.",
+    exercises:["card_walk_prog","card_resistance","card_interval"] },
+  post_mi_phase3: { region:"Cardiac", label:"Post-MI Cardiac Rehab — Phase III Maintenance",
+    note:"Transition toward independent community exercise with intermittent check-ins; consolidate lifestyle/secondary-prevention changes.",
+    goals:"Independent, sustained exercise habit; secondary-prevention risk factors addressed.",
+    exercises:["card_walk_prog","card_resistance","card_stretching"] },
+  post_cabg_phase1: { region:"Cardiac", label:"Post-CABG Cardiac Rehab — Phase I Inpatient (0-1wk)",
+    note:"Sternal precautions in full effect from day 1: log-roll bed mobility, \"elbows-in\" rising, no bilateral overhead reach, splint the sternum to cough. If the patient is anticoagulated (common with new post-op AF), add a fall-risk check before progressing mobility -- current guidance generally favours continuing anticoagulation despite fall risk, so the right response to that risk is closer supervision, not withholding the medication.",
+    goals:"Precaution-compliant bed mobility and transfers independent; pulmonary toilet established; short supervised ambulation by discharge.",
+    exercises:["card_sternal_transfer","card_sternal_breathing","card_early_mobil"] },
+  post_cabg_phase2: { region:"Cardiac", label:"Post-CABG Cardiac Rehab — Phase II Early Outpatient (2-8wks)",
+    note:"Traditional teaching holds bilateral UE loading/lifting restrictions to ~6-8 weeks pending surgeon sign-off on sternal healing. But this closely parallels the hip/lumbar precaution debates elsewhere in this app: a randomised trial (n>200) found no outcome difference between standard restrictive and modified/less-restrictive precautions, and force-measurement data found a cough exerts MORE sternal stress than lifting 18kg with both arms together -- undermining the rationale for low fixed lifting-weight limits. Incentive spirometry specifically has weak Cochrane evidence of added benefit over deep breathing + mobilisation alone -- don't oversell the device.",
+    goals:"Progressive aerobic conditioning; UE strength reintroduced within precautions; sternal wound monitored for stability/infection.",
+    exercises:["card_walk_prog","card_sternal_ue"] },
+  post_cabg_phase3: { region:"Cardiac", label:"Post-CABG Cardiac Rehab — Phase III Maintenance (8wks+)",
+    note:"Precautions are generally lifted by this point once the surgeon confirms sternal stability -- full bilateral resistance training and HIIT (once otherwise cleared) can resume.",
+    goals:"Full return to normal ADLs/exercise; resistance training fully reintroduced; independent community exercise.",
+    exercises:["card_walk_prog","card_resistance","card_interval","card_stretching"] },
   // Hydrotherapy
   aquatic_rehab:  { region:"Hydrotherapy", label:"Aquatic Rehabilitation",      exercises:["hydro_walk","hydro_squat","hydro_balance","hydro_run","hydro_kick"] },
 };
@@ -6236,6 +6372,109 @@ const EVIDENCE_PROTOCOLS = [
       "Hochberger F, et al. Comparative Study on Postoperative Immobilization in Reverse TSA: 4 Weeks vs. 6 Weeks Yields Similar Outcomes. J Clin Med. 2024;13(21):6363.",
     ],
     note:"RSA's dislocation-risk position is the opposite of TSA's -- combined internal rotation + adduction + extension, not external rotation -- because the deltoid, not the rotator cuff, becomes the primary mover. This anatomical reasoning is well-established but not itself validated by a dedicated outcomes RCT; treat it as strong expert consensus." },
+  // Cardio/pulmonary condition protocols (2026-09-21) -- Cardio's
+  // Evidence-Based Protocol picker was ortho-only until now (see
+  // cardioClinicalKnowledge.js's evidenceProtocols flag); these are its
+  // first real, cited condition protocols.
+  { id:"copd", label:"COPD Pulmonary Rehabilitation", regionKey:"respiratory", live:true,
+    phases:[
+      { key:"copd_phase1", label:"Foundation", weeks:"1-2wks" },
+      { key:"copd_phase2", label:"Progressive Training", weeks:"6-12wks" },
+      { key:"copd_phase3", label:"Post-Exacerbation Recovery", weeks:"" },
+      { key:"copd_phase4", label:"Maintenance", weeks:"" },
+    ],
+    sources:[
+      "Rochester CL, et al. (ATS Assembly on Pulmonary Rehabilitation). Pulmonary Rehabilitation for Adults with Chronic Respiratory Disease: An Official American Thoracic Society Clinical Practice Guideline. Am J Respir Crit Care Med. 2023;208(4):e7-e26.",
+      "Global Initiative for Chronic Obstructive Lung Disease (GOLD). Global Strategy for the Diagnosis, Management, and Prevention of COPD: 2026 Report.",
+      "Jia P, et al. The timing of the commencement of pulmonary rehabilitation in hospitalized patients with acute exacerbation of COPD: a systematic review and network meta-analysis. BMC Med. 2026;24:260.",
+      "Ward TJC, et al. Impact of pulmonary rehabilitation programme design on effectiveness in COPD: a systematic review and component network meta-analysis. eClinicalMedicine. 2025;87:103433.",
+      "Puhan MA, et al. Interval versus continuous high-intensity exercise in chronic obstructive pulmonary disease: a randomized trial. Ann Intern Med. 2006;145(11):816-825.",
+      "Greening NJ, et al. An early rehabilitation intervention to enhance recovery during hospital admission for an exacerbation of chronic respiratory disease: randomised controlled trial. BMJ. 2014;349:g4315.",
+    ],
+    note:"Post-exacerbation timing is genuinely unresolved -- different studies favour different windows for different outcomes (readmissions vs. exercise capacity), and one trial found a very-early in-hospital rehab arm had HIGHER 12-month mortality than usual care. Treat this as clinical judgement, not a fixed rule -- confirm medical stability before progressing structured training during/right after an exacerbation." },
+  { id:"ild", label:"ILD / Pulmonary Fibrosis Rehabilitation", regionKey:"respiratory", live:true,
+    phases:[
+      { key:"ild_phase1", label:"Baseline & O2 Titration", weeks:"" },
+      { key:"ild_phase2", label:"Supervised Training", weeks:"6-10wks" },
+      { key:"ild_phase3", label:"Maintenance & Re-Titration", weeks:"" },
+    ],
+    sources:[
+      "Dowman L, Hill CJ, May A, Holland AE. Pulmonary rehabilitation for interstitial lung disease. Cochrane Database Syst Rev. 2021;(2):CD006322.",
+      "Song S, et al. The role of pulmonary rehabilitation in idiopathic pulmonary fibrosis: An overview of systematic reviews. PLoS One. 2023;18(12):e0295367.",
+      "Viani M, et al. Oxygen Therapy during Exercise in Patients with Interstitial Lung Diseases. Biomolecules. 2022;12(5):717.",
+      "Man W, et al. British Thoracic Society Clinical Statement on Pulmonary Rehabilitation. Thorax. 2023;78(Suppl 5):s2-s15.",
+      "Nikoletou D, et al. Comparison of high-intensity interval training versus moderate-intensity continuous training in pulmonary rehabilitation for interstitial lung disease: a randomised controlled pilot feasibility trial. BMJ Open. 2023;13:e066609.",
+    ],
+    note:"Evidence quality here is genuinely weaker than for COPD -- one review found 85.7% of the systematic reviews it assessed had critically low methodological quality, and whether IPF specifically benefits from pulmonary rehab is inconsistent across reviews (some show clear gains, the main Cochrane review found none in IPF specifically). There's also no consensus SpO2 threshold for exercise oxygen titration -- present the ~88-90% figure as a working default, not a guideline-mandated number." },
+  { id:"bronchiectasis", label:"Bronchiectasis", regionKey:"respiratory", live:true,
+    phases:[
+      { key:"bronchiectasis_phase1", label:"Technique Selection", weeks:"" },
+      { key:"bronchiectasis_phase2", label:"Stable Maintenance", weeks:"" },
+      { key:"bronchiectasis_phase3", label:"Exacerbation Management", weeks:"" },
+    ],
+    sources:[
+      "Herrero-Cortina B, et al. European Respiratory Society statement on airway clearance techniques in adults with bronchiectasis. Eur Respir J. 2023;62(1):2202053.",
+      "Chalmers JD, Aliberti S, et al. European Respiratory Society clinical practice guideline for the management of adult bronchiectasis. Eur Respir J. 2025;66(6):2501126.",
+      "Spinou A, et al. Airway clearance management in people with bronchiectasis: data from the European Bronchiectasis Registry (EMBARC). Eur Respir J. 2024;63(6):2301689.",
+      "Lee AL, Burge AT, Holland AE. Airway clearance techniques for bronchiectasis. Cochrane Database Syst Rev. 2015;(11):CD008351.",
+      "Lee AL, Burge AT, Holland AE. Positive expiratory pressure therapy versus other airway clearance techniques for bronchiectasis. Cochrane Database Syst Rev. 2017;(9):CD011699.",
+    ],
+    note:"No airway clearance technique has been shown superior to another -- this is a stable, current consensus, not an open controversy. What IS a genuine problem is real-world underuse: registry data found only ~52% of patients report regular airway clearance use, with technique choice varying enormously by country/practice pattern rather than by evidence. Manual percussion/vibration specifically is the weakest-evidenced of the techniques offered -- be honest about that rather than presenting all techniques as equally strong." },
+  { id:"hfref", label:"Heart Failure — Reduced EF (HFrEF)", regionKey:"cardiac", live:true,
+    phases:[
+      { key:"hfref_phase1", label:"Inpatient", weeks:"" },
+      { key:"hfref_phase2", label:"Early Outpatient", weeks:"" },
+      { key:"hfref_phase3", label:"Community Maintenance", weeks:"3mo+" },
+    ],
+    sources:[
+      "O'Connor CM, et al. Efficacy and Safety of Exercise Training in Patients With Chronic Heart Failure: HF-ACTION Randomized Controlled Trial. JAMA. 2009;301(14):1439-1450.",
+      "Ellingsen Ø, et al. High-Intensity Interval Training in Patients With Heart Failure With Reduced Ejection Fraction (SMARTEX-HF). Circulation. 2017;135(9):839-849.",
+      "Gu S, et al. Effects of high intensity interval training versus moderate intensity continuous training on exercise capacity and quality of life in patients with heart failure: A systematic review and meta-analysis. PLoS One. 2023;18(8):e0290362.",
+      "Brown TM, et al. Core Components of Cardiac Rehabilitation Programs: 2024 Update. A Scientific Statement From the AHA and AACVPR. Circulation. 2024;150:e328-e347.",
+      "Isaksen K, et al. Exercise training and cardiac rehabilitation in patients with implantable cardioverter defibrillators: a review of current literature. Eur J Prev Cardiol. 2012;19(4):804-812.",
+    ],
+    note:"HIIT vs. standard continuous training is genuinely unresolved for HFrEF -- most trials found no consistent group-level advantage either way, though protocol details (interval length/volume) may matter more than the HIIT-vs-continuous label itself. Don't present either as categorically superior." },
+  { id:"hfpef", label:"Heart Failure — Preserved EF (HFpEF)", regionKey:"cardiac", live:true,
+    phases:[
+      { key:"hfpef_phase1", label:"Inpatient", weeks:"" },
+      { key:"hfpef_phase2", label:"Early Outpatient", weeks:"" },
+      { key:"hfpef_phase3", label:"Community Maintenance", weeks:"3mo+" },
+    ],
+    sources:[
+      "Sachdev V, Sharma K, Keteyian SJ, et al. Supervised Exercise Training for Chronic Heart Failure With Preserved Ejection Fraction: A Scientific Statement From the AHA and ACC. Circulation. 2023;147(16):e699-e715.",
+      "Mueller S, et al (OptimEx-Clin). Effect of High-Intensity Interval Training, Moderate Continuous Training, or Guideline-Based Physical Activity Advice on Peak Oxygen Consumption in HFpEF: a Randomized Clinical Trial. JAMA. 2021;325(6):542-551.",
+      "Mueller S, et al. Comparison of exercise training modalities and change in peak oxygen consumption in HFpEF: a secondary analysis of the OptimEx-Clin trial. Eur J Prev Cardiol. 2025;32(11):926-936.",
+      "Kitzman DW, Brubaker P, et al. Effect of Caloric Restriction or Aerobic Exercise Training on Peak Oxygen Consumption and Quality of Life in Obese Older Patients With HFpEF (SECRET). JAMA. 2016;315(1):36-46.",
+      "Brubaker PH, et al. A Randomized, Controlled Trial of Resistance Training Added to Caloric Restriction Plus Aerobic Exercise Training in Obese HFpEF. Circ Heart Fail. 2022;15(11):e010161.",
+    ],
+    note:"How much of HFpEF's exercise benefit is cardiac vs. peripheral/metabolic/obesity-driven is a genuinely open question -- diet alone raised peak VO2 almost as much as exercise alone in one trial. The 'prioritise duration/frequency over intensity' finding is well-evidenced but comes from a single (though well-designed) 2025 secondary analysis, not yet an independently replicated or guideline-codified position." },
+  { id:"post_mi", label:"Post-Myocardial Infarction Cardiac Rehab", regionKey:"cardiac", live:true,
+    phases:[
+      { key:"post_mi_phase1", label:"Phase I Inpatient", weeks:"" },
+      { key:"post_mi_phase2", label:"Phase II Early Outpatient", weeks:"1-4wks" },
+      { key:"post_mi_phase3", label:"Phase III Maintenance", weeks:"" },
+    ],
+    sources:[
+      "Aleksova A, et al. Part 1 -- Cardiac Rehabilitation After an Acute Myocardial Infarction: Four Phases of the Programme -- Where Do We Stand? J Clin Med. 2025;14(4):1117.",
+      "Brown TM, et al. Core Components of Cardiac Rehabilitation Programs: 2024 Update. Circulation. 2024;150(18):e328-e347.",
+      "Munir H, Fromowitz J, Goldfarb M. Early mobilization post-myocardial infarction: A scoping review. PLOS ONE. 2020;15(8):e0237866.",
+      "Chin JSY, et al. Early ambulation before percutaneous coronary intervention in patients with non-ST elevation myocardial infarction: a quasi-experimental study. Journal of Research in Nursing. 2026.",
+    ],
+    note:"Exact optimal Phase II start timing isn't tightly evidence-anchored -- real-world start ranges from 1-4 weeks post-discharge reflect access/scheduling as much as clinical consensus; the general principle is \"as soon as feasible,\" not a specific mandated day." },
+  { id:"post_cabg", label:"Post-CABG Cardiac Rehab", regionKey:"cardiac", live:true,
+    phases:[
+      { key:"post_cabg_phase1", label:"Phase I Inpatient", weeks:"0-1wk" },
+      { key:"post_cabg_phase2", label:"Phase II Early Outpatient", weeks:"2-8wks" },
+      { key:"post_cabg_phase3", label:"Phase III Maintenance", weeks:"8wks+" },
+    ],
+    sources:[
+      "Katijjahbe MA, et al. Standard restrictive sternal precautions and modified sternal precautions had similar effects in people after cardiac surgery via median sternotomy (SMART Trial). Journal of Physiotherapy. 2018;64(2):97-106.",
+      "Danielsen SO, Lie I. Evidence-based strategies for movement after sternotomy. European Journal of Cardiovascular Nursing. 2024;23(5):e54-e56.",
+      "Holloway C, et al. The impact of a less restrictive poststernotomy activity protocol compared with standard sternal precautions in patients following cardiac surgery. Physical Therapy. 2020;100(7):1074-1083.",
+      "Adams J, et al. An alternative approach to prescribing sternal precautions after median sternotomy, \"Keep Your Move in the Tube.\" Proc (Bayl Univ Med Cent). 2016;29(1):97-100.",
+      "Freitas ERFS, et al. Incentive spirometry for preventing pulmonary complications after coronary artery bypass graft. Cochrane Database Syst Rev. 2012;(9):CD004466.",
+    ],
+    note:"Sternal precaution duration/strictness closely parallels the hip and lumbar precaution debates elsewhere in this app -- a randomised trial (SMART, n>200) found no outcome difference between standard restrictive and modified precautions, and force-measurement data found a cough exerts MORE sternal stress than lifting 18kg with both arms together, undermining the rationale for low fixed lifting-weight limits. No systematic review was found underpinning the traditional restrictions -- they're largely expert-opinion/historical-practice-based. Still present the traditional ~6-8 week framework as the reasonable default (most surgeons still practise it), but flag it as evidence-informed, not settled." },
 ];
 
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
