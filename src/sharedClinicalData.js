@@ -5456,6 +5456,15 @@ const EXERCISE_DB = {
         { id:"sh_pully",            name:"Shoulder Pulley AROM",                    target:"GH joint — ROM restoration",                       desc:"Overhead pulley. Use good arm to assist bad arm through range.",             sets:3, reps:15, hold:2,  freq:"3×/day",   phase:"Phase 1", evidence:"Moderate", cues:"Assisted — do not force range. Smooth movement.",         progression:"Reduce assistance → AROM → Add load" },
         { id:"sh_capsule_stretch",  name:"Inferior Capsule Stretch",                target:"Inferior GH capsule — frozen shoulder",            desc:"Supine. Hold arm at side, slightly abducted. Gentle traction downward.",     sets:3, reps:1,  hold:30, freq:"3×/day",   phase:"Phase 1", evidence:"Moderate", cues:"Gentle traction only. No pain reproduction.",             progression:"Increase hold → Combine with ER stretches" },
       ],
+      // Reverse Shoulder Arthroplasty (RSA) reroutes elevation through the
+      // deltoid instead of the (often absent/irreparable) rotator cuff --
+      // none of the existing Rotator Cuff items are appropriate to isolate
+      // that, hence this one new item. RSA's precautions (avoid combined
+      // adduction/IR/extension) mean this is deliberately isolated in
+      // scaption, not the classic side-lying/prone cuff positions above.
+      "Post-Op Early Phase": [
+        { id:"sh_deltoid_iso_scaption", name:"Deltoid Isometric in Scaption",       target:"Deltoid — RSA's primary elevator post-op",         desc:"Supine or supported sitting, arm supported in the scapular plane. Gently press the arm into the support without moving it.", sets:3, reps:10, hold:5, freq:"Daily", phase:"Phase 2", evidence:"Moderate", cues:"Avoid adduction, internal rotation, or extension while doing this -- RSA's dislocation-risk positions.", progression:"Light isotonic in scaption → Standing deltoid raise" },
+      ],
     }
   },
   elbow: {
@@ -5534,6 +5543,15 @@ const EXERCISE_DB = {
         { id:"lb_squat",            name:"Squat Pattern Progression",                target:"Quadriceps, glutes, lumbar extensors",             desc:"Bodyweight squat — 3s descent, 1s pause, 1s rise.",                         sets:3, reps:12, hold:0,  freq:"Daily",    phase:"Phase 2", evidence:"Strong",    cues:"Neutral spine. Knees track toes. Hips back and down.",    progression:"Add weight → Bulgarian split squat → Single-leg" },
         { id:"lb_copenhagen",       name:"Copenhagen Hip Adduction",                 target:"Hip adductors — lateral pelvic stability",         desc:"Side plank. Top leg on bench. Lift bottom leg to meet it. Hold.",           sets:3, reps:10, hold:3,  freq:"3×/week",  phase:"Phase 3", evidence:"Strong",    cues:"Keep hips forward. Controlled lift.",                     progression:"Increase hold → Reduce support" },
       ],
+      // Post-spinal-fusion's single most evidence-backed early element is
+      // simply walking (Ruffilli 2024 meta-analysis) -- everything else in
+      // Phase I is technique/education (log-rolling, BLT avoidance), not a
+      // loadable exercise, so this is the one new item lumbar fusion needs;
+      // Phase II/III reuse the Core Stabilisation / Hip & Glute Integration
+      // items above.
+      "Post-Op Early Phase": [
+        { id:"lb_walking_program",  name:"Progressive Walking Program",              target:"General deconditioning prevention — post-fusion", desc:"Start with short, frequent walks; build toward 30 min, twice daily, by the end of the protected phase.", sets:1, reps:1, hold:0, freq:"2×/day", phase:"Phase 1", evidence:"Strong", cues:"Upright posture. Stop and rest before pain builds, don't push through it.", progression:"Increase duration → Increase pace → Add inclines/stairs" },
+      ],
     }
   },
   hip: {
@@ -5560,6 +5578,16 @@ const EXERCISE_DB = {
       "Hip Flexor Loading": [
         { id:"hp_psoas_march",      name:"Psoas March",                              target:"Iliopsoas, TA — coordinated loading",               desc:"Standing. Resist hip flexion with hand. March in place with resistance.",    sets:3, reps:10, hold:3,  freq:"Daily",    phase:"Phase 2", evidence:"Moderate", cues:"Maintain upright posture. Don't lean back.",              progression:"Band resistance → Step up → Single-leg balance march" },
         { id:"hp_hip_flex_raise",   name:"Seated Hip Flexion Raise",                 target:"Iliopsoas — rehabilitation loading",                desc:"Seated on edge of table. Slowly raise knee 5cm. Hold 10s. Lower.",           sets:3, reps:10, hold:10, freq:"Daily",    phase:"Phase 1", evidence:"Moderate", cues:"Don't lean back. Isolated hip flexion.",                  progression:"Add resistance above knee → Standing → Resisted march" },
+      ],
+      // THR (Total Hip Replacement) day-1-appropriate items -- reuses
+      // kn_ankle_pumps / kn_quad_set from Knee's own Post-Op Early Phase
+      // (identical movements regardless of joint operated on), these three
+      // are the genuinely hip-specific gaps: gluteal reactivation, a
+      // precaution-safe abduction slide, and a functional transfer drill.
+      "Post-Op Early Phase": [
+        { id:"hp_glute_set",        name:"Gluteal Sets",                             target:"Gluteus maximus — isometric reactivation post-op",  desc:"Supine or side-lying. Squeeze buttocks together. Hold, then relax.",         sets:3, reps:10, hold:5,  freq:"3-4×/day", phase:"Phase 1", evidence:"Strong", cues:"Isometric only — no hip movement. Especially important after posterior-approach surgery.", progression:"Standing hip extension → Banded hip extension" },
+        { id:"hp_abd_slide_midline",name:"Supine Hip Abduction Slide",               target:"Gluteus medius — precaution-safe abductor activation", desc:"Supine, leg straight. Slide leg out to the side along the bed, then slide back to midline only — do not cross the midline.", sets:3, reps:10, hold:0,  freq:"2-3×/day", phase:"Phase 1", evidence:"Strong", cues:"Stop at midline on return — do not adduct past it if under posterior-approach precautions.", progression:"Standing hip abduction → Banded lateral walk" },
+        { id:"hp_sts_device",       name:"Sit-to-Stand with Device",                 target:"Quadriceps, glutes — functional transfer, post-op", desc:"From an elevated seat, push up through an assistive device to standing. Control the sit-back down.", sets:3, reps:8,  hold:0,  freq:"Daily",    phase:"Phase 1", evidence:"Strong", cues:"Avoid low/deep chairs if under posterior-approach flexion precautions. Nose over toes.", progression:"Lower seat height → Remove device → Single-leg emphasis" },
       ],
     }
   },
@@ -5906,15 +5934,49 @@ const PROGRAMME_TEMPLATES = {
   chronic_lbp:    { region:"Lumbar", label:"Chronic LBP",                 exercises:["lb_dead_bug","lb_bird_dog","lb_plank","lb_side_plank","lb_hip_hinge","pc_pallof","lb_stir_pot"] },
   disc_ext:       { region:"Lumbar", label:"Disc — Extension Bias",       exercises:["lb_prone_lying","lb_press_up","lb_standing_ext","lb_tva","lb_glute_bridge"] },
   disc_flex:      { region:"Lumbar", label:"Disc — Flexion Bias",         exercises:["lb_knee_chest","lb_cat_camel","lb_rotation_stretch","lb_piriformis","lb_tva"] },
+  lumbar_fusion_phase1: { region:"Lumbar", label:"Lumbar Spinal Fusion — Protected Mobilisation (0-12wks)",
+    note:"Log-roll for bed transfers (bend knees, roll hips and shoulders together, push up with arms). Avoid Bending/Lifting/Twisting (BLT) and cap lifting around 5-10kg. This BLT restriction is more surgeon-consensus than RCT-proven for fusion specifically -- trials do show shortened restriction is fine after simple discectomy, but fusion hasn't been tested the same way, so don't relax it without the surgeon's sign-off.",
+    goals:"Correct ADL mechanics; progressive walking tolerance (toward 30min, 2×/day); independent with an assistive device if needed; home safety set up.",
+    exercises:["lb_walking_program","lb_pelvic_tilt"] },
+  lumbar_fusion_phase2: { region:"Lumbar", label:"Lumbar Spinal Fusion — Core Stabilisation / Early Mobility (6-12wks)",
+    note:"Continue avoiding BLT through ~12 weeks. Build stabiliser endurance (longer isometric holds) before adding dynamic loading.",
+    goals:"Pain 0-2/10 at rest; volitional TA/multifidus contraction restored; LE strength/mobility progressing within precautions; off assistive device.",
+    exercises:["lb_tva","lb_bird_dog","lb_glute_bridge","lb_dead_bug"] },
+  lumbar_fusion_phase3: { region:"Lumbar", label:"Lumbar Spinal Fusion — Progressive Strengthening (3-6+ months)",
+    note:"Weight limits increase gradually as tolerated; return-to-work timing is tiered by job physical demand (sedentary ~8-14wks, heavy labour often 20-28wks) -- confirm with the surgeon. A simple discectomy/laminectomy progresses meaningfully faster than fusion and drops most of these restrictions by 2-3 weeks instead of 12 -- don't apply this fusion timeline to a discectomy patient.",
+    goals:"Return to baseline walking/standing tolerance; functional trunk strength restored; work-simulation tolerance; meaningful improvement on a disability outcome measure (e.g. ODI).",
+    exercises:["lb_plank","lb_side_plank","lb_hip_hinge","lb_squat"] },
   // Hip
   hip_oa:         { region:"Hip", label:"Hip Osteoarthritis",          exercises:["hp_clam","hp_standing_abd","hp_hip_thrust","hp_90_90","hp_adductor_stretch","hp_thomas"] },
   hip_bursitis:   { region:"Hip", label:"Greater Trochanteric Bursitis", exercises:["hp_clam","hp_lat_walk","hp_monster_walk","hp_ober_stretch","hp_standing_abd"] },
   groin_strain:   { region:"Hip", label:"Groin / Adductor Strain",    exercises:["lb_copenhagen","hp_adductor_stretch","hp_side_step_squat","hp_hip_flex_raise","hp_hip_thrust"] },
+  thr_phase1: { region:"Hip", label:"Total Hip Replacement — Protected Phase (0-2wks)",
+    note:"Precautions differ by surgical approach -- posterior: avoid flexion past 90°, adduction past midline, and internal rotation past neutral; anterior/anterolateral: avoid the opposite combination (extension + external rotation + adduction). Confirm which applies with the surgeon. Current large meta-analyses increasingly question whether posterior precautions actually reduce dislocation risk, but the evidence is still low-certainty -- don't drop them without the surgeon's sign-off.",
+    goals:"Independent bed mobility and transfers; household ambulation with an assistive device; pain controlled; quad/glute reactivated; DVT prophylaxis underway.",
+    exercises:["kn_ankle_pumps","kn_quad_set","hp_glute_set","hp_abd_slide_midline","hp_sts_device"] },
+  thr_phase2: { region:"Hip", label:"Total Hip Replacement — Early Strengthening (2-6wks)",
+    note:"Continue surgeon-directed precautions -- most lift them around 6 weeks, some hold to 12. Wean the assistive device as gait normalises, not on a fixed date.",
+    goals:"Off assistive device as tolerated; LE strength progressing toward 4/5 MMT; normalised gait pattern; independent stairs.",
+    exercises:["hp_standing_abd","hp_glute_set","kn_sit_to_stand","hp_step_up"] },
+  thr_phase3: { region:"Hip", label:"Total Hip Replacement — Functional Phase (6-12wks)",
+    note:"Precautions are typically lifted by the surgeon around this point -- confirm before adding deeper flexion/rotation-based loading.",
+    goals:"Ambulation without a device; community-distance walking; reciprocal stairs; return to most ADLs.",
+    exercises:["hp_lat_walk","hp_step_up","hp_standing_abd","kn_leg_press"] },
+  thr_phase4: { region:"Hip", label:"Total Hip Replacement — Advanced / Return to Activity (12wks+)",
+    note:"Timelines vary by patient and surgeon; confirm clearance before impact or pivoting activity. No dosage-comparison trials exist for THR rehab, so treat specific set/rep numbers as standard clinical convention, not literature-validated optimal dosing.",
+    goals:"Strength symmetry (limb symmetry index >90%); return to recreational activity/work as cleared.",
+    exercises:["hp_hip_thrust","hp_side_step_squat","hp_monster_walk","lb_squat"] },
   // Knee
   pfps:           { region:"Knee", label:"Patellofemoral Pain",         exercises:["kn_tqe","kn_vmo_squat","kn_step_down","hp_clam","hp_lat_walk","lb_glute_bridge"] },
   patella_tend:   { region:"Knee", label:"Patellar Tendinopathy",       exercises:["kn_isometric_wall","kn_slow_squat","kn_decline_squat","hp_hip_thrust","kn_rdl"] },
-  acl_early:      { region:"Knee", label:"ACL Rehab — Early Phase",     exercises:["kn_quad_set","kn_straight_leg","kn_tqe","lb_glute_bridge","kn_acl_balance"] },
-  acl_late:       { region:"Knee", label:"ACL Rehab — Return to Sport", exercises:["kn_vmo_squat","kn_step_down","kn_drop_jump","sp_plyometric","sp_agility","sp_nordics"] },
+  acl_early:      { region:"Knee", label:"ACL Rehab — Early Phase",
+    note:"Impairment-focused: quad activation, effusion control, and gait normalisation come before any return-to-sport work. Progress to the next phase on meeting criteria, not a fixed week count.",
+    goals:"Full active quad control (no extensor lag); effusion resolved/minimal; symmetrical gait without a device; pain-free functional ROM.",
+    exercises:["kn_quad_set","kn_straight_leg","kn_tqe","lb_glute_bridge","kn_acl_balance"] },
+  acl_late:       { region:"Knee", label:"ACL Rehab — Return to Sport",
+    note:"Don't clear return to sport on a calendar date. Gate progression on a hop-test battery (single, triple, crossover, and 6m timed hop) plus quad strength testing -- meeting ≥90% Limb Symmetry Index on both is associated with a large reduction in reinjury risk versus clearing on time alone.",
+    goals:"≥90% Limb Symmetry Index on quad strength and all 4 single-leg hop tests; good landing mechanics (no dynamic valgus); sport-specific agility and plyometric tolerance; physician/surgeon clearance.",
+    exercises:["kn_vmo_squat","kn_step_down","kn_drop_jump","sp_plyometric","sp_agility","sp_nordics"] },
   knee_oa:        { region:"Knee", label:"Knee Osteoarthritis",         exercises:["kn_quad_set","kn_straight_leg","kn_sit_to_stand","kn_leg_press","lb_glute_bridge","ank_calf_raise"] },
   hamstring_str:  { region:"Knee", label:"Hamstring Strain Rehab",      exercises:["kn_hamstring_str","kn_rdl","sp_hip_ext_hamstring","kn_nordic","sp_nordics","sp_sprinting"] },
   tka_phase1: { region:"Knee", label:"Total Knee Replacement — Protected Phase (0-2wks)",
@@ -5968,12 +6030,68 @@ const PROGRAMME_TEMPLATES = {
   slap_conservative: { region:"Shoulder", label:"SLAP / Labral Tear — Conservative Management",
     note:"Avoid combined abduction and external rotation, and resisted biceps loading, early in the programme -- both are provocative positions for a SLAP lesion.",
     exercises:["sh_scap_clock","sh_wall_slide","sh_sidelying_ir","sh_rhythmic_stab"] },
+  // Anatomic TSA and Reverse (RSA) shoulder replacement are restricted for
+  // OPPOSITE biomechanical reasons -- TSA restricts external rotation to
+  // protect the subscapularis tenotomy/repair used to access the joint;
+  // RSA restricts internal rotation/adduction/extension because its
+  // reversed ball-and-socket geometry is inherently less constrained and
+  // dislocates in that combined position instead. Kept as two separate
+  // protocols rather than one merged entry so a therapist never applies
+  // one's precautions to the other's patient.
+  tsa_phase1: { region:"Shoulder", label:"Total Shoulder Replacement (TSA) — Protected Phase (0-6wks)",
+    note:"Sling except for exercise/hygiene. No active ROM. Avoid external rotation past ~30-45° and any reaching behind the back -- protects the subscapularis repair used to access the joint. Lifting capped at a coffee cup's weight.",
+    goals:"Passive elevation to ~120° in the scapular plane; pain controlled; independent with ADLs one-handed.",
+    exercises:["sh_pendulum","sh_pully"] },
+  tsa_phase2: { region:"Shoulder", label:"Total Shoulder Replacement (TSA) — Early Active / Sling Wean (6-12wks)",
+    note:"Sling typically weaned by 4-6 weeks per surgeon. External rotation stays limited (~45-60° at the side) and resisted internal rotation stays off the table -- both still protecting the subscapularis. Introduce gentle IR-behind-back stretching around 8-10 weeks, not sooner.",
+    goals:"Active-assisted elevation progressing; independent light ADL use of the hand; out of the sling.",
+    exercises:["sh_capsule_stretch","sh_ir_stretch","sh_scap_clock"] },
+  tsa_phase3: { region:"Shoulder", label:"Total Shoulder Replacement (TSA) — Strengthening (12wks+)",
+    note:"Internal rotation and horizontal adduction restrictions largely lift here -- progress as tolerated. No push-ups or bench press; keep to low-to-moderate impact.",
+    goals:"Isotonic rotator cuff/scapular strength restored; functional AROM within precautions; return to most ADLs.",
+    exercises:["sh_er_band","sh_sidelying_ir","sh_prone_ytw","sh_wall_slide"] },
+  tsa_phase4: { region:"Shoulder", label:"Total Shoulder Replacement (TSA) — Return to Activity (16wks+)",
+    note:"Return to sport typically ~6 months with physician clearance -- no fixed cutoff, individualised to healing and strength symmetry. Published TSA protocols vary widely between institutions (e.g. ER cutoff angles reported across 9 different values) with no RCT consensus on the optimal timeline.",
+    goals:"Strength symmetry with the uninvolved side; return to recreational/occupational activity as cleared.",
+    exercises:["sh_rhythmic_stab","sh_face_pull","sh_diagonal_d2"] },
+  rsa_phase1: { region:"Shoulder", label:"Reverse Shoulder Replacement (RSA) — Protected Phase (0-6wks)",
+    note:"Sling except for washing/exercise. The dislocation-risk position here is the OPPOSITE of TSA's -- avoid internal rotation, adduction, and extension (the \"hand behind back\" position), not external rotation. Elevation stays in the scapular plane only; avoid loading the arm in extension (e.g. pushing off a chair).",
+    goals:"Passive elevation in scaption progressing; pain controlled; elbow/wrist/hand mobility maintained.",
+    exercises:["sh_pendulum","cx_scap_ret"] },
+  rsa_phase2: { region:"Shoulder", label:"Reverse Shoulder Replacement (RSA) — Early ROM / Deltoid Activation (6-12wks)",
+    note:"Continue avoiding internal rotation, adduction, extension, and cross-body movement -- held longer and more strictly than TSA's restrictions. No weight-bearing through the arm through this phase.",
+    goals:"AAROM to AROM progressing in scaption; gentle deltoid activation started; light ADL hand use by ~8 weeks.",
+    exercises:["sh_deltoid_iso_scaption","sh_scap_clock"] },
+  rsa_phase3: { region:"Shoulder", label:"Reverse Shoulder Replacement (RSA) — Strengthening (12-16wks)",
+    note:"Begin progressing internal rotation and horizontal adduction as tolerated -- the deltoid is now the primary mover being trained, not the rotator cuff. Plyometrics not before 16 weeks, and only once strength reaches ~90% of the uninvolved side.",
+    goals:"Isotonic deltoid/scapular strength restored; functional AROM within remaining precautions; independent ADLs.",
+    exercises:["sh_deltoid_iso_scaption","sh_wall_slide","sh_face_pull"] },
+  rsa_phase4: { region:"Shoulder", label:"Reverse Shoulder Replacement (RSA) — Return to Activity (16wks+)",
+    note:"Return to sport ~6 months with physician clearance. RSA rehab timelines have little RCT evidence behind them -- current recommendations are mostly institutional/expert consensus, not head-to-head trial data.",
+    goals:"Strength symmetry with the uninvolved side; return to low-impact recreational activity as cleared.",
+    exercises:["sh_rhythmic_stab","sh_face_pull","sh_diagonal_d2"] },
   // Elbow
   tennis_elbow:   { region:"Elbow", label:"Tennis Elbow",                exercises:["el_isometric_ext","el_tyler_twist","el_wrist_ext_isoton","el_grip_strength"] },
   golfers_elbow:  { region:"Elbow", label:"Golfer's Elbow",              exercises:["el_wrist_flex_iso","el_wrist_flex_eccen","el_forearm_stretch","el_pron_sup"] },
   // Cervical
   cervicogenic_ha:{ region:"Cervical", label:"Cervicogenic Headache",       exercises:["cx_dnf","cx_chin_tuck","cx_scap_ret","pc_ucs_chin","cx_suboccip_release","cx_isometric"] },
   cervical_rad:   { region:"Cervical", label:"Cervical Radiculopathy",      exercises:["cx_chin_tuck","cx_neural_slider","cx_neural_ulnar","cx_neural_radial","cx_dnf","cx_isometric"] },
+  acdf_phase1: { region:"Cervical", label:"Cervical Spine Fusion (ACDF) — Immediate/Protected (0-6wks)",
+    note:"Collar use is genuinely surgeon- and case-dependent -- surveys find roughly 1 in 5 surgeons use one at all after single-level fusion vs. ~7 in 10 after multilevel (commonly 6-12 weeks). Meta-analysis found no fusion-rate difference with vs. without a collar. Avoid end-range neck flexion/extension/rotation and heavy lifting (~10kg cap) regardless. Emerging trial evidence suggests early gentle mobilisation is safe, but most surgeons still don't start formal PT until ~8-9 weeks -- don't start earlier without explicit surgeon clearance.",
+    goals:"Pain controlled; construct protected; no dysphagia progression; UE/scapular mobility maintained; independent with ADLs.",
+    exercises:["sh_pendulum","cx_scap_ret"] },
+  acdf_phase2: { region:"Cervical", label:"Cervical Spine Fusion (ACDF) — Gentle ROM / Isometric (6-8wks)",
+    note:"Avoid aggressive end-range stretching or manual mobilisation of the fused segment. Progress chin-tuck holds gradually (e.g. add a rep every other day) rather than jumping straight to a target rep count.",
+    goals:"Pain-free functional cervical AROM restored; scapulothoracic mechanics normalised; collar weaned per surgeon.",
+    exercises:["cx_chin_tuck","cx_scap_ret","cx_rotation","cx_lat_flex"] },
+  acdf_phase3: { region:"Cervical", label:"Cervical Spine Fusion (ACDF) — Progressive Strengthening (8-12wks+)",
+    note:"Confirm radiographic fusion progression with the surgeon before adding resistance. Avoid contact/high-velocity activity until cleared.",
+    goals:"Cervical/UE strength restored; residual disability resolving; return to desk work and driving.",
+    exercises:["cx_dnf","cx_isometric","cx_neck_ext_iso"] },
+  acdf_phase4: { region:"Cervical", label:"Cervical Spine Fusion (ACDF) — Return to Activity (12wks+)",
+    note:"Heavy labour or high-impact/contact activity is often held to 18-26 weeks -- individualised surgeon clearance required.",
+    goals:"Return to work/recreational activity as cleared; functional cervical strength and endurance restored.",
+    exercises:["cx_isometric","cx_dnf","sh_face_pull"] },
   // Posture
   ucs:            { region:"Posture", label:"Upper Crossed Syndrome",      exercises:["cx_chin_tuck","pc_ucs_chin","pc_band_pullap","pc_pec_foam","sh_wall_slide","sh_prone_ytw","pc_wall_angel"] },
   lcs:            { region:"Posture", label:"Lower Crossed Syndrome",      exercises:["pc_lcs_bridge","pc_hip_flex_str","lb_tva","lb_bird_dog","lb_hip_flexor","lb_glute_bridge","pc_pallof"] },
@@ -6014,22 +6132,110 @@ const EVIDENCE_PROTOCOLS = [
       { key:"tka_phase2", label:"Early Strengthening", weeks:"2-6wks" },
       { key:"tka_phase3", label:"Functional Strengthening", weeks:"6-12wks" },
       { key:"tka_phase4", label:"Advanced / RTA", weeks:"12wks+" },
+    ],
+    sources:[
+      "Bove AM, et al. Clinical practice guideline for physical therapist management of total knee arthroplasty: revision 2026. Physical Therapy. 2026;106(7):pzag058.",
+      "Jette DU, et al. Physical Therapist Management of Total Knee Arthroplasty. Physical Therapy. 2020;100(9):1603-1631.",
+      "Anania A, et al. The natural history of a newly developed flexion contracture following primary TKA. International Orthopaedics. 2013;37(10):1917-1923.",
+      "Harvey LA, Brosseau L, Herbert RD. Continuous passive motion following TKA in people with arthritis. Cochrane Database Syst Rev. 2014;(2):CD004260.",
+      "Sasse C, et al. Continuous Active Motion Versus Continuous Passive Motion for Rehabilitation After TKA: Systematic Review and Meta-Analysis. Indian J Orthop. 2026;60(3):578-591.",
     ] },
   { id:"acl", label:"ACL Reconstruction", regionKey:"knee", live:true,
     phases:[
       { key:"acl_early", label:"Early Phase", weeks:"" },
       { key:"acl_late", label:"Return to Sport", weeks:"" },
+    ],
+    sources:[
+      "van Melick N, et al. Evidence-based clinical practice update: ACL rehabilitation guidelines. British Journal of Sports Medicine. 2016;50(24):1506-1515.",
+      "Adams D, et al. Current Concepts for ACL Reconstruction: A Criterion-Based Rehabilitation Progression. JOSPT. 2012;42(7):601-614.",
+      "Grindem H, et al. Simple decision rules can reduce reinjury risk by 84% after ACL reconstruction: Delaware-Oslo ACL cohort study. Br J Sports Med. 2016;50(13):804-808.",
+      "Kodama E, et al. Return to Sport Following ACL Reconstruction: A Scoping Review of Criteria Determining Return to Sport Readiness. Curr Rev Musculoskelet Med. 2025;18(1).",
+      "Kotsifaki A, et al. Symmetry in Triple Hop Distance Hides Asymmetries in Knee Function After ACL Reconstruction. Am J Sports Med. 2022;50(2):441-450.",
     ] },
   { id:"rct", label:"Rotator Cuff Repair", regionKey:"shoulder", live:true,
     phases:[
       { key:"rct_postop_protected", label:"Protected", weeks:"0-6wks" },
       { key:"rct_postop_active", label:"Active-Assisted", weeks:"6-12wks" },
       { key:"rct_postop_strength", label:"Strengthening", weeks:"12wks+" },
-    ] },
-  { id:"thr", label:"Total Hip Replacement (THR)", regionKey:"hip", live:false },
-  { id:"lumbar_surgery", label:"Lumbar Spine Surgery", regionKey:"lumbar", live:false },
-  { id:"cervical_surgery", label:"Cervical Spine Surgery", regionKey:"cervical", live:false },
-  { id:"shoulder_replacement", label:"Shoulder Replacement (TSA/RSA)", regionKey:"shoulder", live:false },
+    ],
+    sources:[
+      "Hu CW, et al. Early versus delayed mobilization for arthroscopic rotator cuff repair: meta-analysis of RCTs. BMC Musculoskeletal Disorders. 2023;24(1):938.",
+      "Yoo SJ, et al. Which is better? Early versus delayed rehabilitation after arthroscopic rotator cuff repair. Knee Surg Sports Traumatol Arthrosc. 2024;32(4):1049-1057.",
+      "Riboh JC, Garrigues GE. Early Passive Motion Versus Immobilization After Arthroscopic Rotator Cuff Repair. Arthroscopy. 2014;30(8):997-1005.",
+      "Houck DA, et al. Early Versus Delayed Motion After Rotator Cuff Repair: Systematic Review of Overlapping Meta-analyses. Am J Sports Med. 2017;45(12):2911-2915.",
+      "Sciarretta FV, Moya D, List K. Current trends in rehabilitation of rotator cuff injuries. SICOT-J. 2023;9:14.",
+    ],
+    note:"No dedicated APTA/JOSPT clinical practice guideline exists for post-op rotator cuff repair specifically (current CPGs cover nonsurgical management only) -- this protocol's evidence base is RCT-level meta-analyses, a different tier than TKA's guideline-backed protocol above." },
+  { id:"thr", label:"Total Hip Replacement (THR)", regionKey:"hip", live:true,
+    phases:[
+      { key:"thr_phase1", label:"Protected", weeks:"0-2wks" },
+      { key:"thr_phase2", label:"Early Strengthening", weeks:"2-6wks" },
+      { key:"thr_phase3", label:"Functional", weeks:"6-12wks" },
+      { key:"thr_phase4", label:"Advanced / RTA", weeks:"12wks+" },
+    ],
+    sources:[
+      "Sara LK, Lewis CL. Rehabilitation Phases, Precautions, and Mobility Goals Following Total Hip Arthroplasty. HSS Journal. 2023;19(4):494-500.",
+      "Konnyu KJ, et al. Rehabilitation for Total Hip Arthroplasty: A Systematic Review. Am J Phys Med Rehabil. 2023;102(1):11-18.",
+      "Korfitsen CB, et al. Hip precautions after posterior-approach THA do not influence early recovery: systematic review and meta-analysis, 8,835 patients. Acta Orthopaedica. 2023;94:141-151.",
+      "Crompton J, Osagie-Clouard L, Patel A. Do hip precautions after posterior-approach THA affect dislocation rates? Systematic review, 6,900 patients. Acta Orthopaedica. 2020;91(6):687-692.",
+      "Peak EL, et al. The Role of Patient Restrictions in Reducing Early Dislocation Following THA: A Randomized, Prospective Study. J Bone Joint Surg Am. 2005;87(2):247-253.",
+    ],
+    note:"Two large meta-analyses (Korfitsen 2023, Crompton 2020) found no meaningful dislocation-rate difference with vs. without posterior-approach precautions, and unrestricted patients recovered faster -- but both rate the underlying evidence low-to-very-low certainty. Treat this as an active, shifting debate, not settled -- default to what the surgeon specifies." },
+  { id:"lumbar_surgery", label:"Lumbar Spine Fusion Surgery", regionKey:"lumbar", live:true,
+    phases:[
+      { key:"lumbar_fusion_phase1", label:"Protected Mobilisation", weeks:"0-12wks" },
+      { key:"lumbar_fusion_phase2", label:"Core Stabilisation", weeks:"6-12wks" },
+      { key:"lumbar_fusion_phase3", label:"Progressive Strengthening", weeks:"3-6+ months" },
+    ],
+    sources:[
+      "Ruffilli A, et al. Unveiling Timetable for Physical Therapy after Single-Level Lumbar Surgery: Systematic Review and Meta-Analysis. J Clin Med. 2024;13(9):2553.",
+      "Haddas R, et al. Therapeutic exercise following lumbar spine surgery: a narrative review. North American Spine Society Journal. 2025.",
+      "Madera MA, et al. The role of physical therapy and rehabilitation after lumbar fusion surgery for degenerative disease: a systematic review. J Neurosurg Spine. 2017;26(6):694-704.",
+      "Kernc D, Strojnik V, Vengust R. Early initiation of strength training based rehabilitation after lumbar spine fusion improves core muscle strength: RCT. J Orthop Surg Res. 2018;13(1):151.",
+      "Oestergaard LG, et al. Early Versus Late Initiation of Rehabilitation After Lumbar Spinal Fusion. Spine. 2013;38(23):1979-1985.",
+    ],
+    note:"Covers fusion specifically -- a simple discectomy/laminectomy is a meaningfully lighter procedure with better RCT support for shortening restrictions and progresses faster than the timeline above; don't apply this protocol to a discectomy-only patient." },
+  { id:"cervical_surgery", label:"Cervical Spine Fusion (ACDF)", regionKey:"cervical", live:true,
+    phases:[
+      { key:"acdf_phase1", label:"Immediate/Protected", weeks:"0-6wks" },
+      { key:"acdf_phase2", label:"Gentle ROM", weeks:"6-8wks" },
+      { key:"acdf_phase3", label:"Strengthening", weeks:"8-12wks" },
+      { key:"acdf_phase4", label:"Return to Activity", weeks:"12wks+" },
+    ],
+    sources:[
+      "De Biase G, et al. Postoperative Restrictions After Anterior Cervical Discectomy and Fusion. Cureus. 2020;12(8):e9532.",
+      "Zhang T, et al. Comparison of outcomes after ACDF with and without a cervical collar: systematic review and meta-analysis. J Orthop Surg Res. 2024;19:172.",
+      "Ling J, et al. Postoperative Rehabilitation to Improve Outcomes After Cervical Spine Fusion: A Systematic Review. Cureus. 2023;15(5):e39081.",
+      "McFarland C, et al. A Comparison of Clinical Outcomes between Early Cervical Spine Stabilizer Training and Usual Care Following ACDF. Rehabil Res Pract. 2020;2020:5946152.",
+      "Yang S, et al. Postoperative Rehabilitation for Pain and Functional Recovery Following ACDF: A Narrative Review. J Pain Res. 2025;18:4173-4183.",
+    ],
+    note:"Collar duration and how early to start formal PT are both genuinely unresolved -- surgeons disagree substantially (a survey found only ~20% use a collar at all after single-level fusion), and current trial evidence on early PT is running ahead of what most surgeons currently practise. Present timelines as ranges, not fixed defaults." },
+  { id:"tsa", label:"Shoulder Replacement — Anatomic (TSA)", regionKey:"shoulder", live:true,
+    phases:[
+      { key:"tsa_phase1", label:"Protected", weeks:"0-6wks" },
+      { key:"tsa_phase2", label:"Early Active", weeks:"6-12wks" },
+      { key:"tsa_phase3", label:"Strengthening", weeks:"12wks+" },
+      { key:"tsa_phase4", label:"Return to Activity", weeks:"16wks+" },
+    ],
+    sources:[
+      "Bullock GS, et al. A Systematic Review of Proposed Rehabilitation Guidelines Following Anatomic and Reverse Shoulder Arthroplasty. JOSPT. 2019;49(5):337-346.",
+      "Kennedy JS, et al. The American Society of Shoulder and Elbow Therapists' consensus statement on rehabilitation for anatomic TSA (ASSET). J Shoulder Elbow Surg. 2020;29(10):2149-2162.",
+      "Mehta N, et al. Publicly Available Anatomic TSA Rehabilitation Protocols Show High Variability and Frequent Divergence from the 2020 ASSET Recommendations. Int J Sports Phys Ther. 2024;19(7).",
+    ],
+    note:"TSA and RSA (below) are restricted for opposite biomechanical reasons -- TSA protects the subscapularis repair by limiting external rotation. Published protocols vary enormously between institutions with no RCT consensus on the optimal timeline (Mehta 2024 found ER cutoff angles reported across 9 different values)." },
+  { id:"rsa", label:"Shoulder Replacement — Reverse (RSA)", regionKey:"shoulder", live:true,
+    phases:[
+      { key:"rsa_phase1", label:"Protected", weeks:"0-6wks" },
+      { key:"rsa_phase2", label:"Early ROM", weeks:"6-12wks" },
+      { key:"rsa_phase3", label:"Strengthening", weeks:"12-16wks" },
+      { key:"rsa_phase4", label:"Return to Activity", weeks:"16wks+" },
+    ],
+    sources:[
+      "Howard MC, Trasolini NA, Waterman BR. Optimizing Outcomes After Reverse Total Shoulder Arthroplasty: Rehabilitation, Expected Outcomes, and Maximizing Return to Activities. Curr Rev Musculoskelet Med. 2023;16:145-153.",
+      "Levy JC, et al. Speed of recovery after shoulder arthroplasty: a comparison of reverse and anatomic TSA. J Shoulder Elbow Surg. 2014;23(12):1872-1881.",
+      "Hochberger F, et al. Comparative Study on Postoperative Immobilization in Reverse TSA: 4 Weeks vs. 6 Weeks Yields Similar Outcomes. J Clin Med. 2024;13(21):6363.",
+    ],
+    note:"RSA's dislocation-risk position is the opposite of TSA's -- combined internal rotation + adduction + extension, not external rotation -- because the deltoid, not the rotator cuff, becomes the primary mover. This anatomical reasoning is well-established but not itself validated by a dedicated outcomes RCT; treat it as strong expert consensus." },
 ];
 
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>

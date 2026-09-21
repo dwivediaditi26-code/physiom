@@ -142,6 +142,42 @@ export function EvidenceProtocolBrowser({ initialOperationId, onAddExercise, isA
               onRemove={() => {}}
             />
           ))}
+
+          {operation.sources?.length > 0 && <EvidenceSources sources={operation.sources} note={operation.note} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Citations for the operation as a whole (2026-09-21) -- shared across every
+// phase tab rather than repeated per phase, since the underlying evidence
+// base is the same protocol either way. Collapsed by default so a busy
+// therapist isn't forced past a wall of citations to reach "+ Add" -- opens
+// on demand for the ones who actually want to see the sources behind
+// "Evidence-Based Protocol".
+function EvidenceSources({ sources, note }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 10 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" }}
+      >
+        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: BRAND.gray }}>📚 Evidence ({sources.length} source{sources.length === 1 ? "" : "s"})</span>
+        <span style={{ fontSize: "0.7rem", color: BRAND.gray, marginLeft: "auto" }}>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <>
+          {note && (
+            <div style={{ background: BRAND.amberBg, borderRadius: 10, padding: "10px 12px", marginTop: 8, fontSize: "0.76rem", color: BRAND.ink, lineHeight: 1.5 }}>
+              ⚠ {note}
+            </div>
+          )}
+          <ol style={{ margin: "8px 0 0", padding: "0 0 0 18px", fontSize: "0.74rem", color: BRAND.gray, lineHeight: 1.6 }}>
+            {sources.map((s, i) => <li key={i}>{s}</li>)}
+          </ol>
         </>
       )}
     </div>
