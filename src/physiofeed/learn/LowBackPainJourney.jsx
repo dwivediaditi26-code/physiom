@@ -332,21 +332,28 @@ function NotePage({ data, index, onBack, onNext, onOpenCase }) {
 
 export default function LowBackPainJourney({ data, onBack, onOpenCase }) {
   const [openIndex, setOpenIndex] = useState(null);
+  const [direction, setDirection] = useState("next");
   const [done, setDone] = useState(() => readProgress(data.id));
+
+  const openFromContents = (i) => { setDirection("next"); setOpenIndex(i); };
 
   const goTo = (i, complete) => {
     if (complete) markDone(data.id, PAGES[openIndex].key);
     setDone(readProgress(data.id));
-    if (i == null) setOpenIndex(null); else setOpenIndex(i);
+    if (i == null) { setDirection("prev"); setOpenIndex(null); }
+    else { setDirection(i > openIndex ? "next" : "prev"); setOpenIndex(i); }
   };
 
   return (
     <div className="nb-root" style={{ background: "var(--nb-bg)", padding: "14px 16px 28px", borderRadius: 16 }}>
       <NotebookFont />
       {openIndex != null ? (
-        <NotePage data={data} index={openIndex} onBack={() => goTo(null, false)} onNext={goTo} onOpenCase={onOpenCase} />
+        <div key={`p-${openIndex}`} className={`nb-flip nb-flip-${direction}`}>
+          <NotePage data={data} index={openIndex} onBack={() => goTo(null, false)} onNext={goTo} onOpenCase={onOpenCase} />
+        </div>
       ) : (
-        <div className="nb-step-in">
+        <div key="contents" className={`nb-flip nb-flip-${direction}`}>
+        <div>
           <button type="button" className="nb-link" onClick={onBack} style={{ marginBottom: 6 }}><ChevronLeft size={16} /> Back</button>
           <div className="nb-note">{data.region} · {data.level}</div>
           <div className="nb-h1" style={{ marginTop: 4 }}><span className="nb-mark-block">{data.name}</span></div>
@@ -355,7 +362,7 @@ export default function LowBackPainJourney({ data, onBack, onOpenCase }) {
 
           <div className="nb-label" style={{ marginTop: 20, marginBottom: 4 }}>Contents — {done.size} / {PAGES.length} learned</div>
           {PAGES.map((s, i) => (
-            <button key={s.key} type="button" className="nb-index-row" onClick={() => setOpenIndex(i)}>
+            <button key={s.key} type="button" className="nb-index-row" onClick={() => openFromContents(i)}>
               <span style={{ width: 20, flexShrink: 0 }} aria-hidden="true">{done.has(s.key) ? <Check size={16} color="var(--nb-sage)" strokeWidth={3} /> : s.num}</span>
               <span style={{ flex: 1 }}>
                 <span className="nb-body">{s.icon} {s.title}</span>
@@ -364,6 +371,7 @@ export default function LowBackPainJourney({ data, onBack, onOpenCase }) {
             </button>
           ))}
           <Box title="✍️ Note">{done.size === 0 ? <>This whole thing is <DoodleCircle>non-specific</DoodleCircle> until proven otherwise — start with the structures.</> : done.size === PAGES.length ? "Fully learned — nice work." : "Keep going."}</Box>
+        </div>
         </div>
       )}
     </div>

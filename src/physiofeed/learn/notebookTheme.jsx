@@ -48,6 +48,13 @@ const NB_CSS = `
 .nb-index-row{ width:100%; display:flex; align-items:baseline; gap:10px; text-align:left; background:none; border:none; padding:10px 2px; border-bottom:1px dashed var(--nb-line-strong); cursor:pointer; }
 @media (prefers-reduced-motion:no-preference){ .nb-step-in{ animation:nb-in .2s ease-out; } }
 @keyframes nb-in{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+.nb-flip{ overflow-x:hidden; }
+.nb-flip > *{ will-change:transform; }
+@keyframes nb-slide-next-kf{ from{ transform:translateX(28px); opacity:.2; } to{ transform:translateX(0); opacity:1; } }
+@keyframes nb-slide-prev-kf{ from{ transform:translateX(-28px); opacity:.2; } to{ transform:translateX(0); opacity:1; } }
+.nb-flip-next > *{ animation:nb-slide-next-kf .3s ease-out; }
+.nb-flip-prev > *{ animation:nb-slide-prev-kf .3s ease-out; }
+@media (prefers-reduced-motion:reduce){ .nb-flip-next > *, .nb-flip-prev > *{ animation:none; } }
 `;
 
 let injected = false;
