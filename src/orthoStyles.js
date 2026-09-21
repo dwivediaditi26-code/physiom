@@ -968,39 +968,41 @@ export function orthoStyles() {
            same root cause). Wrapping to 2 lines inside a fixed max-width
            keeps every label's real box within its own column, so nothing
            overflows or overlaps a neighbor. */
-        /* AI journey strip -- deliberately its own palette (deep ink +
-           champagne-gold accent), not the app's purple, so this reads as a
-           distinct "AI-guided" progress indicator rather than one more
-           purple bar (2026-09-16, Aditi: "dnt make it purple"). */
+        /* AI journey strip -- champagne-gold shell for the "done" trail
+           (2026-09-16, Aditi: "dnt make it purple"), but the CURRENT step
+           now reads as a numbered stepper (2026-09-20, Aditi: reference
+           screenshot + "redesign it make it different") -- a filled purple
+           circle with its stage number, the one place purple appears here,
+           so "where am I" is unambiguous at a glance instead of just a
+           slightly bigger gold dot. Done steps stay gold with a check;
+           not-yet-reached steps show their number in a plain outlined
+           circle instead of being blank. */
         .ai-journey-dots {
           display: flex; align-items: flex-start; margin: 6px 0 20px;
-          padding: 10px 10px 12px; border-radius: 14px;
+          padding: 10px 8px; border-radius: 14px;
           background: linear-gradient(155deg, #FCFAF6 0%, #F6F1E7 100%);
           box-shadow: inset 0 0 0 1px rgba(184,141,87,0.18);
         }
-        .ai-journey-step { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; width: 56px; }
+        .ai-journey-step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 50px; }
         .ai-journey-dot {
-          width: 11px; height: 11px; border-radius: 50%; background: #fff;
-          box-shadow: inset 0 0 0 1.5px #DCD3C0; transition: all .2s cubic-bezier(.2,.8,.3,1); flex-shrink: 0;
-          position: relative;
+          width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #ADA089;
+          border: 1.5px solid #DDD3BE; font-family: inherit; font-size: 10px; font-weight: 800; padding: 0;
+          display: flex; align-items: center; justify-content: center;
+          transition: all .2s cubic-bezier(.2,.8,.3,1); flex-shrink: 0;
         }
+        .ai-journey-dot-btn { cursor: pointer; }
         .ai-journey-dot.done {
-          background: linear-gradient(145deg, #C9A15B, #8C6D3F); box-shadow: none;
-        }
-        .ai-journey-dot.done::after {
-          content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-          font-size: 7px; font-weight: 900; color: #fff;
+          background: linear-gradient(145deg, #D9B26D, #8C6D3F); border-color: transparent; color: #fff; font-size: 11.5px;
         }
         .ai-journey-dot.active {
-          background: radial-gradient(circle at 35% 30%, #E4C486, #B8863F);
-          box-shadow: 0 0 0 4px rgba(184,141,87,0.22), 0 2px 6px rgba(140,109,63,0.35);
-          transform: scale(1.25);
+          background: ${BRAND.purple}; border-color: ${BRAND.purple}; color: #fff;
+          box-shadow: 0 0 0 3px ${BRAND.purpleFaint};
         }
-        .ai-journey-label { font-size: 8.5px; color: #9A9082; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .04em; text-align: center; line-height: 1.2; max-width: 56px; }
-        .ai-journey-label.active { color: #7A5E2E; font-weight: 800; }
-        .ai-journey-label-btn { font-size: 8.5px; color: #8C6D3F; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .04em; text-align: center; line-height: 1.2; max-width: 56px; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
+        .ai-journey-label { font-size: 7.5px; color: #9A9082; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .03em; text-align: center; line-height: 1.15; max-width: 50px; }
+        .ai-journey-label.active { color: ${BRAND.purpleDark}; font-weight: 800; }
+        .ai-journey-label-btn { font-size: 7.5px; color: #8C6D3F; font-weight: 700; white-space: normal; text-transform: uppercase; letter-spacing: .03em; text-align: center; line-height: 1.15; max-width: 50px; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
         .ai-journey-label-btn:active { text-decoration-color: currentColor; }
-        .ai-journey-line { flex: 1; height: 1.5px; background: #E4DCC9; margin: 5px 2px 0; border-radius: 1px; }
+        .ai-journey-line { flex: 1; height: 1.5px; background: #E4DCC9; margin: 11px 0 0; border-radius: 1px; }
         .ai-journey-line.done { background: linear-gradient(90deg, #C9A15B, #8C6D3F); }
 
         /* AI-assisted entry's Subjective landing -- two equal-weight cards

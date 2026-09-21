@@ -22,17 +22,27 @@ export function AiJourneyDots({ activeIndex, onJump, jumpableIndices }) {
     <div className="ai-journey-dots">
       {AI_JOURNEY_STAGES.map((label, i) => {
         const canJump = onJump && i !== activeIndex && (!jumpableIndices || jumpableIndices.has(i));
+        const done = i < activeIndex;
+        const active = i === activeIndex;
+        const dotClass = "ai-journey-dot" + (active ? " active" : done ? " done" : "");
+        const dotContent = done ? "✓" : i + 1;
         return (
           <React.Fragment key={label}>
             {i > 0 && <div className={"ai-journey-line" + (i <= activeIndex ? " done" : "")} />}
             <div className="ai-journey-step">
-              <div className={"ai-journey-dot" + (i === activeIndex ? " active" : i < activeIndex ? " done" : "")} />
+              {canJump ? (
+                <button type="button" className={dotClass + " ai-journey-dot-btn"} onClick={() => onJump(i)} aria-label={label}>
+                  {dotContent}
+                </button>
+              ) : (
+                <div className={dotClass}>{dotContent}</div>
+              )}
               {canJump ? (
                 <button type="button" className="ai-journey-label ai-journey-label-btn" onClick={() => onJump(i)}>
                   {label}
                 </button>
               ) : (
-                <div className={"ai-journey-label" + (i === activeIndex ? " active" : "")}>{label}</div>
+                <div className={"ai-journey-label" + (active ? " active" : "")}>{label}</div>
               )}
             </div>
           </React.Fragment>
