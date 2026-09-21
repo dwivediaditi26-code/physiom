@@ -1,49 +1,49 @@
 import { useEffect } from "react";
 
-// Handwritten "clinical notebook" visual system for Clinical Learning
-// (2026-09-20, Aditi's brief: "handwritten typography system... beautiful
-// handwritten physiotherapy notebook that became an interactive mobile
-// app"). One font (Kalam) for every piece of text, hierarchy from size/
-// weight/color/underline only, warm paper surfaces instead of the app's
-// usual white-and-violet Tailwind cards. Scoped entirely under `.nb-root`
-// so it never leaks into the rest of Learn (Practical Skills, Study Mode)
-// or the wider app.
+// Handwritten "physio notebook" visual system (2026-09-20, Aditi shared a
+// real handwritten-notes Instagram page as the reference: white ruled
+// paper, red margin line, yellow highlighter on key terms, red circles
+// around key words/numbers, bold underlined all-caps-ish headings, numbered
+// sections flowing as continuous notes -- not a grid of app cards). Scoped
+// entirely under `.nb-root`, mounted only inside the Low Back Pain page
+// (LowBackPainJourney.jsx) -- the rest of Clinical Learning stays as it was.
 
-export const NB_BG = "#FBF5E7";
+export const NB_BG = "#F6F3EA";
 
 const NB_CSS = `
 .nb-root{
-  --nb-bg:#FBF5E7; --nb-paper:#FFFDF6; --nb-ink:#332B1E; --nb-ink-soft:#6E664F; --nb-ink-faint:#A99C7C;
-  --nb-line:#E6D9B8; --nb-line-strong:#D4C193;
-  --nb-sage:#5C7A52; --nb-sage-bg:#E7EFDD; --nb-sage-ink:#3B5230;
-  --nb-terra:#B85E33; --nb-terra-bg:#F6E2CF; --nb-terra-ink:#8A431C;
-  --nb-blue:#3E6C86; --nb-blue-bg:#DCEAF0; --nb-blue-ink:#264C60;
-  --nb-berry:#9C3B4C; --nb-berry-bg:#F5DBE0; --nb-berry-ink:#732433;
-  --nb-mark:#F6D65A;
+  --nb-bg:#F6F3EA; --nb-paper:#FFFEFB; --nb-ink:#221C10; --nb-ink-soft:#5A5340; --nb-ink-faint:#948B70;
+  --nb-line:#D9E0E8; --nb-line-strong:#C7B8A0;
+  --nb-red:#B23B32; --nb-red-bg:#FBEBE8;
+  --nb-sage:#4C8C3C; --nb-sage-bg:#E7EFDD;
+  --nb-mark:#F5DE4A;
   background:var(--nb-bg); color:var(--nb-ink);
-  font-family:'Kalam','Comic Sans MS',cursive; line-height:1.55;
+  font-family:'Caveat','Comic Sans MS',cursive; font-weight:600; line-height:1.55;
 }
 .nb-root, .nb-root *{ box-sizing:border-box; }
-.nb-h1{ font-size:26px; font-weight:700; line-height:1.25; }
-.nb-h2{ font-size:20px; font-weight:700; line-height:1.3; }
-.nb-h3{ font-size:16.5px; font-weight:700; }
-.nb-sub{ font-size:14.5px; color:var(--nb-ink-soft); }
-.nb-label{ font-size:12px; font-weight:700; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
-.nb-body{ font-size:15.5px; color:var(--nb-ink); }
-.nb-note{ font-size:13px; color:var(--nb-ink-soft); }
-.nb-mark{ background:linear-gradient(180deg,transparent 58%,var(--nb-mark) 58%,var(--nb-mark) 92%,transparent 92%); padding:0 1px; }
-.nb-card{ background:var(--nb-paper); border:1.5px solid var(--nb-line); border-radius:18px; padding:14px 16px; }
-.nb-card + .nb-card{ margin-top:12px; }
-.nb-pill{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; border-radius:999px; padding:4px 11px; border:1.5px solid var(--nb-line-strong); background:var(--nb-paper); color:var(--nb-ink-soft); }
-.nb-pill-active{ background:var(--nb-ink); border-color:var(--nb-ink); color:var(--nb-paper); }
-.nb-btn{ font-family:inherit; font-weight:700; font-size:15px; border-radius:16px; padding:12px 18px; border:2px solid var(--nb-ink); background:var(--nb-ink); color:var(--nb-paper); display:flex; align-items:center; justify-content:center; gap:6px; }
-.nb-btn:active{ transform:scale(.99); }
-.nb-btn-outline{ background:transparent; color:var(--nb-ink); }
-.nb-sticky{ background:var(--nb-mark); border-radius:4px 14px 4px 14px; padding:12px 14px; transform:rotate(-0.6deg); box-shadow:2px 3px 0 rgba(51,43,30,.08); }
-.nb-check{ width:22px; height:22px; border:2px solid var(--nb-line-strong); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.nb-check-on{ border-color:var(--nb-sage); background:var(--nb-sage-bg); }
-@media (prefers-reduced-motion:no-preference){ .nb-step-in{ animation:nb-in .25s ease-out; } }
-@keyframes nb-in{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+.nb-h1{ font-size:30px; font-weight:700; line-height:1.2; }
+.nb-h2{ font-size:23px; font-weight:700; line-height:1.25; }
+.nb-h3{ font-size:19px; font-weight:700; text-transform:uppercase; letter-spacing:.01em; }
+.nb-sub{ font-size:17px; color:var(--nb-ink-soft); }
+.nb-label{ font-size:14px; font-weight:700; letter-spacing:.02em; color:var(--nb-ink-faint); text-transform:uppercase; }
+.nb-body{ font-size:19px; color:var(--nb-ink); }
+.nb-note{ font-size:15.5px; color:var(--nb-ink-soft); }
+.nb-mark{ background:linear-gradient(180deg,transparent 55%,var(--nb-mark) 55%,var(--nb-mark) 90%,transparent 90%); padding:0 2px; }
+.nb-pill{ display:inline-flex; align-items:center; gap:5px; font-size:14px; font-weight:700; border-radius:999px; padding:3px 11px; border:1px solid var(--nb-line-strong); background:var(--nb-paper); color:var(--nb-ink-soft); }
+.nb-badge{ position:absolute; top:0; right:0; background:var(--nb-ink); color:var(--nb-paper); font-size:14px; font-weight:700; border-radius:999px; padding:2px 12px; }
+.nb-link{ font-family:inherit; font-weight:700; font-size:18px; color:var(--nb-red); background:none; border:none; padding:4px 0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+.nb-notes{
+  position:relative; background-color:var(--nb-paper); border-radius:8px; padding:20px 18px 20px 30px; border:1px solid var(--nb-line-strong);
+  background-image:
+    linear-gradient(to right, transparent 12px, var(--nb-red) 12px, var(--nb-red) 13px, transparent 13px),
+    repeating-linear-gradient(to bottom, transparent, transparent 32px, var(--nb-line) 33px);
+}
+.nb-box{ border:1.5px solid var(--nb-ink); border-radius:4px; padding:10px 13px; margin:12px 0; background:var(--nb-paper); }
+.nb-box-red{ border-color:var(--nb-red); }
+.nb-divider{ border:none; border-top:1px dashed var(--nb-line-strong); margin:16px 0; }
+.nb-index-row{ width:100%; display:flex; align-items:baseline; gap:10px; text-align:left; background:none; border:none; padding:10px 2px; border-bottom:1px dashed var(--nb-line-strong); cursor:pointer; }
+@media (prefers-reduced-motion:no-preference){ .nb-step-in{ animation:nb-in .2s ease-out; } }
+@keyframes nb-in{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
 `;
 
 let injected = false;
@@ -53,7 +53,7 @@ export function useNotebookFont() {
     const l = document.createElement("link");
     l.id = "nb-font";
     l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap";
+    l.href = "https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap";
     document.head.appendChild(l);
   }, []);
 }
@@ -70,43 +70,45 @@ const TIERS = {
   strong:      { label: "Strong evidence", dot: "#4C8C3C" },
   moderate:    { label: "Moderate evidence", dot: "#3E6C86" },
   limited:     { label: "Limited / uncertain", dot: "#C99A2E" },
-  foundational:{ label: "Foundational / textbook", dot: "#8C8368" },
+  foundational:{ label: "Foundational / textbook", dot: "#948B70" },
 };
 export function EvidenceBadge({ tier }) {
   const t = TIERS[tier] || TIERS.foundational;
   return (
-    <span className="nb-pill" style={{ marginBottom: 10 }}>
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: t.dot, display: "inline-block" }} aria-hidden="true" />
+    <span className="nb-pill" style={{ marginBottom: 8 }}>
+      <span style={{ width: 7, height: 7, borderRadius: 999, background: t.dot, display: "inline-block" }} aria-hidden="true" />
       {t.label}
     </span>
   );
 }
 
-// A loose, hand-drawn connecting line between journey steps.
-export function DoodleConnector({ done }) {
+// A loose, hand-drawn connecting line -- used both between contents-page
+// entries (colored by progress) and between lines of flowing notes on a
+// page (quiet, neutral ink).
+export function DoodleConnector({ color = "var(--nb-line-strong)", dashed = false, short = false }) {
+  const h = short ? 20 : 34;
   return (
-    <svg width="24" height="34" viewBox="0 0 24 34" aria-hidden="true" style={{ display: "block", margin: "0 auto" }}>
-      <path d="M12 1 C 8 10, 16 14, 11 22 C 8 27, 15 29, 12 33" fill="none" stroke={done ? "var(--nb-sage)" : "var(--nb-line-strong)"} strokeWidth="2.2" strokeLinecap="round" strokeDasharray={done ? "0" : "1 6"} />
+    <svg width="20" height={h} viewBox={`0 0 20 ${h}`} aria-hidden="true" style={{ display: "block", margin: short ? "2px 0 2px 4px" : "0 auto" }}>
+      <path d={short ? "M10 1 C 7 6, 13 9, 10 13 C 7 16, 12 17, 10 19" : "M10 1 C 6 10, 14 14, 9 22 C 6 27, 13 29, 10 33"} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeDasharray={dashed ? "1 6" : "0"} />
     </svg>
   );
 }
 
-// A hand-drawn arrow, used inline between short flow labels ("Normal -> What changes").
-export function DoodleArrow() {
+// A wobbly hand-drawn underline, dropped just below a heading.
+export function Underline({ width = 130, color = "var(--nb-ink)" }) {
   return (
-    <svg width="26" height="16" viewBox="0 0 26 16" aria-hidden="true" style={{ flexShrink: 0 }}>
-      <path d="M1 8 C 10 5, 16 11, 22 7" fill="none" stroke="var(--nb-ink-faint)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M17 4 C 19 6, 21 7, 23 7 C 21 8, 19 10, 18 12" fill="none" stroke="var(--nb-ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={width} height="8" viewBox="0 0 130 8" preserveAspectRatio="none" aria-hidden="true" style={{ display: "block", marginTop: 1 }}>
+      <path d="M2 5 C 22 2, 42 7, 64 4 C 86 1, 108 6, 128 3" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }
 
-// A wobbly hand-drawn circle, used to ring a key term.
+// A wobbly hand-drawn red circle around a key term or number.
 export function DoodleCircle({ children }) {
   return (
-    <span style={{ position: "relative", display: "inline-block", padding: "1px 9px" }}>
+    <span style={{ position: "relative", display: "inline-block", padding: "1px 10px" }}>
       <svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-        <path d="M6 20 C 4 6, 30 2, 50 3 C 74 4, 97 8, 94 21 C 97 33, 68 38, 48 37 C 26 38, 3 34, 6 20 Z" fill="none" stroke="var(--nb-terra)" strokeWidth="2.2" />
+        <path d="M6 20 C 4 6, 30 2, 50 3 C 74 4, 97 8, 94 21 C 97 33, 68 38, 48 37 C 26 38, 3 34, 6 20 Z" fill="none" stroke="var(--nb-red)" strokeWidth="2" />
       </svg>
       <span style={{ position: "relative" }}>{children}</span>
     </span>

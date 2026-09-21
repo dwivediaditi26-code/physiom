@@ -193,7 +193,8 @@ export default function LearnTabEntry({ onNav }) {
   if (view === "clinical") {
     return (
       <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
-        <style>{".pm-shell{background:#FBF5E7 !important}"}</style>
+        <style>{".pm-shell{background:#fff !important}"}</style>
+      <DisplayFont/>
         <ClinicalLearning onBack={() => setView("home")}/>
       </div>
     );
