@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ChevronLeft, ChevronRight, BookOpen, UserRound, Bell, Lock, RotateCcw, Bone, Brain, Trophy, HeartPulse, Baby, PersonStanding,
+  ChevronLeft, ChevronRight, UserRound, Bell, Lock, RotateCcw, Bone, Brain, Trophy, HeartPulse, Baby, PersonStanding,
   MessageCircle, History, MessageSquareText, Stethoscope, ClipboardCheck, Lightbulb, ListChecks, TrendingUp, Sparkles, Check,
 } from "lucide-react";
 import InfoBox from "./InfoBox.jsx";
@@ -8,6 +8,9 @@ import { QuickCheck } from "./QuickCheck.jsx";
 import { PINNED_BAR_CSS } from "./pinnedBar.js";
 import { keepInView } from "./scrollKit.js";
 import { CLINICAL_CASES, CASE_SPECIALTIES, DIFFICULTY } from "./clinicalCases.js";
+import { NotebookFont } from "./notebookTheme.jsx";
+import LowBackPainJourney from "./LowBackPainJourney.jsx";
+import { LOW_BACK_PAIN } from "./conditions/lowBackPain.js";
 import cervicalRaw from "../../cervicalConditions.json";
 import thoracicRaw from "../../thoracicConditions.json";
 import lumbarRaw from "../../lumbarConditions.json";
@@ -86,9 +89,9 @@ function useDisplayFont() {
 }
 const DISPLAY_CSS = ".cl-display{font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;letter-spacing:-0.01em}";
 
-function Chip({ active, onClick, children, solid = "bg-violet-600" }) {
+function Chip({ active, onClick, children }) {
   return (
-    <button type="button" onClick={onClick} className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${active ? `${solid} text-white shadow-sm` : "bg-white border border-slate-200 text-slate-600"}`}>
+    <button type="button" onClick={onClick} className={`nb-pill ${active ? "nb-pill-active" : ""}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
       {children}
     </button>
   );
@@ -98,25 +101,25 @@ function Header({ title, subtitle, onBack }) {
   return (
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center gap-1.5 min-w-0">
-        <button type="button" aria-label="Back" onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-50">
-          <ChevronLeft size={22} className="text-slate-600"/>
+        <button type="button" aria-label="Back" onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg hover:bg-black/5">
+          <ChevronLeft size={22} color="var(--nb-ink-soft)"/>
         </button>
         <div className="min-w-0">
-          <h1 className="cl-display text-2xl font-extrabold text-slate-900 leading-tight">{title}</h1>
-          {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+          <h1 className="nb-h1" style={{ lineHeight: 1.15 }}>{title}</h1>
+          {subtitle && <p className="nb-sub" style={{ marginTop: 2 }}>{subtitle}</p>}
         </div>
       </div>
-      <button aria-label="Notifications" className="p-2 rounded-lg hover:bg-slate-50"><Bell size={20} className="text-slate-400"/></button>
+      <button aria-label="Notifications" className="p-2 rounded-lg hover:bg-black/5"><Bell size={20} color="var(--nb-ink-faint)"/></button>
     </div>
   );
 }
 
 function SoonNote({ text }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 px-4 text-center">
-      <Lock size={22} className="mx-auto text-slate-300 mb-2"/>
-      <div className="text-sm font-semibold text-slate-600">{text}</div>
-      <div className="text-xs text-slate-400 mt-1">Being added.</div>
+    <div className="nb-card" style={{ borderStyle: "dashed", textAlign: "center", padding: "36px 16px" }}>
+      <Lock size={22} color="var(--nb-ink-faint)" style={{ margin: "0 auto 8px" }}/>
+      <div className="nb-body" style={{ fontWeight: 700 }}>{text}</div>
+      <div className="nb-note" style={{ marginTop: 4 }}>Being added.</div>
     </div>
   );
 }
@@ -231,25 +234,34 @@ function ConditionsView({ onBack, onOpenCase }) {
     () => MSK_REGIONS.map((r) => ({ ...r, list: Object.values(r.data).filter((c) => c && c.name) })).filter((r) => r.list.length),
     []
   );
-  if (selected) return <ConditionDetail c={selected.c} regionLabel={selected.regionLabel} onBack={() => setSelected(null)} onOpenCase={onOpenCase}/>;
+  if (selected) {
+    if (selected.c.id === LOW_BACK_PAIN.legacyConditionId) {
+      return <LowBackPainJourney data={LOW_BACK_PAIN} onBack={() => setSelected(null)} onOpenCase={onOpenCase}/>;
+    }
+    return <ConditionDetail c={selected.c} regionLabel={selected.regionLabel} onBack={() => setSelected(null)} onOpenCase={onOpenCase}/>;
+  }
   return (
     <div>
-      <Header title="Conditions" subtitle="Learn condition-wise clinical knowledge" onBack={onBack}/>
+      <Header title="Conditions" subtitle="Pick something you want to understand today ✍️" onBack={onBack}/>
       <div className="flex gap-2 overflow-x-auto no-scrollbar my-4">
-        {SPECIALTIES.map((sp) => <Chip key={sp.key} active={spec === sp.key} onClick={() => setSpec(sp.key)} solid={SPEC_THEME[sp.key].solid}>{sp.label}</Chip>)}
+        {SPECIALTIES.map((sp) => <Chip key={sp.key} active={spec === sp.key} onClick={() => setSpec(sp.key)}>{sp.label}</Chip>)}
       </div>
       {spec !== "msk" ? (
         <SoonNote text={`${SPECIALTIES.find((s) => s.key === spec).label} conditions are coming soon`}/>
       ) : (
         groups.map((g) => (
           <div key={g.key} className="mb-5">
-            <div className="cl-display flex items-center gap-2 text-[13px] font-extrabold text-violet-700 mb-2 px-0.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500"/>{g.label}<span className="text-[11px] font-bold text-violet-400">{g.list.length}</span></div>
-            {g.list.map((c) => (
-              <button key={c.id} type="button" onClick={() => setSelected({ c, regionLabel: g.label })} className="w-full flex items-center gap-3 bg-white border border-violet-100 border-l-4 border-l-violet-500 rounded-2xl px-3.5 py-3 mb-2 text-left shadow-sm hover:shadow-md">
-                <span className="cl-display flex-1 text-sm font-bold text-slate-900 leading-snug">{c.name}</span>
-                <ChevronRight size={16} className="text-slate-300 shrink-0"/>
-              </button>
-            ))}
+            <div className="nb-label" style={{ marginBottom: 8 }}>{g.label} · {g.list.length}</div>
+            {g.list.map((c) => {
+              const isLbp = c.id === LOW_BACK_PAIN.legacyConditionId;
+              return (
+                <button key={c.id} type="button" onClick={() => setSelected({ c, regionLabel: g.label })} className="nb-card" style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, textAlign: "left", cursor: "pointer", marginBottom: 10 }}>
+                  <span className="nb-body" style={{ flex: 1, fontWeight: 700 }}>{isLbp ? LOW_BACK_PAIN.name : c.name}</span>
+                  {isLbp && <span className="nb-pill" style={{ fontSize: 10.5, borderColor: "var(--nb-terra)", color: "var(--nb-terra-ink)" }}>New ✍️</span>}
+                  <ChevronRight size={16} color="var(--nb-ink-faint)" style={{ flexShrink: 0 }}/>
+                </button>
+              );
+            })}
           </div>
         ))
       )}
@@ -480,31 +492,25 @@ export default function ClinicalLearning({ onBack }) {
     const conditionCount = MSK_REGIONS.reduce((n, r) => n + Object.values(r.data).filter((c) => c && c.name).length, 0);
     body = (
       <div>
-        <Header title="Clinical Learning" subtitle="Understand the condition, then apply it to a real patient." onBack={onBack}/>
-        <div className="grid grid-cols-1 gap-4 mt-4">
-          <button type="button" onClick={() => setView("conditions")} className="text-left rounded-3xl bg-gradient-to-br from-rose-500 via-pink-500 to-orange-400 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition saturate-[.68]">
-            <BookOpen size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
-            <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><BookOpen size={24}/></span>
-            <span className="cl-display block text-xl font-extrabold">Conditions</span>
-            <span className="block text-sm text-white/90 mt-0.5">Learn condition-wise clinical knowledge</span>
-            <span className="flex flex-wrap gap-1.5 mt-3 relative">
-              {Object.values(SPEC_THEME).map((t) => <span key={t.label} className="text-[10.5px] font-bold bg-white/25 rounded-full px-2.5 py-1">{t.label}</span>)}
-            </span>
-            <span className="block text-[11px] text-white/80 mt-2">{conditionCount} MSK conditions to start</span>
+        <Header title="🩺 Clinical Learning" subtitle="“Understand it. See it. Apply it.”" onBack={onBack}/>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 16 }}>
+          <button type="button" onClick={() => setView("conditions")} className="nb-card" style={{ textAlign: "left", cursor: "pointer", padding: 18 }}>
+            <div style={{ fontSize: 30, marginBottom: 8 }} aria-hidden="true">📚</div>
+            <div className="nb-h2">Conditions</div>
+            <div className="nb-sub" style={{ marginTop: 2 }}>Learn condition-wise</div>
+            <div className="nb-body" style={{ marginTop: 8 }}>“Understand the body, the problem and the clinical picture.”</div>
+            <div className="nb-note" style={{ marginTop: 10 }}>{conditionCount} MSK conditions to start</div>
           </button>
-          <button type="button" onClick={() => setView("cases")} className="text-left rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-500 to-fuchsia-500 text-white p-5 shadow-lg relative overflow-hidden active:scale-[0.99] transition saturate-[.78]">
-            <UserRound size={110} strokeWidth={1.2} className="absolute -right-3 -bottom-4 opacity-15" aria-hidden="true"/>
-            <span className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-3"><UserRound size={24}/></span>
-            <span className="cl-display block text-xl font-extrabold">Clinical Cases</span>
-            <span className="block text-sm text-white/90 mt-0.5">Learn through real-life patient cases</span>
-            <span className="flex flex-wrap gap-1.5 mt-3 relative">
-              {Object.values(LEVEL_THEME).map((l) => <span key={l.label} className="text-[10.5px] font-bold bg-white rounded-full px-2.5 py-1 text-slate-800 flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${l.dot}`}/>{l.label}</span>)}
-            </span>
-            <span className="block text-[11px] text-white/80 mt-2">{CLINICAL_CASES.length} cases across {Object.keys(SPEC_THEME).length} specialties</span>
+          <button type="button" onClick={() => setView("cases")} className="nb-card" style={{ textAlign: "left", cursor: "pointer", padding: 18 }}>
+            <div style={{ fontSize: 30, marginBottom: 8 }} aria-hidden="true">🧑‍⚕️</div>
+            <div className="nb-h2">Clinical Cases</div>
+            <div className="nb-sub" style={{ marginTop: 2 }}>Learn through patients</div>
+            <div className="nb-body" style={{ marginTop: 8 }}>“Now put your knowledge into practice.”</div>
+            <div className="nb-note" style={{ marginTop: 10 }}>{CLINICAL_CASES.length} cases across {Object.keys(SPEC_THEME).length} specialties</div>
           </button>
         </div>
       </div>
     );
   }
-  return <div><style>{DISPLAY_CSS}</style>{body}</div>;
+  return <div className="nb-root" style={{ background: "var(--nb-bg)", minHeight: "100%", padding: "4px 0 24px" }}><NotebookFont/><style>{DISPLAY_CSS}</style>{body}</div>;
 }
