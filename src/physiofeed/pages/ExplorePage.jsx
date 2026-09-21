@@ -102,6 +102,7 @@ export default function ExplorePage() {
         </div>
       )}
 
+      {!postOpen && (
       <button
         type="button"
         onClick={() => setPostOpen(true)}
@@ -109,6 +110,7 @@ export default function ExplorePage() {
       >
         <Plus size={17} /> Post
       </button>
+      )}
 
       {postOpen && <PostOpportunityModal onClose={() => setPostOpen(false)} onPublish={publish} />}
     </main>
