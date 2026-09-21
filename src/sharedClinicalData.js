@@ -5911,6 +5911,21 @@ const EXERCISE_DB = {
       "Heart Failure — HFpEF": [
         { id:"card_hfpef_combined", name:"Combined Aerobic + Resistance Circuit (HFpEF)", target:"Preserve lean mass during weight management — HFpEF", desc:"Lower-extremity-focused resistance circuit (leg press-style movements) paired with aerobic walking, alongside any physician/dietitian-led weight-management plan.", sets:2, reps:12, hold:0, freq:"3×/week", phase:"Phase 2", evidence:"Moderate", cues:"Prescribing caloric targets is outside PT scope -- reinforce activity/energy-balance education and coordinate referral, don't prescribe a diet.", progression:"Increase resistance load in step with aerobic volume increases" },
       ],
+      // Machine/modality-based techniques (2026-09-21) -- the Ortho
+      // module has a dedicated Manual/Modality picker (Ultrasound,
+      // Electrotherapy, ...); Cardio never had an equivalent. These four
+      // are genuinely different in kind, not just target: NMES/TENS are
+      // PT-applied electrotherapy, IPC is explicitly a nursing/medical-
+      // ordered device the PT coordinates around rather than dosages
+      // (see its own cues), and incentive spirometry is a patient-used
+      // device worth being honest about -- weak evidence everywhere it's
+      // been tested, not just in CABG.
+      "Adjunct Modalities": [
+        { id:"card_nmes",           name:"NMES (Neuromuscular Electrical Stimulation)", target:"Quadriceps/peripheral muscle — for patients who cannot yet actively exercise", desc:"Surface electrodes over the quadriceps (± peroneus longus/tibialis anterior). Biphasic pulsed current, 45Hz/400us, 12s-on:6s-off duty cycle, titrated to a VISIBLE contraction -- not just sensory tingling.", sets:1, reps:1, hold:0, freq:"Daily, 45-55min sessions", phase:"Phase 1", evidence:"Mixed — one RCT reduced ICU-acquired weakness incidence; another in post-cardiothoracic-surgery ICU patients found no benefit on strength/mass outcomes", cues:"NOT a general fitness tool -- reserved for patients who genuinely cannot yet participate in active exercise (ICU, severely deconditioned COPD/HF). Avoid over/near implanted cardiac devices, active DVT, or open wounds.", progression:"Transition to active exercise as soon as the patient can participate -- don't continue NMES once volitional training is possible" },
+        { id:"card_tens_thoracic",  name:"TENS — Post-Thoracotomy/Sternotomy Pain", target:"Pain modulation to enable effective cough and deep breathing", desc:"Electrodes placed paravertebrally at the incision's dermatomal level (or flanking the incision). Sensory-level current only -- comfortable tingling, no visible contraction. Applied before/during coughing and airway-clearance sessions.", sets:1, reps:1, hold:0, freq:"As needed before coughing/DBE, continued through early post-op days", phase:"Phase 1", evidence:"Moderate — the best-evidenced modality here; multiple placebo-controlled RCTs in this exact population show improved pain AND improved measured pulmonary function, not just comfort", cues:"One part of a multimodal pain strategy, not a replacement for adequate analgesia. Avoid over implanted cardiac devices, the anterior neck, or open wounds/chest tubes.", progression:"Wean as post-op pain settles and cough becomes less limited" },
+        { id:"card_ipc",            name:"IPC (Intermittent Pneumatic Compression) — Awareness/Coordination", target:"Mechanical DVT prophylaxis for immobile post-op/inpatient cardiac patients", desc:"Inflatable calf/thigh sleeves on a pneumatic pump, cyclically compressing the leg to promote venous return. This is a nursing/medical-ordered device, not a PT-applied technique -- the PT's role is to recognise it should be in place, not remove it without coordinating with nursing, and flag if an at-risk patient isn't wearing one.", sets:1, reps:1, hold:0, freq:"Continuous while immobile, removed for mobility sessions", phase:"Phase 1", evidence:"Solid vs. no prophylaxis; a large RCT found little ADDED benefit on top of pharmacologic prophylaxis (heparin/LMWH) when that's already running", cues:"Document as a co-intervention in the plan of care, not as something you dose or progress yourself.", progression:"Discontinue per the medical team once mobility/pharmacologic prophylaxis reduces ongoing DVT risk" },
+        { id:"card_incentive_spiro",name:"Incentive Spirometry",                      target:"Volume-oriented sustained maximal inspiration — post-thoracic surgery", desc:"Upright position, seal lips around the mouthpiece, inhale slowly and deeply to raise the piston/ball to the target line, hold 3-5s at peak inspiration, exhale normally and rest before repeating. Slow inhalation matters -- fast/forceful breaths just move the indicator without real alveolar recruitment.", sets:1, reps:10, hold:5, freq:"Every 1-2h while awake", phase:"Phase 1", evidence:"Weak across the board — Cochrane reviews found no added benefit over deep breathing + early mobilisation alone in BOTH post-CABG and general upper abdominal surgery. Still worth prescribing (low-risk, near-universally ordered) but don't oversell it.", cues:"Coach slow inhalation technique. Progress the target volume as tolerance improves, don't leave it static.", progression:"Increase target volume toward predicted inspiratory capacity as tolerated" },
+      ],
     }
   },
   oncology: {
@@ -5975,7 +5990,22 @@ const TEMPLATE_TX = {
   thoracic_mob:   { manual:["T-spine PA mobilisation","Rib mobilisation"], machine:["Hot pack 10 min"] },
   stress_incont:  { manual:["Pelvic floor manual facilitation"], machine:["EMS / biofeedback"] },
   pelvic_pain:    { manual:["Myofascial release — pelvic girdle"], machine:["TENS"] },
-  copd:           { manual:["Chest percussion / vibration"], machine:[] },
+  // copd's old single-key entry was orphaned by the 2026-09-21 rework of
+  // PROGRAMME_TEMPLATES.copd into copd_phase1-4 (plus ild_*/bronchiectasis_*/
+  // hfref_*/hfpef_*/post_mi_*/post_cabg_*) -- re-keyed to match, and
+  // extended with the new NMES/TENS/IPC/incentive-spirometry entries built
+  // the same day. This TEMPLATE_TX lookup isn't reachable from the current
+  // CardiopulmonaryAssessment.jsx flow (only from the older ClinicalModules.jsx
+  // treatment picker), but keeping it correct rather than stale/orphaned.
+  copd_phase1:    { manual:["Chest percussion / vibration if secretions present"], machine:[] },
+  copd_phase2:    { manual:[], machine:["NMES — quadriceps, for severely deconditioned patients unable to actively exercise"] },
+  copd_phase3:    { manual:["Chest percussion / vibration","Postural drainage"], machine:[] },
+  bronchiectasis_phase1: { manual:["Postural drainage","Manual percussion & vibration (weakest-evidenced adjunct)"], machine:["PEP / oscillating PEP device"] },
+  bronchiectasis_phase3: { manual:["Postural drainage — increased frequency during exacerbation"], machine:["PEP / oscillating PEP device — increased cycles"] },
+  hfref_phase1:   { manual:[], machine:["NMES — quadriceps, if unable to actively exercise","IPC — DVT prophylaxis (nursing-coordinated, not PT-applied)"] },
+  hfpef_phase1:   { manual:[], machine:["NMES — quadriceps, if unable to actively exercise","IPC — DVT prophylaxis (nursing-coordinated, not PT-applied)"] },
+  post_mi_phase1: { manual:[], machine:["IPC — DVT prophylaxis (nursing-coordinated, not PT-applied)"] },
+  post_cabg_phase1: { manual:["Post-sternotomy splinted cough technique"], machine:["TENS — post-thoracotomy/sternotomy pain","Incentive spirometry (weak evidence, still commonly ordered)","IPC — DVT prophylaxis (nursing-coordinated, not PT-applied)"] },
 };
 const PROGRAMME_TEMPLATES = {
   // Lumbar
@@ -6157,7 +6187,7 @@ const PROGRAMME_TEMPLATES = {
   copd_phase2: { region:"Respiratory", label:"COPD Pulmonary Rehab — Progressive Training (6-12wks)",
     note:"Standard supervised programme length is 8-12 weeks minimum. Interval training is a genuine first-line option -- not just a fallback -- for patients too deconditioned to sustain continuous work; dose it to Borg dyspnoea, not %HRmax, since COPD is usually ventilation- not heart-rate-limited.",
     goals:"Increasing 6MWT distance; improved mMRC/Borg at a matched workload; peripheral strength gains.",
-    exercises:["card_walk_prog","resp_periph_resistance","resp_imst","resp_interval_copd","resp_acbt"] },
+    exercises:["card_walk_prog","resp_periph_resistance","resp_imst","resp_interval_copd","resp_acbt","card_nmes"] },
   copd_phase3: { region:"Respiratory", label:"COPD Pulmonary Rehab — Post-Exacerbation Recovery",
     note:"A genuine branch, not a linear next step -- only applies after a hospitalised exacerbation. Optimal timing is unresolved: one trial found very-early in-hospital structured rehab was associated with worse 12-month outcomes than usual care, so confirm medical stability before progressing beyond gentle mobilisation.",
     goals:"Return to pre-exacerbation activity tolerance without triggering another admission; symptom-recognition action plan understood.",
@@ -6206,7 +6236,7 @@ const PROGRAMME_TEMPLATES = {
   hfref_phase1: { region:"Cardiac", label:"HFrEF Exercise Rehab — Inpatient",
     note:"Early mobilisation, hemodynamic tolerance check, and self-monitoring education (daily weight, symptoms) started during hospitalisation/diagnosis workup.",
     goals:"Tolerates short supervised mobility without symptom escalation; baseline walk distance and vitals recorded.",
-    exercises:["card_early_mobil","resp_diaphragm"] },
+    exercises:["card_early_mobil","resp_diaphragm","card_ipc","card_nmes"] },
   hfref_phase2: { region:"Cardiac", label:"HFrEF Exercise Rehab — Early Outpatient (Supervised)",
     note:"HIIT is NOT a superior default here despite its reputation -- multiple trials (SMARTEX-HF and others) found no consistent advantage over standard continuous training for HFrEF; protocol design details (interval length/volume) seem to matter more than \"HIIT vs. continuous\" as a binary. For ICD/CRT patients, cap training HR ~20bpm below the device's arrhythmia-detection zone and anchor intensity to Borg RPE rather than %HRmax, since beta-blockade and pacing blunt the HR response.",
     goals:"Improved 6MWT/peak VO2; NYHA class improvement; combined aerobic+resistance tolerated; exercise self-efficacy established.",
@@ -6218,7 +6248,7 @@ const PROGRAMME_TEMPLATES = {
   hfpef_phase1: { region:"Cardiac", label:"HFpEF Exercise Rehab — Inpatient",
     note:"Applies only to the subset hospitalised for HFpEF decompensation -- reuses the same early-mobilisation approach as HFrEF's Phase I.",
     goals:"Tolerates short supervised mobility without symptom escalation.",
-    exercises:["card_early_mobil"] },
+    exercises:["card_early_mobil","card_ipc","card_nmes"] },
   hfpef_phase2: { region:"Cardiac", label:"HFpEF Exercise Rehab — Early Outpatient (Supervised)",
     note:"Current best evidence (a 2025 secondary analysis of the OptimEx-Clin trial) favours increasing total weekly exercise VOLUME AND FREQUENCY over increasing intensity -- higher %HRR intensity was actually associated with SMALLER improvement in that analysis. This is emerging, well-evidenced but not yet guideline-codified -- don't present it as settled doctrine. Resistance training deserves earlier emphasis than in HFrEF given the obesity/sarcopenia phenotype common in HFpEF, where a meaningful share of exercise-capacity limitation is peripheral/metabolic rather than purely cardiac.",
     goals:"Increased weekly exercise duration/frequency (the primary lever, not just intensity); combined aerobic+resistance tolerated; peak VO2/6MWT gains; weight-management conversation initiated where relevant (referral, not PT-prescribed caloric targets).",
@@ -6230,7 +6260,7 @@ const PROGRAMME_TEMPLATES = {
   post_mi_phase1: { region:"Cardiac", label:"Post-MI Cardiac Rehab — Phase I Inpatient",
     note:"Current evidence supports mobilisation within 24-72 hours of PCI for hemodynamically stable patients -- not the prolonged bed rest of older practice. A 2026 study even investigated pre-PCI ambulation in NSTEMI as safe in selected patients, though that remains investigational, not standard of care.",
     goals:"Progressive mobilisation to short supervised corridor walks by discharge; risk-factor and symptom-recognition education delivered.",
-    exercises:["card_early_mobil","resp_diaphragm"] },
+    exercises:["card_early_mobil","resp_diaphragm","card_ipc"] },
   post_mi_phase2: { region:"Cardiac", label:"Post-MI Cardiac Rehab — Phase II Early Outpatient",
     note:"Real-world Phase II start ranges 1-4 weeks post-discharge -- this variability reflects programme access/scheduling as much as a specific evidence-based cutoff; there's no single evidence-mandated \"day X.\" Resistance training is typically introduced after an initial aerobic-only stabilisation period, a programme convention more than an RCT-defined rule.",
     goals:"Progressive monitored aerobic conditioning; resistance training introduced once stable; self-monitoring (HR, Borg) skill built.",
@@ -6242,7 +6272,7 @@ const PROGRAMME_TEMPLATES = {
   post_cabg_phase1: { region:"Cardiac", label:"Post-CABG Cardiac Rehab — Phase I Inpatient (0-1wk)",
     note:"Sternal precautions in full effect from day 1: log-roll bed mobility, \"elbows-in\" rising, no bilateral overhead reach, splint the sternum to cough. If the patient is anticoagulated (common with new post-op AF), add a fall-risk check before progressing mobility -- current guidance generally favours continuing anticoagulation despite fall risk, so the right response to that risk is closer supervision, not withholding the medication.",
     goals:"Precaution-compliant bed mobility and transfers independent; pulmonary toilet established; short supervised ambulation by discharge.",
-    exercises:["card_sternal_transfer","card_sternal_breathing","card_early_mobil"] },
+    exercises:["card_sternal_transfer","card_sternal_breathing","card_early_mobil","card_tens_thoracic","card_incentive_spiro","card_ipc"] },
   post_cabg_phase2: { region:"Cardiac", label:"Post-CABG Cardiac Rehab — Phase II Early Outpatient (2-8wks)",
     note:"Traditional teaching holds bilateral UE loading/lifting restrictions to ~6-8 weeks pending surgeon sign-off on sternal healing. But this closely parallels the hip/lumbar precaution debates elsewhere in this app: a randomised trial (n>200) found no outcome difference between standard restrictive and modified/less-restrictive precautions, and force-measurement data found a cough exerts MORE sternal stress than lifting 18kg with both arms together -- undermining the rationale for low fixed lifting-weight limits. Incentive spirometry specifically has weak Cochrane evidence of added benefit over deep breathing + mobilisation alone -- don't oversell the device.",
     goals:"Progressive aerobic conditioning; UE strength reintroduced within precautions; sternal wound monitored for stability/infection.",
@@ -6390,6 +6420,7 @@ const EVIDENCE_PROTOCOLS = [
       "Ward TJC, et al. Impact of pulmonary rehabilitation programme design on effectiveness in COPD: a systematic review and component network meta-analysis. eClinicalMedicine. 2025;87:103433.",
       "Puhan MA, et al. Interval versus continuous high-intensity exercise in chronic obstructive pulmonary disease: a randomized trial. Ann Intern Med. 2006;145(11):816-825.",
       "Greening NJ, et al. An early rehabilitation intervention to enhance recovery during hospital admission for an exacerbation of chronic respiratory disease: randomised controlled trial. BMJ. 2014;349:g4315.",
+      "Jones S, Man WD, Gao W, Higginson IJ, Wilcock A, Maddocks M. Neuromuscular electrical stimulation for muscle weakness in adults with advanced disease. Cochrane Database Syst Rev. 2016;10:CD009419.",
     ],
     note:"Post-exacerbation timing is genuinely unresolved -- different studies favour different windows for different outcomes (readmissions vs. exercise capacity), and one trial found a very-early in-hospital rehab arm had HIGHER 12-month mortality than usual care. Treat this as clinical judgement, not a fixed rule -- confirm medical stability before progressing structured training during/right after an exacerbation." },
   { id:"ild", label:"ILD / Pulmonary Fibrosis Rehabilitation", regionKey:"respiratory", live:true,
@@ -6432,6 +6463,7 @@ const EVIDENCE_PROTOCOLS = [
       "Gu S, et al. Effects of high intensity interval training versus moderate intensity continuous training on exercise capacity and quality of life in patients with heart failure: A systematic review and meta-analysis. PLoS One. 2023;18(8):e0290362.",
       "Brown TM, et al. Core Components of Cardiac Rehabilitation Programs: 2024 Update. A Scientific Statement From the AHA and AACVPR. Circulation. 2024;150:e328-e347.",
       "Isaksen K, et al. Exercise training and cardiac rehabilitation in patients with implantable cardioverter defibrillators: a review of current literature. Eur J Prev Cardiol. 2012;19(4):804-812.",
+      "Jones S, Man WD, Gao W, Higginson IJ, Wilcock A, Maddocks M. Neuromuscular electrical stimulation for muscle weakness in adults with advanced disease. Cochrane Database Syst Rev. 2016;10:CD009419.",
     ],
     note:"HIIT vs. standard continuous training is genuinely unresolved for HFrEF -- most trials found no consistent group-level advantage either way, though protocol details (interval length/volume) may matter more than the HIIT-vs-continuous label itself. Don't present either as categorically superior." },
   { id:"hfpef", label:"Heart Failure — Preserved EF (HFpEF)", regionKey:"cardiac", live:true,
@@ -6446,6 +6478,7 @@ const EVIDENCE_PROTOCOLS = [
       "Mueller S, et al. Comparison of exercise training modalities and change in peak oxygen consumption in HFpEF: a secondary analysis of the OptimEx-Clin trial. Eur J Prev Cardiol. 2025;32(11):926-936.",
       "Kitzman DW, Brubaker P, et al. Effect of Caloric Restriction or Aerobic Exercise Training on Peak Oxygen Consumption and Quality of Life in Obese Older Patients With HFpEF (SECRET). JAMA. 2016;315(1):36-46.",
       "Brubaker PH, et al. A Randomized, Controlled Trial of Resistance Training Added to Caloric Restriction Plus Aerobic Exercise Training in Obese HFpEF. Circ Heart Fail. 2022;15(11):e010161.",
+      "Jones S, Man WD, Gao W, Higginson IJ, Wilcock A, Maddocks M. Neuromuscular electrical stimulation for muscle weakness in adults with advanced disease. Cochrane Database Syst Rev. 2016;10:CD009419.",
     ],
     note:"How much of HFpEF's exercise benefit is cardiac vs. peripheral/metabolic/obesity-driven is a genuinely open question -- diet alone raised peak VO2 almost as much as exercise alone in one trial. The 'prioritise duration/frequency over intensity' finding is well-evidenced but comes from a single (though well-designed) 2025 secondary analysis, not yet an independently replicated or guideline-codified position." },
   { id:"post_mi", label:"Post-Myocardial Infarction Cardiac Rehab", regionKey:"cardiac", live:true,
@@ -6473,8 +6506,14 @@ const EVIDENCE_PROTOCOLS = [
       "Holloway C, et al. The impact of a less restrictive poststernotomy activity protocol compared with standard sternal precautions in patients following cardiac surgery. Physical Therapy. 2020;100(7):1074-1083.",
       "Adams J, et al. An alternative approach to prescribing sternal precautions after median sternotomy, \"Keep Your Move in the Tube.\" Proc (Bayl Univ Med Cent). 2016;29(1):97-100.",
       "Freitas ERFS, et al. Incentive spirometry for preventing pulmonary complications after coronary artery bypass graft. Cochrane Database Syst Rev. 2012;(9):CD004466.",
+      "Forster EL, Kramer JF, Lucy SD, Scudds RA, Novick RJ. Effect of TENS on pain, medications, and pulmonary function following coronary artery bypass graft surgery. Chest. 1994;106(5):1343-1348.",
+      "Husch HH, et al. Effects of Transcutaneous Electrical Nerve Stimulation on Pain, Pulmonary Function, and Respiratory Muscle Strength After Posterolateral Thoracotomy: A Randomized Controlled Trial. Lung. 2020;198(2):345-353.",
+      "do Nascimento Junior P, et al. Incentive spirometry for prevention of postoperative pulmonary complications in upper abdominal surgery. Cochrane Database Syst Rev. 2014;2:CD006058.",
+      "Urbankova J, Quiroz R, Kucher N, Goldhaber SZ. Intermittent pneumatic compression and deep vein thrombosis prevention. A meta-analysis in postoperative patients. Thromb Haemost. 2005;94(6):1181-1185.",
+      "Arabi YM, et al. Adjunctive Intermittent Pneumatic Compression for Venous Thromboprophylaxis. N Engl J Med. 2019;380(14):1305-1315.",
+      "Hillegass E, et al. Role of Physical Therapists in the Management of Individuals at Risk for or Diagnosed With Venous Thromboembolism: Evidence-Based Clinical Practice Guideline. Phys Ther. 2016;96(2):143-166.",
     ],
-    note:"Sternal precaution duration/strictness closely parallels the hip and lumbar precaution debates elsewhere in this app -- a randomised trial (SMART, n>200) found no outcome difference between standard restrictive and modified precautions, and force-measurement data found a cough exerts MORE sternal stress than lifting 18kg with both arms together, undermining the rationale for low fixed lifting-weight limits. No systematic review was found underpinning the traditional restrictions -- they're largely expert-opinion/historical-practice-based. Still present the traditional ~6-8 week framework as the reasonable default (most surgeons still practise it), but flag it as evidence-informed, not settled." },
+    note:"Sternal precaution duration/strictness closely parallels the hip and lumbar precaution debates elsewhere in this app -- a randomised trial (SMART, n>200) found no outcome difference between standard restrictive and modified precautions, and force-measurement data found a cough exerts MORE sternal stress than lifting 18kg with both arms together, undermining the rationale for low fixed lifting-weight limits. No systematic review was found underpinning the traditional restrictions -- they're largely expert-opinion/historical-practice-based. Still present the traditional ~6-8 week framework as the reasonable default (most surgeons still practise it), but flag it as evidence-informed, not settled. Incentive spirometry's weak evidence isn't CABG-specific -- a second Cochrane review found the same lack of added benefit in general upper abdominal surgery too. IPC is a nursing/medical-ordered device, not something the PT applies or doses -- and a large RCT found little added benefit once pharmacologic prophylaxis is already running." },
 ];
 
 const ALL_EXERCISES = Object.values(EXERCISE_DB).flatMap(region =>
