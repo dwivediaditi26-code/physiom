@@ -1,0 +1,135 @@
+// Demo listings for the Explore -> Opportunities board (2026-09-21, Aditi's
+// brief + mockups: jobs/internships/workshops/collaborations for
+// physiotherapists). Front-end only, same as the rest of this app's seed
+// data (mockData.js) -- no backend table for this yet, so nothing here
+// persists across a reload. Field names loosely follow the same shape as
+// mockData.js's posts/people so a real data layer could be swapped in the
+// same way db.js already fronts that seed data.
+
+export const OPPORTUNITY_CATEGORIES = [
+  { key: "all", label: "All" },
+  { key: "job", label: "Jobs" },
+  { key: "internship", label: "Internships" },
+  { key: "collaboration", label: "Collaborations" },
+  { key: "workshop", label: "Workshops" },
+];
+
+export const SPECIALTIES = ["MSK", "Neuro", "Sports", "Pediatrics", "Cardiopulmonary", "Geriatrics"];
+export const LOCATION_TYPES = ["On-site", "Hybrid", "Remote"];
+
+export const INITIAL_OPPORTUNITIES = [
+  {
+    id: "op-1",
+    type: "internship",
+    org: "Apex Movement & Performance Rehab",
+    orgShort: "Apex Movement Center",
+    orgInitials: "AM",
+    orgGradient: "blue",
+    title: "Sports Physiotherapy Internship",
+    location: "Arera Colony, Bhopal",
+    postedAgo: "1 day ago",
+    description: "Gain hands-on experience in sports injury rehabilitation, working alongside senior sports physiotherapists on return-to-sport programs.",
+    stipend: "₹15,000/mo",
+    duration: "6 Weeks",
+    tags: ["Orthopedics", "Exercise Science"],
+    audience: "BPT Students",
+    certificate: true,
+    highlights: ["Clinical Experience", "Advanced Rehab Techniques", "Client Management"],
+    detailHighlights: [
+      { label: "Duration", value: "6 Weeks" },
+      { label: "Patient load", value: "8-10 athletes/day" },
+      { label: "Scope", value: "ACL return-to-sport, dynamometry testing" },
+    ],
+    setup: ["Force plates", "Functional turf track", "Hydrotherapy"],
+    mentor: { name: "Dr. Ankit Mehta, PT", role: "Program Director & Senior Sports PT", initials: "AM", gradient: "violet", bio: "MPT (Sports), 10+ years in elite athlete rehabilitation and return-to-play protocols." },
+  },
+  {
+    id: "op-2",
+    type: "job",
+    org: "SpineCare Neurology Center",
+    orgInitials: "SC",
+    orgGradient: "teal",
+    title: "Consultant Neuro-Physiotherapist",
+    location: "Bhopal, MP",
+    postedAgo: "1 day ago",
+    description: "Expert required for neuro rehabilitation & patient care in a dedicated spine and neurology setting.",
+    salary: "₹70,000 - ₹90,000/mo",
+    employment: "Full-Time",
+    tags: ["Neurology", "Clinical"],
+    audience: "MPT / BPT + 2y experience",
+    highlights: ["Neuro Rehabilitation", "Patient Assessment", "Team Collaboration"],
+    detailHighlights: [
+      { label: "Employment", value: "Full-Time" },
+      { label: "Experience", value: "2+ years" },
+      { label: "Scope", value: "Stroke, spinal cord injury, and post-surgical neuro rehab" },
+    ],
+    setup: ["Gait lab", "Neuro-rehab suite", "EMG biofeedback"],
+    mentor: { name: "Dr. Ritu Nair, PT", role: "Clinical Lead, Neurology", initials: "RN", gradient: "teal", bio: "MPT (Neurology), leads the center's stroke and spinal rehabilitation program." },
+  },
+  {
+    id: "op-3",
+    type: "job",
+    org: "Bansal Hospital",
+    orgInitials: "BH",
+    orgGradient: "slate",
+    title: "Junior Neuro-Physiotherapist",
+    location: "Shahpura, Bhopal",
+    postedAgo: "2 days ago",
+    description: "Hospital-based role supporting inpatient and outpatient neuro-rehabilitation caseloads.",
+    salary: "₹40,000/mo",
+    employment: "Full-Time",
+    tags: ["Hospital", "Neuro"],
+    audience: "MPT / BPT + 2y",
+    highlights: ["Inpatient Rehab", "Outpatient Follow-up", "Case Documentation"],
+    detailHighlights: [
+      { label: "Employment", value: "Full-Time" },
+      { label: "Setting", value: "Hospital, in- and outpatient" },
+      { label: "Scope", value: "Stroke, TBI, and general neuro caseload" },
+    ],
+    setup: ["Inpatient ward access", "Gait training bay", "Hydrotherapy pool"],
+    mentor: { name: "Dr. Kavya Rao, PT", role: "Senior Physiotherapist", initials: "KR", gradient: "rose", bio: "10+ years in hospital-based neuro-rehabilitation." },
+  },
+  {
+    id: "op-4",
+    type: "collaboration",
+    org: "AIIMS Delhi",
+    orgInitials: "RS",
+    orgGradient: "amber",
+    title: "Knee OA Meta-Analysis Co-Author",
+    location: "Remote / Hybrid",
+    postedAgo: "3 days ago",
+    description: "Seeking a co-author with strong literature-review experience for a systematic review and meta-analysis on exercise therapy in knee osteoarthritis.",
+    tags: ["MSK", "Research"],
+    audience: "Research experience preferred",
+    highlights: ["Systematic Review", "Data Extraction", "Co-authorship"],
+    detailHighlights: [
+      { label: "Commitment", value: "~5 hrs/week" },
+      { label: "Timeline", value: "4 months" },
+      { label: "Scope", value: "Screening, data extraction, and manuscript drafting" },
+    ],
+    mentor: { name: "Dr. R. Sharma, PT PhD", role: "Research Lead, AIIMS", initials: "RS", gradient: "amber", bio: "Publishes on musculoskeletal rehabilitation and evidence synthesis." },
+  },
+  {
+    id: "wk-1",
+    type: "workshop",
+    org: "PhysioFeed Academy",
+    orgInitials: "PF",
+    orgGradient: "violet",
+    title: "Clinical Taping Fundamentals Workshop",
+    postedAgo: "1 day ago",
+    description: "A hands-on introduction to kinesiology and rigid taping techniques across common MSK presentations.",
+    date: "18 October 2026",
+    time: "10:00 AM",
+    mode: "Online",
+    fee: "₹499",
+    feeNote: "Early bird",
+    instructor: { name: "Dr. Sameer Sen, PT", role: "Instructor — Sports and Musculoskeletal Physiotherapy", initials: "SS", gradient: "blue" },
+    syllabus: [
+      "Introduction to Kinesiology Taping (Principles & Concepts)",
+      "Shoulder Stability & Impingement Taping Techniques",
+      "Knee Patellar Taping (McConnell and Kinesiology)",
+      "Ankle Sprain Prevention and Treatment Taping",
+      "Edema and Pain Management Applications",
+    ],
+  },
+];
