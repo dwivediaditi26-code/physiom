@@ -6,7 +6,7 @@ import { supabase } from "./supabase.js";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import DemoWalkthrough from "./DemoWalkthrough.jsx";
 
-const A="#7c3aed",BG="#faf8fc",SUR="#ffffff",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a",S2="#f5f0fb",RE="#dc2626",GR="#059669";
+const A="#7c3aed",BG="#ffffff",SUR="#ffffff",BD="#d8cce8",TX="#1a1025",MU="#7e6a9a",S2="#f5f0fb",RE="#dc2626",GR="#059669";
 const inp={width:"100%",padding:"11px 14px",borderRadius:10,border:`1.5px solid ${BD}`,background:S2,color:TX,fontSize:"0.88rem",fontFamily:"inherit",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"};
 const btnS={width:"100%",padding:"12px",borderRadius:10,background:`linear-gradient(135deg,${A},#9333ea)`,color:"#fff",fontSize:"0.9rem",fontWeight:700,border:"none",cursor:"pointer",fontFamily:"inherit",transition:"opacity 0.15s",letterSpacing:"0.2px"};
 const lbl={fontSize:"0.72rem",fontWeight:700,color:MU,textTransform:"uppercase",letterSpacing:"0.8px",display:"block",marginBottom:5};
