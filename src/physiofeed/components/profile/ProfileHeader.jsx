@@ -1,41 +1,34 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, X as XIcon, Clock, Send, Pencil, Briefcase, Users, UserCheck, LayoutGrid, Star } from "lucide-react";
+import { BadgeCheck, MapPin, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, X as XIcon, Clock, Send, Pencil, Users, UserCheck, LayoutGrid, Star } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { formatCount, PROFILE_ACCENTS } from "../shared/constants.js";
 import { getCurrentWorkplace } from "./experienceUtils.js";
 import EditProfileModal from "./EditProfileModal.jsx";
-import OpenToOpportunitiesModal from "./OpenToOpportunitiesModal.jsx";
-import OpenToOpportunitiesPopover from "./OpenToOpportunitiesPopover.jsx";
 
-// "LinkedIn for physiotherapists" header, v3 (2026-09-22) -- Aditi sent a
+// "LinkedIn for physiotherapists" header, v4 (2026-09-22) -- Aditi sent a
 // reference screenshot for the general layout (photo + handwritten-style
 // tagline beside it, name/role/location, a 3-stat bordered row, a gradient
-// "Message" pill + circular action icons), but then had two corrections on
-// top of it: (1) "remove this ACL, kinesiotaping, dryneedling, etc" -- the
+// "Message" pill + circular action icons), then several rounds of
+// corrections: "remove this ACL, kinesiotaping, dryneedling, etc" -- the
 // reference's specialty-chip row is gone, back in line with the original
 // brief's own "do not put a large list of clinical specialties underneath
-// the name"; (2) Open to Opportunities moved up into the hero band right
-// under the name (was down by location), right-aligned and compact (Aditi:
-// "put open for opportunity green and right side smaller"), and recolored
-// a fixed green -- the one deliberate exception to "dnt make it green at
-// all" elsewhere in this header, called out explicitly for this pill --
-// rather than the per-profile accent, so it reads as a distinct status
-// signal instead of blending into the rest of the accent-colored chrome.
-// The tagline
-// pulls profile.quote (EditProfileModal.jsx saves it, nothing rendered it
-// before this). Follow/Connect/Message are three separate actions here
-// (Aditi: "there should be follow connect and message option") --
-// Follow (AppDataContext's followPerson(), a plain one-way follows-table
-// row, previously wired up with no button anywhere) sits beside Connect
-// (the mutual connections request flow) rather than replacing it.
+// the name"; an Open to Opportunities pill was tried in several spots
+// (inline with the name, right-aligned below it) before Aditi asked to
+// just "remove the open for opportunity" entirely -- OpenToOpportunitiesModal.jsx
+// and OpenToOpportunitiesPopover.jsx were deleted along with it, since
+// nothing else referenced them. The tagline pulls profile.quote
+// (EditProfileModal.jsx saves it, nothing rendered it before this).
+// Follow/Connect/Message are three separate actions here (Aditi: "there
+// should be follow connect and message option") -- Follow (AppDataContext's
+// followPerson(), a plain one-way follows-table row, previously wired up
+// with no button anywhere) sits beside Connect (the mutual connections
+// request flow) rather than replacing it.
 export default function ProfileHeader({
   profile, postCount = 0, experience = [], isOwn = true,
   connectionState = "none", onConnect, onAccept, onIgnore, onCancel, onDisconnect, onMessage,
   following = false, onFollow,
 }) {
   const [editing, setEditing] = useState(false);
-  const [editingOpenTo, setEditingOpenTo] = useState(false);
-  const [openToPopoverOpen, setOpenToPopoverOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -57,7 +50,6 @@ export default function ProfileHeader({
   };
 
   const currentWorkplace = getCurrentWorkplace(experience);
-  const hasOpenTo = (profile.openToTypes || []).length > 0;
   const accent = PROFILE_ACCENTS[profile.gradient] || PROFILE_ACCENTS.violet;
 
   return (
@@ -111,21 +103,6 @@ export default function ProfileHeader({
           )}
           {currentWorkplace && <p className="text-xs text-[#2B2140]/70 mt-0.5">{currentWorkplace}</p>}
         </div>
-
-        {(hasOpenTo || isOwn) && (
-          <div className="flex justify-end mt-1.5">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => (isOwn ? setEditingOpenTo(true) : setOpenToPopoverOpen((v) => !v))}
-                className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 whitespace-nowrap"
-              >
-                <Briefcase size={10} /> Open to Opportunities
-              </button>
-              {!isOwn && openToPopoverOpen && <OpenToOpportunitiesPopover types={profile.openToTypes} onClose={() => setOpenToPopoverOpen(false)} />}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 bg-white">
@@ -187,7 +164,6 @@ export default function ProfileHeader({
       {error && <p className="text-xs text-rose-600 px-5 pb-3 -mt-2">{error}</p>}
 
       {isOwn && editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
-      {isOwn && editingOpenTo && <OpenToOpportunitiesModal profile={profile} onClose={() => setEditingOpenTo(false)} />}
     </div>
   );
 }

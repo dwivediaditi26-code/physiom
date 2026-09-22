@@ -86,12 +86,24 @@ export default function EditProfileModal({ profile, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+      {/* Bug fix (2026-09-22, Aditi: "isave option not coming... its hiding
+          in the and not acrolling either"): Save/Cancel used to sit at the
+          bottom of the SAME scrolling block as every field below, so on a
+          shorter mobile viewport (especially with the on-screen keyboard
+          open, which shrinks the visible area further) they could end up
+          below the fold with no obvious way to reach them. The modal card
+          is now a flex column with a fixed height, split into a header,
+          a `flex-1 overflow-y-auto` middle that scrolls its own fields, and
+          a footer that's a normal flex sibling after it -- pinned in view
+          at the bottom of the card no matter how tall the field list gets,
+          not something you have to scroll down inside the fields to reach. */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="font-bold text-slate-900 text-base">Edit profile</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close"><X size={18} /></button>
         </div>
 
+        <div className="flex-1 overflow-y-auto px-5">
         <div className="flex items-center gap-3 mb-2">
           <div className="relative shrink-0">
             <Avatar size={56} grad={gradient} initials={profile.initials} photoUrl={avatarUrl} />
@@ -176,8 +188,10 @@ export default function EditProfileModal({ profile, onClose }) {
             <AlertCircle size={13} className="mt-0.5 shrink-0" /> <span>{error}</span>
           </div>
         )}
+        <div className="pb-4" />
+        </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 shrink-0">
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:bg-slate-50">Cancel</button>
           <button onClick={submit} disabled={!name.trim() || saving || uploadingPhoto} className="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
             {saving ? "Saving…" : "Save"}
