@@ -8,13 +8,16 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // Mobile/tablet section switcher: a segmented control with a white thumb that
 // slides under the current section (2026-09-20, Aditi: "make it like I" --
 // design I of the redesign mockups; before it came the expanding-pill "J" and,
-// first, a row of raised 3D tiles she didn't like). Five equal, text-only
-// segments share the strip's width, so nothing scrolls or gets clipped. People
-// and Messages are not in it: the app's own top bar already has search
-// (People), bell and messages icons on every PhysioFeed screen (AppFull.jsx
-// pm-mobile-hdr), and the laptop sidebar still lists all seven.
+// first, a row of raised 3D tiles she didn't like). Equal, text-only segments
+// share the strip's width (--n below), so nothing scrolls or gets clipped.
+// People was hidden behind the top bar's search icon at first, but that
+// wasn't discoverable enough (2026-09-22, Aditi: "where is people button") --
+// it's back in the strip now, right before Saved (PRO_NAV's own order).
+// Messages stays out: the top bar's message icon covers it on every
+// PhysioFeed screen (AppFull.jsx pm-mobile-hdr), and the laptop sidebar
+// still lists all seven.
 // Styling: .pf-seg* in physiofeed.css.
-const SECTIONS = PRO_NAV.filter((item) => item.path !== "/people" && item.path !== "/messages");
+const SECTIONS = PRO_NAV.filter((item) => item.path !== "/messages");
 const SHORT_LABEL = { "Physio Feed": "Feed", Communities: "Groups" };
 
 function SectionNav() {
