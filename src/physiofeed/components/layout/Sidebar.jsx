@@ -13,16 +13,16 @@ function NavSection({ title, items }) {
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-300 ${
-                isActive ? "bg-violet-50 text-violet-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              `pf-font-head w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-300 ${
+                isActive ? "bg-[#FFF4E0] text-[#B0790A]" : "text-slate-600 hover:bg-[#F7F5FF] hover:text-[#2B2140]"
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon name={item.icon} size={17} className={isActive ? "text-violet-600" : "text-slate-400"} />
+                <Icon name={item.icon} size={17} className={isActive ? "text-[#E09A1F]" : "text-slate-400"} />
                 <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-violet-100 text-violet-700">{item.badge}</span>}
+                {item.badge && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FFF4E0] text-[#B0790A]">{item.badge}</span>}
               </>
             )}
           </NavLink>

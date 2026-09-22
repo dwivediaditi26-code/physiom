@@ -136,7 +136,7 @@
   min-width: 0;
   padding: 3px;
   border-radius: 12px;
-  background: #f1f0f5;
+  background: #F7F5FF;
 }
 .pf-seg-thumb {
   position: absolute;
@@ -147,8 +147,8 @@
   width: calc((100% - 6px) / var(--n, 5));
   box-sizing: border-box;
   border-radius: 9px;
-  background: #ffffff;
-  border: 1px solid #dcd8e8;
+  background: #FFF4E0;
+  border: 1px solid #FFD98A;
   pointer-events: none;
   /* !important: utils.jsx has a global "Theme transitions" rule that forces
      its own `transition` (colours only) on every element with !important, so
@@ -170,18 +170,18 @@
   font-size: clamp(11px, 3.3vw, 13px);
   font-weight: 500;
   line-height: 16px;
-  color: #5b5a66;
+  color: #8A7FA3;
   /* .pf-seg is a router Link (an <a>) and Preflight is off for this whole
      folder, so the browser's link underline has to be removed by hand. */
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
 .pf-seg-on {
-  color: #6d28d9;
-  font-weight: 600;
+  color: #B0790A;
+  font-weight: 700;
 }
 .pf-seg:focus-visible {
-  outline: 2px solid #7c3aed;
+  outline: 2px solid #FFB020;
   outline-offset: -2px;
   border-radius: 9px;
 }

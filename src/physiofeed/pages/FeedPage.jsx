@@ -31,7 +31,7 @@ export default function FeedPage() {
         <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors focus:outline-none ${activeTab === tab ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}>
+              className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-full text-sm font-bold transition-colors focus:outline-none ${activeTab === tab ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#8A7FA3] hover:bg-[#F7F5FF]"}`}>
               {tab}
             </button>
           ))}

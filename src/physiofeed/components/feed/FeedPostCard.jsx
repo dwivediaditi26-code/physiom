@@ -55,13 +55,13 @@ export default function FeedPostCard({ post }) {
         <div className="min-w-0 flex-1">
           <Link to={post.isSelf ? "/profile" : `/profile/${post.authorId}`} className="flex items-center gap-1 w-fit min-w-0">
             <span className="font-semibold text-slate-900 text-sm truncate hover:underline">{post.author}</span>
-            {post.verified && <BadgeCheck size={15} className="text-violet-600 shrink-0" />}
+            {post.verified && <BadgeCheck size={15} className="text-[#DB2777] shrink-0" />}
           </Link>
           <p className="text-xs text-slate-400">{post.role} · {post.time}</p>
         </div>
         {!post.isSelf && (
           <button onClick={() => followAuthor(post.id)}
-            className={`shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-violet-300 ${post.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
+            className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 ${post.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
             {post.following ? <><Check size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
           </button>
         )}
@@ -82,7 +82,7 @@ export default function FeedPostCard({ post }) {
       )}
 
       <div className="flex flex-wrap gap-1.5 mt-2">
-        {post.tags.map((t) => <span key={t} className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">#{t}</span>)}
+        {post.tags.map((t) => <span key={t} className="text-xs font-bold text-[#B0790A] bg-[#FFF4E0] px-2 py-0.5 rounded-md">#{t}</span>)}
       </div>
 
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
@@ -92,16 +92,16 @@ export default function FeedPostCard({ post }) {
             <span className={`text-xs font-medium ${post.liked ? "text-rose-500" : "text-slate-500"}`}>{post.likes}</span>
           </button>
           <button onClick={openComments} className="flex items-center gap-1.5 group focus:outline-none">
-            <MessageCircle size={19} className="text-slate-400 group-hover:text-violet-600" />
+            <MessageCircle size={19} className="text-slate-400 group-hover:text-[#DB2777]" />
             <span className="text-xs font-medium text-slate-500">{post.commentList.length}</span>
           </button>
-          <button className="flex items-center gap-1.5 group focus:outline-none"><Share2 size={19} className="text-slate-400 group-hover:text-violet-600" /></button>
+          <button className="flex items-center gap-1.5 group focus:outline-none"><Share2 size={19} className="text-slate-400 group-hover:text-[#DB2777]" /></button>
         </div>
         <div className="flex items-center gap-1">
           {!post.isSelf && <ReportButton postId={post.id} />}
           {post.isSelf && <DeletePostButton postId={post.id} />}
           <button onClick={() => savePost(post.id)} className="focus:outline-none">
-            <Bookmark size={19} className={post.saved ? "fill-violet-600 text-violet-600" : "text-slate-400 hover:text-violet-600"} />
+            <Bookmark size={19} className={post.saved ? "fill-[#FFB020] text-[#FFB020]" : "text-slate-400 hover:text-[#FFB020]"} />
           </button>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function FeedPostCard({ post }) {
         <Avatar size={26} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
         <input ref={commentInputRef} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
           placeholder="Add a comment…" className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent" />
-        <button onClick={submitComment} disabled={!commentText.trim()} className="text-violet-600 disabled:text-slate-300"><Send size={16} /></button>
+        <button onClick={submitComment} disabled={!commentText.trim()} className="text-[#DB2777] disabled:text-slate-300"><Send size={16} /></button>
       </div>
     </article>
   );
