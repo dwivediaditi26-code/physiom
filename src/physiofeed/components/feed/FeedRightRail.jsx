@@ -5,8 +5,11 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 const TRENDING = ["ACL Rehabilitation", "Dry Needling", "Low Back Pain", "Shoulder Instability"];
 
 export default function FeedRightRail() {
-  const { people, followPerson } = useAppData();
-  const suggestions = people.filter((p) => !p.following).slice(0, 3);
+  const { people, connectionStates, connectWith } = useAppData();
+  // Suggest people you have no connection with at all -- not just people
+  // you don't follow, which is what this used to check back when Connect
+  // was a relabelled Follow (P2).
+  const suggestions = people.filter((p) => !connectionStates[p.id]).slice(0, 3);
 
   return (
     <aside className="hidden xl:block w-64 shrink-0 space-y-4">
@@ -20,7 +23,13 @@ export default function FeedRightRail() {
                 <p className="text-xs font-semibold text-slate-800 truncate">{p.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{p.role} · {p.mutual} mutual</p>
               </div>
-              <button onClick={() => followPerson(p.id)} className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100">Connect</button>
+              <button
+                onClick={() => connectWith(p.id).catch(() => {})}
+                disabled={connectionStates[p.id] === "pending_sent"}
+                className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                {connectionStates[p.id] === "pending_sent" ? "Pending" : "Connect"}
+              </button>
             </div>
           ))}
         </div>

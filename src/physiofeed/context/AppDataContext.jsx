@@ -15,6 +15,12 @@ export function AppDataProvider({ children }) {
   const [rotations, setRotations] = useState([]);
   const [publications, setPublications] = useState([]);
   const [exercises, setExercises] = useState([]);
+  // P2 connections: `connectionStates` is { otherUserId: none | pending_sent
+  // | pending_received | connected }, one query for everyone rather than one
+  // per profile card. `connectionRequests` is the incoming pending list the
+  // People page renders.
+  const [connectionStates, setConnectionStates] = useState({});
+  const [connectionRequests, setConnectionRequests] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -22,14 +28,16 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr] = await Promise.all([
+      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr, cs, cr] = await Promise.all([
         db.getPosts(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
         db.getAchievements(), db.getRotations(), db.getPublications(), db.getExercises(), db.getProfile(),
+        db.getConnectionStates(), db.getConnectionRequests(),
       ]);
       setPosts(p); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
       setAchievements(ac); setRotations(rt); setPublications(pu); setExercises(exr); setProfile(pr);
+      setConnectionStates(cs); setConnectionRequests(cr);
       setLoading(false);
     })();
   }, []);
@@ -96,6 +104,21 @@ export function AppDataProvider({ children }) {
   const deleteRotation = useCallback(async (id) => { setRotations(await db.deleteRotation(id)); }, []);
   const uploadResume = useCallback((file) => db.uploadResume(file), []);
 
+  // Connections (P2) -- each action returns the refreshed state map, and
+  // also re-reads the incoming request list because accepting/ignoring one
+  // removes it from there. Errors propagate to the caller (the Connect
+  // button shows them) rather than being swallowed here, same as the
+  // education/achievements wrappers below.
+  const refreshConnections = useCallback(async () => {
+    const [cs, cr] = await Promise.all([db.getConnectionStates(), db.getConnectionRequests()]);
+    setConnectionStates(cs); setConnectionRequests(cr);
+  }, []);
+  const connectWith = useCallback(async (id) => { setConnectionStates(await db.sendConnectionRequest(id)); await refreshConnections(); }, [refreshConnections]);
+  const acceptConnection = useCallback(async (id) => { setConnectionStates(await db.acceptConnectionRequest(id)); await refreshConnections(); }, [refreshConnections]);
+  const ignoreConnection = useCallback(async (id) => { setConnectionStates(await db.ignoreConnectionRequest(id)); await refreshConnections(); }, [refreshConnections]);
+  const cancelConnection = useCallback(async (id) => { setConnectionStates(await db.cancelConnectionRequest(id)); await refreshConnections(); }, [refreshConnections]);
+  const disconnectFrom = useCallback(async (id) => { setConnectionStates(await db.disconnectFrom(id)); await refreshConnections(); }, [refreshConnections]);
+
   // Publications (2026-09-22, Evidence & Contributions tab) -- same wrapper
   // shape as education/achievements/rotations above.
   const addPublication = useCallback(async (fields) => { setPublications(await db.addPublication(fields)); }, []);
@@ -105,6 +128,8 @@ export function AppDataProvider({ children }) {
   const value = {
     loading, posts, people, notifications, evidence, communities,
     expertise, education, achievements, rotations, publications, exercises, profile,
+    connectionStates, connectionRequests,
+    connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,

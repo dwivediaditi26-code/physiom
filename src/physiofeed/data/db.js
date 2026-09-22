@@ -1063,6 +1063,175 @@ export async function toggleFollowPerson(id) {
   return getPeople();
 }
 
+/* ---------------- connections (P2) ---------------- */
+//
+// See supabase/add_mvp_network_opportunities.sql. Deliberately separate
+// from `follows` above: following is "show me their content", connecting
+// is "we have a professional relationship" -- a user can do either, both
+// or neither, and the Connect button is NOT just a relabelled Follow.
+//
+// The table holds ONE row per pair of people regardless of who asked
+// (enforced by connections_pair_idx), so every read here has to look for
+// that row in either direction and then work out which side you're on.
+// The five states the UI cares about:
+//
+//   none             no row, or the row is rejected/withdrawn
+//   pending_sent     row is pending and YOU asked
+//   pending_received row is pending and THEY asked -- you can accept/ignore
+//   connected        row is accepted
+//
+// Demo people (mockData.js, ids like "u-priya") are never real rows --
+// isRealUserId() short-circuits them to "none" the same way the profile
+// *ByUser queries do, and the People page keeps using the local
+// follow/demo behaviour for them.
+
+// The one row for this pair, in whichever direction it was created.
+async function findConnectionRow(uid, otherUserId) {
+  const { data, error } = await supabase
+    .from("connections")
+    .select("id, requester_id, recipient_id, status")
+    .or(`and(requester_id.eq.${uid},recipient_id.eq.${otherUserId}),and(requester_id.eq.${otherUserId},recipient_id.eq.${uid})`)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+function connectionStateFrom(row, uid) {
+  if (!row) return "none";
+  if (row.status === "accepted") return "connected";
+  if (row.status !== "pending") return "none"; // rejected / withdrawn -- free to ask again
+  return row.requester_id === uid ? "pending_sent" : "pending_received";
+}
+
+// Every connection state involving you, as { otherUserId: state }. One
+// query for the whole People list rather than one per person.
+export async function getConnectionStates() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return {};
+    const { data, error } = await supabase
+      .from("connections")
+      .select("id, requester_id, recipient_id, status")
+      .or(`requester_id.eq.${uid},recipient_id.eq.${uid}`);
+    if (error) throw error;
+    const map = {};
+    for (const row of data || []) {
+      const otherId = row.requester_id === uid ? row.recipient_id : row.requester_id;
+      map[otherId] = connectionStateFrom(row, uid);
+    }
+    return map;
+  } catch (e) {
+    console.error("getConnectionStates(): --", e?.message || e);
+    return {};
+  }
+}
+
+export async function getConnectionState(otherUserId) {
+  if (!isRealUserId(otherUserId)) return "none";
+  try {
+    const uid = await currentUserId();
+    if (!uid) return "none";
+    return connectionStateFrom(await findConnectionRow(uid, otherUserId), uid);
+  } catch (e) {
+    console.error("getConnectionState(): --", e?.message || e);
+    return "none";
+  }
+}
+
+// Incoming pending requests, with enough profile detail to render a card.
+export async function getConnectionRequests() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase
+      .from("connections")
+      .select("id, requester_id, created_at")
+      .eq("recipient_id", uid)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) return [];
+    const { data: profiles } = await supabase
+      .from("profiles").select("*").in("id", data.map((r) => r.requester_id));
+    const byId = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
+    return data.map((r) => {
+      const p = byId[r.requester_id];
+      return {
+        id: r.id, userId: r.requester_id, createdAt: r.created_at,
+        name: p?.name || "Unknown", role: p?.role || "", location: p?.location || "",
+        grad: p?.gradient || "violet", initials: p?.initials || "?", avatarUrl: p?.avatar_url || null,
+      };
+    });
+  } catch (e) {
+    console.error("getConnectionRequests(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function sendConnectionRequest(otherUserId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to connect with people.");
+  if (!isRealUserId(otherUserId)) throw new Error("This is a demo profile -- you can't connect with it yet.");
+  const existing = await findConnectionRow(uid, otherUserId);
+  if (existing) {
+    if (existing.status === "accepted" || existing.status === "pending") return getConnectionStates();
+    // Asking again after a reject/withdraw. Deleting and re-inserting
+    // rather than flipping status back to 'pending' on the spot: the
+    // "you have a connection request" notification is an AFTER INSERT
+    // trigger, so an in-place update would silently notify nobody.
+    const { error: delErr } = await supabase.from("connections").delete().eq("id", existing.id);
+    if (delErr) throw delErr;
+  }
+  const { error } = await supabase
+    .from("connections")
+    .insert({ requester_id: uid, recipient_id: otherUserId, status: "pending" });
+  if (error) throw error;
+  return getConnectionStates();
+}
+
+export async function acceptConnectionRequest(otherUserId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to accept connection requests.");
+  const row = await findConnectionRow(uid, otherUserId);
+  if (!row || row.recipient_id !== uid) throw new Error("There's no pending request from this person.");
+  const { error } = await supabase
+    .from("connections")
+    .update({ status: "accepted", updated_at: new Date().toISOString() })
+    .eq("id", row.id);
+  if (error) throw error;
+  return getConnectionStates();
+}
+
+export async function ignoreConnectionRequest(otherUserId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage connection requests.");
+  const row = await findConnectionRow(uid, otherUserId);
+  if (!row || row.recipient_id !== uid) throw new Error("There's no pending request from this person.");
+  const { error } = await supabase
+    .from("connections")
+    .update({ status: "rejected", updated_at: new Date().toISOString() })
+    .eq("id", row.id);
+  if (error) throw error;
+  return getConnectionStates();
+}
+
+// Withdrawing your own request, and disconnecting an accepted connection,
+// both just remove the row -- there's no state either person needs to see
+// afterwards, and it leaves both sides free to ask again later.
+export async function cancelConnectionRequest(otherUserId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage connection requests.");
+  const row = await findConnectionRow(uid, otherUserId);
+  if (!row) return getConnectionStates();
+  const { error } = await supabase.from("connections").delete().eq("id", row.id);
+  if (error) throw error;
+  return getConnectionStates();
+}
+
+export async function disconnectFrom(otherUserId) {
+  return cancelConnectionRequest(otherUserId);
+}
+
 /* ---------------- evidence ---------------- */
 
 // Phase 3b (see supabase/add_evidence_communities.sql). research_articles is

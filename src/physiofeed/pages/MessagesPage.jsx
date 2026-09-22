@@ -31,7 +31,7 @@ export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
   const demo = useDemoConversations();
-  const { people, followPerson } = useAppData();
+  const { connectionStates, connectWith } = useAppData();
 
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -133,10 +133,10 @@ export default function MessagesPage() {
   const active = allConversations.find((c) => c.userId === withId);
 
   // Demo threads (recruiter/applicant chat) are exempt -- "connected" is a
-  // People/Profile concept that doesn't apply to those. `following` IS
-  // this app's "connected" flag -- see ProfileHeader.jsx/OtherProfilePage.jsx's
-  // own Connect button, which reads the same field.
-  const isConnected = active?.isDemo || (people.find((p) => p.id === withId)?.following ?? false);
+  // People/Profile concept that doesn't apply to those. Reads the real
+  // connections table via context (P2); this used to check the `follows`
+  // row, back when Connect was just a relabelled Follow.
+  const isConnected = active?.isDemo || connectionStates[withId] === "connected";
   const sentCount = thread.filter((m) => m.isSelf && !m.system).length;
   const limitReached = !isConnected && sentCount >= MESSAGE_LIMIT_IF_NOT_CONNECTED;
 
@@ -256,8 +256,12 @@ export default function MessagesPage() {
                   <p className="text-xs text-slate-500 flex-1">
                     You've sent {MESSAGE_LIMIT_IF_NOT_CONNECTED} messages to {active?.name || "this person"} without connecting.
                   </p>
-                  <button onClick={() => followPerson(withId)} className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800">
-                    Connect
+                  <button
+                    onClick={() => connectWith(withId).catch(() => {})}
+                    disabled={connectionStates[withId] === "pending_sent"}
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500"
+                  >
+                    {connectionStates[withId] === "pending_sent" ? "Pending" : "Connect"}
                   </button>
                 </div>
               ) : (

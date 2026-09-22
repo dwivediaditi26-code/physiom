@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, Building2, Pencil, MoreHorizontal, Link2, Share2, Download, UserPlus, Check, MessageSquare, Briefcase } from "lucide-react";
+import { BadgeCheck, MapPin, Building2, Pencil, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, Clock, MessageSquare, Briefcase } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { formatCount } from "../shared/constants.js";
 import { getCurrentWorkplace } from "./experienceUtils.js";
@@ -21,18 +21,32 @@ import OpenToOpportunitiesPopover from "./OpenToOpportunitiesPopover.jsx";
 // whichever entry says "Present" rather than inventing a new
 // profile.currentWorkplace column with no matching Supabase migration --
 // see experienceUtils.js and mockData.js's ROTATIONS comment.
-export default function ProfileHeader({ profile, postCount, experience = [], isOwn = true, following = false, onFollow, onMessage }) {
+export default function ProfileHeader({
+  profile, postCount, experience = [], isOwn = true,
+  connectionState = "none", onConnect, onAccept, onIgnore, onCancel, onDisconnect, onMessage,
+}) {
   const [editing, setEditing] = useState(false);
   const [editingOpenTo, setEditingOpenTo] = useState(false);
   const [openToPopoverOpen, setOpenToPopoverOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [requesting, setRequesting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleConnect = () => {
-    if (following || requesting) return;
-    setRequesting(true);
-    onFollow?.();
-    setTimeout(() => setRequesting(false), 900);
+  // Every connection action goes through here so the button can't be
+  // double-fired and a real error (RLS, offline, already-connected race)
+  // surfaces in the UI instead of being swallowed -- the old version just
+  // flipped to "Requested" on a 900ms timer whether or not anything saved.
+  const run = async (fn) => {
+    if (!fn || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError(e.message || "Couldn't do that -- please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const currentWorkplace = getCurrentWorkplace(experience);
@@ -86,12 +100,40 @@ export default function ProfileHeader({ profile, postCount, experience = [], isO
           </button>
         ) : (
           <>
-            <button onClick={handleConnect} disabled={requesting}
-              className={`pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl transition active:scale-95 ${
-                following ? "bg-slate-50 text-slate-500 border border-slate-200" : "text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-80"
-              }`}>
-              {following ? <><Check size={14} /> Connected</> : requesting ? "Requested" : <><UserPlus size={14} /> Connect</>}
-            </button>
+            {/* Four real states, driven by the connections table (P2), not a
+                relabelled Follow. `pending_received` is the only one that
+                needs two actions, so it renders two buttons. Disconnect
+                lives in the More menu rather than on the Connected button,
+                so an accidental tap can't drop a connection. */}
+            {connectionState === "pending_received" ? (
+              <>
+                <button onClick={() => run(onAccept)} disabled={busy}
+                  className="pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 transition active:scale-95">
+                  <Check size={14} /> Accept
+                </button>
+                <button onClick={() => run(onIgnore)} disabled={busy}
+                  className="text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+                  Ignore
+                </button>
+              </>
+            ) : connectionState === "pending_sent" ? (
+              <button onClick={() => run(onCancel)} disabled={busy} title="Tap to withdraw your request"
+                className="flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 disabled:opacity-60">
+                <Clock size={14} /> Pending
+              </button>
+            ) : connectionState === "connected" ? (
+              <span className="flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200">
+                <Check size={14} /> Connected
+              </span>
+            ) : (
+              <button onClick={() => run(onConnect)} disabled={busy}
+                className="pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 transition active:scale-95">
+                <UserPlus size={14} /> {busy ? "Connecting…" : "Connect"}
+              </button>
+            )}
+            {/* Message stays available whether or not you're connected --
+                non-connections get a 3-message cap in MessagesPage.jsx
+                instead of being blocked outright. */}
             <button onClick={onMessage} aria-label={`Message ${profile.name}`}
               className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
               <MessageSquare size={14} /> Message
@@ -113,10 +155,20 @@ export default function ProfileHeader({ profile, postCount, experience = [], isO
                   <Download size={13} /> Download résumé
                 </a>
               ) : null}
+              {!isOwn && connectionState === "connected" && (
+                <button
+                  onClick={() => { setMoreOpen(false); run(onDisconnect); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 border-t border-slate-100"
+                >
+                  <UserMinus size={13} /> Remove connection
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {error && <p className="text-xs text-rose-600 mt-2">{error}</p>}
 
       {isOwn && editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
       {isOwn && editingOpenTo && <OpenToOpportunitiesModal profile={profile} onClose={() => setEditingOpenTo(false)} />}

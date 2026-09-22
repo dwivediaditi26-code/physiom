@@ -6,7 +6,8 @@ import Avatar from "../components/shared/Avatar.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 export default function PeoplePage() {
-  const { people, profile } = useAppData();
+  const { people, profile, connectionRequests, acceptConnection, ignoreConnection } = useAppData();
+  const [actingOn, setActingOn] = useState(null);
   const [searchParams] = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(urlQuery);
@@ -43,6 +44,48 @@ export default function PeoplePage() {
         <Search size={16} className="text-slate-400" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search people…" className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400" />
       </div>
+
+      {/* Incoming connection requests (P2). Only rendered when there are
+          any -- this is an inbox, not a permanent empty section. Sits above
+          the people list because it's the one thing here that needs a
+          decision from you rather than browsing. */}
+      {connectionRequests.length > 0 && (
+        <section className="mb-5">
+          <h2 className="pf-font-head text-sm font-extrabold text-slate-900 mb-2.5">
+            Connection requests <span className="text-slate-400 font-bold">({connectionRequests.length})</span>
+          </h2>
+          <div className="space-y-2.5">
+            {connectionRequests.map((r) => (
+              <div key={r.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center gap-3">
+                <Link to={`/profile/${r.userId}`} className="shrink-0">
+                  <Avatar size={44} grad={r.grad} initials={r.initials} photoUrl={r.avatarUrl} />
+                </Link>
+                <Link to={`/profile/${r.userId}`} className="min-w-0 flex-1 basis-40">
+                  <p className="text-sm font-semibold text-slate-800 truncate hover:underline">{r.name}</p>
+                  <p className="text-xs text-slate-600 truncate">{r.role}</p>
+                  {r.location && <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {r.location}</p>}
+                </Link>
+                <div className="flex items-center gap-2 ml-auto shrink-0">
+                  <button
+                    onClick={async () => { setActingOn(r.userId); try { await ignoreConnection(r.userId); } finally { setActingOn(null); } }}
+                    disabled={actingOn === r.userId}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Ignore
+                  </button>
+                  <button
+                    onClick={async () => { setActingOn(r.userId); try { await acceptConnection(r.userId); } finally { setActingOn(null); } }}
+                    disabled={actingOn === r.userId}
+                    className="pf-font-head text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60"
+                  >
+                    Accept
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <div className="grid sm:grid-cols-2 gap-3">
         {selfMatches && (
           <div className="bg-white rounded-2xl border-2 border-[#FFD98A] shadow-sm p-4 flex items-center gap-3 sm:col-span-2">

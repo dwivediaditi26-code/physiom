@@ -24,7 +24,10 @@ import * as db from "../data/db.js";
 export default function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { posts, profile: myProfile, people, followPerson } = useAppData();
+  const {
+    posts, profile: myProfile, connectionStates,
+    connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom,
+  } = useAppData();
   const [otherProfile, setOtherProfile] = useState(null);
   const [education, setEducation] = useState([]);
   const [achievements, setAchievements] = useState([]);
@@ -75,7 +78,8 @@ export default function OtherProfilePage() {
   }
 
   const authorPosts = posts.filter((p) => p.authorId === userId);
-  const following = people.find((p) => p.id === userId)?.following ?? false;
+  // P2: the real connections table, not the old follows-row stand-in.
+  const connectionState = connectionStates[userId] || "none";
 
   return (
     <>
@@ -90,8 +94,12 @@ export default function OtherProfilePage() {
           postCount={authorPosts.length}
           experience={rotations}
           isOwn={false}
-          following={following}
-          onFollow={() => followPerson(userId)}
+          connectionState={connectionState}
+          onConnect={() => connectWith(userId)}
+          onAccept={() => acceptConnection(userId)}
+          onIgnore={() => ignoreConnection(userId)}
+          onCancel={() => cancelConnection(userId)}
+          onDisconnect={() => disconnectFrom(userId)}
           onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
         />
 

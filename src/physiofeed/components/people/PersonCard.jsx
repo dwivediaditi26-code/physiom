@@ -1,12 +1,33 @@
-import { MapPin, UserPlus, Check, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { MapPin, UserPlus, Check, Clock, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
+// The Connect button reads the real connections table (P2) rather than the
+// `follows` row it used to stand in for. Demo people (mockData.js) have no
+// real row and can't be connected to -- sendConnectionRequest throws a
+// readable message for those, shown inline here.
 export default function PersonCard({ person }) {
-  const { followPerson } = useAppData();
+  const { connectionStates, connectWith, acceptConnection, cancelConnection } = useAppData();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const state = connectionStates[person.id] || "none";
+
+  const run = async (fn) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError(e.message || "Couldn't do that.");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     // flex-wrap (2026-08-27): on narrow real devices the row (avatar + name/
     // role/location + message icon + Follow/Following button) added up
@@ -32,11 +53,28 @@ export default function PersonCard({ person }) {
         >
           <MessageSquare size={15} />
         </button>
-        <button onClick={() => followPerson(person.id)}
-          className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${person.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"}`}>
-          {person.following ? <><Check size={13} /> Connected</> : <><UserPlus size={13} /> Connect</>}
-        </button>
+        {state === "connected" ? (
+          <span className="pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-50 text-slate-500 border border-slate-200">
+            <Check size={13} /> Connected
+          </span>
+        ) : state === "pending_sent" ? (
+          <button onClick={() => run(() => cancelConnection(person.id))} disabled={busy} title="Tap to withdraw your request"
+            className="pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 disabled:opacity-60">
+            <Clock size={13} /> Pending
+          </button>
+        ) : state === "pending_received" ? (
+          <button onClick={() => run(() => acceptConnection(person.id))} disabled={busy}
+            className="pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60">
+            <Check size={13} /> Accept
+          </button>
+        ) : (
+          <button onClick={() => run(() => connectWith(person.id))} disabled={busy}
+            className="pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#7C3AED] text-white hover:bg-[#6D28D9] disabled:opacity-60">
+            <UserPlus size={13} /> Connect
+          </button>
+        )}
       </div>
+      {error && <p className="w-full text-[11px] text-rose-600">{error}</p>}
     </div>
   );
 }
