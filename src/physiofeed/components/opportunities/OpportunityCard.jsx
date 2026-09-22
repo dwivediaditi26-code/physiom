@@ -66,6 +66,7 @@ export default function OpportunityCard({ opp, onOpen }) {
         <button
           type="button"
           onClick={() => onOpen(opp)}
+          data-opp-cta
           className="pf-font-head text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm active:scale-[0.97] transition"
           style={{ background: c.solid }}
         >

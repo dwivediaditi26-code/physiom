@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Plus, Briefcase, ChevronRight } from "lucide-react";
 import { INITIAL_OPPORTUNITIES, OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
 import { INITIAL_APPLICANTS } from "../data/applicantsMock.js";
@@ -38,6 +38,17 @@ export default function ExplorePage() {
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
 
+  // The FAB floats fixed above the card list (bottom-right) so it's always
+  // reachable while scrolling, but that means whichever card's Apply/Register
+  // button (bottom-right of the card-foot row, same corner) scrolls under it
+  // becomes covered and unclickable. Rather than guess a scroll offset that's
+  // "safe", measure the real geometry: hide the FAB whenever its rect would
+  // actually overlap a rendered CTA button, re-checked on every scroll/resize
+  // and whenever the list itself changes (category/search).
+  const fabRef = useRef(null);
+  const gridRef = useRef(null);
+  const [fabHidden, setFabHidden] = useState(false);
+
   // These sub-views are swapped by local state, not by the router (the URL
   // stays "/explore" throughout), so ScrollToTop.jsx's route-change effect
   // never sees them -- tapping a card/button used to open the new view
@@ -59,6 +70,39 @@ export default function ExplorePage() {
   }, [opportunities, category, query]);
 
   const myPostings = useMemo(() => opportunities.filter((o) => o.postedByMe), [opportunities]);
+
+  useEffect(() => {
+    if (view !== "hub" || postOpen) return;
+    const GAP = 8; // px breathing room so the FAB never sits flush against a CTA either
+
+    const overlapsAnyCta = () => {
+      const fab = fabRef.current;
+      const grid = gridRef.current;
+      if (!fab || !grid) return false;
+      const f = fab.getBoundingClientRect();
+      return [...grid.querySelectorAll("[data-opp-cta]")].some((cta) => {
+        const r = cta.getBoundingClientRect();
+        return f.left - GAP < r.right && f.right + GAP > r.left && f.top - GAP < r.bottom && f.bottom + GAP > r.top;
+      });
+    };
+
+    let settleTimer;
+    const recheck = () => setFabHidden(overlapsAnyCta());
+    const onScroll = () => {
+      setFabHidden(true); // hide immediately while in motion, then re-measure once it settles
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(recheck, 120);
+    };
+
+    recheck();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", recheck);
+    return () => {
+      clearTimeout(settleTimer);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", recheck);
+    };
+  }, [view, postOpen, filtered]);
 
   const openOpportunity = (opp) => { setChatFor(null); setActive(opp); };
   const closeDetail = () => setActive(null);
@@ -215,16 +259,19 @@ export default function ExplorePage() {
       {filtered.length === 0 ? (
         <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">No opportunities match "{query}".</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4 pb-6">
+        <div ref={gridRef} className="grid sm:grid-cols-2 gap-4 pb-28 lg:pb-20">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}
         </div>
       )}
 
       {!postOpen && (
       <button
+        ref={fabRef}
         type="button"
         onClick={() => setPostOpen(true)}
-        className="pf-font-head fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-[#FFB020] pl-4 pr-5 py-3.5 rounded-full shadow-lg active:scale-[0.97] transition"
+        tabIndex={fabHidden ? -1 : undefined}
+        aria-hidden={fabHidden}
+        className={`pf-font-head fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-gradient-to-br from-[#FFCB5C] to-[#FF9F1C] pl-4 pr-5 py-3.5 rounded-full shadow-[0_10px_24px_-6px_rgba(255,159,28,0.6)] active:scale-[0.97] transition ${fabHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       >
         <Plus size={17} /> Post
       </button>
