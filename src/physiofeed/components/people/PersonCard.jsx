@@ -28,12 +28,12 @@ export default function PersonCard({ person }) {
         <button
           onClick={() => navigate(`/messages?with=${encodeURIComponent(person.id)}`)}
           aria-label={`Message ${person.name}`}
-          className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-[#DB2777]"
+          className="shrink-0 p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-[#7C3AED]"
         >
           <MessageSquare size={15} />
         </button>
         <button onClick={() => followPerson(person.id)}
-          className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${person.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
+          className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${person.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"}`}>
           {person.following ? <><Check size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
         </button>
       </div>
