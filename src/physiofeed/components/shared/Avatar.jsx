@@ -5,7 +5,7 @@ import { GRADIENTS } from "./constants.js";
 // actual <img> instead of the gradient+initials placeholder. Falls back to
 // the gradient automatically if the image fails to load (a stale/expired
 // URL shouldn't leave a broken-image icon everywhere that avatar appears).
-export default function Avatar({ size = 40, grad = "violet", initials = "AS", photoUrl = null }) {
+export default function Avatar({ size = 40, grad = "violet", initials = "AS", photoUrl = null, className = "" }) {
   const [failed, setFailed] = useState(false);
 
   if (photoUrl && !failed) {
@@ -14,7 +14,7 @@ export default function Avatar({ size = 40, grad = "violet", initials = "AS", ph
         src={photoUrl}
         alt={initials}
         style={{ width: size, height: size }}
-        className="shrink-0 rounded-full object-cover"
+        className={`shrink-0 rounded-full object-cover ${className}`}
         onError={() => setFailed(true)}
       />
     );
@@ -23,7 +23,7 @@ export default function Avatar({ size = 40, grad = "violet", initials = "AS", ph
   return (
     <div
       style={{ width: size, height: size, fontSize: size * 0.36 }}
-      className={`shrink-0 rounded-full bg-gradient-to-br ${GRADIENTS[grad]} flex items-center justify-center text-white font-semibold`}
+      className={`shrink-0 rounded-full bg-gradient-to-br ${GRADIENTS[grad]} flex items-center justify-center text-white font-semibold ${className}`}
     >
       {initials}
     </div>

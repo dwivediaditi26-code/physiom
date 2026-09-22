@@ -1,24 +1,42 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, Pencil, MoreHorizontal, Link2, Share2, UserPlus, Check, MessageSquare } from "lucide-react";
+import { BadgeCheck, MapPin, Pencil, MoreHorizontal, Link2, Share2, UserPlus, Check, MessageSquare, Briefcase } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { formatCount } from "../shared/constants.js";
 import EditProfileModal from "./EditProfileModal.jsx";
 
 // Own profile keeps the real "Edit Profile" button (EditProfileModal.jsx).
 // Someone else's profile (see OtherProfilePage.jsx) passes isOwn={false}
-// plus following/onFollow/onMessage -- real Follow/Message actions wired to
-// the same followPerson()/DM system PersonCard.jsx already uses.
+// plus following/onFollow/onMessage -- real Connect/Message actions wired to
+// the same followPerson()/DM system PersonCard.jsx already uses. "Connect"
+// (2026-09-22, Aditi's reference spec for the other-profile hero card) is
+// just new copy/color over that same following boolean -- onFollow still
+// flips the one real following flag; `requesting` here is a purely local,
+// few-hundred-ms "Requested" transition so the click reads as a real
+// connection request instead of an instant toggle, with nothing to persist.
 export default function ProfileHeader({ profile, postCount, isOwn = true, following = false, onFollow, onMessage }) {
   const [editing, setEditing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+
+  const handleConnect = () => {
+    if (following || requesting) return;
+    setRequesting(true);
+    onFollow?.();
+    setTimeout(() => setRequesting(false), 900);
+  };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-5">
-      <div className="px-5 sm:px-8 pt-6 pb-6">
+    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-5">
+      <div className="px-5 sm:px-8 pt-6 pb-6 bg-gradient-to-b from-[#F3EEFF]/60 via-[#FBF9FF]/40 to-white">
         <div className="flex items-start gap-4 mb-3">
           <div className="relative shrink-0">
-            <Avatar size={88} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
-            <span className="absolute bottom-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" />
+            <Avatar size={80} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} className="border-2 border-white shadow-md" />
+            <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" />
+            {!isOwn && !following && (
+              <span className="pf-font-head absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Available to Connect
+              </span>
+            )}
           </div>
           <div className="min-w-0 pt-1">
             <div className="flex items-center gap-1.5">
@@ -32,7 +50,9 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
                 "Neuro Physiotherapist · Bengaluru") that already contains
                 whatever the clinician actually typed, so it just renders
                 as-is now. */}
-            {profile.role && <p className="text-sm text-slate-500">{profile.role}</p>}
+            <p className="text-sm text-slate-500">
+              {profile.role}{profile.verified && " · Verified"}
+            </p>
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
           </div>
         </div>
@@ -47,12 +67,16 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
             ) : (
               <>
                 <button onClick={onMessage} aria-label={`Message ${profile.name}`}
-                  className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
                   <MessageSquare size={14} /> Message
                 </button>
-                <button onClick={onFollow}
-                  className={`pf-font-head flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl transition-colors ${following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
-                  {following ? <><Check size={14} /> Following</> : <><UserPlus size={14} /> Follow</>}
+                <button onClick={handleConnect} disabled={requesting}
+                  className={`pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl transition active:scale-95 ${
+                    following
+                      ? "bg-slate-50 text-slate-500 border border-slate-200"
+                      : "text-white bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] shadow-md shadow-purple-200 hover:opacity-90 disabled:opacity-80"
+                  }`}>
+                  {following ? <><Check size={14} /> Connected</> : requesting ? "Requested" : <><UserPlus size={14} /> Connect</>}
                 </button>
               </>
             )}
@@ -67,6 +91,14 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
             </div>
           </div>
         </div>
+
+        {!isOwn && profile.openToWork && (
+          <div className="flex justify-center mt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+              <Briefcase size={12} /> Open to Opportunities
+            </span>
+          </div>
+        )}
 
         {/* Bug fix (2026-08-19): Followers used the old hardcoded "always
             format as K" math (showed "0.0K" for a genuine 0), and Posts

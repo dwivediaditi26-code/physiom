@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Activity, Zap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
-import AboutCard from "../components/profile/AboutCard.jsx";
-import ClinicalCard from "../components/profile/ClinicalCard.jsx";
+import ProfileAboutSummary from "../components/profile/ProfileAboutSummary.jsx";
 import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
-import AchievementsCard from "../components/profile/AchievementsCard.jsx";
 import GridPostCard from "../components/feed/GridPostCard.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 import * as db from "../data/db.js";
@@ -22,7 +20,14 @@ import * as db from "../data/db.js";
 // single shared, app-wide library, not per-user data, so showing it on
 // every profile would just repeat identical content rather than show
 // anything that's actually theirs.
-const TABS = ["Posts", "Cases", "Research", "About"];
+//
+// 3-tab "About/Feed/Cases" bar + the consolidated About card
+// (ProfileAboutSummary.jsx, replacing separate AboutCard/ClinicalCard/
+// AchievementsCard here) are from Aditi's 2026-09-22 reference spec for
+// this page specifically -- ProfilePage.jsx (your own profile) keeps its
+// existing 4-tab layout untouched. Research posts aren't gone, just not
+// separately tabbed: they still show under Feed like any other post.
+const TABS = ["About", "Feed", "Cases"];
 const SHORTCUTS = [
   { label: "ACL Rehab", category: "Techniques", icon: Activity },
   { label: "Sports Injuries", category: "Case Studies", icon: Zap },
@@ -38,7 +43,7 @@ export default function OtherProfilePage() {
   const [rotations, setRotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState("Posts");
+  const [activeTab, setActiveTab] = useState("About");
   const [categoryFilter, setCategoryFilter] = useState(null);
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export default function OtherProfilePage() {
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
-    setActiveTab("Posts");
+    setActiveTab("About");
     setCategoryFilter(null);
     (async () => {
       const [p, ed, ac, rt] = await Promise.all([
@@ -75,21 +80,20 @@ export default function OtherProfilePage() {
     return (
       <main className="flex-1 min-w-0 py-14 text-center">
         <p className="text-sm text-slate-500">This profile couldn't be found.</p>
-        <button onClick={() => navigate(-1)} className="mt-3 text-sm font-medium text-violet-600 hover:underline">Go back</button>
+        <button onClick={() => navigate(-1)} className="mt-3 text-sm font-medium text-[#7C3AED] hover:underline">Go back</button>
       </main>
     );
   }
 
   const authorPosts = posts.filter((p) => p.authorId === userId);
   const gridPosts =
-    activeTab === "Posts" ? (categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts)
+    activeTab === "Feed" ? (categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts)
     : activeTab === "Cases" ? authorPosts.filter((p) => p.category === "Case Studies")
-    : activeTab === "Research" ? authorPosts.filter((p) => p.category === "Research")
     : [];
   const following = people.find((p) => p.id === userId)?.following ?? false;
 
   const pickShortcut = (s) => {
-    setActiveTab("Posts");
+    setActiveTab("Feed");
     setCategoryFilter((cur) => (cur === s.category ? null : s.category));
   };
 
@@ -108,24 +112,24 @@ export default function OtherProfilePage() {
           onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
         />
 
-        <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+        <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
           {TABS.map((tab) => (
             <button key={tab} onClick={() => { setActiveTab(tab); setCategoryFilter(null); }}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-colors ${activeTab === tab ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
-              {tab}
+              className={`pf-font-head flex-1 text-center text-xs font-bold tracking-wide py-2 rounded-xl transition-all ${activeTab === tab ? "bg-[#7C3AED] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+              {tab.toUpperCase()}
             </button>
           ))}
         </div>
 
-        {activeTab === "Posts" && (
+        {activeTab === "Feed" && (
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar mb-5 px-1 py-1">
             {SHORTCUTS.map((s) => {
               const Icon = s.icon;
               const on = categoryFilter === s.category;
               return (
                 <button key={s.label} onClick={() => pickShortcut(s)} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${on ? "bg-violet-600" : "bg-violet-50"}`}>
-                    <Icon size={18} className={on ? "text-white" : "text-violet-600"} />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${on ? "bg-[#7C3AED]" : "bg-[#F3EEFF]"}`}>
+                    <Icon size={18} className={on ? "text-white" : "text-[#7C3AED]"} />
                   </div>
                   <span className="text-[10px] text-slate-500 text-center leading-tight">{s.label}</span>
                 </button>
@@ -136,11 +140,9 @@ export default function OtherProfilePage() {
 
         {activeTab === "About" ? (
           <div className="space-y-4">
-            <AboutCard profile={otherProfile} readOnly />
-            <ClinicalCard profile={otherProfile} readOnly />
+            <ProfileAboutSummary profile={otherProfile} achievements={achievements} />
             <RotationsCard entries={rotations} readOnly />
             <EducationCard entries={education} readOnly />
-            <AchievementsCard entries={achievements} readOnly />
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
@@ -150,11 +152,9 @@ export default function OtherProfilePage() {
       </main>
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">
-        <AboutCard profile={otherProfile} readOnly />
-        <ClinicalCard profile={otherProfile} readOnly />
+        <ProfileAboutSummary profile={otherProfile} achievements={achievements} />
         <RotationsCard entries={rotations} readOnly />
         <EducationCard entries={education} readOnly />
-        <AchievementsCard entries={achievements} readOnly />
       </aside>
     </>
   );
