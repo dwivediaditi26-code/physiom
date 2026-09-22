@@ -1,9 +1,10 @@
 // profileTabSmoke.test.jsx
 // Smoke test for the redesigned Profile tab (now reuses PhysioFeed's own
 // ProfilePage component instead of the earlier plain placeholder). Confirms
-// it renders without crashing, discloses that the bio/stats/posts are demo
-// content (not the real logged-in user's real activity), and that the real
-// Sign Out action is still present and wired to the real onSignOut handler.
+// it renders without crashing and that the real Sign Out action is still
+// present and wired to the real onSignOut handler. Used to also assert a
+// "Demo profile" disclosure banner here -- removed along with that banner
+// (2026-09-22, Aditi: "remove this demo profile thing written").
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, cleanup, fireEvent, within } from "@testing-library/react";
@@ -25,20 +26,19 @@ describe("Profile tab", () => {
     });
   });
 
-  it("renders with a demo-content disclosure and a real, working Sign out button", async () => {
+  it("renders with a real, working Sign out button", async () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.getAllByText("Profile").length).toBeGreaterThan(0);
     }, { timeout: 10_000 });
     const profileTab = screen.getAllByText("Profile").find(el => el.closest("button"));
     fireEvent.click(profileTab);
-    await waitFor(() => {
-      expect(screen.getByText(/Demo profile/i)).toBeTruthy();
-    }, { timeout: 10_000 });
     // Scoped to the Profile tab's own content (.physiofeed-root) -- the
     // sidebar also has its own "Sign out" now (2026-09-10, moved there from
     // the Clinical "Today" header), so an unscoped query matches both.
-    const profilePanel = document.querySelector(".physiofeed-root");
-    expect(within(profilePanel).getByRole("button", { name: /sign out/i })).toBeTruthy();
+    await waitFor(() => {
+      const profilePanel = document.querySelector(".physiofeed-root");
+      expect(profilePanel && within(profilePanel).getByRole("button", { name: /sign out/i })).toBeTruthy();
+    }, { timeout: 10_000 });
   }, 15_000);
 });

@@ -19,7 +19,7 @@ export const GRADIENTS = {
 // `text-${color}-600` at render time would never get styled.
 export const PROFILE_ACCENTS = {
   amber: {
-    hero: "from-amber-50 via-[#FFF8F0] to-white",
+    hero: "from-amber-50/70 via-white to-white",
     text: "text-amber-600",
     chipBg: "bg-amber-50 border-amber-100 hover:bg-amber-100",
     icon: "text-amber-500",
@@ -29,7 +29,7 @@ export const PROFILE_ACCENTS = {
     filled: "border-amber-200 bg-amber-50 text-amber-600",
   },
   violet: {
-    hero: "from-violet-50 via-[#F8F6FF] to-white",
+    hero: "from-violet-50/70 via-white to-white",
     text: "text-violet-600",
     chipBg: "bg-violet-50 border-violet-100 hover:bg-violet-100",
     icon: "text-violet-500",
@@ -39,7 +39,7 @@ export const PROFILE_ACCENTS = {
     filled: "border-violet-200 bg-violet-50 text-violet-600",
   },
   slate: {
-    hero: "from-slate-100 via-[#F5F6F8] to-white",
+    hero: "from-slate-100/70 via-white to-white",
     text: "text-slate-700",
     chipBg: "bg-slate-100 border-slate-200 hover:bg-slate-200",
     icon: "text-slate-500",
@@ -49,7 +49,7 @@ export const PROFILE_ACCENTS = {
     filled: "border-slate-300 bg-slate-100 text-slate-700",
   },
   teal: {
-    hero: "from-teal-50 via-[#F0FBFA] to-white",
+    hero: "from-teal-50/70 via-white to-white",
     text: "text-teal-600",
     chipBg: "bg-teal-50 border-teal-100 hover:bg-teal-100",
     icon: "text-teal-500",
@@ -59,7 +59,7 @@ export const PROFILE_ACCENTS = {
     filled: "border-teal-200 bg-teal-50 text-teal-600",
   },
   rose: {
-    hero: "from-rose-50 via-[#FFF3F6] to-white",
+    hero: "from-rose-50/70 via-white to-white",
     text: "text-rose-600",
     chipBg: "bg-rose-50 border-rose-100 hover:bg-rose-100",
     icon: "text-rose-500",
@@ -69,7 +69,7 @@ export const PROFILE_ACCENTS = {
     filled: "border-rose-200 bg-rose-50 text-rose-600",
   },
   blue: {
-    hero: "from-blue-50 via-[#F0F5FF] to-white",
+    hero: "from-blue-50/70 via-white to-white",
     text: "text-blue-600",
     chipBg: "bg-blue-50 border-blue-100 hover:bg-blue-100",
     icon: "text-blue-500",

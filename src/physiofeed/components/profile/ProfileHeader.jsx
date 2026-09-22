@@ -15,9 +15,13 @@ import OpenToOpportunitiesPopover from "./OpenToOpportunitiesPopover.jsx";
 // reference's specialty-chip row is gone, back in line with the original
 // brief's own "do not put a large list of clinical specialties underneath
 // the name"; (2) Open to Opportunities moved up into the hero band right
-// under the name (was down by location) and recolored a fixed amber, not
-// the per-profile accent, so it reads as a distinct status pill rather
-// than blending into the rest of the accent-colored chrome. The tagline
+// under the name (was down by location), right-aligned and compact (Aditi:
+// "put open for opportunity green and right side smaller"), and recolored
+// a fixed green -- the one deliberate exception to "dnt make it green at
+// all" elsewhere in this header, called out explicitly for this pill --
+// rather than the per-profile accent, so it reads as a distinct status
+// signal instead of blending into the rest of the accent-colored chrome.
+// The tagline
 // pulls profile.quote (EditProfileModal.jsx saves it, nothing rendered it
 // before this). Follow/Connect/Message are three separate actions here
 // (Aditi: "there should be follow connect and message option") --
@@ -58,7 +62,7 @@ export default function ProfileHeader({
 
   return (
     <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm mb-5 bg-white">
-      <div className={`relative bg-gradient-to-br ${accent.hero} px-4 pt-4 pb-3.5`}>
+      <div className={`relative bg-gradient-to-b ${accent.hero} px-4 pt-4 pb-3.5`}>
         <div className="absolute top-2.5 right-2.5">
           <button onClick={() => setMoreOpen((v) => !v)} className="p-2 rounded-full bg-white/70 backdrop-blur text-slate-500 hover:bg-white" aria-label="More"><MoreHorizontal size={16} /></button>
           {moreOpen && (
@@ -101,17 +105,22 @@ export default function ProfileHeader({
             <h1 className="pf-font-head text-xl font-extrabold text-[#2B2140]">{profile.name}</h1>
             {profile.verified && <BadgeCheck size={19} className={`${accent.text} shrink-0`} />}
           </div>
+          <p className="text-sm text-[#2B2140] font-semibold mt-1">{profile.role}</p>
+          {profile.location && (
+            <p className="text-xs text-[#2B2140] flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
+          )}
+          {currentWorkplace && <p className="text-xs text-[#2B2140]/70 mt-0.5">{currentWorkplace}</p>}
         </div>
 
         {(hasOpenTo || isOwn) && (
-          <div className="flex justify-start mt-2">
+          <div className="flex justify-end mt-1.5">
             <div className="relative">
               <button
                 type="button"
                 onClick={() => (isOwn ? setEditingOpenTo(true) : setOpenToPopoverOpen((v) => !v))}
-                className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 whitespace-nowrap"
               >
-                <Briefcase size={11} /> Open to Opportunities
+                <Briefcase size={10} /> Open to Opportunities
               </button>
               {!isOwn && openToPopoverOpen && <OpenToOpportunitiesPopover types={profile.openToTypes} onClose={() => setOpenToPopoverOpen(false)} />}
             </div>
@@ -119,15 +128,7 @@ export default function ProfileHeader({
         )}
       </div>
 
-      <div className="bg-white px-4 pt-2.5 pb-3">
-        <p className="text-sm text-[#2B2140] font-semibold">{profile.role}</p>
-        {profile.location && (
-          <p className="text-xs text-[#2B2140] flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
-        )}
-        {currentWorkplace && <p className="text-xs text-[#2B2140]/70 mt-0.5">{currentWorkplace}</p>}
-      </div>
-
-      <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
+      <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 bg-white">
         <div className="flex flex-col items-center gap-0.5 py-2.5"><Users size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.followers)}</span><span className="text-[11px] text-[#2B2140]/60">Followers</span></div>
         <div className="flex flex-col items-center gap-0.5 py-2.5"><UserCheck size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.following)}</span><span className="text-[11px] text-[#2B2140]/60">Following</span></div>
         <div className="flex flex-col items-center gap-0.5 py-2.5"><LayoutGrid size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(postCount)}</span><span className="text-[11px] text-[#2B2140]/60">Posts</span></div>

@@ -19,12 +19,13 @@ import "./physiofeed.css";
 // reason: an isolated MemoryRouter, not BrowserRouter, so it doesn't fight
 // with physiom's own real browser URL/back-button handling.
 //
-// The bio/stats/posts shown are still PhysioFeed's demo data (same caveat
-// as the PhysioFeed tab itself -- not real follower counts for the actual
-// logged-in user yet), so this stays clearly labeled rather than presenting
-// fabricated numbers as real. Real sign-out is wired in below the profile
-// card since that's the one genuinely real, necessary action this screen
-// needs regardless of demo content.
+// The bio/stats/posts shown are still PhysioFeed's demo data until a real
+// profile exists (same caveat as the PhysioFeed tab itself) -- the banner
+// that used to spell this out here was removed (2026-09-22, Aditi: "remove
+// this demo profile thing written"), so ProfilePage.jsx's own empty/zero
+// states are what surfaces that now. Real sign-out is wired in below the
+// profile card since that's the one genuinely real, necessary action this
+// screen needs regardless of demo content.
 //
 // `pf-bare-entry` (2026-09-22, ProfileTabs.jsx's new sticky tab bar):
 // unlike PhysioFeedEntry.jsx (the real PhysioFeed tab), this route renders
@@ -37,9 +38,6 @@ export default function ProfileTabEntry({ onSignOut }) {
     <div className="physiofeed-root pf-bare-entry">
       <MemoryRouter initialEntries={["/profile"]}>
         <AppDataProvider>
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium rounded-xl py-1.5 px-3 mb-4">
-            Demo profile — bio, stats and posts below are placeholder content, not your real activity yet.
-          </div>
           <div className="flex gap-6">
             <ProfilePage/>
           </div>
