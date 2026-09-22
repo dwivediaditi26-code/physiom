@@ -2,10 +2,12 @@ import { useState } from "react";
 import { ChevronLeft, MapPin, IndianRupee, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
+import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 
 export default function OpportunityDetail({ opp, onBack, onMessage }) {
   const [applied, setApplied] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
+  const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -45,7 +47,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage }) {
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Clinical setup</p>
             <div className="flex flex-wrap gap-1.5">
-              {opp.setup.map((s) => <span key={s} className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-violet-50 text-violet-700">{s}</span>)}
+              {opp.setup.map((s) => <span key={s} className="pf-font-body text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: c.tint, color: c.text }}>{s}</span>)}
             </div>
           </div>
         )}
@@ -73,7 +75,8 @@ export default function OpportunityDetail({ opp, onBack, onMessage }) {
           type="button"
           onClick={() => setApplyOpen(true)}
           disabled={applied}
-          className={`flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm transition ${applied ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-violet-600 to-indigo-600 active:scale-[0.98]"}`}
+          className={`pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm transition ${applied ? "bg-emerald-50 text-emerald-700" : "text-white active:scale-[0.98]"}`}
+          style={applied ? undefined : { background: c.solid }}
         >
           {applied ? <><Check size={16} /> Applied (Review Pending)</> : "Apply with Profile"}
         </button>

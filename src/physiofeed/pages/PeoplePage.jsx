@@ -45,10 +45,10 @@ export default function PeoplePage() {
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {selfMatches && (
-          <div className="bg-white rounded-2xl border border-violet-200 shadow-sm p-4 flex items-center gap-3 sm:col-span-2">
+          <div className="bg-white rounded-2xl border-2 border-[#FFD98A] shadow-sm p-4 flex items-center gap-3 sm:col-span-2">
             <Avatar size={44} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-800 truncate">{profile.name} <span className="text-violet-500 font-medium">(You)</span></p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{profile.name} <span className="text-[#B0790A] font-medium">(You)</span></p>
               <p className="text-xs text-slate-400 truncate">{profile.role}</p>
               {profile.location && <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {profile.location}</p>}
             </div>

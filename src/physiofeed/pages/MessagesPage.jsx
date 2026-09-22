@@ -178,7 +178,7 @@ export default function MessagesPage() {
               <button
                 key={c.userId}
                 onClick={() => openConversation(c.userId)}
-                className={`flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none ${withId === c.userId ? "bg-violet-50" : ""}`}
+                className={`flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none ${withId === c.userId ? "bg-[#FDF0F6]" : ""}`}
               >
                 <Avatar size={38} grad={c.gradient} initials={c.initials} photoUrl={c.avatarUrl} />
                 <div className="min-w-0 flex-1">
@@ -188,7 +188,7 @@ export default function MessagesPage() {
                   </p>
                   <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
                 </div>
-                {c.unread > 0 && <span className="shrink-0 w-2 h-2 rounded-full bg-violet-600" aria-label={`${c.unread} unread`} />}
+                {c.unread > 0 && <span className="shrink-0 w-2 h-2 rounded-full bg-[#DB2777]" aria-label={`${c.unread} unread`} />}
               </button>
             ))
           )}
@@ -224,7 +224,7 @@ export default function MessagesPage() {
                       </div>
                     ) : (
                       <div key={m.id} className={`flex ${m.isSelf ? "justify-end" : "justify-start"}`}>
-                        <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
+                        <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-[#DB2777] text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
                       </div>
                     )
                   ))
@@ -239,7 +239,7 @@ export default function MessagesPage() {
                   placeholder="Type a message…"
                   className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent px-2"
                 />
-                <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-violet-600 disabled:text-slate-300 p-1.5">
+                <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#DB2777] disabled:text-slate-300 p-1.5">
                   <Send size={17} />
                 </button>
               </div>

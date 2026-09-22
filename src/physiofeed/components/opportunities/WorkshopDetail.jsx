@@ -12,7 +12,7 @@ export default function WorkshopDetail({ opp, onBack }) {
         <p className="text-sm font-semibold text-slate-900 truncate">Event Details</p>
       </div>
 
-      <div className="relative h-36 bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-500 flex items-center justify-center">
+      <div className="relative h-36 bg-gradient-to-br from-[#FF5FA2] to-[#FFB020] flex items-center justify-center">
         <Video size={30} className="text-white/70" />
         {opp.mode === "Online" && (
           <span className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/25 flex items-center justify-center"><Video size={15} className="text-white" /></span>
@@ -33,7 +33,7 @@ export default function WorkshopDetail({ opp, onBack }) {
           </div>
         </div>
 
-        <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 mb-4">{opp.mode?.toUpperCase()}</span>
+        <span className="pf-font-head inline-block text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FFE9F3] text-[#D93E80] mb-4">{opp.mode?.toUpperCase()}</span>
 
         <p className="text-sm text-slate-600 leading-relaxed mb-5">{opp.description}</p>
 
@@ -53,7 +53,7 @@ export default function WorkshopDetail({ opp, onBack }) {
             <div className="space-y-2">
               {opp.syllabus.map((s) => (
                 <div key={s} className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full border-2 border-violet-300 mt-0.5 shrink-0" />
+                  <span className="w-4 h-4 rounded-full border-2 border-[#FF5FA2] mt-0.5 shrink-0" />
                   <span className="text-sm text-slate-700 leading-snug">{s}</span>
                 </div>
               ))}
@@ -71,7 +71,7 @@ export default function WorkshopDetail({ opp, onBack }) {
           type="button"
           onClick={() => setRegistered(true)}
           disabled={registered}
-          className={`flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-violet-600 to-indigo-600 active:scale-[0.98]"}`}
+          className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-[#FF5FA2] active:scale-[0.98]"}`}
         >
           {registered ? <><Check size={16} /> Registered</> : "Register Now"}
         </button>

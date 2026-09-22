@@ -60,7 +60,7 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
         >
           <Avatar size={30} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-800 truncate">{profile.name} <span className="text-violet-500 font-medium">(You)</span></p>
+            <p className="text-xs font-semibold text-slate-800 truncate">{profile.name} <span className="text-[#B0790A] font-medium">(You)</span></p>
             <p className="text-[10px] text-slate-400 truncate">{profile.role}{profile.location ? ` · ${profile.location}` : ""}</p>
           </div>
         </button>
@@ -82,7 +82,7 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
           ))}
           <button
             onClick={() => goToPeople(trimmedQuery)}
-            className="w-full text-center text-xs font-semibold text-violet-600 hover:text-violet-700 px-2 py-2 mt-1 border-t border-slate-100"
+            className="w-full text-center text-xs font-semibold text-[#DB2777] hover:text-[#C2185B] px-2 py-2 mt-1 border-t border-slate-100"
           >
             See all results in People
           </button>
@@ -158,7 +158,7 @@ export default function Header() {
       <div className="relative hidden lg:block">
       <div className="max-w-[1200px] mx-auto flex items-center gap-3 px-4 sm:px-6 h-16">
         <Link to="/feed" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#DB2777] to-[#FFB020]" />
           <div className="hidden sm:block leading-tight">
             <p className="font-bold text-slate-900 text-sm">PhysioFeed</p>
             <p className="text-[10px] text-slate-400 -mt-0.5">Stronger Together</p>
