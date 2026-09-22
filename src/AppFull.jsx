@@ -333,6 +333,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
   const [canGoBack, setCanGoBack] = useState(false);
+  // Bumped when the Learn tab is tapped while Learn is already open, so the
+  // <LazyLearnTabEntry key=...> below remounts and lands back on Learn's home
+  // instead of staying inside whichever study screen is open (2026-09-19,
+  // Aditi: "when we click on learn it should open the learn page again... i
+  // have to click back again and again").
+  const [learnResetKey, setLearnResetKey] = useState(0);
   const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
@@ -1057,6 +1063,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     ) {
       setPendingLeave({ key, ctx, navOpts });
       return;
+    }
+    // Tapping "Learn" while already on Learn = back to Learn's home page. Not
+    // for popstate replays (browser Back/Forward keeps Learn as it was).
+    if (key === "learn" && key === activeRef.current && !navOpts.__fromPopState) {
+      setLearnResetKey((k) => k + 1);
     }
     // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
     // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
@@ -2317,7 +2328,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </div>
               ):tests==="LEARN_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading…</div>}>
-                  <LazyLearnTabEntry onNav={navTo}/>
+                  <LazyLearnTabEntry key={learnResetKey} onNav={navTo}/>
                 </Suspense>
               ):tests==="PROFILE_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
