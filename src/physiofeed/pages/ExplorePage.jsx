@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, Briefcase, ChevronRight } from "lucide-react";
 import { INITIAL_OPPORTUNITIES, OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
 import { INITIAL_APPLICANTS } from "../data/applicantsMock.js";
@@ -37,6 +37,16 @@ export default function ExplorePage() {
   const [pipelineFor, setPipelineFor] = useState(null); // opportunity whose applicants are being reviewed
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
+
+  // These sub-views are swapped by local state, not by the router (the URL
+  // stays "/explore" throughout), so ScrollToTop.jsx's route-change effect
+  // never sees them -- tapping a card/button used to open the new view
+  // wherever the hub's list had been scrolled to (2026-09-22, Aditi: "it
+  // takes me to the midsection... I want it to take me to the top").
+  const view = chatFor ? "chat" : pipelineFor ? "pipeline" : myPostingsOpen ? "myPostings" : active ? "detail" : "hub";
+  useEffect(() => {
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
+  }, [view]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

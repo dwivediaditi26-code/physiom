@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppShell from "./components/layout/AppShell.jsx";
+import ScrollToTop from "./components/layout/ScrollToTop.jsx";
 import FeedPage from "./pages/FeedPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import OtherProfilePage from "./pages/OtherProfilePage.jsx";
@@ -23,6 +24,7 @@ import AdminAddEvidencePage from "./pages/AdminAddEvidencePage.jsx";
 export default function PhysioFeedRoutes() {
   return (
     <AppShell>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/feed" replace />} />
         <Route path="/feed" element={<FeedPage />} />
