@@ -104,16 +104,19 @@ drop policy if exists "organization_members_select_all" on organization_members;
 create policy "organization_members_select_all" on organization_members
   for select using (true);
 
+-- You can only add YOURSELF to an org. An earlier draft of this policy
+-- also allowed existing admins to add other people, via a subquery on
+-- organization_members from inside a policy ON organization_members --
+-- that's the classic Postgres RLS self-recursion trap ("infinite
+-- recursion detected in policy for relation ..."), which fails at query
+-- time rather than at CREATE POLICY time, so it would only have blown up
+-- the first time anyone joined an org. Admin-adds-somebody-else needs a
+-- SECURITY DEFINER helper to check membership outside RLS; deferred until
+-- there's an actual org-admin UI, which is past MVP.
 drop policy if exists "organization_members_insert_admin" on organization_members;
-create policy "organization_members_insert_admin" on organization_members
-  for insert with check (
-    auth.uid() = user_id
-    or exists (
-      select 1 from organization_members m
-      where m.organization_id = organization_members.organization_id
-        and m.user_id = auth.uid() and m.role = 'admin'
-    )
-  );
+drop policy if exists "organization_members_insert_self" on organization_members;
+create policy "organization_members_insert_self" on organization_members
+  for insert with check (auth.uid() = user_id);
 
 drop policy if exists "organizations_update_admin" on organizations;
 create policy "organizations_update_admin" on organizations
