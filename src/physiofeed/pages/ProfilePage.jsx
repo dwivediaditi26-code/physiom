@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, Zap, Dumbbell, GraduationCap } from "lucide-react";
+import { Activity, Zap, GraduationCap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
 import AboutCard from "../components/profile/AboutCard.jsx";
 import ClinicalCard from "../components/profile/ClinicalCard.jsx";
@@ -7,20 +7,18 @@ import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
 import AchievementsCard from "../components/profile/AchievementsCard.jsx";
 import GridPostCard from "../components/feed/GridPostCard.jsx";
-import { ExerciseFullGrid, ExerciseStrip } from "../components/profile/ExerciseGrid.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
-const TABS = ["Posts", "Cases", "Research", "Exercises", "About"];
+const TABS = ["About", "Posts", "Cases", "Research"];
 const SHORTCUTS = [
   { label: "ACL Rehab", icon: Activity, category: "Techniques" },
   { label: "Sports Injuries", icon: Zap, category: "Case Studies" },
-  { label: "Exercises", icon: Dumbbell, category: "__exercises__" },
   { label: "Workshops", icon: GraduationCap, category: "Education" },
 ];
 
 export default function ProfilePage() {
   const { posts, profile } = useAppData();
-  const [activeTab, setActiveTab] = useState("Posts");
+  const [activeTab, setActiveTab] = useState("About");
   const [categoryFilter, setCategoryFilter] = useState(null);
 
   if (!profile) return null;
@@ -33,7 +31,6 @@ export default function ProfilePage() {
     : [];
 
   const pickShortcut = (s) => {
-    if (s.category === "__exercises__") { setActiveTab("Exercises"); setCategoryFilter(null); return; }
     setActiveTab("Posts");
     setCategoryFilter((cur) => (cur === s.category ? null : s.category));
   };
@@ -71,15 +68,10 @@ export default function ProfilePage() {
 
         {activeTab === "About" ? (
           <div className="space-y-4"><AboutCard /><ClinicalCard /><RotationsCard /><EducationCard /><AchievementsCard /></div>
-        ) : activeTab === "Exercises" ? (
-          <ExerciseFullGrid />
         ) : (
-          <>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {gridPosts.length === 0 ? <div className="col-span-2 text-center py-14 text-slate-400 text-sm">No posts here yet.</div> : gridPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
-            </div>
-            {activeTab === "Posts" && <ExerciseStrip />}
-          </>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {gridPosts.length === 0 ? <div className="col-span-2 text-center py-14 text-slate-400 text-sm">No posts here yet.</div> : gridPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
+          </div>
         )}
       </main>
 

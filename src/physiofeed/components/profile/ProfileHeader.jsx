@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BadgeCheck, MapPin, Pencil, MoreHorizontal, Link2, Share2, UserPlus, Check, MessageSquare } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
-import { GRADIENTS, formatCount } from "../shared/constants.js";
+import { formatCount } from "../shared/constants.js";
 import EditProfileModal from "./EditProfileModal.jsx";
 
 // Own profile keeps the real "Edit Profile" button (EditProfileModal.jsx).
@@ -11,30 +11,16 @@ import EditProfileModal from "./EditProfileModal.jsx";
 export default function ProfileHeader({ profile, postCount, isOwn = true, following = false, onFollow, onMessage }) {
   const [editing, setEditing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const quoteLines = profile.quote.replace(/\.$/, "").split(". ");
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-5">
-      <div className={`relative h-40 sm:h-52 bg-gradient-to-br ${GRADIENTS.slate} flex items-center px-6 sm:px-10`}>
-        <p className="text-white text-sm sm:text-base font-medium italic leading-relaxed max-w-xs">
-          "{quoteLines.map((line, i) => (
-            <span key={i}>
-              {line}{i < quoteLines.length - 1 ? "." : ""}
-              {i < quoteLines.length - 1 && <br />}
-            </span>
-          ))}"
-        </p>
-      </div>
-      <div className="px-5 sm:px-8 pb-6">
-        <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-3">
-          <div className="relative">
-            <div className="rounded-full ring-4 ring-white"><Avatar size={88} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} /></div>
+      <div className="px-5 sm:px-8 pt-6 pb-6">
+        <div className="flex items-start gap-4 mb-3">
+          <div className="relative shrink-0">
+            <Avatar size={88} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
             <span className="absolute bottom-1.5 right-1.5 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" />
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 pt-1">
             <div className="flex items-center gap-1.5">
               <h1 className="text-lg font-bold text-slate-900">{profile.name}</h1>
               {profile.verified && <BadgeCheck size={17} className="text-violet-600" />}
@@ -49,6 +35,9 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
             {profile.role && <p className="text-sm text-slate-500">{profile.role}</p>}
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-start justify-end gap-3">
           <div className="flex items-center gap-2">
             {isOwn ? (
               <button onClick={() => setEditing(true)}
