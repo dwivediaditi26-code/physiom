@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
 import ProfileTabs, { PROFILE_TABS } from "../components/profile/ProfileTabs.jsx";
 import useProfileSections from "../components/profile/useProfileSections.js";
@@ -91,9 +90,11 @@ export default function OtherProfilePage() {
   return (
     <>
       <main className="flex-1 min-w-0">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-3">
-          <ArrowLeft size={15} /> Back
-        </button>
+        {/* No in-page "Back" link (2026-09-22, Aditi circled it in a
+            screenshot and said to remove it) -- PhysioMind's own app header
+            already has a back arrow right above this page, so the two were
+            redundant. `navigate` is still used below (own-profile redirect,
+            not-found state's "Go back"). */}
         <ProfileHeader
           profile={otherProfile}
           postCount={authorPosts.length}

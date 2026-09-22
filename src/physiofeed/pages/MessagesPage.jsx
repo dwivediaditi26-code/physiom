@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, ChevronLeft, MessageSquare } from "lucide-react";
+import { Send, ChevronLeft, MessageSquare, Lock } from "lucide-react";
 import Avatar from "../components/shared/Avatar.jsx";
 import * as db from "../data/db.js";
 import { useDemoConversations } from "../context/DemoConversationsContext.jsx";
+import { useAppData } from "../context/AppDataContext.jsx";
+
+// Non-connection message cap (2026-09-22, Aditi: "when connected only
+// then... 3 messages you can do if not connected") -- lets a clinician
+// send a few messages to break the ice before connecting, same shape as
+// LinkedIn's own free-InMail-style limit, but stops short of unlimited
+// messaging to someone who hasn't accepted a connection. Counts only the
+// open thread's OWN messages you sent (not theirs), so their replies never
+// count against your cap and don't need their own gating.
+const MESSAGE_LIMIT_IF_NOT_CONNECTED = 3;
 
 // Direct messages between clinicians (Aditi's request: "chat area to
 // message the physios"). See supabase/add_direct_messages.sql for the
@@ -21,6 +31,7 @@ export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
   const demo = useDemoConversations();
+  const { people, followPerson } = useAppData();
 
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -121,8 +132,16 @@ export default function MessagesPage() {
   );
   const active = allConversations.find((c) => c.userId === withId);
 
+  // Demo threads (recruiter/applicant chat) are exempt -- "connected" is a
+  // People/Profile concept that doesn't apply to those. `following` IS
+  // this app's "connected" flag -- see ProfileHeader.jsx/OtherProfilePage.jsx's
+  // own Connect button, which reads the same field.
+  const isConnected = active?.isDemo || (people.find((p) => p.id === withId)?.following ?? false);
+  const sentCount = thread.filter((m) => m.isSelf && !m.system).length;
+  const limitReached = !isConnected && sentCount >= MESSAGE_LIMIT_IF_NOT_CONNECTED;
+
   const submit = async () => {
-    if (!text.trim() || sending || !withId) return;
+    if (!text.trim() || sending || !withId || limitReached) return;
     if (active?.isDemo) {
       demo.sendMessage({ id: withId, name: active.name, initials: active.initials, gradient: active.gradient, headline: active.role, regarding: active.regarding }, text.trim());
       setText("");
@@ -231,18 +250,30 @@ export default function MessagesPage() {
                 )}
               </div>
               {error && <p className="px-4 text-xs text-rose-600 pb-1">{error}</p>}
-              <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100">
-                <input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && submit()}
-                  placeholder="Type a message…"
-                  className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent px-2"
-                />
-                <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#DB2777] disabled:text-slate-300 p-1.5">
-                  <Send size={17} />
-                </button>
-              </div>
+              {limitReached ? (
+                <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-100 bg-slate-50">
+                  <Lock size={14} className="text-slate-400 shrink-0" />
+                  <p className="text-xs text-slate-500 flex-1">
+                    You've sent {MESSAGE_LIMIT_IF_NOT_CONNECTED} messages to {active?.name || "this person"} without connecting.
+                  </p>
+                  <button onClick={() => followPerson(withId)} className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800">
+                    Connect
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100">
+                  <input
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && submit()}
+                    placeholder="Type a message…"
+                    className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent px-2"
+                  />
+                  <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#DB2777] disabled:text-slate-300 p-1.5">
+                    <Send size={17} />
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
