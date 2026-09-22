@@ -64,8 +64,8 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 
 | P | Scope | Status | Notes |
 |---|---|---|---|
-| P0 | Audit + auth + DB foundation | Audit done | Blocker was the two unrun migrations |
-| P1 | Professional identity | Code verified | `db.js` read + write mappings audited both directions, all correct. Waiting only on the migration run, then live verification |
+| P0 | Audit + auth + DB foundation | Done | Two profile migrations run 2026-09-22 and verified live |
+| P1 | Professional identity | **PASSED** | Acceptance test driven end-to-end on the real signed-in account: added a certification → full reload → still there → confirmed the row independently via the REST API → deleted it → confirmed gone. Read, write and delete paths all work |
 | P2 | People + Connect/Accept/Ignore | Not started | Real work: schema + state machine + requests inbox |
 | P3 | Messaging | Mostly done | Needs gating on real connection state |
 | P4 | Opportunities + Jobs + Save | Not started | **Largest item.** Schema + db.js + rewire 10 components off mock state |
@@ -94,10 +94,13 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 
 ## 4b. Schema decisions (2026-09-22)
 
-Two SQL files to run in the Supabase dashboard, in order:
+SQL to run in the Supabase dashboard, in order:
 
-1. `supabase/add_profile_clinical_cv.sql` + `supabase/add_profile_clinical_taxonomy.sql` — P1. (A combined, re-runnable version of these two was handed over in chat.)
-2. `supabase/add_mvp_network_opportunities.sql` — everything for P2–P6.
+1. ✅ **Run 2026-09-22** — `supabase/add_profile_clinical_cv.sql` + `supabase/add_profile_clinical_taxonomy.sql` (P1). Verified live.
+2. ⬜ `supabase/add_notification_post_id.sql` — **was never run.** `notifications.post_id` is missing, so `getNotifications()` 400s and silently falls back to *demo* notifications for real signed-in users. Already idempotent, paste as-is.
+3. ⬜ `supabase/add_mvp_network_opportunities.sql` — everything for P2–P6.
+
+> Lesson: a migration file existing in `supabase/` does **not** mean it was ever run. Check against the live database (`/rest/v1/<table>?select=<col>&limit=1`) rather than assuming.
 
 Decisions worth remembering:
 
