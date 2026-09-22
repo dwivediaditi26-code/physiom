@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import { AppDataProvider } from "./context/AppDataContext.jsx";
 import PhysioFeedRoutes from "./PhysioFeedRoutes.jsx";
@@ -30,10 +30,18 @@ const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people"
 // take us to the evidence page... it is taking us directly to the physio
 // feed"; then, for the header icons: "search notification and message
 // should go up there when we open the physio feed").
+//
+// Each jumpTo is acted on once (2026-09-20): react-router hands out a new
+// `navigate` on every route change, so this effect used to re-run after any
+// tap inside PhysioFeed and pull you straight back to the jump target --
+// after the header search icon, the section strip's Evidence/Saved/... did
+// nothing and you stayed on People.
 function JumpBridge({ jumpTo }) {
   const navigate = useNavigate();
+  const handled = useRef(null);
   useEffect(() => {
-    if (!jumpTo || !JUMPABLE_TABS.has(jumpTo.pfTab)) return;
+    if (!jumpTo || !JUMPABLE_TABS.has(jumpTo.pfTab) || handled.current === jumpTo) return;
+    handled.current = jumpTo;
     navigate(`/${jumpTo.pfTab}`, { replace: true, state: jumpTo.pfArticleId ? { articleId: jumpTo.pfArticleId } : undefined });
   }, [jumpTo, navigate]);
   return null;

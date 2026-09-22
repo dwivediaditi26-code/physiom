@@ -1,10 +1,51 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, matchPath, useNavigate, useLocation } from "react-router-dom";
 import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
-import { Icon } from "../shared/icons.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
+
+// Mobile/tablet section switcher: a segmented control with a white thumb that
+// slides under the current section (2026-09-20, Aditi: "make it like I" --
+// design I of the redesign mockups; before it came the expanding-pill "J" and,
+// first, a row of raised 3D tiles she didn't like). Five equal, text-only
+// segments share the strip's width, so nothing scrolls or gets clipped. People
+// and Messages are not in it: the app's own top bar already has search
+// (People), bell and messages icons on every PhysioFeed screen (AppFull.jsx
+// pm-mobile-hdr), and the laptop sidebar still lists all seven.
+// Styling: .pf-seg* in physiofeed.css.
+const SECTIONS = PRO_NAV.filter((item) => item.path !== "/people" && item.path !== "/messages");
+const SHORT_LABEL = { "Physio Feed": "Feed", Communities: "Groups" };
+
+function SectionNav() {
+  const { pathname } = useLocation();
+  // Same prefix rule NavLink uses, so /communities/123 still counts as Groups.
+  const activeIdx = SECTIONS.findIndex((s) => matchPath({ path: s.path, end: false }, pathname));
+  // On a page that isn't one of the five (People, Messages, a profile...) the
+  // thumb fades out where it was, instead of sliding back to the first segment.
+  const [thumbIdx, setThumbIdx] = useState(Math.max(activeIdx, 0));
+  if (activeIdx >= 0 && activeIdx !== thumbIdx) setThumbIdx(activeIdx);
+
+  return (
+    <nav className="pf-seg-track" aria-label="PhysioFeed sections" style={{ "--n": SECTIONS.length }}>
+      <span
+        className="pf-seg-thumb"
+        aria-hidden="true"
+        style={{ transform: `translateX(${thumbIdx * 100}%)`, opacity: activeIdx >= 0 ? 1 : 0 }}
+      />
+      {SECTIONS.map((item, i) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          className={"pf-seg" + (i === activeIdx ? " pf-seg-on" : "")}
+          aria-current={i === activeIdx ? "page" : undefined}
+        >
+          {SHORT_LABEL[item.label] || item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
 
 // Shared result list for both the desktop inline search bar and the
 // mobile full-width search row -- same matches/selfMatches state, just
@@ -98,58 +139,22 @@ export default function Header() {
 
   return (
     <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
-      {/* Mobile-only section nav: premium tactile 3D tiles (Feed/Evidence/
-          Explore/Communities/People/Messages/Saved) (2026-09-18, Aditi,
-          with a reference screenshot of soft-glass cards: "premium,
-          modern 3D UI... LinkedIn's credibility, Instagram's polish,
-          Apple-level spacing... subtle 3D depth, not childish" --
-          upgrading the flat-ish square tiles from the previous pass
-          (2026-09-17: "square buttons in 3D... light blue" -> "indigo"
-          -> "the clicking on it that color should be light"). Styling
-          lives in .pf-tile* (physiofeed.css) since the spec's hover-lift/
-          click-compress states need real :hover/:active, not inline
-          JSX style objects. The warm off-white strip background is
-          "Layer 2" in the spec's 3-layer depth system -- the tiles
-          (Layer 3) read as floating objects sitting just above it,
-          rather than sitting directly on the page's plain white.
-          The back-chevron (was in the logo/icon row below) lives here
-          now, since that row -- previously just a bare unlabeled logo
-          square on mobile once the search/bell/message icons moved to
-          physiom's own top header -- is dropped entirely on mobile:
-          "PhysioMind" already has its own name+logo up there, so this
-          was a second one saying nothing, with a dead gap of empty
-          header height around it ("there is a space is left... remove
-          it"). Kept for desktop below unchanged. */}
-      <div className="lg:hidden relative border-t border-slate-200" style={{ background: "#FAFAF8" }}>
-        <div className="flex items-center gap-2 px-2.5 py-2 overflow-x-auto no-scrollbar">
+      {/* Mobile/tablet section nav (SectionNav above). The back chevron (any
+          page but /feed) sits to its left. */}
+      <div className="lg:hidden bg-white border-t border-slate-200">
+        <div className="flex items-center gap-1 px-3 py-2 max-w-[460px] mx-auto">
           {location.pathname !== "/feed" && (
             <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
               <ChevronLeft size={18} />
             </button>
           )}
-          {PRO_NAV.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => "pf-tile shrink-0 focus:outline-none" + (isActive ? " pf-tile-active" : "")}
-            >
-              <span className="pf-tile-pod">
-                <Icon name={item.icon} size={13} />
-              </span>
-              <span className="pf-tile-label">
-                {item.label === "Physio Feed" ? "Feed" : item.label === "Communities" ? "Groups" : item.label}
-              </span>
-              <span className="pf-tile-dot" />
-            </NavLink>
-          ))}
+          <SectionNav />
         </div>
-        {/* Fade hint that there's more to scroll to -- matches the strip's
-            own #FAFAF8 now rather than pure white, so the fade doesn't
-            show a visible seam against it. */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8" style={{ background: "linear-gradient(to left, #FAFAF8, transparent)" }} />
       </div>
 
-      {/* Logo/icon row -- desktop only now (see comment above). */}
+      {/* Logo/icon row -- desktop only. On mobile the app's own top bar
+          already carries the PhysioMind logo plus the search/bell/messages
+          icons (this row used to be a second, empty-looking copy of it). */}
       <div className="relative hidden lg:block">
       <div className="max-w-[1200px] mx-auto flex items-center gap-3 px-4 sm:px-6 h-16">
         <Link to="/feed" className="flex items-center gap-2 shrink-0">

@@ -121,131 +121,70 @@
   }
 }
 
-/* PhysioFeed mobile section nav -- premium tactile 3D tiles
-   (2026-09-18, Aditi: "premium, modern 3D UI... LinkedIn's credibility,
-   Instagram's polish, Apple-level spacing... subtle 3D depth, not
-   childish", with a reference screenshot of soft-glass cards + a
-   circular icon pod). Plain CSS with real :hover/:active here rather
-   than inline JSX style objects (used for the tiles' first pass) --
-   the spec's hover-lift / click-compress states need real pseudo-
-   classes, not a mouseover/mousedown handler pair.
-   Label size is 11px rather than the spec's 15-16px: this strip holds
-   7 items (Feed/Evidence/Explore/Groups/People/Messages/Saved), not
-   the 5 in the reference image, and 15px labels widened each tile
-   enough to push most of the row off-screen on a phone before any
-   scrolling -- the premium visual language carries at 11px, the extra
-   size doesn't (2026-09-18, Aditi: "make it smaller" -- sized down
-   again from an already-reduced first pass).
-   Proportions redone a second time (2026-09-18, Aditi, after the
-   underline fix still wasn't enough: "its not same") -- the reference
-   cards are square with a large icon pod (roughly 40% of the card's own
-   width) and a strong glow specifically around the active pod, not just
-   a slightly darker fill. The previous pass had a taller, narrower card
-   with a small pod and no glow -- shape and depth both corrected here,
-   independent of the earlier size-only fix. */
-.pf-tile {
+/* PhysioFeed mobile/tablet section nav -- sliding segmented control
+   (2026-09-20, Aditi: "i dnt like these button can suggest some other
+   designs" -> "make it like I"). Replaces the raised 3D tile row (.pf-tile*)
+   she didn't like and the expanding-pill version after it. A light track
+   holds five equal, text-only segments; a white thumb slides under the
+   current one (Header.jsx SectionNav sets its translateX and --n, the
+   segment count). Everything fits, so there is no horizontal scroll and no
+   clipped last item. Flat on purpose: no shadows or glow. */
+.pf-seg-track {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 52px;
-  height: 52px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 7px 13px rgba(50, 45, 70, 0.1), 0 2px 3px rgba(50, 45, 70, 0.06);
-  transform: translateY(0);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-  /* .pf-tile is a NavLink (an <a>) -- Preflight is off for this whole
-     folder (see the big comment atop this file), so nothing was ever
-     resetting the browser's native link underline. It rendered under
-     every label, visible against the reference screenshot's clean
-     glass look (2026-09-18, Aditi: "these are not same"). */
-  text-decoration: none;
-}
-.pf-tile::after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: -5px;
-  height: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px;
   border-radius: 12px;
-  background: rgba(50, 45, 70, 0.07);
-  z-index: -1;
+  background: #f1f0f5;
 }
-.pf-tile:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 28px rgba(50, 45, 70, 0.14), 0 3px 6px rgba(50, 45, 70, 0.08);
-}
-.pf-tile:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(50, 45, 70, 0.1), 0 1px 2px rgba(50, 45, 70, 0.06);
-}
-.pf-tile-active {
-  background: rgba(238, 234, 249, 0.9);
-  border-color: rgba(110, 90, 166, 0.3);
-  box-shadow: 0 4px 18px rgba(110, 90, 166, 0.35), 0 12px 24px rgba(110, 90, 166, 0.16), 0 2px 5px rgba(110, 90, 166, 0.1);
-  transform: translateY(-2px);
-}
-.pf-tile-active:hover {
-  transform: translateY(-4px);
-}
-.pf-tile-pod {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
+.pf-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  /* One segment = the track's width minus its 3px side padding, split --n ways. */
+  width: calc((100% - 6px) / var(--n, 5));
+  box-sizing: border-box;
+  border-radius: 9px;
   background: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 5px rgba(50, 45, 70, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  color: #777681;
-  transition: transform 200ms ease, background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  border: 1px solid #dcd8e8;
+  pointer-events: none;
+  /* !important: utils.jsx has a global "Theme transitions" rule that forces
+     its own `transition` (colours only) on every element with !important, so
+     without it the thumb would jump instead of slide. */
+  transition: transform 220ms ease, opacity 150ms ease !important;
 }
-.pf-tile:hover .pf-tile-pod {
-  transform: translateY(-1.5px);
+.pf-seg {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 9px 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Fluid so "Evidence", the longest label, always fits inside the thumb
+     (down to a 320px phone) and stops growing at 13px on tablets. */
+  font-size: clamp(11px, 3.3vw, 13px);
+  font-weight: 500;
+  line-height: 16px;
+  color: #5b5a66;
+  /* .pf-seg is a router Link (an <a>) and Preflight is off for this whole
+     folder, so the browser's link underline has to be removed by hand. */
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.pf-tile-active .pf-tile-pod {
-  /* Was a solid dark/near-black fill, matching the reference image's
-     active pod -- but Aditi's earlier, more specific instruction for
-     this tile set overrides that: "the clicking on it that color
-     should be light" (2026-09-17). Re-drifted dark when the pod got
-     its own glow treatment; corrected back to light purplish
-     (2026-09-18: "light purplish... when we click on it it is
-     becoming black make it light purplish the color we decided"). */
-  background: #d9cdf2;
-  color: #453084;
-  box-shadow: 0 0 0 3px rgba(110, 90, 166, 0.16), 0 3px 7px rgba(110, 90, 166, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-.pf-tile-label {
-  font-size: 9px;
+.pf-seg-on {
+  color: #6d28d9;
   font-weight: 600;
-  color: #4b4a54;
-  letter-spacing: -0.01em;
 }
-.pf-tile-active .pf-tile-label {
-  font-weight: 700;
-  color: #1e1e24;
-}
-.pf-tile-dot {
-  width: 2.5px;
-  height: 2.5px;
-  border-radius: 50%;
-  background: #c9c7d1;
-}
-.pf-tile-active .pf-tile-dot {
-  width: 10px;
-  height: 2.5px;
-  border-radius: 2px;
-  background: #6e5aa6;
+.pf-seg:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: -2px;
+  border-radius: 9px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .pf-tile,
-  .pf-tile-pod {
-    transition: none;
-  }
+  .pf-seg-thumb { transition: none !important; }
 }
