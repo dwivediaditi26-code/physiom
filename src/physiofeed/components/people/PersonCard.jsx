@@ -21,8 +21,8 @@ export default function PersonCard({ person }) {
       </Link>
       <Link to={`/profile/${person.id}`} className="min-w-0 flex-1 basis-40">
         <p className="text-sm font-semibold text-slate-800 truncate hover:underline">{person.name}</p>
-        <p className="text-xs text-slate-400 truncate">{person.role}</p>
-        <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {person.location} · {person.mutual} mutual</p>
+        <p className="text-xs text-slate-600 truncate">{person.role}</p>
+        <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {person.location} · {person.mutual} mutual</p>
       </Link>
       <div className="flex items-center gap-2 ml-auto shrink-0">
         <button
@@ -34,7 +34,7 @@ export default function PersonCard({ person }) {
         </button>
         <button onClick={() => followPerson(person.id)}
           className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${person.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"}`}>
-          {person.following ? <><Check size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
+          {person.following ? <><Check size={13} /> Connected</> : <><UserPlus size={13} /> Connect</>}
         </button>
       </div>
     </div>

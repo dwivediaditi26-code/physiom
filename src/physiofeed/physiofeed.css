@@ -69,6 +69,26 @@
     outline: none;
   }
 
+  /* Same Preflight gap, for <a>/<Link>: with no reset, an unstyled link's
+     text-decoration/color falls back to the browser default (underline,
+     "-webkit-link" blue). Text-decoration-color in particular follows the
+     element that INTRODUCED the line, not the element painting the glyphs
+     -- so a <p className="text-slate-400"> nested inside a plain <Link>
+     rendered in its own correct gray fill, but with an underline drawn in
+     the Link's still-default blue, propagating through every descendant
+     line of text (name/role/location all underlined in that same blue),
+     confirmed via getComputedStyle showing "none" on the <p> itself even
+     while the line visibly painted (propagation isn't inheritance, so it
+     doesn't show up on the descendant's own computed style). Reported by
+     Aditi as unstyled-looking blue link text on the People list
+     (PersonCard.jsx) (2026-09-22). Same zero-specificity scoping as above
+     so a Link/component that wants real link styling (e.g. explicit
+     hover:underline) still wins normally. */
+  :where(.physiofeed-root) a {
+    color: inherit;
+    text-decoration: none;
+  }
+
   /* Second half of the same Preflight gap: Tailwind's `.border*` utility
      classes (e.g. `.border { border-width: 1px }`) only ever set
      border-WIDTH, never border-style -- normally Tailwind's Preflight
@@ -153,6 +173,19 @@
    utils.jsx), so it never hits the desktop case those two are splitting for. */
 .pf-bare-entry .pf-profile-tabs {
   top: var(--pm-mobile-hdr-h, 64px);
+}
+
+/* Profile pages' inline sections (2026-09-22, Aditi: "i want inline wise" --
+   see useProfileSections.js). Clicking a ProfileTabs pill now scrollIntoView()s
+   the matching section instead of swapping which one renders; this keeps that
+   landing spot clear of the sticky .pf-header/.pf-profile-tabs bars above it.
+   --pf-scroll-offset is kept live by useProfileSections.js (the bars' own
+   rendered `top` differs by breakpoint and entry point, same as
+   .pf-profile-tabs above splits itself -- reading it from the DOM there
+   avoids a second, driftable copy of that math here). The fallback covers
+   only the instant before that first measurement runs. */
+.pf-profile-section {
+  scroll-margin-top: var(--pf-scroll-offset, 140px);
 }
 
 /* PhysioFeed mobile/tablet section nav -- sliding segmented control

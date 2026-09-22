@@ -20,7 +20,7 @@ export default function FeedRightRail() {
                 <p className="text-xs font-semibold text-slate-800 truncate">{p.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{p.role} · {p.mutual} mutual</p>
               </div>
-              <button onClick={() => followPerson(p.id)} className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100">Follow</button>
+              <button onClick={() => followPerson(p.id)} className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100">Connect</button>
             </div>
           ))}
         </div>

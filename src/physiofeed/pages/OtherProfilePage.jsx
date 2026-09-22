@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Activity, Zap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
-import ProfileTabs from "../components/profile/ProfileTabs.jsx";
+import ProfileTabs, { PROFILE_TABS } from "../components/profile/ProfileTabs.jsx";
+import useProfileSections from "../components/profile/useProfileSections.js";
 import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
 import ClinicalProfileTab from "../components/profile/ClinicalProfileTab.jsx";
 import EvidenceContributionsTab from "../components/profile/EvidenceContributionsTab.jsx";
@@ -25,6 +26,10 @@ import * as db from "../data/db.js";
 // + Opportunities first). The Exercises tab/strip stays deliberately
 // omitted -- `exercises` (ExerciseGrid.jsx) is a single shared, app-wide
 // library, not per-user data.
+//
+// All six sections render inline on one scrollable page (2026-09-22,
+// Aditi: "thiis showing page wise .. i want inline wise" -- see
+// ProfilePage.jsx and useProfileSections.js for the fuller reasoning).
 const SHORTCUTS = [
   { label: "ACL Rehab", category: "Techniques", icon: Activity },
   { label: "Sports Injuries", category: "Case Studies", icon: Zap },
@@ -41,8 +46,8 @@ export default function OtherProfilePage() {
   const [otherPublications, setOtherPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState("About");
   const [categoryFilter, setCategoryFilter] = useState(null);
+  const { activeTab, register, scrollTo } = useProfileSections(PROFILE_TABS);
 
   useEffect(() => {
     // Viewing your own id via this route (e.g. an old link) -- just show
@@ -54,7 +59,6 @@ export default function OtherProfilePage() {
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
-    setActiveTab("About");
     setCategoryFilter(null);
     (async () => {
       const [p, ed, ac, rt, pu] = await Promise.all([
@@ -86,11 +90,11 @@ export default function OtherProfilePage() {
   }
 
   const authorPosts = posts.filter((p) => p.authorId === userId);
-  const gridPosts = activeTab === "Posts" ? (categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts) : [];
+  const gridPosts = categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts;
   const following = people.find((p) => p.id === userId)?.following ?? false;
 
   const pickShortcut = (s) => {
-    setActiveTab("Posts");
+    scrollTo("Posts");
     setCategoryFilter((cur) => (cur === s.category ? null : s.category));
   };
 
@@ -109,9 +113,9 @@ export default function OtherProfilePage() {
           onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
         />
 
-        <ProfileTabs active={activeTab} onChange={(t) => { setActiveTab(t); setCategoryFilter(null); }} />
+        <ProfileTabs active={activeTab} onChange={scrollTo} />
 
-        {activeTab === "Posts" && (
+        <div id="profile-section-Posts" ref={register("Posts")} className="pf-profile-section">
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar mb-5 px-1 py-1">
             {SHORTCUTS.map((s) => {
               const Icon = s.icon;
@@ -126,18 +130,16 @@ export default function OtherProfilePage() {
               );
             })}
           </div>
-        )}
-
-        {activeTab === "About" && <ProfileAboutSection profile={otherProfile} achievements={achievements} isOwn={false} />}
-        {activeTab === "Clinical" && <ClinicalProfileTab profile={otherProfile} isOwn={false} />}
-        {activeTab === "Experience" && <RotationsCard entries={rotations} readOnly />}
-        {activeTab === "Education" && <EducationCard entries={education} readOnly />}
-        {activeTab === "Evidence" && <EvidenceContributionsTab profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />}
-        {activeTab === "Posts" && (
           <div className="grid sm:grid-cols-2 gap-4">
             {gridPosts.length === 0 ? <div className="col-span-2 text-center py-14 text-slate-400 text-sm">No posts here yet.</div> : gridPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
           </div>
-        )}
+        </div>
+
+        <div id="profile-section-About" ref={register("About")} className="pf-profile-section"><ProfileAboutSection profile={otherProfile} achievements={achievements} isOwn={false} /></div>
+        <div id="profile-section-Clinical" ref={register("Clinical")} className="pf-profile-section"><ClinicalProfileTab profile={otherProfile} isOwn={false} /></div>
+        <div id="profile-section-Experience" ref={register("Experience")} className="pf-profile-section"><RotationsCard entries={rotations} readOnly /></div>
+        <div id="profile-section-Education" ref={register("Education")} className="pf-profile-section"><EducationCard entries={education} readOnly /></div>
+        <div id="profile-section-Evidence" ref={register("Evidence")} className="pf-profile-section"><EvidenceContributionsTab profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} /></div>
       </main>
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">

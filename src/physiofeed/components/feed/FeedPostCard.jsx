@@ -62,7 +62,7 @@ export default function FeedPostCard({ post }) {
         {!post.isSelf && (
           <button onClick={() => followAuthor(post.id)}
             className={`pf-font-head shrink-0 flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-pink-300 ${post.following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
-            {post.following ? <><Check size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
+            {post.following ? <><Check size={13} /> Connected</> : <><UserPlus size={13} /> Connect</>}
           </button>
         )}
       </div>
