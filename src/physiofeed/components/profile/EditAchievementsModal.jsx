@@ -2,9 +2,11 @@ import { useState } from "react";
 import { X, Trash2, Plus, AlertCircle } from "lucide-react";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { Icon } from "../shared/icons.jsx";
+import { MONTHS } from "../shared/constants.js";
 
 const FIELD = "w-full text-sm text-slate-700 placeholder:text-slate-400 outline-none border border-slate-200 rounded-lg px-2.5 py-2 focus:border-violet-300";
-const ICON_OPTIONS = ["Trophy", "Award", "Star", "Sparkles"];
+const SELECT = "text-sm text-slate-700 outline-none border border-slate-200 rounded-lg px-2.5 py-2 focus:border-violet-300 bg-white";
+const ICON_OPTIONS = ["Award", "ShieldCheck", "Trophy", "Star"];
 const TONE_OPTIONS = [
   { value: "text-amber-500", swatch: "bg-amber-500" },
   { value: "text-violet-600", swatch: "bg-violet-600" },
@@ -13,11 +15,14 @@ const TONE_OPTIONS = [
   { value: "text-blue-500", swatch: "bg-blue-500" },
 ];
 
-// Feature (2026-08-19): real editing for the Achievements card -- same
-// per-row save/delete shape as EditEducationModal.jsx (see that file's
-// header comment for the reasoning). The one addition here is a color
-// ("tone") swatch picker, since achievements render their icon in a
-// specific color (AchievementsCard.jsx's `a.tone` class).
+// Re-scoped from general "Achievements" to Licenses & Certifications
+// (2026-09-22 redesign) -- issuer/year/credentialId are additive fields on
+// the same `achievements` table (see supabase/add_profile_clinical_taxonomy.sql).
+// Same per-row save/delete shape as EditEducationModal.jsx. There is
+// deliberately no "verified" control anywhere in this form -- see
+// db.js's addAchievement()/updateAchievement() and
+// ProfileAboutSection.jsx for why: nothing here can make a certification
+// "Verified," only PhysioFeed itself (once that flow exists).
 function IconPicker({ value, onChange }) {
   return (
     <div className="flex gap-1.5 shrink-0">
@@ -54,30 +59,38 @@ function TonePicker({ value, onChange }) {
   );
 }
 
-// One existing achievement. "demo-" ids (see mockData.js) only ever show
+// One existing certification. "demo-" ids (see mockData.js) only ever show
 // up when no real list has loaded yet (signed out, or the migration
 // hasn't run) -- Save/Delete on one of those surfaces the same "sign in
 // to edit" error every other write in db.js throws in that situation.
 function EntryRow({ entry }) {
   const { updateAchievement, deleteAchievement } = useAppData();
   const [title, setTitle] = useState(entry.title);
-  const [subtitle, setSubtitle] = useState(entry.subtitle);
+  const [issuer, setIssuer] = useState(entry.issuer || "");
+  const [month, setMonth] = useState(entry.month || "");
+  const [year, setYear] = useState(entry.year || "");
+  const [credentialId, setCredentialId] = useState(entry.credentialId || "");
   const [iconName, setIconName] = useState(entry.iconName);
   const [tone, setTone] = useState(entry.tone);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState(null);
 
-  const dirty = title !== entry.title || subtitle !== entry.subtitle || iconName !== entry.iconName || tone !== entry.tone;
+  const dirty = title !== entry.title || issuer !== (entry.issuer || "") || month !== (entry.month || "") || year !== (entry.year || "")
+    || credentialId !== (entry.credentialId || "") || iconName !== entry.iconName || tone !== entry.tone;
 
   const save = async () => {
     if (!title.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await updateAchievement(entry.id, { title, subtitle, iconName, tone });
+      // `subtitle` (issuer · month year) is what the read-only card
+      // actually renders -- same derived-string approach EducationCard's
+      // title/subtitle pair already uses, so ProfileAboutSection doesn't
+      // need to know about issuer/month/year separately just to show them.
+      const subtitle = [issuer.trim(), [month.trim(), year.trim()].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
+      await updateAchievement(entry.id, { title, subtitle, issuer, month, year, credentialId, iconName, tone });
       setTitle((t) => t.trim());
-      setSubtitle((s) => s.trim());
     } catch (e) {
       setError(e.message || "Couldn't save that -- please try again.");
     } finally {
@@ -107,8 +120,16 @@ function EntryRow({ entry }) {
       <div className="flex items-start gap-2">
         <IconPicker value={iconName} onChange={setIconName} />
         <div className="flex-1 min-w-0 space-y-1.5">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Top Contributor" className={FIELD} />
-          <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="e.g. PhysioLink Community · 2026" className={FIELD} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dry Needling" className={FIELD} />
+          <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Issuing organization" className={FIELD} />
+          <div className="flex gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+              <option value="">Month</option>
+              {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+          </div>
+          <input value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Credential ID (optional)" className={FIELD} />
         </div>
       </div>
       <TonePicker value={tone} onChange={setTone} />
@@ -146,9 +167,12 @@ function EntryRow({ entry }) {
 function NewEntryRow({ onAdded, onCancel }) {
   const { addAchievement } = useAppData();
   const [title, setTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [iconName, setIconName] = useState("Trophy");
-  const [tone, setTone] = useState("text-amber-500");
+  const [issuer, setIssuer] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [credentialId, setCredentialId] = useState("");
+  const [iconName, setIconName] = useState("Award");
+  const [tone, setTone] = useState("text-violet-600");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -157,7 +181,8 @@ function NewEntryRow({ onAdded, onCancel }) {
     setBusy(true);
     setError(null);
     try {
-      await addAchievement({ title, subtitle, iconName, tone });
+      const subtitle = [issuer.trim(), [month.trim(), year.trim()].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
+      await addAchievement({ title, subtitle, issuer, month, year, credentialId, iconName, tone });
       onAdded();
     } catch (e) {
       setError(e.message || "Couldn't add that -- please try again.");
@@ -170,8 +195,16 @@ function NewEntryRow({ onAdded, onCancel }) {
       <div className="flex items-start gap-2">
         <IconPicker value={iconName} onChange={setIconName} />
         <div className="flex-1 min-w-0 space-y-1.5">
-          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Top Contributor" className={FIELD} />
-          <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="e.g. PhysioLink Community · 2026" className={FIELD} />
+          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Dry Needling" className={FIELD} />
+          <input value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="Issuing organization" className={FIELD} />
+          <div className="flex gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+              <option value="">Month</option>
+              {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+          </div>
+          <input value={credentialId} onChange={(e) => setCredentialId(e.target.value)} placeholder="Credential ID (optional)" className={FIELD} />
         </div>
       </div>
       <TonePicker value={tone} onChange={setTone} />
@@ -204,14 +237,14 @@ export default function EditAchievementsModal({ entries, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-slate-900 text-base">Achievements</h2>
+          <h2 className="font-bold text-slate-900 text-base">Licenses & certifications</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close">
             <X size={18} />
           </button>
         </div>
 
         <div className="space-y-3">
-          {entries.length === 0 && !adding && <p className="text-sm text-slate-400 text-center py-4">No achievements yet — add your first below.</p>}
+          {entries.length === 0 && !adding && <p className="text-sm text-slate-400 text-center py-4">No certifications yet — add your first below.</p>}
           {entries.map((entry) => (
             <EntryRow key={entry.id} entry={entry} />
           ))}
@@ -223,7 +256,7 @@ export default function EditAchievementsModal({ entries, onClose }) {
               onClick={() => setAdding(true)}
               className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-violet-600 border border-dashed border-violet-300 rounded-xl py-2.5 hover:bg-violet-50"
             >
-              <Plus size={14} /> Add achievement
+              <Plus size={14} /> Add certification
             </button>
           )}
         </div>

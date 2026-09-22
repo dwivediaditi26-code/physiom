@@ -2,8 +2,10 @@ import { useState } from "react";
 import { X, Trash2, Plus, AlertCircle } from "lucide-react";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { Icon } from "../shared/icons.jsx";
+import { MONTHS } from "../shared/constants.js";
 
 const FIELD = "w-full text-sm text-slate-700 placeholder:text-slate-400 outline-none border border-slate-200 rounded-lg px-2.5 py-2 focus:border-violet-300";
+const SELECT = "text-sm text-slate-700 outline-none border border-slate-200 rounded-lg px-2.5 py-2 focus:border-violet-300 bg-white";
 const ICON_OPTIONS = ["GraduationCap", "Award", "BookOpen", "ShieldCheck"];
 
 // Feature (2026-08-19): real editing for the Education & certifications
@@ -42,19 +44,21 @@ function EntryRow({ entry }) {
   const { updateEducationEntry, deleteEducationEntry } = useAppData();
   const [title, setTitle] = useState(entry.title);
   const [subtitle, setSubtitle] = useState(entry.subtitle);
+  const [month, setMonth] = useState(entry.month || "");
+  const [year, setYear] = useState(entry.year || "");
   const [iconName, setIconName] = useState(entry.iconName);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState(null);
 
-  const dirty = title !== entry.title || subtitle !== entry.subtitle || iconName !== entry.iconName;
+  const dirty = title !== entry.title || subtitle !== entry.subtitle || month !== (entry.month || "") || year !== (entry.year || "") || iconName !== entry.iconName;
 
   const save = async () => {
     if (!title.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await updateEducationEntry(entry.id, { title, subtitle, iconName });
+      await updateEducationEntry(entry.id, { title, subtitle, month, year, iconName });
       setTitle((t) => t.trim());
       setSubtitle((s) => s.trim());
     } catch (e) {
@@ -89,6 +93,13 @@ function EntryRow({ entry }) {
         <div className="flex-1 min-w-0 space-y-1.5">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. MPT — Orthopaedics" className={FIELD} />
           <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="e.g. XYZ University, India" className={FIELD} />
+          <div className="flex gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+              <option value="">Month</option>
+              {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+          </div>
         </div>
       </div>
       {error && (
@@ -126,6 +137,8 @@ function NewEntryRow({ onAdded, onCancel }) {
   const { addEducationEntry } = useAppData();
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
   const [iconName, setIconName] = useState("GraduationCap");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -135,7 +148,7 @@ function NewEntryRow({ onAdded, onCancel }) {
     setBusy(true);
     setError(null);
     try {
-      await addEducationEntry({ title, subtitle, iconName });
+      await addEducationEntry({ title, subtitle, month, year, iconName });
       onAdded();
     } catch (e) {
       setError(e.message || "Couldn't add that -- please try again.");
@@ -150,6 +163,13 @@ function NewEntryRow({ onAdded, onCancel }) {
         <div className="flex-1 min-w-0 space-y-1.5">
           <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. MPT — Orthopaedics" className={FIELD} />
           <input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="e.g. XYZ University, India" className={FIELD} />
+          <div className="flex gap-1.5">
+            <select value={month} onChange={(e) => setMonth(e.target.value)} className={`${SELECT} flex-1`}>
+              <option value="">Month</option>
+              {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={`${FIELD} w-20`} />
+          </div>
         </div>
       </div>
       {error && (

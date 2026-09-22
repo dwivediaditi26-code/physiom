@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Activity, Zap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
-import ProfileAboutSummary from "../components/profile/ProfileAboutSummary.jsx";
+import ProfileTabs from "../components/profile/ProfileTabs.jsx";
+import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
+import ClinicalProfileTab from "../components/profile/ClinicalProfileTab.jsx";
+import EvidenceContributionsTab from "../components/profile/EvidenceContributionsTab.jsx";
 import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
 import GridPostCard from "../components/feed/GridPostCard.jsx";
@@ -10,24 +13,18 @@ import { useAppData } from "../context/AppDataContext.jsx";
 import * as db from "../data/db.js";
 
 // Profile page for VIEWING SOMEONE ELSE, reached by clicking a name/avatar
-// in the feed or on the People page. Deliberately mirrors ProfilePage.jsx's
-// layout (tabs, category shortcuts, About/Education/Achievements sidebar)
-// -- the first version of this page was just a header + flat post grid,
-// which looked and felt like a second-class, stripped-down profile next to
-// your own full one (Aditi's feedback: "should also show same profile of
-// people to everyone like insta or linkedin"). The only intentional
-// omission is the Exercises tab/strip: `exercises` (ExerciseGrid.jsx) is a
-// single shared, app-wide library, not per-user data, so showing it on
-// every profile would just repeat identical content rather than show
-// anything that's actually theirs.
+// in the feed or on the People page. Mirrors ProfilePage.jsx's layout --
+// see that file for the shared components both pages now use.
 //
-// 3-tab "About/Feed/Cases" bar + the consolidated About card
-// (ProfileAboutSummary.jsx, replacing separate AboutCard/ClinicalCard/
-// AchievementsCard here) are from Aditi's 2026-09-22 reference spec for
-// this page specifically -- ProfilePage.jsx (your own profile) keeps its
-// existing 4-tab layout untouched. Research posts aren't gone, just not
-// separately tabbed: they still show under Feed like any other post.
-const TABS = ["About", "Feed", "Cases"];
+// Sticky ProfileTabs (2026-09-22 redesign, Aditi's "PhysioFeed Therapist
+// Profile" spec): Posts | About | Clinical | Experience | Education |
+// Evidence, replacing the earlier 3-tab About/Feed/Cases bar. Experience
+// and Education still show today's RotationsCard/EducationCard content
+// as-is -- restructuring those into full multi-entry cards is a later
+// pass (Aditi's own scoping: Clinical Profile + Evidence & Contributions
+// + Opportunities first). The Exercises tab/strip stays deliberately
+// omitted -- `exercises` (ExerciseGrid.jsx) is a single shared, app-wide
+// library, not per-user data.
 const SHORTCUTS = [
   { label: "ACL Rehab", category: "Techniques", icon: Activity },
   { label: "Sports Injuries", category: "Case Studies", icon: Zap },
@@ -41,6 +38,7 @@ export default function OtherProfilePage() {
   const [education, setEducation] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [rotations, setRotations] = useState([]);
+  const [otherPublications, setOtherPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState("About");
@@ -59,17 +57,19 @@ export default function OtherProfilePage() {
     setActiveTab("About");
     setCategoryFilter(null);
     (async () => {
-      const [p, ed, ac, rt] = await Promise.all([
+      const [p, ed, ac, rt, pu] = await Promise.all([
         db.getProfileById(userId),
         db.getEducationByUser(userId),
         db.getAchievementsByUser(userId),
         db.getRotationsByUser(userId),
+        db.getPublicationsByUser(userId),
       ]);
       if (cancelled) return;
       if (!p) setNotFound(true); else setOtherProfile(p);
       setEducation(ed);
       setAchievements(ac);
       setRotations(rt);
+      setOtherPublications(pu);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -86,14 +86,11 @@ export default function OtherProfilePage() {
   }
 
   const authorPosts = posts.filter((p) => p.authorId === userId);
-  const gridPosts =
-    activeTab === "Feed" ? (categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts)
-    : activeTab === "Cases" ? authorPosts.filter((p) => p.category === "Case Studies")
-    : [];
+  const gridPosts = activeTab === "Posts" ? (categoryFilter ? authorPosts.filter((p) => p.category === categoryFilter) : authorPosts) : [];
   const following = people.find((p) => p.id === userId)?.following ?? false;
 
   const pickShortcut = (s) => {
-    setActiveTab("Feed");
+    setActiveTab("Posts");
     setCategoryFilter((cur) => (cur === s.category ? null : s.category));
   };
 
@@ -112,16 +109,9 @@ export default function OtherProfilePage() {
           onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
         />
 
-        <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
-          {TABS.map((tab) => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setCategoryFilter(null); }}
-              className={`pf-font-head flex-1 text-center text-xs font-bold tracking-wide py-2 rounded-xl transition-all ${activeTab === tab ? "bg-[#7C3AED] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-              {tab.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <ProfileTabs active={activeTab} onChange={(t) => { setActiveTab(t); setCategoryFilter(null); }} />
 
-        {activeTab === "Feed" && (
+        {activeTab === "Posts" && (
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar mb-5 px-1 py-1">
             {SHORTCUTS.map((s) => {
               const Icon = s.icon;
@@ -138,13 +128,12 @@ export default function OtherProfilePage() {
           </div>
         )}
 
-        {activeTab === "About" ? (
-          <div className="space-y-4">
-            <ProfileAboutSummary profile={otherProfile} achievements={achievements} />
-            <RotationsCard entries={rotations} readOnly />
-            <EducationCard entries={education} readOnly />
-          </div>
-        ) : (
+        {activeTab === "About" && <ProfileAboutSection profile={otherProfile} achievements={achievements} isOwn={false} />}
+        {activeTab === "Clinical" && <ClinicalProfileTab profile={otherProfile} isOwn={false} />}
+        {activeTab === "Experience" && <RotationsCard entries={rotations} readOnly />}
+        {activeTab === "Education" && <EducationCard entries={education} readOnly />}
+        {activeTab === "Evidence" && <EvidenceContributionsTab profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />}
+        {activeTab === "Posts" && (
           <div className="grid sm:grid-cols-2 gap-4">
             {gridPosts.length === 0 ? <div className="col-span-2 text-center py-14 text-slate-400 text-sm">No posts here yet.</div> : gridPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
           </div>
@@ -152,7 +141,7 @@ export default function OtherProfilePage() {
       </main>
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">
-        <ProfileAboutSummary profile={otherProfile} achievements={achievements} />
+        <ProfileAboutSection profile={otherProfile} achievements={achievements} isOwn={false} />
         <RotationsCard entries={rotations} readOnly />
         <EducationCard entries={education} readOnly />
       </aside>

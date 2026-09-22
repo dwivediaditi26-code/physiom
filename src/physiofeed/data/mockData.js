@@ -35,6 +35,26 @@ export const CURRENT_USER = {
   skills: ["ACL Rehabilitation", "Kinesio Taping", "Dry Needling", "Exercise Prescription"],
   resumeUrl: null,
   resumeName: null,
+  // Clinical Profile / Evidence & Contributions / Opportunities
+  // (2026-09-22 "PhysioFeed Therapist Profile" redesign) -- see db.js's
+  // getProfile() and supabase/add_profile_clinical_taxonomy.sql. Filled in
+  // for the demo profile for the same reason as the clinical-CV fields
+  // above; a real new sign-up gets the blank slate getProfile() creates.
+  headline: "Helping athletes return stronger, not just return sooner.",
+  areaOfPractice: ["Sports Physiotherapy", "Orthopedic Physiotherapy"],
+  clinicalInterests: ["ACL Rehabilitation", "Return to Sport", "Shoulder Disorders"],
+  clinicalSkillsAssessment: ["ROM assessment", "Special tests", "Movement analysis"],
+  clinicalSkillsTreatment: ["Exercise therapy", "Manual therapy", "Home exercise prescription"],
+  patientPopulations: ["Athletes", "Post-operative patients", "Adults"],
+  clinicalApproach: "I combine clinical reasoning, patient goals, functional assessment, and the best available evidence to develop individualized rehabilitation plans.",
+  researchInterests: ["ACL rehabilitation", "Exercise therapy", "Sports injury prevention"],
+  // Six options: Jobs, Internships, Collaborations, Research, Workshops,
+  // Mentorship -- replaces the old openToWork boolean above (kept for
+  // back-compat, see db.js). A practising senior physio isn't job-hunting
+  // (openToWork: false above), but realistically still open to giving
+  // back/collaborating -- not literally empty the way "not open to
+  // anything" would be.
+  openToTypes: ["Mentorship", "Research", "Workshops"],
 };
 
 export const INITIAL_POSTS = [
@@ -185,17 +205,38 @@ export const EXERCISES = [
 // tables, so a stable string prefix here is enough for the UI to tell "can
 // this be edited for real" apart from "still showing the placeholder list"
 // without a separate flag.
+// month/year (2026-09-22, Aditi: "year month in education an[d]
+// certification") -- see db.js's getEducation() and
+// supabase/add_profile_clinical_taxonomy.sql.
 export const EDUCATION = [
-  { id: "demo-edu-1", title: "MPT — Orthopaedics", subtitle: "XYZ University, India", iconName: "GraduationCap" },
-  { id: "demo-edu-2", title: "BPT — Physiotherapy", subtitle: "ABC College of Physiotherapy", iconName: "GraduationCap" },
-  { id: "demo-edu-3", title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2", iconName: "Award" },
-  { id: "demo-edu-4", title: "Dry Needling — Level 1", subtitle: "Kinetacore", iconName: "Award" },
+  { id: "demo-edu-1", title: "MPT — Orthopaedics", subtitle: "XYZ University, India", iconName: "GraduationCap", month: "May", year: "2022" },
+  { id: "demo-edu-2", title: "BPT — Physiotherapy", subtitle: "ABC College of Physiotherapy", iconName: "GraduationCap", month: "May", year: "2020" },
+  { id: "demo-edu-3", title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2", iconName: "Award", month: "September", year: "2021" },
+  { id: "demo-edu-4", title: "Dry Needling — Level 1", subtitle: "Kinetacore", iconName: "Award", month: "November", year: "2023" },
 ];
 
+// Re-scoped from general "achievements" to Licenses & Certifications
+// (2026-09-22 redesign, supabase/add_profile_clinical_taxonomy.sql adds
+// issuer/year/credentialId/verified) -- the old "Top Contributor"/"Most
+// Helpful Physio" community-recognition badges didn't have an issuer or a
+// year to genuinely earn, so they don't fit this table's new shape.
+// credentialId is left blank, same as this app leaves out any other field
+// it can't back with a real value (no invented ID numbers, same reasoning
+// as ProfileAboutSection.jsx not inventing a registration number). Distinct
+// from EDUCATION's own "Certified Manual Therapist"/"Dry Needling" entries
+// above -- those stay where they are (Education tab, untouched this pass).
 export const ACHIEVEMENTS = [
-  { id: "demo-ach-1", title: "Top Contributor", subtitle: "PhysioLink Community · 2024", iconName: "Trophy", tone: "text-amber-500" },
-  { id: "demo-ach-2", title: "Research Contributor", subtitle: "5+ research posts published", iconName: "Award", tone: "text-violet-600" },
-  { id: "demo-ach-3", title: "Most Helpful Physio", subtitle: "Top rated by peers", iconName: "Star", tone: "text-rose-500" },
+  { id: "demo-ach-1", title: "Certified Sports Rehabilitation Specialist", subtitle: "Sports Physiotherapy Academy · March 2022", issuer: "Sports Physiotherapy Academy", month: "March", year: "2022", credentialId: "", verified: false, iconName: "ShieldCheck", tone: "text-violet-600" },
+  { id: "demo-ach-2", title: "Kinesio Taping Practitioner", subtitle: "Kinesio Taping Association Intl. · August 2023", issuer: "Kinesio Taping Association Intl.", month: "August", year: "2023", credentialId: "", verified: false, iconName: "Award", tone: "text-amber-500" },
+  { id: "demo-ach-3", title: "First Aid & CPR", subtitle: "Indian Red Cross Society · January 2024", issuer: "Indian Red Cross Society", month: "January", year: "2024", credentialId: "", verified: false, iconName: "Activity", tone: "text-rose-500" },
+];
+
+// Publications (2026-09-22 redesign) -- Evidence & Contributions tab, see
+// db.js's getPublicationsByUser()/addPublication() and
+// supabase/add_profile_clinical_taxonomy.sql's publications table. Same
+// "demo-" id convention as EDUCATION/ACHIEVEMENTS/ROTATIONS above.
+export const PUBLICATIONS = [
+  { id: "demo-pub-1", title: "Criteria-based vs time-based return-to-sport progression after ACL reconstruction", journal: "Journal of Sports Rehabilitation", year: "2025", authors: "Sharma A, Iyer R", doiUrl: "" },
 ];
 
 // Same "demo-" id convention as EDUCATION/ACHIEVEMENTS above -- see

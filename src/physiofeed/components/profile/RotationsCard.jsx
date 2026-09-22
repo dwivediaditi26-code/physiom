@@ -6,9 +6,9 @@ import EditRotationsModal from "./EditRotationsModal.jsx";
 // Clinical rotations & postings (2026-09-21, Aditi's brief: "Edit
 // Clinical Profile & CV" -- one form feeding your public profile AND
 // Explore's Instant Apply). Same "own list from context, or an `entries`
-// prop for viewing someone else read-only" shape as EducationCard.jsx /
-// AchievementsCard.jsx right next to it on the About tab -- see those
-// for the fuller reasoning, not repeated here. Backed by
+// prop for viewing someone else read-only" shape as EducationCard.jsx
+// right next to it -- see that file for the fuller reasoning, not
+// repeated here. Backed by
 // supabase/add_profile_clinical_cv.sql's `rotations` table.
 export default function RotationsCard({ entries, readOnly = false }) {
   const { rotations: ownRotations } = useAppData();

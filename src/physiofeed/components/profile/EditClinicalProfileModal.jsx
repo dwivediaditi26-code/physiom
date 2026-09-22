@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { X, AlertCircle, FileText, Upload } from "lucide-react";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { validateResumeFile } from "../../lib/media.js";
+import { OPPORTUNITY_TYPES } from "../shared/constants.js";
 
 const FIELD = "w-full text-sm text-slate-700 placeholder:text-slate-400 outline-none border border-slate-200 rounded-lg px-2.5 py-2 focus:border-violet-300";
 const LABEL = "text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block";
@@ -22,7 +23,9 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
   const [phone, setPhone] = useState(profile.phone || "");
   const [skills, setSkills] = useState(profile.skills || []);
   const [skillDraft, setSkillDraft] = useState("");
-  const [openToWork, setOpenToWork] = useState(profile.openToWork !== false);
+  const [clinicalInterests, setClinicalInterests] = useState(profile.clinicalInterests || []);
+  const [interestDraft, setInterestDraft] = useState("");
+  const [openToTypes, setOpenToTypes] = useState(profile.openToTypes || []);
   const [willingToRelocate, setWillingToRelocate] = useState(!!profile.willingToRelocate);
   const [resumeUrl, setResumeUrl] = useState(profile.resumeUrl || null);
   const [resumeName, setResumeName] = useState(profile.resumeName || null);
@@ -39,6 +42,18 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
     setSkillDraft("");
   };
   const removeSkill = (s) => setSkills((prev) => prev.filter((x) => x !== s));
+
+  const addInterest = () => {
+    const s = interestDraft.trim();
+    if (!s || clinicalInterests.includes(s)) { setInterestDraft(""); return; }
+    setClinicalInterests((prev) => [...prev, s]);
+    setInterestDraft("");
+  };
+  const removeInterest = (s) => setClinicalInterests((prev) => prev.filter((x) => x !== s));
+
+  const toggleOpenToType = (t) => {
+    setOpenToTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  };
 
   const handleResumePicked = async (e) => {
     const file = e.target.files?.[0];
@@ -66,7 +81,7 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
     try {
       await updateProfile({
         clinicalTitle: clinicalTitle.trim(), college: college.trim(), phone: phone.trim(),
-        skills, openToWork, willingToRelocate, resumeUrl, resumeName,
+        skills, clinicalInterests, openToTypes, willingToRelocate, resumeUrl, resumeName,
       });
       onClose();
     } catch (e) {
@@ -144,21 +159,46 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
           className={`${FIELD} mb-4`}
         />
 
-        <label className={LABEL}>Opportunity preferences</label>
-        <div className="space-y-2 mb-4">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="radio" name="openToWork" checked={openToWork} onChange={() => setOpenToWork(true)} className="w-4 h-4 text-violet-600 focus:ring-violet-300" />
-            <span className="text-sm text-slate-700">Open to internships & jobs</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="radio" name="openToWork" checked={!openToWork} onChange={() => setOpenToWork(false)} className="w-4 h-4 text-violet-600 focus:ring-violet-300" />
-            <span className="text-sm text-slate-700">Not looking right now</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
-            <input type="checkbox" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-300" />
-            <span className="text-sm text-slate-700">Willing to relocate to other cities</span>
-          </label>
+        <label className={LABEL}>Clinical interests</label>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {clinicalInterests.map((s) => (
+            <span key={s} className="inline-flex items-center gap-1 text-[11px] font-medium pl-2.5 pr-1.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">
+              {s}
+              <button type="button" onClick={() => removeInterest(s)} aria-label={`Remove ${s}`} className="hover:text-violet-900"><X size={11} /></button>
+            </span>
+          ))}
         </div>
+        <input
+          value={interestDraft}
+          onChange={(e) => setInterestDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addInterest(); }
+          }}
+          onBlur={addInterest}
+          placeholder="Type an interest and press Enter (e.g. Low Back Pain)"
+          className={`${FIELD} mb-4`}
+        />
+
+        <label className={LABEL}>Open to opportunities</label>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {OPPORTUNITY_TYPES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggleOpenToType(t)}
+              aria-pressed={openToTypes.includes(t)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                openToTypes.includes(t) ? "bg-violet-600 border-violet-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
+          <input type="checkbox" checked={willingToRelocate} onChange={(e) => setWillingToRelocate(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-300" />
+          <span className="text-sm text-slate-700">Willing to relocate to other cities</span>
+        </label>
 
         {error && (
           <div className="flex items-start gap-1.5 mb-3 text-xs text-rose-600">

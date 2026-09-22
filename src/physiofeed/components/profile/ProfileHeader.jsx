@@ -26,8 +26,17 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-5">
-      <div className="px-5 sm:px-8 pt-6 pb-6 bg-gradient-to-b from-[#F3EEFF]/60 via-[#FBF9FF]/40 to-white">
+    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm mb-5">
+      {/* rounded-3xl here too (2026-09-22 bug fix), not overflow-hidden on
+          the card above -- the "more" dropdown just below is absolutely
+          positioned inside this div, and overflow-hidden on the outer
+          card clipped it (cut off "Share profile") whenever there wasn't
+          much content underneath to push the card tall enough, e.g. a
+          profile with no bio/skills like a fresh demo person's. The
+          gradient fades to white by its own bottom edge anyway, so
+          matching the rounding here does the same corner-clipping job
+          without also clipping this div's own overflowing children. */}
+      <div className="rounded-3xl px-5 sm:px-8 pt-6 pb-6 bg-gradient-to-b from-[#F3EEFF]/60 via-[#FBF9FF]/40 to-white">
         <div className="flex items-start gap-4 mb-3">
           <div className="relative shrink-0">
             <Avatar size={80} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} className="border-2 border-white shadow-md" />
@@ -53,6 +62,7 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
             <p className="text-sm text-slate-500">
               {profile.role}{profile.verified && " · Verified"}
             </p>
+            {profile.headline && <p className="text-sm text-slate-700 mt-1 max-w-md">{profile.headline}</p>}
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
           </div>
         </div>
@@ -92,11 +102,14 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
           </div>
         </div>
 
-        {!isOwn && profile.openToWork && (
-          <div className="flex justify-center mt-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
-              <Briefcase size={12} /> Open to Opportunities
+        {(profile.openToTypes || []).length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
+              <Briefcase size={12} /> Open to
             </span>
+            {profile.openToTypes.map((t) => (
+              <span key={t} className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">{t}</span>
+            ))}
           </div>
         )}
 

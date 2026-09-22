@@ -32,6 +32,7 @@ export default function EditProfileModal({ profile, onClose }) {
   const { updateProfile, uploadProfileImage } = useAppData();
   const [name, setName] = useState(profile.name || "");
   const [role, setRole] = useState(profile.role || "");
+  const [headline, setHeadline] = useState(profile.headline || "");
   const [location, setLocation] = useState(profile.location || "");
   const [bio, setBio] = useState(profile.bio || "");
   const [quote, setQuote] = useState(profile.quote || "");
@@ -72,7 +73,7 @@ export default function EditProfileModal({ profile, onClose }) {
     setError(null);
     try {
       await updateProfile({
-        name: name.trim(), role: role.trim(), location: location.trim(), bio: bio.trim(), quote: quote.trim(), gradient, avatarUrl,
+        name: name.trim(), role: role.trim(), headline: headline.trim(), location: location.trim(), bio: bio.trim(), quote: quote.trim(), gradient, avatarUrl,
         experience: experience.trim(), languages: languages.trim(), memberships: memberships.trim(), availableForConsults,
       });
       onClose();
@@ -143,6 +144,9 @@ export default function EditProfileModal({ profile, onClose }) {
 
         <label className={LABEL}>Role / title</label>
         <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Sports Physiotherapist · Mumbai" className={`${FIELD} mb-3`} />
+
+        <label className={LABEL}>Headline</label>
+        <input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Helping athletes return stronger, not just return sooner." className={`${FIELD} mb-3`} />
 
         <label className={LABEL}>Location</label>
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Mumbai, Maharashtra, India" className={`${FIELD} mb-3`} />

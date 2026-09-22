@@ -28,12 +28,23 @@ export default function EducationCard({ entries, readOnly = false }) {
         <p className="text-sm text-slate-400">{readOnly ? "No education or certifications added yet." : "Add your education & certifications."}</p>
       ) : (
         <div className="space-y-3">
-          {education.map((e) => (
-            <div key={e.id} className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#FFF4E0] flex items-center justify-center shrink-0"><Icon name={e.iconName} size={14} className="text-[#B0790A]" /></div>
-              <div className="min-w-0"><p className="text-sm font-medium text-slate-800">{e.title}</p><p className="text-xs text-slate-400">{e.subtitle}</p></div>
-            </div>
-          ))}
+          {education.map((e) => {
+            // "year month in education an[d] certification" (2026-09-22) --
+            // shown as a right-aligned "Mon YYYY" badge, same spot
+            // RotationsCard's duration takes, abbreviated to 3 letters here
+            // only for display (the stored value stays the full month name
+            // so the edit form's dropdown selection stays unambiguous).
+            const when = [e.month?.slice(0, 3), e.year].filter(Boolean).join(" ");
+            return (
+              <div key={e.id} className="flex items-start gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-[#FFF4E0] flex items-center justify-center shrink-0"><Icon name={e.iconName} size={14} className="text-[#B0790A]" /></div>
+                <div className="min-w-0 flex-1 flex items-baseline justify-between gap-2">
+                  <div className="min-w-0"><p className="text-sm font-medium text-slate-800">{e.title}</p><p className="text-xs text-slate-400">{e.subtitle}</p></div>
+                  {when && <p className="text-xs text-slate-400 shrink-0">{when}</p>}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       {!readOnly && editing && <EditEducationModal entries={education} onClose={() => setEditing(false)} />}

@@ -28,6 +28,43 @@ export const PRO_NAV = [
   { path: "/saved", label: "Saved", icon: "Bookmark" },
 ];
 
+// Fixed taxonomies for the Clinical Profile tab / About section / Open-to
+// status (2026-09-22 "PhysioFeed Therapist Profile" redesign). Plain text[]
+// columns in Supabase (see supabase/add_profile_clinical_taxonomy.sql), not
+// enums -- these lists are what enforce a fixed option set, so adding or
+// renaming an option later is a code change here, not a migration.
+// AREA_OF_PRACTICE is shared by two places in the spec that list
+// overlapping examples (About's "Clinical Expertise" and the Clinical
+// tab's "Areas of Practice") -- one field, shown as a short teaser in one
+// place and the full picker in the other, rather than two near-duplicate
+// fields asking a therapist to enter the same thing twice.
+export const AREA_OF_PRACTICE = [
+  "Orthopedic Physiotherapy", "Sports Physiotherapy", "Neurological Physiotherapy",
+  "Pediatric Physiotherapy", "Cardiorespiratory Physiotherapy", "Geriatric Physiotherapy",
+];
+export const CLINICAL_SKILLS_ASSESSMENT = [
+  "ROM assessment", "Special tests", "Neurological examination",
+  "Posture assessment", "Gait assessment", "Movement analysis",
+];
+export const CLINICAL_SKILLS_TREATMENT = [
+  "Exercise therapy", "Manual therapy", "Electrotherapy",
+  "Patient education", "Home exercise prescription",
+];
+export const PATIENT_POPULATIONS = [
+  "Athletes", "Post-operative patients", "Adults", "Children", "Older adults",
+];
+export const OPPORTUNITY_TYPES = [
+  "Jobs", "Internships", "Collaborations", "Research", "Workshops", "Mentorship",
+];
+
+// Education & Certifications date fields (2026-09-22, Aditi: "year month
+// in education an[d] certification"). A plain select, not a date picker --
+// a degree or cert only ever needs "when", not a specific day.
+export const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 export function initialsOf(name) {
   return name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
 }

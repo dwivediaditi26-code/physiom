@@ -22,6 +22,7 @@
 import {
   INITIAL_POSTS, PEOPLE, NOTIFICATIONS, EXERCISES, EDUCATION,
   ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER, ROTATIONS,
+  PUBLICATIONS,
 } from "./mockData.js";
 import { supabase, authHeader } from "../../supabase.js";
 import { initialsOf } from "../components/shared/constants.js";
@@ -473,6 +474,19 @@ export async function getProfile() {
         skills: [],
         resume_url: null,
         resume_name: null,
+        // Clinical Profile / Evidence & Contributions / Opportunities
+        // (2026-09-22) -- blank, same reasoning as the fields above.
+        // Requires add_profile_clinical_taxonomy.sql to have run, same
+        // caveat as clinical_title etc. above.
+        headline: "",
+        area_of_practice: [],
+        clinical_interests: [],
+        clinical_skills_assessment: [],
+        clinical_skills_treatment: [],
+        patient_populations: [],
+        clinical_approach: "",
+        research_interests: [],
+        open_to_types: [],
       };
       const { data: inserted } = await supabase.from("profiles").insert(defaults).select().single();
       row = inserted || defaults;
@@ -516,6 +530,21 @@ export async function getProfile() {
       skills: row.skills || [],
       resumeUrl: row.resume_url || null,
       resumeName: row.resume_name || null,
+      // Clinical Profile / Evidence & Contributions / Opportunities
+      // (2026-09-22) -- "" / [] (not undefined) on rows from before
+      // add_profile_clinical_taxonomy.sql runs, same reasoning as every
+      // other field above. openToTypes replaces openToWork as the real
+      // "what kind of opportunity" signal; openToWork above is kept only
+      // for any code that still reads the old boolean.
+      headline: row.headline || "",
+      areaOfPractice: row.area_of_practice || [],
+      clinicalInterests: row.clinical_interests || [],
+      clinicalSkillsAssessment: row.clinical_skills_assessment || [],
+      clinicalSkillsTreatment: row.clinical_skills_treatment || [],
+      patientPopulations: row.patient_populations || [],
+      clinicalApproach: row.clinical_approach || "",
+      researchInterests: row.research_interests || [],
+      openToTypes: row.open_to_types || [],
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
@@ -546,6 +575,13 @@ export async function getProfileById(userId) {
       // read-only "viewing someone else" path never surfaces it.
       clinicalTitle: "", college: "", openToWork: true, willingToRelocate: false,
       skills: [], resumeUrl: null, resumeName: null,
+      // Demo PEOPLE rows (mockData.js) never had real clinical-taxonomy
+      // data either -- empty, same as every other field above, not a
+      // guess dressed up from their one-line `role`.
+      headline: "", areaOfPractice: [], clinicalInterests: [],
+      clinicalSkillsAssessment: [], clinicalSkillsTreatment: [],
+      patientPopulations: [], clinicalApproach: "", researchInterests: [],
+      openToTypes: [],
     });
   }
 
@@ -567,6 +603,14 @@ export async function getProfileById(userId) {
       clinicalTitle: row.clinical_title || "", college: row.college || "",
       openToWork: row.open_to_work === false ? false : true, willingToRelocate: !!row.willing_to_relocate,
       skills: row.skills || [], resumeUrl: row.resume_url || null, resumeName: row.resume_name || null,
+      headline: row.headline || "", areaOfPractice: row.area_of_practice || [],
+      clinicalInterests: row.clinical_interests || [],
+      clinicalSkillsAssessment: row.clinical_skills_assessment || [],
+      clinicalSkillsTreatment: row.clinical_skills_treatment || [],
+      patientPopulations: row.patient_populations || [],
+      clinicalApproach: row.clinical_approach || "",
+      researchInterests: row.research_interests || [],
+      openToTypes: row.open_to_types || [],
     });
   } catch (e) {
     console.error("getProfileById(): --", e?.message || e);
@@ -600,6 +644,18 @@ export async function updateProfile(fields) {
   if (fields.availableForConsults !== undefined) patch.available_for_consults = fields.availableForConsults;
   if (fields.openToWork !== undefined) patch.open_to_work = fields.openToWork;
   if (fields.willingToRelocate !== undefined) patch.willing_to_relocate = fields.willingToRelocate;
+  // Clinical Profile / Evidence & Contributions / Opportunities
+  // (2026-09-22) -- text[] columns take the JS array as-is, same as skills
+  // above.
+  if (fields.headline !== undefined) patch.headline = fields.headline;
+  if (fields.areaOfPractice !== undefined) patch.area_of_practice = fields.areaOfPractice;
+  if (fields.clinicalInterests !== undefined) patch.clinical_interests = fields.clinicalInterests;
+  if (fields.clinicalSkillsAssessment !== undefined) patch.clinical_skills_assessment = fields.clinicalSkillsAssessment;
+  if (fields.clinicalSkillsTreatment !== undefined) patch.clinical_skills_treatment = fields.clinicalSkillsTreatment;
+  if (fields.patientPopulations !== undefined) patch.patient_populations = fields.patientPopulations;
+  if (fields.clinicalApproach !== undefined) patch.clinical_approach = fields.clinicalApproach;
+  if (fields.researchInterests !== undefined) patch.research_interests = fields.researchInterests;
+  if (fields.openToTypes !== undefined) patch.open_to_types = fields.openToTypes;
   if (fields.name) {
     patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
   }
@@ -640,11 +696,11 @@ export async function getEducation() {
     if (!uid) return clone(EDUCATION); // signed out / guest mode -- keep the demo list
     const { data, error } = await supabase
       .from("education_entries")
-      .select("id, title, subtitle, icon_name")
+      .select("id, title, subtitle, icon_name, month, year")
       .eq("user_id", uid)
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name }));
+    return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, month: r.month || "", year: r.year || "" }));
   } catch (e) {
     console.error("getEducation(): falling back to demo list --", e?.message || e);
     return clone(EDUCATION);
@@ -660,11 +716,11 @@ export async function getEducationByUser(userId) {
   try {
     const { data, error } = await supabase
       .from("education_entries")
-      .select("id, title, subtitle, icon_name")
+      .select("id, title, subtitle, icon_name, month, year")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name }));
+    return (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, month: r.month || "", year: r.year || "" }));
   } catch (e) {
     console.error("getEducationByUser(): --", e?.message || e);
     return [];
@@ -677,22 +733,25 @@ export async function getEducationByUser(userId) {
 // thinking their real credentials were saved when they weren't. Errors
 // (not signed in, migration not run yet, RLS block) surface for real so
 // the edit modal can show them instead of quietly closing.
-export async function addEducationEntry({ title, subtitle, iconName }) {
+export async function addEducationEntry({ title, subtitle, iconName, month, year }) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your education & certifications.");
   const { error } = await supabase.from("education_entries").insert({
     user_id: uid, title: title.trim(), subtitle: (subtitle || "").trim(), icon_name: iconName || "GraduationCap",
+    month: (month || "").trim(), year: (year || "").trim(),
   });
   if (error) throw error;
   return getEducation();
 }
-export async function updateEducationEntry(id, { title, subtitle, iconName }) {
+export async function updateEducationEntry(id, { title, subtitle, iconName, month, year }) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your education & certifications.");
   const patch = {};
   if (title !== undefined) patch.title = title.trim();
   if (subtitle !== undefined) patch.subtitle = subtitle.trim();
   if (iconName !== undefined) patch.icon_name = iconName;
+  if (month !== undefined) patch.month = month.trim();
+  if (year !== undefined) patch.year = year.trim();
   const { error } = await supabase.from("education_entries").update(patch).eq("id", id).eq("user_id", uid);
   if (error) throw error;
   return getEducation();
@@ -770,17 +829,26 @@ export async function deleteRotation(id) {
 }
 
 // Same real-first/demo-fallback shape as getEducation() above.
+// title/subtitle/iconName/tone are the original "achievements" shape;
+// issuer/year/credentialId (2026-09-22, Licenses & Certifications) are
+// additive -- see supabase/add_profile_clinical_taxonomy.sql. verified is
+// deliberately never read here for the own-profile path either: there's
+// no admin verification flow yet, so nothing in this file ever sets it to
+// true (see addAchievement/updateAchievement below).
 export async function getAchievements() {
   try {
     const uid = await currentUserId();
     if (!uid) return clone(ACHIEVEMENTS);
     const { data, error } = await supabase
       .from("achievements")
-      .select("id, title, subtitle, icon_name, tone")
+      .select("id, title, subtitle, icon_name, tone, issuer, year, month, credential_id, verified")
       .eq("user_id", uid)
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone }));
+    return data.map((r) => ({
+      id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone,
+      issuer: r.issuer || "", year: r.year || "", month: r.month || "", credentialId: r.credential_id || "", verified: !!r.verified,
+    }));
   } catch (e) {
     console.error("getAchievements(): falling back to demo list --", e?.message || e);
     return clone(ACHIEVEMENTS);
@@ -794,45 +862,120 @@ export async function getAchievementsByUser(userId) {
   try {
     const { data, error } = await supabase
       .from("achievements")
-      .select("id, title, subtitle, icon_name, tone")
+      .select("id, title, subtitle, icon_name, tone, issuer, year, month, credential_id, verified")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
     if (error) throw error;
-    return (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone }));
+    return (data || []).map((r) => ({
+      id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, tone: r.tone,
+      issuer: r.issuer || "", year: r.year || "", month: r.month || "", credentialId: r.credential_id || "", verified: !!r.verified,
+    }));
   } catch (e) {
     console.error("getAchievementsByUser(): --", e?.message || e);
     return [];
   }
 }
 
-export async function addAchievement({ title, subtitle, iconName, tone }) {
+export async function addAchievement({ title, subtitle, iconName, tone, issuer, year, month, credentialId }) {
   const uid = await currentUserId();
-  if (!uid) throw new Error("Sign in to edit your achievements.");
+  if (!uid) throw new Error("Sign in to edit your certifications.");
   const { error } = await supabase.from("achievements").insert({
     user_id: uid, title: title.trim(), subtitle: (subtitle || "").trim(),
-    icon_name: iconName || "Trophy", tone: tone || "text-amber-500",
+    icon_name: iconName || "Award", tone: tone || "text-violet-600",
+    issuer: (issuer || "").trim(), year: (year || "").trim(), month: (month || "").trim(), credential_id: (credentialId || "").trim(),
   });
   if (error) throw error;
   return getAchievements();
 }
-export async function updateAchievement(id, { title, subtitle, iconName, tone }) {
+export async function updateAchievement(id, { title, subtitle, iconName, tone, issuer, year, month, credentialId }) {
   const uid = await currentUserId();
-  if (!uid) throw new Error("Sign in to edit your achievements.");
+  if (!uid) throw new Error("Sign in to edit your certifications.");
   const patch = {};
   if (title !== undefined) patch.title = title.trim();
   if (subtitle !== undefined) patch.subtitle = subtitle.trim();
   if (iconName !== undefined) patch.icon_name = iconName;
   if (tone !== undefined) patch.tone = tone;
+  if (issuer !== undefined) patch.issuer = issuer.trim();
+  if (year !== undefined) patch.year = year.trim();
+  if (month !== undefined) patch.month = month.trim();
+  if (credentialId !== undefined) patch.credential_id = credentialId.trim();
   const { error } = await supabase.from("achievements").update(patch).eq("id", id).eq("user_id", uid);
   if (error) throw error;
   return getAchievements();
 }
 export async function deleteAchievement(id) {
   const uid = await currentUserId();
-  if (!uid) throw new Error("Sign in to edit your achievements.");
+  if (!uid) throw new Error("Sign in to edit your certifications.");
   const { error } = await supabase.from("achievements").delete().eq("id", id).eq("user_id", uid);
   if (error) throw error;
   return getAchievements();
+}
+
+// Publications (2026-09-22, Evidence & Contributions tab), backed by
+// supabase/add_profile_clinical_taxonomy.sql's publications table. Same
+// real-first/demo-fallback-on-read, real-error-on-write shape as
+// education_entries above.
+export async function getPublications() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(PUBLICATIONS);
+    const { data, error } = await supabase
+      .from("publications")
+      .select("id, title, journal, year, authors, doi_url")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, title: r.title, journal: r.journal, year: r.year, authors: r.authors, doiUrl: r.doi_url }));
+  } catch (e) {
+    console.error("getPublications(): falling back to demo list --", e?.message || e);
+    return clone(PUBLICATIONS);
+  }
+}
+
+export async function getPublicationsByUser(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("publications")
+      .select("id, title, journal, year, authors, doi_url")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map((r) => ({ id: r.id, title: r.title, journal: r.journal, year: r.year, authors: r.authors, doiUrl: r.doi_url }));
+  } catch (e) {
+    console.error("getPublicationsByUser(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function addPublication({ title, journal, year, authors, doiUrl }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your publications.");
+  const { error } = await supabase.from("publications").insert({
+    user_id: uid, title: title.trim(), journal: (journal || "").trim(),
+    year: (year || "").trim(), authors: (authors || "").trim(), doi_url: (doiUrl || "").trim(),
+  });
+  if (error) throw error;
+  return getPublications();
+}
+export async function updatePublication(id, { title, journal, year, authors, doiUrl }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your publications.");
+  const patch = {};
+  if (title !== undefined) patch.title = title.trim();
+  if (journal !== undefined) patch.journal = journal.trim();
+  if (year !== undefined) patch.year = year.trim();
+  if (authors !== undefined) patch.authors = authors.trim();
+  if (doiUrl !== undefined) patch.doi_url = doiUrl.trim();
+  const { error } = await supabase.from("publications").update(patch).eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getPublications();
+}
+export async function deletePublication(id) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your publications.");
+  const { error } = await supabase.from("publications").delete().eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getPublications();
 }
 
 export async function getExercises() { return clone(EXERCISES); }

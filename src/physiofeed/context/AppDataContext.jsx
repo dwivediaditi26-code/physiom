@@ -13,6 +13,7 @@ export function AppDataProvider({ children }) {
   const [education, setEducation] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [rotations, setRotations] = useState([]);
+  const [publications, setPublications] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,14 +22,14 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, pe, no, ev, co, ex, ed, ac, rt, exr, pr] = await Promise.all([
+      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr] = await Promise.all([
         db.getPosts(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
-        db.getAchievements(), db.getRotations(), db.getExercises(), db.getProfile(),
+        db.getAchievements(), db.getRotations(), db.getPublications(), db.getExercises(), db.getProfile(),
       ]);
       setPosts(p); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
-      setAchievements(ac); setRotations(rt); setExercises(exr); setProfile(pr);
+      setAchievements(ac); setRotations(rt); setPublications(pu); setExercises(exr); setProfile(pr);
       setLoading(false);
     })();
   }, []);
@@ -95,15 +96,22 @@ export function AppDataProvider({ children }) {
   const deleteRotation = useCallback(async (id) => { setRotations(await db.deleteRotation(id)); }, []);
   const uploadResume = useCallback((file) => db.uploadResume(file), []);
 
+  // Publications (2026-09-22, Evidence & Contributions tab) -- same wrapper
+  // shape as education/achievements/rotations above.
+  const addPublication = useCallback(async (fields) => { setPublications(await db.addPublication(fields)); }, []);
+  const updatePublication = useCallback(async (id, fields) => { setPublications(await db.updatePublication(id, fields)); }, []);
+  const deletePublication = useCallback(async (id) => { setPublications(await db.deletePublication(id)); }, []);
+
   const value = {
     loading, posts, people, notifications, evidence, communities,
-    expertise, education, achievements, rotations, exercises, profile,
+    expertise, education, achievements, rotations, publications, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
     addAchievement, updateAchievement, deleteAchievement,
     addRotation, updateRotation, deleteRotation, uploadResume,
+    addPublication, updatePublication, deletePublication,
     composerOpen, setComposerOpen, composerType, setComposerType,
   };
 
