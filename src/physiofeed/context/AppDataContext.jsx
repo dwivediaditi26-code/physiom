@@ -13,6 +13,7 @@ export function AppDataProvider({ children }) {
   const [expertise, setExpertise] = useState([]);
   const [education, setEducation] = useState([]);
   const [achievements, setAchievements] = useState([]);
+  const [rotations, setRotations] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,14 +22,14 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, st, pe, no, ev, co, ex, ed, ac, exr, pr] = await Promise.all([
+      const [p, st, pe, no, ev, co, ex, ed, ac, rt, exr, pr] = await Promise.all([
         db.getPosts(), db.getStories(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
-        db.getAchievements(), db.getExercises(), db.getProfile(),
+        db.getAchievements(), db.getRotations(), db.getExercises(), db.getProfile(),
       ]);
       setPosts(p); setStories(st); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
-      setAchievements(ac); setExercises(exr); setProfile(pr);
+      setAchievements(ac); setRotations(rt); setExercises(exr); setProfile(pr);
       setLoading(false);
     })();
   }, []);
@@ -93,15 +94,23 @@ export function AppDataProvider({ children }) {
   const updateAchievement = useCallback(async (id, fields) => { setAchievements(await db.updateAchievement(id, fields)); }, []);
   const deleteAchievement = useCallback(async (id) => { setAchievements(await db.deleteAchievement(id)); }, []);
 
+  // Clinical rotations & CV (2026-09-21) -- same wrapper shape as
+  // education/achievements above.
+  const addRotation = useCallback(async (fields) => { setRotations(await db.addRotation(fields)); }, []);
+  const updateRotation = useCallback(async (id, fields) => { setRotations(await db.updateRotation(id, fields)); }, []);
+  const deleteRotation = useCallback(async (id) => { setRotations(await db.deleteRotation(id)); }, []);
+  const uploadResume = useCallback((file) => db.uploadResume(file), []);
+
   const value = {
     loading, posts, stories, people, notifications, evidence, communities,
-    expertise, education, achievements, exercises, profile,
+    expertise, education, achievements, rotations, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     viewStory, addStory, deleteStory, uploadStoryImage, uploadStoryVideo,
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
     addAchievement, updateAchievement, deleteAchievement,
+    addRotation, updateRotation, deleteRotation, uploadResume,
     composerOpen, setComposerOpen, composerType, setComposerType,
   };
 

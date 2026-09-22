@@ -21,7 +21,7 @@
 // -----------------------------------------------------------------------
 import {
   INITIAL_POSTS, STORIES, PEOPLE, NOTIFICATIONS, EXERCISES, EDUCATION,
-  ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER,
+  ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER, ROTATIONS,
 } from "./mockData.js";
 import { supabase, authHeader } from "../../supabase.js";
 import { initialsOf } from "../components/shared/constants.js";
@@ -379,6 +379,21 @@ export async function uploadProfileImage(blob) {
   return uploadToBucket("profile-images", uid, blob, "jpg");
 }
 
+// Clinical profile & CV (2026-09-21): uses the resumes bucket
+// supabase/add_profile_clinical_cv.sql creates (RLS: your own folder,
+// public read, same shape as every other bucket). Unlike
+// uploadProfileImage() this uploads the file as-is -- lib/media.js's
+// compressImage() is a JPEG re-encode via <canvas>, meaningless for a
+// PDF -- so validateResumeFile() (size/type only) is the only check
+// before this runs. Keeps the original extension (validated as .pdf by
+// the caller) rather than a hardcoded one.
+export async function uploadResume(file) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload your resume.");
+  const ext = (file.name?.split(".").pop() || "pdf").toLowerCase();
+  return uploadToBucket("resumes", uid, file, ext);
+}
+
 // Feature (2026-08-19): real stories -- uses the story-media bucket
 // supabase/add_stories.sql creates (RLS: your own folder, public read,
 // same shape as every other bucket here).
@@ -580,6 +595,21 @@ export async function getProfile() {
         languages: "",
         memberships: "",
         available_for_consults: false,
+        // Clinical profile & CV (2026-09-21) -- blank/false, same reasoning
+        // as the About-card fields above; open_to_work defaults true (see
+        // add_profile_clinical_cv.sql's header comment). Requires that
+        // migration to have run -- until it does, inserting unknown
+        // columns throws, and this whole function falls back to
+        // CURRENT_USER (the try/catch wrapping getProfile()), same as any
+        // other field here would before its own migration ran.
+        clinical_title: "",
+        college: "",
+        phone: "",
+        open_to_work: true,
+        willing_to_relocate: false,
+        skills: [],
+        resume_url: null,
+        resume_name: null,
       };
       const { data: inserted } = await supabase.from("profiles").insert(defaults).select().single();
       row = inserted || defaults;
@@ -609,6 +639,20 @@ export async function getProfile() {
       languages: row.languages || "",
       memberships: row.memberships || "",
       availableForConsults: !!row.available_for_consults,
+      // Clinical profile & CV (2026-09-21) -- "" (not undefined) on rows
+      // from before add_profile_clinical_cv.sql runs, same reasoning as
+      // experience/languages/memberships above. open_to_work falls back to
+      // `true` rather than `!!row.open_to_work` for that same
+      // pre-migration case -- undefined should read as "hasn't said
+      // otherwise yet", not "closed to work".
+      clinicalTitle: row.clinical_title || "",
+      college: row.college || "",
+      phone: row.phone || "",
+      openToWork: row.open_to_work === false ? false : true,
+      willingToRelocate: !!row.willing_to_relocate,
+      skills: row.skills || [],
+      resumeUrl: row.resume_url || null,
+      resumeName: row.resume_name || null,
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
@@ -635,6 +679,10 @@ export async function getProfileById(userId) {
       gradient: demoPerson.grad, initials: initialsOf(demoPerson.name), location: demoPerson.location,
       bio: "", quote: "", followers: 0, following: 0, avatarUrl: demoPerson.avatarUrl || null,
       experience: "", languages: "", memberships: "", availableForConsults: false,
+      // No phone -- see add_profile_clinical_cv.sql's header comment, this
+      // read-only "viewing someone else" path never surfaces it.
+      clinicalTitle: "", college: "", openToWork: true, willingToRelocate: false,
+      skills: [], resumeUrl: null, resumeName: null,
     });
   }
 
@@ -650,6 +698,12 @@ export async function getProfileById(userId) {
       avatarUrl: row.avatar_url || null,
       experience: row.experience || "", languages: row.languages || "", memberships: row.memberships || "",
       availableForConsults: !!row.available_for_consults,
+      // No phone here either -- same reasoning as the demo-person branch
+      // above; this is the one path every OTHER clinician's ClinicalCard
+      // reads from.
+      clinicalTitle: row.clinical_title || "", college: row.college || "",
+      openToWork: row.open_to_work === false ? false : true, willingToRelocate: !!row.willing_to_relocate,
+      skills: row.skills || [], resumeUrl: row.resume_url || null, resumeName: row.resume_name || null,
     });
   } catch (e) {
     console.error("getProfileById(): --", e?.message || e);
@@ -668,13 +722,21 @@ export async function updateProfile(fields) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your profile.");
   const patch = {};
-  for (const key of ["name", "role", "location", "bio", "quote", "gradient", "experience", "languages", "memberships"]) {
+  for (const key of ["name", "role", "location", "bio", "quote", "gradient", "experience", "languages", "memberships", "phone", "college"]) {
     if (fields[key] !== undefined) patch[key] = fields[key];
   }
   if (fields.avatarUrl !== undefined) patch.avatar_url = fields.avatarUrl;
-  // Boolean, so this has to check `!== undefined` rather than truthiness --
-  // `false` is a real, meaningful value here (not "field omitted").
+  if (fields.clinicalTitle !== undefined) patch.clinical_title = fields.clinicalTitle;
+  if (fields.resumeUrl !== undefined) patch.resume_url = fields.resumeUrl;
+  if (fields.resumeName !== undefined) patch.resume_name = fields.resumeName;
+  // Array, not a scalar column -- Postgres text[] takes the JS array as-is.
+  if (fields.skills !== undefined) patch.skills = fields.skills;
+  // Booleans, so these have to check `!== undefined` rather than
+  // truthiness -- `false` is a real, meaningful value here (not "field
+  // omitted"), same reasoning as availableForConsults below.
   if (fields.availableForConsults !== undefined) patch.available_for_consults = fields.availableForConsults;
+  if (fields.openToWork !== undefined) patch.open_to_work = fields.openToWork;
+  if (fields.willingToRelocate !== undefined) patch.willing_to_relocate = fields.willingToRelocate;
   if (fields.name) {
     patch.initials = fields.name.split(" ").map((w) => w[0]).join("").replace(/[.,]/g, "").slice(0, 2).toUpperCase();
   }
@@ -778,6 +840,70 @@ export async function deleteEducationEntry(id) {
   const { error } = await supabase.from("education_entries").delete().eq("id", id).eq("user_id", uid);
   if (error) throw error;
   return getEducation();
+}
+
+// Clinical rotations & postings (2026-09-21), backed by
+// supabase/add_profile_clinical_cv.sql. Exactly the same
+// real-first/demo-fallback-on-read, real-error-on-write shape as
+// education_entries above -- see its comments for the reasoning, not
+// repeated here.
+export async function getRotations() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(ROTATIONS);
+    const { data, error } = await supabase
+      .from("rotations")
+      .select("id, department, duration")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, department: r.department, duration: r.duration }));
+  } catch (e) {
+    console.error("getRotations(): falling back to demo list --", e?.message || e);
+    return clone(ROTATIONS);
+  }
+}
+
+export async function getRotationsByUser(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("rotations")
+      .select("id, department, duration")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map((r) => ({ id: r.id, department: r.department, duration: r.duration }));
+  } catch (e) {
+    console.error("getRotationsByUser(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function addRotation({ department, duration }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your clinical rotations.");
+  const { error } = await supabase.from("rotations").insert({
+    user_id: uid, department: department.trim(), duration: (duration || "").trim(),
+  });
+  if (error) throw error;
+  return getRotations();
+}
+export async function updateRotation(id, { department, duration }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your clinical rotations.");
+  const patch = {};
+  if (department !== undefined) patch.department = department.trim();
+  if (duration !== undefined) patch.duration = duration.trim();
+  const { error } = await supabase.from("rotations").update(patch).eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getRotations();
+}
+export async function deleteRotation(id) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your clinical rotations.");
+  const { error } = await supabase.from("rotations").delete().eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getRotations();
 }
 
 // Same real-first/demo-fallback shape as getEducation() above.

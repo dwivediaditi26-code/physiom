@@ -21,6 +21,20 @@ export const CURRENT_USER = {
   languages: "English, Hindi, Marathi",
   memberships: "IAP, WCPT",
   availableForConsults: true,
+  // Clinical profile & CV fields (2026-09-21) -- see db.js's getProfile()
+  // and supabase/add_profile_clinical_cv.sql. Same reasoning as the
+  // About-card fields above: this is what the demo profile has always
+  // implicitly been (a practising sports physio, not a job-seeking
+  // intern), so it stays filled in for guest mode; a real new sign-up
+  // gets the blank/open-to-work-by-default slate getProfile() creates.
+  clinicalTitle: "Sports Physiotherapist, PT",
+  college: "MPT (Sports) — DY Patil University",
+  phone: "",
+  openToWork: false,
+  willingToRelocate: false,
+  skills: ["ACL Rehabilitation", "Kinesio Taping", "Dry Needling", "Exercise Prescription"],
+  resumeUrl: null,
+  resumeName: null,
 };
 
 export const INITIAL_POSTS = [
@@ -197,6 +211,14 @@ export const ACHIEVEMENTS = [
   { id: "demo-ach-1", title: "Top Contributor", subtitle: "PhysioLink Community · 2024", iconName: "Trophy", tone: "text-amber-500" },
   { id: "demo-ach-2", title: "Research Contributor", subtitle: "5+ research posts published", iconName: "Award", tone: "text-violet-600" },
   { id: "demo-ach-3", title: "Most Helpful Physio", subtitle: "Top rated by peers", iconName: "Star", tone: "text-rose-500" },
+];
+
+// Same "demo-" id convention as EDUCATION/ACHIEVEMENTS above -- see
+// db.js's getRotations()/addRotation() and supabase/add_profile_clinical_cv.sql.
+export const ROTATIONS = [
+  { id: "demo-rot-1", department: "Ortho & MSK OPD", duration: "4 Months" },
+  { id: "demo-rot-2", department: "Sports Injury Clinic", duration: "3 Months" },
+  { id: "demo-rot-3", department: "Neuro Rehabilitation", duration: "2 Months" },
 ];
 
 export const EXPERTISE = [

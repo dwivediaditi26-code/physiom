@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Activity, Zap, Dumbbell, GraduationCap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
 import AboutCard from "../components/profile/AboutCard.jsx";
+import ClinicalCard from "../components/profile/ClinicalCard.jsx";
+import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
 import AchievementsCard from "../components/profile/AchievementsCard.jsx";
 import GridPostCard from "../components/feed/GridPostCard.jsx";
@@ -68,7 +70,7 @@ export default function ProfilePage() {
         )}
 
         {activeTab === "About" ? (
-          <div className="space-y-4"><AboutCard /><EducationCard /><AchievementsCard /></div>
+          <div className="space-y-4"><AboutCard /><ClinicalCard /><RotationsCard /><EducationCard /><AchievementsCard /></div>
         ) : activeTab === "Exercises" ? (
           <ExerciseFullGrid />
         ) : (
@@ -82,7 +84,7 @@ export default function ProfilePage() {
       </main>
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">
-        <AboutCard /><EducationCard /><AchievementsCard />
+        <AboutCard /><ClinicalCard /><RotationsCard /><EducationCard /><AchievementsCard />
       </aside>
     </>
   );

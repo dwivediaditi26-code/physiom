@@ -13,6 +13,10 @@ export const MAX_VIDEO_SECONDS = 90;
 // post video, but capped much shorter since a story is meant to be a
 // quick clip, not a full video post.
 export const MAX_STORY_VIDEO_SECONDS = 30;
+// Clinical profile & CV (2026-09-21): a real resume is almost always
+// under 1MB (text/1-2 pages) -- 8MB is generous headroom for a scanned or
+// image-heavy CV without allowing something absurd.
+export const MAX_RESUME_MB = 8;
 
 const COMPRESS_MAX_DIMENSION = 1600;
 const COMPRESS_QUALITY = 0.82;
@@ -26,6 +30,18 @@ export function validateImageFile(file) {
 export function validateVideoFile(file) {
   if (!file.type.startsWith("video/")) return "That's not a video file.";
   if (file.size > MAX_VIDEO_MB * 1024 * 1024) return `Videos must be under ${MAX_VIDEO_MB}MB.`;
+  return null;
+}
+
+// PDF only, not "any document" -- a recruiter opening "View CV" needs
+// something that renders the same everywhere with no app to open it in,
+// which rules out .doc/.docx. Some browsers report an empty/generic
+// file.type for a PDF picked via certain file managers, so the extension
+// is checked too rather than relying on MIME type alone.
+export function validateResumeFile(file) {
+  const looksLikePdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+  if (!looksLikePdf) return "Please upload your resume as a PDF.";
+  if (file.size > MAX_RESUME_MB * 1024 * 1024) return `Your resume must be under ${MAX_RESUME_MB}MB.`;
   return null;
 }
 

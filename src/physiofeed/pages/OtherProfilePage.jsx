@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Activity, Zap } from "lucide-react";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
 import AboutCard from "../components/profile/AboutCard.jsx";
+import ClinicalCard from "../components/profile/ClinicalCard.jsx";
+import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
 import AchievementsCard from "../components/profile/AchievementsCard.jsx";
 import GridPostCard from "../components/feed/GridPostCard.jsx";
@@ -33,6 +35,7 @@ export default function OtherProfilePage() {
   const [otherProfile, setOtherProfile] = useState(null);
   const [education, setEducation] = useState([]);
   const [achievements, setAchievements] = useState([]);
+  const [rotations, setRotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState("Posts");
@@ -51,15 +54,17 @@ export default function OtherProfilePage() {
     setActiveTab("Posts");
     setCategoryFilter(null);
     (async () => {
-      const [p, ed, ac] = await Promise.all([
+      const [p, ed, ac, rt] = await Promise.all([
         db.getProfileById(userId),
         db.getEducationByUser(userId),
         db.getAchievementsByUser(userId),
+        db.getRotationsByUser(userId),
       ]);
       if (cancelled) return;
       if (!p) setNotFound(true); else setOtherProfile(p);
       setEducation(ed);
       setAchievements(ac);
+      setRotations(rt);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -132,6 +137,8 @@ export default function OtherProfilePage() {
         {activeTab === "About" ? (
           <div className="space-y-4">
             <AboutCard profile={otherProfile} readOnly />
+            <ClinicalCard profile={otherProfile} readOnly />
+            <RotationsCard entries={rotations} readOnly />
             <EducationCard entries={education} readOnly />
             <AchievementsCard entries={achievements} readOnly />
           </div>
@@ -144,6 +151,8 @@ export default function OtherProfilePage() {
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">
         <AboutCard profile={otherProfile} readOnly />
+        <ClinicalCard profile={otherProfile} readOnly />
+        <RotationsCard entries={rotations} readOnly />
         <EducationCard entries={education} readOnly />
         <AchievementsCard entries={achievements} readOnly />
       </aside>
