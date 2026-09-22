@@ -208,11 +208,17 @@ export const EXERCISES = [
 // month/year (2026-09-22, Aditi: "year month in education an[d]
 // certification") -- see db.js's getEducation() and
 // supabase/add_profile_clinical_taxonomy.sql.
+// Degrees only (2026-09-22 redesign) -- the two certification-shaped
+// entries this used to also hold ("Certified Manual Therapist"/"Dry
+// Needling") moved down into ACHIEVEMENTS below, which is now the one
+// place Certifications live (see that array's own comment). A real
+// signed-in user's pre-existing education_entries rows can't be told
+// apart as "degree" vs "cert" after the fact -- they just keep showing
+// under Education, same graceful-legacy-data trade-off as everywhere else
+// in this file that reshapes a demo list without a matching migration.
 export const EDUCATION = [
   { id: "demo-edu-1", title: "MPT — Orthopaedics", subtitle: "XYZ University, India", iconName: "GraduationCap", month: "May", year: "2022" },
   { id: "demo-edu-2", title: "BPT — Physiotherapy", subtitle: "ABC College of Physiotherapy", iconName: "GraduationCap", month: "May", year: "2020" },
-  { id: "demo-edu-3", title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2", iconName: "Award", month: "September", year: "2021" },
-  { id: "demo-edu-4", title: "Dry Needling — Level 1", subtitle: "Kinetacore", iconName: "Award", month: "November", year: "2023" },
 ];
 
 // Re-scoped from general "achievements" to Licenses & Certifications
@@ -226,25 +232,65 @@ export const EDUCATION = [
 // from EDUCATION's own "Certified Manual Therapist"/"Dry Needling" entries
 // above -- those stay where they are (Education tab, untouched this pass).
 export const ACHIEVEMENTS = [
-  { id: "demo-ach-1", title: "Certified Sports Rehabilitation Specialist", subtitle: "Sports Physiotherapy Academy · March 2022", issuer: "Sports Physiotherapy Academy", month: "March", year: "2022", credentialId: "", verified: false, iconName: "ShieldCheck", tone: "text-violet-600" },
+  { id: "demo-ach-1", title: "Certified Sports Rehabilitation Specialist", subtitle: "Sports Physiotherapy Academy · March 2022", issuer: "Sports Physiotherapy Academy", month: "March", year: "2022", credentialId: "", verified: true, iconName: "ShieldCheck", tone: "text-violet-600" },
   { id: "demo-ach-2", title: "Kinesio Taping Practitioner", subtitle: "Kinesio Taping Association Intl. · August 2023", issuer: "Kinesio Taping Association Intl.", month: "August", year: "2023", credentialId: "", verified: false, iconName: "Award", tone: "text-amber-500" },
   { id: "demo-ach-3", title: "First Aid & CPR", subtitle: "Indian Red Cross Society · January 2024", issuer: "Indian Red Cross Society", month: "January", year: "2024", credentialId: "", verified: false, iconName: "Activity", tone: "text-rose-500" },
+  // Moved down from EDUCATION above (2026-09-22 redesign) -- see that
+  // array's comment.
+  { id: "demo-ach-4", title: "Certified Manual Therapist", subtitle: "IASTM — Level 1 & 2 · September 2021", issuer: "IASTM — Level 1 & 2", month: "September", year: "2021", credentialId: "", verified: false, iconName: "Award", tone: "text-blue-500" },
+  { id: "demo-ach-5", title: "Dry Needling — Level 1", subtitle: "Kinetacore · November 2023", issuer: "Kinetacore", month: "November", year: "2023", credentialId: "", verified: false, iconName: "Award", tone: "text-emerald-600" },
 ];
 
-// Publications (2026-09-22 redesign) -- Evidence & Contributions tab, see
+// Publications (2026-09-22 redesign) -- Research & Evidence section, see
 // db.js's getPublicationsByUser()/addPublication() and
 // supabase/add_profile_clinical_taxonomy.sql's publications table. Same
 // "demo-" id convention as EDUCATION/ACHIEVEMENTS/ROTATIONS above.
+//
+// `journal` doubles as the research-work TYPE label ("Evidence Summary"/
+// "Research Project"/"Dissertation" instead of a real journal name where
+// there wasn't a formal one to publish in) -- the real `publications`
+// table has no separate type column, and adding one isn't a change this
+// pass can safely make without a matching migration (see ResearchEvidenceSection.jsx's
+// own comment on how it derives the shown type badge from this).
 export const PUBLICATIONS = [
-  { id: "demo-pub-1", title: "Criteria-based vs time-based return-to-sport progression after ACL reconstruction", journal: "Journal of Sports Rehabilitation", year: "2025", authors: "Sharma A, Iyer R", doiUrl: "" },
+  { id: "demo-pub-1", title: "ACL Rehabilitation After Surgery: Current Evidence", journal: "Evidence Summary", year: "2026", authors: "", doiUrl: "" },
+  { id: "demo-pub-2", title: "Effect of Exercise Therapy on Chronic Low Back Pain", journal: "Journal of Sports Rehabilitation", year: "2025", authors: "Sharma A", doiUrl: "" },
+  { id: "demo-pub-3", title: "Role of Eccentric Training in Patellar Tendinopathy", journal: "Research Project", year: "2024", authors: "", doiUrl: "" },
+  { id: "demo-pub-4", title: "Effectiveness of Manual Therapy in Mechanical Low Back Pain", journal: "Dissertation", year: "2023", authors: "Sharma A", doiUrl: "" },
+];
+
+// Professional Contributions (2026-09-22 redesign) -- workshops run,
+// conference talks, guest lectures, awards. Read-only/display-only for now
+// (own profile only): there's no backing Supabase table for this yet (see
+// ProfessionalContributionsSection.jsx), so unlike EDUCATION/ACHIEVEMENTS/
+// PUBLICATIONS above this never goes through db.js's real-row-first,
+// demo-fallback-on-failure pattern -- it's just this list, always. Adding
+// real per-user persistence is a later pass once there's a table to
+// migrate to, same as Explore's Opportunities board started as
+// local-only state before it had one.
+export const CONTRIBUTIONS = [
+  { id: "demo-con-1", type: "Workshop", title: "Movement Assessment in Sports Injuries", year: "2024", location: "Bengaluru" },
+  { id: "demo-con-2", type: "Conference Presentation", title: "Annual Conference of Indian Association of Physiotherapists", year: "2023", location: "" },
+  { id: "demo-con-3", type: "Guest Lecture", title: "Sports Injury Rehabilitation – Practical Approach", year: "2023", location: "" },
 ];
 
 // Same "demo-" id convention as EDUCATION/ACHIEVEMENTS above -- see
 // db.js's getRotations()/addRotation() and supabase/add_profile_clinical_cv.sql.
+//
+// Re-purposed from "clinical rotations during training" to real work
+// Experience (2026-09-22, "PhysioFeed Therapist Profile" redesign brief:
+// LinkedIn-style Organization/Title/Dates cards, not a training-rotation
+// log). The `rotations` table only has `department`/`duration` text
+// columns -- rather than a schema migration I can't verify/apply from
+// here, both fields just carry richer text now: `department` is
+// "<Title> — <Organization>" (em dash) and `duration` is "<Start> –
+// <End or Present>" (en dash). RotationsCard.jsx parses these back apart
+// for display and falls back to showing the raw string when a real
+// user's older entry (or EditRotationsModal's own legacy free-text) has
+// no delimiter -- see that file.
 export const ROTATIONS = [
-  { id: "demo-rot-1", department: "Ortho & MSK OPD", duration: "4 Months" },
-  { id: "demo-rot-2", department: "Sports Injury Clinic", duration: "3 Months" },
-  { id: "demo-rot-3", department: "Neuro Rehabilitation", duration: "2 Months" },
+  { id: "demo-rot-1", department: "Physiotherapist — Active Physio & Rehab Centre", duration: "Jan 2024 – Present" },
+  { id: "demo-rot-2", department: "Junior Physiotherapist — Sunrise Orthopaedic Hospital", duration: "Aug 2021 – Dec 2023" },
 ];
 
 export const EXPERTISE = [

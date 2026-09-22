@@ -10,6 +10,10 @@ import EditEducationModal from "./EditEducationModal.jsx";
 // all. Falls back to your own list from context (and shows the Edit
 // button) when no entries prop is given, so ProfilePage.jsx's existing
 // usage is unchanged.
+//
+// Title dropped "& certifications" (2026-09-22 redesign) -- certifications
+// now live in their own CertificationsCard.jsx next to this one; EDUCATION
+// itself is degrees-only since that same pass, see mockData.js's comment.
 export default function EducationCard({ entries, readOnly = false }) {
   const { education: ownEducation } = useAppData();
   const education = entries ?? ownEducation;
@@ -17,15 +21,15 @@ export default function EducationCard({ entries, readOnly = false }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-slate-900">Education & certifications</p>
+        <p className="pf-font-head text-sm font-extrabold text-slate-900">Education</p>
         {!readOnly && (
-          <button onClick={() => setEditing(true)} aria-label="Edit education & certifications" className="text-slate-400 hover:text-[#DB2777] p-1 -m-1 rounded-md hover:bg-[#FDF0F6]">
+          <button onClick={() => setEditing(true)} aria-label="Edit education" className="text-slate-400 hover:text-slate-700 p-1 -m-1 rounded-md hover:bg-slate-50">
             <Pencil size={13} />
           </button>
         )}
       </div>
       {education.length === 0 ? (
-        <p className="text-sm text-slate-400">{readOnly ? "No education or certifications added yet." : "Add your education & certifications."}</p>
+        <p className="text-sm text-slate-400">{readOnly ? "No education added yet." : "Add your education."}</p>
       ) : (
         <div className="space-y-3">
           {education.map((e) => {
