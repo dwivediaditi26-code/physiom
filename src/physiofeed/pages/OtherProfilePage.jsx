@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
-import ProfileTabs, { PROFILE_TABS } from "../components/profile/ProfileTabs.jsx";
-import useProfileSections from "../components/profile/useProfileSections.js";
+import ProfileTabs from "../components/profile/ProfileTabs.jsx";
 import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
 import RotationsCard from "../components/profile/RotationsCard.jsx";
 import EducationCard from "../components/profile/EducationCard.jsx";
@@ -14,24 +13,14 @@ import * as db from "../data/db.js";
 
 // Profile page for VIEWING SOMEONE ELSE, reached by clicking a name/avatar
 // in the feed or on the People page. Mirrors ProfilePage.jsx's layout --
-// see that file for the shared components both pages now use.
-//
-// Sticky ProfileTabs (2026-09-22 "LinkedIn for physiotherapists" redesign,
-// Aditi's brief): Posts | About | Experience | Education | Research,
-// replacing the earlier 6-tab bar that had standalone Clinical and
-// Evidence tabs (see ProfileTabs.jsx/ProfilePage.jsx for the fuller
-// reasoning). No ProfessionalContributionsSection here -- it's demo/
-// own-profile-only data, see that component's own comment. The Exercises
-// tab/strip stays deliberately omitted -- `exercises` (ExerciseGrid.jsx)
-// is a single shared, app-wide library, not per-user data.
-//
-// All sections render inline on one scrollable page (2026-09-22, Aditi:
-// "thiis showing page wise .. i want inline wise" -- see ProfilePage.jsx
-// and useProfileSections.js for the fuller reasoning).
-//
-// Posts is just the posts grid, nothing else (2026-09-22, Aditi: "make the
-// post setion only for all the post" -- see ProfilePage.jsx's own comment,
-// same reasoning shared here).
+// see that file for the fuller reasoning on the section list and on real
+// tab-switching (each tab renders alone, not one long inline scroll --
+// reverted 2026-09-22 once Aditi hit it with a profile that actually had
+// posts: "about experience, education, research in a different tab").
+// No ProfessionalContributionsSection here -- it's demo/own-profile-only
+// data, see that component's own comment. The Exercises tab/strip stays
+// deliberately omitted -- `exercises` (ExerciseGrid.jsx) is a single
+// shared, app-wide library, not per-user data.
 export default function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -43,7 +32,7 @@ export default function OtherProfilePage() {
   const [otherPublications, setOtherPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const { activeTab, register, scrollTo } = useProfileSections(PROFILE_TABS);
+  const [activeTab, setActiveTab] = useState("Posts");
 
   useEffect(() => {
     // Viewing your own id via this route (e.g. an old link) -- just show
@@ -55,6 +44,7 @@ export default function OtherProfilePage() {
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
+    setActiveTab("Posts"); // a new profile always opens back on Posts, not wherever the last one was scrolled/tabbed to
     (async () => {
       const [p, ed, ac, rt, pu] = await Promise.all([
         db.getProfileById(userId),
@@ -93,8 +83,8 @@ export default function OtherProfilePage() {
         {/* No in-page "Back" link (2026-09-22, Aditi circled it in a
             screenshot and said to remove it) -- PhysioMind's own app header
             already has a back arrow right above this page, so the two were
-            redundant. `navigate` is still used below (own-profile redirect,
-            not-found state's "Go back"). */}
+            redundant. `navigate` is still used above/below (own-profile
+            redirect, not-found state's "Go back"). */}
         <ProfileHeader
           profile={otherProfile}
           postCount={authorPosts.length}
@@ -105,23 +95,22 @@ export default function OtherProfilePage() {
           onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
         />
 
-        <ProfileTabs active={activeTab} onChange={scrollTo} />
+        <ProfileTabs active={activeTab} onChange={setActiveTab} />
 
-        <div id="profile-section-Posts" ref={register("Posts")} className="pf-profile-section">
+        {activeTab === "Posts" && (
           <div className="grid sm:grid-cols-2 gap-4">
             {authorPosts.length === 0 ? <div className="col-span-2 text-center py-14 text-slate-400 text-sm">No posts here yet.</div> : authorPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
           </div>
-        </div>
-
-        <div id="profile-section-About" ref={register("About")} className="pf-profile-section mb-5"><ProfileAboutSection profile={otherProfile} isOwn={false} /></div>
-        <div id="profile-section-Experience" ref={register("Experience")} className="pf-profile-section mb-5"><RotationsCard entries={rotations} readOnly /></div>
-        <div id="profile-section-Education" ref={register("Education")} className="pf-profile-section mb-5 space-y-4">
-          <EducationCard entries={education} readOnly />
-          <CertificationsCard entries={achievements} readOnly />
-        </div>
-        <div id="profile-section-Research" ref={register("Research")} className="pf-profile-section">
-          <ResearchEvidenceSection profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />
-        </div>
+        )}
+        {activeTab === "About" && <ProfileAboutSection profile={otherProfile} isOwn={false} />}
+        {activeTab === "Experience" && <RotationsCard entries={rotations} readOnly />}
+        {activeTab === "Education" && (
+          <div className="space-y-4">
+            <EducationCard entries={education} readOnly />
+            <CertificationsCard entries={achievements} readOnly />
+          </div>
+        )}
+        {activeTab === "Research" && <ResearchEvidenceSection profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />}
       </main>
 
       <aside className="hidden xl:block w-72 shrink-0 space-y-4">

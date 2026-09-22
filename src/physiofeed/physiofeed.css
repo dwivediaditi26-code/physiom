@@ -175,18 +175,15 @@
   top: var(--pm-mobile-hdr-h, 64px);
 }
 
-/* Profile pages' inline sections (2026-09-22, Aditi: "i want inline wise" --
-   see useProfileSections.js). Clicking a ProfileTabs pill now scrollIntoView()s
-   the matching section instead of swapping which one renders; this keeps that
-   landing spot clear of the sticky .pf-header/.pf-profile-tabs bars above it.
-   --pf-scroll-offset is kept live by useProfileSections.js (the bars' own
-   rendered `top` differs by breakpoint and entry point, same as
-   .pf-profile-tabs above splits itself -- reading it from the DOM there
-   avoids a second, driftable copy of that math here). The fallback covers
-   only the instant before that first measurement runs. */
-.pf-profile-section {
-  scroll-margin-top: var(--pf-scroll-offset, 140px);
-}
+/* Profile pages briefly rendered every section inline on one scroll, with
+   ProfileTabs jumping between them via scrollIntoView() (2026-09-22,
+   Aditi: "i want inline wise") -- reverted the same day once a profile
+   with real posts made that scroll long enough to bury About/Experience/
+   etc. below the post grid ("about experience, education, research in a
+   different tab"). ProfilePage.jsx/OtherProfilePage.jsx are back to
+   swapping which single section renders, so there's no scroll-jump target
+   to offset here any more -- see git history (useProfileSections.js,
+   deleted this same pass) if this ever needs reviving. */
 
 /* PhysioFeed mobile/tablet section nav -- sliding segmented control
    (2026-09-20, Aditi: "i dnt like these button can suggest some other
