@@ -24,7 +24,7 @@ export function ExerciseStrip() {
     <div className="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-slate-900">Top shared exercises</p>
-        <button className="text-xs font-medium text-violet-600">View all</button>
+        <button className="text-xs font-bold text-[#DB2777]">View all</button>
       </div>
       <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
         {exercises.map((e) => (

@@ -18,7 +18,7 @@ export default function AchievementsCard({ entries, readOnly = false }) {
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-slate-900">Achievements</p>
         {!readOnly && (
-          <button onClick={() => setEditing(true)} aria-label="Edit achievements" className="text-slate-400 hover:text-violet-600 p-1 -m-1 rounded-md hover:bg-violet-50">
+          <button onClick={() => setEditing(true)} aria-label="Edit achievements" className="text-slate-400 hover:text-[#DB2777] p-1 -m-1 rounded-md hover:bg-[#FDF0F6]">
             <Pencil size={13} />
           </button>
         )}

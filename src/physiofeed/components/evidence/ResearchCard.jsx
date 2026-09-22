@@ -12,7 +12,7 @@ const LEVEL_TONE = { "Level 1": "bg-emerald-50 text-emerald-700", "Level 2": "bg
 const ResearchCard = forwardRef(function ResearchCard({ article, highlighted }, ref) {
   const { saveEvidence } = useAppData();
   return (
-    <div ref={ref} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow ${highlighted ? "border-violet-400 ring-2 ring-violet-300" : "border-slate-200"}`}>
+    <div ref={ref} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow ${highlighted ? "border-[#FFB020] ring-2 ring-[#FFD98A]" : "border-slate-200"}`}>
       <GradientTile grad={article.grad} className="h-2" />
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-2">
@@ -34,11 +34,11 @@ const ResearchCard = forwardRef(function ResearchCard({ article, highlighted }, 
           </div>
         )}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {article.tags.map((t) => <span key={t} className="text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md">#{t}</span>)}
+          {article.tags.map((t) => <span key={t} className="text-[10px] font-bold text-[#B0790A] bg-[#FFF4E0] px-1.5 py-0.5 rounded-md">#{t}</span>)}
         </div>
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
           {article.sourceUrl ? (
-            <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700">
+            <a href={article.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-semibold text-[#DB2777] hover:text-[#C2185B]">
               Read on {article.sourceName || "source"} <ExternalLink size={12} />
             </a>
           ) : (
@@ -47,7 +47,7 @@ const ResearchCard = forwardRef(function ResearchCard({ article, highlighted }, 
           <div className="flex items-center gap-1">
             <button className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><Share2 size={15} /></button>
             <button onClick={() => saveEvidence(article.id)} className="p-1.5 rounded-lg hover:bg-slate-50">
-              <Bookmark size={15} className={article.saved ? "fill-violet-600 text-violet-600" : "text-slate-400"} />
+              <Bookmark size={15} className={article.saved ? "fill-[#FFB020] text-[#FFB020]" : "text-slate-400"} />
             </button>
           </div>
         </div>

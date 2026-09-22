@@ -40,10 +40,10 @@ export default function ProfilePage() {
       <main className="flex-1 min-w-0">
         <ProfileHeader profile={profile} postCount={ownPosts.length} />
 
-        <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm">
+        <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar bg-white border-2 border-[#F1EEFB] rounded-2xl p-1.5 shadow-sm">
           {TABS.map((tab) => (
             <button key={tab} onClick={() => { setActiveTab(tab); setCategoryFilter(null); }}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-colors ${activeTab === tab ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-xl text-sm font-bold transition-colors ${activeTab === tab ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#8A7FA3] hover:bg-[#F7F5FF]"}`}>
               {tab}
             </button>
           ))}
@@ -56,8 +56,8 @@ export default function ProfilePage() {
               const on = categoryFilter === s.category;
               return (
                 <button key={s.label} onClick={() => pickShortcut(s)} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${on ? "bg-violet-600" : "bg-violet-50"}`}>
-                    <Icon size={18} className={on ? "text-white" : "text-violet-600"} />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${on ? "bg-[#DB2777]" : "bg-[#FDF0F6]"}`}>
+                    <Icon size={18} className={on ? "text-white" : "text-[#DB2777]"} />
                   </div>
                   <span className="text-[10px] text-slate-500 text-center leading-tight">{s.label}</span>
                 </button>

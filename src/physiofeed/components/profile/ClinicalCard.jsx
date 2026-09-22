@@ -35,7 +35,7 @@ export default function ClinicalCard({ profile: profileProp, readOnly = false })
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-slate-900">Clinical profile & CV</p>
         {!readOnly && (
-          <button onClick={() => setEditing(true)} aria-label="Edit clinical profile & CV" className="text-slate-400 hover:text-violet-600 p-1 -m-1 rounded-md hover:bg-violet-50">
+          <button onClick={() => setEditing(true)} aria-label="Edit clinical profile & CV" className="text-slate-400 hover:text-[#DB2777] p-1 -m-1 rounded-md hover:bg-[#FDF0F6]">
             <Pencil size={13} />
           </button>
         )}
@@ -62,7 +62,7 @@ export default function ClinicalCard({ profile: profileProp, readOnly = false })
           {profile.skills?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {profile.skills.map((s) => (
-                <span key={s} className="text-[11px] font-medium px-2 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">{s}</span>
+                <span key={s} className="text-[11px] font-bold px-2 py-1 rounded-full bg-[#FFF4E0] text-[#B0790A] border border-[#FFE1A8]">{s}</span>
               ))}
             </div>
           )}
@@ -72,11 +72,11 @@ export default function ClinicalCard({ profile: profileProp, readOnly = false })
               href={profile.resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2.5 text-sm text-slate-600 hover:text-violet-600 group"
+              className="flex items-center gap-2.5 text-sm text-slate-600 hover:text-[#DB2777] group"
             >
-              <FileText size={15} className="text-slate-400 group-hover:text-violet-500 shrink-0" />
+              <FileText size={15} className="text-slate-400 group-hover:text-[#DB2777] shrink-0" />
               <span className="truncate flex-1 min-w-0">{profile.resumeName || "Résumé.pdf"}</span>
-              <span className="flex items-center gap-1 text-xs font-semibold text-violet-600 shrink-0">View CV <ExternalLink size={11} /></span>
+              <span className="flex items-center gap-1 text-xs font-semibold text-[#DB2777] shrink-0">View CV <ExternalLink size={11} /></span>
             </a>
           ) : !readOnly ? (
             <div className="flex items-center gap-2.5 text-sm text-slate-400">

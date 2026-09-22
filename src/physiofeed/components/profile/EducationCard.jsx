@@ -19,7 +19,7 @@ export default function EducationCard({ entries, readOnly = false }) {
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-semibold text-slate-900">Education & certifications</p>
         {!readOnly && (
-          <button onClick={() => setEditing(true)} aria-label="Edit education & certifications" className="text-slate-400 hover:text-violet-600 p-1 -m-1 rounded-md hover:bg-violet-50">
+          <button onClick={() => setEditing(true)} aria-label="Edit education & certifications" className="text-slate-400 hover:text-[#DB2777] p-1 -m-1 rounded-md hover:bg-[#FDF0F6]">
             <Pencil size={13} />
           </button>
         )}
@@ -30,7 +30,7 @@ export default function EducationCard({ entries, readOnly = false }) {
         <div className="space-y-3">
           {education.map((e) => (
             <div key={e.id} className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center shrink-0"><Icon name={e.iconName} size={14} className="text-violet-600" /></div>
+              <div className="w-7 h-7 rounded-lg bg-[#FFF4E0] flex items-center justify-center shrink-0"><Icon name={e.iconName} size={14} className="text-[#B0790A]" /></div>
               <div className="min-w-0"><p className="text-sm font-medium text-slate-800">{e.title}</p><p className="text-xs text-slate-400">{e.subtitle}</p></div>
             </div>
           ))}

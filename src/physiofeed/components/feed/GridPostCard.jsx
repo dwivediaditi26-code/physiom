@@ -26,7 +26,7 @@ export default function GridPostCard({ post }) {
         </button>
         <p className="text-xs text-slate-600 mt-2.5 line-clamp-2">{post.caption}</p>
         <div className="flex flex-wrap gap-1 mt-2">
-          {post.tags.map((t) => <span key={t} className="text-[10px] font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md">#{t}</span>)}
+          {post.tags.map((t) => <span key={t} className="text-[10px] font-bold text-[#B0790A] bg-[#FFF4E0] px-1.5 py-0.5 rounded-md">#{t}</span>)}
         </div>
         <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100">
           <button onClick={() => likePost(post.id)} className="flex items-center gap-1.5">
@@ -36,7 +36,7 @@ export default function GridPostCard({ post }) {
           <button onClick={() => setDetailOpen(true)} className="flex items-center gap-1.5">
             <MessageCircle size={16} className="text-slate-400" /><span className="text-xs text-slate-500">{post.commentList.length}</span>
           </button>
-          <button onClick={() => savePost(post.id)} className="ml-auto"><Bookmark size={16} className={post.saved ? "fill-violet-600 text-violet-600" : "text-slate-400"} /></button>
+          <button onClick={() => savePost(post.id)} className="ml-auto"><Bookmark size={16} className={post.saved ? "fill-[#FFB020] text-[#FFB020]" : "text-slate-400"} /></button>
         </div>
       </article>
       {detailOpen && <PostDetailModal post={post} onClose={() => setDetailOpen(false)} />}

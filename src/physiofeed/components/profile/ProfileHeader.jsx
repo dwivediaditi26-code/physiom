@@ -22,8 +22,8 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
           </div>
           <div className="min-w-0 pt-1">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-lg font-bold text-slate-900">{profile.name}</h1>
-              {profile.verified && <BadgeCheck size={17} className="text-violet-600" />}
+              <h1 className="pf-font-head text-lg font-extrabold text-[#2B2140]">{profile.name}</h1>
+              {profile.verified && <BadgeCheck size={17} className="text-[#DB2777]" />}
             </div>
             {/* Bug fix (2026-08-19): this used to hardcode " · Sports
                 Rehabilitation" after everyone's role, regardless of their
@@ -51,7 +51,7 @@ export default function ProfileHeader({ profile, postCount, isOwn = true, follow
                   <MessageSquare size={14} /> Message
                 </button>
                 <button onClick={onFollow}
-                  className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-colors ${following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
+                  className={`pf-font-head flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl transition-colors ${following ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
                   {following ? <><Check size={14} /> Following</> : <><UserPlus size={14} /> Follow</>}
                 </button>
               </>

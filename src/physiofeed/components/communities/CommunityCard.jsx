@@ -13,7 +13,7 @@ export default function CommunityCard({ community }) {
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-slate-400"><Users size={13} /> {community.members.toLocaleString()} members</span>
           <button onClick={() => joinCommunity(community.id)}
-            className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${community.joined ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
+            className={`pf-font-head flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${community.joined ? "bg-slate-50 text-slate-500 border border-slate-200" : "bg-[#DB2777] text-white hover:bg-[#C2185B]"}`}>
             {community.joined ? <><Check size={12} /> Joined</> : "Join"}
           </button>
         </div>
