@@ -707,12 +707,26 @@ export async function getEducation() {
   }
 }
 
+// Demo people (mockData.js) have string ids like "u-priya", not UUIDs.
+// Every *ByUser query below filters on a uuid column, so a demo id fails
+// at the Postgres type level -- before the profile migrations ran that
+// surfaced as "table/column does not exist", and after they ran it's
+// "invalid input syntax for type uuid" instead. Either way it's four
+// pointless 400s per mock profile view, all caught and turned into the
+// same empty list. Short-circuiting here keeps that result without the
+// round-trip, and keeps the console quiet enough that a REAL query
+// failure still stands out.
+function isRealUserId(userId) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || "");
+}
+
 // Read-only variant for VIEWING SOMEONE ELSE's About tab (OtherProfilePage.jsx)
 // -- education_entries_select_all lets anyone read anyone's real rows, so
 // this is a plain query with no auth-gating, and no demo fallback: a demo
 // person (id not in the real profiles table) genuinely has no education
 // rows, which is just an empty list, not an error.
 export async function getEducationByUser(userId) {
+  if (!isRealUserId(userId)) return [];
   try {
     const { data, error } = await supabase
       .from("education_entries")
@@ -787,6 +801,7 @@ export async function getRotations() {
 }
 
 export async function getRotationsByUser(userId) {
+  if (!isRealUserId(userId)) return [];
   try {
     const { data, error } = await supabase
       .from("rotations")
@@ -859,6 +874,7 @@ export async function getAchievements() {
 // as getEducationByUser() above (achievements_select_all RLS policy, no
 // demo fallback, empty is a real answer not an error).
 export async function getAchievementsByUser(userId) {
+  if (!isRealUserId(userId)) return [];
   try {
     const { data, error } = await supabase
       .from("achievements")
@@ -933,6 +949,7 @@ export async function getPublications() {
 }
 
 export async function getPublicationsByUser(userId) {
+  if (!isRealUserId(userId)) return [];
   try {
     const { data, error } = await supabase
       .from("publications")
