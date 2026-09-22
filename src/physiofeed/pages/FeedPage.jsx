@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import StoriesBar from "../components/feed/StoriesBar.jsx";
 import Composer from "../components/feed/Composer.jsx";
 import FeedPostCard from "../components/feed/FeedPostCard.jsx";
 import FeedRightRail from "../components/feed/FeedRightRail.jsx";
@@ -29,7 +28,6 @@ export default function FeedPage() {
   return (
     <>
       <main className="flex-1 min-w-0 max-w-2xl mx-auto">
-        <StoriesBar />
         <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}

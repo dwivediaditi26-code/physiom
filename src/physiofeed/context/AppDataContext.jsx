@@ -5,7 +5,6 @@ const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
   const [posts, setPosts] = useState([]);
-  const [stories, setStories] = useState([]);
   const [people, setPeople] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [evidence, setEvidence] = useState([]);
@@ -22,12 +21,12 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, st, pe, no, ev, co, ex, ed, ac, rt, exr, pr] = await Promise.all([
-        db.getPosts(), db.getStories(), db.getPeople(), db.getNotifications(),
+      const [p, pe, no, ev, co, ex, ed, ac, rt, exr, pr] = await Promise.all([
+        db.getPosts(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
         db.getAchievements(), db.getRotations(), db.getExercises(), db.getProfile(),
       ]);
-      setPosts(p); setStories(st); setPeople(pe); setNotifications(no);
+      setPosts(p); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
       setAchievements(ac); setRotations(rt); setExercises(exr); setProfile(pr);
       setLoading(false);
@@ -65,11 +64,6 @@ export function AppDataProvider({ children }) {
   const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
   const votePoll = useCallback(async (id, optionIndex) => { setPosts(await db.votePoll(id, optionIndex)); }, []);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
-  const viewStory = useCallback(async (id) => { setStories(await db.markStorySeen(id)); }, []);
-  const addStory = useCallback(async (fields) => { setStories(await db.addStory(fields)); }, []);
-  const deleteStory = useCallback(async (id) => { setStories(await db.deleteStory(id)); }, []);
-  const uploadStoryImage = useCallback((blob) => db.uploadStoryImage(blob), []);
-  const uploadStoryVideo = useCallback((file) => db.uploadStoryVideo(file), []);
   const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
   const endorseSkill = useCallback(async (name) => { setExpertise(await db.toggleEndorse(name)); }, []);
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
@@ -102,10 +96,9 @@ export function AppDataProvider({ children }) {
   const uploadResume = useCallback((file) => db.uploadResume(file), []);
 
   const value = {
-    loading, posts, stories, people, notifications, evidence, communities,
+    loading, posts, people, notifications, evidence, communities,
     expertise, education, achievements, rotations, exercises, profile,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
-    viewStory, addStory, deleteStory, uploadStoryImage, uploadStoryVideo,
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
