@@ -28,7 +28,7 @@ export default function ProfileTabs({ active, onChange }) {
             onClick={() => onChange(tab)}
             aria-current={active === tab ? "page" : undefined}
             className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-full text-sm font-bold transition-colors ${
-              active === tab ? "bg-slate-900 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"
+              active === tab ? "bg-violet-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"
             }`}
           >
             {tab}

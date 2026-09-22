@@ -21,7 +21,7 @@ export default function ProfessionalContributionsSection() {
       <div className="space-y-4">
         {CONTRIBUTIONS.map((c) => (
           <div key={c.id} className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><Presentation size={15} className="text-slate-600" /></div>
+            <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center shrink-0"><Presentation size={15} className="text-violet-600" /></div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.type}</p>
               <p className="text-sm font-medium text-slate-800 leading-snug">{c.title}</p>

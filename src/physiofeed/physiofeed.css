@@ -259,3 +259,7 @@
    existing type. See index.html for the Google Fonts <link>. */
 .pf-font-head { font-family: 'Baloo 2', ui-rounded, sans-serif; }
 .pf-font-body { font-family: 'Nunito Sans', system-ui, sans-serif; }
+
+/* Profile header's handwritten tagline (profile.quote) -- see index.html
+   for the Caveat <link>. */
+.pf-font-quote { font-family: 'Caveat', cursive; }

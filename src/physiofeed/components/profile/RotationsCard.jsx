@@ -38,7 +38,7 @@ export default function RotationsCard({ entries, readOnly = false }) {
             const { title, organization, dateRange } = parseExperienceEntry(r);
             return (
               <div key={r.id} className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><Building2 size={16} className="text-slate-600" /></div>
+                <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center shrink-0"><Building2 size={16} className="text-violet-600" /></div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-900 leading-snug">{title || organization}</p>
                   {title && organization && <p className="text-sm text-slate-600">{organization}</p>}

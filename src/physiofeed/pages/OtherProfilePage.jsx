@@ -25,7 +25,7 @@ export default function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const {
-    posts, profile: myProfile, connectionStates,
+    posts, profile: myProfile, connectionStates, people, followPerson,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom,
   } = useAppData();
   const [otherProfile, setOtherProfile] = useState(null);
@@ -72,7 +72,7 @@ export default function OtherProfilePage() {
     return (
       <main className="flex-1 min-w-0 py-14 text-center">
         <p className="text-sm text-slate-500">This profile couldn't be found.</p>
-        <button onClick={() => navigate(-1)} className="mt-3 text-sm font-medium text-[#7C3AED] hover:underline">Go back</button>
+        <button onClick={() => navigate(-1)} className="mt-3 text-sm font-medium text-slate-700 hover:underline">Go back</button>
       </main>
     );
   }
@@ -80,6 +80,9 @@ export default function OtherProfilePage() {
   const authorPosts = posts.filter((p) => p.authorId === userId);
   // P2: the real connections table, not the old follows-row stand-in.
   const connectionState = connectionStates[userId] || "none";
+  // Follow is a separate, plain one-way follows-table row (AppDataContext's
+  // followPerson()) -- unrelated to the connections state machine above.
+  const person = people.find((p) => p.id === userId);
 
   return (
     <>
@@ -95,6 +98,8 @@ export default function OtherProfilePage() {
           experience={rotations}
           isOwn={false}
           connectionState={connectionState}
+          following={person?.following ?? false}
+          onFollow={() => followPerson(userId)}
           onConnect={() => connectWith(userId)}
           onAccept={() => acceptConnection(userId)}
           onIgnore={() => ignoreConnection(userId)}

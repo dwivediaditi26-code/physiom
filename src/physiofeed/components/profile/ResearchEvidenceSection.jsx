@@ -56,7 +56,7 @@ export default function ResearchEvidenceSection({ profile, posts, publications =
                 <p className="text-sm font-medium text-slate-800 leading-snug">{pub.title}</p>
                 <p className="text-xs text-slate-400">{[pub.journal, pub.year].filter(Boolean).join(" • ")}{pub.authors ? ` · ${pub.authors}` : ""}</p>
                 {pub.doiUrl && (
-                  <a href={pub.doiUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 mt-0.5">
+                  <a href={pub.doiUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-800 mt-0.5">
                     View publication <ExternalLink size={11} />
                   </a>
                 )}
@@ -71,7 +71,7 @@ export default function ResearchEvidenceSection({ profile, posts, publications =
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2.5">Research Interests</p>
           <div className="flex flex-wrap gap-2">
             {profile.researchInterests.map((s) => (
-              <span key={s} className="text-xs font-medium px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700">{s}</span>
+              <span key={s} className="text-xs font-medium px-3 py-1.5 rounded-full bg-violet-50 border border-violet-100 text-violet-700">{s}</span>
             ))}
           </div>
         </div>

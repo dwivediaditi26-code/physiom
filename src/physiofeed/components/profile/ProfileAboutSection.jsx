@@ -64,7 +64,7 @@ export default function ProfileAboutSection({ profile, isOwn = false }) {
               <p className="text-xs text-slate-400 truncate">{profile.resumeName || "Résumé.pdf"}</p>
             </div>
           </div>
-          <span className="shrink-0 p-2 rounded-xl text-white bg-slate-900 shadow-sm">
+          <span className="shrink-0 p-2 rounded-xl text-white bg-violet-600 shadow-sm">
             <Download size={15} />
           </span>
         </a>

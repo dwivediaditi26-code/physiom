@@ -168,7 +168,7 @@ export default function EditEvidenceModal({ profile, publications, onClose }) {
         <label className={LABEL}>Research interests</label>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {researchInterests.map((s) => (
-            <span key={s} className="inline-flex items-center gap-1 text-[11px] font-medium pl-2.5 pr-1.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-100">
+            <span key={s} className="inline-flex items-center gap-1 text-[11px] font-medium pl-2.5 pr-1.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
               {s}
               <button type="button" onClick={() => removeInterest(s)} aria-label={`Remove ${s}`} className="hover:text-violet-900"><X size={11} /></button>
             </span>
@@ -199,7 +199,7 @@ export default function EditEvidenceModal({ profile, publications, onClose }) {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-violet-600 border border-dashed border-violet-300 rounded-xl py-2.5 hover:bg-violet-50"
+              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-900 border border-dashed border-slate-300 rounded-xl py-2.5 hover:bg-slate-100"
             >
               <Plus size={14} /> Add publication
             </button>

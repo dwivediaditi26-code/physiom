@@ -29,11 +29,11 @@ export default function CertificationsCard({ entries, readOnly = false }) {
         <div className="space-y-3">
           {entries.map((a) => (
             <div key={a.id} className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><Icon name={a.iconName} size={14} className="text-slate-600" /></div>
+              <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center shrink-0"><Icon name={a.iconName} size={14} className="text-violet-600" /></div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-medium text-slate-800">{a.title}</p>
-                  {a.verified && <Check size={12} className="text-slate-500 shrink-0" aria-label="Verified by PhysioFeed" />}
+                  {a.verified && <Check size={12} className="text-violet-600 shrink-0" aria-label="Verified by PhysioFeed" />}
                 </div>
                 {a.subtitle && <p className="text-xs text-slate-400">{a.subtitle}</p>}
               </div>

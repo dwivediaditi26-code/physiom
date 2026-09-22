@@ -167,7 +167,7 @@ export default function EditProfileModal({ profile, onClose }) {
         <input value={memberships} onChange={(e) => setMemberships(e.target.value)} placeholder="e.g. IAP, WCPT" className={`${FIELD} mb-3`} />
 
         <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
-          <input type="checkbox" checked={availableForConsults} onChange={(e) => setAvailableForConsults(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-300" />
+          <input type="checkbox" checked={availableForConsults} onChange={(e) => setAvailableForConsults(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300" />
           <span className="text-sm text-slate-700">Available for online consults</span>
         </label>
 

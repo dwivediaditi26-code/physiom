@@ -1,29 +1,33 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, Building2, Pencil, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, Clock, MessageSquare, Briefcase } from "lucide-react";
+import { BadgeCheck, MapPin, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, X as XIcon, Clock, Send, Pencil, Briefcase, Users, UserCheck, LayoutGrid, Star } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
-import { formatCount } from "../shared/constants.js";
+import { formatCount, PROFILE_ACCENTS } from "../shared/constants.js";
 import { getCurrentWorkplace } from "./experienceUtils.js";
 import EditProfileModal from "./EditProfileModal.jsx";
 import OpenToOpportunitiesModal from "./OpenToOpportunitiesModal.jsx";
 import OpenToOpportunitiesPopover from "./OpenToOpportunitiesPopover.jsx";
 
-// Compact "LinkedIn for physiotherapists" header (2026-09-22 redesign,
-// Aditi's brief) -- replaces the old tall violet-gradient hero. The brief
-// is explicit this should read as a professional-identity card (photo,
-// name, designation, workplace, location, connect/message), not a
-// clinical-skills teaser, so the old "Open to / Mentorship / Research /
-// Workshops" pill ROW is gone -- just one small "Open to Opportunities"
-// pill now (OpenToOpportunitiesModal.jsx / *Popover.jsx), matching the
-// brief's "keep this very small, only expand on tap" instruction.
-//
-// `experience` (the rotations/Experience list, same data RotationsCard.jsx
-// renders) is a new prop so "Current Workplace" can be derived from
-// whichever entry says "Present" rather than inventing a new
-// profile.currentWorkplace column with no matching Supabase migration --
-// see experienceUtils.js and mockData.js's ROTATIONS comment.
+// "LinkedIn for physiotherapists" header, v3 (2026-09-22) -- Aditi sent a
+// reference screenshot for the general layout (photo + handwritten-style
+// tagline beside it, name/role/location, a 3-stat bordered row, a gradient
+// "Message" pill + circular action icons), but then had two corrections on
+// top of it: (1) "remove this ACL, kinesiotaping, dryneedling, etc" -- the
+// reference's specialty-chip row is gone, back in line with the original
+// brief's own "do not put a large list of clinical specialties underneath
+// the name"; (2) Open to Opportunities moved up into the hero band right
+// under the name (was down by location) and recolored a fixed amber, not
+// the per-profile accent, so it reads as a distinct status pill rather
+// than blending into the rest of the accent-colored chrome. The tagline
+// pulls profile.quote (EditProfileModal.jsx saves it, nothing rendered it
+// before this). Follow/Connect/Message are three separate actions here
+// (Aditi: "there should be follow connect and message option") --
+// Follow (AppDataContext's followPerson(), a plain one-way follows-table
+// row, previously wired up with no button anywhere) sits beside Connect
+// (the mutual connections request flow) rather than replacing it.
 export default function ProfileHeader({
-  profile, postCount, experience = [], isOwn = true,
+  profile, postCount = 0, experience = [], isOwn = true,
   connectionState = "none", onConnect, onAccept, onIgnore, onCancel, onDisconnect, onMessage,
+  following = false, onFollow,
 }) {
   const [editing, setEditing] = useState(false);
   const [editingOpenTo, setEditingOpenTo] = useState(false);
@@ -34,8 +38,7 @@ export default function ProfileHeader({
 
   // Every connection action goes through here so the button can't be
   // double-fired and a real error (RLS, offline, already-connected race)
-  // surfaces in the UI instead of being swallowed -- the old version just
-  // flipped to "Requested" on a 900ms timer whether or not anything saved.
+  // surfaces in the UI instead of being swallowed.
   const run = async (fn) => {
     if (!fn || busy) return;
     setBusy(true);
@@ -51,99 +54,15 @@ export default function ProfileHeader({
 
   const currentWorkplace = getCurrentWorkplace(experience);
   const hasOpenTo = (profile.openToTypes || []).length > 0;
+  const accent = PROFILE_ACCENTS[profile.gradient] || PROFILE_ACCENTS.violet;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-      <div className="flex items-start gap-3.5">
-        <Avatar size={64} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} className="border-2 border-white shadow-sm shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h1 className="pf-font-head text-base font-extrabold text-slate-900 truncate">{profile.name}</h1>
-            {profile.verified && <BadgeCheck size={16} className="text-slate-700 shrink-0" />}
-          </div>
-          <p className="text-sm text-slate-500 truncate">{profile.role}</p>
-          {profile.headline && <p className="text-sm text-slate-700 mt-1 leading-snug">{profile.headline}</p>}
-          <div className="flex flex-col gap-0.5 mt-1.5">
-            {currentWorkplace && (
-              <p className="text-xs text-slate-500 flex items-center gap-1"><Building2 size={12} className="shrink-0" /> {currentWorkplace}</p>
-            )}
-            {profile.location && (
-              <p className="text-xs text-slate-500 flex items-center gap-1"><MapPin size={12} className="shrink-0" /> {profile.location}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 mt-3.5">
-        <span className="text-xs text-slate-500"><span className="font-bold text-slate-900">{formatCount(profile.followers)}</span> Followers</span>
-        <span className="w-1 h-1 rounded-full bg-slate-300" />
-        <span className="text-xs text-slate-500"><span className="font-bold text-slate-900">{formatCount(profile.following)}</span> Connections</span>
-        {(hasOpenTo || isOwn) && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => (isOwn ? setEditingOpenTo(true) : setOpenToPopoverOpen((v) => !v))}
-              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
-            >
-              <Briefcase size={11} /> Open to Opportunities
-            </button>
-            {!isOwn && openToPopoverOpen && <OpenToOpportunitiesPopover types={profile.openToTypes} onClose={() => setOpenToPopoverOpen(false)} />}
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 mt-4">
-        {isOwn ? (
-          <button onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">
-            <Pencil size={14} /> Edit Profile
-          </button>
-        ) : (
-          <>
-            {/* Four real states, driven by the connections table (P2), not a
-                relabelled Follow. `pending_received` is the only one that
-                needs two actions, so it renders two buttons. Disconnect
-                lives in the More menu rather than on the Connected button,
-                so an accidental tap can't drop a connection. */}
-            {connectionState === "pending_received" ? (
-              <>
-                <button onClick={() => run(onAccept)} disabled={busy}
-                  className="pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 transition active:scale-95">
-                  <Check size={14} /> Accept
-                </button>
-                <button onClick={() => run(onIgnore)} disabled={busy}
-                  className="text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-60">
-                  Ignore
-                </button>
-              </>
-            ) : connectionState === "pending_sent" ? (
-              <button onClick={() => run(onCancel)} disabled={busy} title="Tap to withdraw your request"
-                className="flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 disabled:opacity-60">
-                <Clock size={14} /> Pending
-              </button>
-            ) : connectionState === "connected" ? (
-              <span className="flex items-center gap-1.5 text-sm font-semibold px-5 py-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200">
-                <Check size={14} /> Connected
-              </span>
-            ) : (
-              <button onClick={() => run(onConnect)} disabled={busy}
-                className="pf-font-head flex items-center gap-1.5 text-sm font-bold px-5 py-2 rounded-xl text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 transition active:scale-95">
-                <UserPlus size={14} /> {busy ? "Connecting…" : "Connect"}
-              </button>
-            )}
-            {/* Message stays available whether or not you're connected --
-                non-connections get a 3-message cap in MessagesPage.jsx
-                instead of being blocked outright. */}
-            <button onClick={onMessage} aria-label={`Message ${profile.name}`}
-              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
-              <MessageSquare size={14} /> Message
-            </button>
-          </>
-        )}
-        <div className="relative">
-          <button onClick={() => setMoreOpen((v) => !v)} className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"><MoreHorizontal size={16} /></button>
+    <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm mb-5 bg-white">
+      <div className={`relative bg-gradient-to-br ${accent.hero} px-4 pt-4 pb-3.5`}>
+        <div className="absolute top-2.5 right-2.5">
+          <button onClick={() => setMoreOpen((v) => !v)} className="p-2 rounded-full bg-white/70 backdrop-blur text-slate-500 hover:bg-white" aria-label="More"><MoreHorizontal size={16} /></button>
           {moreOpen && (
-            <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-30">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-30 text-left">
               <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"><Link2 size={13} /> Copy profile link</button>
               <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50"><Share2 size={13} /> Share profile</button>
               {isOwn ? (
@@ -166,9 +85,105 @@ export default function ProfileHeader({
             </div>
           )}
         </div>
+
+        <div className="flex items-start gap-3">
+          <Avatar size={132} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} className="shadow-[0_0_18px_8px_rgba(255,255,255,0.85)] shrink-0" />
+          {profile.quote && (
+            <div className="text-right pt-9 pr-1 min-w-0 flex-1">
+              <p className={`pf-font-quote ${accent.text} text-xl leading-[1.2]`}>{profile.quote}</p>
+              <span className={`inline-block w-14 h-[2px] ${accent.underline} mt-1 rounded-full`} />
+            </div>
+          )}
+        </div>
+
+        <div className="text-left mt-3.5">
+          <div className="flex items-center gap-2">
+            <h1 className="pf-font-head text-xl font-extrabold text-[#2B2140]">{profile.name}</h1>
+            {profile.verified && <BadgeCheck size={19} className={`${accent.text} shrink-0`} />}
+          </div>
+        </div>
+
+        {(hasOpenTo || isOwn) && (
+          <div className="flex justify-start mt-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => (isOwn ? setEditingOpenTo(true) : setOpenToPopoverOpen((v) => !v))}
+                className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+              >
+                <Briefcase size={11} /> Open to Opportunities
+              </button>
+              {!isOwn && openToPopoverOpen && <OpenToOpportunitiesPopover types={profile.openToTypes} onClose={() => setOpenToPopoverOpen(false)} />}
+            </div>
+          </div>
+        )}
       </div>
 
-      {error && <p className="text-xs text-rose-600 mt-2">{error}</p>}
+      <div className="bg-white px-4 pt-2.5 pb-3">
+        <p className="text-sm text-[#2B2140] font-semibold">{profile.role}</p>
+        {profile.location && (
+          <p className="text-xs text-[#2B2140] flex items-center gap-1 mt-1"><MapPin size={12} /> {profile.location}</p>
+        )}
+        {currentWorkplace && <p className="text-xs text-[#2B2140]/70 mt-0.5">{currentWorkplace}</p>}
+      </div>
+
+      <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
+        <div className="flex flex-col items-center gap-0.5 py-2.5"><Users size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.followers)}</span><span className="text-[11px] text-[#2B2140]/60">Followers</span></div>
+        <div className="flex flex-col items-center gap-0.5 py-2.5"><UserCheck size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.following)}</span><span className="text-[11px] text-[#2B2140]/60">Following</span></div>
+        <div className="flex flex-col items-center gap-0.5 py-2.5"><LayoutGrid size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(postCount)}</span><span className="text-[11px] text-[#2B2140]/60">Posts</span></div>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-3">
+        {isOwn ? (
+          <button onClick={() => setEditing(true)}
+            className={`pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-full text-white bg-gradient-to-r ${accent.button} hover:opacity-90 transition active:scale-[0.98]`}>
+            <Pencil size={14} /> Edit Profile
+          </button>
+        ) : (
+          <>
+            {connectionState === "pending_received" ? (
+              <>
+                <button onClick={() => run(onAccept)} disabled={busy}
+                  className={`pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold px-5 py-2.5 rounded-full text-white bg-gradient-to-r ${accent.button} disabled:opacity-60 transition active:scale-[0.98]`}>
+                  <Check size={14} /> Accept
+                </button>
+                <button onClick={() => run(onIgnore)} disabled={busy} aria-label="Ignore request"
+                  className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-60">
+                  <XIcon size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => run(onFollow)} disabled={busy}
+                  className={`flex-1 flex items-center justify-center gap-1 text-xs font-bold px-2 py-2.5 rounded-full border disabled:opacity-60 ${following ? accent.filled : accent.outline}`}>
+                  <Star size={14} fill={following ? "currentColor" : "none"} /> {following ? "Following" : "Follow"}
+                </button>
+                <button onClick={onMessage}
+                  className={`pf-font-head flex-1 flex items-center justify-center gap-1 text-xs font-bold px-2 py-2.5 rounded-full text-white bg-gradient-to-r ${accent.button} hover:opacity-90 transition active:scale-[0.98]`}>
+                  <Send size={14} /> Message
+                </button>
+                {connectionState === "connected" ? (
+                  <span title="Connected" className={`flex-1 flex items-center justify-center gap-1 text-xs font-bold px-2 py-2.5 rounded-full border ${accent.filled}`}>
+                    <Check size={14} /> Connected
+                  </span>
+                ) : connectionState === "pending_sent" ? (
+                  <button onClick={() => run(onCancel)} disabled={busy} title="Tap to withdraw your request"
+                    className="flex-1 flex items-center justify-center gap-1 text-xs font-bold px-2 py-2.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 disabled:opacity-60">
+                    <Clock size={14} /> Pending
+                  </button>
+                ) : (
+                  <button onClick={() => run(onConnect)} disabled={busy}
+                    className={`flex-1 flex items-center justify-center gap-1 text-xs font-bold px-2 py-2.5 rounded-full border disabled:opacity-60 ${accent.outline}`}>
+                    <UserPlus size={14} /> Connect
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {error && <p className="text-xs text-rose-600 px-5 pb-3 -mt-2">{error}</p>}
 
       {isOwn && editing && <EditProfileModal profile={profile} onClose={() => setEditing(false)} />}
       {isOwn && editingOpenTo && <OpenToOpportunitiesModal profile={profile} onClose={() => setEditingOpenTo(false)} />}

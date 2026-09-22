@@ -218,7 +218,7 @@ export default function EditEducationModal({ entries, onClose }) {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-violet-600 border border-dashed border-violet-300 rounded-xl py-2.5 hover:bg-violet-50"
+              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-slate-700 border border-dashed border-slate-300 rounded-xl py-2.5 hover:bg-slate-50"
             >
               <Plus size={14} /> Add entry
             </button>

@@ -6,8 +6,9 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // Own-profile editor for the header's small "Open to Opportunities" pill
 // (2026-09-22 redesign). Used to be a row of always-visible pills right in
 // the header; the brief wants that collapsed down to one small pill that
-// only expands into this toggle-chip picker on tap. Palette is monochrome
-// slate/navy, not green (Aditi: "dnt make it green at all").
+// only expands into this toggle-chip picker on tap. Violet accent, matching
+// ProfileHeader.jsx -- never green (Aditi: "dnt make it green at all"),
+// but the app's own existing violet brand is fine.
 export default function OpenToOpportunitiesModal({ profile, onClose }) {
   const { updateProfile } = useAppData();
   const [selected, setSelected] = useState(profile.openToTypes || []);
@@ -47,7 +48,7 @@ export default function OpenToOpportunitiesModal({ profile, onClose }) {
                 type="button"
                 onClick={() => toggle(type)}
                 className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition ${
-                  selected.includes(type) ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  selected.includes(type) ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 {type}
@@ -58,7 +59,7 @@ export default function OpenToOpportunitiesModal({ profile, onClose }) {
         </div>
         <div className="flex items-center gap-2 px-5 py-4 border-t border-slate-100">
           <button onClick={onClose} className="flex-1 text-sm font-semibold px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
-          <button onClick={save} disabled={saving} className="flex-1 text-sm font-bold px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60">
+          <button onClick={save} disabled={saving} className="flex-1 text-sm font-bold px-4 py-2.5 rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60">
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
