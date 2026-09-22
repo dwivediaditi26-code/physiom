@@ -17,6 +17,19 @@ export const OPPORTUNITY_CATEGORIES = [
 export const SPECIALTIES = ["MSK", "Neuro", "Sports", "Pediatrics", "Cardiopulmonary", "Geriatrics"];
 export const LOCATION_TYPES = ["On-site", "Hybrid", "Remote"];
 
+// "Candy Coat" type colors (2026-09-22, Aditi's pick from three restyle
+// directions) -- each opportunity type owns a real color carried through
+// its card tint, badge and CTA button, instead of one flat violet for
+// everything. `solid` is the badge/button/icon color, `tint` is the
+// card's soft top-gradient wash, `text` is a darker readable shade of the
+// same hue for on-tint text.
+export const TYPE_COLORS = {
+  job: { solid: "#3E7BFA", tint: "#EAF1FF", text: "#2B5FD9" },
+  internship: { solid: "#17B897", tint: "#E4FBF3", text: "#0E9280" },
+  workshop: { solid: "#FF5FA2", tint: "#FFE9F3", text: "#D93E80" },
+  collaboration: { solid: "#FFB020", tint: "#FFF4E0", text: "#B0790A" },
+};
+
 export const INITIAL_OPPORTUNITIES = [
   {
     id: "op-1",

@@ -188,3 +188,10 @@
 @media (prefers-reduced-motion: reduce) {
   .pf-seg-thumb { transition: none !important; }
 }
+
+/* "Candy Coat" (2026-09-22, Aditi's pick from three Explore restyle
+   directions) -- opt-in font classes, not a base override, so only the
+   Explore board picks these up and the rest of PhysioFeed keeps its
+   existing type. See index.html for the Google Fonts <link>. */
+.pf-font-head { font-family: 'Baloo 2', ui-rounded, sans-serif; }
+.pf-font-body { font-family: 'Nunito Sans', system-ui, sans-serif; }

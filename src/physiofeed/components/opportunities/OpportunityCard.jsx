@@ -1,17 +1,15 @@
 import { MapPin, IndianRupee, Clock, Video } from "lucide-react";
-import Avatar from "../shared/Avatar.jsx";
+import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 
 const TYPE_LABEL = { job: "Job", internship: "Internship", collaboration: "Collaboration", workshop: "Workshop" };
-const TYPE_TINT = {
-  job: "bg-violet-50 text-violet-700",
-  internship: "bg-teal-50 text-teal-700",
-  collaboration: "bg-amber-50 text-amber-700",
-  workshop: "bg-rose-50 text-rose-700",
-};
 
+// "Candy Coat" (2026-09-22, Aditi's pick from three Explore restyle
+// directions): each opportunity type owns a real color, carried through
+// this card's top tint, badge and CTA -- instead of one flat violet for
+// every card regardless of type. See TYPE_COLORS in opportunitiesMock.js.
 function Pill({ children, icon: Icon }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600">
+    <span className="pf-font-body inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F7F5FF] text-[#6E5CC7]">
       {Icon && <Icon size={11} />}
       {children}
     </span>
@@ -20,22 +18,31 @@ function Pill({ children, icon: Icon }) {
 
 export default function OpportunityCard({ opp, onOpen }) {
   const isWorkshop = opp.type === "workshop";
+  const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
+    <div
+      className="rounded-[22px] p-4 border-2 shadow-sm hover:shadow-md transition"
+      style={{ borderColor: "#F1EEFB", background: `linear-gradient(180deg, ${c.tint} 0%, #fff 88px)` }}
+    >
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Avatar size={34} grad={opp.orgGradient} initials={opp.orgInitials} />
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs pf-font-head font-bold shrink-0" style={{ background: c.solid }}>
+            {opp.orgInitials}
+          </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">{opp.org}</p>
-            <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${TYPE_TINT[opp.type]}`}>{TYPE_LABEL[opp.type]}</span>
+            <p className="pf-font-body text-sm font-bold text-slate-900 truncate">{opp.org}</p>
+            <span className="pf-font-head inline-block text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: c.solid }}>
+              {TYPE_LABEL[opp.type]}
+            </span>
           </div>
         </div>
-        <span className="text-[11px] text-slate-400 shrink-0">{opp.postedAgo}</span>
+        <span className="pf-font-body text-[11px] text-slate-400 shrink-0">{opp.postedAgo}</span>
       </div>
 
       <button type="button" onClick={() => onOpen(opp)} className="text-left w-full">
-        <p className="text-[15px] font-bold text-slate-900 leading-snug mb-1">{opp.title}</p>
-        <p className="text-sm text-slate-500 leading-snug mb-3 line-clamp-2">{opp.description}</p>
+        <p className="pf-font-head text-[15px] font-bold text-slate-900 leading-snug mb-1">{opp.title}</p>
+        <p className="pf-font-body text-sm text-slate-500 leading-snug mb-3 line-clamp-2">{opp.description}</p>
       </button>
 
       <div className="flex flex-wrap gap-1.5 mb-3.5">
@@ -55,11 +62,12 @@ export default function OpportunityCard({ opp, onOpen }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <button type="button" onClick={() => onOpen(opp)} className="text-xs font-semibold text-slate-500 hover:text-slate-700">View details</button>
+        <button type="button" onClick={() => onOpen(opp)} className="pf-font-body text-xs font-bold text-slate-500 hover:text-slate-700">View details</button>
         <button
           type="button"
           onClick={() => onOpen(opp)}
-          className="text-xs font-bold text-white px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 shadow-sm active:scale-[0.97] transition"
+          className="pf-font-head text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm active:scale-[0.97] transition"
+          style={{ background: c.solid }}
         >
           {isWorkshop ? "Register" : "Apply"}
         </button>

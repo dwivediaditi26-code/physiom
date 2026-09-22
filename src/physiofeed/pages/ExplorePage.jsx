@@ -156,31 +156,31 @@ export default function ExplorePage() {
   return (
     <main className="flex-1 min-w-0 relative">
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-slate-900 mb-1">Explore</h1>
-        <p className="text-sm text-slate-500">Jobs, internships, workshops and collaborations for physiotherapists.</p>
+        <h1 className="pf-font-head text-2xl font-extrabold text-[#2B2140] mb-1">Explore</h1>
+        <p className="pf-font-body text-sm text-[#8A7FA3]">Jobs, internships, workshops and collaborations for physiotherapists.</p>
       </div>
 
       <button
         type="button"
         onClick={() => setMyPostingsOpen(true)}
-        className="w-full flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 hover:bg-slate-50 transition"
+        className="w-full flex items-center gap-3 bg-white border-2 border-[#F1EEFB] rounded-2xl px-4 py-3 mb-4 hover:bg-[#FBFAFF] transition"
       >
-        <span className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><Briefcase size={16} className="text-indigo-600" /></span>
+        <span className="w-9 h-9 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><Briefcase size={16} className="text-[#6E5CC7]" /></span>
         <span className="min-w-0 flex-1 text-left">
-          <span className="block text-sm font-bold text-slate-900">My Postings</span>
-          <span className="block text-xs text-slate-500">Manage your listings and review applicants</span>
+          <span className="pf-font-head block text-sm font-bold text-[#2B2140]">My Postings</span>
+          <span className="pf-font-body block text-xs text-[#8A7FA3]">Manage your listings and review applicants</span>
         </span>
-        {myPostings.length > 0 && <span className="text-xs font-bold text-indigo-600 bg-indigo-50 rounded-full px-2 py-0.5 shrink-0">{myPostings.length}</span>}
-        <ChevronRight size={16} className="text-slate-300 shrink-0" />
+        {myPostings.length > 0 && <span className="pf-font-head text-xs font-bold text-white bg-[#6E5CC7] rounded-full px-2 py-0.5 shrink-0">{myPostings.length}</span>}
+        <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
       </button>
 
-      <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 h-11 mb-3.5">
-        <Search size={16} className="text-slate-400 shrink-0" />
+      <div className="flex items-center gap-2 bg-[#F7F5FF] border-2 border-[#EFE9FF] rounded-2xl px-3.5 h-11 mb-3.5">
+        <Search size={16} className="text-[#8A7FA3] shrink-0" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search opportunities, clinics, cities…"
-          className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
+          className="pf-font-body bg-transparent text-sm outline-none w-full placeholder:text-[#A79CC4] text-[#2B2140]"
         />
       </div>
 
@@ -188,21 +188,22 @@ export default function ExplorePage() {
         {OPPORTUNITY_CATEGORIES.map((c) => {
           const live = opportunities.filter((o) => o.status !== "closed");
           const count = c.key === "all" ? live.length : live.filter((o) => o.type === c.key).length;
+          const on = category === c.key;
           return (
             <button
               key={c.key}
               type="button"
               onClick={() => setCategory(c.key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${category === c.key ? "bg-violet-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-600"}`}
+              className={`pf-font-head shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border-2 ${on ? "bg-[#FFB020] border-[#FFB020] text-[#3A2A00] shadow-sm" : "bg-white border-[#F1EEFB] text-[#6E5CC7]"}`}
             >
-              {c.label} <span className={category === c.key ? "opacity-80" : "text-slate-400"}>{count}</span>
+              {c.label} <span className={on ? "opacity-70" : "text-[#C4BAE3]"}>{count}</span>
             </button>
           );
         })}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-14 text-slate-400 text-sm">No opportunities match "{query}".</div>
+        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">No opportunities match "{query}".</div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4 pb-6">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}
@@ -213,7 +214,7 @@ export default function ExplorePage() {
       <button
         type="button"
         onClick={() => setPostOpen(true)}
-        className="fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-white pl-4 pr-5 py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg active:scale-[0.97] transition"
+        className="pf-font-head fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-[#FFB020] pl-4 pr-5 py-3.5 rounded-full shadow-lg active:scale-[0.97] transition"
       >
         <Plus size={17} /> Post
       </button>
