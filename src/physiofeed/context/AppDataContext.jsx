@@ -21,6 +21,11 @@ export function AppDataProvider({ children }) {
   // People page renders.
   const [connectionStates, setConnectionStates] = useState({});
   const [connectionRequests, setConnectionRequests] = useState([]);
+  // P3: unread DM count for the header's message icon. Lives here rather
+  // than in MessagesPage because the badge has to show on every screen --
+  // that page is where you go once you already know there's something
+  // waiting.
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -28,16 +33,16 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr, cs, cr] = await Promise.all([
+      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr, cs, cr, um] = await Promise.all([
         db.getPosts(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
         db.getAchievements(), db.getRotations(), db.getPublications(), db.getExercises(), db.getProfile(),
-        db.getConnectionStates(), db.getConnectionRequests(),
+        db.getConnectionStates(), db.getConnectionRequests(), db.getUnreadMessageCount(),
       ]);
       setPosts(p); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
       setAchievements(ac); setRotations(rt); setPublications(pu); setExercises(exr); setProfile(pr);
-      setConnectionStates(cs); setConnectionRequests(cr);
+      setConnectionStates(cs); setConnectionRequests(cr); setUnreadMessages(um);
       setLoading(false);
     })();
   }, []);
@@ -58,6 +63,27 @@ export function AppDataProvider({ children }) {
       unsubscribe = await db.subscribeToNotifications(async () => {
         if (cancelled) return;
         setNotifications(await db.getNotifications());
+      });
+      if (cancelled) unsubscribe();
+    })();
+    return () => { cancelled = true; unsubscribe(); };
+  }, []);
+
+  // P3: same shape as the bell's subscription above, for the envelope.
+  // Every insert involving you re-counts -- cheap (a head-only count) and
+  // correct whether the row is one you received (count up) or one you sent
+  // from another device (unchanged).
+  const refreshUnreadMessages = useCallback(async () => {
+    setUnreadMessages(await db.getUnreadMessageCount());
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+    (async () => {
+      unsubscribe = await db.subscribeToMessages(async () => {
+        if (cancelled) return;
+        setUnreadMessages(await db.getUnreadMessageCount());
       });
       if (cancelled) unsubscribe();
     })();
@@ -128,7 +154,7 @@ export function AppDataProvider({ children }) {
   const value = {
     loading, posts, people, notifications, evidence, communities,
     expertise, education, achievements, rotations, publications, exercises, profile,
-    connectionStates, connectionRequests,
+    connectionStates, connectionRequests, unreadMessages, refreshUnreadMessages,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,

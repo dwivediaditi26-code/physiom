@@ -106,7 +106,7 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
 // row takes you to the People list rather than a profile you can't reach.
 export default function Header() {
   const [query, setQuery] = useState("");
-  const { notifications, profile, people } = useAppData();
+  const { notifications, profile, people, unreadMessages } = useAppData();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -212,7 +212,13 @@ export default function Header() {
                 notification -- it wasn't tracking `read` at all. */}
             {notifications.some((n) => !n.read) && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />}
           </button>
-          <button onClick={() => navigate("/messages")} aria-label="Messages" className="p-2 rounded-lg hover:bg-slate-50"><MessageSquare size={19} className="text-slate-500" /></button>
+          {/* Unread dot (P3): the bell has had one since 2026-08-19, the
+              envelope never did -- a message that arrived while you were
+              anywhere but /messages was completely silent. */}
+          <button onClick={() => navigate("/messages")} aria-label={unreadMessages > 0 ? `Messages (${unreadMessages} unread)` : "Messages"} className="relative p-2 rounded-lg hover:bg-slate-50">
+            <MessageSquare size={19} className="text-slate-500" />
+            {unreadMessages > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />}
+          </button>
           {profile && (
             <Link to="/profile" className="hidden sm:flex items-center gap-2 focus:outline-none">
               <Avatar size={32} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />

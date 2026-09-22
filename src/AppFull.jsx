@@ -4,7 +4,7 @@ import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { createPortal } from "react-dom";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
-import { getNotifications as getPfNotifications } from "./physiofeed/data/db.js";
+import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfUnreadMessages } from "./physiofeed/data/db.js";
 import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
@@ -326,6 +326,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // needing to be mounted inside PhysioFeed's own AppDataProvider/router.
   const [pfUnread, setPfUnread] = useState(false);
   useEffect(() => { getPfNotifications().then((n) => setPfUnread(n.some((x) => !x.read))).catch(() => {}); }, []);
+  // Same, for the message icon beside it (P3) -- it had no unread dot at
+  // all, so a DM that arrived while you were outside PhysioFeed's
+  // Messages page was invisible. Re-checked on every tab change rather
+  // than subscribed: this header lives outside PhysioFeed's
+  // AppDataProvider, and tapping between tabs is the only moment the
+  // dot's state can matter to you here.
+  const [pfUnreadMsgs, setPfUnreadMsgs] = useState(0);
+  useEffect(() => { getPfUnreadMessages().then(setPfUnreadMsgs).catch(() => {}); }, [active]);
   // ── Back navigation (in-app Back button + real browser/hardware back) ──
   // activeRef mirrors `active` synchronously so navTo (a stable useCallback)
   // can tell whether a nav call is actually going somewhere new, without
@@ -1875,9 +1883,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               <BellIcon size={18}/>
               {pfUnread && <span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#f43f5e"}}/>}
             </button>
-            <button onClick={()=>navTo("physiofeed",{pfTab:"messages"})} aria-label="Messages"
-              style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <button onClick={()=>navTo("physiofeed",{pfTab:"messages"})} aria-label={pfUnreadMsgs>0?`Messages (${pfUnreadMsgs} unread)`:"Messages"}
+              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <MessageSquareIcon size={18}/>
+              {pfUnreadMsgs>0 && <span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#f43f5e"}}/>}
             </button>
           </div>
         ) : active==="clinical" ? (

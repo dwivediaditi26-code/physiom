@@ -1645,6 +1645,29 @@ export async function getMessages(otherUserId) {
   return (data || []).map((m) => ({ id: m.id, text: m.text, isSelf: m.sender_id === uid, createdAt: m.created_at }));
 }
 
+// How many messages are waiting for you, across every thread (P3). The
+// header's message icon needs this to show an unread dot -- the bell has
+// had one for months, the envelope never did, so a message that arrived
+// while you were anywhere other than /messages was completely silent.
+// A head-only count, not getConversations(), because that fetches every
+// message row plus the other parties' profiles just to derive a number.
+export async function getUnreadMessageCount() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return 0;
+    const { count, error } = await supabase
+      .from("direct_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", uid)
+      .eq("read", false);
+    if (error) throw error;
+    return count || 0;
+  } catch (e) {
+    console.error("getUnreadMessageCount(): --", e?.message || e);
+    return 0;
+  }
+}
+
 export async function sendMessage(otherUserId, text) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to send a message.");

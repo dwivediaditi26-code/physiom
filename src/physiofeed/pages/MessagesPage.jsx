@@ -31,7 +31,7 @@ export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
   const demo = useDemoConversations();
-  const { connectionStates, connectWith } = useAppData();
+  const { connectionStates, connectWith, refreshUnreadMessages } = useAppData();
 
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -75,7 +75,9 @@ export default function MessagesPage() {
         if (cancelled) return;
         setThread(msgs);
         await db.markConversationRead(withId);
-        if (!cancelled) loadConversations(); // clears this conversation's unread badge in the list
+        // clears this conversation's unread badge in the list, and the
+        // header's envelope dot if that was the last unread thread (P3)
+        if (!cancelled) { loadConversations(); refreshUnreadMessages(); }
       } catch (e) {
         if (!cancelled) setError(e.message || "Couldn't load this conversation.");
       } finally {
@@ -83,7 +85,7 @@ export default function MessagesPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [withId, loadConversations, demo]);
+  }, [withId, loadConversations, demo, refreshUnreadMessages]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -115,12 +117,12 @@ export default function MessagesPage() {
         // (already appended optimistically by submit()'s own setThread
         // call) -- guard on id to avoid appending our own message twice.
         setThread((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, { id: row.id, text: row.text, isSelf: row.recipient_id === openWith, createdAt: row.created_at }]));
-        if (row.sender_id === openWith) db.markConversationRead(openWith).then(loadConversations);
+        if (row.sender_id === openWith) db.markConversationRead(openWith).then(() => { loadConversations(); refreshUnreadMessages(); });
       });
       if (cancelled) unsubscribe();
     })();
     return () => { cancelled = true; unsubscribe(); };
-  }, [loadConversations]);
+  }, [loadConversations, refreshUnreadMessages]);
 
   // Merges the real (Supabase) list with DemoConversationsContext's list
   // so a "Chat / Invite" thread keeps showing up here, not just inside
