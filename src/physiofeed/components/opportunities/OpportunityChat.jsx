@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, Send, MapPin, IndianRupee, BadgeCheck, FileText } from "lucide-react";
+import { ChevronLeft, Send, MapPin, IndianRupee, BadgeCheck, FileText, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
+
+const QUICK_PROMPTS = ["Are clinical hours flexible?", "When is the start date?"];
 
 // Instant Apply (2026-09-21, Aditi's brief: "Edit Clinical Profile & CV --
 // one form, two outputs"). The opening message and the attached-profile
@@ -36,15 +39,27 @@ export default function OpportunityChat({ opp, onBack }) {
     },
   ]);
   const [text, setText] = useState("");
+  const [applied, setApplied] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [thread]);
 
+  const sendText = (value) => {
+    if (!value.trim()) return;
+    setThread((prev) => [...prev, { id: `m${prev.length + 1}`, isSelf: true, text: value.trim() }]);
+  };
+
   const send = () => {
     if (!text.trim()) return;
-    setThread((prev) => [...prev, { id: `m${prev.length + 1}`, isSelf: true, text: text.trim() }]);
+    sendText(text);
     setText("");
   };
+
+  // Bridge back to a formal application (2026-09-22, Aditi's brief: "Interested
+  // in this role? Complete Application with 1-Tap") once the poster has
+  // replied, so a purely exploratory chat can convert without retyping.
+  const mentorReplied = thread.some((m) => !m.isSelf && !m.attachProfile);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: "min(70dvh, 640px)" }}>
@@ -65,6 +80,16 @@ export default function OpportunityChat({ opp, onBack }) {
           {(opp.stipend || opp.salary || opp.fee) && <span className="inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600"><IndianRupee size={10} />{opp.stipend || opp.salary || opp.fee}</span>}
         </div>
       </div>
+
+      {!applied && (
+        <div className="flex gap-1.5 px-4 py-2 border-b border-slate-100 shrink-0 overflow-x-auto no-scrollbar">
+          {QUICK_PROMPTS.map((p) => (
+            <button key={p} type="button" onClick={() => sendText(p)} className="shrink-0 text-[11px] font-semibold text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1.5 hover:bg-violet-100 whitespace-nowrap">
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
         {thread.map((m) => (
@@ -106,6 +131,22 @@ export default function OpportunityChat({ opp, onBack }) {
         ))}
       </div>
 
+      {mentorReplied && (
+        <div className="px-4 py-2 border-t border-slate-100 shrink-0">
+          {applied ? (
+            <span className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg py-2"><Check size={13} /> Applied (Review Pending)</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setApplyOpen(true)}
+              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white rounded-lg py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 shadow-sm active:scale-[0.98] transition"
+            >
+              Interested in this role? Complete application with 1-tap
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100 shrink-0">
         <input
           value={text}
@@ -118,6 +159,14 @@ export default function OpportunityChat({ opp, onBack }) {
           <Send size={14} />
         </button>
       </div>
+
+      {applyOpen && (
+        <ApplyOpportunityModal
+          opp={opp}
+          onClose={() => setApplyOpen(false)}
+          onApplied={() => { setApplied(true); setApplyOpen(false); }}
+        />
+      )}
     </div>
   );
 }

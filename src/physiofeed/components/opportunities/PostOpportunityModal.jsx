@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ImagePlus, Folder } from "lucide-react";
 import { SPECIALTIES, LOCATION_TYPES } from "../../data/opportunitiesMock.js";
 import { GRADIENTS } from "../shared/constants.js";
@@ -28,6 +29,24 @@ function Field({ label, children }) {
 
 const inputCls = "h-11 w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm";
 const textareaCls = "w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm resize-none";
+
+let comboboxSeq = 0;
+
+// A bare <select> only allows a preset value. Aditi asked for the freedom
+// to type a custom one too (2026-09-22) -- e.g. a specialty or setting we
+// didn't anticipate. Native input+datalist keeps tap-to-pick suggestions
+// while never blocking free text.
+function Combobox({ value, onChange, options, placeholder }) {
+  const [listId] = useState(() => `combo-opts-${comboboxSeq++}`);
+  return (
+    <>
+      <input list={listId} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />
+      <datalist id={listId}>
+        {options.map((o) => <option key={o} value={o} />)}
+      </datalist>
+    </>
+  );
+}
 
 const BANNER_HINT = {
   workshop: "Upload workshop schedule or CME banner",
@@ -118,6 +137,10 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
       title: title.trim(),
       location: locationLabel,
       postedAgo: "Just now",
+      postedByMe: true,
+      status: "active",
+      daysRemaining: 30,
+      stats: { views: 0, applications: 0, chats: 0 },
       description: description.trim() || `${specialty} opportunity posted via PhysioFeed.`,
       stipend: type === "internship" ? pay || undefined : undefined,
       salary: type === "job" ? pay || undefined : undefined,
@@ -133,8 +156,14 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+  // Portaled to document.body (2026-09-22) so this always mounts as a
+  // direct body child, same pattern as InfoCard.jsx's modal. z-[200]
+  // (2026-09-22, Aditi's report: header/close button hidden after opening
+  // over scrolled content) -- the app's own real chrome sits above z-50:
+  // `.pm-mobile-hdr` is z-101, `.pm-bnav` is z-140, so this modal's header
+  // was painting *underneath* them, not actually off-screen.
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 sticky top-0 bg-white z-10">
           <div>
@@ -171,14 +200,10 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Specialty">
-              <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} className={inputCls}>
-                {SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Combobox value={specialty} onChange={setSpecialty} options={SPECIALTIES} placeholder="e.g. MSK" />
             </Field>
             <Field label="Practice Setting">
-              <select value={practiceSetting} onChange={(e) => setPracticeSetting(e.target.value)} className={inputCls}>
-                {PRACTICE_SETTINGS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <Combobox value={practiceSetting} onChange={setPracticeSetting} options={PRACTICE_SETTINGS} placeholder="e.g. Private OPD" />
             </Field>
           </div>
 
@@ -187,9 +212,7 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
               <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Bhopal" className={inputCls} />
             </Field>
             <Field label="Work Mode">
-              <select value={workMode} onChange={(e) => setWorkMode(e.target.value)} className={inputCls}>
-                {LOCATION_TYPES.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
+              <Combobox value={workMode} onChange={setWorkMode} options={LOCATION_TYPES} placeholder="e.g. On-site" />
             </Field>
           </div>
 
@@ -211,6 +234,7 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

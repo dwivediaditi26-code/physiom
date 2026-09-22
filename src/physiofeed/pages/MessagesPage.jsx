@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Send, ChevronLeft, MessageSquare } from "lucide-react";
 import Avatar from "../components/shared/Avatar.jsx";
 import * as db from "../data/db.js";
+import { useDemoConversations } from "../context/DemoConversationsContext.jsx";
 
 // Direct messages between clinicians (Aditi's request: "chat area to
 // message the physios"). See supabase/add_direct_messages.sql for the
@@ -19,6 +20,7 @@ import * as db from "../data/db.js";
 export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
+  const demo = useDemoConversations();
 
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -43,6 +45,16 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!withId) { setThread([]); return; }
+    // Demo threads (2026-09-22, from ApplicantChatModal's "Chat / Invite")
+    // live in DemoConversationsContext, not Supabase -- skip the real
+    // fetch entirely so a fake applicant id never hits db.getMessages
+    // (which throws for guests and wouldn't find a real row anyway).
+    if (demo.hasThread(withId)) {
+      setThread(demo.getMessages(withId));
+      setLoadingThread(false);
+      setError(null);
+      return;
+    }
     let cancelled = false;
     setLoadingThread(true);
     setError(null);
@@ -60,7 +72,7 @@ export default function MessagesPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [withId, loadConversations]);
+  }, [withId, loadConversations, demo]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -99,10 +111,23 @@ export default function MessagesPage() {
     return () => { cancelled = true; unsubscribe(); };
   }, [loadConversations]);
 
-  const active = conversations.find((c) => c.userId === withId);
+  // Merges the real (Supabase) list with DemoConversationsContext's list
+  // so a "Chat / Invite" thread keeps showing up here, not just inside
+  // ApplicantChatModal's one-off popup (2026-09-22, Aditi: "the message
+  // conversation chat should always show here").
+  const allConversations = useMemo(
+    () => [...demo.list, ...conversations].sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)),
+    [demo.list, conversations]
+  );
+  const active = allConversations.find((c) => c.userId === withId);
 
   const submit = async () => {
     if (!text.trim() || sending || !withId) return;
+    if (active?.isDemo) {
+      demo.sendMessage({ id: withId, name: active.name, initials: active.initials, gradient: active.gradient, headline: active.role, regarding: active.regarding }, text.trim());
+      setText("");
+      return;
+    }
     setSending(true);
     setError(null);
     try {
@@ -142,14 +167,14 @@ export default function MessagesPage() {
         <div className={`${withId ? "hidden sm:flex" : "flex"} flex-col w-full sm:w-72 shrink-0 border-r border-slate-100 overflow-y-auto`}>
           {loadingList ? (
             <p className="text-sm text-slate-400 p-4">Loading…</p>
-          ) : conversations.length === 0 ? (
+          ) : allConversations.length === 0 ? (
             <div className="p-6 text-center">
               <MessageSquare size={26} className="text-slate-300 mx-auto mb-2" />
               <p className="text-sm text-slate-500">No conversations yet.</p>
               <p className="text-xs text-slate-400 mt-1">Message a physio from the People page to start one.</p>
             </div>
           ) : (
-            conversations.map((c) => (
+            allConversations.map((c) => (
               <button
                 key={c.userId}
                 onClick={() => openConversation(c.userId)}
@@ -157,7 +182,10 @@ export default function MessagesPage() {
               >
                 <Avatar size={38} grad={c.gradient} initials={c.initials} photoUrl={c.avatarUrl} />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm truncate ${c.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{c.name}</p>
+                  <p className={`text-sm truncate flex items-center gap-1.5 ${c.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
+                    {c.name}
+                    {c.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
+                  </p>
                   <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
                 </div>
                 {c.unread > 0 && <span className="shrink-0 w-2 h-2 rounded-full bg-violet-600" aria-label={`${c.unread} unread`} />}
@@ -175,7 +203,13 @@ export default function MessagesPage() {
               <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100">
                 <button onClick={backToList} aria-label="Back to conversations" className="sm:hidden text-slate-400 hover:text-slate-600"><ChevronLeft size={18} /></button>
                 {active && <Avatar size={30} grad={active.gradient} initials={active.initials} photoUrl={active.avatarUrl} />}
-                <p className="text-sm font-semibold text-slate-900 truncate">{active?.name || "Conversation"}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate flex items-center gap-1.5">
+                    {active?.name || "Conversation"}
+                    {active?.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
+                  </p>
+                  {active?.regarding && <p className="text-[11px] text-slate-400 truncate">Re: {active.regarding}</p>}
+                </div>
               </div>
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
                 {loadingThread ? (
@@ -184,9 +218,15 @@ export default function MessagesPage() {
                   <p className="text-sm text-slate-400 text-center mt-6">Say hello to start the conversation.</p>
                 ) : (
                   thread.map((m) => (
-                    <div key={m.id} className={`flex ${m.isSelf ? "justify-end" : "justify-start"}`}>
-                      <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
-                    </div>
+                    m.system ? (
+                      <div key={m.id} className="flex justify-center">
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">{m.text}</span>
+                      </div>
+                    ) : (
+                      <div key={m.id} className={`flex ${m.isSelf ? "justify-end" : "justify-start"}`}>
+                        <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
+                      </div>
+                    )
                   ))
                 )}
               </div>

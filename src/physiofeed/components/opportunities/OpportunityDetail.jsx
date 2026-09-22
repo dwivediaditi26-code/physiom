@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { ChevronLeft, MapPin, IndianRupee, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
+import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
 
 export default function OpportunityDetail({ opp, onBack, onMessage }) {
   const [applied, setApplied] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -69,13 +71,21 @@ export default function OpportunityDetail({ opp, onBack, onMessage }) {
         </button>
         <button
           type="button"
-          onClick={() => setApplied(true)}
+          onClick={() => setApplyOpen(true)}
           disabled={applied}
           className={`flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm transition ${applied ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-violet-600 to-indigo-600 active:scale-[0.98]"}`}
         >
-          {applied ? <><Check size={16} /> Applied</> : "Apply with Profile"}
+          {applied ? <><Check size={16} /> Applied (Review Pending)</> : "Apply with Profile"}
         </button>
       </div>
+
+      {applyOpen && (
+        <ApplyOpportunityModal
+          opp={opp}
+          onClose={() => setApplyOpen(false)}
+          onApplied={() => { setApplied(true); setApplyOpen(false); }}
+        />
+      )}
     </div>
   );
 }

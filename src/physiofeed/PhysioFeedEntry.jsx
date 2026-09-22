@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import { AppDataProvider } from "./context/AppDataContext.jsx";
+import { DemoConversationsProvider } from "./context/DemoConversationsContext.jsx";
 import PhysioFeedRoutes from "./PhysioFeedRoutes.jsx";
 import "./physiofeed.css";
 
@@ -52,8 +53,10 @@ export default function PhysioFeedEntry({ jumpTo }) {
     <div className="physiofeed-root">
       <MemoryRouter initialEntries={[JUMPABLE_TABS.has(jumpTo?.pfTab) ? `/${jumpTo.pfTab}` : "/feed"]}>
         <AppDataProvider>
-          <JumpBridge jumpTo={jumpTo}/>
-          <PhysioFeedRoutes/>
+          <DemoConversationsProvider>
+            <JumpBridge jumpTo={jumpTo}/>
+            <PhysioFeedRoutes/>
+          </DemoConversationsProvider>
         </AppDataProvider>
       </MemoryRouter>
     </div>
