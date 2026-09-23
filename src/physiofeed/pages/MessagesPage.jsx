@@ -82,6 +82,20 @@ export default function MessagesPage() {
   const [composeQuery, setComposeQuery] = useState("");
   const scrollRef = useRef(null);
   const cardRef = useRef(null);
+  const composerRef = useRef(null);
+
+  // Compose box grows with the message instead of scrolling sideways in a
+  // single line (2026-09-23, Aditi: "we have the freedom to edit the
+  // message" before sending -- Enter still sends, Shift+Enter for a new
+  // line, same as every other chat app). Capped at ~5 lines via the
+  // max-h-32/overflow-y-auto on the element itself; this just keeps the
+  // scrollHeight measurement in sync as text changes.
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -454,15 +468,22 @@ export default function MessagesPage() {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100">
-                  <input
+                <div className="flex items-end gap-2 px-3 py-2.5 border-t border-slate-100">
+                  <textarea
+                    ref={composerRef}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && submit()}
-                    placeholder="Type a message…"
-                    className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent px-2"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submit();
+                      }
+                    }}
+                    placeholder="Type a message… (Shift+Enter for a new line)"
+                    rows={1}
+                    className="flex-1 text-sm outline-none resize-none placeholder:text-slate-400 bg-transparent px-2 py-1.5 max-h-32 overflow-y-auto leading-normal"
                   />
-                  <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#3E7BFA] disabled:text-slate-300 p-1.5">
+                  <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#3E7BFA] disabled:text-slate-300 p-1.5 shrink-0">
                     <Send size={17} />
                   </button>
                 </div>

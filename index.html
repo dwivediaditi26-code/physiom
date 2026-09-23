@@ -184,8 +184,11 @@
 
     <!-- Main app bundle — Vite injects this -->
     <script type="module" src="/src/main.jsx"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
+  <script type="module">
+    // PROD-only: the SW's cache-first fetch handling races Vite's own dev
+    // module/HMR requests (@vite/client, main.jsx, @react-refresh), which
+    // can fail them outright and leave `npm run dev` on a blank page.
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then(r => console.log('[SW] registered:', r.scope))
