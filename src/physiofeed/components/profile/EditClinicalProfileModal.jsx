@@ -93,12 +93,24 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+      {/* Same fix as EditProfileModal.jsx (2026-09-22, Aditi: "save option
+          not coming... its hiding"): Save/Cancel used to sit at the bottom
+          of the SAME scrolling block as every field above -- with this many
+          fields (title/college/phone/résumé/skills/interests/open-to/
+          relocate) they could easily end up below the fold on a mobile
+          viewport with no obvious way to reach them. Split into a fixed-
+          height flex column -- header, a `flex-1 overflow-y-auto` middle
+          that scrolls its own fields, and a footer that's a normal flex
+          sibling after it -- pinned in view no matter how tall the field
+          list gets, this modal just never got that same fix applied when
+          it was split out of EditProfileModal.jsx. */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="font-bold text-slate-900 text-base">Clinical profile & CV</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close"><X size={18} /></button>
         </div>
 
+        <div className="flex-1 overflow-y-auto px-5">
         <label className={LABEL}>Professional title / degree</label>
         <input value={clinicalTitle} onChange={(e) => setClinicalTitle(e.target.value)} placeholder="e.g. BPT Intern (Final Year)" className={`${FIELD} mb-3`} />
 
@@ -205,8 +217,10 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
             <AlertCircle size={13} className="mt-0.5 shrink-0" /> <span>{error}</span>
           </div>
         )}
+        <div className="pb-4" />
+        </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 shrink-0">
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:bg-slate-50">Cancel</button>
           <button onClick={submit} disabled={saving || uploadingResume} className="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
             {saving ? "Saving…" : "Save"}
