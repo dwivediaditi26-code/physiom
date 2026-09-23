@@ -104,7 +104,7 @@ export default function EditClinicalProfileModal({ profile, onClose }) {
           sibling after it -- pinned in view no matter how tall the field
           list gets, this modal just never got that same fix applied when
           it was split out of EditProfileModal.jsx. */}
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md h-[85dvh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="font-bold text-slate-900 text-base">Clinical profile & CV</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close"><X size={18} /></button>
