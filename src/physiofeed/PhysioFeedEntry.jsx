@@ -19,7 +19,7 @@ import "./physiofeed.css";
 // both go through this, naming the destination as a bare key rather than
 // a path so callers outside this folder never need to know PhysioFeed's
 // actual route strings.
-const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people"]);
+const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people", "search"]);
 
 // This tab stays mounted once visited (AppFull.jsx keeps every tab alive
 // in the shared .pm-main container instead of unmounting it), so
@@ -36,7 +36,7 @@ const JUMPABLE_TABS = new Set(["evidence", "notifications", "messages", "people"
 // `navigate` on every route change, so this effect used to re-run after any
 // tap inside PhysioFeed and pull you straight back to the jump target --
 // after the header search icon, the section strip's Evidence/Saved/... did
-// nothing and you stayed on People.
+// nothing and you stayed on the search page.
 function JumpBridge({ jumpTo }) {
   const navigate = useNavigate();
   const handled = useRef(null);

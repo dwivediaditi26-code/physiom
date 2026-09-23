@@ -8,6 +8,7 @@ import EvidencePage from "./pages/EvidencePage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import PeoplePage from "./pages/PeoplePage.jsx";
+import SearchPage from "./pages/SearchPage.jsx";
 import MessagesPage from "./pages/MessagesPage.jsx";
 import SavedPage from "./pages/SavedPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
@@ -34,6 +35,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/communities" element={<CommunitiesPage />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/saved" element={<SavedPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />

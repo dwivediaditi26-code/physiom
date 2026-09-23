@@ -1874,7 +1874,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             -- "normally" being every other tab, which keeps "+ New"). */}
         {active==="physiofeed"||active==="profile" ? (
           <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-            <button onClick={()=>navTo("physiofeed",{pfTab:"people"})} aria-label="Search"
+            <button onClick={()=>navTo("physiofeed",{pfTab:"search"})} aria-label="Search"
               style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <SearchIcon size={18}/>
             </button>

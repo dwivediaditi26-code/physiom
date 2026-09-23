@@ -72,7 +72,7 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 | P5 | Apply + My Applications | Built, untested | Real applications table + My Applications list (3c8324f). Acceptance test needs two accounts |
 | P6 | Application status + notifications | Built, untested | Triggers shipped in the P2–P6 migration; client now reads entity_type/entity_id and deep-links |
 | P7 | Feed + posts + evidence | Built, untested | Real posts/likes/comments already; 2026-09-22 removed the demo-feed-on-empty fallback and the silent fake-success on failed writes for signed-in users |
-| P8 | Search + discovery | Not started | Build from scratch |
+| P8 | Search + discovery | Built, untested | /search page + db.searchEverything() across people/opportunities/posts/evidence; header Enter and the app's mobile search icon both land there; results deep-link to profile, /explore?opp=, /feed?post=, evidence highlight |
 | P9 | Permissions, states, mobile QA | Not started | |
 
 **Rule: do not start a priority while the one above it fails its acceptance test.**

@@ -318,6 +318,7 @@ export async function createPost({ text, category, media, postType = "post", tit
       .insert({ author_id: uid, category, heading, caption: text, media_type: mediaType, media: mediaJson, media_urls: mediaUrls, tags: [], post_type: postType })
       .select().single();
     if (error) throw error;
+    invalidateSearchCorpus(); // P8: searchable immediately, not after the cache expires
     return clone(data);
   } catch (e) {
     // Publishing is the one write where silently keeping a local copy is
@@ -1877,6 +1878,7 @@ export async function publishOpportunity(fields) {
   };
   const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
   if (error) throw error;
+  invalidateSearchCorpus(); // P8: a listing you just posted must be findable now, not in 30s
   return rowToOpportunity(data, uid, 0);
 }
 
@@ -2044,4 +2046,154 @@ export async function setApplicationStatus(applicationId, status) {
     .update({ status: APP_STATUS_FROM_UI[status] || status, updated_at: new Date().toISOString() })
     .eq("id", applicationId);
   if (error) throw error;
+}
+
+// -----------------------------------------------------------------------
+// ---- search (P8) ----
+// One query box across everything PhysioFeed holds: people, opportunities,
+// posts, evidence.
+//
+// This filters in the client on top of the existing getters rather than
+// running four `ilike` queries of its own, and that is deliberate:
+//   - every getter above already knows this app's auth rules, its demo
+//     fallbacks and its column-existence hazards (see getPosts()'s comment
+//     on select("*")). A second, parallel set of queries would have to
+//     re-learn all of it and would drift the first time one changed.
+//   - a result therefore always matches what the corresponding tab shows.
+//     Search can never surface a row the Explore board or People list
+//     would hide from you.
+// The corpus is small (one clinic's worth of rows) and is cached for
+// CORPUS_TTL_MS so typing doesn't refetch on every keystroke. If this ever
+// grows past a few thousand rows, move the matching server-side -- the
+// shape returned here is what the UI depends on, not the mechanism.
+// -----------------------------------------------------------------------
+const CORPUS_TTL_MS = 30_000;
+let _corpus = null;
+let _corpusAt = 0;
+
+export function invalidateSearchCorpus() {
+  _corpus = null;
+  _corpusAt = 0;
+}
+
+async function loadSearchCorpus() {
+  if (_corpus && Date.now() - _corpusAt < CORPUS_TTL_MS) return _corpus;
+  const [people, opportunities, posts, evidence, profile] = await Promise.all([
+    getPeople(), getOpportunities(), getPosts(), getEvidence(), getProfile(),
+  ]);
+  _corpus = { people, opportunities, posts, evidence, profile };
+  _corpusAt = Date.now();
+  return _corpus;
+}
+
+const norm = (v) => (v == null ? "" : String(v)).toLowerCase();
+const hay = (...parts) => parts.map(norm).filter(Boolean).join(" \u0000 ");
+
+// Every whitespace-separated term has to appear somewhere in the record,
+// so "shoulder delhi" narrows instead of widening. Records whose *title*
+// carries a term sort above ones that only matched on body text.
+function scoreOf(terms, haystack, title) {
+  const t = norm(title);
+  for (const term of terms) if (!haystack.includes(term)) return 0;
+  let score = 1;
+  for (const term of terms) {
+    if (t.startsWith(term)) score += 4;
+    else if (t.includes(term)) score += 2;
+  }
+  return score;
+}
+
+function rankAndTrim(rows, limit) {
+  return rows.sort((a, b) => b._score - a._score).slice(0, limit).map(({ _score, ...r }) => r);
+}
+
+// Results are normalised to one shape so SearchPage renders a single row
+// component per category and just navigates to `to` (+ `state`, which
+// EvidencePage reads as location.state.articleId -- its existing
+// highlight-one-article entry point, reused rather than duplicated).
+export async function searchEverything(query, { limit = 6 } = {}) {
+  const terms = norm(query).split(/\s+/).filter(Boolean);
+  const empty = { query, people: [], opportunities: [], posts: [], evidence: [], total: 0 };
+  if (!terms.length) return empty;
+
+  const { people, opportunities, posts, evidence, profile } = await loadSearchCorpus();
+
+  // getPeople() excludes you from its list by design, so a search for your
+  // own name would come back empty -- same trap Header.jsx hit in
+  // 2026-08-18. Fold yourself back in as an ordinary result.
+  const peopleWithSelf = profile
+    ? [{ id: profile.id, name: profile.name, role: profile.role, location: profile.location, grad: profile.gradient, avatarUrl: profile.avatarUrl, isSelf: true }, ...people]
+    : people;
+
+  const peopleHits = peopleWithSelf
+    .map((p) => ({
+      kind: "person",
+      id: String(p.id),
+      title: p.name,
+      subtitle: [p.role, p.location].filter(Boolean).join(" · "),
+      meta: p.isSelf ? "You" : p.following ? "Following" : "",
+      gradient: p.grad || undefined,
+      initials: initialsOf(p.name),
+      avatarUrl: p.avatarUrl || null,
+      // No profile page exists for a demo person (their id isn't a real
+      // auth user), so those hand off to the People list pre-filtered
+      // instead of a route that would bounce back to /feed.
+      to: p.isSelf ? "/profile" : isRealUserId(p.id) ? `/profile/${p.id}` : `/people?q=${encodeURIComponent(p.name)}`,
+      _score: scoreOf(terms, hay(p.name, p.role, p.location), p.name),
+    }))
+    .filter((r) => r._score > 0);
+
+  const oppHits = opportunities
+    .map((o) => ({
+      kind: "opportunity",
+      id: String(o.id),
+      title: o.title,
+      subtitle: [o.org, o.location].filter(Boolean).join(" · "),
+      meta: o.status === "closed" ? "Closed" : o.type || "",
+      gradient: o.orgGradient || undefined,
+      initials: o.orgInitials || initialsOf(o.org || o.title),
+      to: `/explore?opp=${encodeURIComponent(o.id)}`,
+      _score: scoreOf(terms, hay(o.title, o.org, o.location, o.specialty, o.description, (o.tags || []).join(" ")), o.title),
+    }))
+    .filter((r) => r._score > 0);
+
+  const postHits = posts
+    .map((p) => ({
+      kind: "post",
+      id: String(p.id),
+      title: p.heading || p.caption || "Post",
+      subtitle: [p.author, p.category].filter(Boolean).join(" · "),
+      meta: p.time || "",
+      gradient: p.gradient || undefined,
+      initials: initialsOf(p.author),
+      avatarUrl: p.authorAvatarUrl || null,
+      to: `/feed?post=${encodeURIComponent(p.id)}`,
+      _score: scoreOf(terms, hay(p.heading, p.caption, p.author, p.category, (p.tags || []).join(" ")), p.heading || p.caption),
+    }))
+    .filter((r) => r._score > 0);
+
+  const evidenceHits = evidence
+    .map((e) => ({
+      kind: "evidence",
+      id: String(e.id),
+      title: e.title,
+      subtitle: [e.journal, e.year].filter(Boolean).join(" · "),
+      meta: e.level || e.type || "",
+      gradient: e.grad || undefined,
+      initials: initialsOf(e.journal || e.title),
+      to: "/evidence",
+      state: { articleId: e.id },
+      _score: scoreOf(terms, hay(e.title, e.journal, e.category, e.summary, e.conclusion, (e.tags || []).join(" ")), e.title),
+    }))
+    .filter((r) => r._score > 0);
+
+  const total = peopleHits.length + oppHits.length + postHits.length + evidenceHits.length;
+  return {
+    query,
+    people: rankAndTrim(peopleHits, limit),
+    opportunities: rankAndTrim(oppHits, limit),
+    posts: rankAndTrim(postHits, limit),
+    evidence: rankAndTrim(evidenceHits, limit),
+    total,
+  };
 }

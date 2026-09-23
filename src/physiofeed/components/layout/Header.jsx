@@ -53,7 +53,7 @@ function SectionNav() {
 // Shared result list for both the desktop inline search bar and the
 // mobile full-width search row -- same matches/selfMatches state, just
 // rendered from two different trigger points.
-function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnProfile, goToPeople }) {
+function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnProfile, goToPeople, goToSearch }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-2">
       {selfMatches && (
@@ -84,14 +84,22 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
             </button>
           ))}
           <button
-            onClick={() => goToPeople(trimmedQuery)}
+            onClick={() => goToSearch(trimmedQuery)}
             className="w-full text-center text-xs font-semibold text-[#DB2777] hover:text-[#C2185B] px-2 py-2 mt-1 border-t border-slate-100"
           >
-            See all results in People
+            See all results for "{trimmedQuery}"
           </button>
         </>
       ) : !selfMatches ? (
-        <p className="text-xs text-slate-400 px-2 py-3 text-center">No physios found for "{trimmedQuery}"</p>
+        /* P8 (2026-09-22): a name-only miss used to be a dead end here --
+           the query might still match an opportunity, a post or a paper,
+           and now there's a page that looks. */
+        <button
+          onClick={() => goToSearch(trimmedQuery)}
+          className="w-full text-xs text-slate-500 px-2 py-3 text-center hover:bg-slate-50 rounded-xl"
+        >
+          No physios named "{trimmedQuery}" — <span className="font-semibold text-[#DB2777]">search everything</span>
+        </button>
       ) : null}
     </div>
   );
@@ -135,6 +143,14 @@ export default function Header() {
     navigate(`/people?q=${encodeURIComponent(q)}`);
     setQuery("");
   };
+  // P8 (2026-09-22): Enter and "see all" leave this people-only dropdown
+  // for /search, which covers opportunities, posts and evidence too. The
+  // dropdown itself stays people-first -- it's a quick name lookup, and
+  // making it wait on four fetches per keystroke would ruin that.
+  const goToSearch = (q) => {
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+    setQuery("");
+  };
   const goToOwnProfile = () => {
     navigate("/profile");
     setQuery("");
@@ -175,7 +191,7 @@ export default function Header() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && trimmedQuery) goToPeople(trimmedQuery);
+                if (e.key === "Enter" && trimmedQuery) goToSearch(trimmedQuery);
                 if (e.key === "Escape") setQuery("");
               }}
               placeholder="Search physios by name, specialty, or city…"
@@ -184,7 +200,7 @@ export default function Header() {
           </div>
           {trimmedQuery && (
             <div className="absolute left-0 top-full mt-2 w-full z-30">
-              <SearchResults trimmedQuery={trimmedQuery} selfMatches={selfMatches} matches={matches} profile={profile} goToOwnProfile={goToOwnProfile} goToPeople={goToPeople} />
+              <SearchResults trimmedQuery={trimmedQuery} selfMatches={selfMatches} matches={matches} profile={profile} goToOwnProfile={goToOwnProfile} goToPeople={goToPeople} goToSearch={goToSearch} />
             </div>
           )}
         </div>
@@ -198,7 +214,8 @@ export default function Header() {
             Aditi: "search notification and message should go up there
             when we open the physio feed"). The mobile search toggle this
             row used to also hold is gone for the same reason -- that
-            header's search icon takes you to People instead. */}
+            header's search icon takes you to /search instead (P8; it went
+            to People until 2026-09-22). */}
         <div className="hidden lg:flex items-center gap-1 sm:gap-3 ml-auto shrink-0">
           {/* Own page, not a dropdown (2026-08-27, Aditi's request): the old
               bell dropdown had no reliable close behaviour, especially once

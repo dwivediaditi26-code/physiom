@@ -53,6 +53,21 @@ export default function ExplorePage() {
     if (deepLinkView === "applications") { setMyAppsOpen(true); setMyPostingsOpen(false); }
     else if (deepLinkView === "postings") { setMyPostingsOpen(true); setMyAppsOpen(false); }
   }, [deepLinkView]);
+
+  // P8 deep link. Search results route to /explore?opp=<id>; the detail
+  // screen is local state here too, and the board is loaded async, so this
+  // waits for `opportunities` rather than firing once on mount. Acted on
+  // once per id so a later Back to the hub isn't yanked straight back in.
+  const deepLinkOpp = searchParams.get("opp");
+  const handledOpp = useRef(null);
+  useEffect(() => {
+    if (!deepLinkOpp || handledOpp.current === deepLinkOpp || !opportunities.length) return;
+    const match = opportunities.find((o) => String(o.id) === deepLinkOpp);
+    if (!match) return;
+    handledOpp.current = deepLinkOpp;
+    setActive(match);
+  }, [deepLinkOpp, opportunities]);
+
   const [pipelineFor, setPipelineFor] = useState(null); // opportunity whose applicants are being reviewed
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
