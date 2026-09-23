@@ -66,11 +66,11 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 |---|---|---|---|
 | P0 | Audit + auth + DB foundation | Done | Two profile migrations run 2026-09-22 and verified live |
 | P1 | Professional identity | **PASSED** | Acceptance test driven end-to-end on the real signed-in account: added a certification → full reload → still there → confirmed the row independently via the REST API → deleted it → confirmed gone. Read, write and delete paths all work |
-| P2 | People + Connect/Accept/Ignore | Not started | Real work: schema + state machine + requests inbox |
-| P3 | Messaging | Mostly done | Needs gating on real connection state |
-| P4 | Opportunities + Jobs + Save | Not started | **Largest item.** Schema + db.js + rewire 10 components off mock state |
-| P5 | Apply + My Applications | Not started | Depends entirely on P4 |
-| P6 | Application status + notifications | Not started | Cheap once P2/P5 exist — extend existing triggers |
+| P2 | People + Connect/Accept/Ignore | **PASSED** | Acceptance test run two-user by Aditi 2026-09-22 |
+| P3 | Messaging | Done | Real threads + realtime; unread dot added to both headers 2026-09-22 |
+| P4 | Opportunities + Jobs + Save | Built, untested | db.js + every render site real (3c8324f). Acceptance test needs a signed-in account |
+| P5 | Apply + My Applications | Built, untested | Real applications table + My Applications list (3c8324f). Acceptance test needs two accounts |
+| P6 | Application status + notifications | Built, untested | Triggers shipped in the P2–P6 migration; client now reads entity_type/entity_id and deep-links |
 | P7 | Feed + posts + evidence | Largely working | Verify against acceptance tests |
 | P8 | Search + discovery | Not started | Build from scratch |
 | P9 | Permissions, states, mobile QA | Not started | |

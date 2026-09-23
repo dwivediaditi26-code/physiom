@@ -21,7 +21,7 @@ export default function NotificationsPage() {
     <main className="flex-1 min-w-0">
       <div className="mb-5">
         <h1 className="text-xl font-bold text-slate-900 mb-1">Notifications</h1>
-        <p className="text-sm text-slate-500">Likes, comments, and follows from the PhysioFeed community.</p>
+        <p className="text-sm text-slate-500">Likes, comments, follows, connection requests and application updates.</p>
       </div>
 
       {notifications.length === 0 ? (

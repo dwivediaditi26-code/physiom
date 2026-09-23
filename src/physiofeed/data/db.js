@@ -1369,7 +1369,7 @@ export async function getNotifications() {
   try {
     const { data, error } = await supabase
       .from("notifications")
-      .select("id, icon_name, text, tone, read, created_at, actor_id, kind, post_id")
+      .select("id, icon_name, text, tone, read, created_at, actor_id, kind, post_id, entity_type, entity_id")
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -1378,6 +1378,17 @@ export async function getNotifications() {
       link: n.kind === "message" ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
           : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/feed?post=${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
           : n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
+          // P6 (2026-09-22): the P2/P4/P5 triggers in
+          // add_mvp_network_opportunities.sql write connection and
+          // application notifications with entity_type/entity_id. There's no
+          // route per application -- Explore's sub-views are local state, not
+          // routes (see ExplorePage.jsx) -- so these deep-link to the screen
+          // that shows the object, and ExplorePage reads ?view= to open the
+          // right one on arrival.
+          : n.kind === "connection_request" ? "/people"
+          : n.kind === "connection_accepted" ? (n.actor_id ? `/profile/${n.actor_id}` : "/people")
+          : n.kind === "application_received" ? "/explore?view=postings"
+          : n.kind === "application_status" ? "/explore?view=applications"
           : null,
     }));
   } catch (e) {

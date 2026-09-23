@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Briefcase, ChevronRight, ChevronLeft, FileText } from "lucide-react";
 import { OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
 import * as db from "../data/db.js";
@@ -42,6 +43,16 @@ export default function ExplorePage() {
 
   const [myPostingsOpen, setMyPostingsOpen] = useState(false);
   const [myAppsOpen, setMyAppsOpen] = useState(false);
+
+  // P6 deep links. A notification can't route to an application directly --
+  // these sub-views are local state, not routes -- so getNotifications()
+  // points at /explore?view=postings|applications and this opens it.
+  const [searchParams] = useSearchParams();
+  const deepLinkView = searchParams.get("view");
+  useEffect(() => {
+    if (deepLinkView === "applications") { setMyAppsOpen(true); setMyPostingsOpen(false); }
+    else if (deepLinkView === "postings") { setMyPostingsOpen(true); setMyAppsOpen(false); }
+  }, [deepLinkView]);
   const [pipelineFor, setPipelineFor] = useState(null); // opportunity whose applicants are being reviewed
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
