@@ -97,10 +97,23 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 SQL to run in the Supabase dashboard, in order:
 
 1. ✅ **Run 2026-09-22** — `supabase/add_profile_clinical_cv.sql` + `supabase/add_profile_clinical_taxonomy.sql` (P1). Verified live.
-2. ⬜ `supabase/add_notification_post_id.sql` — **was never run.** `notifications.post_id` is missing, so `getNotifications()` 400s and silently falls back to *demo* notifications for real signed-in users. Already idempotent, paste as-is.
-3. ⬜ `supabase/add_mvp_network_opportunities.sql` — everything for P2–P6.
+2. ✅ **Verified live 2026-09-22** — `supabase/add_notification_post_id.sql`. `notifications.post_id` now selects 200, not 42703. The "was never run" note above it was stale.
+3. ✅ **Verified live 2026-09-22** — `supabase/add_mvp_network_opportunities.sql` (P2–P6). Every table and column it creates answers 200: `connections(id,status)`, `opportunities(id,creator_id,details)`, `applications(id,status,cover_note)`, `saved_items(item_type,item_id)`, `notifications(entity_type,entity_id)`.
 
-> Lesson: a migration file existing in `supabase/` does **not** mean it was ever run. Check against the live database (`/rest/v1/<table>?select=<col>&limit=1`) rather than assuming.
+> Lesson: a migration file existing in `supabase/` does **not** mean it was ever run — and a doc saying it wasn't run doesn't mean it still hasn't been. Check against the live database (`/rest/v1/<table>?select=<col>&limit=1`) rather than assuming either way. A missing column answers `42703`; an existing one answers 200 with `[]` when RLS hides the rows.
+
+### What's actually in the live database (2026-09-22, anon count probe)
+
+| Table | Rows visible to anon | Reading |
+|---|---|---|
+| `profiles` | 5 | Real clinicians |
+| `posts` | 2 | Real posts |
+| `research_articles` | 16 | Curated library, seeded |
+| `communities` | **0** | Publicly readable like the three above, so this is genuinely empty — the Groups tab is a real empty state, not an RLS artefact. Needs rows seeded before it means anything |
+| `opportunities` | **0** | Explore is empty. Nothing to open, save, apply to, or find in search until someone posts a listing |
+| `applications`, `connections`, `notifications` | n/a | RLS scopes these per-user; a zero from an anonymous probe says nothing |
+
+**This is what blocks the outstanding acceptance tests.** P4/P5/P6/P8's opportunity paths can't be exercised at all until one listing exists, and P2/P5/P6 need a second account regardless.
 
 Decisions worth remembering:
 
@@ -129,6 +142,8 @@ Decisions worth remembering:
 **P7** — A posts → B sees it in feed → B likes → A sees the like.
 
 **P8** — one search box returns categorised results across people, opportunities, posts, evidence.
+
+**P9** — (none was written at audit time). Proposed: signed in, a write that the database rejects shows an error and the UI reverts to what's stored — it never shows a state that wasn't saved. Every list that can be empty says so in its own words. No horizontal scroll or obscured control at 375px.
 
 ---
 
