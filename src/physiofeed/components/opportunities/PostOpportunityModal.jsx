@@ -136,6 +136,13 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
       orgGradient: GRAD_KEYS[Math.floor(Math.random() * GRAD_KEYS.length)],
       title: title.trim(),
       location: locationLabel,
+      // 2026-09-23: publishOpportunity() reads `locationType` and
+      // `specialty` off this object and writes them to their own columns,
+      // but this modal only ever sent them folded into `tags` -- so every
+      // user-posted listing had an empty location_type and specialty while
+      // the seeded ones didn't.
+      locationType: workMode,
+      specialty,
       postedAgo: "Just now",
       postedByMe: true,
       status: "active",
@@ -230,7 +237,15 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
             disabled={!canPublish}
             className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40 active:scale-[0.98] transition mt-1"
           >
-            Next: Requirements & Scope →
+            {/* 2026-09-23 (Aditi: "when I am posting any workshop or
+                anything it is not showing in public"): this button called
+                publish() while promising a second step. You filled one
+                screen, tapped what read as "continue", and the modal
+                vanished -- the listing WAS published, publicly, but with
+                only the fields on this screen, and nothing said so. There
+                is no step two in this component; the label was the whole
+                bug. */}
+            Publish listing
           </button>
         </div>
       </div>
