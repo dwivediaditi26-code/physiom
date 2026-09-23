@@ -117,7 +117,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
         className="fixed inset-x-0 lg:sticky lg:inset-x-auto bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5 z-[130]"
         style={{ bottom: barOffsets.bnav }}
       >
-        <button type="button" onClick={() => onMessage(opp)} className="flex-1 text-sm font-bold text-slate-700 border border-slate-200 rounded-xl py-3 hover:bg-slate-50">
+        <button type="button" onClick={() => onMessage(opp)} className="flex-1 text-sm font-bold text-center text-slate-700 border border-slate-200 rounded-xl py-3 hover:bg-slate-50">
           Message {opp.mentor ? opp.mentor.name.split(",")[0].replace("Dr. ", "") : "Lead"}
         </button>
         <button
