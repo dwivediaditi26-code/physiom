@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
@@ -10,6 +10,40 @@ import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 export default function OpportunityDetail({ opp, onBack, onMessage, applied, onApplied, saved, onToggleSave }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
+
+  // Message/Apply bar made truly fixed below the desktop breakpoint
+  // (2026-09-23, "make this button constant") -- it was `sticky bottom-0`,
+  // which only pins within its own scroll container. physiom's shared
+  // .pm-main scroll container has no height cap (every tab stays mounted),
+  // so this card wasn't the real scrolling box and the bar just sat in
+  // normal flow -- reachable, but only after scrolling past it, same class
+  // of bug as the MessagesPage/OpportunityChat scroll locks (8543cd0,
+  // c363edd). Unlike those, this screen has no inner scroll region to
+  // redirect scrolling into -- it's meant to scroll normally -- so `fixed`
+  // (viewport-relative, immune to the oversized scroll container) is the
+  // fix here instead. Kept to <1024px, the same breakpoint .pm-bnav itself
+  // uses, because desktop's sidebar layout has no full-bleed edge to pin a
+  // fixed bar to without also covering the sidebar; sticky is left as-is
+  // there since it wasn't reported broken.
+  //
+  // Both the mobile bottom-nav's real height and this bar's own height are
+  // measured rather than hardcoded -- .pm-bnav's padding-bottom varies with
+  // env(safe-area-inset-bottom) per device, and hardcoding either would
+  // silently drift the moment either bar's content changes.
+  const actionBarRef = useRef(null);
+  const [barOffsets, setBarOffsets] = useState({ bnav: 0, bar: 0 });
+  useEffect(() => {
+    const measure = () => {
+      const bnav = document.querySelector(".pm-bnav");
+      setBarOffsets({
+        bnav: bnav ? bnav.getBoundingClientRect().height : 0,
+        bar: actionBarRef.current ? actionBarRef.current.getBoundingClientRect().height : 0,
+      });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -27,7 +61,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
         </button>
       </div>
 
-      <div className="p-5 pb-28">
+      <div className="p-5 pb-28" style={{ paddingBottom: `max(7rem, ${barOffsets.bnav + barOffsets.bar + 16}px)` }}>
         <div className="flex items-center gap-3 mb-4">
           <Avatar size={44} grad={opp.orgGradient} initials={opp.orgInitials} />
           <div className="min-w-0">
@@ -78,7 +112,11 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5">
+      <div
+        ref={actionBarRef}
+        className="fixed inset-x-0 lg:sticky lg:inset-x-auto bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5 z-[130]"
+        style={{ bottom: barOffsets.bnav }}
+      >
         <button type="button" onClick={() => onMessage(opp)} className="flex-1 text-sm font-bold text-slate-700 border border-slate-200 rounded-xl py-3 hover:bg-slate-50">
           Message {opp.mentor ? opp.mentor.name.split(",")[0].replace("Dr. ", "") : "Lead"}
         </button>
