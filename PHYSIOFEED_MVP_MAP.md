@@ -98,7 +98,8 @@ SQL to run in the Supabase dashboard, in order:
 
 1. ✅ **Run 2026-09-22** — `supabase/add_profile_clinical_cv.sql` + `supabase/add_profile_clinical_taxonomy.sql` (P1). Verified live.
 2. ✅ **Verified live 2026-09-22** — `supabase/add_notification_post_id.sql`. `notifications.post_id` now selects 200, not 42703. The "was never run" note above it was stale.
-3. ✅ **Verified live 2026-09-22** — `supabase/add_mvp_network_opportunities.sql` (P2–P6). Every table and column it creates answers 200: `connections(id,status)`, `opportunities(id,creator_id,details)`, `applications(id,status,cover_note)`, `saved_items(item_type,item_id)`, `notifications(entity_type,entity_id)`.
+3. ✅ **Verified live 2026-09-22** — `supabase/add_mvp_network_opportunities.sql` (P2–P6).
+4. ⬜ `supabase/seed_opportunities.sql` — **seed data, not schema.** Writes the seven listings the Explore board was designed against as real `opportunities` rows, split between the two Aditi accounts so both the recruiter and applicant sides can be tested. Unblocks the P4/P5/P6/P8 acceptance tests. Re-running it deletes and recreates the seeded rows (and cascades to any applications on them) — don't re-run once testing has started. Every table and column it creates answers 200: `connections(id,status)`, `opportunities(id,creator_id,details)`, `applications(id,status,cover_note)`, `saved_items(item_type,item_id)`, `notifications(entity_type,entity_id)`.
 
 > Lesson: a migration file existing in `supabase/` does **not** mean it was ever run — and a doc saying it wasn't run doesn't mean it still hasn't been. Check against the live database (`/rest/v1/<table>?select=<col>&limit=1`) rather than assuming either way. A missing column answers `42703`; an existing one answers 200 with `[]` when RLS hides the rows.
 
@@ -110,7 +111,7 @@ SQL to run in the Supabase dashboard, in order:
 | `posts` | 2 | Real posts |
 | `research_articles` | 16 | Curated library, seeded |
 | `communities` | **0** | Publicly readable like the three above, so this is genuinely empty — the Groups tab is a real empty state, not an RLS artefact. Needs rows seeded before it means anything |
-| `opportunities` | **0** | Explore is empty. Nothing to open, save, apply to, or find in search until someone posts a listing |
+| `opportunities` | **0** | Explore is empty. Nothing to open, save, apply to, or find in search until someone posts a listing — `supabase/seed_opportunities.sql` (item 4 above) fixes this; not yet run |
 | `applications`, `connections`, `notifications` | n/a | RLS scopes these per-user; a zero from an anonymous probe says nothing |
 
 **This is what blocks the outstanding acceptance tests.** P4/P5/P6/P8's opportunity paths can't be exercised at all until one listing exists, and P2/P5/P6 need a second account regardless.
