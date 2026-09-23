@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, ChevronLeft, MessageSquare, Lock } from "lucide-react";
+import { Send, ChevronLeft, MessageSquare, Lock, Search, PenSquare, X } from "lucide-react";
 import Avatar from "../components/shared/Avatar.jsx";
+import { initialsOf } from "../components/shared/constants.js";
 import * as db from "../data/db.js";
 import { useDemoConversations } from "../context/DemoConversationsContext.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
@@ -27,11 +28,44 @@ const MESSAGE_LIMIT_IF_NOT_CONNECTED = 3;
 // pattern as /people?q=... -- PersonCard's "Message" button and the
 // header search dropdown both link straight into a specific thread this
 // way, and back/forward navigation works for free.
+// Inbox timestamps read the way a messaging app's do: clock time today,
+// weekday within the last week, date beyond that (2026-09-23).
+function inboxTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const days = Math.round((now - d) / 86400000);
+  if (days < 7) return d.toLocaleDateString([], { weekday: "short" });
+  return d.toLocaleDateString([], { day: "numeric", month: "short" });
+}
+
+function messageTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+// Separator label above the first message of each day.
+function dayLabel(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return "Today";
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], { day: "numeric", month: "short", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
+}
+
 export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
   const demo = useDemoConversations();
-  const { connectionStates, connectWith, refreshUnreadMessages } = useAppData();
+  const { connectionStates, connectWith, refreshUnreadMessages, people } = useAppData();
 
   const [conversations, setConversations] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -40,6 +74,12 @@ export default function MessagesPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  // Inbox search + "new message" picker (2026-09-23, Aditi's messaging
+  // spec). Both are inbox-only state; which conversation is OPEN stays in
+  // the URL, as before.
+  const [listQuery, setListQuery] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeQuery, setComposeQuery] = useState("");
   const scrollRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
@@ -134,6 +174,28 @@ export default function MessagesPage() {
   );
   const active = allConversations.find((c) => c.userId === withId);
 
+  // Search the inbox by person (2026-09-23, spec item 7). Name and
+  // designation both, since "the sports physio in Bhopal" is as likely a
+  // way to look someone up as their name.
+  const visibleConversations = useMemo(() => {
+    const q = listQuery.trim().toLowerCase();
+    if (!q) return allConversations;
+    return allConversations.filter(
+      (c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q)
+    );
+  }, [allConversations, listQuery]);
+
+  // "New message": anyone real you aren't already talking to. Demo
+  // recruiter threads are excluded -- they aren't people you can start a
+  // conversation with.
+  const composeCandidates = useMemo(() => {
+    const already = new Set(conversations.map((c) => String(c.userId)));
+    const q = composeQuery.trim().toLowerCase();
+    return (people || [])
+      .filter((p) => !already.has(String(p.id)))
+      .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.role || "").toLowerCase().includes(q));
+  }, [people, conversations, composeQuery]);
+
   // Demo threads (recruiter/applicant chat) are exempt -- "connected" is a
   // People/Profile concept that doesn't apply to those. Reads the real
   // connections table via context (P2); this used to check the `follows`
@@ -172,9 +234,36 @@ export default function MessagesPage() {
           chat card doesn't get pushed below the fold on short viewports
           (see the `dvh`, not `vh`, comment below for the other half of
           this fix). */}
-      <div className={`${withId ? "hidden sm:block" : ""} mb-5`}>
-        <h1 className="text-xl font-bold text-slate-900 mb-1">Messages</h1>
-        <p className="text-sm text-slate-500">Direct conversations with other physios.</p>
+      <div className={`${withId ? "hidden sm:block" : ""} mb-4`}>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-slate-900 mb-1">Messages</h1>
+            <p className="text-sm text-slate-500">Direct conversations with other physios.</p>
+          </div>
+          {/* New message (2026-09-23, spec item 8). Until now a conversation
+              could only be started from somebody's profile -- there was no
+              way in from the inbox itself. */}
+          <button
+            type="button"
+            onClick={() => { setComposeOpen(true); setComposeQuery(""); }}
+            aria-label="New message"
+            className="shrink-0 p-2 rounded-lg border border-slate-200 text-[#6E5CC7] hover:bg-slate-50"
+          >
+            <PenSquare size={17} />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-10">
+          <Search size={15} className="text-slate-400 shrink-0" />
+          <input
+            value={listQuery}
+            onChange={(e) => setListQuery(e.target.value)}
+            placeholder="Search conversations…"
+            className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
+          />
+          {listQuery && (
+            <button type="button" onClick={() => setListQuery("")} aria-label="Clear search" className="shrink-0 text-slate-400 hover:text-slate-600"><X size={14} /></button>
+          )}
+        </div>
       </div>
 
       {/* `dvh` (dynamic viewport height), not `vh` -- on mobile browsers
@@ -191,25 +280,40 @@ export default function MessagesPage() {
           ) : allConversations.length === 0 ? (
             <div className="p-6 text-center">
               <MessageSquare size={26} className="text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No conversations yet.</p>
-              <p className="text-xs text-slate-400 mt-1">Message a physio from the People page to start one.</p>
+              <p className="text-sm text-slate-500">Start a professional conversation</p>
+              <p className="text-xs text-slate-400 mt-1">Message a physio from their profile, or use the new-message button above.</p>
+            </div>
+          ) : visibleConversations.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-sm text-slate-400">No conversations match &ldquo;{listQuery.trim()}&rdquo;.</p>
             </div>
           ) : (
-            allConversations.map((c) => (
+            visibleConversations.map((c) => (
               <button
                 key={c.userId}
                 onClick={() => openConversation(c.userId)}
                 className={`flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none ${withId === c.userId ? "bg-[#FDF0F6]" : ""}`}
               >
-                <Avatar size={38} grad={c.gradient} initials={c.initials} photoUrl={c.avatarUrl} />
+                <Avatar size={40} grad={c.gradient} initials={c.initials} photoUrl={c.avatarUrl} />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm truncate flex items-center gap-1.5 ${c.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
-                    {c.name}
-                    {c.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className={`text-sm truncate flex items-center gap-1.5 flex-1 ${c.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
+                      {c.name}
+                      {c.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
+                    </p>
+                    {/* Time and designation (2026-09-23): getConversations()
+                        has returned `role` and `lastAt` all along, the row
+                        just never showed either. */}
+                    <span className="shrink-0 text-[10.5px] text-slate-400">{inboxTime(c.lastAt)}</span>
+                  </div>
+                  {c.role && <p className="text-[11px] text-slate-400 truncate">{c.role}</p>}
                   <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
                 </div>
-                {c.unread > 0 && <span className="shrink-0 w-2 h-2 rounded-full bg-[#DB2777]" aria-label={`${c.unread} unread`} />}
+                {c.unread > 0 && (
+                  <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#DB2777] text-white text-[10px] font-bold flex items-center justify-center" aria-label={`${c.unread} unread`}>
+                    {c.unread > 9 ? "9+" : c.unread}
+                  </span>
+                )}
               </button>
             ))
           )}
@@ -229,7 +333,12 @@ export default function MessagesPage() {
                     {active?.name || "Conversation"}
                     {active?.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
                   </p>
-                  {active?.regarding && <p className="text-[11px] text-slate-400 truncate">Re: {active.regarding}</p>}
+                  {/* Designation under the name (2026-09-23), falling back
+                      to the "Re: <opportunity>" line the recruiter threads
+                      use -- both are context about who you're talking to. */}
+                  {active?.regarding
+                    ? <p className="text-[11px] text-slate-400 truncate">Re: {active.regarding}</p>
+                    : active?.role ? <p className="text-[11px] text-slate-400 truncate">{active.role}</p> : null}
                 </div>
               </div>
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
@@ -238,17 +347,32 @@ export default function MessagesPage() {
                 ) : thread.length === 0 ? (
                   <p className="text-sm text-slate-400 text-center mt-6">Say hello to start the conversation.</p>
                 ) : (
-                  thread.map((m) => (
-                    m.system ? (
-                      <div key={m.id} className="flex justify-center">
-                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">{m.text}</span>
+                  thread.map((m, i) => {
+                    // Day separator above the first message of each day
+                    // (2026-09-23). Demo/system rows carry no createdAt, so
+                    // they never trigger one.
+                    const prev = thread[i - 1];
+                    const showDay = !!m.createdAt && (!prev?.createdAt || new Date(prev.createdAt).toDateString() !== new Date(m.createdAt).toDateString());
+                    return (
+                      <div key={m.id}>
+                        {showDay && (
+                          <div className="flex justify-center my-3">
+                            <span className="text-[10.5px] font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{dayLabel(m.createdAt)}</span>
+                          </div>
+                        )}
+                        {m.system ? (
+                          <div className="flex justify-center">
+                            <span className="text-[11px] font-semibold text-[#6E5CC7] bg-[#F7F5FF] px-3 py-1.5 rounded-full">{m.text}</span>
+                          </div>
+                        ) : (
+                          <div className={`flex flex-col ${m.isSelf ? "items-end" : "items-start"}`}>
+                            <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-[#DB2777] text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
+                            {m.createdAt && <span className="text-[10px] text-slate-400 mt-0.5 px-1">{messageTime(m.createdAt)}</span>}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div key={m.id} className={`flex ${m.isSelf ? "justify-end" : "justify-start"}`}>
-                        <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-[#DB2777] text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
-                      </div>
-                    )
-                  ))
+                    );
+                  })
                 )}
               </div>
               {error && <p className="px-4 text-xs text-rose-600 pb-1">{error}</p>}
@@ -284,6 +408,53 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* New-message picker (2026-09-23, spec item 8). Deliberately a plain
+          people list, not a second search surface: picking someone just
+          opens their thread via the same ?with= the rest of this page uses,
+          so nothing is written until an actual message is sent. */}
+      {composeOpen && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4" onClick={() => setComposeOpen(false)}>
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col max-h-[70dvh]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <h2 className="text-lg font-bold text-slate-900">New message</h2>
+              <button type="button" onClick={() => setComposeOpen(false)} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+            </div>
+            <div className="px-5 pb-3">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-10">
+                <Search size={15} className="text-slate-400 shrink-0" />
+                <input
+                  autoFocus
+                  value={composeQuery}
+                  onChange={(e) => setComposeQuery(e.target.value)}
+                  placeholder="Search physios…"
+                  className="bg-transparent text-sm outline-none w-full placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto px-2 pb-5">
+              {composeCandidates.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8 px-5">
+                  {composeQuery.trim() ? `Nobody matches "${composeQuery.trim()}".` : "You already have a conversation with everyone here."}
+                </p>
+              ) : composeCandidates.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => { setComposeOpen(false); openConversation(String(p.id)); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left"
+                >
+                  <Avatar size={38} grad={p.grad} initials={initialsOf(p.name)} photoUrl={p.avatarUrl} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
+                    {(p.role || p.location) && <p className="text-xs text-slate-400 truncate">{[p.role, p.location].filter(Boolean).join(" · ")}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
