@@ -125,7 +125,7 @@ function romCountFor(entry, movements) {
   let n = 0;
   movements.forEach((m) => {
     const v = entry[m.id];
-    if (v && (v.left || v.right)) n++;
+    if (v && Object.values(v).some((mv) => mv && (mv.left || mv.right))) n++;
   });
   return n;
 }
@@ -246,9 +246,18 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
   const counts = {};
   ROM_REGION_KEYS.forEach((k) => (counts[k] = romCountFor(d[k], ROM_DATA[k] || [])));
 
+  // Active / Passive / Resisted keep separate L/R readings per movement
+  // (2026-09-22, gap vs the standard MGM assessment chart's parallel
+  // Active ROM / Passive ROM columns) -- entry[mId] used to be a flat
+  // {left,right}, so switching the mode toggle silently overwrote whatever
+  // was typed under the previous mode instead of keeping both. Now keyed
+  // one level deeper by mode: entry[mId] = {arom:{left,right}, prom:{...},
+  // resisted:{...}}, so AROM and PROM (and Resisted) are three real,
+  // independently-readable values, not one shared box relabelled.
   function setVal(mId, side, val) {
     const cur = entry[mId] || {};
-    set(activeKey, { ...entry, [mId]: { ...cur, [side]: val } });
+    const modeVal = cur[mode] || {};
+    set(activeKey, { ...entry, [mId]: { ...cur, [mode]: { ...modeVal, [side]: val } } });
   }
   function setMeta(mId, field, val) {
     set(activeKey, { ...entry, [mId + "_" + field]: entry[mId + "_" + field] === val ? "" : val });
@@ -270,7 +279,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
         </div>
 
         {allMovements.map((m) => {
-          const val = entry[m.id] || {};
+          const val = (entry[m.id] || {})[mode] || {};
           const gradeL = m.normal ? RESTRICTION_GRADE(Number(val.left), m.normal) : null;
           const gradeR = m.normal ? RESTRICTION_GRADE(Number(val.right), m.normal) : null;
           const pain = entry[m.id + "_pain"];
@@ -547,6 +556,7 @@ export function JointMobilitySection({ data, setData, selectedRegions, sectionKe
       <RegionTabBar regions={regions} activeKey={key} onSelect={setActiveKey} onAdd={addRegion} />
       <div className="rom-card">
         <div className="rom-card-title">{label}</div>
+        <Segmented label="Position tested" options={["Loose-packed", "Close-packed"]} value={entry.position} onChange={(v) => set(key, { ...entry, position: v })} />
         <Segmented label="Accessory mobility" options={["Hypomobile", "Normal", "Hypermobile"]} value={entry.grade} onChange={(v) => set(key, { ...entry, grade: v })} />
         <TextArea label="Notes" value={entry.notes} onChange={(v) => set(key, { ...entry, notes: v })} />
       </div>
@@ -778,6 +788,7 @@ export function SpecialTestsSection({ data, setData, selectedRegions, sectionKey
    {label, value} rows for AssessmentSummary (Review page +
    "Copy assessment as text").
    ============================================================ */
+const ROM_MODE_LABEL = { arom: "Active", prom: "Passive", resisted: "Resisted" };
 export function formatRomSection(sectionData) {
   const rows = [];
   ROM_REGION_KEYS.forEach((regionKeyName) => {
@@ -785,11 +796,15 @@ export function formatRomSection(sectionData) {
     if (!entry) return;
     (ROM_DATA[regionKeyName] || []).forEach((m) => {
       const v = entry[m.id];
-      if (!v || (!v.left && !v.right)) return;
-      const parts = [];
-      if (v.left) parts.push(`L ${v.left}°`);
-      if (v.right) parts.push(`R ${v.right}°`);
-      rows.push({ label: `${regionKeyName} — ${m.mv}`, value: parts.join(" / ") });
+      if (v) {
+        Object.entries(v).forEach(([mode, mv]) => {
+          if (!mv || (!mv.left && !mv.right)) return;
+          const parts = [];
+          if (mv.left) parts.push(`L ${mv.left}°`);
+          if (mv.right) parts.push(`R ${mv.right}°`);
+          rows.push({ label: `${regionKeyName} — ${m.mv} (${ROM_MODE_LABEL[mode] || mode})`, value: parts.join(" / ") });
+        });
+      }
       if (entry[m.id + "_pain"]) rows.push({ label: `${regionKeyName} — ${m.mv} pain`, value: entry[m.id + "_pain"] });
       if (entry[m.id + "_ef"]) rows.push({ label: `${regionKeyName} — ${m.mv} end feel`, value: entry[m.id + "_ef"] });
     });
@@ -824,7 +839,7 @@ export function formatJointMobilitySection(sectionData) {
     const key = regionKey(r);
     const label = [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ") || "Region";
     const entry = sectionData[key] || {};
-    if (entry.grade) rows.push({ label, value: entry.grade + (entry.notes ? ` — ${entry.notes}` : "") });
+    if (entry.grade) rows.push({ label, value: [entry.position, entry.grade].filter(Boolean).join(" — ") + (entry.notes ? ` — ${entry.notes}` : "") });
   });
   return rows;
 }

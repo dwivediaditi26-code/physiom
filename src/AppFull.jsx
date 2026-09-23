@@ -340,6 +340,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // needing `active` in its dependency array.
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
+  // Mirrors `navContext` the same way activeRef mirrors `active` -- navTo
+  // needs to read the CURRENT context's `wizardStep` (see OPAQUE_ASSESSMENT_KEYS
+  // below) without putting navContext in its own dependency array.
+  const navContextRef = useRef({});
+  useEffect(() => { navContextRef.current = navContext; }, [navContext]);
   const [canGoBack, setCanGoBack] = useState(false);
   // Bumped when the Learn tab is tapped while Learn is already open, so the
   // <LazyLearnTabEntry key=...> below remounts and lands back on Learn's home
@@ -347,6 +352,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Aditi: "when we click on learn it should open the learn page again... i
   // have to click back again and again").
   const [learnResetKey, setLearnResetKey] = useState(0);
+  // Same idea as learnResetKey, for PhysioFeed (Aditi, 2026-09-23: "when I
+  // click on physio feed after clinical it should take me to the past page
+  // that I'm working on... but when I double click it, it should give the
+  // home page"). Bumped only on a real re-tap of the PhysioFeed tab while
+  // it's already open -- see the matching check in navTo() below.
+  const [physioFeedResetKey, setPhysioFeedResetKey] = useState(0);
   const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
@@ -1077,6 +1088,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (key === "learn" && key === activeRef.current && !navOpts.__fromPopState) {
       setLearnResetKey((k) => k + 1);
     }
+    // Same for PhysioFeed -- but only a bare re-tap (no explicit pfTab
+    // target), so the header's search/bell/message icons (navTo("physiofeed",
+    // {pfTab:...}), fired from OUTSIDE PhysioFeed while it's already the
+    // active tab) still land on that specific section instead of getting
+    // reset back to the feed.
+    if (key === "physiofeed" && key === activeRef.current && !navOpts.__fromPopState && !ctx?.pfTab) {
+      setPhysioFeedResetKey((k) => k + 1);
+    }
     // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
     // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
     // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
@@ -1120,7 +1139,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // the phone/browser hardware Back button and the in-header Back button
     // both work off the same real history stack instead of a separate one
     // we'd have to keep in sync by hand.
-    if (!navOpts.__fromPopState && key !== activeRef.current) {
+    //
+    // One deliberate exception: Ortho/Neuro/Cardio's guided assessment
+    // wizards (OPAQUE_ASSESSMENT_KEYS) each mount under a single opaque key
+    // for their entire internal step list (Demographics/Subjective/ROM/...)
+    // -- useWizardStepHistory.js re-navigates to that SAME key on every
+    // internal step, tagging `ctx.wizardStep` with whichever step id it
+    // landed on, specifically so THIS still counts as a real nav and still
+    // pushes (Aditi, 2026-09-22: "when we click on back it takes us to
+    // total home button ...even if we are in middle of assessment" -- every
+    // step was collapsing into the one history entry this whole opaque
+    // screen got when it first opened).
+    const isWizardStepChange =
+      key === activeRef.current &&
+      OPAQUE_ASSESSMENT_KEYS.has(key) &&
+      ctx?.wizardStep !== undefined &&
+      ctx.wizardStep !== navContextRef.current?.wizardStep;
+    if (!navOpts.__fromPopState && (key !== activeRef.current || isWizardStepChange)) {
       try {
         window.history.pushState({ pmNavKey: key, pmNavCtx: ctx || {} }, "", window.location.href);
         setCanGoBack(true);
@@ -2149,6 +2184,35 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             </div>
           )}
 
+          {/* PhysioFeed -- same deferred-mount/hidden-when-not-active pattern as
+              Posture just above, NOT the currentSection/ALL_TESTS group map
+              below (that map only renders whichever group belongs to the
+              CURRENT `active` tab, so routing PhysioFeed through it meant it
+              fully unmounted -- losing its MemoryRouter state, scroll
+              position, whatever screen you were on -- every single time you
+              left and came back. PhysioFeedEntry.jsx's own header comment
+              already assumed "AppFull.jsx keeps every tab alive"; this is
+              what actually makes that true for it. key={physioFeedResetKey}
+              is the one intentional exception: bumped in navTo() only on a
+              bare re-tap of an already-open PhysioFeed, forcing a fresh
+              mount back to the feed home -- everything else (leaving to
+              Clinical and coming back, a header search/bell/message jump)
+              preserves whatever screen you were on. 2026-09-23, Aditi: "jab
+              hum clinical pe jaate hain aur physio feed pe wapas aate hain
+              to woh naye jaisa khulta hai... jab main physio feed pe click
+              karu clinical ke baad to woh mujhe us purani screen pe le jaana
+              chahiye jahan main kaam kar raha tha". */}
+          {mountedTabs.has("physiofeed") && (
+            <div className="pm-bleed" style={{display: active==="physiofeed" ? "block" : "none"}}>
+              <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
+                <LazyPhysioFeedEntry key={physioFeedResetKey} jumpTo={active==="physiofeed"?navContext:undefined}/>
+              </Suspense>
+            </div>
+          )}
+          {active==="physiofeed" && !mountedTabs.has("physiofeed") && (
+            <div className="pm-bleed" style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>
+          )}
+
           {/* Objective hub — ROM/MMT/Special/Neuro expand in place, scoped to
               the region(s) picked in Subjective. Not part of the ALL_TESTS/
               currentSection group system (there's no "objective" entry there),
@@ -2200,7 +2264,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               floating in a narrower column. */}
           {active==="cardio_assessment" && (
             <div className="pm-bleed">
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined}/></Suspense>
             </div>
           )}
 
@@ -2217,7 +2281,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               Special Tests/ROM/etc. */}
           {active==="neuro_assessment" && (
             <div className="pm-bleed">
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined}/></Suspense>
             </div>
           )}
 
@@ -2228,7 +2292,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               STREAMS, untouched below. */}
           {active==="ortho_new_assessment" && (
             <div className="pm-bleed">
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
             </div>
           )}
 
@@ -2330,11 +2394,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               {tests==="HOME_MODULE"?(
                 <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
               ):tests==="PHYSIOFEED_MODULE"?(
-                <div className="pm-bleed">
-                  <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
-                    <LazyPhysioFeedEntry jumpTo={active==="physiofeed"?navContext:undefined}/>
-                  </Suspense>
-                </div>
+                // Actually rendered by the mountedTabs-gated block up near
+                // Posture (see its own comment) so it stays mounted across
+                // tab switches instead of losing state every time -- this
+                // branch only exists so the group-header guard above still
+                // recognizes the key; nothing to render here.
+                null
               ):tests==="LEARN_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading…</div>}>
                   <LazyLearnTabEntry key={learnResetKey} onNav={navTo}/>

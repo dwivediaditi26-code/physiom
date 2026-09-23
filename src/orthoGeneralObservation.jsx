@@ -5,9 +5,19 @@ import { postureFieldsForRegion, POSTURE_VIEWS, OBSERVATION_INFO } from "./ortho
 /* ============================================================
    GeneralObservationSection — Outpatient pathway only. Replaces
    the shared ObservationSection (orthoCommonSections.jsx, still
-   used unchanged by IPD/Post-op) with 6 small cards: Appearance,
+   used unchanged by IPD/Post-op) with 5 small cards: Appearance,
    Posture & Alignment (region-aware), Local Observation (SEADS),
-   Swelling/Edema, Movement Snapshot, Gait Snapshot.
+   Swelling/Edema, Gait Snapshot.
+
+   2026-09-22 (Aditi): Local Observation's Swelling and Muscle bulk
+   are now present/absent toggles that reveal detail fields (location
+   + grade for swelling; a type list for muscle bulk) only once marked
+   present, instead of a severity/type Segmented always shown even when
+   nothing was found. Erythema removed from Local Observation. Movement
+   Snapshot card removed entirely. Gait Snapshot's detail fields (pattern,
+   speed, symmetry, device, assistance, notes) now only appear once
+   "Observed?" is answered "Yes", instead of always showing for a gait
+   that was never actually tested.
    ============================================================ */
 
 function Card({ icon, title, infoKey, children }) {
@@ -87,16 +97,35 @@ function MeasurementRow({ site, right, left, onRight, onLeft, onRemove }) {
 export function GeneralObservationSection({ data, setData, selectedRegions = [], regionLabelOf, onOpenGait }) {
   const [d, set] = useSectionData(data, setData, "observation");
   const appearance = d.appearance || {};
+  const attitude = d.attitude || {};
   const posture = d.posture || {};
   const local = d.local || {};
   const edema = d.edema || {};
-  const movement = d.movement || {};
   const gait = d.gait || {};
   const measurements = edema.measurements || [];
+  const swellingMeasurements = local.swellingMeasurements || [];
+  const muscleBulkMeasurements = local.muscleBulkMeasurements || [];
+  const regionOptions = selectedRegions.map((r) => regionLabelOf(r));
 
   function setSub(key, field, value) {
     set(key, { ...d[key], [field]: value });
   }
+
+  // Shared by Swelling and Muscle bulk's own circumference measurements
+  // below (2026-09-22, Aditi: "same for muscle bulk region wise and put
+  // measurement") -- same right/left-per-site shape as the Swelling/Edema
+  // card's `measurements`, just scoped to `local.<field>Measurements`
+  // instead of `edema.measurements` since these are separate findings.
+  function measurementHandlers(field, list) {
+    return {
+      onAdd: (name) => setSub("local", field, [...list, { site: name, right: "", left: "" }]),
+      onRight: (i, v) => setSub("local", field, list.map((mm, ii) => (ii === i ? { ...mm, right: v } : mm))),
+      onLeft: (i, v) => setSub("local", field, list.map((mm, ii) => (ii === i ? { ...mm, left: v } : mm))),
+      onRemove: (i) => setSub("local", field, list.filter((_, ii) => ii !== i)),
+    };
+  }
+  const swellingM = measurementHandlers("swellingMeasurements", swellingMeasurements);
+  const muscleBulkM = measurementHandlers("muscleBulkMeasurements", muscleBulkMeasurements);
 
   return (
     <>
@@ -104,11 +133,16 @@ export function GeneralObservationSection({ data, setData, selectedRegions = [],
       <Segmented label="Observed from" options={["Standing", "Sitting", "Walking"]} value={d.observedFrom} onChange={(v) => set("observedFrom", v)} />
 
       <Card icon="👤" title="General Appearance" infoKey="appearance">
+        <Segmented label="General condition" options={["Poor", "Fair", "Good"]} value={appearance.generalCondition} onChange={(v) => setSub("appearance", "generalCondition", v)} />
         <Segmented label="Body build" options={["Ectomorphic", "Mesomorphic", "Endomorphic"]} value={appearance.bodyBuild} onChange={(v) => setSub("appearance", "bodyBuild", v)} wrap />
-        <Segmented label="Nutritional appearance" options={["Normal", "Reduced", "Increased"]} value={appearance.nutrition} onChange={(v) => setSub("appearance", "nutrition", v)} />
-        <Segmented label="Alertness" options={["Alert", "Drowsy", "Other"]} value={appearance.alertness} onChange={(v) => setSub("appearance", "alertness", v)} />
         <Segmented label="Distress" options={["None", "Mild", "Moderate", "Severe"]} value={appearance.distress} onChange={(v) => setSub("appearance", "distress", v)} />
         <Segmented label="Overall presentation" options={["Normal", "Guarded", "Distressed"]} value={appearance.presentation} onChange={(v) => setSub("appearance", "presentation", v)} />
+      </Card>
+
+      <Card icon="🛌" title="Attitude of the Limbs" infoKey="attitude">
+        <TextField label="Supine" value={attitude.supine} onChange={(v) => setSub("attitude", "supine", v)} placeholder="Resting limb position — supine" />
+        <TextField label="Sitting" value={attitude.sitting} onChange={(v) => setSub("attitude", "sitting", v)} placeholder="Resting limb position — sitting" />
+        <TextField label="Standing" value={attitude.standing} onChange={(v) => setSub("attitude", "standing", v)} placeholder="Resting limb position — standing" />
       </Card>
 
       <Card icon="🧍" title="Posture & Alignment" infoKey="posture">
@@ -129,55 +163,80 @@ export function GeneralObservationSection({ data, setData, selectedRegions = [],
 
       <Card icon="🔎" title="Local Observation" infoKey="local">
         <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={local.side} onChange={(v) => setSub("local", "side", v)} />
-        <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={local.swelling} onChange={(v) => setSub("local", "swelling", v)} />
-        <Segmented label="Erythema" options={["Absent", "Present"]} value={local.erythema} onChange={(v) => setSub("local", "erythema", v)} />
+        <Segmented label="Swelling" options={["Absent", "Present"]} value={local.swelling} onChange={(v) => setSub("local", "swelling", v)} />
+        {local.swelling === "Present" && (
+          <>
+            <SelectField label="Swelling location" type="multi" options={regionOptions} value={local.swellingLocation} onChange={(v) => setSub("local", "swellingLocation", v)} placeholder="Select region(s)" />
+            <Segmented label="Swelling grade" options={["Mild", "Moderate", "Severe"]} value={local.swellingGrade} onChange={(v) => setSub("local", "swellingGrade", v)} />
+            {swellingMeasurements.map((m, i) => (
+              <MeasurementRow key={i} site={m.site} right={m.right} left={m.left}
+                onRight={(v) => swellingM.onRight(i, v)} onLeft={(v) => swellingM.onLeft(i, v)} onRemove={() => swellingM.onRemove(i)} />
+            ))}
+            <AddMovementRow onAdd={swellingM.onAdd} placeholder="+ Add measurement" />
+          </>
+        )}
         <SelectField label="Skin / colour" type="multi" options={["Normal", "Redness", "Discoloration", "Bruising", "Other"]} value={local.skin} onChange={(v) => setSub("local", "skin", v)} />
-        <Segmented label="Muscle bulk" options={["Symmetrical", "Atrophy", "Hypertrophy"]} value={local.muscleBulk} onChange={(v) => setSub("local", "muscleBulk", v)} />
+        <Segmented label="Muscle bulk" options={["Normal", "Abnormal"]} value={local.muscleBulk} onChange={(v) => setSub("local", "muscleBulk", v)} />
+        {local.muscleBulk === "Abnormal" && (
+          <>
+            <SelectField label="Muscle bulk change" type="single" options={["Atrophy", "Hypertrophy", "Asymmetry", "Other"]} value={local.muscleBulkType} onChange={(v) => setSub("local", "muscleBulkType", v)} />
+            <SelectField label="Muscle bulk location" type="multi" options={regionOptions} value={local.muscleBulkLocation} onChange={(v) => setSub("local", "muscleBulkLocation", v)} placeholder="Select region(s)" />
+            {muscleBulkMeasurements.map((m, i) => (
+              <MeasurementRow key={i} site={m.site} right={m.right} left={m.left}
+                onRight={(v) => muscleBulkM.onRight(i, v)} onLeft={(v) => muscleBulkM.onLeft(i, v)} onRemove={() => muscleBulkM.onRemove(i)} />
+            ))}
+            <AddMovementRow onAdd={muscleBulkM.onAdd} placeholder="+ Add measurement" />
+          </>
+        )}
         <Segmented label="Deformity" options={["None", "Present"]} value={local.deformity} onChange={(v) => setSub("local", "deformity", v)} />
+        {local.deformity === "Present" && (
+          <SelectField label="Deformity type" type="multi" options={["Varus", "Valgus", "Flexion deformity", "Extension deformity", "Rotational", "Angular", "Other"]} value={local.deformityType} onChange={(v) => setSub("local", "deformityType", v)} />
+        )}
+        <Segmented label="Bony contours" options={["Normal", "Prominent", "Asymmetrical", "Irregular"]} value={local.bonyContours} onChange={(v) => setSub("local", "bonyContours", v)} wrap />
         <Segmented label="Scar" options={["None", "Surgical", "Traumatic", "Other"]} value={local.scar} onChange={(v) => setSub("local", "scar", v)} />
       </Card>
 
       <Card icon="💧" title="Swelling / Edema" infoKey="swelling">
         <Segmented label="Presence" options={["None", "Present"]} value={edema.presence} onChange={(v) => setSub("edema", "presence", v)} />
-        <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={edema.side} onChange={(v) => setSub("edema", "side", v)} />
-        <TextField label="Location" value={edema.location} onChange={(v) => setSub("edema", "location", v)} placeholder="Anatomical location" />
-        <Segmented label="Severity" options={["Mild", "Moderate", "Severe"]} value={edema.severity} onChange={(v) => setSub("edema", "severity", v)} />
-        <Segmented label="Character" options={["Localized", "Diffuse"]} value={edema.character} onChange={(v) => setSub("edema", "character", v)} />
-        <Segmented label="Pitting" options={["None", "1+", "2+", "3+", "4+"]} value={edema.pitting} onChange={(v) => setSub("edema", "pitting", v)} />
-        {measurements.map((m, i) => (
-          <MeasurementRow
-            key={i}
-            site={m.site}
-            right={m.right}
-            left={m.left}
-            onRight={(v) => set("edema", { ...edema, measurements: measurements.map((mm, ii) => (ii === i ? { ...mm, right: v } : mm)) })}
-            onLeft={(v) => set("edema", { ...edema, measurements: measurements.map((mm, ii) => (ii === i ? { ...mm, left: v } : mm)) })}
-            onRemove={() => set("edema", { ...edema, measurements: measurements.filter((_, ii) => ii !== i) })}
-          />
-        ))}
-        <AddMovementRow onAdd={(name) => set("edema", { ...edema, measurements: [...measurements, { site: name, right: "", left: "" }] })} placeholder="+ Add measurement" />
-      </Card>
-
-      <Card icon="🚶" title="Movement Snapshot" infoKey="movement">
-        <Segmented label="Sit → Stand" options={["Normal", "Difficult", "Painful", "Uses arms", "Assistance"]} value={movement.sitToStand} onChange={(v) => setSub("movement", "sitToStand", v)} wrap />
-        <Segmented label="Squat" options={["Normal", "Limited", "Painful", "Asymmetrical"]} value={movement.squat} onChange={(v) => setSub("movement", "squat", v)} wrap />
-        <Segmented label="Single-leg stance" options={["Normal", "Reduced", "Unable"]} value={movement.singleLegStance} onChange={(v) => setSub("movement", "singleLegStance", v)} />
-        <Segmented label="Reaching" options={["Normal", "Limited", "Painful"]} value={movement.reaching} onChange={(v) => setSub("movement", "reaching", v)} />
-        <Segmented label="General movement" options={["Normal", "Guarded", "Slow", "Asymmetrical"]} value={movement.generalMovement} onChange={(v) => setSub("movement", "generalMovement", v)} wrap />
+        {edema.presence === "Present" && (
+          <>
+            <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={edema.side} onChange={(v) => setSub("edema", "side", v)} />
+            <SelectField label="Location" type="multi" options={regionOptions} value={edema.location} onChange={(v) => setSub("edema", "location", v)} placeholder="Select region(s)" />
+            <Segmented label="Severity" options={["Mild", "Moderate", "Severe"]} value={edema.severity} onChange={(v) => setSub("edema", "severity", v)} />
+            <Segmented label="Character" options={["Localized", "Diffuse"]} value={edema.character} onChange={(v) => setSub("edema", "character", v)} />
+            <Segmented label="Pitting" options={["None", "1+", "2+", "3+", "4+"]} value={edema.pitting} onChange={(v) => setSub("edema", "pitting", v)} />
+            {measurements.map((m, i) => (
+              <MeasurementRow
+                key={i}
+                site={m.site}
+                right={m.right}
+                left={m.left}
+                onRight={(v) => set("edema", { ...edema, measurements: measurements.map((mm, ii) => (ii === i ? { ...mm, right: v } : mm)) })}
+                onLeft={(v) => set("edema", { ...edema, measurements: measurements.map((mm, ii) => (ii === i ? { ...mm, left: v } : mm)) })}
+                onRemove={() => set("edema", { ...edema, measurements: measurements.filter((_, ii) => ii !== i) })}
+              />
+            ))}
+            <AddMovementRow onAdd={(name) => set("edema", { ...edema, measurements: [...measurements, { site: name, right: "", left: "" }] })} placeholder="+ Add measurement" />
+          </>
+        )}
       </Card>
 
       <Card icon="🚶‍♂️" title="Gait Snapshot" infoKey="gait">
         <Segmented label="Observed?" options={["Yes", "No"]} value={gait.observed} onChange={(v) => setSub("gait", "observed", v)} />
-        <SelectField label="Pattern" type="single" options={["Normal", "Antalgic", "Ataxic", "Trendelenburg", "Steppage", "Other"]} value={gait.pattern} onChange={(v) => setSub("gait", "pattern", v)} />
-        <Segmented label="Speed" options={["Normal", "Slow", "Fast"]} value={gait.speed} onChange={(v) => setSub("gait", "speed", v)} />
-        <Segmented label="Symmetry" options={["Symmetrical", "Asymmetrical"]} value={gait.symmetry} onChange={(v) => setSub("gait", "symmetry", v)} />
-        <Segmented label="Assistive device" options={["None", "Cane", "Walker", "Crutches", "Other"]} value={gait.device} onChange={(v) => setSub("gait", "device", v)} wrap />
-        <Segmented label="Assistance" options={["Independent", "Supervision", "Minimal Assist", "Moderate Assist", "Maximum Assist"]} value={gait.assistance} onChange={(v) => setSub("gait", "assistance", v)} wrap />
-        <TextField label="Notable observation" value={gait.notes} onChange={(v) => setSub("gait", "notes", v)} />
-        {onOpenGait && (
-          <button type="button" className="info-btn-full" style={{ marginTop: 10 }} onClick={onOpenGait}>
-            → Full Gait Assessment
-          </button>
+        {gait.observed === "Yes" && (
+          <>
+            <SelectField label="Pattern" type="single" options={["Normal", "Antalgic", "Ataxic", "Trendelenburg", "Steppage", "Other"]} value={gait.pattern} onChange={(v) => setSub("gait", "pattern", v)} />
+            <Segmented label="Speed" options={["Normal", "Slow", "Fast"]} value={gait.speed} onChange={(v) => setSub("gait", "speed", v)} />
+            <Segmented label="Symmetry" options={["Symmetrical", "Asymmetrical"]} value={gait.symmetry} onChange={(v) => setSub("gait", "symmetry", v)} />
+            <Segmented label="Assistive device" options={["None", "Cane", "Walker", "Crutches", "Other"]} value={gait.device} onChange={(v) => setSub("gait", "device", v)} wrap />
+            <Segmented label="Assistance" options={["Independent", "Supervision", "Minimal Assist", "Moderate Assist", "Maximum Assist"]} value={gait.assistance} onChange={(v) => setSub("gait", "assistance", v)} wrap />
+            <TextField label="Notable observation" value={gait.notes} onChange={(v) => setSub("gait", "notes", v)} />
+            {onOpenGait && (
+              <button type="button" className="info-btn-full" style={{ marginTop: 10 }} onClick={onOpenGait}>
+                → Full Gait Assessment
+              </button>
+            )}
+          </>
         )}
       </Card>
     </>

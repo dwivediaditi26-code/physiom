@@ -154,6 +154,39 @@ export function BalanceSection({ data, setData }) {
   );
 }
 
+export function LimbLengthSection({ data, setData }) {
+  const [d, set] = useSectionData(data, setData, "limbLength");
+  return (
+    <>
+      <SectionIntro icon="📏" title="Limb Length Discrepancy" info="True length: ASIS to medial malleolus (lower limb) or acromion to tip of middle finger (upper limb), bones aligned neutrally. Apparent length: umbilicus/xiphisternum to medial malleolus/finger tip, in the patient's own resting posture -- a difference here with a normal true length points to pelvic obliquity or postural asymmetry, not real bone/joint shortening." />
+      <div className="subheading">True length</div>
+      <div className="vitals-grid">
+        <NumberField label="Right" value={d.trueRight} onChange={(v) => set("trueRight", v)} unit="cm" width="45%" />
+        <NumberField label="Left" value={d.trueLeft} onChange={(v) => set("trueLeft", v)} unit="cm" width="45%" />
+      </div>
+      <div className="subheading">Apparent length</div>
+      <div className="vitals-grid">
+        <NumberField label="Right" value={d.apparentRight} onChange={(v) => set("apparentRight", v)} unit="cm" width="45%" />
+        <NumberField label="Left" value={d.apparentLeft} onChange={(v) => set("apparentLeft", v)} unit="cm" width="45%" />
+      </div>
+      <TextArea label="Notes" value={d.notes} onChange={(v) => set("notes", v)} placeholder="Suspected cause of any discrepancy, measurement method used..." />
+    </>
+  );
+}
+
+/* formatters[stepId] contract for orthoSummary.jsx */
+export function formatLimbLengthSection(section) {
+  const rows = [];
+  if (section.trueLeft || section.trueRight) {
+    rows.push({ label: "True length", value: [section.trueRight && `R ${section.trueRight}cm`, section.trueLeft && `L ${section.trueLeft}cm`].filter(Boolean).join(" / ") });
+  }
+  if (section.apparentLeft || section.apparentRight) {
+    rows.push({ label: "Apparent length", value: [section.apparentRight && `R ${section.apparentRight}cm`, section.apparentLeft && `L ${section.apparentLeft}cm`].filter(Boolean).join(" / ") });
+  }
+  if (section.notes) rows.push({ label: "Notes", value: section.notes });
+  return rows;
+}
+
 // Quick radiculopathy/neuro screen -- same myotome/dermatome/DTR grading
 // used by the standalone Neuro assessment's Spinal Cord Injury workup
 // (NeurologicalAssessment.jsx), trimmed to the key upper + lower limb levels
@@ -248,6 +281,30 @@ export function NeuroScreenSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="⚡" title="Neuro Screen" info="Quick myotome/dermatome/reflex screen for suspected nerve root involvement -- not a full neurological exam. Refer to Neuro assessment for a complete workup." />
+      <div className="subheading">Sensory Assessment — Superficial</div>
+      <LRGrid
+        label="Superficial sensations"
+        rows={["Pain", "Touch", "Temperature", "Pressure"]}
+        options={["Normal", "Reduced", "Absent", "Hyperaesthesia"]}
+        value={d.sensorySuperficial || {}}
+        onChange={(v) => set("sensorySuperficial", v)}
+      />
+      <div className="subheading">Sensory Assessment — Deep</div>
+      <LRGrid
+        label="Deep sensations"
+        rows={["Vibration", "Kinesthesia"]}
+        options={["Normal", "Reduced", "Absent"]}
+        value={d.sensoryDeep || {}}
+        onChange={(v) => set("sensoryDeep", v)}
+      />
+      <div className="subheading">Sensory Assessment — Combined / Cortical</div>
+      <LRGrid
+        label="Combined sensations"
+        rows={["Stereognosis", "Tactile localization", "Two-point discrimination", "Graphesthesia"]}
+        options={["Intact", "Impaired", "Not tested"]}
+        value={d.sensoryCombined || {}}
+        onChange={(v) => set("sensoryCombined", v)}
+      />
       <div className="subheading">Myotomes (MMT 0-5)</div>
       <LRGrid
         label="Key myotomes"
@@ -274,6 +331,14 @@ export function NeuroScreenSection({ data, setData }) {
         value={d.dtr || {}}
         onChange={(v) => set("dtr", v)}
         rowInfo={DTR_ROW_INFO}
+      />
+      <div className="subheading">Superficial reflexes</div>
+      <LRGrid
+        label="Superficial reflexes"
+        rows={["Abdominal (upper)", "Abdominal (lower)", "Cremasteric"]}
+        options={["Present", "Absent", "Not tested"]}
+        value={d.superficialReflexes || {}}
+        onChange={(v) => set("superficialReflexes", v)}
       />
       <div className="subheading">Pathological reflexes</div>
       <SelectField label="Plantar response (Babinski)" type="single" options={["Flexor (normal/downgoing)", "Extensor (Babinski positive/upgoing)", "Equivocal", "Not tested"]} value={d.babinski} onChange={(v) => set("babinski", v)} />

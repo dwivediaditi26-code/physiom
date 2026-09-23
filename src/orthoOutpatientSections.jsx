@@ -53,6 +53,14 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           ))}
         </div>
       </div>
+      {/* Seeded by AI intake (2026-09-23, Aditi: "whatever it extracted it
+          should show in the subjective assessment... right now it leaves
+          out things") -- see orthoAiIntake.js's regionAiNotes comment for
+          why this is one plain-text note per region instead of the AI
+          auto-ticking the specific fields below. Always rendered (not
+          only when non-empty) so it also works as an ordinary manual
+          note field when no AI intake was used. */}
+      <TextArea label="From AI intake (review & transcribe into the fields below)" value={regionData.aiNotes} onChange={(v) => setField("aiNotes", v)} />
       {fields.map((f) => (
         <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} />
       ))}
@@ -121,7 +129,7 @@ export function RedFlagScreenSection({ data, setData }) {
   );
 }
 
-export function SubjectiveSection({ data, setData, selectedRegions = [], regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
+export function SubjectiveSection({ data, setData, selectedRegions = [], setSelectedRegions, regionLabelOf, requireAuth, autoOpenAI, onConditionDetected, detectedConditionLabel, patientData }) {
   const [d, set] = useSectionData(data, setData, "subjective");
 
   // Two entry options for this step: say it, or write it.
@@ -145,6 +153,7 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
   // extracted" panel can show the AI's own output verbatim, including
   // fields this wizard has no dedicated home for.
   function applyAiUpdates(updates) {
+    const suggested = (updates.regions || []).filter((r) => r && r.id);
     setData((prev) => {
       const fillBlank = (existing = {}, incoming = {}) => {
         const out = { ...existing };
@@ -153,14 +162,50 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
         });
         return out;
       };
+      // Region AI-notes seed (2026-09-23, Aditi: "whatever it extracted it
+      // should show in the subjective assessment... right now it leaves
+      // out things") -- see the long comment on regionAiNotes in
+      // orthoAiIntake.js for why this is one plain-text seed per region
+      // rather than auto-ticking the region's own precise checklist
+      // fields. fillBlank so re-dictating never wipes a note already
+      // reviewed/edited by the clinician.
+      let regions = prev.subjective?.regions || {};
+      if (updates.regionAiNotes && suggested.length) {
+        const nextRegions = { ...regions };
+        suggested.forEach((r) => {
+          nextRegions[r.id] = fillBlank(nextRegions[r.id], { aiNotes: updates.regionAiNotes });
+        });
+        regions = nextRegions;
+      }
       return {
         ...prev,
-        subjective: { ...prev.subjective, ...updates.subjective, __aiExtracted: updates.extracted || prev.subjective?.__aiExtracted },
+        subjective: { ...prev.subjective, ...updates.subjective, regions, __aiExtracted: updates.extracted || prev.subjective?.__aiExtracted },
         pain: { ...prev.pain, ...updates.pain },
         demographics: fillBlank(prev.demographics, updates.demographics),
         redFlags: fillBlank(prev.redFlags, updates.redFlags),
       };
     });
+    // Bug fix (2026-09-23, Aditi: "it is not working for the region, it's
+    // not filling out the region specific") -- OrthoAssessment.jsx's own
+    // pre-wizard AI intake already adds any region the narrative names via
+    // this exact same additive merge (never removes/overwrites a region
+    // already picked), but re-dictating from inside this step never had
+    // setSelectedRegions to call, so a region only mentioned here (not on
+    // the earlier landing screen) silently never reached the region picker
+    // -- and with no matching region selected, RegionSubjectiveTabs below
+    // renders nothing at all, which read as "the region-specific fields
+    // aren't filling in."
+    if (setSelectedRegions) {
+      if (suggested.length) {
+        setSelectedRegions((prev) => {
+          const next = [...prev];
+          suggested.forEach((r) => {
+            if (!next.some((x) => x.id === r.id)) next.push({ id: r.id, side: r.side || "" });
+          });
+          return next;
+        });
+      }
+    }
     // Real fix for "AI Assisted Assessment always suggests generic Objective
     // tests" -- the wizard was hardcoding condition="general" for the whole
     // session regardless of what the patient's own narrative describes.
@@ -208,6 +253,9 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], regionL
       <TextArea label="Previous treatment" value={d.previousTreatment} onChange={(v) => set("previousTreatment", v)} placeholder="Prior physio, injections, medication, surgery..." />
       <TextArea label="Relevant medical history" value={d.medicalHistory} onChange={(v) => set("medicalHistory", v)} />
       <TextField label="Medication" value={d.medication} onChange={(v) => set("medication", v)} />
+      <TextArea label="Family history" value={d.familyHistory} onChange={(v) => set("familyHistory", v)} placeholder="Relevant conditions in immediate family..." />
+      <TextArea label="Personal history" value={d.personalHistory} onChange={(v) => set("personalHistory", v)} placeholder="Habits — smoking, alcohol, activity level, diet..." />
+      <TextArea label="Socio-economic history" value={d.socioEconomicHistory} onChange={(v) => set("socioEconomicHistory", v)} placeholder="Living situation, occupation demands, financial/support factors relevant to care..." />
       <TextArea label="Functional limitations" value={d.functionalLimitations} onChange={(v) => set("functionalLimitations", v)} placeholder="What the patient can no longer do..." />
       <TextArea label="Patient goals" value={d.patientGoals} onChange={(v) => set("patientGoals", v)} placeholder="What matters most to the patient right now" />
 
@@ -273,11 +321,14 @@ export function ClinicalAssessmentSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon="🧠" title="Clinical Assessment" info="Clinician's own reasoning from the findings above — not an AI-generated diagnosis." />
+      <TextArea label="Investigations" value={d.investigations} onChange={(v) => set("investigations", v)} placeholder="Relevant labs, X-ray, MRI, USG, nerve conduction findings..." />
       <TextArea label="Key findings" value={d.keyFindings} onChange={(v) => set("keyFindings", v)} />
       <TextArea label="Impairments" value={d.impairments} onChange={(v) => set("impairments", v)} />
       <TextArea label="Movement dysfunction" value={d.movementDysfunction} onChange={(v) => set("movementDysfunction", v)} />
       <TextArea label="Contributing factors" value={d.contributingFactors} onChange={(v) => set("contributingFactors", v)} />
       <TextArea label="Clinical impression" value={d.clinicalImpression} onChange={(v) => set("clinicalImpression", v)} />
+      <TextArea label="Differential diagnosis" value={d.differentialDiagnosis} onChange={(v) => set("differentialDiagnosis", v)} placeholder="Other conditions considered and ruled out/in..." />
+      <TextArea label="Final diagnosis" value={d.finalDiagnosis} onChange={(v) => set("finalDiagnosis", v)} />
       <TextArea label="Problem list" value={d.problemList} onChange={(v) => set("problemList", v)} placeholder="Key problems in priority order..." />
     </>
   );

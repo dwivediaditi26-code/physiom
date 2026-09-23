@@ -232,6 +232,23 @@ export function mapParseResultToOrthoUpdates(result = {}) {
   // silently dropped just because this wizard has no dedicated field for it.
   const extracted = extractedRows(result);
 
+  // Region-specific checklist fields (orthoSubjectiveRegionData.js) are
+  // NOT auto-filled from this -- each region carries 15-30+ fields with
+  // exact-wording options wired straight into that region's own reasoning
+  // engine (orthoCervicalReasoning.js etc, e.g. WAD grade, Lhermitte's
+  // sign, a cauda equina screen), so force-matching this generic parse
+  // output onto them risks silently ticking the wrong option on something
+  // that specific -- worse than leaving it blank. Instead (2026-09-23,
+  // Aditi: "whatever it extracted it should show in the subjective
+  // assessment... right now it leaves out things") every extracted row is
+  // handed back as one plain-text block, seeded into a real, fully-editable
+  // "From AI intake" note at the top of each region's own tab (see
+  // applyAiUpdates in orthoOutpatientSections.jsx) -- the clinician reads
+  // it there and transcribes whatever applies into the actual checklist
+  // fields themselves, so nothing the AI heard is silently dropped from
+  // this step even though it was never guessed into a specific field.
+  const regionAiNotes = extracted.map((r) => `${r.label}: ${r.value}`).join("\n");
+
   return {
     subjective,
     pain,
@@ -239,6 +256,7 @@ export function mapParseResultToOrthoUpdates(result = {}) {
     redFlags,
     regions,
     extracted,
+    regionAiNotes,
     flags,
     missingInfo: [],
     confidence: result._confidence || {},

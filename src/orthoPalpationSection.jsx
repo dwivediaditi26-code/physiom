@@ -138,7 +138,8 @@ export function PalpationSection({ data, setData, selectedRegions = [], focusZon
           <Segmented label="Swelling" options={["None", "Mild", "Moderate", "Severe"]} value={d.swelling} onChange={(v) => set("swelling", v)} />
           <SelectField label="Muscle tone" type="multi" options={["Normal", "Hypertonic", "Hypotonic", "Spasm", "Guarding"]} value={d.muscleTone} onChange={(v) => set("muscleTone", v)} />
           <TextArea label="Trigger points" value={d.triggerPoints} onChange={(v) => set("triggerPoints", v)} placeholder="Location and referral pattern..." />
-          <SelectField label="Scar / tissue mobility" type="multi" options={["N/A", "Normal", "Adherent", "Restricted", "Hypersensitive"]} value={d.scarMobility} onChange={(v) => set("scarMobility", v)} />
+          <SelectField label="Type of skin" type="multi" options={["Normal", "Dry", "Moist / sweaty", "Thickened", "Thin / atrophic", "Shiny", "Scaly"]} value={d.skinType} onChange={(v) => set("skinType", v)} />
+          <SelectField label="Scar / tissue mobility" type="multi" options={["N/A", "Normal", "Adherent", "Non-adherent", "Restricted", "Hypersensitive"]} value={d.scarMobility} onChange={(v) => set("scarMobility", v)} />
         </>
       )}
     </>

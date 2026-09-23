@@ -81,6 +81,7 @@ export default function MessagesPage() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeQuery, setComposeQuery] = useState("");
   const scrollRef = useRef(null);
+  const cardRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -224,6 +225,55 @@ export default function MessagesPage() {
     }
   };
 
+  // 2026-09-23 (Aditi: "the page is scrolling of message, it should scroll
+  // the chat, make chat static page" -- then "same for message list").
+  // Applies to the inbox and the open thread alike: the card was a 70dvh box
+  // inside a page that was itself taller than the viewport, so a swipe
+  // scrolled the PAGE -- dragging the whole chat, header and composer
+  // included -- instead of the messages. With a thread open the card is
+  // now sized to whatever room is actually left below it, so the page has
+  // nothing to scroll and the only scrollable thing is the message list.
+  //
+  // Measured rather than computed from a dvh formula because what sits
+  // above it varies: the guest banner, the action-error strip and the
+  // section nav all come and go.
+  //
+  // The page itself is locked while this screen is mounted. physiom keeps
+  // every tab mounted at once, so the document is taller than the viewport
+  // on every PhysioFeed page regardless of what's on it -- which is why a
+  // swipe here dragged the whole chat instead of the messages, and why
+  // subtracting "document overflow" to size the card was measuring other
+  // tabs and shrinking it to nothing. Everything clipped by the lock is
+  // the shell's own trailing padding; the bottom nav is position:fixed and
+  // unaffected.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const fit = () => {
+      const node = cardRef.current;
+      if (!node) return;
+      node.style.height = "";
+      const top = node.getBoundingClientRect().top;
+      const bnav = document.querySelector(".pm-bnav");
+      const bottom = bnav ? bnav.getBoundingClientRect().height : 0;
+      node.style.height = `${Math.max(280, window.innerHeight - top - bottom - 10)}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    const id = setTimeout(fit, 250); // banners settling in above it
+    return () => {
+      window.removeEventListener("resize", fit);
+      clearTimeout(id);
+      if (el) el.style.height = "";
+    };
+  }, [withId, error, loadingThread, loadingList, listQuery]);
+
   const openConversation = (userId) => setSearchParams({ with: userId });
   const backToList = () => setSearchParams({});
 
@@ -247,7 +297,7 @@ export default function MessagesPage() {
             type="button"
             onClick={() => { setComposeOpen(true); setComposeQuery(""); }}
             aria-label="New message"
-            className="shrink-0 p-2 rounded-lg border border-slate-200 text-[#6E5CC7] hover:bg-slate-50"
+            className="shrink-0 p-2 rounded-lg border border-slate-200 text-[#3E7BFA] hover:bg-slate-50"
           >
             <PenSquare size={17} />
           </button>
@@ -272,7 +322,10 @@ export default function MessagesPage() {
           chrome above it routinely pushed the message input below the
           visible fold with no visual hint there was more content to
           scroll to. `dvh` tracks the actually-visible viewport instead. */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex" style={{ height: "min(70dvh, 640px)" }}>
+      <div
+        ref={cardRef}
+        className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex"
+      >
         {/* Conversation list -- hidden on mobile once a thread is open */}
         <div className={`${withId ? "hidden sm:flex" : "flex"} flex-col w-full sm:w-72 shrink-0 border-r border-slate-100 overflow-y-auto`}>
           {loadingList ? (
@@ -292,7 +345,7 @@ export default function MessagesPage() {
               <button
                 key={c.userId}
                 onClick={() => openConversation(c.userId)}
-                className={`flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none ${withId === c.userId ? "bg-[#FDF0F6]" : ""}`}
+                className={`flex items-center gap-2.5 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none ${withId === c.userId ? "bg-[#F5F9FF]" : ""}`}
               >
                 <Avatar size={40} grad={c.gradient} initials={c.initials} photoUrl={c.avatarUrl} />
                 <div className="min-w-0 flex-1">
@@ -310,7 +363,7 @@ export default function MessagesPage() {
                   <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
                 </div>
                 {c.unread > 0 && (
-                  <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#DB2777] text-white text-[10px] font-bold flex items-center justify-center" aria-label={`${c.unread} unread`}>
+                  <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EAF1FF] text-[#2B5FD9] text-[10px] font-bold flex items-center justify-center" aria-label={`${c.unread} unread`}>
                     {c.unread > 9 ? "9+" : c.unread}
                   </span>
                 )}
@@ -362,11 +415,11 @@ export default function MessagesPage() {
                         )}
                         {m.system ? (
                           <div className="flex justify-center">
-                            <span className="text-[11px] font-semibold text-[#6E5CC7] bg-[#F7F5FF] px-3 py-1.5 rounded-full">{m.text}</span>
+                            <span className="text-[11px] font-semibold text-[#2B5FD9] bg-[#EAF1FF] px-3 py-1.5 rounded-full">{m.text}</span>
                           </div>
                         ) : (
                           <div className={`flex flex-col ${m.isSelf ? "items-end" : "items-start"}`}>
-                            <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-[#DB2777] text-white" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
+                            <span className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap break-words ${m.isSelf ? "bg-[#EAF1FF] text-slate-900" : "bg-slate-100 text-slate-700"}`}>{m.text}</span>
                             {m.createdAt && <span className="text-[10px] text-slate-400 mt-0.5 px-1">{messageTime(m.createdAt)}</span>}
                           </div>
                         )}
@@ -399,7 +452,7 @@ export default function MessagesPage() {
                     placeholder="Type a message…"
                     className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent px-2"
                   />
-                  <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#DB2777] disabled:text-slate-300 p-1.5">
+                  <button onClick={submit} disabled={!text.trim() || sending} aria-label="Send message" className="text-[#3E7BFA] disabled:text-slate-300 p-1.5">
                     <Send size={17} />
                   </button>
                 </div>

@@ -4,8 +4,8 @@ import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
-import { RomSection, MmtSection, SpecialTestsSection, formatRomSection, formatMmtSection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
-import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection } from "./orthoCommonSections.jsx";
+import { RomSection, MmtSection, SpecialTestsSection, JointMobilitySection, formatRomSection, formatMmtSection, formatSpecialTestsSection, formatJointMobilitySection } from "./orthoRegionAssessments.jsx";
+import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection, LimbLengthSection, formatLimbLengthSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
@@ -18,6 +18,7 @@ import ConditionObjectiveAssessment, { formatConditionObjectiveSection } from ".
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
+import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { saveTemplate } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
@@ -77,7 +78,9 @@ export const orthoSummaryFormatters = {
   observation: formatGeneralObservationSection,
   rom: formatRomSection,
   mmt: formatMmtSection,
+  jointMobility: formatJointMobilitySection,
   specialTests: formatSpecialTestsSection,
+  limbLength: formatLimbLengthSection,
   kineticChain: formatKineticChainSection,
   cpa: formatCpaSection,
   sttt: formatSttSection,
@@ -151,7 +154,25 @@ const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "g
 // instead of only when a condition promoted them or the therapist added
 // them. AI-assisted entry skips them (AI_ENTRY_SKIP_IDS) since AI Objective
 // already has CPA / Kinetic chain / Functional / STTT tabs inline.
-const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
+// outcomeMeasure moved from OPTIONAL_IDS to BASE_IDS too (Aditi: "put the
+// outcome measure in the general assessment") -- same move
+// specialTests/neuroScreen/kineticChain/cpa/sttt/fma already got, standard
+// on every Outpatient entry (General included) instead of only via
+// "Add assessment" or a condition's own promote list.
+const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation", "palpation", "suggest", "objectiveAI", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "homeProtocol", "review"];
+// General Assessment (2026-09-22, Aditi: split "how do you want to start"
+// into General vs Advanced) -- General is now the quick/core OPD set;
+// Advanced keeps the full BASE_IDS list above unchanged. Body Chart isn't
+// its own step id (it's a sub-widget inside "pain", PainSection's own
+// body_chart_pro field) so it isn't listed here -- it used to be hidden
+// specifically in General Assessment (PainSection's hideBodyChart prop),
+// dropped (Aditi: "why the pain assessment the body chart is removed") so
+// Pain looks the same in General and Advanced.
+// Palpation dropped back out of this trim list (Aditi: "the palpation is
+// removed. Put the palpation... why did the palpation is removed?") --
+// General Assessment now keeps it like every other core Objective step.
+const GENERAL_TRIMMED_IDS = ["kineticChain", "cpa", "sttt", "fma", "carePlanSessions", "homeProtocol"];
+const GENERAL_BASE_IDS = BASE_IDS.filter((id) => !GENERAL_TRIMMED_IDS.includes(id));
 // AI Assisted Assessment entry only -- goes straight from Subjective into
 // AI Objective Assessment (which already inline-covers Observation/
 // Palpation/ROM/MMT itself), skipping these as separate steps in between.
@@ -161,7 +182,7 @@ const BASE_IDS = ["demographics", "subjective", "redFlags", "pain", "observation
 // before Region, and feeds it in via initialAiUpdates.demographics exactly
 // like an AI-parsed narrative already did.
 const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma"];
-const OPTIONAL_IDS = ["vitals", "edema", "fascia", "gait", "balance", "activityTolerance", "outcomeMeasure", "progress"];
+const OPTIONAL_IDS = ["vitals", "edema", "fascia", "gait", "balance", "activityTolerance", "progress"];
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next
 // (2026-09-16, Aditi: "we can select it from anywhere... it's not stuck").
@@ -183,7 +204,7 @@ function aiStageIndexFor(id) {
 // Summary are already real steps.
 const AI_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
-const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "specialTests", "neuroScreen", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
+const ORDERED_ALL = ["demographics", "subjective", "redFlags", "vitals", "pain", "observation", "palpation", "suggest", "objectiveAI", "edema", "rom", "mmt", "jointMobility", "specialTests", "neuroScreen", "limbLength", "kineticChain", "cpa", "sttt", "fma", "fascia", "gait", "balance", "functionalAssessment", "activityTolerance", "outcomeMeasure", "clinicalAssessment", ...CAREPLAN_STEP_IDS, "techniques", "exercisePrescription", "homeProtocol", "progress", "review"];
 
 // Exported so SpecialtyPatientProfile.jsx's Ortho Assessment tab can render
 // the EXACT same summary the wizard's own Review step uses (same pattern as
@@ -212,8 +233,10 @@ const STEP_META = {
   edema: { icon: <Icon name="droplet" />, label: "Edema" },
   rom: { icon: <Icon name="ruler" />, label: "ROM" },
   mmt: { icon: <Icon name="muscle" />, label: "MMT" },
+  jointMobility: { icon: <Icon name="bone" />, label: "Joint Mobility" },
   specialTests: { icon: <Icon name="microscope" />, label: "Special Tests" },
   neuroScreen: { icon: <Icon name="bolt" />, label: "Neuro Screen" },
+  limbLength: { icon: <Icon name="ruler" />, label: "Limb Length" },
   kineticChain: { icon: <Icon name="chain" />, label: "Kinetic Chain" },
   cpa: { icon: <Icon name="brain" />, label: "CPA (NKT)" },
   sttt: { icon: <Icon name="bone" />, label: "STTT (Cyriax)" },
@@ -311,7 +334,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions: initialSelectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
+export default function OrthoOutpatientAssessment({ selectedRegions: initialSelectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onNav, navContext, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
   // Editable, not a fixed prop (2026-09-16, Aditi: "why can't we select
   // again the demographic and region... I can't go back") -- AI-assisted
   // entry picks regions on a pre-wizard screen (OrthoAssessment.jsx) that
@@ -334,7 +357,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   // own plain steps below, so showing objectiveAI there too was a second,
   // redundant tab (2026-09-16, Aditi: "remove the AI objective assessment
   // tab it should be normally basic").
-  const effectiveBaseIds = BASE_IDS.filter(
+  const effectiveBaseIds = (initialCondition === "general" ? GENERAL_BASE_IDS : BASE_IDS).filter(
     (id) => id !== "suggest" && (entryMode !== "ai" || !AI_ENTRY_SKIP_IDS.includes(id)) && (id !== "objectiveAI" || entryMode === "ai")
   );
   // `condition` used to be a plain prop, fixed for the whole assessment --
@@ -358,7 +381,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   const [condition, setCondition] = useState(aiDetectedCondition ? aiDetectedCondition.id : initialCondition);
   const [detectedConditionLabel, setDetectedConditionLabel] = useState(aiDetectedCondition ? aiDetectedCondition.label : null);
   const conditionMeta = OUTPATIENT_CONDITIONS.find((c) => c.id === condition);
-  const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
+  const conditionLabel = templateName ? templateName : condition === "general" ? "General Assessment" : condition === "advanced" ? "Advanced Assessment" : conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
   // Red-star "required for this condition" badge on StepNav (2026-09-16,
   // Aditi) -- reads the same promote list that already drives step
   // ordering, just surfaces it visually instead of only reordering silently.
@@ -366,7 +389,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
 
   const [stepOrder, setStepOrder] = useState(() => {
     if (initialStepOrder && initialStepOrder.length) return initialStepOrder.filter((id) => STEP_META[id]);
-    const promoted = aiDetectedCondition ? aiDetectedCondition.promote : initialCondition === "general" ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
+    const promoted = aiDetectedCondition ? aiDetectedCondition.promote : (initialCondition === "general" || initialCondition === "advanced") ? [] : conditionMeta ? conditionMeta.promote : FALLBACK_PROMOTE;
     // AI entry normally skips Red Flags and Pain as separate steps
     // (AI_ENTRY_SKIP_IDS) -- but not when the intake itself produced answers
     // for them: an extraction that recorded an NRS score or a red flag the
@@ -488,6 +511,18 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
     const idx = stepOrder.indexOf(id);
     if (idx >= 0) setStep(idx);
   }
+  // Browser/hardware Back & Forward inside this wizard (see
+  // useWizardStepHistory.js) -- replays through the exact same jumpTo/onExit
+  // this step machine already uses for StepNav clicks and its own Back
+  // button, just triggered from real history instead of a click.
+  useWizardStepHistory({
+    wizardKey: "ortho_new_assessment",
+    stepId: current?.id,
+    onNav,
+    navContext,
+    onExternalStep: jumpTo,
+    onBeforeFirstStep: onExit,
+  });
   // AI-assisted entry drops "demographics" from stepOrder entirely (it's
   // collected pre-wizard in OrthoAssessment.jsx instead) -- but if a student
   // skipped name/age there, MissingDemographicsModal's "Go to Patient Info"
@@ -751,6 +786,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
               data={data}
               setData={setData}
               selectedRegions={selectedRegions}
+              setSelectedRegions={setSelectedRegions}
               regionLabelOf={regionLabelOf}
               requireAuth={requireAuth}
               autoOpenAI={autoOpenAI}
@@ -818,8 +854,10 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           )}
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
+          {current.id === "jointMobility" && <JointMobilitySection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "specialTests" && <SpecialTestsSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
+          {current.id === "limbLength" && <LimbLengthSection data={data} setData={setData} />}
           {current.id === "kineticChain" && <KineticChainSection data={data} setData={setData} />}
           {current.id === "cpa" && <CpaSection data={data} setData={setData} />}
           {current.id === "sttt" && <SttSection data={data} setData={setData} />}

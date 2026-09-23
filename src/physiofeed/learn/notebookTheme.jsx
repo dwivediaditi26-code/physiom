@@ -33,6 +33,10 @@ const NB_CSS = `
 .nb-table{ width:100%; border-collapse:collapse; margin:10px 0; background:var(--nb-paper); font-size:14.5px; }
 .nb-table th,.nb-table td{ border:1.5px solid var(--nb-ink); padding:7px 9px; text-align:left; }
 .nb-table th{ font-weight:700; background:var(--nb-sage-bg); }
+.nb-diagram-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:12px 0; }
+.nb-diagram-panel{ border:1.5px solid var(--nb-ink); border-radius:4px; overflow:hidden; background:var(--nb-paper); }
+.nb-diagram-title{ font-size:12px; font-weight:400; text-transform:uppercase; letter-spacing:.02em; background:var(--nb-sage-bg); padding:5px 8px; border-bottom:1.5px solid var(--nb-ink); }
+.nb-diagram-body{ padding:8px; }
 .nb-pill{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; border-radius:999px; padding:3px 10px; border:1px solid var(--nb-line-strong); background:var(--nb-paper); color:var(--nb-ink-soft); }
 .nb-badge{ position:absolute; top:0; right:0; background:var(--nb-ink); color:var(--nb-paper); font-size:12px; font-weight:700; border-radius:999px; padding:2px 11px; }
 .nb-link{ font-family:inherit; font-weight:700; font-size:14.5px; color:var(--nb-red); background:none; border:none; padding:4px 0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }

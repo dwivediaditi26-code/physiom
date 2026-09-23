@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
 import { PickerList, PickerIcon, ConditionPicker, RegionPicker, regionLabelList, AiJourneyDots } from "./orthoSetupKit.jsx";
-import { getTemplates } from "./orthoTemplates.js";
+import { getTemplates, saveTemplate, deleteTemplate } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
 import OrthoIPDAssessment, { IPD_CONDITIONS } from "./OrthoIPDAssessment.jsx";
 import OrthoPostOpAssessment, { POSTOP_CONDITIONS } from "./OrthoPostOpAssessment.jsx";
-import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS } from "./OrthoOutpatientAssessment.jsx";
+import OrthoOutpatientAssessment, { OUTPATIENT_CONDITIONS, buildOrthoAssessSteps } from "./OrthoOutpatientAssessment.jsx";
 import OrthoAIIntakePanel from "./OrthoAIIntakePanel.jsx";
 import { DemographicsSection } from "./orthoOutpatientSections.jsx";
 
@@ -52,11 +52,12 @@ const AI_PRE_WIZARD_JUMPABLE = new Set([0, 1, 2, 3, 4]);
 
 const OPD_MODES = [
   { id: "condition", icon: "ti-stethoscope", label: "Condition-wise", desc: "Pick a clinical context — promotes relevant assessments automatically" },
-  { id: "general", icon: "ti-clipboard-list", label: "General Assessment", desc: "Standard OPD assessment — nothing pre-promoted, add whatever you need" },
+  { id: "general", icon: "ti-clipboard-list", label: "General Assessment", desc: "Quick standard OPD assessment — the core sections only" },
+  { id: "advanced", icon: "ti-clipboard-check", label: "Advanced Assessment", desc: "Everything included — Kinetic Chain, CPA, STTT, Functional Movement, Palpation, Sessions, Home Protocol and more" },
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onSave, activePatientId, requireAuth, entryMode, patientData, resume } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume } = {}) {
   // resume (2026-09-02, Aditi: "edit assessment... should take us to last
   // page of assessment summary and review, not to pathway selection or
   // region selection") -- SpecialtyPatientProfile.jsx's "Edit" button
@@ -203,6 +204,8 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
         initialStepOrder={opdMode === "templates" ? selectedTemplate?.stepOrder : undefined}
         templateName={opdMode === "templates" ? selectedTemplate?.name : undefined}
         onExit={restart}
+        onNav={onNav}
+        navContext={navContext}
         onSave={onSave}
         activePatientId={activePatientId}
         patientData={patientData}
@@ -226,7 +229,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   const canProceedCondition =
     step !== 2 ||
     (isOutpatient
-      ? (opdMode === "condition" && !!condition) || opdMode === "general" || (opdMode === "templates" && !!selectedTemplate)
+      ? (opdMode === "condition" && !!condition) || opdMode === "general" || opdMode === "advanced" || (opdMode === "templates" && !!selectedTemplate)
       : !!condition);
   const canProceed = canProceedPathway && canProceedRegion && canProceedCondition;
 
@@ -251,6 +254,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
     setCustomConditionLabel("");
     setSelectedTemplate(null);
     if (id === "general") setCondition("general");
+    if (id === "advanced") setCondition("advanced");
   }
 
   return (
@@ -394,7 +398,7 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
 
           {step === 2 && meta && isOutpatient && (
             <>
-              <SectionIntro icon="🩺" title="How do you want to start?" sub="Condition-wise promotes relevant assessments automatically. General starts with the standard set. My Templates reuses a section list you've saved before." />
+              <SectionIntro icon="🩺" title="How do you want to start?" sub="Condition-wise promotes relevant assessments automatically. General starts with just the core set. Advanced includes every objective tool. My Templates reuses a section list you've saved before." />
               <PickerList items={OPD_MODES} value={opdMode} onSelect={selectOpdMode} />
 
               {opdMode === "condition" && (
@@ -448,29 +452,125 @@ export default function OrthoAssessment({ onExit, onSave, activePatientId, requi
   );
 }
 
+// Sections that don't make sense to hand-pick when building a template from
+// scratch: pseudo/AI-only steps and ones already retired from the live step
+// list (still in STEP_META for old records, see OrthoOutpatientAssessment.jsx).
+// "review" is left out of the checklist itself but always appended to the
+// saved stepOrder, since a template without a Final Review step would have
+// nowhere to actually save from.
+const TEMPLATE_COMPOSER_EXCLUDED_IDS = new Set(["region", "suggest", "objectiveAI", "techniques", "exercisePrescription", "review"]);
+
 function TemplatePicker({ selected, onSelect }) {
-  const templates = getTemplates();
-  if (!templates.length) {
-    return (
-      <div className="hint" style={{ padding: "8px 2px" }}>
-        No saved templates yet — build out an assessment the way you like it, then tap "💾 Save as Template" from its Final Review screen.
-      </div>
-    );
+  const [templates, setTemplates] = useState(() => getTemplates());
+  const [composerOpen, setComposerOpen] = useState(false);
+
+  function handleDelete(id) {
+    deleteTemplate(id);
+    setTemplates(getTemplates());
+    if (selected?.id === id) onSelect(null);
   }
+
   return (
-    <div className="picker-grid">
-      {templates.map((t) => (
-        <button key={t.id} type="button" className={"picker-card" + (selected?.id === t.id ? " selected" : "")} onClick={() => onSelect(t)}>
-          <div className="picker-icon">📁</div>
+    <>
+      <div className="picker-grid">
+        <button type="button" className="picker-card" onClick={() => setComposerOpen(true)}>
+          <div className="picker-icon">➕</div>
           <div>
-            <div className="picker-label">{t.name}</div>
-            <div className="picker-desc">
-              {[t.regionsLabel, t.conditionLabel].filter(Boolean).join(" · ")}
-              {t.stepOrder ? ` · ${t.stepOrder.length} sections` : ""}
-            </div>
+            <div className="picker-label">Create New Template</div>
+            <div className="picker-desc">Tick sections from the assessment list — no need to run a full assessment first</div>
           </div>
         </button>
-      ))}
+        {templates.map((t) => (
+          <div key={t.id} className={"picker-card" + (selected?.id === t.id ? " selected" : "")} style={{ cursor: "default" }}>
+            <div className="picker-icon">📁</div>
+            <div style={{ flex: 1 }}>
+              <div className="picker-label">{t.name}</div>
+              <div className="picker-desc">
+                {[t.regionsLabel, t.conditionLabel].filter(Boolean).join(" · ")}
+                {t.stepOrder ? ` · ${t.stepOrder.length} sections` : ""}
+              </div>
+            </div>
+            <button type="button" className="ghost-btn" style={{ padding: "8px 12px" }} onClick={() => onSelect(t)}>
+              {selected?.id === t.id ? "Selected ✓" : "Use"}
+            </button>
+            <button type="button" className="ghost-btn" style={{ padding: "8px 10px" }} aria-label="Delete template" onClick={() => handleDelete(t.id)}>
+              🗑
+            </button>
+          </div>
+        ))}
+      </div>
+      {!templates.length && (
+        <div className="hint" style={{ padding: "10px 2px 2px" }}>
+          Or build out a live assessment the way you like it and tap "💾 Save as Template" from its Final Review screen.
+        </div>
+      )}
+      {composerOpen && (
+        <TemplateComposer
+          onClose={() => setComposerOpen(false)}
+          onSaved={(entry) => {
+            setTemplates(getTemplates());
+            setComposerOpen(false);
+            onSelect(entry);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function TemplateComposer({ onClose, onSaved }) {
+  const library = buildOrthoAssessSteps().filter((s) => !TEMPLATE_COMPOSER_EXCLUDED_IDS.has(s.id));
+  const [checked, setChecked] = useState(new Set());
+  const [name, setName] = useState("");
+
+  function toggle(id) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleSave() {
+    const stepOrder = [...library.filter((s) => checked.has(s.id)).map((s) => s.id), "review"];
+    onSaved(saveTemplate({ name, stepOrder, regionsLabel: "", conditionLabel: "Custom template" }));
+  }
+
+  return (
+    <div className="ct-modal">
+      <div className="ct-modal-header">
+        <div className="ct-modal-title">➕ Create New Template</div>
+        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div className="ct-modal-body">
+        <div className="text-input-wrap" style={{ marginBottom: 14 }}>
+          <input className="text-input" autoFocus placeholder="Template name, e.g. Knee OA — quick clinic visit" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="hint" style={{ marginBottom: 10 }}>
+          Tick every section this template should include — pulled straight from the Ortho assessment list. "Final Review" is always added automatically.
+        </div>
+        <div className="ct-group">
+          {library.map((s) => {
+            const isChecked = checked.has(s.id);
+            return (
+              <button type="button" key={s.id} className={"ct-item" + (isChecked ? " ct-item-checked" : "")} onClick={() => toggle(s.id)}>
+                <span className="ct-checkbox">{isChecked ? "☑" : "☐"}</span>
+                <span>
+                  {s.icon} {s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="ct-modal-footer">
+        <button type="button" className="primary-btn" disabled={!name.trim() || checked.size === 0} onClick={handleSave}>
+          Save Template
+        </button>
+      </div>
     </div>
   );
 }

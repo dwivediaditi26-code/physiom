@@ -6,6 +6,8 @@ import { respiratoryData } from "./respiratoryData.js";
 import { Icon, IconPair } from "./StepIcons.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
+import { getTemplates as getCardioTemplates, saveTemplate as saveCardioTemplate, deleteTemplate as deleteCardioTemplate } from "./cardioTemplates.js";
+import { useWizardStepHistory } from "./useWizardStepHistory.js";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -990,6 +992,180 @@ function AddAssessmentModal({ addedIds, onToggle, onClose }) {
   );
 }
 
+// "My Templates" for Cardio (2026-09-22, Aditi) -- previously Cardio had no
+// template concept at all: stepOrder was always the fixed
+// DEFAULT_ASSESS_STEP_IDS with no way to save/reuse a trimmed section list.
+// Mirrors Ortho's My Templates (orthoTemplates.js / OrthoAssessment.jsx's
+// TemplatePicker), backed by cardioTemplates.js instead.
+function CardioTemplatePicker({ onUse, onBack }) {
+  const [templates, setTemplates] = useState(() => getCardioTemplates());
+  const [composerOpen, setComposerOpen] = useState(false);
+
+  function handleDelete(id) {
+    deleteCardioTemplate(id);
+    setTemplates(getCardioTemplates());
+  }
+
+  return (
+    <>
+      <button type="button" className="ghost-btn" style={{ marginBottom: 14 }} onClick={onBack}>
+        ← Choose a different way
+      </button>
+      <SectionIntro icon="📁" title="My Templates" sub="Reuse a section list you saved from a previous assessment." />
+      <div className="picker-grid">
+        <button type="button" className="picker-card" onClick={() => setComposerOpen(true)}>
+          <div className="picker-icon">➕</div>
+          <div>
+            <div className="picker-label">Create New Template</div>
+            <div className="picker-desc">Tick sections from the assessment list — no need to run a full assessment first</div>
+          </div>
+        </button>
+        {templates.map((t) => (
+          <div key={t.id} className="picker-card" style={{ cursor: "default" }}>
+            <div className="picker-icon">📁</div>
+            <div style={{ flex: 1 }}>
+              <div className="picker-label">{t.name}</div>
+              <div className="picker-desc">
+                {[SETTINGS.find((s) => s.id === t.setting)?.label, SYSTEMS.find((s) => s.id === t.system)?.label].filter(Boolean).join(" · ")}
+                {t.stepOrder ? ` · ${t.stepOrder.length} sections` : ""}
+              </div>
+            </div>
+            <button type="button" className="ghost-btn" style={{ padding: "8px 12px" }} onClick={() => onUse(t)}>
+              Use
+            </button>
+            <button type="button" className="ghost-btn" style={{ padding: "8px 10px" }} aria-label="Delete template" onClick={() => handleDelete(t.id)}>
+              🗑
+            </button>
+          </div>
+        ))}
+      </div>
+      {!templates.length && (
+        <div className="hint" style={{ padding: "10px 2px 2px" }}>
+          Or build out a live assessment and tap "💾 Save as Template" from its Summary step.
+        </div>
+      )}
+      {composerOpen && (
+        <CardioTemplateComposer
+          onClose={() => setComposerOpen(false)}
+          onSaved={(entry) => {
+            setTemplates(getCardioTemplates());
+            setComposerOpen(false);
+            onUse(entry);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function CardioTemplateComposer({ onClose, onSaved }) {
+  const library = buildCardioAssessSteps(DEFAULT_ASSESS_STEP_IDS).filter((s) => s.id !== "summary");
+  const [checked, setChecked] = useState(new Set());
+  const [name, setName] = useState("");
+  const [pickSetting, setPickSetting] = useState("outpatient");
+  const [pickSystem, setPickSystem] = useState("combined");
+
+  function toggle(id) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleSave() {
+    const stepOrder = [...library.filter((s) => checked.has(s.id)).map((s) => s.id), "summary"];
+    onSaved(saveCardioTemplate({ name, stepOrder, setting: pickSetting, system: pickSystem }));
+  }
+
+  return (
+    <div className="ct-modal">
+      <div className="ct-modal-header">
+        <div className="ct-modal-title">➕ Create New Template</div>
+        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div className="ct-modal-body">
+        <div className="text-input-wrap" style={{ marginBottom: 14 }}>
+          <input className="text-input" autoFocus placeholder="Template name, e.g. ICU — quick daily check" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="ct-group">
+          <div className="ct-group-title">SETTING</div>
+          {SETTINGS.map((s) => (
+            <button type="button" key={s.id} className={"ct-item" + (pickSetting === s.id ? " ct-item-checked" : "")} onClick={() => setPickSetting(s.id)}>
+              <span className="ct-checkbox">{pickSetting === s.id ? "●" : "○"}</span>
+              <span>
+                {s.icon} {s.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="ct-group">
+          <div className="ct-group-title">SYSTEM</div>
+          {SYSTEMS.map((s) => (
+            <button type="button" key={s.id} className={"ct-item" + (pickSystem === s.id ? " ct-item-checked" : "")} onClick={() => setPickSystem(s.id)}>
+              <span className="ct-checkbox">{pickSystem === s.id ? "●" : "○"}</span>
+              <span>
+                {s.icon} {s.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="hint" style={{ margin: "10px 0" }}>
+          Tick every section this template should include, from the Cardiopulmonary assessment list. "Summary & Review" is always added automatically.
+        </div>
+        <div className="ct-group">
+          {library.map((s) => {
+            const isChecked = checked.has(s.id);
+            return (
+              <button type="button" key={s.id} className={"ct-item" + (isChecked ? " ct-item-checked" : "")} onClick={() => toggle(s.id)}>
+                <span className="ct-checkbox">{isChecked ? "☑" : "☐"}</span>
+                <span>
+                  {s.icon} {s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="ct-modal-footer">
+        <button type="button" className="primary-btn" disabled={!name.trim() || checked.size === 0} onClick={handleSave}>
+          Save Template
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CardioSaveTemplateModal({ defaultName, onSave, onClose }) {
+  const [name, setName] = useState(defaultName || "");
+  return (
+    <div className="ct-modal">
+      <div className="ct-modal-header">
+        <div className="ct-modal-title">💾 Save as Template</div>
+        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div className="ct-modal-body">
+        <div className="hint" style={{ marginBottom: 10 }}>
+          Saves this assessment's section list (not the patient data) so you can start from the same set next time — from Setting, pick "My Templates".
+        </div>
+        <div className="text-input-wrap">
+          <input className="text-input" autoFocus placeholder="Template name, e.g. ICU — quick daily check" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+      </div>
+      <div className="ct-modal-footer">
+        <button type="button" className="primary-btn" disabled={!name.trim()} onClick={() => onSave(name)}>
+          Save Template
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* Content editor for a library item added to the assessment — same fields as the original */
 function CustomSection({ id, meta, data, setData }) {
   const [d, set] = useSectionData(data, setData, id);
@@ -1950,7 +2126,7 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
 // current patient's saved cardio data (switching patients) -- see the
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
-export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav } = {}) {
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
   // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
   // which is what causes the "whole page jumps/zooms while filling" feeling
   // on mobile (2026-08-20, Aditi). Mirrors NeurologicalAssessment.jsx's own
@@ -1992,6 +2168,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [missingDemFields, setMissingDemFields] = useState(null);
+  // "How do you want to start?" sub-choice at step 0 -- null shows that
+  // choice, "fresh" reveals the existing Setting picker, "templates" reveals
+  // My Templates. Kept as a plain state flag rather than a new numbered step
+  // since `step` is load-bearing everywhere below (total, assessIndex,
+  // current), so it renders as a sub-view *within* step 0 instead.
+  const [cardioMode, setCardioMode] = useState(() => (hasExisting ? "fresh" : null));
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   // Every wizard step shares the same scroll container, so it never gets a
   // fresh scrollTop of its own -- tapping a StepNav circle after scrolling
   // deep into the previous step used to land the new step already scrolled
@@ -2104,6 +2287,28 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     if (step >= 2 && current) setVisited((v) => new Set(v).add(current.id));
   }, [step, current]);
 
+  // Browser/hardware Back & Forward inside this wizard (see
+  // useWizardStepHistory.js) -- only once past the Setting/System picker
+  // (step 0/1, not shown in StepNav either), same scope as Ortho/Neuro's own
+  // pre-wizard pickers. onBeforeFirstStep returns to the System screen
+  // (step 1) rather than resetting anything -- goBack() itself has no exit
+  // boundary below step 0 to reuse here (Cardio's own "How do you want to
+  // start?" -> Setting -> System has no separate onExit the way Ortho/Neuro
+  // do), and a plain step-back preserves entered data (req: never lose it).
+  function jumpToCardioStep(id) {
+    if (step >= 2 && current?.id === id) return;
+    const idx = assessSteps.findIndex((s) => s.id === id);
+    if (idx >= 0) setStep(2 + idx);
+  }
+  useWizardStepHistory({
+    wizardKey: "cardio_assessment",
+    stepId: step >= 2 ? current?.id : null,
+    onNav,
+    navContext,
+    onExternalStep: jumpToCardioStep,
+    onBeforeFirstStep: () => setStep(1),
+  });
+
   function goNext() {
     if (step < total - 1) setStep(step + 1);
   }
@@ -2118,6 +2323,13 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setVisited(new Set());
     setStepOrder(DEFAULT_ASSESS_STEP_IDS);
     setCustomStepsMeta({});
+    setCardioMode(null);
+  }
+  function applyCardioTemplate(t) {
+    setSetting(t.setting || "outpatient");
+    setSystem(t.system || "combined");
+    setStepOrder(t.stepOrder && t.stepOrder.length ? t.stepOrder : DEFAULT_ASSESS_STEP_IDS);
+    setStep(2);
   }
   function toggleCtItem(id, label, icon) {
     const isAdded = stepOrder.includes(id);
@@ -2464,7 +2676,33 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         <div className="content">
-          {step === 0 && (
+          {step === 0 && cardioMode === null && (
+            <>
+              <SectionIntro title="How do you want to start?" sub="Start a fresh assessment, or reuse a section list you've saved before." />
+              <div className="picker-grid">
+                <button type="button" className="picker-card" onClick={() => setCardioMode("fresh")}>
+                  <div className="picker-icon">
+                    <Icon name="stethoscope" />
+                  </div>
+                  <div>
+                    <div className="picker-label">Start Assessment</div>
+                    <div className="picker-desc">Pick setting and system, then the standard section list</div>
+                  </div>
+                </button>
+                <button type="button" className="picker-card" onClick={() => setCardioMode("templates")}>
+                  <div className="picker-icon">📁</div>
+                  <div>
+                    <div className="picker-label">My Templates</div>
+                    <div className="picker-desc">Reuse a section list you saved from a previous assessment</div>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 0 && cardioMode === "templates" && <CardioTemplatePicker onUse={applyCardioTemplate} onBack={() => setCardioMode(null)} />}
+
+          {step === 0 && cardioMode === "fresh" && (
             <>
               <SectionIntro title="Where is the patient being assessed?" sub="Select the patient setting to configure the assessment — 5 settings × 3 systems = 15 pathways." />
               <div className="picker-grid">
@@ -2521,7 +2759,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
             <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
           )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
-          {current.id === "summary" && <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />}
+          {current.id === "summary" && (
+            <>
+              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />
+              <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
+                💾 Save as Template
+              </button>
+            </>
+          )}
           {current.id.startsWith("ct-") && <CustomSection id={current.id} meta={current} data={data} setData={setData} />}
         </div>
 
@@ -2557,7 +2802,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
                 ✅ Save Assessment
               </button>
             </>
-          ) : (
+          ) : step === 0 && cardioMode !== "fresh" ? null : (
             <button className="primary-btn" disabled={!canProceedSetting || !canProceedSystem} onClick={goNext}>
               {step === 0 ? "Continue to system" : step === total - 2 ? "Review & finish" : "Next"}
             </button>
@@ -2565,6 +2810,16 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         </div>
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {saveTemplateOpen && (
+          <CardioSaveTemplateModal
+            defaultName={`${SETTINGS.find((s) => s.id === setting)?.label || ""} · ${SYSTEMS.find((s) => s.id === system)?.label || ""}`}
+            onClose={() => setSaveTemplateOpen(false)}
+            onSave={(name) => {
+              saveCardioTemplate({ name, stepOrder, setting, system });
+              setSaveTemplateOpen(false);
+            }}
+          />
+        )}
         {missingDemFields && (
           <MissingDemographicsModal
             missing={missingDemFields}

@@ -8,6 +8,7 @@ import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePla
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { Icon } from "./StepIcons.jsx";
+import { useWizardStepHistory } from "./useWizardStepHistory.js";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -1104,6 +1105,63 @@ function AddAssessmentModal({ addedIds, onToggle, onClose }) {
   );
 }
 
+// "My Templates" -> "+ Create New Template" (2026-09-22, Aditi: wants to pick
+// sections from the assessment list rather than running a live assessment
+// first). Scoped to DOMAIN_STEP_IDS only -- ALWAYS_STEP_IDS (demographics,
+// safety, subjective, chart, observation, interpretation, care plan,
+// precautions, exercise prescription, summary) are unconditionally forced
+// into every assessment by buildStepOrder() regardless of template, so they
+// aren't actually template-controlled and don't belong in this checklist.
+function NeuroTemplateComposer({ onClose, onSave }) {
+  const [checked, setChecked] = useState(new Set());
+  const [name, setName] = useState("");
+
+  function toggle(id) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="ct-modal">
+      <div className="ct-modal-header">
+        <div className="ct-modal-title">⭐ Create New Template</div>
+        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div className="ct-modal-body">
+        <TextField label="Template name" value={name} onChange={setName} placeholder="e.g. Stroke — quick OPD screen" />
+        <div className="hint" style={{ margin: "10px 0" }}>
+          Tick every exam area this template should include, from the Neuro assessment list. Patient Information, Safety, Subjective, Chart Review, Observation, Clinical Interpretation, Care Plan, Precautions and Exercise Prescription are always included, so they aren't listed here.
+        </div>
+        <div className="ct-group">
+          {DOMAIN_STEP_IDS.map((id) => {
+            const meta = STEP_META.find((s) => s.id === id);
+            const isChecked = checked.has(id);
+            return (
+              <button type="button" key={id} className={"ct-item" + (isChecked ? " ct-item-checked" : "")} onClick={() => toggle(id)}>
+                <span className="ct-checkbox">{isChecked ? "☑" : "☐"}</span>
+                <span>
+                  {meta?.icon} {meta?.label || id}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="ct-modal-footer">
+        <button type="button" className="primary-btn" disabled={!name.trim() || checked.size === 0} onClick={() => onSave(name.trim(), Array.from(checked))}>
+          Save Template
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* Content editor for a library item added to the assessment */
 function CustomSection({ id, meta, data, setData }) {
   const [d, set] = useSectionData(data, setData, id);
@@ -2041,7 +2099,7 @@ function saveMyTemplatesToStorage(list) {
 // re-hydration effects below) rather than flattening every internal
 // field into the shared bag -- this file owns its own deeply nested
 // step/section data model, not worth rewriting.
-export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav } = {}) {
+export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
   useEffect(() => {
     // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
     // which is what causes the "whole page jumps/zooms" feeling on mobile.
@@ -2086,6 +2144,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [composeTemplateOpen, setComposeTemplateOpen] = useState(false);
   const [missingDemFields, setMissingDemFields] = useState(null);
   // Every wizard step/phase shares the same scroll container, so it never
   // gets a fresh scrollTop of its own -- tapping a StepNav circle (or moving
@@ -2207,6 +2266,26 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     if (step >= 1 && current) setVisited((v) => new Set(v).add(current.id));
   }, [step, current]);
 
+  // Browser/hardware Back & Forward inside this wizard (see
+  // useWizardStepHistory.js) -- only once the therapist has actually
+  // reached "assess" (the Setting/Mode/Template picker ahead of it stays a
+  // single untracked screen, same scope as Ortho's own pathway/region/
+  // condition picker). onBeforeFirstStep mirrors goBack()'s own
+  // phase==="assess" && step===1 case just above.
+  function jumpToNeuroStep(id) {
+    if (step >= 1 && current?.id === id) return;
+    const idx = assessSteps.findIndex((s) => s.id === id);
+    if (idx >= 0) setStep(1 + idx);
+  }
+  useWizardStepHistory({
+    wizardKey: "neuro_assessment",
+    stepId: phase === "assess" ? current?.id : null,
+    onNav,
+    navContext,
+    onExternalStep: jumpToNeuroStep,
+    onBeforeFirstStep: () => setPhase("mode"),
+  });
+
   function goNext() {
     if (step < total - 1) setStep(step + 1);
   }
@@ -2301,6 +2380,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     });
     setSaveModalOpen(false);
     setSaveName("");
+  }
+  function saveComposedTemplate(name, domainSteps) {
+    const newTemplate = { id: `t-${Date.now()}`, name, domainSteps, customIds: [], customMeta: {} };
+    setMyTemplates((prev) => {
+      const next = [...prev, newTemplate];
+      saveMyTemplatesToStorage(next);
+      return next;
+    });
+    setComposeTemplateOpen(false);
   }
   function toggleCtItem(id, label, icon) {
     const isAdded = stepOrder.includes(id);
@@ -2718,8 +2806,17 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           {phase === "mytemplates" && (
             <>
               <SectionIntro icon={<Icon name="star" />} title="My Templates" sub="Your saved custom assessment workflows." />
+              <div className="picker-grid">
+                <button type="button" className="picker-card" onClick={() => setComposeTemplateOpen(true)}>
+                  <div className="picker-icon">➕</div>
+                  <div>
+                    <div className="picker-label">Create New Template</div>
+                    <div className="picker-desc">Tick exam areas from the assessment list — no need to run a full assessment first</div>
+                  </div>
+                </button>
+              </div>
               {myTemplates.length === 0 ? (
-                <Alert tone="amber">No saved templates yet. Build an assessment, then tap "Save this assessment as a template" from the Summary step to create one.</Alert>
+                <Alert tone="amber">No saved templates yet. Tap "Create New Template" above, or build an assessment and tap "Save this assessment as a template" from the Summary step.</Alert>
               ) : (
                 <div className="picker-grid">
                   {myTemplates.map((t) => (
@@ -2845,6 +2942,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
 
         {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {composeTemplateOpen && <NeuroTemplateComposer onClose={() => setComposeTemplateOpen(false)} onSave={saveComposedTemplate} />}
         {missingDemFields && (
           <MissingDemographicsModal
             missing={missingDemFields}

@@ -113,27 +113,126 @@ function Box({ children, red, title }) {
   );
 }
 
-// A simple, labelled schematic of the lumbar segment -- stacked vertebrae,
-// disc and facet joints with leader-line labels, in the same spirit as the
-// hand-drawn anatomy sketches in the reference notes.
-function LumbarSketch() {
+// Labelled schematic anatomy diagrams (2026-09-21, Aditi shared a real
+// illustrated-notebook spread and asked to add images "like that"). No image
+// generation tool is available here, and pulling real anatomy-textbook
+// images off the web would be a copyright risk for a real product, so these
+// are custom-drawn SVG schematics instead -- teaching diagrams, not
+// anatomically precise art -- styled to sit on the notebook page.
+const BONE = "#E8DCC0";
+const DISC_FILL = "#A9C9E3";
+const CORD_FILL = "#F3DE7A";
+const NUCLEUS_FILL = "#EAF3DE";
+const M_ERECTOR = "#D98E86";
+const M_MULTIFIDUS = "#8FB86D";
+const M_QL = "#E3C27D";
+
+function DiagramPanel({ title, children }) {
   return (
-    <svg viewBox="0 0 300 170" width="100%" height="150" role="img" aria-label="Simple diagram of a lumbar spinal segment" style={{ display: "block", margin: "10px 0" }}>
-      <rect x="90" y="20" width="70" height="34" rx="6" fill="none" stroke="var(--nb-ink)" strokeWidth="2" />
-      <ellipse cx="125" cy="60" rx="36" ry="9" fill="none" stroke="var(--nb-red)" strokeWidth="2" />
-      <rect x="90" y="70" width="70" height="34" rx="6" fill="none" stroke="var(--nb-ink)" strokeWidth="2" />
-      <path d="M70 30 Q 55 45 70 60" fill="none" stroke="var(--nb-ink)" strokeWidth="1.6" />
-      <path d="M180 30 Q 195 45 180 60" fill="none" stroke="var(--nb-ink)" strokeWidth="1.6" />
-      <line x1="90" y1="87" x2="20" y2="87" stroke="var(--nb-ink-faint)" strokeWidth="1" strokeDasharray="3 3" />
-      <text x="8" y="83" fontSize="11" fill="var(--nb-ink-soft)" fontFamily="inherit">vertebra</text>
-      <line x1="125" y1="60" x2="220" y2="60" stroke="var(--nb-ink-faint)" strokeWidth="1" strokeDasharray="3 3" />
-      <text x="224" y="64" fontSize="11" fill="var(--nb-red)" fontFamily="inherit">disc</text>
-      <line x1="75" y1="45" x2="20" y2="20" stroke="var(--nb-ink-faint)" strokeWidth="1" strokeDasharray="3 3" />
-      <text x="8" y="16" fontSize="11" fill="var(--nb-ink-soft)" fontFamily="inherit">facet joint</text>
-      <circle cx="125" cy="120" r="5" fill="var(--nb-ink)" />
-      <line x1="125" y1="120" x2="230" y2="130" stroke="var(--nb-ink-faint)" strokeWidth="1" strokeDasharray="3 3" />
-      <text x="150" y="145" fontSize="11" fill="var(--nb-ink-soft)" fontFamily="inherit">nerve root</text>
+    <div className="nb-diagram-panel">
+      <div className="nb-diagram-title">{title}</div>
+      <div className="nb-diagram-body">{children}</div>
+    </div>
+  );
+}
+
+function Leader({ x1, y1, x2, y2, label, color = "var(--nb-ink-soft)", anchor }) {
+  return (
+    <g>
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--nb-ink-faint)" strokeWidth="1" strokeDasharray="2 3" />
+      <text x={x2} y={y2} fontSize="10.5" fill={color} fontFamily="inherit" textAnchor={anchor || "start"}>{label}</text>
+    </g>
+  );
+}
+
+function SagittalSpineDiagram() {
+  const vx = 62, vw = 72, vh = 36;
+  const levels = [16, 62, 108];
+  return (
+    <svg viewBox="0 0 230 210" width="100%" height="190" role="img" aria-label="Schematic sagittal cross-section of the lumbar spine">
+      <rect x="150" y="10" width="16" height="150" rx="8" fill={CORD_FILL} stroke="var(--nb-ink)" strokeWidth="1.5" />
+      <line x1="158" y1="16" x2="158" y2="154" stroke="var(--nb-ink)" strokeWidth="1" strokeDasharray="2 3" />
+      {levels.map((y, i) => (
+        <g key={i}>
+          <rect x={vx} y={y} width={vw} height={vh} rx="7" fill={BONE} stroke="var(--nb-ink)" strokeWidth="1.6" />
+          <path d={`M${vx + vw} ${y + vh / 2 - 5} L${vx + vw + 18} ${y + vh / 2} L${vx + vw} ${y + vh / 2 + 5} Z`} fill={BONE} stroke="var(--nb-ink)" strokeWidth="1.2" />
+          {i < levels.length - 1 && <rect x={vx} y={y + vh} width={vw} height={levels[i + 1] - (y + vh)} rx="3" fill={DISC_FILL} stroke="var(--nb-ink)" strokeWidth="1.4" />}
+        </g>
+      ))}
+      <Leader x1={vx + vw / 2} y1={levels[0] + vh / 2} x2="8" y2="26" label="Vertebral body" />
+      <Leader x1={vx + vw / 2} y1={levels[0] + vh + 5} x2="8" y2="80" label="Disc" />
+      <Leader x1="158" y1="90" x2="196" y2="70" label="Spinal canal" />
+      <Leader x1={vx + vw + 14} y1={levels[2] + vh / 2} x2="196" y2="188" label="Spinous process" />
     </svg>
+  );
+}
+
+function AxialDiscDiagram() {
+  return (
+    <svg viewBox="0 0 220 210" width="100%" height="190" role="img" aria-label="Schematic axial cross-section of a herniated disc compressing a nerve root">
+      <circle cx="100" cy="95" r="52" fill={DISC_FILL} stroke="var(--nb-ink)" strokeWidth="1.8" />
+      <circle cx="100" cy="95" r="25" fill={NUCLEUS_FILL} stroke="var(--nb-ink)" strokeWidth="1.6" />
+      <path d="M142 72 C 162 66, 176 82, 166 98 C 158 109, 142 106, 142 96 Z" fill="var(--nb-red-bg)" stroke="var(--nb-red)" strokeWidth="1.8" />
+      <circle cx="180" cy="88" r="7" fill="none" stroke="var(--nb-red)" strokeWidth="2" />
+      <line x1="175" y1="83" x2="185" y2="93" stroke="var(--nb-red)" strokeWidth="2" />
+      <line x1="185" y1="83" x2="175" y2="93" stroke="var(--nb-red)" strokeWidth="2" />
+      <ellipse cx="55" cy="150" rx="15" ry="9" fill={BONE} stroke="var(--nb-ink)" strokeWidth="1.4" />
+      <path d="M40 168 Q 100 195 160 168" fill="none" stroke={BONE} strokeWidth="14" strokeLinecap="round" />
+      <path d="M40 168 Q 100 195 160 168" fill="none" stroke="var(--nb-ink)" strokeWidth="1.4" />
+      <Leader x1="88" y1="95" x2="8" y2="30" label="Nucleus pulposus" />
+      <Leader x1="128" y1="60" x2="8" y2="190" label="Annulus fibrosus" />
+      <Leader x1="180" y1="80" x2="186" y2="60" label="Nerve root compression" anchor="end" />
+      <Leader x1="55" y1="150" x2="12" y2="165" label="Pedicle" />
+      <Leader x1="100" y1="185" x2="100" y2="205" label="Lamina" anchor="middle" />
+    </svg>
+  );
+}
+
+function PostureDiagram() {
+  const cols = [
+    { x: 38, d: "M38 8 C 26 45, 48 80, 34 118 C 24 148, 38 168, 34 195", label: "Normal", ok: true },
+    { x: 118, d: "M118 8 C 100 50, 145 78, 106 118 C 82 150, 118 168, 106 195", label: "Hyperlordosis", ok: false },
+    { x: 198, d: "M198 8 L196 55 L200 100 L197 145 L198 195", label: "Flat back", ok: false },
+  ];
+  return (
+    <svg viewBox="0 0 240 215" width="100%" height="190" role="img" aria-label="Lateral posture comparison: normal lordosis, hyperlordosis, and flat back">
+      {cols.map((c) => (
+        <g key={c.label}>
+          <path d={c.d} fill="none" stroke="var(--nb-ink)" strokeWidth="3" strokeLinecap="round" />
+          <text x={c.x} y="210" fontSize="10.5" fill="var(--nb-ink-soft)" fontFamily="inherit" textAnchor="middle">{c.label}</text>
+          <text x={c.x} y="24" fontSize="15" fill={c.ok ? "var(--nb-sage)" : "var(--nb-red)"} textAnchor="middle">{c.ok ? "✓" : "✕"}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function BackMusclesDiagram() {
+  return (
+    <svg viewBox="0 0 220 225" width="100%" height="190" role="img" aria-label="Simplified schematic of the deep posterior back muscles">
+      <path d="M60 150 L160 150 L175 192 L45 192 Z" fill={BONE} stroke="var(--nb-ink)" strokeWidth="1.6" />
+      <line x1="110" y1="10" x2="110" y2="150" stroke="var(--nb-ink)" strokeWidth="2" />
+      <path d="M92 20 C 80 60, 82 110, 88 150 L100 150 C 96 110, 96 60, 104 20 Z" fill={M_ERECTOR} stroke="var(--nb-ink)" strokeWidth="1.2" opacity="0.88" />
+      <path d="M128 20 C 140 60, 138 110, 132 150 L120 150 C 124 110, 124 60, 116 20 Z" fill={M_ERECTOR} stroke="var(--nb-ink)" strokeWidth="1.2" opacity="0.88" />
+      <path d="M100 88 C 96 110, 98 132, 102 150 L108 150 C 106 132, 106 110, 108 88 Z" fill={M_MULTIFIDUS} stroke="var(--nb-ink)" strokeWidth="1" />
+      <path d="M120 88 C 124 110, 122 132, 118 150 L112 150 C 114 132, 114 110, 112 88 Z" fill={M_MULTIFIDUS} stroke="var(--nb-ink)" strokeWidth="1" />
+      <path d="M65 128 L92 128 L96 156 L60 160 Z" fill={M_QL} stroke="var(--nb-ink)" strokeWidth="1.2" opacity="0.88" />
+      <path d="M155 128 L128 128 L124 156 L160 160 Z" fill={M_QL} stroke="var(--nb-ink)" strokeWidth="1.2" opacity="0.88" />
+      <Leader x1="88" y1="55" x2="8" y2="42" label="Erector spinae" />
+      <Leader x1="104" y1="115" x2="8" y2="118" label="Multifidus" />
+      <Leader x1="88" y1="148" x2="8" y2="185" label="Quadratus lumborum" />
+    </svg>
+  );
+}
+
+function AnatomyDiagramGrid() {
+  return (
+    <div className="nb-diagram-grid">
+      <DiagramPanel title="Sagittal cross-section"><SagittalSpineDiagram /></DiagramPanel>
+      <DiagramPanel title="Axial: disc herniation"><AxialDiscDiagram /></DiagramPanel>
+      <DiagramPanel title="Posterior: deep back muscles"><BackMusclesDiagram /></DiagramPanel>
+      <DiagramPanel title="Lateral posture variations"><PostureDiagram /></DiagramPanel>
+    </div>
   );
 }
 
@@ -147,7 +246,7 @@ function PageBody({ data, pageKey }) {
         <>
           <EvidenceBadge tier={a.tier} />
           <P>{a.intro}</P>
-          <LumbarSketch />
+          <AnatomyDiagramGrid />
           <DefNotes items={a.structures} get={(s) => ({ label: s.label, note: s.note })} />
           <Box title="✍️ Clinical pearl">{a.pearl}</Box>
         </>

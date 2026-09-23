@@ -22,6 +22,7 @@ import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
+import { useWizardStepHistory } from "./useWizardStepHistory.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -286,7 +287,7 @@ function AddAssessmentModal({ activeIds, onToggle, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region + type
    of surgery have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoPostOpAssessment({ selectedRegions, condition, customConditionLabel, onExit, onSave, activePatientId, patientData, initialData, initialStep }) {
+export default function OrthoPostOpAssessment({ selectedRegions, condition, customConditionLabel, onExit, onNav, navContext, onSave, activePatientId, patientData, initialData, initialStep }) {
   const conditionMeta = POSTOP_CONDITIONS.find((c) => c.id === condition);
   const conditionLabel = conditionMeta ? conditionMeta.label : customConditionLabel || "Other";
 
@@ -355,6 +356,16 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
     const idx = stepOrder.indexOf(id);
     if (idx >= 0) setStep(idx);
   }
+  // Browser/hardware Back & Forward inside this wizard -- see
+  // useWizardStepHistory.js and OrthoOutpatientAssessment.jsx's identical wiring.
+  useWizardStepHistory({
+    wizardKey: "ortho_new_assessment",
+    stepId: current?.id,
+    onNav,
+    navContext,
+    onExternalStep: jumpTo,
+    onBeforeFirstStep: onExit,
+  });
   function toggleAssessment(id) {
     const active = stepOrder.includes(id);
     if (active) {
