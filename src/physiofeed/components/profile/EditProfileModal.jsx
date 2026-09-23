@@ -39,7 +39,6 @@ export default function EditProfileModal({ profile, onClose }) {
   const [experience, setExperience] = useState(profile.experience || "");
   const [languages, setLanguages] = useState(profile.languages || "");
   const [memberships, setMemberships] = useState(profile.memberships || "");
-  const [availableForConsults, setAvailableForConsults] = useState(!!profile.availableForConsults);
   const [gradient, setGradient] = useState(profile.gradient || "violet");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -74,7 +73,7 @@ export default function EditProfileModal({ profile, onClose }) {
     try {
       await updateProfile({
         name: name.trim(), role: role.trim(), headline: headline.trim(), location: location.trim(), bio: bio.trim(), quote: quote.trim(), gradient, avatarUrl,
-        experience: experience.trim(), languages: languages.trim(), memberships: memberships.trim(), availableForConsults,
+        experience: experience.trim(), languages: languages.trim(), memberships: memberships.trim(),
       });
       onClose();
     } catch (e) {
@@ -177,11 +176,6 @@ export default function EditProfileModal({ profile, onClose }) {
 
         <label className={LABEL}>Memberships</label>
         <input value={memberships} onChange={(e) => setMemberships(e.target.value)} placeholder="e.g. IAP, WCPT" className={`${FIELD} mb-3`} />
-
-        <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
-          <input type="checkbox" checked={availableForConsults} onChange={(e) => setAvailableForConsults(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300" />
-          <span className="text-sm text-slate-700">Available for online consults</span>
-        </label>
 
         {error && (
           <div className="flex items-start gap-1.5 mb-3 text-xs text-rose-600">
