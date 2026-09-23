@@ -1915,6 +1915,17 @@ export async function setOpportunityStatus(oppId, uiStatus) {
   if (error) throw error;
 }
 
+// Permanently remove a listing from MyPostingsPage (2026-09-23, "everything
+// should have delete option"). Creator-only by RLS (opportunities_delete_own);
+// existing applications/saves cascade per the FK, same as closing doesn't
+// touch them but deleting necessarily does.
+export async function deleteOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { error } = await supabase.from("opportunities").delete().eq("id", oppId);
+  if (error) throw error;
+}
+
 // ---- saved opportunities (saved_items) ----
 // saved_items is generic (post | evidence | opportunity) but only
 // opportunities use it so far -- posts and evidence have their own older

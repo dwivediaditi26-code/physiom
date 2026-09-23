@@ -199,6 +199,20 @@ export default function ExplorePage() {
     }
   };
 
+  const deleteListing = async (oppId) => {
+    const removed = opportunities.find((o) => o.id === oppId);
+    // Optimistic, same shape as toggleListingStatus -- the only failure
+    // mode is RLS rejecting a listing that isn't yours, which this page
+    // never offers in the first place.
+    setOpportunities((prev) => prev.filter((o) => o.id !== oppId));
+    try {
+      await db.deleteOpportunity(oppId);
+    } catch (e) {
+      if (removed) setOpportunities((prev) => [...prev, removed]);
+      setActionError(e.message || "Couldn't delete that listing.");
+    }
+  };
+
   const toggleSave = async (opp) => {
     setActionError(null);
     try {
@@ -284,6 +298,7 @@ export default function ExplorePage() {
         onNewPost={() => { setMyPostingsOpen(false); setPostOpen(true); }}
         onViewApplicants={openPipeline}
         onToggleStatus={toggleListingStatus}
+        onDelete={deleteListing}
       />
     );
   }
