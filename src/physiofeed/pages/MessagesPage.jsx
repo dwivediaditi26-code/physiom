@@ -247,9 +247,19 @@ export default function MessagesPage() {
   // the shell's own trailing padding; the bottom nav is position:fixed and
   // unaffected.
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    // Both <html> and <body> get locked -- which one actually scrolls
+    // varies by browser/layout, and physiom's own shell CSS has <html> as
+    // the real scrolling element here (verified: body.overflow=hidden
+    // alone still let window.scrollTo move the page). Locking both is
+    // belt-and-braces and correct either way.
+    const htmlPrev = document.documentElement.style.overflow;
+    const bodyPrev = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.documentElement.style.overflow = htmlPrev;
+      document.body.style.overflow = bodyPrev;
+    };
   }, []);
 
   useEffect(() => {
