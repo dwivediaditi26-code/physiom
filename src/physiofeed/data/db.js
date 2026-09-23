@@ -1716,3 +1716,298 @@ export async function subscribeToMessages(onChange) {
     .subscribe();
   return () => supabase.removeChannel(channel);
 }
+
+/* ---------------- opportunities, applications, saves (P4/P5) ---------------- */
+//
+// Explore's opportunities board was pure front-end state until now: posting
+// a job pushed an object into ExplorePage's useState and it vanished on
+// reload. These back it with the `opportunities` / `applications` /
+// `saved_items` tables from supabase/add_mvp_network_opportunities.sql.
+//
+// The table keeps the fields anyone filters or sorts on as real columns
+// (type, title, location, specialty, tags, status, deadline) and parks the
+// rest of the card's presentation shape in `details jsonb` -- the same
+// convention posts.media already uses. That keeps the existing
+// OpportunityCard/OpportunityDetail/WorkshopDetail components working on
+// exactly the object shape they already render, without a column per
+// decorative field.
+//
+// Reads fall back to the demo board (opportunitiesMock.js) ONLY on a real
+// failure -- a successful query returning zero rows is an empty board, not
+// a broken one, and shows the empty state instead of pretending there are
+// listings.
+
+// UI statuses are active|closed; the table's are draft|published|paused|
+// closed|expired. Everything published-and-not-closed reads as active.
+function oppStatusToUi(dbStatus) {
+  return dbStatus === "closed" || dbStatus === "expired" ? "closed" : "active";
+}
+
+function agoLabel(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(ms / 60000);
+  if (mins < 2) return "Just now";
+  if (mins < 60) return `${mins} minutes ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 31) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.round(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+}
+
+function rowToOpportunity(row, uid, applicationCount = 0) {
+  const d = row.details || {};
+  return {
+    ...d,                       // orgInitials, orgGradient, mentor, highlights, stipend/salary/fee, syllabus, ...
+    id: String(row.id),
+    type: row.type,
+    org: row.org_name,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    locationType: row.location_type,
+    specialty: row.specialty,
+    tags: row.tags || [],
+    deadline: row.deadline || undefined,
+    date: row.event_date || d.date,
+    registrationUrl: row.registration_url || undefined,
+    status: oppStatusToUi(row.status),
+    postedByMe: !!uid && row.creator_id === uid,
+    creatorId: row.creator_id,
+    postedAgo: agoLabel(row.created_at),
+    createdAt: row.created_at,
+    stats: { views: d.views || 0, applications: applicationCount, chats: d.chats || 0 },
+  };
+}
+
+// The whole board. One extra query counts applications per listing so
+// MyPostingsPage/ApplicantPipeline show a real number instead of a seeded
+// one -- only for YOUR listings, because applications RLS only ever
+// returns rows on opportunities you created (or applied to yourself).
+export async function getOpportunities() {
+  try {
+    const uid = await currentUserId();
+    const { data, error } = await supabase
+      .from("opportunities")
+      .select("*")
+      .neq("status", "draft")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    let counts = {};
+    if (uid && rows.length) {
+      const { data: apps } = await supabase
+        .from("applications")
+        .select("opportunity_id")
+        .in("opportunity_id", rows.map((r) => r.id));
+      for (const a of apps || []) counts[a.opportunity_id] = (counts[a.opportunity_id] || 0) + 1;
+    }
+    return rows.map((r) => rowToOpportunity(r, uid, counts[r.id] || 0));
+  } catch (e) {
+    console.error("getOpportunities(): falling back to demo board --", e?.message || e);
+    const { INITIAL_OPPORTUNITIES } = await import("./opportunitiesMock.js");
+    return clone(INITIAL_OPPORTUNITIES);
+  }
+}
+
+// Publishing is a real write -- it throws rather than faking success, same
+// contract as createPost(). `fields` is the object PostOpportunityModal
+// already builds; the scalars it knows about become columns and the rest
+// rides along in details.
+export async function publishOpportunity(fields) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to post an opportunity.");
+  const {
+    type, title, org, description, location, locationType, specialty, tags,
+    deadline, date, registrationUrl, id: _ignoredId, postedByMe: _pbm, postedAgo: _pa,
+    status: _st, stats: _stats, creatorId: _cid, createdAt: _ca, ...details
+  } = fields;
+  const row = {
+    creator_id: uid,
+    org_name: (org || "").trim(),
+    type: type || "job",
+    title: (title || "").trim(),
+    description: description || "",
+    location: location || "",
+    location_type: locationType || "",
+    specialty: specialty || "",
+    tags: tags || [],
+    deadline: deadline || null,
+    // `date` is a free-text "TBA"-able label on workshops; only a real
+    // date can go in the date column, the rest stays in details.
+    event_date: /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : null,
+    registration_url: registrationUrl || "",
+    status: "published",
+    details,
+  };
+  const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
+  if (error) throw error;
+  return rowToOpportunity(data, uid, 0);
+}
+
+// Open/close a listing from MyPostingsPage. Creator-only by RLS.
+export async function setOpportunityStatus(oppId, uiStatus) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ status: uiStatus === "closed" ? "closed" : "published", updated_at: new Date().toISOString() })
+    .eq("id", oppId);
+  if (error) throw error;
+}
+
+// ---- saved opportunities (saved_items) ----
+// saved_items is generic (post | evidence | opportunity) but only
+// opportunities use it so far -- posts and evidence have their own older
+// saved_posts/research_saves tables and aren't worth migrating for this.
+
+export async function getSavedOpportunityIds() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase
+      .from("saved_items")
+      .select("item_id")
+      .eq("user_id", uid)
+      .eq("item_type", "opportunity");
+    if (error) throw error;
+    return (data || []).map((r) => r.item_id);
+  } catch (e) {
+    console.error("getSavedOpportunityIds(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function toggleSaveOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to save opportunities.");
+  const key = { user_id: uid, item_type: "opportunity", item_id: String(oppId) };
+  const { data: existing, error: selErr } = await supabase
+    .from("saved_items").select("item_id").match(key).maybeSingle();
+  if (selErr) throw selErr;
+  if (existing) {
+    const { error } = await supabase.from("saved_items").delete().match(key);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase.from("saved_items").insert(key);
+  if (error) throw error;
+  return true;
+}
+
+// ---- applications (P5) ----
+
+// The applications table carries the full recruiting vocabulary
+// (applied -> under_review -> shortlisted -> interview -> offer -> hired,
+// plus rejected). ApplicantPipeline.jsx only has three buckets, and the
+// UI is not being redesigned for this -- so the two vocabularies are
+// translated here at the db boundary. Anything not yet triaged reads as
+// "new", anything advanced reads as "shortlisted".
+const APP_STATUS_TO_UI = {
+  applied: "new", under_review: "new",
+  shortlisted: "shortlisted", interview: "shortlisted", offer: "shortlisted", hired: "shortlisted",
+  rejected: "passed",
+};
+const APP_STATUS_FROM_UI = { new: "applied", shortlisted: "shortlisted", passed: "rejected" };
+
+// Your own applications, newest first, joined to the listing they're for --
+// this is the "My Applications" list.
+export async function getMyApplications() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id, opportunity_id, cover_note, resume_url, status, created_at, opportunities(*)")
+      .eq("applicant_id", uid)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map((a) => ({
+      id: String(a.id),
+      opportunityId: String(a.opportunity_id),
+      coverNote: a.cover_note,
+      resumeUrl: a.resume_url,
+      status: APP_STATUS_TO_UI[a.status] || "new",
+      rawStatus: a.status,
+      appliedAt: a.created_at,
+      appliedAgo: agoLabel(a.created_at),
+      opportunity: a.opportunities ? rowToOpportunity(a.opportunities, uid) : null,
+    }));
+  } catch (e) {
+    console.error("getMyApplications(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function applyToOpportunity(oppId, { coverNote = "", resumeUrl = "" } = {}) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to apply.");
+  const { error } = await supabase.from("applications").insert({
+    opportunity_id: oppId, applicant_id: uid, cover_note: coverNote, resume_url: resumeUrl,
+  });
+  // The unique (opportunity_id, applicant_id) constraint is the real guard
+  // against double-applying -- surface it as the plain fact rather than a
+  // Postgres error code.
+  if (error) {
+    if (error.code === "23505") throw new Error("You've already applied to this.");
+    throw error;
+  }
+}
+
+// The recruiter side of the pipeline: everyone who applied to one of YOUR
+// listings, with their profile so the cards have a name and photo. RLS
+// only returns rows on opportunities you created, so an ordinary user
+// calling this for someone else's listing gets an empty list, not a leak.
+export async function getApplicantsForOpportunity(oppId) {
+  try {
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id, applicant_id, cover_note, resume_url, status, created_at")
+      .eq("opportunity_id", oppId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    if (!rows.length) return [];
+    const { data: profiles } = await supabase.from("profiles").select("*").in("id", rows.map((r) => r.applicant_id));
+    const byId = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
+    return rows.map((a) => {
+      const p = byId[a.applicant_id];
+      return {
+        id: String(a.id),
+        userId: a.applicant_id,
+        name: p?.name || "Physiotherapist",
+        role: p?.role || "",
+        location: p?.location || "",
+        initials: p?.initials || initialsOf(p?.name || "P"),
+        gradient: p?.gradient || "violet",
+        avatarUrl: p?.avatar_url || null,
+        headline: p?.clinical_title || p?.role || "Physiotherapist",
+        skills: p?.skills || [],
+        verified: !!p?.verified,
+        coverNote: a.cover_note,
+        note: a.cover_note || "",
+        resumeUrl: a.resume_url || p?.resume_url || "",
+        status: APP_STATUS_TO_UI[a.status] || "new",
+        rawStatus: a.status,
+        appliedAgo: agoLabel(a.created_at),
+      };
+    });
+  } catch (e) {
+    console.error("getApplicantsForOpportunity(): --", e?.message || e);
+    return [];
+  }
+}
+
+// Recruiter moves an applicant along the pipeline. RLS restricts UPDATE to
+// the listing's creator, so this throwing "row not found"-shaped errors for
+// anyone else is the schema working, not a bug.
+export async function setApplicationStatus(applicationId, status) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to review applicants.");
+  const { error } = await supabase
+    .from("applications")
+    .update({ status: APP_STATUS_FROM_UI[status] || status, updated_at: new Date().toISOString() })
+    .eq("id", applicationId);
+  if (error) throw error;
+}

@@ -3,19 +3,39 @@ import { createPortal } from "react-dom";
 import { X, Phone, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import * as db from "../../data/db.js";
 
 const textareaCls = "w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm resize-none";
 
 // The "Apply with Profile" bottom sheet (2026-09-22, Aditi's brief: a
 // one-tap, high-signal clinical application replacing PDF attachments).
-// Attaches the signed-in demo profile as a read-only snapshot, submission
-// is a local-state-only demo (feeds ApplicantPipeline.jsx's mock data, no
-// backend table), and the inline "sent" checkmark is what actually flips
-// OpportunityDetail's sticky button to "Applied".
+// Attaches the signed-in profile as a read-only snapshot.
+//
+// P5 (2026-09-22): submitting used to be local state only -- a checkmark
+// and nothing behind it. It now writes an `applications` row, so the
+// recruiter's pipeline shows a real applicant and the applicant's own "My
+// Applications" list can track its status. Errors surface inline instead
+// of the sheet claiming success it didn't have.
 export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
   const { profile } = useAppData();
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const submit = async () => {
+    if (busy || sent) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await db.applyToOpportunity(opp.id, { coverNote: note.trim(), resumeUrl: profile?.resumeUrl || "" });
+      setSent(true);
+    } catch (e) {
+      setError(e.message || "Couldn't send that application -- please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!sent) return;
@@ -62,13 +82,14 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
             <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-5"><Phone size={12} className="text-slate-400" />Contact shared: {profile.phone}</p>
           )}
 
+          {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
           <button
             type="button"
-            onClick={() => setSent(true)}
-            disabled={sent}
-            className={`w-full flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 transition ${sent ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md active:scale-[0.98]"}`}
+            onClick={submit}
+            disabled={sent || busy}
+            className={`w-full flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 transition ${sent ? "bg-emerald-50 text-emerald-700" : "text-white bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md active:scale-[0.98] disabled:opacity-60"}`}
           >
-            {sent ? <><Check size={16} /> Application sent to {posterName}!</> : "Confirm & submit application 🚀"}
+            {sent ? <><Check size={16} /> Application sent to {posterName}!</> : busy ? "Sending…" : "Confirm & submit application 🚀"}
           </button>
         </div>
       </div>

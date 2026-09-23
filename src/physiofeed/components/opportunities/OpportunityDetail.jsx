@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { ChevronLeft, MapPin, IndianRupee, Check } from "lucide-react";
+import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 
-export default function OpportunityDetail({ opp, onBack, onMessage }) {
-  const [applied, setApplied] = useState(false);
+// `applied` and `saved` are owned by ExplorePage now (P4/P5) -- they come
+// from the real applications / saved_items tables, so they survive a
+// reload instead of resetting to false every time this screen mounts.
+export default function OpportunityDetail({ opp, onBack, onMessage, applied, onApplied, saved, onToggleSave }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
 
@@ -13,7 +15,16 @@ export default function OpportunityDetail({ opp, onBack, onMessage }) {
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
         <button type="button" onClick={onBack} aria-label="Back" className="p-1 -ml-1 text-slate-500 hover:text-slate-700"><ChevronLeft size={19} /></button>
-        <p className="text-sm font-semibold text-slate-900 truncate">{opp.title}</p>
+        <p className="text-sm font-semibold text-slate-900 truncate flex-1">{opp.title}</p>
+        <button
+          type="button"
+          onClick={() => onToggleSave?.(opp)}
+          aria-label={saved ? "Remove from saved" : "Save this opportunity"}
+          aria-pressed={!!saved}
+          className={`p-1.5 rounded-lg shrink-0 ${saved ? "text-[#6E5CC7]" : "text-slate-400 hover:text-slate-600"}`}
+        >
+          <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
+        </button>
       </div>
 
       <div className="p-5 pb-28">
@@ -86,7 +97,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage }) {
         <ApplyOpportunityModal
           opp={opp}
           onClose={() => setApplyOpen(false)}
-          onApplied={() => { setApplied(true); setApplyOpen(false); }}
+          onApplied={() => { setApplyOpen(false); onApplied?.(); }}
         />
       )}
     </div>

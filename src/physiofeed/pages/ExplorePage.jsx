@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Plus, Briefcase, ChevronRight } from "lucide-react";
-import { INITIAL_OPPORTUNITIES, OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
-import { INITIAL_APPLICANTS } from "../data/applicantsMock.js";
+import { Search, Plus, Briefcase, ChevronRight, ChevronLeft, FileText } from "lucide-react";
+import { OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
+import * as db from "../data/db.js";
 import OpportunityCard from "../components/opportunities/OpportunityCard.jsx";
 import OpportunityDetail from "../components/opportunities/OpportunityDetail.jsx";
 import WorkshopDetail from "../components/opportunities/WorkshopDetail.jsx";
@@ -15,18 +15,25 @@ import ApplicantChatModal from "../components/opportunities/ApplicantChatModal.j
 // Explore -> Opportunities board (2026-09-21, Aditi's brief + mockups: jobs,
 // internships, workshops and research collaborations for physiotherapists).
 // Replaces the previous "trending topics / popular posts" Explore page --
-// this is what she asked to "put in Explore". Demo content only, same as
-// the rest of PhysioFeed's seed data (see AppShell.jsx's "Demo content"
-// banner) -- there's no opportunities table in Supabase yet, so postings
-// and applications here are local state and don't survive a reload.
+// this is what she asked to "put in Explore".
+//
+// P4/P5 (2026-09-22): this was front-end state only -- posting a job
+// pushed an object into useState and it vanished on reload, and applying
+// flipped a boolean nobody else could see. Everything on this page now
+// goes through db.js (`opportunities` / `applications` / `saved_items`).
+// The UI itself is unchanged; only where its data comes from moved.
 //
 // The Recruiter / Poster Dashboard (2026-09-22, same brief + real mockup
 // references) lives here too: "My Postings" -> ApplicantPipeline ->
-// ApplicantProfileSheet, all reading/writing `applicantsByOpp` below so
-// Pass/Shortlist/Invite are real state changes, not decoration.
+// ApplicantProfileSheet, now reading real applicants and writing real
+// status changes.
 export default function ExplorePage() {
-  const [opportunities, setOpportunities] = useState(INITIAL_OPPORTUNITIES);
-  const [applicantsByOpp, setApplicantsByOpp] = useState(INITIAL_APPLICANTS);
+  const [opportunities, setOpportunities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pipelineApplicants, setPipelineApplicants] = useState([]);
+  const [savedIds, setSavedIds] = useState([]);
+  const [myApplications, setMyApplications] = useState([]);
+  const [actionError, setActionError] = useState(null);
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(null); // the opportunity object, or null = hub
@@ -34,6 +41,7 @@ export default function ExplorePage() {
   const [postOpen, setPostOpen] = useState(false);
 
   const [myPostingsOpen, setMyPostingsOpen] = useState(false);
+  const [myAppsOpen, setMyAppsOpen] = useState(false);
   const [pipelineFor, setPipelineFor] = useState(null); // opportunity whose applicants are being reviewed
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
@@ -54,10 +62,39 @@ export default function ExplorePage() {
   // never sees them -- tapping a card/button used to open the new view
   // wherever the hub's list had been scrolled to (2026-09-22, Aditi: "it
   // takes me to the midsection... I want it to take me to the top").
-  const view = chatFor ? "chat" : pipelineFor ? "pipeline" : myPostingsOpen ? "myPostings" : active ? "detail" : "hub";
+  const view = chatFor ? "chat" : pipelineFor ? "pipeline" : myPostingsOpen ? "myPostings" : myAppsOpen ? "myApps" : active ? "detail" : "hub";
   useEffect(() => {
     try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
   }, [view]);
+
+  // Board + your saves + your applications, all real (P4/P5).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [opps, saves, apps] = await Promise.all([
+        db.getOpportunities(), db.getSavedOpportunityIds(), db.getMyApplications(),
+      ]);
+      if (cancelled) return;
+      setOpportunities(opps);
+      setSavedIds(saves);
+      setMyApplications(apps);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Applicants are fetched per listing when its pipeline opens, rather
+  // than all up front -- only the creator can read them, and most people
+  // never open this side of the board at all.
+  useEffect(() => {
+    if (!pipelineFor) { setPipelineApplicants([]); return; }
+    let cancelled = false;
+    (async () => {
+      const list = await db.getApplicantsForOpportunity(pipelineFor.id);
+      if (!cancelled) setPipelineApplicants(list);
+    })();
+    return () => { cancelled = true; };
+  }, [pipelineFor]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,6 +107,8 @@ export default function ExplorePage() {
   }, [opportunities, category, query]);
 
   const myPostings = useMemo(() => opportunities.filter((o) => o.postedByMe), [opportunities]);
+  const appliedIds = useMemo(() => new Set(myApplications.map((a) => String(a.opportunityId))), [myApplications]);
+  const isSaved = (opp) => savedIds.includes(String(opp?.id));
 
   useEffect(() => {
     if (view !== "hub" || postOpen) return;
@@ -109,34 +148,62 @@ export default function ExplorePage() {
   const openChat = (opp) => setChatFor(opp);
   const closeChat = () => setChatFor(null);
 
-  const publish = (opp) => {
-    setOpportunities((prev) => [opp, ...prev]);
-    setApplicantsByOpp((prev) => ({ ...prev, [opp.id]: [] }));
-    setPostOpen(false);
+  const publish = async (opp) => {
+    setActionError(null);
+    try {
+      const saved = await db.publishOpportunity(opp);
+      setOpportunities((prev) => [saved, ...prev]);
+      setPostOpen(false);
+    } catch (e) {
+      setActionError(e.message || "Couldn't publish that listing -- please try again.");
+    }
   };
 
-  const toggleListingStatus = (oppId) => {
-    setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, status: o.status === "closed" ? "active" : "closed" } : o));
+  const toggleListingStatus = async (oppId) => {
+    const current = opportunities.find((o) => o.id === oppId);
+    const next = current?.status === "closed" ? "active" : "closed";
+    // Optimistic -- the only failure mode is RLS rejecting a listing that
+    // isn't yours, which this page never offers in the first place.
+    setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, status: next } : o));
+    try {
+      await db.setOpportunityStatus(oppId, next);
+    } catch (e) {
+      setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, status: current.status } : o));
+      setActionError(e.message || "Couldn't update that listing.");
+    }
   };
+
+  const toggleSave = async (opp) => {
+    setActionError(null);
+    try {
+      const nowSaved = await db.toggleSaveOpportunity(opp.id);
+      setSavedIds((prev) => nowSaved ? [...prev, String(opp.id)] : prev.filter((id) => id !== String(opp.id)));
+    } catch (e) {
+      setActionError(e.message || "Couldn't save that.");
+    }
+  };
+
+  const refreshApplications = async () => setMyApplications(await db.getMyApplications());
 
   const openPipeline = (opp) => { setMyPostingsOpen(false); setPipelineFor(opp); };
   const closePipeline = () => { setPipelineFor(null); setProfileSheetId(null); setChatModalId(null); };
 
-  const setApplicantStatus = (oppId, applicantId, status) => {
-    setApplicantsByOpp((prev) => ({
-      ...prev,
-      [oppId]: (prev[oppId] || []).map((a) => a.id === applicantId ? { ...a, status: a.status === status ? "new" : status } : a),
-    }));
+  // Tapping the status an applicant already has clears it back to
+  // "applied" -- same toggle behaviour the local-state version had, so
+  // Pass/Shortlist still act like toggles rather than one-way doors.
+  const setApplicantStatus = async (applicationId, status) => {
+    const current = pipelineApplicants.find((a) => a.id === applicationId);
+    const next = current?.status === status ? "new" : status;
+    setPipelineApplicants((prev) => prev.map((a) => a.id === applicationId ? { ...a, status: next } : a));
+    try {
+      await db.setApplicationStatus(applicationId, next);
+    } catch (e) {
+      setPipelineApplicants((prev) => prev.map((a) => a.id === applicationId ? { ...a, status: current.status } : a));
+      setActionError(e.message || "Couldn't update that applicant.");
+    }
   };
 
-  const inviteApplicant = (oppId, applicantId) => {
-    setApplicantsByOpp((prev) => ({
-      ...prev,
-      [oppId]: (prev[oppId] || []).map((a) => a.id === applicantId ? { ...a, status: "shortlisted" } : a),
-    }));
-  };
-
-  const pipelineApplicants = pipelineFor ? (applicantsByOpp[pipelineFor.id] || []) : [];
+  const inviteApplicant = (applicationId) => setApplicantStatus(applicationId, "shortlisted");
   const profileSheetApplicant = profileSheetId ? pipelineApplicants.find((a) => a.id === profileSheetId) : null;
   const chatModalApplicant = chatModalId ? pipelineApplicants.find((a) => a.id === chatModalId) : null;
 
@@ -156,8 +223,8 @@ export default function ExplorePage() {
           applicants={pipelineApplicants}
           onBack={closePipeline}
           onOpenApplicant={(a) => setProfileSheetId(a.id)}
-          onPass={(id) => setApplicantStatus(pipelineFor.id, id, "passed")}
-          onShortlist={(id) => setApplicantStatus(pipelineFor.id, id, "shortlisted")}
+          onPass={(id) => setApplicantStatus(id, "passed")}
+          onShortlist={(id) => setApplicantStatus(id, "shortlisted")}
           onChat={(a) => setChatModalId(a.id)}
         />
         {profileSheetApplicant && (
@@ -165,8 +232,8 @@ export default function ExplorePage() {
             applicant={profileSheetApplicant}
             opp={pipelineFor}
             onClose={() => setProfileSheetId(null)}
-            onPass={(id) => setApplicantStatus(pipelineFor.id, id, "passed")}
-            onShortlist={(id) => setApplicantStatus(pipelineFor.id, id, "shortlisted")}
+            onPass={(id) => setApplicantStatus(id, "passed")}
+            onShortlist={(id) => setApplicantStatus(id, "shortlisted")}
             onMessage={(a) => { setProfileSheetId(null); setChatModalId(a.id); }}
           />
         )}
@@ -175,7 +242,7 @@ export default function ExplorePage() {
             applicant={chatModalApplicant}
             opp={pipelineFor}
             onClose={() => setChatModalId(null)}
-            onInvite={(id) => inviteApplicant(pipelineFor.id, id)}
+            onInvite={(id) => inviteApplicant(id)}
           />
         )}
       </>
@@ -186,12 +253,43 @@ export default function ExplorePage() {
     return (
       <MyPostingsPage
         postings={myPostings}
-        applicantsByOpp={applicantsByOpp}
         onBack={() => setMyPostingsOpen(false)}
         onNewPost={() => { setMyPostingsOpen(false); setPostOpen(true); }}
         onViewApplicants={openPipeline}
         onToggleStatus={toggleListingStatus}
       />
+    );
+  }
+
+  if (myAppsOpen) {
+    return (
+      <main className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-5">
+          <button type="button" onClick={() => setMyAppsOpen(false)} aria-label="Back" className="p-1.5 -ml-1.5 rounded-lg hover:bg-[#F7F5FF] text-[#8A7FA3]"><ChevronLeft size={20} /></button>
+          <h1 className="pf-font-head text-xl font-bold text-[#2B2140] flex-1">My Applications</h1>
+        </div>
+        {myApplications.length === 0 ? (
+          <p className="pf-font-body text-sm text-[#A79CC4]">You haven't applied to anything yet.</p>
+        ) : (
+          <div className="space-y-3 pb-6">
+            {myApplications.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { if (a.opportunity) { setMyAppsOpen(false); openOpportunity(a.opportunity); } }}
+                className="w-full text-left bg-white border-2 border-[#F1EEFB] rounded-2xl px-4 py-3.5 hover:bg-[#FBFAFF] transition"
+              >
+                <p className="pf-font-head text-sm font-bold text-[#2B2140] leading-snug">{a.opportunity?.title || "Opportunity"}</p>
+                <p className="pf-font-body text-xs text-[#8A7FA3] mb-2">{a.opportunity?.org || ""}</p>
+                <span className={`pf-font-head inline-block text-[10.5px] font-bold px-2 py-0.5 rounded-full ${a.status === "shortlisted" ? "bg-[#FFF4DC] text-[#8A6100]" : a.status === "passed" ? "bg-[#F4F2FA] text-[#8A7FA3]" : "bg-[#F7F5FF] text-[#6E5CC7]"}`}>
+                  {a.status === "shortlisted" ? "Shortlisted" : a.status === "passed" ? "Not selected" : "Applied"}
+                </span>
+                <span className="pf-font-body text-[11px] text-[#A79CC4] ml-2">{a.appliedAgo}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </main>
     );
   }
 
@@ -201,7 +299,15 @@ export default function ExplorePage() {
         {active.type === "workshop" ? (
           <WorkshopDetail opp={active} onBack={closeDetail} />
         ) : (
-          <OpportunityDetail opp={active} onBack={closeDetail} onMessage={openChat} />
+          <OpportunityDetail
+            opp={active}
+            onBack={closeDetail}
+            onMessage={openChat}
+            applied={appliedIds.has(String(active.id))}
+            onApplied={refreshApplications}
+            saved={isSaved(active)}
+            onToggleSave={toggleSave}
+          />
         )}
       </main>
     );
@@ -227,6 +333,22 @@ export default function ExplorePage() {
         {myPostings.length > 0 && <span className="pf-font-head text-xs font-bold text-white bg-[#6E5CC7] rounded-full px-2 py-0.5 shrink-0">{myPostings.length}</span>}
         <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
       </button>
+
+      <button
+        type="button"
+        onClick={() => setMyAppsOpen(true)}
+        className="w-full flex items-center gap-3 bg-white border-2 border-[#F1EEFB] rounded-2xl px-4 py-3 mb-4 hover:bg-[#FBFAFF] transition"
+      >
+        <span className="w-9 h-9 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><FileText size={16} className="text-[#6E5CC7]" /></span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className="pf-font-head block text-sm font-bold text-[#2B2140]">My Applications</span>
+          <span className="pf-font-body block text-xs text-[#8A7FA3]">Track the roles you've applied to</span>
+        </span>
+        {myApplications.length > 0 && <span className="pf-font-head text-xs font-bold text-white bg-[#6E5CC7] rounded-full px-2 py-0.5 shrink-0">{myApplications.length}</span>}
+        <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
+      </button>
+
+      {actionError && <p className="pf-font-body text-xs text-rose-600 mb-3">{actionError}</p>}
 
       <div className="flex items-center gap-2 bg-[#F7F5FF] border-2 border-[#EFE9FF] rounded-2xl px-3.5 h-11 mb-3.5">
         <Search size={16} className="text-[#8A7FA3] shrink-0" />
@@ -256,8 +378,10 @@ export default function ExplorePage() {
         })}
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">No opportunities match "{query}".</div>
+      {loading ? (
+        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">Loading opportunities…</div>
+      ) : filtered.length === 0 ? (
+        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
       ) : (
         <div ref={gridRef} className="grid sm:grid-cols-2 gap-4 pb-28 lg:pb-20">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}

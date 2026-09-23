@@ -3,11 +3,12 @@ import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle } from "lucid
 
 // "My Posted Opportunities" (2026-09-22, Aditi's brief + real mockup
 // reference) -- the recruiter/poster dashboard, reachable from a banner on
-// the Explore hub. Lists opportunities this demo profile posted
-// (`postedByMe`, see opportunitiesMock.js), split into active vs closed.
-// Stats are the seed `stats` object except `applications`, which is always
-// the live applicant count so it can never drift from the pipeline itself.
-export default function MyPostingsPage({ postings, applicantsByOpp, onBack, onNewPost, onViewApplicants, onToggleStatus }) {
+// the Explore hub. Lists opportunities you posted (`postedByMe`, now
+// creator_id === you -- see db.js's rowToOpportunity), split into active
+// vs closed. The applicant count is `stats.applications`, which db.js
+// derives by counting real `applications` rows, so it can never drift
+// from the pipeline itself.
+export default function MyPostingsPage({ postings, onBack, onNewPost, onViewApplicants, onToggleStatus }) {
   const [showClosed, setShowClosed] = useState(false);
   const active = postings.filter((o) => o.status !== "closed");
   const closed = postings.filter((o) => o.status === "closed");
@@ -30,7 +31,7 @@ export default function MyPostingsPage({ postings, applicantsByOpp, onBack, onNe
       {active.length === 0 && <p className="text-sm text-slate-400 mb-5">You don't have any active postings yet.</p>}
       <div className="space-y-3 mb-6">
         {active.map((o) => (
-          <PostingCard key={o.id} opp={o} count={applicantsByOpp[o.id]?.length ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} />
+          <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} />
         ))}
       </div>
 
@@ -42,7 +43,7 @@ export default function MyPostingsPage({ postings, applicantsByOpp, onBack, onNe
           {showClosed && (
             <div className="space-y-3">
               {closed.map((o) => (
-                <PostingCard key={o.id} opp={o} count={applicantsByOpp[o.id]?.length ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} closed />
+                <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} closed />
               ))}
             </div>
           )}
