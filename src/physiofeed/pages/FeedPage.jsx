@@ -14,7 +14,7 @@ const TABS = ["For You", "Following", "Research", "Case Studies", "Techniques", 
 // GridPostCard.jsx already opens on the Profile/Saved/Explore grids --
 // rather than building a second post-detail UI for this one entry point.
 export default function FeedPage() {
-  const { posts } = useAppData();
+  const { posts, feedError, clearFeedError } = useAppData();
   const [activeTab, setActiveTab] = useState("For You");
   const [searchParams, setSearchParams] = useSearchParams();
   const openPostId = searchParams.get("post");
@@ -38,6 +38,16 @@ export default function FeedPage() {
         </div>
         <div className="space-y-4">
           <Composer />
+          {/* P7 (2026-09-22): a like/comment that fails to save used to do
+              nothing visible at all -- db.js quietly wrote it to its demo
+              array instead. Failures are real now, so they need somewhere
+              to land. */}
+          {feedError && (
+            <div className="flex items-start gap-2 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5">
+              <p className="pf-font-body text-xs text-rose-700 flex-1">{feedError}</p>
+              <button type="button" onClick={clearFeedError} aria-label="Dismiss" className="text-rose-400 text-xs font-bold">✕</button>
+            </div>
+          )}
           {visiblePosts.length === 0 ? (
             <div className="text-center py-16 text-slate-400 text-sm">Nothing here yet — be the first to post in {activeTab}.</div>
           ) : visiblePosts.map((post) => <FeedPostCard key={post.id} post={post} />)}

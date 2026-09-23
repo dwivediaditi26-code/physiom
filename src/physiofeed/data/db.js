@@ -83,7 +83,13 @@ export async function getPosts() {
       .select("id, author_id, category, heading, caption, media_type, media, media_urls, tags, post_type, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    if (!posts || posts.length === 0) return clone(_posts); // no real posts yet -- keep the demo feed visible
+    // P7 (2026-09-22): this used to return the demo feed for ANY empty
+    // result. A signed-in user whose community hasn't posted yet was shown
+    // canned posts they could like and comment on but never really touch --
+    // the same dishonesty getNotifications() was fixed for. Zero rows is
+    // now an honest empty feed once you're signed in; the demo feed stays
+    // for guest mode, which has no real feed to show.
+    if (!posts || posts.length === 0) return uid ? [] : clone(_posts);
 
     const postIds = posts.map((p) => p.id);
     const pollPostIds = posts.filter((p) => p.post_type === "poll").map((p) => p.id);
@@ -169,6 +175,11 @@ export async function toggleLike(postId) {
       if (error) throw error;
     }
   } catch (e) {
+    // P7 (2026-09-22): the local-array fallback below is guest-mode
+    // behaviour, not error handling. For a signed-in user a failed write
+    // used to still flip the heart, so a like that never reached the
+    // database looked exactly like one that did. Real failures now throw.
+    if (await currentUserId()) throw e;
     _posts = _posts.map((p) => (p.id === postId ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p));
   }
   // BUG FIX (2026-08-18): this used to `return clone(_posts.find(...)) || null`,
@@ -196,6 +207,7 @@ export async function toggleSave(postId) {
       if (error) throw error;
     }
   } catch (e) {
+    if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     _posts = _posts.map((p) => (p.id === postId ? { ...p, saved: !p.saved } : p));
   }
   return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
@@ -219,6 +231,10 @@ export async function toggleFollowAuthor(postId) {
       if (error) throw error;
     }
   } catch (e) {
+    // "can't follow yourself" and "not a real post yet" are thrown above as
+    // ordinary control flow, so they'd surface as errors here -- both are
+    // states the UI already prevents, and neither deserves a thrown error.
+    if (await currentUserId() && !/follow yourself|not a real post/.test(e?.message || "")) throw e;
     _posts = _posts.map((p) => (p.id === postId ? { ...p, following: !p.following } : p));
   }
   return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
@@ -231,6 +247,7 @@ export async function addComment(postId, text) {
     const { error } = await supabase.from("comments").insert({ post_id: postId, author_id: uid, text });
     if (error) throw error;
   } catch (e) {
+    if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     const comment = { id: `c${Date.now()}`, author: CURRENT_USER.name, text, isSelf: true };
     _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: [...p.commentList, comment] } : p));
   }
@@ -252,6 +269,7 @@ export async function deletePost(postId) {
     const { error } = await supabase.from("posts").delete().eq("id", postId).eq("author_id", uid);
     if (error) throw error;
   } catch (e) {
+    if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     _posts = _posts.filter((p) => p.id !== postId);
   }
   return getPosts();
@@ -264,6 +282,7 @@ export async function deleteComment(postId, commentId) {
     const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("author_id", uid);
     if (error) throw error;
   } catch (e) {
+    if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: p.commentList.filter((c) => c.id !== commentId) } : p));
   }
   return getPosts();
@@ -301,7 +320,10 @@ export async function createPost({ text, category, media, postType = "post", tit
     if (error) throw error;
     return clone(data);
   } catch (e) {
-    console.error("createPost(): falling back to local mock post --", e?.message || e);
+    // Publishing is the one write where silently keeping a local copy is
+    // worst of all -- the post looks published and is gone on reload.
+    if (await currentUserId()) throw e;
+    console.error("createPost(): guest mode, keeping a local mock post --", e?.message || e);
     const post = {
       id: `p${Date.now()}`, authorId: CURRENT_USER.id, author: CURRENT_USER.name, isSelf: true,
       verified: true, role: CURRENT_USER.role, time: "now", category, media: mediaType,
@@ -326,6 +348,7 @@ export async function votePoll(postId, optionIndex) {
     const { error } = await supabase.from("poll_votes").insert({ post_id: postId, user_id: uid, option_index: optionIndex });
     if (error) throw error;
   } catch (e) {
+    if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     _posts = _posts.map((p) => {
       if (p.id !== postId || !p.poll || p.poll.myVote !== null) return p;
       const counts = p.poll.counts.slice();

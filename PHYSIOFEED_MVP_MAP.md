@@ -71,7 +71,7 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 | P4 | Opportunities + Jobs + Save | Built, untested | db.js + every render site real (3c8324f). Acceptance test needs a signed-in account |
 | P5 | Apply + My Applications | Built, untested | Real applications table + My Applications list (3c8324f). Acceptance test needs two accounts |
 | P6 | Application status + notifications | Built, untested | Triggers shipped in the P2–P6 migration; client now reads entity_type/entity_id and deep-links |
-| P7 | Feed + posts + evidence | Largely working | Verify against acceptance tests |
+| P7 | Feed + posts + evidence | Built, untested | Real posts/likes/comments already; 2026-09-22 removed the demo-feed-on-empty fallback and the silent fake-success on failed writes for signed-in users |
 | P8 | Search + discovery | Not started | Build from scratch |
 | P9 | Permissions, states, mobile QA | Not started | |
 

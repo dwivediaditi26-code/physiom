@@ -5,6 +5,7 @@ const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
   const [posts, setPosts] = useState([]);
+  const [feedError, setFeedError] = useState(null);
   const [people, setPeople] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [evidence, setEvidence] = useState([]);
@@ -90,22 +91,39 @@ export function AppDataProvider({ children }) {
     return () => { cancelled = true; unsubscribe(); };
   }, []);
 
-  const likePost = useCallback(async (id) => { await db.toggleLike(id); setPosts(await db.getPosts()); }, []);
-  const savePost = useCallback(async (id) => { await db.toggleSave(id); setPosts(await db.getPosts()); }, []);
-  const followAuthor = useCallback(async (id) => { await db.toggleFollowAuthor(id); setPosts(await db.getPosts()); }, []);
-  const commentOnPost = useCallback(async (id, text) => { await db.addComment(id, text); setPosts(await db.getPosts()); }, []);
+  // P7 (2026-09-22): db.js no longer fakes a successful like/comment/
+  // delete into its demo array when a signed-in user's write fails, so
+  // those writes can now reject. Each feed action runs through this: the
+  // post list is re-read from the database either way (so the UI snaps
+  // back to what's really stored) and the failure surfaces as `feedError`
+  // instead of an unhandled promise rejection nobody sees.
+  const runFeedAction = useCallback(async (fn) => {
+    setFeedError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setFeedError(e?.message || "That didn't save -- please try again.");
+    } finally {
+      setPosts(await db.getPosts());
+    }
+  }, []);
+
+  const likePost = useCallback((id) => runFeedAction(() => db.toggleLike(id)), [runFeedAction]);
+  const savePost = useCallback((id) => runFeedAction(() => db.toggleSave(id)), [runFeedAction]);
+  const followAuthor = useCallback((id) => runFeedAction(() => db.toggleFollowAuthor(id)), [runFeedAction]);
+  const commentOnPost = useCallback((id, text) => runFeedAction(() => db.addComment(id, text)), [runFeedAction]);
   const publishPost = useCallback(async (fields) => { await db.createPost(fields); setPosts(await db.getPosts()); }, []);
   const uploadImage = useCallback((blob) => db.uploadPostImage(blob), []);
   const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
-  const votePoll = useCallback(async (id, optionIndex) => { setPosts(await db.votePoll(id, optionIndex)); }, []);
+  const votePoll = useCallback((id, optionIndex) => runFeedAction(() => db.votePoll(id, optionIndex)), [runFeedAction]);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
   const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
   const endorseSkill = useCallback(async (name) => { setExpertise(await db.toggleEndorse(name)); }, []);
   const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
   const joinCommunity = useCallback(async (id) => { setCommunities(await db.toggleJoinCommunity(id)); }, []);
   const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
-  const deletePost = useCallback(async (id) => { setPosts(await db.deletePost(id)); }, []);
-  const deleteComment = useCallback(async (postId, commentId) => { setPosts(await db.deleteComment(postId, commentId)); }, []);
+  const deletePost = useCallback((id) => runFeedAction(() => db.deletePost(id)), [runFeedAction]);
+  const deleteComment = useCallback((postId, commentId) => runFeedAction(() => db.deleteComment(postId, commentId)), [runFeedAction]);
   const markNotificationRead = useCallback(async (id) => { setNotifications(await db.markNotificationRead(id)); }, []);
   const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
   const uploadProfileImage = useCallback((blob) => db.uploadProfileImage(blob), []);
@@ -157,6 +175,7 @@ export function AppDataProvider({ children }) {
     connectionStates, connectionRequests, unreadMessages, refreshUnreadMessages,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
+    feedError, clearFeedError: () => setFeedError(null),
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
