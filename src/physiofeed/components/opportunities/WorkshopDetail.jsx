@@ -1,9 +1,29 @@
 import { useState } from "react";
 import { ChevronLeft, Calendar, Clock, Video, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
+import * as db from "../../data/db.js";
 
-export default function WorkshopDetail({ opp, onBack }) {
-  const [registered, setRegistered] = useState(false);
+// `registered` is owned by ExplorePage (2026-09-23), read from the real
+// `applications` table -- this used to be local useState, so "Registered"
+// was a label the button wore until the next reload and the poster never
+// heard about it. See db.registerForWorkshop().
+export default function WorkshopDetail({ opp, onBack, registered, onRegistered }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const register = async () => {
+    if (busy || registered) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await db.registerForWorkshop(opp.id, { creatorId: opp.creatorId, title: opp.title });
+      await onRegistered?.();
+    } catch (e) {
+      setError(e.message || "Couldn't register you -- please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -62,19 +82,27 @@ export default function WorkshopDetail({ opp, onBack }) {
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] text-slate-400 leading-none">{opp.feeNote || "Fee"}</p>
-          <p className="text-lg font-bold text-slate-900">{opp.fee}</p>
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 py-3">
+        {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] text-slate-400 leading-none">{opp.feeNote || "Fee"}</p>
+            <p className="text-lg font-bold text-slate-900">{opp.fee}</p>
+          </div>
+          <button
+            type="button"
+            onClick={register}
+            disabled={registered || busy}
+            className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-[#FF5FA2] active:scale-[0.98] disabled:opacity-60"}`}
+          >
+            {registered ? <><Check size={16} /> Registered</> : busy ? "Registering…" : "Register Now"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setRegistered(true)}
-          disabled={registered}
-          className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-[#FF5FA2] active:scale-[0.98]"}`}
-        >
-          {registered ? <><Check size={16} /> Registered</> : "Register Now"}
-        </button>
+        {registered && (
+          <p className="text-[11px] text-slate-400 mt-2">
+            The organiser has your request and a chat thread is open — they'll confirm the details there.
+          </p>
+        )}
       </div>
     </div>
   );

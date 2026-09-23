@@ -13,9 +13,15 @@ const TABS = [
 // mockups) -- opened from "View Applicants" on MyPostingsPage.jsx. Status
 // changes (Pass/Shortlist) and opening the full dossier are both wired to
 // real state in ExplorePage.jsx, not decorative.
-export default function ApplicantPipeline({ opp, applicants, onBack, onOpenApplicant, onPass, onShortlist, onChat }) {
+// `registrantsOnly` (2026-09-23, Aditi's spec for workshops): a workshop
+// has registrants, not candidates -- nobody is shortlisted or passed over,
+// they either want a place or they don't. In that mode this drops the
+// status tabs and the whole Pass / Shortlist / Chat row and is simply the
+// list of people who asked for a place. Same table and same query as the
+// hiring pipeline; only what's rendered differs.
+export default function ApplicantPipeline({ opp, applicants, onBack, onOpenApplicant, onPass, onShortlist, onChat, registrantsOnly }) {
   const [tab, setTab] = useState("all");
-  const filtered = tab === "all" ? applicants : applicants.filter((a) => a.status === tab);
+  const filtered = registrantsOnly || tab === "all" ? applicants : applicants.filter((a) => a.status === tab);
   const countFor = (key) => (key === "all" ? applicants.length : applicants.filter((a) => a.status === key).length);
 
   return (
@@ -24,11 +30,16 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
         <button type="button" onClick={onBack} aria-label="Back" className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 text-slate-500"><ChevronLeft size={20} /></button>
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-slate-900 truncate">{opp.title}</h1>
-          <p className="text-xs text-slate-400">{applicants.length} applicant{applicants.length === 1 ? "" : "s"}</p>
+          <p className="text-xs text-slate-400">
+            {applicants.length}{" "}
+            {registrantsOnly
+              ? `registration${applicants.length === 1 ? "" : "s"}`
+              : `applicant${applicants.length === 1 ? "" : "s"}`}
+          </p>
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar my-4 pb-0.5">
+      <div className={`flex gap-2 overflow-x-auto no-scrollbar my-4 pb-0.5 ${registrantsOnly ? "hidden" : ""}`}>
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -42,7 +53,9 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-14 text-slate-400 text-sm">No applicants in this filter yet.</div>
+        <div className="text-center py-14 text-slate-400 text-sm">
+          {registrantsOnly ? "Nobody has registered yet." : "No applicants in this filter yet."}
+        </div>
       ) : (
         <div className="space-y-3 pb-6">
           {filtered.map((a) => (
@@ -66,6 +79,7 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
                 </div>
               </button>
 
+              {!registrantsOnly && (
               <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100">
                 <button type="button" onClick={() => onPass(a.id)} disabled={a.status === "passed"} className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-600 border border-slate-200 rounded-lg px-2.5 py-2 hover:bg-slate-50 disabled:opacity-40">
                   <XCircle size={12} /> Pass
@@ -81,6 +95,7 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
                   <MessageCircle size={12} /> Chat / Invite
                 </button>
               </div>
+              )}
             </div>
           ))}
         </div>

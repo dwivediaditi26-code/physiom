@@ -248,10 +248,11 @@ export default function ExplorePage() {
           opp={pipelineFor}
           applicants={pipelineApplicants}
           onBack={closePipeline}
-          onOpenApplicant={(a) => setProfileSheetId(a.id)}
+          onOpenApplicant={(a) => { if (pipelineFor.type !== "workshop") setProfileSheetId(a.id); }}
           onPass={(id) => setApplicantStatus(id, "passed")}
           onShortlist={(id) => setApplicantStatus(id, "shortlisted")}
           onChat={(a) => setChatModalId(a.id)}
+          registrantsOnly={pipelineFor.type === "workshop"}
         />
         {profileSheetApplicant && (
           <ApplicantProfileSheet
@@ -323,7 +324,12 @@ export default function ExplorePage() {
     return (
       <main className="flex-1 min-w-0">
         {active.type === "workshop" ? (
-          <WorkshopDetail opp={active} onBack={closeDetail} />
+          <WorkshopDetail
+            opp={active}
+            onBack={closeDetail}
+            registered={appliedIds.has(String(active.id))}
+            onRegistered={refreshApplications}
+          />
         ) : (
           <OpportunityDetail
             opp={active}

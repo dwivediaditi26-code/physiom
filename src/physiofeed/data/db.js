@@ -2017,6 +2017,38 @@ export async function applyToOpportunity(oppId, { coverNote = "", resumeUrl = ""
 // listings, with their profile so the cards have a name and photo. RLS
 // only returns rows on opportunities you created, so an ordinary user
 // calling this for someone else's listing gets an empty list, not a leak.
+// Workshop registration (2026-09-23, Aditi's spec: "it should not have the
+// pass shortlist or chat -- it just have that they want to register and it
+// will show who wants to register... they can directly contact them for the
+// registration, they get it in the chat").
+//
+// Until now "Register Now" in WorkshopDetail.jsx was a useState and nothing
+// else: no row, no notification, no registrant list, and the button reset
+// to "Register Now" on the next reload. The poster had no way of knowing
+// anyone had ever tried.
+//
+// It reuses the `applications` table rather than adding a registrations
+// one -- a registration IS an application with a simpler lifecycle, the
+// unique (opportunity_id, applicant_id) constraint already prevents
+// double-registering, and the application_received trigger already tells
+// the poster. Payment comes later; for now the poster arranges it in the
+// chat, so registering also opens a real DM thread with them.
+export async function registerForWorkshop(oppId, { creatorId, title } = {}) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to register.");
+  await applyToOpportunity(oppId, { coverNote: "Registration request" });
+  // The DM is what makes "they get it in the chat" true. It's secondary to
+  // the registration itself: if the thread can't be opened the person IS
+  // still registered, so this must not undo that or surface as a failure.
+  if (creatorId && creatorId !== uid) {
+    try {
+      await sendMessage(creatorId, `Hi — I'd like to register for "${title || "your workshop"}". Please let me know the next step.`);
+    } catch (e) {
+      console.error("registerForWorkshop(): registered, but couldn't open the chat thread --", e?.message || e);
+    }
+  }
+}
+
 export async function getApplicantsForOpportunity(oppId) {
   try {
     const { data, error } = await supabase
