@@ -45,6 +45,23 @@ export default function OpportunityChat({ opp, onBack }) {
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [thread]);
 
+  // Same fix as MessagesPage.jsx (2026-09-23, Aditi: "only messages should
+  // scroll"): physiom keeps every tab mounted at once, so <html>/<body> are
+  // always taller than the viewport, and a swipe over this fixed-height
+  // (70dvh) card scrolled the whole page instead of just the thread inside
+  // it. Locking both while this chat is mounted leaves the `scrollRef` div
+  // above as the only scrollable thing.
+  useEffect(() => {
+    const htmlPrev = document.documentElement.style.overflow;
+    const bodyPrev = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = htmlPrev;
+      document.body.style.overflow = bodyPrev;
+    };
+  }, []);
+
   const sendText = (value) => {
     if (!value.trim()) return;
     setThread((prev) => [...prev, { id: `m${prev.length + 1}`, isSelf: true, text: value.trim() }]);
