@@ -13,6 +13,10 @@ export default function ReportButton({ postId }) {
   const { reportPost } = useAppData();
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
+  // P9 (2026-09-22): db.reportPost() used to return false on failure and
+  // this showed "Reported" regardless -- a report that never reached the
+  // table looked filed. It throws now, and a failure says so.
+  const [error, setError] = useState(null);
 
   if (done) {
     return (
@@ -32,6 +36,7 @@ export default function ReportButton({ postId }) {
       >
         <Flag size={15} />
       </button>
+      {error && <p className="absolute right-0 top-full mt-1 w-44 text-[11px] text-rose-600 bg-white border border-rose-200 rounded-lg px-2 py-1.5 shadow-sm z-20">{error}</p>}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-20">
           <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Report this post</p>
@@ -40,8 +45,12 @@ export default function ReportButton({ postId }) {
               key={r}
               onClick={async () => {
                 setOpen(false);
-                await reportPost(postId, r);
-                setDone(true);
+                try {
+                  await reportPost(postId, r);
+                  setDone(true);
+                } catch (e) {
+                  setError(e?.message || "Couldn't send that report -- please try again.");
+                }
               }}
               className="w-full text-left px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
             >

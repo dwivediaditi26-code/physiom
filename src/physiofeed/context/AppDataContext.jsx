@@ -6,6 +6,12 @@ const AppDataContext = createContext(null);
 export function AppDataProvider({ children }) {
   const [posts, setPosts] = useState([]);
   const [feedError, setFeedError] = useState(null);
+  // P9 (2026-09-22): the non-feed writes -- follow, save an article, join a
+  // community, mark a notification read -- no longer fake success for a
+  // signed-in user either, so they need somewhere for a failure to land.
+  // One shared surface rendered by AppShell rather than an error line
+  // bolted onto four different pages.
+  const [actionError, setActionError] = useState(null);
   const [people, setPeople] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [evidence, setEvidence] = useState([]);
@@ -108,6 +114,20 @@ export function AppDataProvider({ children }) {
     }
   }, []);
 
+  // Same contract as runFeedAction above, for everything outside the feed:
+  // report what went wrong, and re-read the list either way so the UI
+  // shows what's really stored rather than the optimistic flip.
+  const runAction = useCallback(async (fn, resync, fallback) => {
+    setActionError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setActionError(e?.message || fallback);
+    } finally {
+      await resync();
+    }
+  }, []);
+
   const likePost = useCallback((id) => runFeedAction(() => db.toggleLike(id)), [runFeedAction]);
   const savePost = useCallback((id) => runFeedAction(() => db.toggleSave(id)), [runFeedAction]);
   const followAuthor = useCallback((id) => runFeedAction(() => db.toggleFollowAuthor(id)), [runFeedAction]);
@@ -117,14 +137,30 @@ export function AppDataProvider({ children }) {
   const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
   const votePoll = useCallback((id, optionIndex) => runFeedAction(() => db.votePoll(id, optionIndex)), [runFeedAction]);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
-  const followPerson = useCallback(async (id) => { setPeople(await db.toggleFollowPerson(id)); }, []);
+  const followPerson = useCallback((id) => runAction(
+    () => db.toggleFollowPerson(id),
+    async () => setPeople(await db.getPeople()),
+    "Couldn't update that follow -- please try again.",
+  ), [runAction]);
   const endorseSkill = useCallback(async (name) => { setExpertise(await db.toggleEndorse(name)); }, []);
-  const saveEvidence = useCallback(async (id) => { setEvidence(await db.toggleSaveEvidence(id)); }, []);
-  const joinCommunity = useCallback(async (id) => { setCommunities(await db.toggleJoinCommunity(id)); }, []);
+  const saveEvidence = useCallback((id) => runAction(
+    () => db.toggleSaveEvidence(id),
+    async () => setEvidence(await db.getEvidence()),
+    "Couldn't save that paper -- please try again.",
+  ), [runAction]);
+  const joinCommunity = useCallback((id) => runAction(
+    () => db.toggleJoinCommunity(id),
+    async () => setCommunities(await db.getCommunities()),
+    "Couldn't update that group -- please try again.",
+  ), [runAction]);
   const reportPost = useCallback(async (id, reason) => db.reportPost(id, reason), []);
   const deletePost = useCallback((id) => runFeedAction(() => db.deletePost(id)), [runFeedAction]);
   const deleteComment = useCallback((postId, commentId) => runFeedAction(() => db.deleteComment(postId, commentId)), [runFeedAction]);
-  const markNotificationRead = useCallback(async (id) => { setNotifications(await db.markNotificationRead(id)); }, []);
+  const markNotificationRead = useCallback((id) => runAction(
+    () => db.markNotificationRead(id),
+    async () => setNotifications(await db.getNotifications()),
+    "Couldn't mark that as read -- please try again.",
+  ), [runAction]);
   const updateProfile = useCallback(async (fields) => { const p = await db.updateProfile(fields); setProfile(p); return p; }, []);
   const uploadProfileImage = useCallback((blob) => db.uploadProfileImage(blob), []);
 
@@ -176,6 +212,7 @@ export function AppDataProvider({ children }) {
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     feedError, clearFeedError: () => setFeedError(null),
+    actionError, clearActionError: () => setActionError(null),
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
     uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,

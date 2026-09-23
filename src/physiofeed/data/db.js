@@ -457,7 +457,10 @@ async function getFollowCounts(userId) {
 export async function getProfile() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return clone(CURRENT_USER); // signed out / guest mode -- keep the demo profile
+    // `isDemo` (P9, 2026-09-22) marks the shared demo identity so the UI
+    // can tell "guest looking at seeded content" from "real clinician with
+    // a real network" -- AppShell's demo banner keys off it.
+    if (!user) return { ...clone(CURRENT_USER), isDemo: true }; // signed out / guest mode
 
     let { data: row } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
@@ -572,7 +575,7 @@ export async function getProfile() {
     });
   } catch (e) {
     console.error("getProfile(): falling back to demo profile --", e?.message || e);
-    return clone(CURRENT_USER); // `profiles` table not created yet, or any other failure
+    return { ...clone(CURRENT_USER), isDemo: true }; // `profiles` table not created yet, or any other failure
   }
 }
 
@@ -1045,7 +1048,9 @@ export async function getPeople() {
     if (uid) query = query.neq("id", uid);
     const { data: profiles, error } = await query;
     if (error) throw error;
-    if (!profiles || profiles.length === 0) return clone(_people);
+    // P9 (2026-09-22): zero real profiles is an honest empty People list
+    // for a signed-in clinician -- same rule getPosts() got in P7.
+    if (!profiles || profiles.length === 0) return uid ? [] : clone(_people);
 
     const { data: follows } = uid
       ? await supabase.from("follows").select("following_id").eq("follower_id", uid)
@@ -1057,9 +1062,13 @@ export async function getPeople() {
       mutual: 0, grad: p.gradient || "violet", avatarUrl: p.avatar_url || null,
       following: followingSet.has(p.id),
     }));
-    // Demo people stay visible alongside real ones so the People tab never
-    // looks sparse while PhysioFeed only has a handful of real clinicians.
-    return clone([...real, ..._people]);
+    // P9 (2026-09-22): demo people used to be appended to the real list
+    // unconditionally, so a signed-in clinician saw invented colleagues
+    // they could follow, message and search -- follows against them fail
+    // (no such auth user) and were being faked locally. Signed in, you now
+    // see only real clinicians; the demo roster stays for guest mode,
+    // which has no real network to show.
+    return uid ? clone(real) : clone([...real, ..._people]);
   } catch (e) {
     console.error("getPeople(): falling back to demo people --", e?.message || e);
     return clone(_people);
@@ -1080,8 +1089,13 @@ export async function toggleFollowPerson(id) {
       if (error) throw error;
     }
   } catch (e) {
-    // Covers both "not signed in" and "id is a demo person, not a real
-    // profile" (foreign key violation) -- same fallback shape as posts.
+    // P9 (2026-09-22): this used to swallow EVERY failure into a local
+    // flip, so a signed-in clinician whose follow was rejected saw a
+    // "Following" button that meant nothing and reverted on reload. The
+    // local flip is guest mode only now -- demo people are no longer
+    // handed to signed-in users at all (see getPeople()), so the old
+    // "demo person, foreign key violation" case can't arise there.
+    if (await currentUserId()) throw e;
     _people = _people.map((p) => (p.id === id ? { ...p, following: !p.following } : p));
   }
   return getPeople();
@@ -1276,7 +1290,11 @@ export async function getEvidence() {
       .select("*")
       .order("year", { ascending: false });
     if (error) throw error;
-    if (!articles || articles.length === 0) return clone(_evidence);
+    // P9 (2026-09-22): see getPeople()/getPosts(). research_articles is
+    // curated rather than user-generated, so empty means "nobody has
+    // seeded it", but showing a signed-in clinician demo papers they can
+    // "save" -- a save that can't be stored -- is the same lie.
+    if (!articles || articles.length === 0) return uid ? [] : clone(_evidence);
 
     const { data: saves } = uid
       ? await supabase.from("research_saves").select("article_id").eq("user_id", uid)
@@ -1310,6 +1328,7 @@ export async function toggleSaveEvidence(id) {
       if (error) throw error;
     }
   } catch (e) {
+    if (await currentUserId()) throw e; // P9: see toggleFollowPerson()
     _evidence = _evidence.map((ev) => (ev.id === id ? { ...ev, saved: !ev.saved } : ev));
   }
   return getEvidence();
@@ -1328,7 +1347,7 @@ export async function getCommunities() {
       .from("communities")
       .select("id, name, description, gradient, community_members(count)");
     if (error) throw error;
-    if (!communities || communities.length === 0) return clone(_communities);
+    if (!communities || communities.length === 0) return uid ? [] : clone(_communities);
 
     const { data: memberships } = uid
       ? await supabase.from("community_members").select("community_id").eq("user_id", uid)
@@ -1360,6 +1379,7 @@ export async function toggleJoinCommunity(id) {
       if (error) throw error;
     }
   } catch (e) {
+    if (await currentUserId()) throw e; // P9: see toggleFollowPerson()
     _communities = _communities.map((c) => (c.id === id ? { ...c, joined: !c.joined, members: c.members + (c.joined ? -1 : 1) } : c));
   }
   return getCommunities();
@@ -1428,7 +1448,10 @@ export async function markNotificationRead(id) {
     const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", uid);
     if (error) throw error;
   } catch (e) {
-    console.error("markNotificationRead(): no-op --", e?.message || e);
+    // P9 (2026-09-22): a failed update used to be a console line only --
+    // the unread dot disappeared locally and was back on the next load.
+    if (await currentUserId()) throw e;
+    console.error("markNotificationRead(): guest mode, no-op --", e?.message || e);
   }
   return getNotifications();
 }
@@ -1470,7 +1493,11 @@ export async function reportPost(postId, reason) {
     if (error) throw error;
     return true;
   } catch (e) {
-    console.error("reportPost(): no-op --", e?.message || e);
+    // P9 (2026-09-22): ReportButton showed "Reported" on the `false` this
+    // used to return, so a report that never reached the table looked
+    // filed. Signed in, the failure is real and the button says so.
+    if (await currentUserId()) throw e;
+    console.error("reportPost(): guest mode, no-op --", e?.message || e);
     return false;
   }
 }
@@ -1496,30 +1523,25 @@ export async function getReports() {
   }
 }
 
+// P9 (2026-09-22): these two used to return false on failure and
+// AdminReportsPage dropped the row from its list regardless -- a report
+// that was never dismissed, or a post that was never removed, vanished
+// from the queue as if it had been handled. They throw now; the page keeps
+// the row and shows the error.
 export async function dismissReport(id) {
-  try {
-    const { error } = await supabase.from("reports").update({ status: "dismissed" }).eq("id", id);
-    if (error) throw error;
-    return true;
-  } catch (e) {
-    console.error("dismissReport(): --", e?.message || e);
-    return false;
-  }
+  const { error } = await supabase.from("reports").update({ status: "dismissed" }).eq("id", id);
+  if (error) throw error;
+  return true;
 }
 
 // Removes the reported post outright (admin-only delete policy on posts)
 // and marks the report resolved.
 export async function removeReportedPost(reportId, postId) {
-  try {
-    const { error: delErr } = await supabase.from("posts").delete().eq("id", postId);
-    if (delErr) throw delErr;
-    const { error: updErr } = await supabase.from("reports").update({ status: "removed" }).eq("id", reportId);
-    if (updErr) throw updErr;
-    return true;
-  } catch (e) {
-    console.error("removeReportedPost(): --", e?.message || e);
-    return false;
-  }
+  const { error: delErr } = await supabase.from("posts").delete().eq("id", postId);
+  if (delErr) throw delErr;
+  const { error: updErr } = await supabase.from("reports").update({ status: "removed" }).eq("id", reportId);
+  if (updErr) throw updErr;
+  return true;
 }
 
 /* ---------------- add evidence (admin) ---------------- */

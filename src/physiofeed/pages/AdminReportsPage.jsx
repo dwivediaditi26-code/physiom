@@ -16,6 +16,7 @@ export default function AdminReportsPage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!profile?.isAdmin) return;
@@ -31,18 +32,34 @@ export default function AdminReportsPage() {
   // "not found" behaviour instead of a page that looks broken/empty.
   if (!profile?.isAdmin) return <Navigate to="/feed" replace />;
 
+  // P9 (2026-09-22): both of these used to drop the row from the queue
+  // whether or not the write succeeded, so a report that was never
+  // dismissed -- or a post that was never removed -- disappeared from
+  // review as if it had been handled. The row now stays put on failure.
   const handleDismiss = async (id) => {
     setBusyId(id);
-    await db.dismissReport(id);
-    setReports((rs) => rs.filter((r) => r.id !== id));
-    setBusyId(null);
+    setError(null);
+    try {
+      await db.dismissReport(id);
+      setReports((rs) => rs.filter((r) => r.id !== id));
+    } catch (e) {
+      setError(e?.message || "Couldn't dismiss that report -- please try again.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const handleRemove = async (report) => {
     setBusyId(report.id);
-    await db.removeReportedPost(report.id, report.postId);
-    setReports((rs) => rs.filter((r) => r.id !== report.id));
-    setBusyId(null);
+    setError(null);
+    try {
+      await db.removeReportedPost(report.id, report.postId);
+      setReports((rs) => rs.filter((r) => r.id !== report.id));
+    } catch (e) {
+      setError(e?.message || "Couldn't remove that post -- please try again.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
@@ -54,6 +71,8 @@ export default function AdminReportsPage() {
           <p className="text-sm text-slate-500">Open reports awaiting review.</p>
         </div>
       </div>
+
+      {error && <p className="text-xs text-rose-600 mb-3">{error}</p>}
 
       {loading ? (
         <p className="text-sm text-slate-400">Loading…</p>
