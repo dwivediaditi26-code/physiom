@@ -73,7 +73,7 @@ Missing (blocks deep-linking): `/opportunity/:id`, `/application/:id`, `/organiz
 | P6 | Application status + notifications | Built, untested | Triggers shipped in the P2–P6 migration; client now reads entity_type/entity_id and deep-links |
 | P7 | Feed + posts + evidence | Built, untested | Real posts/likes/comments already; 2026-09-22 removed the demo-feed-on-empty fallback and the silent fake-success on failed writes for signed-in users |
 | P8 | Search + discovery | Built, untested | /search page + db.searchEverything() across people/opportunities/posts/evidence; header Enter and the app's mobile search icon both land there; results deep-link to profile, /explore?opp=, /feed?post=, evidence highlight |
-| P9 | Permissions, states, mobile QA | Not started | |
+| P9 | Permissions, states, mobile QA | Built, untested signed-in | Guest vs signed-in honesty across every non-feed read and write; empty states on People/Communities/Evidence; 375px pass (one real bug: Explore's FAB sat over the empty state) |
 
 **Rule: do not start a priority while the one above it fails its acceptance test.**
 

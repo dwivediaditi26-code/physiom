@@ -404,10 +404,14 @@ export default function ExplorePage() {
         })}
       </div>
 
+      {/* P9 (2026-09-22, mobile QA): the card grid already cleared the FAB
+          with pb-28, but these two didn't -- on a phone with nothing to
+          list, the "+ Post" button floated straight over the only line of
+          text on the screen. */}
       {loading ? (
-        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">Loading opportunities…</div>
+        <div className="pf-font-body text-center pt-10 pb-28 lg:pb-20 text-[#A79CC4] text-sm">Loading opportunities…</div>
       ) : filtered.length === 0 ? (
-        <div className="pf-font-body text-center py-14 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
+        <div className="pf-font-body text-center pt-10 pb-28 lg:pb-20 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
       ) : (
         <div ref={gridRef} className="grid sm:grid-cols-2 gap-4 pb-28 lg:pb-20">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}

@@ -83,8 +83,15 @@ export default function EvidencePage() {
 
           <p className="pf-font-body text-xs text-[#A79CC4] mb-4">Showing {filtered.length} of {evidence.length}</p>
 
+          {/* P9 (2026-09-22): one message covered both "your filter matched
+              nothing" and "the library is empty" -- the second is reachable
+              now that getEvidence() stops padding an empty table with demo
+              papers for signed-in users, and telling them their search was
+              at fault would be wrong. */}
           {filtered.length === 0 ? (
-            <div className="pf-font-body text-center py-16 text-[#A79CC4] text-sm">No research matches that search.</div>
+            <div className="pf-font-body text-center py-16 text-[#A79CC4] text-sm">
+              {evidence.length === 0 ? "No research articles yet — the library is still being built." : "No research matches that search."}
+            </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
               {filtered.map((a) => (

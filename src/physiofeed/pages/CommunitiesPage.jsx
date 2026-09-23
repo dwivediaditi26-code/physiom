@@ -19,10 +19,22 @@ export default function CommunitiesPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{joined.map((c) => <CommunityCard key={c.id} community={c} />)}</div>
         </div>
       )}
-      <div>
-        <p className="pf-font-head text-sm font-bold text-[#2B2140] mb-3">Discover</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{discover.map((c) => <CommunityCard key={c.id} community={c} />)}</div>
-      </div>
+      {/* P9 (2026-09-22): getCommunities() no longer pads an empty table
+          with demo groups for a signed-in clinician, so "no groups yet" is
+          a state this page can actually reach -- it used to render a bare
+          "Discover" heading over nothing. */}
+      {communities.length === 0 ? (
+        <div className="pf-font-body text-center py-16 text-[#A79CC4] text-sm">No communities yet — they'll appear here once they're set up.</div>
+      ) : (
+        <div>
+          <p className="pf-font-head text-sm font-bold text-[#2B2140] mb-3">Discover</p>
+          {discover.length === 0 ? (
+            <p className="pf-font-body text-sm text-[#A79CC4]">You've joined every community here.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{discover.map((c) => <CommunityCard key={c.id} community={c} />)}</div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

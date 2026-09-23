@@ -100,6 +100,17 @@ export default function PeoplePage() {
         )}
         {filtered.map((p) => <PersonCard key={p.id} person={p} />)}
       </div>
+      {/* P9 (2026-09-22): this page rendered a bare grid with nothing in
+          it when nobody matched. Reachable far more often now that
+          getPeople() stops padding the real list with demo clinicians for
+          signed-in users. */}
+      {filtered.length === 0 && !selfMatches && (
+        <div className="text-center py-16 text-slate-400 text-sm">
+          {people.length === 0
+            ? "No other clinicians here yet — you're early."
+            : `No one matches "${query.trim()}".`}
+        </div>
+      )}
     </main>
   );
 }
