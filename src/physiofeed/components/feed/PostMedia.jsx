@@ -13,6 +13,19 @@ export default function PostMedia({ post, onDoubleTap, burst, size = "large" }) 
   // handles every demo post (gradient tiles, checklist/phases overlays,
   // the demo carousel) exactly as before.
   const hasRealMedia = Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0;
+
+  // createPost() (db.js) defaults media_type to "checklist" for a plain
+  // text post (no photo/video attached) -- there was never a dedicated
+  // "no media" type. With no real upload and no actual checklist items,
+  // that used to fall through to the decorative gradient tile below with
+  // nothing on it, on every plain text post. Same issue already fixed for
+  // Clinical Discussion cards (GridPostCard.jsx, 2026-09-23); fixing it
+  // here instead so every post type (not just discussions) stops showing
+  // an empty gradient box.
+  if (!hasRealMedia && post.media === "checklist" && !(post.checklist?.length > 0)) {
+    return null;
+  }
+
   if (hasRealMedia && (post.media === "photo" || post.media === "video")) {
     const idx = post.mediaIndex || 0;
     const currentUrl = post.mediaUrls[idx];
