@@ -346,6 +346,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const navContextRef = useRef({});
   useEffect(() => { navContextRef.current = navContext; }, [navContext]);
   const [canGoBack, setCanGoBack] = useState(false);
+  // PhysioFeedEntry.jsx's BackBridge writes { canGoBack, goBack } here on
+  // every internal navigation -- lets goBack() below unwind PhysioFeed's
+  // own Feed/Explore/People/.../discussion navigation one step at a time
+  // instead of always falling straight through to window.history.back()
+  // (see goBack's own comment for why that alone isn't enough).
+  const physioFeedBackRef = useRef({ canGoBack: false, goBack: () => {} });
   // Bumped when the Learn tab is tapped while Learn is already open, so the
   // <LazyLearnTabEntry key=...> below remounts and lands back on Learn's home
   // instead of staying inside whichever study screen is open (2026-09-19,
@@ -1260,7 +1266,24 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // In-header "← Back" button: defers to the real browser history (rather
   // than a hand-rolled stack) so it stays perfectly in sync with the
   // hardware back button -- one press of either always does the same thing.
+  //
+  // EXCEPT inside PhysioFeed (2026-09-23, "it takes us directly to home...
+  // it should take us just previous open page"): PhysioFeedEntry.jsx's
+  // MemoryRouter deliberately never touches window.history (its own header
+  // comment explains why -- a second router driving the real URL would
+  // fight with navTo's pushState), so there is nothing finer-grained than
+  // "leave PhysioFeed" for window.history.back() to fall back to. While
+  // inside PhysioFeed with somewhere internal left to unwind, defer to
+  // BackBridge's tracked depth instead. The hardware/gesture back button
+  // still goes through window.history.back() directly and so still jumps
+  // straight out of PhysioFeed in one step -- fully unifying the two would
+  // mean PhysioFeed's internal nav pushing real history entries, a much
+  // bigger change than this one button.
   const goBack = useCallback(() => {
+    if (activeRef.current === "physiofeed" && physioFeedBackRef.current.canGoBack) {
+      physioFeedBackRef.current.goBack();
+      return;
+    }
     try { window.history.back(); } catch {}
   }, []);
 
@@ -2205,7 +2228,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {mountedTabs.has("physiofeed") && (
             <div className="pm-bleed" style={{display: active==="physiofeed" ? "block" : "none"}}>
               <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>}>
-                <LazyPhysioFeedEntry key={physioFeedResetKey} jumpTo={active==="physiofeed"?navContext:undefined}/>
+                <LazyPhysioFeedEntry key={physioFeedResetKey} jumpTo={active==="physiofeed"?navContext:undefined} backRef={physioFeedBackRef}/>
               </Suspense>
             </div>
           )}

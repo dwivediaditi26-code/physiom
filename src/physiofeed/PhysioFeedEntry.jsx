@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { MemoryRouter, useNavigate } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { AppDataProvider } from "./context/AppDataContext.jsx";
 import { DemoConversationsProvider } from "./context/DemoConversationsContext.jsx";
 import PhysioFeedRoutes from "./PhysioFeedRoutes.jsx";
@@ -48,13 +48,62 @@ function JumpBridge({ jumpTo }) {
   return null;
 }
 
-export default function PhysioFeedEntry({ jumpTo }) {
+// Lets AppFull.jsx's in-header "← Back" button unwind PhysioFeed's own
+// internal navigation one step at a time instead of always falling
+// straight through to window.history.back() -- which, since MemoryRouter
+// never touches real browser history (see the file header comment above),
+// otherwise pops clean past everything visited inside PhysioFeed in one
+// jump (2026-09-23, "it should take us just [the] previous open page").
+// `depthRef` counts internal navigations since this tab was last (re)mounted;
+// `goingBackRef` tells the location-change effect below "this change is
+// OUR OWN goBack() call, don't count it as a new forward step."
+function BackBridge({ backRef }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const depthRef = useRef(0);
+  const goingBackRef = useRef(false);
+  // Seeded directly from the first render's location.key, NOT set inside
+  // an effect -- React.StrictMode (see main.jsx) double-invokes effects in
+  // dev, and a run-once "have I mounted yet" flag isn't idempotent against
+  // that (the 2nd invocation sees the flag already flipped and counts a
+  // phantom step that never happened). Comparing against the last-seen KEY
+  // is: both invocations see the same unchanged location.key on a no-op
+  // re-run, so the comparison is a safe no-op either way it fires.
+  const lastKeyRef = useRef(location.key);
+
+  useEffect(() => {
+    if (location.key === lastKeyRef.current) return;
+    lastKeyRef.current = location.key;
+    if (goingBackRef.current) { goingBackRef.current = false; depthRef.current = Math.max(0, depthRef.current - 1); return; }
+    depthRef.current += 1;
+    // location.key (not .pathname) so a same-path, different-query nav --
+    // e.g. a notification's /feed?post=<id> deep link opening a different
+    // post while already on /feed -- still counts as a real step.
+  }, [location.key]);
+
+  useEffect(() => {
+    if (!backRef) return;
+    backRef.current = {
+      canGoBack: depthRef.current > 0,
+      goBack: () => {
+        if (depthRef.current <= 0) return;
+        goingBackRef.current = true;
+        navigate(-1);
+      },
+    };
+  });
+
+  return null;
+}
+
+export default function PhysioFeedEntry({ jumpTo, backRef }) {
   return (
     <div className="physiofeed-root">
       <MemoryRouter initialEntries={[JUMPABLE_TABS.has(jumpTo?.pfTab) ? `/${jumpTo.pfTab}` : "/feed"]}>
         <AppDataProvider>
           <DemoConversationsProvider>
             <JumpBridge jumpTo={jumpTo}/>
+            <BackBridge backRef={backRef}/>
             <PhysioFeedRoutes/>
           </DemoConversationsProvider>
         </AppDataProvider>
