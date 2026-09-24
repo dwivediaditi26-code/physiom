@@ -3,6 +3,7 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 import CreateTypePicker from "./create/CreateTypePicker.jsx";
 import PostComposer from "./create/PostComposer.jsx";
 import CaseComposer from "./create/CaseComposer.jsx";
+import DiscussionComposer from "./create/DiscussionComposer.jsx";
 import ResearchComposer from "./create/ResearchComposer.jsx";
 import PollComposer from "./create/PollComposer.jsx";
 
@@ -35,6 +36,7 @@ export default function Composer() {
 
   switch (composerType) {
     case "case": return <CaseComposer />;
+    case "discussion": return <DiscussionComposer />;
     case "research": return <ResearchComposer />;
     case "poll": return <PollComposer />;
     case "video": return <PostComposer mode="video" />;

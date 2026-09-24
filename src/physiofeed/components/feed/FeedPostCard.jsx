@@ -8,6 +8,8 @@ import DeletePostButton from "./DeletePostButton.jsx";
 import CaseBody from "./CaseBody.jsx";
 import ResearchBody from "./ResearchBody.jsx";
 import PollBody from "./PollBody.jsx";
+import DiscussionBody from "./DiscussionBody.jsx";
+import DiscussionThread from "./DiscussionThread.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
@@ -45,6 +47,8 @@ export default function FeedPostCard({ post }) {
   };
 
   const visibleComments = showAllComments ? post.commentList : post.commentList.slice(0, 1);
+  const isDiscussion = post.postType === "discussion";
+  const answerCount = isDiscussion ? post.commentList.filter((c) => !c.parentId && !c.isCaseUpdate && !c.isFinalUpdate).length : post.commentList.length;
 
   return (
     <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5">
@@ -73,6 +77,8 @@ export default function FeedPostCard({ post }) {
         <ResearchBody post={post} />
       ) : post.postType === "poll" ? (
         <PollBody post={post} />
+      ) : post.postType === "discussion" ? (
+        <DiscussionBody post={post} onDoubleTap={handleDoubleTap} burst={burst} />
       ) : (
         <>
           {post.media !== "image" && post.media !== "photo" && <h3 className="font-bold text-slate-900 text-base mb-2">{post.heading}</h3>}
@@ -93,7 +99,7 @@ export default function FeedPostCard({ post }) {
           </button>
           <button onClick={openComments} className="flex items-center gap-1.5 group focus:outline-none">
             <MessageCircle size={19} className="text-slate-400 group-hover:text-[#DB2777]" />
-            <span className="text-xs font-medium text-slate-500">{post.commentList.length}</span>
+            <span className="text-xs font-medium text-slate-500">{isDiscussion ? answerCount : post.commentList.length}</span>
           </button>
           <button className="flex items-center gap-1.5 group focus:outline-none"><Share2 size={19} className="text-slate-400 group-hover:text-[#DB2777]" /></button>
         </div>
@@ -122,37 +128,43 @@ export default function FeedPostCard({ post }) {
         </div>
       )}
 
-      {post.commentList.length > 0 && (
-        <div className="mt-3 space-y-1.5">
-          {!showAllComments && post.commentList.length > 1 && (
-            <button onClick={() => setShowAllComments(true)} className="text-xs text-slate-400 hover:text-slate-600">View all {post.commentList.length} comments</button>
-          )}
-          {visibleComments.map((c) => (
-            <div key={c.id} className="flex items-start justify-between gap-2 group">
-              <p className="text-xs text-slate-600"><span className="font-semibold text-slate-800">{c.author}</span> {c.text}</p>
-              {c.isSelf && (
-                <button
-                  onClick={() => deleteComment(post.id, c.id)}
-                  aria-label="Delete comment"
-                  className="shrink-0 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
-                >
-                  <Trash2 size={12} />
-                </button>
+      {isDiscussion ? (
+        <DiscussionThread post={post} />
+      ) : (
+        <>
+          {post.commentList.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {!showAllComments && post.commentList.length > 1 && (
+                <button onClick={() => setShowAllComments(true)} className="text-xs text-slate-400 hover:text-slate-600">View all {post.commentList.length} comments</button>
               )}
+              {visibleComments.map((c) => (
+                <div key={c.id} className="flex items-start justify-between gap-2 group">
+                  <p className="text-xs text-slate-600"><span className="font-semibold text-slate-800">{c.author}</span> {c.text}</p>
+                  {c.isSelf && (
+                    <button
+                      onClick={() => deleteComment(post.id, c.id)}
+                      aria-label="Delete comment"
+                      className="shrink-0 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
-        {/* Bug fix (2026-08-18): this was hardcoded to grad="violet"
-            initials="AS" regardless of who was actually signed in --
-            now shows the real signed-in user's avatar. */}
-        <Avatar size={26} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
-        <input ref={commentInputRef} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
-          placeholder="Add a comment…" className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent" />
-        <button onClick={submitComment} disabled={!commentText.trim()} className="text-[#DB2777] disabled:text-slate-300"><Send size={16} /></button>
-      </div>
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+            {/* Bug fix (2026-08-18): this was hardcoded to grad="violet"
+                initials="AS" regardless of who was actually signed in --
+                now shows the real signed-in user's avatar. */}
+            <Avatar size={26} grad={profile?.gradient} initials={profile?.initials} photoUrl={profile?.avatarUrl} />
+            <input ref={commentInputRef} value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitComment()}
+              placeholder="Add a comment…" className="flex-1 text-sm outline-none placeholder:text-slate-400 bg-transparent" />
+            <button onClick={submitComment} disabled={!commentText.trim()} className="text-[#DB2777] disabled:text-slate-300"><Send size={16} /></button>
+          </div>
+        </>
+      )}
     </article>
   );
 }

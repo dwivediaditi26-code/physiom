@@ -1,4 +1,4 @@
-import { FileText, Stethoscope, FlaskConical, Video, Image as ImageIcon, BarChart3 } from "lucide-react";
+import { FileText, Stethoscope, FlaskConical, Video, Image as ImageIcon, BarChart3, MessagesSquare } from "lucide-react";
 
 // The very first thing a physio sees after tapping "Create" -- picking a
 // type up front is what keeps the feed from turning into one undifferentiated
@@ -7,6 +7,7 @@ import { FileText, Stethoscope, FlaskConical, Video, Image as ImageIcon, BarChar
 const TYPES = [
   { id: "post", icon: FileText, label: "Post", desc: "Share something with physiotherapists" },
   { id: "case", icon: Stethoscope, label: "Clinical Case", desc: "Share an educational case" },
+  { id: "discussion", icon: MessagesSquare, label: "Clinical Discussion", desc: "Ask the community about a case" },
   { id: "research", icon: FlaskConical, label: "Research", desc: "Share / discuss research" },
   { id: "video", icon: Video, label: "Video", desc: "Technique · Exercise · Tip" },
   { id: "photo", icon: ImageIcon, label: "Photo / Image", desc: "Posture · exercise · diagram" },

@@ -95,7 +95,7 @@ export async function getPosts() {
     const pollPostIds = posts.filter((p) => p.post_type === "poll").map((p) => p.id);
     const [likesRes, commentsRes, savesRes, followsRes, pollVotesRes] = await Promise.all([
       supabase.from("post_likes").select("post_id, user_id").in("post_id", postIds),
-      supabase.from("comments").select("id, post_id, author_id, text, created_at").in("post_id", postIds).order("created_at", { ascending: true }),
+      supabase.from("comments").select("id, post_id, author_id, text, created_at, parent_comment_id, is_case_update, is_final_update").in("post_id", postIds).order("created_at", { ascending: true }),
       uid ? supabase.from("saved_posts").select("post_id").eq("user_id", uid) : Promise.resolve({ data: [] }),
       uid ? supabase.from("follows").select("following_id").eq("follower_id", uid) : Promise.resolve({ data: [] }),
       pollPostIds.length ? supabase.from("poll_votes").select("post_id, user_id, option_index").in("post_id", pollPostIds) : Promise.resolve({ data: [] }),
@@ -150,9 +150,22 @@ export async function getPosts() {
         mediaUrls: p.media_urls || [],
         tags: p.tags || [],
         postType, case: media.case || null, research: media.research || null, poll,
+        discussion: media.discussion || null,
         likes: postLikes.length, liked: uid ? postLikes.some((l) => l.user_id === uid) : false, saved: savedSet.has(p.id),
         likedByPreview: postLikes.slice(0, 2).map((l) => profileById[l.user_id]?.name).filter(Boolean),
-        commentList: postComments.map((c) => ({ id: String(c.id), author: profileById[c.author_id]?.name || "Unknown", text: c.text, isSelf: uid ? c.author_id === uid : false })),
+        commentList: postComments.map((c) => ({
+          id: String(c.id),
+          authorId: c.author_id,
+          author: profileById[c.author_id]?.name || "Unknown",
+          authorAvatarUrl: profileById[c.author_id]?.avatar_url || null,
+          authorGradient: profileById[c.author_id]?.gradient || "violet",
+          text: c.text,
+          isSelf: uid ? c.author_id === uid : false,
+          parentId: c.parent_comment_id ? String(c.parent_comment_id) : null,
+          isCaseUpdate: !!c.is_case_update,
+          isFinalUpdate: !!c.is_final_update,
+          time: timeAgo(c.created_at),
+        })),
       };
     });
   } catch (e) {
@@ -240,11 +253,16 @@ export async function toggleFollowAuthor(postId) {
   return getPosts(); // see the BUG FIX comment in toggleLike() above -- same crash, same fix
 }
 
-export async function addComment(postId, text) {
+export async function addComment(postId, text, opts = {}) {
+  const { parentCommentId, isCaseUpdate, isFinalUpdate } = opts;
   try {
     const uid = await currentUserId();
     if (!uid) throw new Error("not signed in");
-    const { error } = await supabase.from("comments").insert({ post_id: postId, author_id: uid, text });
+    const row = { post_id: postId, author_id: uid, text };
+    if (parentCommentId) row.parent_comment_id = parentCommentId;
+    if (isCaseUpdate) row.is_case_update = true;
+    if (isFinalUpdate) row.is_final_update = true;
+    const { error } = await supabase.from("comments").insert(row);
     if (error) throw error;
   } catch (e) {
     if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
@@ -285,6 +303,24 @@ export async function deleteComment(postId, commentId) {
     if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     _posts = _posts.map((p) => (p.id === postId ? { ...p, commentList: p.commentList.filter((c) => c.id !== commentId) } : p));
   }
+  return getPosts();
+}
+
+// Clinical Discussion's "Close discussion" toggle (2026-09-23). "Closed"
+// isn't a real posts column -- it lives at media.discussion.closed, same
+// jsonb pattern case/research/poll fields already use. posts_update_own
+// RLS already scopes this to the author, so the .eq("author_id", uid) here
+// is belt-and-braces, same as deletePost()/deleteComment() above.
+export async function setDiscussionClosed(postId, closed) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to update this discussion.");
+  const { data: existing, error: selErr } = await supabase.from("posts").select("media").eq("id", postId).maybeSingle();
+  if (selErr) throw selErr;
+  const media = existing?.media || {};
+  const { error } = await supabase.from("posts")
+    .update({ media: { ...media, discussion: { ...(media.discussion || {}), closed } } })
+    .eq("id", postId).eq("author_id", uid);
+  if (error) throw error;
   return getPosts();
 }
 
@@ -389,6 +425,17 @@ export async function uploadPostVideo(file) {
   if (!uid) throw new Error("Sign in to upload videos.");
   const ext = (file.name?.split(".").pop() || "mp4").toLowerCase();
   return uploadToBucket("post-videos", uid, file, ext);
+}
+
+// Clinical Discussion's optional "Add document" attachment (2026-09-23) --
+// own bucket (add_clinical_discussions.sql), same own-folder/public-read
+// shape as every other bucket here. PDF only, validated by the caller via
+// lib/media.js's validateResumeFile() -- same reasoning as uploadResume().
+export async function uploadPostDocument(file) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload documents.");
+  const ext = (file.name?.split(".").pop() || "pdf").toLowerCase();
+  return uploadToBucket("post-documents", uid, file, ext);
 }
 
 // Added 2026-08-18 for real profile-photo upload -- uses the

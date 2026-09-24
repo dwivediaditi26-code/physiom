@@ -23,6 +23,13 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 export default function GridPostCard({ post }) {
   const { likePost, savePost } = useAppData();
   const [detailOpen, setDetailOpen] = useState(false);
+  // Once replies/case-updates share commentList (Clinical Discussion,
+  // 2026-09-23) a raw .length here would count them too -- only top-level,
+  // non-update entries are real "answers"/comments, same filter
+  // FeedPostCard.jsx uses for its own count.
+  const commentCount = post.postType === "discussion"
+    ? post.commentList.filter((c) => !c.parentId && !c.isCaseUpdate && !c.isFinalUpdate).length
+    : post.commentList.length;
   return (
     <>
       <article
@@ -34,7 +41,15 @@ export default function GridPostCard({ post }) {
       >
         <p className="text-xs text-slate-400 mb-2">{post.time} ago</p>
         {post.media !== "image" && <h3 className="font-semibold text-slate-900 text-sm mb-2">{post.heading}</h3>}
-        <PostMedia post={post} size="small" />
+        {/* Clinical Discussion (2026-09-23): most discussions have no photo/
+            video, and PostMedia's fallback for a medialess post is a big
+            decorative gradient tile -- fine as a colorful post accent
+            elsewhere, but wrong for a plain text question (exactly the
+            "dashboard-like" look the feature explicitly avoids). Only show
+            it here when there's a real attachment to show. */}
+        {(post.postType !== "discussion" || post.media === "photo" || post.media === "video") && (
+          <PostMedia post={post} size="small" />
+        )}
         <p className="text-xs text-slate-600 mt-2.5 line-clamp-2">{post.caption}</p>
         <div className="flex flex-wrap gap-1 mt-2">
           {post.tags.map((t) => <span key={t} className="text-[10px] font-bold text-[#B0790A] bg-[#FFF4E0] px-1.5 py-0.5 rounded-md">#{t}</span>)}
@@ -45,7 +60,7 @@ export default function GridPostCard({ post }) {
             <span className="text-xs text-slate-500">{post.likes}</span>
           </button>
           <span className="flex items-center gap-1.5">
-            <MessageCircle size={16} className="text-slate-400" /><span className="text-xs text-slate-500">{post.commentList.length}</span>
+            <MessageCircle size={16} className="text-slate-400" /><span className="text-xs text-slate-500">{commentCount}</span>
           </span>
           <button onClick={(e) => { e.stopPropagation(); savePost(post.id); }} className="ml-auto"><Bookmark size={16} className={post.saved ? "fill-[#FFB020] text-[#FFB020]" : "text-slate-400"} /></button>
         </div>

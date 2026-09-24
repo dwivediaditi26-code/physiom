@@ -131,10 +131,12 @@ export function AppDataProvider({ children }) {
   const likePost = useCallback((id) => runFeedAction(() => db.toggleLike(id)), [runFeedAction]);
   const savePost = useCallback((id) => runFeedAction(() => db.toggleSave(id)), [runFeedAction]);
   const followAuthor = useCallback((id) => runFeedAction(() => db.toggleFollowAuthor(id)), [runFeedAction]);
-  const commentOnPost = useCallback((id, text) => runFeedAction(() => db.addComment(id, text)), [runFeedAction]);
+  const commentOnPost = useCallback((id, text, opts) => runFeedAction(() => db.addComment(id, text, opts)), [runFeedAction]);
   const publishPost = useCallback(async (fields) => { await db.createPost(fields); setPosts(await db.getPosts()); }, []);
   const uploadImage = useCallback((blob) => db.uploadPostImage(blob), []);
   const uploadVideo = useCallback((file) => db.uploadPostVideo(file), []);
+  const uploadDocument = useCallback((file) => db.uploadPostDocument(file), []);
+  const closeDiscussion = useCallback((id, closed) => runFeedAction(() => db.setDiscussionClosed(id, closed)), [runFeedAction]);
   const votePoll = useCallback((id, optionIndex) => runFeedAction(() => db.votePoll(id, optionIndex)), [runFeedAction]);
   const setCarousel = useCallback(async (id, index) => { await db.setCarouselIndex(id, index); setPosts(await db.getPosts()); }, []);
   const followPerson = useCallback((id) => runAction(
@@ -214,7 +216,7 @@ export function AppDataProvider({ children }) {
     feedError, clearFeedError: () => setFeedError(null),
     actionError, clearActionError: () => setActionError(null),
     followPerson, endorseSkill, saveEvidence, joinCommunity, reportPost, deletePost, deleteComment, markNotificationRead,
-    uploadImage, uploadVideo, votePoll, updateProfile, uploadProfileImage,
+    uploadImage, uploadVideo, uploadDocument, closeDiscussion, votePoll, updateProfile, uploadProfileImage,
     addEducationEntry, updateEducationEntry, deleteEducationEntry,
     addAchievement, updateAchievement, deleteAchievement,
     addRotation, updateRotation, deleteRotation, uploadResume,
