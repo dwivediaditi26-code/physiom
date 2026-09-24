@@ -1839,7 +1839,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       </div>
 
       {/* Header — Medical Professional */}
-      <div className="pm-header" style={{background:PC.isDark?`linear-gradient(180deg,${PC.headerBg},${PC.surface})`:`${PC.headerBg}`,borderBottom:`1px solid ${PC.border}`,padding:"0 24px",position:"sticky",top:0,zIndex:100,boxShadow:PC.isDark?"0 1px 20px rgba(0,0,0,0.4)":"0 1px 12px rgba(0,20,50,0.06)",transform:"translateZ(0)",WebkitTransform:"translateZ(0)",willChange:"transform",backfaceVisibility:"hidden"}}>
+      <div className="pm-header" style={{background:"#ffffff",borderBottom:`1px solid ${PC.border}`,padding:"0 24px",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 12px rgba(0,20,50,0.06)",transform:"translateZ(0)",WebkitTransform:"translateZ(0)",willChange:"transform",backfaceVisibility:"hidden"}}>
         <div className="pm-header-inner" style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
             <button className="pm-hamburger" onClick={()=>setNavOpen(o=>!o)} aria-label="Open navigation">☰</button>
@@ -2018,17 +2018,16 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         </div>
       )}
       {!activePatient && (
-        <div className="pm-patient-bar" style={{background:PC.isDark?"rgba(56,189,248,0.03)":"rgba(3,105,161,0.03)",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <div className="pm-patient-bar" style={{background:"#ffffff",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           <span style={{fontSize:"0.8rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
           <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
-          <button onClick={()=>setShowPatientDb(true)} style={{padding:"5px 14px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:7,color:PC.a2,fontSize:"0.78rem",fontWeight:600,cursor:"pointer"}}>Load Patient</button>
         </div>
       )}
 
       <div className="pm-body" style={{display:"flex",flex:1,maxWidth:1400,margin:"0 auto",width:"100%"}}>
 
         {/* Desktop Sidebar */}
-        <div className="pm-sidebar" style={{width:210,minWidth:210,borderRight:`1px solid ${PC.border}`,padding:"16px 0 10px",background:PC.navBg,position:"sticky",top:60,height:"calc(100vh - 60px)",overflowY:"auto"}}>
+        <div className="pm-sidebar" style={{width:210,minWidth:210,borderRight:`1px solid ${PC.border}`,padding:"16px 0 10px",background:"#ffffff",position:"sticky",top:60,height:"calc(100vh - 60px)",overflowY:"auto"}}>
           <SidebarItems onNav={navTo}/>
         </div>
 
