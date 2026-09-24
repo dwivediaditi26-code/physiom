@@ -108,7 +108,7 @@ export function orthoStyles() {
         .ct-checkbox { font-size: 16px; color: ${BRAND.purple}; flex-shrink: 0; }
         .ct-modal-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid ${BRAND.border}; }
 
-        .content { flex: 1; padding: 18px 16px 150px; }
+        .content { flex: 1; padding: 6px 16px 150px; }
 
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
@@ -786,51 +786,37 @@ export function orthoStyles() {
         .obj-match-c4 { background: #F0FDFA; } .obj-match-c4 .obj-match-pct { color: #0D9488; } .obj-match-c4.obj-match-card-active { border-color: #0D9488; }
         .obj-match-c5 { background: #EEF2FF; } .obj-match-c5 .obj-match-pct { color: #4F46E5; } .obj-match-c5.obj-match-card-active { border-color: #4F46E5; }
 
-        /* Objective Assessment subtopic tab bar -- horizontal, scrollable row
-           of individual "3D piano key" tiles; the active tile pops up solid
-           purple with a raised keycap shadow (2026-09-11, per chat reference:
-           "make it piano 3rd button"). Replaces the old all-sections-stacked
-           -on-one-page layout with one subtopic shown at a time. */
-        /* Neutral resting state, purple reserved for the active tab only
-           (2026-09-16, Aditi: "this is too much purple" -- bar background,
-           inactive-tab tint and inactive-tab text were all purple on top
-           of each other). Matches .region-tab's own gray-resting/
-           purple-active convention. */
-        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 3px; background: #F6F5FA; border-radius: 14px; padding: 6px; margin: 14px 0 12px; }
+        /* Objective Assessment subtopic tab bar -- flat, segmented pill row
+           (2026-09-24, Aditi, pasting a Stitch reference mockup: "make the
+           AI page of ortho like this same to same"). Replaces the earlier
+           raised "3D piano key" treatment: solid purple pill for the active
+           tab, plain white/bordered pills at rest, matching the reference's
+           Observation/Palpation/ROM/Special Tests tab row exactly. */
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 3px; margin: 14px 0 12px; }
         .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 3px; cursor: pointer; opacity: 0.6; }
         .obj-subtopic-scroll-btn:active { opacity: 1; }
-        /* Lean/compact (2026-09-24, Aditi went bigger, then "make this area
-           smaller", then straight-up compared it to her reference image and
-           asked for "lean compact" -- the reference fits Observation /
-           Palpation / ROM / Special Tests in one row at this width, this
-           should too). The center-snap padding's constant tracks a tile's own
-           half-width so a tile still centers correctly when scrolled to. */
-        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 5px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 40px); }
+        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px; }
         .obj-subtopic-tab { scroll-snap-align: center; }
         .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
-        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px; padding: 6px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
-          background: linear-gradient(180deg, #fff, #F7F7F9);
-          box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(20,10,45,.05), 0 4px 8px rgba(20,10,45,.06);
+        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-family: inherit;
+          background: #fff; border: 1px solid ${BRAND.border};
           transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-subtopic-tab i { font-size: 12px; color: ${BRAND.gray}; }
-        .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
+        .obj-subtopic-tab:active { transform: scale(0.96); }
+        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.gray}; }
+        .obj-subtopic-tab span { font-size: 11px; font-weight: 700; color: ${BRAND.ink}; line-height: 1.2; text-align: center; white-space: nowrap; }
+        .obj-subtopic-count { font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: #F1F0F5; color: ${BRAND.gray}; }
         .obj-subtopic-tab-active {
-          background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
-          transform: translateY(-2px);
-          box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #4a339e, 0 6px 12px rgba(76,58,168,.4);
+          background: ${BRAND.purple}; border-color: ${BRAND.purple};
+          box-shadow: 0 3px 8px rgba(124,58,237,.28);
         }
         .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
+        .obj-subtopic-tab-active .obj-subtopic-count { background: rgba(255,255,255,.22); color: #fff; }
         /* A clear, single card for the whole Observation/Posture/etc. stack
            below the tabs (2026-09-24, Aditi, comparing to her reference: "the
            below section also align") -- was a bare 1px border easy to miss
            against the white page background, reading as loose stacked rows
            rather than one section. */
         .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; padding: 6px 10px 8px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(20,10,45,.05); }
-        .obj-subtopic-nav { display: flex; justify-content: space-between; gap: 10px; padding: 14px 4px 4px; }
-        .obj-subtopic-nav-btn { padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
-        .obj-subtopic-nav-btn.back { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; }
-        .obj-subtopic-nav-btn.next { border: none; background: ${BRAND.purple}; color: #fff; }
-        .obj-subtopic-nav-btn:disabled { opacity: 0.4; cursor: default; }
 
         /* "Suggest probable objective assessment" button (2026-09-10, Aditi:
            "make 3d button and motion graphic when we click on it") — solid
@@ -849,6 +835,56 @@ export function orthoStyles() {
         .obj-ai-suggest-btn.thinking { background: linear-gradient(90deg, #D9CFFB 0%, #EDE7FE 50%, #D9CFFB 100%); background-size: 200% 100%; animation: objAiShimmer 1s linear infinite; cursor: default; }
         @keyframes objAiPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
         .obj-ai-thinking-icon { display: inline-block; animation: objAiPulse .6s ease-in-out infinite; }
+
+        /* Differential Inference banner — same Stitch reference (2026-09-24,
+           "same to same"): a gradient explainer card with its own explicit
+           Re-analyze button, replacing the old whole-card-is-one-tap-target
+           "Suggest probable objective assessment" button above. */
+        .obj-diag-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-radius: 12px; background: linear-gradient(90deg, ${BRAND.purpleFaint} 0%, #F3EEFE 60%, #EEF2FF 100%); border: 1px solid #DDD6FE; margin-top: 0; }
+        .obj-diag-banner-main { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+        .obj-diag-banner-icon { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, ${BRAND.purple}, ${BRAND.purpleDark}); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .obj-diag-banner-title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .obj-diag-banner-title { font-size: 12px; font-weight: 800; color: ${BRAND.purpleDark}; }
+        .obj-diag-banner-badge { font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: #fff; color: ${BRAND.purple}; }
+        .obj-diag-banner-sub { font-size: 10px; color: ${BRAND.gray}; line-height: 1.3; margin-top: 2px; }
+        .obj-diag-banner-btn { flex-shrink: 0; padding: 7px 12px; background: #fff; color: ${BRAND.purple}; font-size: 11px; font-weight: 700; border-radius: 10px; border: 1px solid #DDD6FE; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; }
+        .obj-diag-banner-btn:active { transform: scale(0.96); }
+        .obj-diag-banner-btn:disabled { opacity: 0.6; cursor: default; }
+
+        /* Target Hypotheses — compact 3-card grid, same reference mockup.
+           Top-ranked condition gets the accent treatment (purple border +
+           tinted PRIMARY badge + colored confidence tag); the other two
+           read as plain DIFF cards so the eye lands on one condition
+           first. "Customize" expands the full ranked list underneath
+           (same data/selection the old scrollable pill row used). */
+        .obj-hypo-head { display: flex; align-items: center; justify-content: space-between; margin: 2px 2px 6px; }
+        .obj-hypo-label { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: ${BRAND.grayLight}; }
+        .obj-hypo-customize { font-size: 12px; font-weight: 700; color: ${BRAND.purple}; background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 6px; font-family: inherit; }
+        .obj-hypo-customize:active { background: ${BRAND.purpleFaint}; }
+        .obj-hypo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4px; }
+        .obj-hypo-card { position: relative; text-align: left; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 10px; padding: 7px; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; justify-content: space-between; min-height: 78px; overflow: hidden; transition: border-color .12s ease, transform .1s ease; }
+        .obj-hypo-card:active { transform: scale(0.97); }
+        .obj-hypo-card-primary { border-color: ${BRAND.purple}; background: linear-gradient(180deg, ${BRAND.purpleFaint} 0%, #fff 70%); }
+        .obj-hypo-tag { position: absolute; top: 0; right: 0; font-size: 6.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 5px; border-radius: 0 0 0 8px; }
+        .obj-hypo-tag-primary { background: ${BRAND.purple}; color: #fff; }
+        .obj-hypo-tag-diff { background: #F1F0F5; color: ${BRAND.gray}; }
+        .obj-hypo-id { display: block; font-size: 9px; font-weight: 900; line-height: 1; color: ${BRAND.gray}; }
+        .obj-hypo-card-primary .obj-hypo-id { color: ${BRAND.purple}; }
+        .obj-hypo-name { display: block; font-size: 9.5px; font-weight: 700; color: ${BRAND.ink}; line-height: 1.25; margin-top: 3px; }
+        .obj-hypo-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+        .obj-hypo-icon { width: 16px; height: 16px; border-radius: 4px; background: ${BRAND.purpleFaint}; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; }
+        .obj-hypo-tier { font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px; background: #F1F0F5; color: ${BRAND.gray}; line-height: 1.5; }
+        .obj-hypo-tier-high { background: ${BRAND.greenBg}; color: ${BRAND.green}; }
+        .obj-hypo-tier-med { background: ${BRAND.amberBg}; color: ${BRAND.amber}; }
+        .obj-hypo-more { margin-top: 6px; }
+
+        /* Finding-card status pill (Positive/Unmarked) — same reference
+           mockup's per-finding badge, next to the title instead of only the
+           bottom-right checkmark the card already had. */
+        .obj-finding-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .obj-finding-status { flex-shrink: 0; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+        .obj-finding-status-positive { background: #FFF1F2; color: #E11D48; }
+        .obj-finding-status-unmarked { background: #F1F0F5; color: ${BRAND.grayLight}; text-transform: none; font-weight: 700; }
 
         /* Condition-specific assessment module cards — interactive checkboxes */
         .cmod-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
@@ -989,8 +1025,8 @@ export function orthoStyles() {
            not-yet-reached steps show their number in a plain outlined
            circle instead of being blank. */
         .ai-journey-dots {
-          display: flex; align-items: flex-start; margin: 6px 0 20px;
-          padding: 10px 8px; border-radius: 14px;
+          display: flex; align-items: flex-start; margin: 4px 0 2px;
+          padding: 8px 8px; border-radius: 14px;
           background: linear-gradient(155deg, #FCFAF6 0%, #F6F1E7 100%);
           box-shadow: inset 0 0 0 1px rgba(184,141,87,0.18);
         }

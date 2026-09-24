@@ -480,19 +480,105 @@ function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
   );
 }
 
-function ModuleCard({ label, color, defaultOpen = true, children }) {
+// Low/Med/High confidence label for a condition's real matchTier (same
+// Strong/Possible/Weak/Insufficient/Unlikely value ConditionTabs already
+// reads off matchById) -- for HypothesisGrid's tier pill.
+function tierLevel(m) {
+  if (!m) return null;
+  if (m.matchTier === "Strong match") return "high";
+  if (m.matchTier === "Possible match") return "med";
+  return "low";
+}
+const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
+
+// Target Hypotheses -- compact 3-card grid (top-ranked condition + next two)
+// mirroring the Stitch reference mockup, in front of the full scrollable
+// ConditionTabs list rather than replacing it: "Customize" reveals the rest
+// of `order` below for picking any other condition, same selection/data as
+// before (2026-09-24, Aditi: "make the AI page of ortho like this same to
+// same").
+function HypothesisGrid({ conditions, order, matchById, activeId, onSelect, expanded, onToggleExpanded }) {
+  const top3 = order.slice(0, 3);
+  return (
+    <div>
+      <div className="obj-hypo-head">
+        <span className="obj-hypo-label">Target Hypotheses</span>
+        {order.length > 3 && (
+          <button type="button" className="obj-hypo-customize" onClick={onToggleExpanded}>
+            {expanded ? "Show top 3" : `Customize (${order.length})`}
+          </button>
+        )}
+      </div>
+      <div className="obj-hypo-grid">
+        {top3.map((id, i) => {
+          const c = conditions[id];
+          if (!c) return null;
+          const m = matchById[id];
+          const pct = conditionMatchPct(m);
+          const level = tierLevel(m);
+          const isPrimary = i === 0;
+          const isActive = id === activeId;
+          return (
+            <button
+              key={id}
+              type="button"
+              className={"obj-hypo-card" + (isPrimary ? " obj-hypo-card-primary" : "") + (isActive && !isPrimary ? " obj-hypo-card-primary" : "")}
+              onClick={() => onSelect(id)}
+            >
+              <span className={"obj-hypo-tag " + (isPrimary ? "obj-hypo-tag-primary" : "obj-hypo-tag-diff")}>{isPrimary ? "Primary" : "Diff"}</span>
+              <span>
+                <span className="obj-hypo-id">{id}</span>
+                <span className="obj-hypo-name">{c.name}</span>
+              </span>
+              <span className="obj-hypo-foot">
+                <span className="obj-hypo-icon">🦴</span>
+                <span className={"obj-hypo-tier" + (isPrimary && level ? ` obj-hypo-tier-${level}` : "")}>
+                  {pct != null ? `${pct}%` : level ? TIER_TEXT[level] : m ? m.matchTier : "—"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {expanded && (
+        <div className="obj-hypo-more">
+          <ConditionTabs conditions={conditions} order={order} matchById={matchById} activeId={activeId} onSelect={onSelect} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Header restyled to match the Stitch reference's plain black title + light
+// pill finding-count, in place of the old colored-text "Close ↑"/"Open →"
+// link (2026-09-24, Aditi: pasted reference vs. app screenshots side by
+// side -- "first image is what i want... second is our webapp right now").
+// Still collapsible (tapping the header still toggles), just a quiet
+// chevron now instead of a text button, so a long module list can still be
+// tidied away without the header reading as a nav control.
+function ModuleCard({ label, subtitle, count, color, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderTop: `1px solid ${HAIRLINE}`, padding: "14px 2px" }}>
       <div
         onClick={() => setOpen((o) => !o)}
         role="button"
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", gap: 10 }}
       >
-        <span style={{ fontSize: "0.95rem", fontWeight: 700, color: color || BRAND.ink }}>
-          {label}
+        <span>
+          <span style={{ fontSize: "1rem", fontWeight: 800, color: BRAND.ink, display: "block" }}>
+            {label}
+          </span>
+          {subtitle && <span style={{ fontSize: "0.78rem", color: BRAND.gray, display: "block", marginTop: 2 }}>{subtitle}</span>}
         </span>
-        <span style={{ fontSize: "0.76rem", fontWeight: 600, color: BRAND.purple }}>{open ? "Close ↑" : "Open →"}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginTop: subtitle ? 2 : 0 }}>
+          {count != null && (
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: BRAND.purpleDark, background: BRAND.purpleFaint, padding: "4px 10px", borderRadius: 999 }}>
+              {count} Finding{count === 1 ? "" : "s"}
+            </span>
+          )}
+          <i className={"ti ti-chevron-" + (open ? "up" : "down")} style={{ fontSize: 16, color: BRAND.grayLight }} aria-hidden="true"></i>
+        </span>
       </div>
       {open && <div style={{ marginTop: 12 }}>{children}</div>}
     </div>
@@ -524,7 +610,7 @@ const SUBTOPICS = [
 // (2026-09-11: "whoever in the middle will show"). Tapping a tile still
 // works and scrolls it to center; both paths converge on the same
 // nearest-to-center logic so they never fight each other.
-function SubtopicTabs({ active, onSelect }) {
+function SubtopicTabs({ active, onSelect, counts }) {
   const scrollRef = React.useRef(null);
   const tileRefs = React.useRef({});
   const settleTimer = React.useRef(null);
@@ -588,6 +674,7 @@ function SubtopicTabs({ active, onSelect }) {
           >
             <i className={"ti " + s.icon} aria-hidden="true"></i>
             <span>{s.label}</span>
+            {counts?.[s.key] > 0 && <span className="obj-subtopic-count">{counts[s.key]}</span>}
           </button>
         ))}
       </div>
@@ -787,44 +874,42 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
       <button
         type="button"
         onClick={onToggle}
-        style={{ display: "flex", alignItems: "center", gap: 16, textAlign: "left", padding: 14, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+        style={{ display: "flex", alignItems: "flex-start", gap: 14, textAlign: "left", padding: 14, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
       >
         <div
           onClick={photoId ? (e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); } : undefined}
-          style={{ position: "relative", flex: "0 0 auto", width: 96, height: 96, borderRadius: 16, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
+          style={{ position: "relative", flex: "0 0 auto", width: 84, height: 84, borderRadius: 14, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
         >
           {hasPhoto ? (
             <img src={imgSrc} alt="" onError={() => setImgFailed(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 34, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
+            <i className={"ti " + (photoId ? "ti-camera-plus" : icon)} style={{ fontSize: 28, color: active ? BRAND.purpleDark : BRAND.grayLight }} aria-hidden="true"></i>
           )}
           {photoId && (
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFile} />
           )}
           {uploading && (
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.75)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-loader-2" style={{ fontSize: 26, color: BRAND.purple }} aria-hidden="true"></i>
+              <i className="ti ti-loader-2" style={{ fontSize: 22, color: BRAND.purple }} aria-hidden="true"></i>
             </div>
           )}
-          <span style={{ position: "absolute", top: -8, left: -8, width: 24, height: 24, borderRadius: 7, background: BRAND.purple, color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{index}</span>
-          {active && (
-            <span style={{ position: "absolute", bottom: -8, right: -8, width: 24, height: 24, borderRadius: "50%", background: BRAND.purple, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="ti ti-check" style={{ fontSize: 14 }} aria-hidden="true"></i>
-            </span>
-          )}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "0.95rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+          <div className="obj-finding-title-row">
+            <div style={{ fontSize: "0.9rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
+            <span className={"obj-finding-status " + (active ? "obj-finding-status-positive" : "obj-finding-status-unmarked")}>
+              {active ? "Positive" : "Unmarked"}
+            </span>
+          </div>
           {instruction && (
-            <div style={{ fontSize: "0.78rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 3 }}>{instruction}</div>
+            <div style={{ fontSize: "0.76rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 3 }}>{instruction}</div>
           )}
           {active && interpretation && (
-            <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.78rem", color: BRAND.gray, lineHeight: 1.5 }}>
+            <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.76rem", color: BRAND.gray, lineHeight: 1.5 }}>
               {splitSentences(interpretation).map((s, i) => <li key={i}>{s}</li>)}
             </ul>
           )}
         </div>
-        <i className="ti ti-chevron-down" style={{ fontSize: 18, color: BRAND.grayLight, transform: active ? "rotate(180deg)" : "none", flexShrink: 0 }} aria-hidden="true"></i>
       </button>
     </div>
   );
@@ -1192,7 +1277,7 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
   const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
   const howTo = category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       {options.map((o, i) => (
         <FindingCard
           key={o}
@@ -1227,9 +1312,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
   const [activeId, setActiveId] = useState(null);
   const [activeSubtopic, setActiveSubtopic] = useState("observation");
+  const [showAllHypotheses, setShowAllHypotheses] = useState(false);
   // Switching regions should land on that region's own front screen, not
   // whatever condition state the previous region was showing.
-  useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); }, [config.key]);
+  useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); setShowAllHypotheses(false); }, [config.key]);
   // Content used to stay hidden behind this tap -- Aditi wants it visible
   // immediately since the ranking is already computed synchronously from
   // Subjective data (engineResult/rankedIds below), so the button is now
@@ -1334,14 +1420,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     <div>
       {regionTabs}
 
-      {/* Same "assistant card" button/copy as the Subjective step's own
-          "🧠 Suggest probable objective assessment" (SubjectiveObjective.jsx).
-          The ranked cards below are always visible and already reflect the
-          current Subjective data live (2026-09-13, Aditi: "show it normally
-          even we dont click button") -- tapping just replays the "Analyzing…"
-          beat as a visual refresh cue after editing Subjective, it doesn't
-          reveal anything new. The sub-line below spells this out so it's
-          clear the button isn't the only way to see results.
+      {/* Differential Inference banner -- same gradient-card/Re-analyze
+          treatment as the Stitch reference (2026-09-24, Aditi: "make the AI
+          page of ortho like this same to same"), replacing the old
+          "🧠 Suggest probable objective assessment" button. Still the same
+          underlying behaviour: the ranked cards below are always live off
+          the current Subjective data (2026-09-13, Aditi: "show it normally
+          even we dont click button") -- Re-analyze just replays the
+          "Analyzing…" beat as a visual refresh cue, it doesn't reveal
+          anything new.
           Not sticky: when this renders inside the AI Objective Assessment
           wizard step, it sat under the same scrolling ancestor as that
           step's own sticky .topbar (journey dots + back button) and, being
@@ -1351,32 +1438,26 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           it's clicking so bad ... everything is vibrating"). Matches the
           single-sticky-header-per-screen pattern already established for
           .topbar/Cardio's header rather than stacking a second one. */}
-      <button
-        type="button"
-        className={"obj-ai-suggest-btn" + (isAnalyzing ? " thinking" : "")}
-        onClick={runSuggestAnalysis}
-        disabled={isAnalyzing}
-        style={{
-          width: "100%", minHeight: 40, padding: "8px 10px", borderRadius: 10,
-          cursor: isAnalyzing ? "default" : "pointer", fontFamily: "inherit",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginTop: 10, marginBottom: 4, textAlign: "left",
-        }}
-      >
-        <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-          <span className="obj-ai-suggest-title" style={{ fontSize: "0.7rem", fontWeight: 800, display: "flex", alignItems: "center", gap: 4, lineHeight: 1.25 }}>
-            <span className={isAnalyzing ? "obj-ai-thinking-icon" : undefined}>🧠</span>
-            {isAnalyzing ? "Analyzing…" : "Suggest probable objective assessment"}
-          </span>
-          <span className="obj-ai-suggest-sub" style={{ fontSize: "0.62rem", lineHeight: 1.25 }}>
-            {engineResult
-              ? `Matches Subjective answers — ${config.label}, ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched.`
-              : `Matches conditions to your Subjective answers — ${config.label}, fill Subjective first.`}
-          </span>
-        </span>
-        {!isAnalyzing && (
-          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.64rem", fontWeight: 800, flexShrink: 0, padding: "6px 10px", borderRadius: 999, background: "rgba(124,58,237,0.14)" }}>Re-run →</span>
-        )}
-      </button>
+      <div className="obj-diag-banner">
+        <div className="obj-diag-banner-main">
+          <span className={"obj-diag-banner-icon" + (isAnalyzing ? " obj-ai-thinking-icon" : "")}>🧠</span>
+          <div style={{ minWidth: 0 }}>
+            <div className="obj-diag-banner-title-row">
+              <span className="obj-diag-banner-title">Differential Inference</span>
+              {engineResult && <span className="obj-diag-banner-badge">{isAnalyzing ? "Analyzing…" : "Live Match"}</span>}
+            </div>
+            <div className="obj-diag-banner-sub">
+              {engineResult
+                ? `Matches Subjective answers — ${config.label}, ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched.`
+                : `Matches conditions to your Subjective answers — ${config.label}, fill Subjective first.`}
+            </div>
+          </div>
+        </div>
+        <button type="button" className="obj-diag-banner-btn" onClick={runSuggestAnalysis} disabled={isAnalyzing}>
+          <i className="ti ti-refresh" aria-hidden="true"></i>
+          <span>Re-analyze</span>
+        </button>
+      </div>
 
       <>
         {redFlag && (
@@ -1389,7 +1470,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           )}
 
           <div style={{ marginTop: 14 }}>
-            <ConditionTabs conditions={config.conditions} order={order} matchById={matchById} activeId={selectedId} onSelect={setActiveId} />
+            <HypothesisGrid
+              conditions={config.conditions}
+              order={order}
+              matchById={matchById}
+              activeId={selectedId}
+              onSelect={setActiveId}
+              expanded={showAllHypotheses}
+              onToggleExpanded={() => setShowAllHypotheses((v) => !v)}
+            />
           </div>
 
           {matchedCondition && (
@@ -1398,7 +1487,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             </div>
           )}
 
-          <SubtopicTabs active={activeSubtopic} onSelect={setActiveSubtopic} />
+          <SubtopicTabs
+            active={activeSubtopic}
+            onSelect={setActiveSubtopic}
+            counts={{
+              observation: (isV1 ? condition.observationChecklist : condition.observation)?.length || 0,
+              palpation: (isV1 ? condition.palpationZones : condition.palpation)?.length || 0,
+            }}
+          />
           <div className="obj-subtopic-page">
 
           {/* "Suggested tests" (Required/Recommended, or Key Exams for v1
@@ -1410,13 +1506,17 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               view can read it directly, same as this block did. */}
 
           {activeSubtopic === "observation" && <>
-          <ModuleCard label="Observation" color="#7C3AED">
-            <FindingCardList category="observation" options={isV1 ? condition.observationChecklist : condition.observation} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
+          {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
+          <>
+          <ModuleCard label="Observation" subtitle="General findings on visual inspection" count={obsOptions?.length || 0}>
+            <FindingCardList category="observation" options={obsOptions} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
           </ModuleCard>
 
-          <ModuleCard label="Posture" color="#3B82F6">
-            <FindingCardList category="posture" options={isV1 ? condition.postureChecklist : condition.posture} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
+          <ModuleCard label="Posture & Structural Alignment" subtitle="Record observed positional adaptations" count={pOptions?.length || 0}>
+            <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
           </ModuleCard>
+          </>
+          ); })()}
 
           {condition.fascia && (
             <ModuleCard label="Fascia" color="#EC4899" defaultOpen={false}>
@@ -1426,19 +1526,15 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </>}
 
           {activeSubtopic === "palpation" && <>
-          <ModuleCard label="Palpation" color={BRAND.red}>
-            {isV1 ? (
-              condition.palpationZones ? (
-                <FindingCardList category="palpation" options={condition.palpationZones} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
-              ) : (
-                <EmptyNote>Not specified in condition library.</EmptyNote>
-              )
-            ) : condition.palpation.length > 0 ? (
-              <FindingCardList category="palpation" options={condition.palpation} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
+          {(() => { const palpOptions = isV1 ? condition.palpationZones : condition.palpation; return (
+          <ModuleCard label="Palpation" subtitle="Findings on manual palpation" count={palpOptions?.length || 0}>
+            {palpOptions?.length > 0 ? (
+              <FindingCardList category="palpation" options={palpOptions} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
             ) : (
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
           </ModuleCard>
+          ); })()}
           </>}
 
           {activeSubtopic === "cpa" && <>
@@ -1908,28 +2004,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </ModuleCard>
           </>}
 
-          </div>
-          <div className="obj-subtopic-nav">
-            <button
-              type="button" className="obj-subtopic-nav-btn back"
-              disabled={SUBTOPICS.findIndex((s) => s.key === activeSubtopic) === 0}
-              onClick={() => {
-                const i = SUBTOPICS.findIndex((s) => s.key === activeSubtopic);
-                if (i > 0) setActiveSubtopic(SUBTOPICS[i - 1].key);
-              }}
-            >
-              ← Back
-            </button>
-            <button
-              type="button" className="obj-subtopic-nav-btn next"
-              disabled={SUBTOPICS.findIndex((s) => s.key === activeSubtopic) === SUBTOPICS.length - 1}
-              onClick={() => {
-                const i = SUBTOPICS.findIndex((s) => s.key === activeSubtopic);
-                if (i < SUBTOPICS.length - 1) setActiveSubtopic(SUBTOPICS[i + 1].key);
-              }}
-            >
-              Next →
-            </button>
           </div>
         </>
     </div>
