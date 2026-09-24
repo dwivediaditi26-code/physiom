@@ -774,7 +774,7 @@ export function orthoStyles() {
            different color") -- tinted background + matching border/%
            color, so conditions are visually distinguishable at a glance
            instead of every card reading identically until tapped. */
-        .obj-match-card { flex: 0 0 auto; min-width: 112px; max-width: 138px; text-align: left; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 9px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
+        .obj-match-card { flex: 0 0 auto; min-width: 100px; max-width: 118px; text-align: left; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 8px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
         .obj-match-card:active { transform: scale(0.97); }
         .obj-match-pct { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.01em; }
         .obj-match-name { display: block; font-size: 10.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 1px; line-height: 1.2; }
@@ -796,17 +796,23 @@ export function orthoStyles() {
            inactive-tab tint and inactive-tab text were all purple on top
            of each other). Matches .region-tab's own gray-resting/
            purple-active convention. */
-        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 4px; background: #F6F5FA; border-radius: 18px; padding: 8px; margin: 14px 0 12px; }
-        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px; cursor: pointer; opacity: 0.6; }
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 3px; background: #F6F5FA; border-radius: 14px; padding: 6px; margin: 14px 0 12px; }
+        .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 3px; cursor: pointer; opacity: 0.6; }
         .obj-subtopic-scroll-btn:active { opacity: 1; }
-        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 42px); }
+        /* Lean/compact (2026-09-24, Aditi went bigger, then "make this area
+           smaller", then straight-up compared it to her reference image and
+           asked for "lean compact" -- the reference fits Observation /
+           Palpation / ROM / Special Tests in one row at this width, this
+           should too). The center-snap padding's constant tracks a tile's own
+           half-width so a tile still centers correctly when scrolled to. */
+        .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 5px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px calc(50% - 40px); }
         .obj-subtopic-tab { scroll-snap-align: center; }
         .obj-subtopic-tabs::-webkit-scrollbar { display: none; }
-        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; padding: 7px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
+        .obj-subtopic-tab { flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px; padding: 6px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit;
           background: linear-gradient(180deg, #fff, #F7F7F9);
           box-shadow: 0 1px 0 #fff inset, 0 2px 0 rgba(20,10,45,.05), 0 4px 8px rgba(20,10,45,.06);
           transition: transform .12s ease, box-shadow .12s ease; }
-        .obj-subtopic-tab i { font-size: 13px; color: ${BRAND.gray}; }
+        .obj-subtopic-tab i { font-size: 12px; color: ${BRAND.gray}; }
         .obj-subtopic-tab span { font-size: 10.5px; font-weight: 700; color: ${BRAND.gray}; line-height: 1.2; text-align: center; white-space: nowrap; }
         .obj-subtopic-tab-active {
           background: linear-gradient(180deg, #7C5CEA, #5A3FC0);
@@ -814,7 +820,12 @@ export function orthoStyles() {
           box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 3px 0 #4a339e, 0 6px 12px rgba(76,58,168,.4);
         }
         .obj-subtopic-tab-active i, .obj-subtopic-tab-active span { color: #fff; opacity: 1; }
-        .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 4px 2px 6px; margin-bottom: 12px; }
+        /* A clear, single card for the whole Observation/Posture/etc. stack
+           below the tabs (2026-09-24, Aditi, comparing to her reference: "the
+           below section also align") -- was a bare 1px border easy to miss
+           against the white page background, reading as loose stacked rows
+           rather than one section. */
+        .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; padding: 6px 10px 8px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(20,10,45,.05); }
         .obj-subtopic-nav { display: flex; justify-content: space-between; gap: 10px; padding: 14px 4px 4px; }
         .obj-subtopic-nav-btn { padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
         .obj-subtopic-nav-btn.back { border: 1px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; }

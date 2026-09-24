@@ -1357,24 +1357,24 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
         onClick={runSuggestAnalysis}
         disabled={isAnalyzing}
         style={{
-          width: "100%", minHeight: 52, padding: "12px 14px", borderRadius: 12,
+          width: "100%", minHeight: 40, padding: "8px 10px", borderRadius: 10,
           cursor: isAnalyzing ? "default" : "pointer", fontFamily: "inherit",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 12, marginBottom: 4, textAlign: "left",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginTop: 10, marginBottom: 4, textAlign: "left",
         }}
       >
-        <span style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <span className="obj-ai-suggest-title" style={{ fontSize: "0.78rem", fontWeight: 800, display: "flex", alignItems: "center", gap: 5, lineHeight: 1.35 }}>
+        <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+          <span className="obj-ai-suggest-title" style={{ fontSize: "0.7rem", fontWeight: 800, display: "flex", alignItems: "center", gap: 4, lineHeight: 1.25 }}>
             <span className={isAnalyzing ? "obj-ai-thinking-icon" : undefined}>🧠</span>
             {isAnalyzing ? "Analyzing…" : "Suggest probable objective assessment"}
           </span>
-          <span className="obj-ai-suggest-sub" style={{ fontSize: "0.7rem", lineHeight: 1.3 }}>
+          <span className="obj-ai-suggest-sub" style={{ fontSize: "0.62rem", lineHeight: 1.25 }}>
             {engineResult
-              ? `${config.label} — ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched from Subjective. Updated Subjective? Tap to refresh.`
-              : `${config.label} — no Subjective data yet. Fill Subjective, then tap to check for matches.`}
+              ? `Matches Subjective answers — ${config.label}, ${rankedCount} condition${rankedCount === 1 ? "" : "s"} matched.`
+              : `Matches conditions to your Subjective answers — ${config.label}, fill Subjective first.`}
           </span>
         </span>
         {!isAnalyzing && (
-          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.76rem", fontWeight: 800, flexShrink: 0 }}>Re-run →</span>
+          <span className="obj-ai-suggest-cta" style={{ fontSize: "0.64rem", fontWeight: 800, flexShrink: 0, padding: "6px 10px", borderRadius: 999, background: "rgba(124,58,237,0.14)" }}>Re-run →</span>
         )}
       </button>
 

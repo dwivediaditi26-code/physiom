@@ -829,15 +829,15 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                   Aditi: wants this "stepwise" and clear for students new to
                   the app). That explanation used to be a full SectionIntro
                   (icon + big title + info button), then just an isolated (i)
-                  button floating with nothing beside it -- 2026-09-16, Aditi:
-                  "remove this... put description to click the button to show
-                  which match according to subjective... short and perfect".
-                  One short always-visible line instead of a tap-to-reveal
-                  sheet, so a new student doesn't have to discover the (i)
-                  button to know what this screen does. */}
-              <div style={{ fontSize: 11.5, color: BRAND.gray, marginBottom: 6 }}>
-                Matches conditions to your Subjective answers — tap to check or refresh.
-              </div>
+                  button floating with nothing beside it, then a plain line of
+                  text sitting above the AI-suggest button -- 2026-09-24,
+                  Aditi: "isko button ke andar hi rakho" (put it inside the
+                  button itself) -- a floating instruction above a button it
+                  describes reads as two disconnected things. The explanation
+                  is now the button's own subtitle (see
+                  ConditionObjectiveAssessment's obj-ai-suggest-sub), so
+                  there's one self-explaining control, not a caption + a
+                  button. */}
               <ConditionObjectiveAssessment
                 data={data}
                 setData={setData}
