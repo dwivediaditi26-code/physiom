@@ -36,7 +36,11 @@ export function AppDataProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [composerOpen, setComposerOpen] = useState(false);
-  const [composerType, setComposerType] = useState(null); // null | 'post' | 'case' | 'research' | 'video' | 'photo' | 'poll'
+  const [composerType, setComposerType] = useState(null); // null | 'post' | 'case' | 'discussion' | 'research' | 'video' | 'photo' | 'poll'
+  // Share-as-Clinical-Discussion hand-off (ShareBridge in
+  // PhysioFeedEntry.jsx): text assembled from selected assessment sections,
+  // consumed once by DiscussionComposer's lazy useState init, then cleared.
+  const [composerPrefill, setComposerPrefill] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -222,6 +226,7 @@ export function AppDataProvider({ children }) {
     addRotation, updateRotation, deleteRotation, uploadResume,
     addPublication, updatePublication, deletePublication,
     composerOpen, setComposerOpen, composerType, setComposerType,
+    composerPrefill, setComposerPrefill,
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

@@ -16,9 +16,14 @@ const TOPICS = ["Shoulder", "Lumbar", "Knee", "Neuro", "Sports", "Pediatrics", "
 // or rewritten -- what's typed is exactly what gets posted. Deliberately no
 // AI anywhere in this file.
 export default function DiscussionComposer() {
-  const { publishPost, profile, uploadImage, uploadVideo, uploadDocument, setComposerOpen, setComposerType } = useAppData();
+  const { publishPost, profile, uploadImage, uploadVideo, uploadDocument, setComposerOpen, setComposerType, composerPrefill, setComposerPrefill } = useAppData();
   const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
+  // Seeded once at mount from a "Share as Clinical Discussion" hand-off
+  // (ShareBridge in PhysioFeedEntry.jsx) -- a lazy initializer, not an
+  // effect, since Composer.jsx mounts a fresh DiscussionComposer instance
+  // each time composerType switches to "discussion" (same pattern
+  // OrthoAssessment.jsx's `resume` prop already uses for the same reason).
+  const [text, setText] = useState(composerPrefill || "");
   const [category, setCategory] = useState(null); // optional single-select topic
   const [attachment, setAttachment] = useState(null); // { kind: 'photo'|'video'|'document', file, previewUrl, duration? }
   const [error, setError] = useState(null);
@@ -70,8 +75,8 @@ export default function DiscussionComposer() {
     setAttachment({ kind: "document", file });
   };
 
-  const close = () => { clearAttachment(); setComposerType(null); setComposerOpen(false); };
-  const back = () => { clearAttachment(); setComposerType(null); };
+  const close = () => { clearAttachment(); setComposerPrefill(null); setComposerType(null); setComposerOpen(false); };
+  const back = () => { clearAttachment(); setComposerPrefill(null); setComposerType(null); };
   const canSubmit = text.trim() && !uploading;
 
   const submit = async () => {
@@ -93,6 +98,7 @@ export default function DiscussionComposer() {
       });
       clearAttachment();
       setText(""); setTitle(""); setCategory(null);
+      setComposerPrefill(null);
       setComposerType(null);
       setComposerOpen(false);
     } catch (e) {

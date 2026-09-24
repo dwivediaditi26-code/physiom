@@ -8,6 +8,7 @@ import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { getTemplates as getCardioTemplates, saveTemplate as saveCardioTemplate, deleteTemplate as deleteCardioTemplate } from "./cardioTemplates.js";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
+import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -2012,11 +2013,45 @@ export function withCarePlanSummaryAlias(data) {
   return { ...data, carePlanPlan: data?.cardioCarePlan };
 }
 
-export function SummarySection({ setting, system, data, setData, assessSteps, formatters }) {
+export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
+
+  // Share as Clinical Discussion (2026-09-23): same content-bearing filter
+  // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics
+  // ("Patient Information") can never be offered as a checkbox here.
+  const shareSections = useMemo(
+    () => steps
+      .filter((s) => s.id !== "summary" && !SHARE_EXCLUDED_STEP_IDS.has(s.id))
+      .filter((s) => rowsForStep(s, data[s.id] || {}, formatters).length)
+      .map((s) => ({ id: s.id, label: s.label })),
+    [steps, data, formatters]
+  );
+  const buildShareText = (selectedIds) => {
+    const idSet = new Set(selectedIds);
+    let lines = [];
+    steps.filter((s) => idSet.has(s.id)).forEach((step) => {
+      const result = rowsForStep(step, data[step.id] || {}, formatters);
+      if (isGroupedResult(result)) {
+        result.groups.forEach(({ heading, rows }) => {
+          if (!rows.length) return;
+          lines.push(`${step.label}: ${heading}`);
+          rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
+          lines.push("");
+        });
+        return;
+      }
+      if (result.length) {
+        lines.push(`— ${step.label} —`);
+        result.forEach(([k, v]) => lines.push(`${k}: ${v}`));
+        lines.push("");
+      }
+    });
+    return lines.join("\n").trim();
+  };
 
   // exportText must be computed unconditionally -- every hook in this
   // component has to run on every render regardless of showTreatment, or
@@ -2097,6 +2132,18 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
       >
         {copied ? "Copied ✓" : "Copy assessment as text"}
       </button>
+      {onShare && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setShareOpen(true)}>
+          💬 Share as Clinical Discussion
+        </button>
+      )}
+      {shareOpen && (
+        <ShareAssessmentModal
+          sections={shareSections}
+          onClose={() => setShareOpen(false)}
+          onConfirm={(ids) => { onShare(buildShareText(ids)); setShareOpen(false); }}
+        />
+      )}
     </>
   );
 }
@@ -2761,7 +2808,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && (
             <>
-              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} />
+              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} />
               <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
-import { AppDataProvider } from "./context/AppDataContext.jsx";
+import { AppDataProvider, useAppData } from "./context/AppDataContext.jsx";
 import { DemoConversationsProvider } from "./context/DemoConversationsContext.jsx";
 import PhysioFeedRoutes from "./PhysioFeedRoutes.jsx";
 import "./physiofeed.css";
@@ -96,6 +96,27 @@ function BackBridge({ backRef }) {
   return null;
 }
 
+// Lets an outside screen (a clinical assessment's "Share as Clinical
+// Discussion" button) hand off assembled section text and land the user
+// straight in an open, pre-filled Discussion Composer -- same navTo()/
+// jumpTo channel as JumpBridge above, just carrying a payload instead of a
+// bare tab name, and consumed with the same ref-identity guard so it only
+// fires once per distinct navTo() call. Needs AppDataContext (for
+// composerType/composerOpen/composerPrefill), so it has to render inside
+// <AppDataProvider>, same as JumpBridge/BackBridge.
+function ShareBridge({ jumpTo }) {
+  const { setComposerType, setComposerOpen, setComposerPrefill } = useAppData();
+  const handled = useRef(null);
+  useEffect(() => {
+    if (!jumpTo?.pfShareDiscussion || handled.current === jumpTo) return;
+    handled.current = jumpTo;
+    setComposerPrefill(jumpTo.pfShareDiscussion.text);
+    setComposerType("discussion");
+    setComposerOpen(true);
+  }, [jumpTo, setComposerType, setComposerOpen, setComposerPrefill]);
+  return null;
+}
+
 export default function PhysioFeedEntry({ jumpTo, backRef }) {
   return (
     <div className="physiofeed-root">
@@ -104,6 +125,7 @@ export default function PhysioFeedEntry({ jumpTo, backRef }) {
           <DemoConversationsProvider>
             <JumpBridge jumpTo={jumpTo}/>
             <BackBridge backRef={backRef}/>
+            <ShareBridge jumpTo={jumpTo}/>
             <PhysioFeedRoutes/>
           </DemoConversationsProvider>
         </AppDataProvider>

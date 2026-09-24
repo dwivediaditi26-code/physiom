@@ -9,6 +9,7 @@ import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { Icon } from "./StepIcons.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
+import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -1926,10 +1927,35 @@ function rowsForStep(step, section, formatters) {
     .map(([label, value]) => ({ label: humanizeKey(label), value }));
 }
 
-export function SummarySection({ setting, data, assessSteps, formatters }) {
+export function SummarySection({ setting, data, assessSteps, formatters, onShare }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const steps = assessSteps || ASSESS_STEPS;
+
+  // Share as Clinical Discussion (2026-09-23): same content-bearing filter
+  // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics
+  // ("Patient Information") can never be offered as a checkbox here.
+  const shareSections = useMemo(
+    () => steps
+      .filter((s) => s.id !== "summary" && !SHARE_EXCLUDED_STEP_IDS.has(s.id))
+      .filter((s) => rowsForStep(s, data[s.id] || {}, formatters).length)
+      .map((s) => ({ id: s.id, label: s.label })),
+    [steps, data, formatters]
+  );
+  const buildShareText = (selectedIds) => {
+    const idSet = new Set(selectedIds);
+    let lines = [];
+    steps.filter((s) => idSet.has(s.id)).forEach((step) => {
+      const rows = rowsForStep(step, data[step.id] || {}, formatters);
+      if (rows.length) {
+        lines.push(`— ${step.label} —`);
+        rows.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
+        lines.push("");
+      }
+    });
+    return lines.join("\n").trim();
+  };
 
   const exportText = useMemo(() => {
     let lines = [`NEUROLOGICAL ASSESSMENT`, `Setting: ${settingLabel}`, ""];
@@ -1976,6 +2002,18 @@ export function SummarySection({ setting, data, assessSteps, formatters }) {
       >
         {copied ? "Copied ✓" : "Copy assessment as text"}
       </button>
+      {onShare && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setShareOpen(true)}>
+          💬 Share as Clinical Discussion
+        </button>
+      )}
+      {shareOpen && (
+        <ShareAssessmentModal
+          sections={shareSections}
+          onClose={() => setShareOpen(false)}
+          onConfirm={(ids) => { onShare(buildShareText(ids)); setShareOpen(false); }}
+        />
+      )}
     </>
   );
 }
@@ -2887,7 +2925,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               )}
               {current.id === "summary" && (
                 <>
-                  <SummarySection setting={setting} data={reviewData} assessSteps={assessSteps} formatters={neuroSummaryFormatters} />
+                  <SummarySection setting={setting} data={reviewData} assessSteps={assessSteps} formatters={neuroSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} />
                   <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setSaveModalOpen(true)}>
                     ⭐ Save this assessment as a template
                   </button>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { SectionIntro, fmtVal } from "./orthoFieldKit.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
+import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 
 /* Cardio-style summary/review — one card per completed section, each row a
    plain label/value pair, exactly matching CardiopulmonaryAssessment's
@@ -26,9 +27,41 @@ function rowsForStep(step, section, formatters) {
 const isGrouped = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
 const rowCount = (result) => (isGrouped(result) ? result.groups.reduce((n, g) => n + g.rows.length, 0) : result.length);
 
-export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters, hideTitle }) {
+export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters, hideTitle, onShare }) {
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const contentSteps = steps.filter((s) => s.id !== "review" && s.id !== "setup");
+
+  // Share as Clinical Discussion (2026-09-23): same content-bearing filter
+  // as exportText below, minus SHARE_EXCLUDED_STEP_IDS -- demographics can
+  // never be offered as a checkbox here, see that constant's own comment.
+  const shareSections = useMemo(
+    () => contentSteps
+      .filter((s) => !SHARE_EXCLUDED_STEP_IDS.has(s.id))
+      .filter((s) => rowCount(rowsForStep(s, data[s.id] || {}, formatters)))
+      .map((s) => ({ id: s.id, label: s.label })),
+    [contentSteps, data, formatters]
+  );
+  const buildShareText = (selectedIds) => {
+    const idSet = new Set(selectedIds);
+    let lines = [];
+    contentSteps.filter((s) => idSet.has(s.id)).forEach((step) => {
+      const result = rowsForStep(step, data[step.id] || {}, formatters);
+      if (!rowCount(result)) return;
+      lines.push(`— ${step.label} —`);
+      if (isGrouped(result)) {
+        result.groups.forEach(({ heading, rows }) => {
+          if (!rows.length) return;
+          lines.push(heading + ":");
+          rows.forEach(({ label, value }) => lines.push(value ? `  ${label}: ${value}` : `  ${label}`));
+        });
+      } else {
+        result.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
+      }
+      lines.push("");
+    });
+    return lines.join("\n").trim();
+  };
 
   const exportText = useMemo(() => {
     let lines = [...exportHeaderLines, ""];
@@ -106,6 +139,18 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
       >
         {copied ? "Copied ✓" : "Copy assessment as text"}
       </button>
+      {onShare && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setShareOpen(true)}>
+          💬 Share as Clinical Discussion
+        </button>
+      )}
+      {shareOpen && (
+        <ShareAssessmentModal
+          sections={shareSections}
+          onClose={() => setShareOpen(false)}
+          onConfirm={(ids) => { onShare(buildShareText(ids)); setShareOpen(false); }}
+        />
+      )}
     </>
   );
 }
