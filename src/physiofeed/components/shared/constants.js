@@ -91,12 +91,20 @@ export const CLINICAL_NAV = [
   { path: "/analytics", label: "Analytics", icon: "BarChart3" },
 ];
 
+// Reordered 2026-09-25 (Aditi: "feed, opportunity, case discussion, people,
+// evidence, saved" -- Communities/Groups dropped entirely). Explore is
+// relabeled "Opportunity" here rather than renaming the page/route --
+// what's actually on that screen (jobs/internships/workshops/collaborations)
+// always was "Opportunity", "Explore" was just the placeholder name it
+// launched under. Case Discussion is the Quora-style Q&A post type
+// (add_clinical_discussions.sql) getting its own tab instead of being mixed
+// into the general Feed -- see CaseDiscussionsPage.jsx.
 export const PRO_NAV = [
   { path: "/feed", label: "Physio Feed", icon: "Rss" },
-  { path: "/evidence", label: "Evidence", icon: "BookOpen", badge: "New" },
-  { path: "/explore", label: "Explore", icon: "Compass" },
-  { path: "/communities", label: "Communities", icon: "UsersRound" },
+  { path: "/explore", label: "Opportunity", icon: "Compass" },
+  { path: "/discussions", label: "Case Discussion", icon: "MessageCircle" },
   { path: "/people", label: "People", icon: "User" },
+  { path: "/evidence", label: "Evidence", icon: "BookOpen", badge: "New" },
   { path: "/messages", label: "Messages", icon: "MessageSquare" },
   { path: "/saved", label: "Saved", icon: "Bookmark" },
 ];

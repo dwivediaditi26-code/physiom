@@ -5,43 +5,42 @@ import Avatar from "../shared/Avatar.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
-// Mobile/tablet section switcher: a segmented control with a white thumb that
-// slides under the current section (2026-09-20, Aditi: "make it like I" --
-// design I of the redesign mockups; before it came the expanding-pill "J" and,
-// first, a row of raised 3D tiles she didn't like). Equal, text-only segments
-// share the strip's width (--n below), so nothing scrolls or gets clipped.
+// Mobile/tablet section switcher (2026-09-25 redesign, Aditi: "scrollable"):
+// a row of independent, left-aligned pills instead of the previous fixed
+// equal-width segmented control with a sliding thumb. That control was
+// sized around "Evidence" (8 chars) as its longest label; "Opportunity" and
+// "Case Discussion" broke that assumption and clipped to "Opportu…" /
+// "Case D…" depending on which segment was active. Pills that size to
+// their own text and scroll instead of compete for a fixed share never
+// clip, at the cost of the old "every section visible at a glance" property
+// -- same trade the Explore board's category chips and Feed's own topic
+// tabs already made, so this also makes PhysioFeed's several pill-tab rows
+// look and behave the same way instead of two different patterns.
 // People was hidden behind the top bar's search icon at first, but that
 // wasn't discoverable enough (2026-09-22, Aditi: "where is people button") --
-// it's back in the strip now, right before Saved (PRO_NAV's own order).
+// it's back in the strip now, per PRO_NAV's own order.
 // Messages stays out: the top bar's message icon covers it on every
 // PhysioFeed screen (AppFull.jsx pm-mobile-hdr), and the laptop sidebar
 // still lists all seven.
-// Styling: .pf-seg* in physiofeed.css.
 const SECTIONS = PRO_NAV.filter((item) => item.path !== "/messages");
-const SHORT_LABEL = { "Physio Feed": "Feed", Communities: "Groups" };
+const SHORT_LABEL = { "Physio Feed": "Feed" };
 
 function SectionNav() {
   const { pathname } = useLocation();
-  // Same prefix rule NavLink uses, so /communities/123 still counts as Groups.
+  // Same prefix rule NavLink uses, so a post opened via /discussions?post=…
+  // still counts as Case Discussion.
   const activeIdx = SECTIONS.findIndex((s) => matchPath({ path: s.path, end: false }, pathname));
-  // On a page that isn't one of the five (People, Messages, a profile...) the
-  // thumb fades out where it was, instead of sliding back to the first segment.
-  const [thumbIdx, setThumbIdx] = useState(Math.max(activeIdx, 0));
-  if (activeIdx >= 0 && activeIdx !== thumbIdx) setThumbIdx(activeIdx);
 
   return (
-    <nav className="pf-seg-track" aria-label="PhysioFeed sections" style={{ "--n": SECTIONS.length }}>
-      <span
-        className="pf-seg-thumb"
-        aria-hidden="true"
-        style={{ transform: `translateX(${thumbIdx * 100}%)`, opacity: activeIdx >= 0 ? 1 : 0 }}
-      />
+    <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar" aria-label="PhysioFeed sections">
       {SECTIONS.map((item, i) => (
         <Link
           key={item.path}
           to={item.path}
-          className={"pf-seg" + (i === activeIdx ? " pf-seg-on" : "")}
           aria-current={i === activeIdx ? "page" : undefined}
+          className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors focus:outline-none ${
+            i === activeIdx ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#0D0D0D] hover:bg-[#F7F5FF]"
+          }`}
         >
           {SHORT_LABEL[item.label] || item.label}
         </Link>
