@@ -147,12 +147,18 @@ export default function TesterEntry() {
   const tool = TOOLS.find((t) => t.key === toolKey);
   const Component = tool.Component;
 
+  // Ortho/Neuro/Cardio's own sticky topbar positions itself at
+  // `top: var(--pm-mobile-hdr-h, 64px)` so it sits just below AppFull.jsx's
+  // real mobile header when there is one. AppFull.jsx zeroes that variable
+  // itself for a full-screen assessment (no header to sit under); this page
+  // never sets it at all, so the topbar fell back to the raw 64px default
+  // and stuck too low, leaving scrolled content poking out above/behind it.
   return (
-    <>
+    <div style={{ "--pm-mobile-hdr-h": "0px" }}>
       <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: MUTED }}>Loading…</div>}>
         <Component patientData={data} activePatientId={null} onSave={set} onNav={onNav} navContext={{}} requireAuth={requireAuth} hideAiPathway={toolKey === "ortho"} />
       </Suspense>
       <Notice text={notice} onClose={() => setNotice("")} />
-    </>
+    </div>
   );
 }
