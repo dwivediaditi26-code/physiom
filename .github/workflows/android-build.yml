@@ -53,11 +53,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # @capacitor/cli 8 requires Node >= 22 (the other workflows still use
-      # 20, which is fine for them -- they never run the Capacitor CLI).
+      # Node 24 ships npm 11, the npm package-lock.json is written with. npm 10
+      # (Node 20/22) treats vitest's optional esbuild peer as missing and
+      # `npm ci` refuses to install. @capacitor/cli 8 also needs Node >= 22.
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       # android/gradle/gradle-daemon-jvm.properties pins the Gradle daemon to
