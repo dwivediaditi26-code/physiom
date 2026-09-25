@@ -3,50 +3,25 @@ import { createPortal } from "react-dom";
 import { X, ImagePlus, Folder } from "lucide-react";
 import { SPECIALTIES, LOCATION_TYPES } from "../../data/opportunitiesMock.js";
 import { GRADIENTS } from "../shared/constants.js";
+import { Field, inputCls, textareaCls, Combobox } from "./FormFields.jsx";
 
 // 2026-09-21, Aditi's follow-up after seeing this modal live: the type
 // selector was a cramped 2x2 grid, and the submit button clipped against
 // the sheet's bottom edge with the page's own floating "+ Post" FAB
 // visibly bleeding through underneath it (fixed by hiding that FAB while
 // this modal is open -- see ExplorePage.jsx).
+// Workshop used to be a pill here too, but it now has its own dedicated
+// wizard (WorkshopWizard.jsx, opened from CreateOpportunityTypePicker) --
+// picking it here would silently skip that wizard's date/instructor/
+// pricing/registration fields, reintroducing the exact "published with only
+// 9 generic fields" gap that wizard exists to fix.
 const TYPE_PILLS = [
   { key: "job", label: "Job", icon: "💼" },
   { key: "internship", label: "Internship", icon: "🎓" },
   { key: "collaboration", label: "Collab", icon: "🤝" },
-  { key: "workshop", label: "Workshop", icon: "🎓" },
 ];
 const PRACTICE_SETTINGS = ["Private OPD", "Tertiary Hospital", "Sports Academy"];
 const GRAD_KEYS = Object.keys(GRADIENTS);
-
-function Field({ label, children }) {
-  return (
-    <label className="block mb-4">
-      <span className="block text-xs font-semibold text-slate-600 mb-1.5">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-const inputCls = "h-11 w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm";
-const textareaCls = "w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm resize-none";
-
-let comboboxSeq = 0;
-
-// A bare <select> only allows a preset value. Aditi asked for the freedom
-// to type a custom one too (2026-09-22) -- e.g. a specialty or setting we
-// didn't anticipate. Native input+datalist keeps tap-to-pick suggestions
-// while never blocking free text.
-function Combobox({ value, onChange, options, placeholder }) {
-  const [listId] = useState(() => `combo-opts-${comboboxSeq++}`);
-  return (
-    <>
-      <input list={listId} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />
-      <datalist id={listId}>
-        {options.map((o) => <option key={o} value={o} />)}
-      </datalist>
-    </>
-  );
-}
 
 const BANNER_HINT = {
   workshop: "Upload workshop schedule or CME banner",
@@ -108,8 +83,8 @@ function BannerUpload({ type, bannerUrl, onPick, onClear }) {
   );
 }
 
-export default function PostOpportunityModal({ onClose, onPublish }) {
-  const [type, setType] = useState("job");
+export default function PostOpportunityModal({ onClose, onPublish, initialType = "job" }) {
+  const [type, setType] = useState(initialType === "workshop" ? "job" : initialType);
   const [title, setTitle] = useState("");
   const [org, setOrg] = useState("");
   const [specialty, setSpecialty] = useState(SPECIALTIES[0]);
@@ -121,8 +96,8 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
   const [bannerUrl, setBannerUrl] = useState(null);
 
   const canPublish = title.trim() && org.trim();
-  const payLabel = type === "internship" ? "Monthly Stipend" : type === "job" ? "Salary / CTC" : "Fee";
-  const payPlaceholder = type === "workshop" ? "₹499" : "₹15,000/mo";
+  const payLabel = type === "internship" ? "Monthly Stipend" : "Salary / CTC";
+  const payPlaceholder = "₹15,000/mo";
 
   const publish = () => {
     if (!canPublish) return;
@@ -151,15 +126,9 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
       description: description.trim() || `${specialty} opportunity posted via PhysioFeed.`,
       stipend: type === "internship" ? pay || undefined : undefined,
       salary: type === "job" ? pay || undefined : undefined,
-      fee: type === "workshop" ? pay || "Free" : undefined,
-      date: type === "workshop" ? "TBA" : undefined,
-      time: type === "workshop" ? "TBA" : undefined,
-      mode: type === "workshop" ? workMode : undefined,
       tags: [specialty, practiceSetting],
       bannerUrl: bannerUrl || undefined,
       mentor: { name: org.trim() || "Program lead", role: `${specialty} lead`, initials, gradient: "violet", bio: "" },
-      instructor: type === "workshop" ? { name: org.trim() || "Instructor", role: `${specialty} instructor`, initials, gradient: "blue" } : undefined,
-      syllabus: type === "workshop" ? [] : undefined,
     });
   };
 
@@ -174,7 +143,11 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 sticky top-0 bg-white z-10">
           <div>
-            <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">Step 1 of 2</p>
+            {/* Was "Step 1 of 2" with no step 2 anywhere -- Aditi reported
+                (2026-09-23) that this read as "continue" but actually
+                published immediately, publicly, with only this screen's
+                fields. This form has always been one screen; the label now
+                says so instead of promising a step that doesn't exist. */}
             <h2 className="text-lg font-bold text-slate-900">Post an opportunity</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
@@ -237,14 +210,6 @@ export default function PostOpportunityModal({ onClose, onPublish }) {
             disabled={!canPublish}
             className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40 active:scale-[0.98] transition mt-1"
           >
-            {/* 2026-09-23 (Aditi: "when I am posting any workshop or
-                anything it is not showing in public"): this button called
-                publish() while promising a second step. You filled one
-                screen, tapped what read as "continue", and the modal
-                vanished -- the listing WAS published, publicly, but with
-                only the fields on this screen, and nothing said so. There
-                is no step two in this component; the label was the whole
-                bug. */}
             Publish listing
           </button>
         </div>

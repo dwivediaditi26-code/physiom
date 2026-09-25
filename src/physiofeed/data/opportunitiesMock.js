@@ -17,6 +17,20 @@ export const OPPORTUNITY_CATEGORIES = [
 export const SPECIALTIES = ["MSK", "Neuro", "Sports", "Pediatrics", "Cardiopulmonary", "Geriatrics"];
 export const LOCATION_TYPES = ["On-site", "Hybrid", "Remote"];
 
+// Workshop-specific pickers (2026-09-24, the Create Workshop wizard). Kept
+// separate from SPECIALTIES/LOCATION_TYPES above -- those are the job/
+// internship combobox options (free-text-friendly, no fixed vocabulary);
+// a workshop's category and format are single-select and closer to the
+// mockups' exact wording, so they get their own lists rather than being
+// forced into the job vocabulary.
+export const WORKSHOP_CATEGORIES = [
+  "MSK", "Neuro", "Sports", "Cardio", "Pediatrics",
+  "Women's Health", "Geriatrics", "Research", "General Physiotherapy", "Other",
+];
+export const WORKSHOP_FORMATS = ["Online", "In-person", "Hybrid"];
+export const WORKSHOP_AUDIENCE = ["BPT Students", "MPT Students", "Physiotherapists", "Other healthcare professionals"];
+export const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Advanced", "No experience required"];
+
 // "Candy Coat" type colors (2026-09-22, Aditi's pick from three restyle
 // directions) -- each opportunity type owns a real color carried through
 // its card tint, badge and CTA button, instead of one flat violet for

@@ -25,6 +25,11 @@ export default function OpportunityCard({ opp, onOpen }) {
       className="rounded-[22px] p-4 border-2 shadow-sm hover:shadow-md transition"
       style={{ borderColor: "#F1EEFB", background: `linear-gradient(180deg, ${c.tint} 0%, #fff 88px)` }}
     >
+      {opp.bannerUrl && (
+        <button type="button" onClick={() => onOpen(opp)} className="block w-full h-28 -mt-4 -mx-4 mb-3 rounded-t-[20px] overflow-hidden" style={{ width: "calc(100% + 2rem)" }}>
+          <img src={opp.bannerUrl} alt="" className="w-full h-full object-cover" />
+        </button>
+      )}
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs pf-font-head font-bold shrink-0" style={{ background: c.solid }}>

@@ -8,6 +8,8 @@ import OpportunityDetail from "../components/opportunities/OpportunityDetail.jsx
 import WorkshopDetail from "../components/opportunities/WorkshopDetail.jsx";
 import OpportunityChat from "../components/opportunities/OpportunityChat.jsx";
 import PostOpportunityModal from "../components/opportunities/PostOpportunityModal.jsx";
+import CreateOpportunityTypePicker from "../components/opportunities/CreateOpportunityTypePicker.jsx";
+import WorkshopWizard from "../components/opportunities/wizard/WorkshopWizard.jsx";
 import MyPostingsPage from "../components/opportunities/MyPostingsPage.jsx";
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
@@ -39,7 +41,22 @@ export default function ExplorePage() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(null); // the opportunity object, or null = hub
   const [chatFor, setChatFor] = useState(null); // opportunity being messaged about, or null
-  const [postOpen, setPostOpen] = useState(false);
+  // "+ Post" now opens a type picker first (2026-09-24) rather than jumping
+  // straight into PostOpportunityModal -- Workshop hands off to its own
+  // wizard (WorkshopWizard.jsx); Job/Internship/Collaboration still open
+  // PostOpportunityModal, pre-set to that type via modalType.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [modalType, setModalType] = useState(null); // "job" | "internship" | "collaboration" | null
+  const [workshopOpen, setWorkshopOpen] = useState(false);
+  const postOpen = pickerOpen || !!modalType || workshopOpen; // any create-flow open, for FAB-hiding below
+
+  const openCreateFlow = () => setPickerOpen(true);
+  const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); };
+  const pickCreateType = (type) => {
+    setPickerOpen(false);
+    if (type === "workshop") setWorkshopOpen(true);
+    else setModalType(type);
+  };
 
   const [myPostingsOpen, setMyPostingsOpen] = useState(false);
   const [myAppsOpen, setMyAppsOpen] = useState(false);
@@ -179,10 +196,22 @@ export default function ExplorePage() {
     try {
       const saved = await db.publishOpportunity(opp);
       setOpportunities((prev) => [saved, ...prev]);
-      setPostOpen(false);
+      setModalType(null);
     } catch (e) {
       setActionError(e.message || "Couldn't publish that listing -- please try again.");
     }
+  };
+
+  // WorkshopWizard's Save Draft / Publish Workshop, both funneled through
+  // createOpportunity(fields, {publish}). A draft won't come back on the
+  // next getOpportunities() fetch (that query excludes drafts -- My
+  // Postings' own "show my drafts" fetch is a later piece of work), but
+  // appending it here means it shows up immediately, this session, rather
+  // than the wizard closing with no visible trace that anything saved.
+  const createFromWizard = async (fields, { publish }) => {
+    const saved = await db.createOpportunity(fields, { publish });
+    setOpportunities((prev) => [saved, ...prev]);
+    setWorkshopOpen(false);
   };
 
   const toggleListingStatus = async (oppId) => {
@@ -295,7 +324,7 @@ export default function ExplorePage() {
       <MyPostingsPage
         postings={myPostings}
         onBack={() => setMyPostingsOpen(false)}
-        onNewPost={() => { setMyPostingsOpen(false); setPostOpen(true); }}
+        onNewPost={() => { setMyPostingsOpen(false); openCreateFlow(); }}
         onViewApplicants={openPipeline}
         onToggleStatus={toggleListingStatus}
         onDelete={deleteListing}
@@ -344,6 +373,7 @@ export default function ExplorePage() {
             onBack={closeDetail}
             registered={appliedIds.has(String(active.id))}
             onRegistered={refreshApplications}
+            onMessage={openChat}
           />
         ) : (
           <OpportunityDetail
@@ -443,7 +473,7 @@ export default function ExplorePage() {
       <button
         ref={fabRef}
         type="button"
-        onClick={() => setPostOpen(true)}
+        onClick={openCreateFlow}
         tabIndex={fabHidden ? -1 : undefined}
         aria-hidden={fabHidden}
         className={`pf-font-head fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-gradient-to-br from-[#FFCB5C] to-[#FF9F1C] pl-4 pr-5 py-3.5 rounded-full shadow-[0_10px_24px_-6px_rgba(255,159,28,0.6)] active:scale-[0.97] transition ${fabHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
@@ -452,7 +482,9 @@ export default function ExplorePage() {
       </button>
       )}
 
-      {postOpen && <PostOpportunityModal onClose={() => setPostOpen(false)} onPublish={publish} />}
+      {pickerOpen && <CreateOpportunityTypePicker onClose={closeCreateFlow} onPick={pickCreateType} />}
+      {modalType && <PostOpportunityModal initialType={modalType} onClose={closeCreateFlow} onPublish={publish} />}
+      {workshopOpen && <WorkshopWizard onClose={closeCreateFlow} onSubmit={createFromWizard} />}
     </main>
   );
 }
