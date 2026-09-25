@@ -183,15 +183,25 @@ const SPECIAL_TEST_DATA_BUCKET = {
   ankleFoot: ["ankle_foot"],
   elbowWristHand: ["elbow_wrist"],
 };
-function specialRichItemFor(regionKey, testName) {
+// Raw SPECIAL_TESTS_DATA entry (structure/sensitivity/specificity included)
+// for a condition-library test name -- specialRichItemFor below still
+// builds the tap-to-open info sheet from it, but the Structure/Sens/Spec
+// line (2026-09-24, Aditi, comparing to the real Advanced Assessment's
+// Special Tests screen: "I like it... I want that in my AI assessment")
+// needs the raw fields directly, not just the sheet-shaped richItem.
+function specialTestEntryFor(regionKey, testName) {
   const buckets = SPECIAL_TEST_DATA_BUCKET[regionKey];
   if (!buckets) return null;
   const target = normalizeName(testName);
   for (const bucket of buckets) {
     const entry = (SPECIAL_TESTS_DATA[bucket]?.tests || []).find((t) => normalizeName(t.label) === target);
-    if (entry) return specialRichItem(entry);
+    if (entry) return entry;
   }
   return null;
+}
+function specialRichItemFor(regionKey, testName) {
+  const entry = specialTestEntryFor(regionKey, testName);
+  return entry ? specialRichItem(entry) : null;
 }
 
 function normalizeName(s) {
@@ -670,7 +680,7 @@ function Chip({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       style={{
-        padding: "7px 13px", borderRadius: 9, fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", outline: "none",
+        padding: "5px 8px", borderRadius: 8, fontSize: "0.62rem", fontWeight: 600, cursor: "pointer", outline: "none", whiteSpace: "nowrap",
         border: active ? `1px solid ${BRAND.purple}` : `1px dashed ${HAIRLINE}`,
         background: active ? BRAND.purple : "#fff",
         color: active ? "#fff" : BRAND.ink,
@@ -685,7 +695,7 @@ function Chip({ active, onClick, children }) {
 function ChipGroup({ options, selected, onToggle, multi = true }) {
   const values = multi ? (selected ? selected.split(", ").filter(Boolean) : []) : selected ? [selected] : [];
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {options.map((o) => (
         <Chip key={o} active={values.includes(o)} onClick={() => onToggle(o)}>{o}</Chip>
       ))}
@@ -1557,8 +1567,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <SubLabel>{condition.cpaNkt.muscle}</SubLabel>
                   </div>
                 )}
-                <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5, marginBottom: 10 }}>{condition.cpaNkt.narrative}</div>
-                <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={v("cpaNkt", "state")} onToggle={(o) => toggleSingle("cpaNkt", "state", o)} multi={false} />
+                <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.cpaNkt.narrative}</InfoCard>
+                <div style={{ marginTop: 10 }}>
+                  <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={v("cpaNkt", "state")} onToggle={(o) => toggleSingle("cpaNkt", "state", o)} multi={false} />
+                </div>
               </>
             ) : condition.cpa.applicable === false ? (
               <EmptyNote>{condition.cpa.reason}</EmptyNote>
@@ -1576,7 +1588,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     </div>
                   );
                 })}
-                <PurpleBox title="Clinical Interpretation">{condition.cpa.pattern}</PurpleBox>
+                <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.cpa.pattern}</InfoCard>
               </>
             )}
           </ModuleCard>
@@ -1736,18 +1748,28 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   // Thoracic's specialTests are {name} objects; other v2
                   // regions use plain strings — normalize both.
                   const t = typeof raw === "string" ? raw : raw.name;
+                  const testEntry = specialTestEntryFor(config.key, t);
                   return (
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                        <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={specialRichItemFor(config.key, t)} />
-                        <PatientPhotoTile photoId={findingPhotoId(config.key, "special", t)} />
-                        <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
-                      </div>
-                      <CategoryLabel>Side</CategoryLabel>
-                      <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
-                      <div style={{ marginTop: 10 }}>
-                        <CategoryLabel>Result</CategoryLabel>
-                        <ChipGroup options={["Negative", "Positive", "Equivocal"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={testEntry ? specialRichItem(testEntry) : null} />
+                        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                          <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
+                          {(testEntry?.structure || testEntry?.sensitivity) && (
+                            <div style={{ fontSize: "0.68rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 2 }}>
+                              {testEntry.structure && <>Structure: {testEntry.structure}</>}
+                              {testEntry.sensitivity && <> · Sens: {testEntry.sensitivity} · Spec: {testEntry.specificity}</>}
+                            </div>
+                          )}
+                          <div style={{ marginTop: 8 }}>
+                            <CategoryLabel>Side</CategoryLabel>
+                            <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <CategoryLabel>Result</CategoryLabel>
+                            <ChipGroup options={["Negative", "Positive", "Equivocal"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1895,7 +1917,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   {interpretSttOption(v("kineticChain", "state")) && (
                     <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, marginBottom: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "state"))}</div>
                   )}
-                  <BlueBox title="Chain Effect">{condition.kineticChain.chainEffect}</BlueBox>
+                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.kineticChain.chainEffect}</InfoCard>
                 </>
               )}
             </ModuleCard>
@@ -1918,7 +1940,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       )}
                     </div>
                   ))}
-                  <BlueBox title="Chain Effect">{condition.kineticChain.chainEffect}</BlueBox>
+                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.kineticChain.chainEffect}</InfoCard>
                 </>
               )}
             </ModuleCard>
@@ -1931,8 +1953,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                 <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
-                {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.testName} text={condition.functionalScreen.note} eyebrow="NOTE" />}
               </div>
+              {condition.functionalScreen.note && (
+                <div style={{ marginBottom: 10 }}>
+                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.functionalScreen.note}</InfoCard>
+                </div>
+              )}
               {condition.functionalScreen.measure.type === "number" && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: condition.functionalScreen.secondaryChip ? 14 : 0 }}>
                   <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{condition.functionalScreen.measure.label}</span>
@@ -1978,8 +2004,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note)} />
                     <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
-                    {condition.functionalScreen.note && <InfoButton small title={condition.functionalScreen.name} text={condition.functionalScreen.note} eyebrow="NOTE" />}
                   </div>
+                  {condition.functionalScreen.note && (
+                    <div style={{ marginBottom: 12 }}>
+                      <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.functionalScreen.note}</InfoCard>
+                    </div>
+                  )}
                   {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
                       <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{f.label}</span>

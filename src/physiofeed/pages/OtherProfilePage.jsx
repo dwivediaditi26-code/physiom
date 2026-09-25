@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
+import ProfileViewSwitch from "../components/profile/ProfileViewSwitch.jsx";
 import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
 import CurrentRoleSection from "../components/profile/CurrentRoleSection.jsx";
 import RotationsCard from "../components/profile/RotationsCard.jsx";
@@ -13,16 +14,15 @@ import { useAppData } from "../context/AppDataContext.jsx";
 import * as db from "../data/db.js";
 
 // Visitor view of someone else's profile. Mirrors ProfilePage.jsx's
-// single-scroll layout (2026-09-24 redesign): header, then About /
-// Current Role / Education / Experience / Certifications / Research /
-// Professional Evidence / Activity in order, no tabs. Sections with no
-// data are hidden entirely for visitors (per the brief: "either hide
-// the empty section completely OR show 'Not added yet'... Only use
-// this where useful"), so a stranger sees a clean CV-shaped page
-// rather than a wall of empty prompts. Professional contributions now
-// come from the real per-user contributions table (2026-09-24 pass --
-// see supabase/add_profile_contributions.sql), so this page shows
-// them alongside everything else instead of hiding the section.
+// two-view layout (2026-09-24: "activity and professional profile...
+// two things" -- see ProfileViewSwitch.jsx): "Activity" is just the
+// post grid, "Professional Profile" is About -> Current Role ->
+// Education -> Experience -> Certifications -> Research -> Professional
+// Evidence in one continuous scroll. Sections with no data are hidden
+// entirely for visitors (per the brief: "either hide the empty section
+// completely OR show 'Not added yet'... Only use this where useful"),
+// so a stranger sees a clean CV-shaped page rather than a wall of empty
+// prompts.
 export default function OtherProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -38,6 +38,7 @@ export default function OtherProfilePage() {
   const [otherContributions, setOtherContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [view, setView] = useState("Professional Profile");
 
   useEffect(() => {
     // Viewing your own id via this route (e.g. an old link) -- just show
@@ -49,6 +50,7 @@ export default function OtherProfilePage() {
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
+    setView("Professional Profile"); // a new profile always opens back on Professional Profile, not wherever the last one was switched to
     (async () => {
       const [p, ed, ac, rt, pu, ct] = await Promise.all([
         db.getProfileById(userId),
@@ -95,7 +97,7 @@ export default function OtherProfilePage() {
   const hasContributions = otherContributions.length > 0;
 
   return (
-    <main className="flex-1 min-w-0 space-y-6 pb-24">
+    <main className="flex-1 min-w-0 pb-24">
       <ProfileHeader
         profile={otherProfile}
         postCount={authorPosts.length}
@@ -112,36 +114,36 @@ export default function OtherProfilePage() {
         onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
       />
 
-      {hasAbout && <ProfileAboutSection profile={otherProfile} isOwn={false} />}
+      <ProfileViewSwitch active={view} onChange={setView} />
 
-      {hasCurrentRole && <CurrentRoleSection rotations={rotations} isOwn={false} />}
-
-      {hasEducation && <EducationCard entries={education} readOnly />}
-
-      {hasExperience && <RotationsCard entries={rotations} readOnly />}
-
-      {hasCertifications && <CertificationsCard entries={achievements} readOnly />}
-
-      {hasResearch && (
-        <ResearchEvidenceSection profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />
+      {view === "Professional Profile" ? (
+        <div className="space-y-6">
+          {hasAbout && <ProfileAboutSection profile={otherProfile} isOwn={false} />}
+          {hasCurrentRole && <CurrentRoleSection rotations={rotations} isOwn={false} />}
+          {hasEducation && <EducationCard entries={education} readOnly />}
+          {hasExperience && <RotationsCard entries={rotations} readOnly />}
+          {hasCertifications && <CertificationsCard entries={achievements} readOnly />}
+          {hasResearch && (
+            <ResearchEvidenceSection profile={otherProfile} posts={posts} publications={otherPublications} isOwn={false} />
+          )}
+          {hasContributions && (
+            <ProfessionalContributionsSection entries={otherContributions} isOwn={false} readOnly />
+          )}
+          {!hasAbout && !hasCurrentRole && !hasEducation && !hasExperience && !hasCertifications && !hasResearch && !hasContributions && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-sm text-slate-400">
+              No professional details added yet.
+            </div>
+          )}
+        </div>
+      ) : authorPosts.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-sm text-slate-400">
+          No posts yet.
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {authorPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
+        </div>
       )}
-
-      {hasContributions && (
-        <ProfessionalContributionsSection entries={otherContributions} isOwn={false} readOnly />
-      )}
-
-      <section>
-        <h2 className="pf-font-head text-base font-extrabold text-slate-900 mb-3 px-1">Activity</h2>
-        {authorPosts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-sm text-slate-400">
-            No posts yet.
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {authorPosts.map((post) => <GridPostCard key={post.id} post={post} />)}
-          </div>
-        )}
-      </section>
     </main>
   );
 }
