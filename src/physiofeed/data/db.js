@@ -2098,19 +2098,18 @@ export async function updateOpportunity(oppId, fields, { publish } = {}) {
   return rowToOpportunity(data, uid, 0);
 }
 
-// Open/close a listing from MyPostingsPage. Creator-only by RLS.
-// Superseded by closeOpportunity()/reopenOpportunity()/cancelOpportunity()
-// below (which also stamp the matching *_at column) -- kept as-is because
-// MyPostingsPage's current Close/Reopen toggle still calls this; it's
-// rewired to the named actions when the status-aware action menu lands.
-export async function setOpportunityStatus(oppId, uiStatus) {
+// Carry a draft over the draft->published line from MyPostingsPage's own
+// action menu -- same transition WorkshopWizard/ApplicationOpportunityForm's
+// "Publish" button makes, just without reopening the wizard to do it.
+export async function publishOpportunity(oppId) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: uiStatus === "closed" ? "closed" : "published", updated_at: new Date().toISOString() })
+    .update({ status: "published", published_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", oppId);
   if (error) throw error;
+  invalidateSearchCorpus();
 }
 
 // Stop taking new registrations/applications on purpose, without saying

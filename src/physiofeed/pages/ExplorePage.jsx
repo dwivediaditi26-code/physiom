@@ -221,25 +221,10 @@ export default function ExplorePage() {
     closeCreateFlow();
   };
 
-  const toggleListingStatus = async (oppId) => {
-    const current = opportunities.find((o) => o.id === oppId);
-    const next = current?.status === "closed" ? "active" : "closed";
-    // Optimistic -- the only failure mode is RLS rejecting a listing that
-    // isn't yours, which this page never offers in the first place.
-    setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, status: next } : o));
-    try {
-      await db.setOpportunityStatus(oppId, next);
-    } catch (e) {
-      setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, status: current.status } : o));
-      setActionError(e.message || "Couldn't update that listing.");
-    }
-  };
-
   const deleteListing = async (oppId) => {
     const removed = opportunities.find((o) => o.id === oppId);
-    // Optimistic, same shape as toggleListingStatus -- the only failure
-    // mode is RLS rejecting a listing that isn't yours, which this page
-    // never offers in the first place.
+    // Optimistic -- the only failure mode is RLS rejecting a listing that
+    // isn't yours, which this page never offers in the first place.
     setOpportunities((prev) => prev.filter((o) => o.id !== oppId));
     try {
       await db.deleteOpportunity(oppId);
@@ -248,6 +233,48 @@ export default function ExplorePage() {
       setActionError(e.message || "Couldn't delete that listing.");
     }
   };
+
+  // MyPostingsPage's per-status action menu (Phase E, 2026-09-25) --
+  // publish/close/reopen/cancel all write one column each and don't return
+  // the updated row, so the optimistic patch below is applied by hand
+  // instead of merging in a fetched object (same trade-off deleteListing
+  // above already makes). Duplicate is the odd one out: it inserts a new
+  // row and does return it, so that one just prepends like createFromWizard.
+  const runListingAction = async (oppId, action, dbCall, optimisticPatch) => {
+    const current = opportunities.find((o) => o.id === oppId);
+    setOpportunities((prev) => prev.map((o) => o.id === oppId ? { ...o, ...optimisticPatch } : o));
+    try {
+      await dbCall(oppId);
+    } catch (e) {
+      setOpportunities((prev) => prev.map((o) => o.id === oppId ? current : o));
+      setActionError(e.message || `Couldn't ${action} that listing.`);
+    }
+  };
+
+  const publishListing = (oppId) => runListingAction(oppId, "publish", db.publishOpportunity, {
+    rawStatus: "published", status: "active", lifecycleStatus: "published", publishedAt: new Date().toISOString(),
+  });
+  const closeListing = (oppId) => runListingAction(oppId, "close", db.closeOpportunity, {
+    rawStatus: "closed", status: "closed", lifecycleStatus: "closed", closedAt: new Date().toISOString(),
+  });
+  const reopenListing = (oppId) => runListingAction(oppId, "reopen", db.reopenOpportunity, {
+    rawStatus: "published", status: "active", lifecycleStatus: "published", closedAt: undefined,
+  });
+  const cancelListing = (oppId) => runListingAction(oppId, "cancel", db.cancelOpportunity, {
+    rawStatus: "cancelled", status: "closed", lifecycleStatus: "cancelled", cancelledAt: new Date().toISOString(),
+  });
+
+  const duplicateListing = async (oppId) => {
+    setActionError(null);
+    try {
+      const copy = await db.duplicateOpportunity(oppId);
+      setOpportunities((prev) => [copy, ...prev]);
+    } catch (e) {
+      setActionError(e.message || "Couldn't duplicate that listing.");
+    }
+  };
+
+  const viewFromPostings = (opp) => { setMyPostingsOpen(false); openOpportunity(opp); };
 
   const toggleSave = async (opp) => {
     setActionError(null);
@@ -333,9 +360,14 @@ export default function ExplorePage() {
         onBack={() => setMyPostingsOpen(false)}
         onNewPost={() => { setMyPostingsOpen(false); openCreateFlow(); }}
         onViewApplicants={openPipeline}
-        onToggleStatus={toggleListingStatus}
-        onDelete={deleteListing}
+        onView={viewFromPostings}
         onEdit={openEditFlow}
+        onPublish={publishListing}
+        onClose={closeListing}
+        onReopen={reopenListing}
+        onCancel={cancelListing}
+        onDuplicate={duplicateListing}
+        onDelete={deleteListing}
       />
     );
   }
