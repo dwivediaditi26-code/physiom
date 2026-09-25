@@ -846,11 +846,26 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
       fd.append("public_id", photoId);
       const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
+      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
+      // dashboard -- uploading to a public_id that already holds a photo
+      // is silently ignored: Cloudinary still answers 200 OK, but
+      // `existing: true` means it just handed back the OLD asset's info
+      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
+      // and "its not replacing at all" -- same gap as InfoCard.jsx's
+      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
+      // and getting the untouched original back). Needs the Overwrite
+      // toggle turned on for ml_default in the Cloudinary console to
+      // actually fix -- Cloudinary rejects the `overwrite` upload param
+      // outright on unsigned requests, so it can't be forced from here.
+      const json = await res.json();
+      if (json.existing) throw new Error("blocked-overwrite");
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
       alert(err?.message === "empty-image"
         ? "That photo didn't come through properly (it looked empty) — please try again."
+        : err?.message === "blocked-overwrite"
+        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
         : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploading(false);
@@ -982,11 +997,26 @@ function PatientPhotoTile({ photoId, size = 40 }) {
       fd.append("public_id", photoId);
       const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
+      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
+      // dashboard -- uploading to a public_id that already holds a photo
+      // is silently ignored: Cloudinary still answers 200 OK, but
+      // `existing: true` means it just handed back the OLD asset's info
+      // and stored nothing new (2026-09-25, Aditi: replaced a wrong photo
+      // and "its not replacing at all" -- same gap as InfoCard.jsx's
+      // isRealPhoto guard above, confirmed by re-POSTing a slot directly
+      // and getting the untouched original back). Needs the Overwrite
+      // toggle turned on for ml_default in the Cloudinary console to
+      // actually fix -- Cloudinary rejects the `overwrite` upload param
+      // outright on unsigned requests, so it can't be forced from here.
+      const json = await res.json();
+      if (json.existing) throw new Error("blocked-overwrite");
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
       alert(err?.message === "empty-image"
         ? "That photo didn't come through properly (it looked empty) — please try again."
+        : err?.message === "blocked-overwrite"
+        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
         : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploading(false);

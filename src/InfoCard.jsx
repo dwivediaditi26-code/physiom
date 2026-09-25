@@ -194,6 +194,21 @@ function PerformPane({ perform }) {
       fd.append("public_id", publicId);
       const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
+      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
+      // own dashboard settings -- uploading to a public_id that already
+      // holds something (even a bad/stub photo from before) is silently
+      // ignored: Cloudinary still answers 200 OK, but `existing: true`
+      // means it just handed back the OLD asset's info and stored nothing
+      // new (2026-09-25, Aditi: replaced a wrong CN II photo and "its not
+      // replacing at all" -- confirmed by re-POSTing the same slot
+      // directly and getting the untouched original's metadata back).
+      // Fixing this for real needs the Overwrite toggle turned on for
+      // ml_default in the Cloudinary console -- Cloudinary rejects the
+      // `overwrite` upload param outright on unsigned requests, so it
+      // can't be forced from here. This at least stops the app from
+      // claiming success when nothing actually changed.
+      const json = await res.json();
+      if (json.existing) throw new Error("blocked-overwrite");
       retryCountRef.current[i] = 0;
       // A previous failed load (e.g. the placeholder 404 before any photo
       // existed) must not keep blocking this slot now that a real photo
@@ -205,6 +220,8 @@ function PerformPane({ perform }) {
     } catch (err) {
       alert(err?.message === "empty-image"
         ? "That photo didn't come through properly (it looked empty) — please try again."
+        : err?.message === "blocked-overwrite"
+        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
         : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploadingIdx(null);
