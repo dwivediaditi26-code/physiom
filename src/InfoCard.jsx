@@ -100,6 +100,25 @@ function publicIdFromSrc(src) {
   return src && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
 }
 
+// Rejects a picked file before it reaches Cloudinary if it isn't a real
+// photo -- guards against a rare mobile-browser failure mode where the file
+// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
+// whose full-res version hadn't finished downloading yet) instead of the
+// actual photo. These slots are shared across every user of the app, so a
+// stub upload silently overwrites the real photo for everyone, not just
+// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
+// black after upload -- the stored file turned out to be a genuine, fully
+// opaque 1x1px image, not a broken render).
+function isRealPhoto(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+    img.src = url;
+  });
+}
+
 function PerformPane({ perform }) {
   const baseSlots = normalizeImages(perform);
   const [idx, setIdx] = useState(0);
@@ -168,6 +187,7 @@ function PerformPane({ perform }) {
     if (!file || publicId == null) return;
     setUploadingIdx(i);
     try {
+      if (!(await isRealPhoto(file))) throw new Error("empty-image");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", "ml_default");
@@ -182,8 +202,10 @@ function PerformPane({ perform }) {
       // stale can linger.
       setErroredSrcs(new Set());
       setVersions((prev) => ({ ...prev, [i]: Date.now() }));
-    } catch {
-      alert("Photo upload failed — check your connection and try again.");
+    } catch (err) {
+      alert(err?.message === "empty-image"
+        ? "That photo didn't come through properly (it looked empty) — please try again."
+        : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploadingIdx(null);
     }

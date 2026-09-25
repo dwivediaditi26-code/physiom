@@ -803,6 +803,26 @@ function splitSentences(text) {
 // Uploads go straight to Cloudinary's unsigned endpoint client-side --
 // explicitly passing public_id makes Cloudinary honor that exact id
 // instead of auto-generating one, which is what keeps the URL predictable.
+// Rejects a picked file before it reaches Cloudinary if it isn't a real
+// photo -- guards against a rare mobile-browser failure mode where the file
+// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
+// whose full-res version hadn't finished downloading yet) instead of the
+// actual photo. These slots are shared across every user of the app, so a
+// stub upload silently overwrites the real photo for everyone, not just
+// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
+// black after upload -- the stored file turned out to be a genuine, fully
+// opaque 1x1px image, not a broken render; same unguarded upload pattern
+// as this file's finding/patient photo tiles below).
+function isRealPhoto(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+    img.src = url;
+  });
+}
+
 function FindingCard({ index, icon, label, active, instruction, interpretation, onToggle, photoId }) {
   const [imgFailed, setImgFailed] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
@@ -819,6 +839,7 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
     if (!file || !photoId) return;
     setUploading(true);
     try {
+      if (!(await isRealPhoto(file))) throw new Error("empty-image");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", "ml_default");
@@ -828,7 +849,9 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert("Photo upload failed — check your connection and try again.");
+      alert(err?.message === "empty-image"
+        ? "That photo didn't come through properly (it looked empty) — please try again."
+        : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploading(false);
     }
@@ -952,6 +975,7 @@ function PatientPhotoTile({ photoId, size = 40 }) {
     if (!file || !photoId) return;
     setUploading(true);
     try {
+      if (!(await isRealPhoto(file))) throw new Error("empty-image");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", "ml_default");
@@ -961,7 +985,9 @@ function PatientPhotoTile({ photoId, size = 40 }) {
       setImgFailed(false);
       setImgVersion(Date.now());
     } catch (err) {
-      alert("Photo upload failed — check your connection and try again.");
+      alert(err?.message === "empty-image"
+        ? "That photo didn't come through properly (it looked empty) — please try again."
+        : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploading(false);
     }
