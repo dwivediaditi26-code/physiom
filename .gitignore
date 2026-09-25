@@ -5,6 +5,7 @@ dist
 playwright-report
 test-results
 e2e/login.local.json
+supabase/.temp/
 # Added by code-review-graph
 .code-review-graph/
 .DS_Store

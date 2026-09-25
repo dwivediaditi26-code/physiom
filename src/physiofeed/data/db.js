@@ -462,6 +462,17 @@ export async function uploadResume(file) {
   return uploadToBucket("resumes", uid, file, ext);
 }
 
+// Opportunity cover images (2026-09-24): PostOpportunityModal's BannerUpload
+// has only ever held a URL.createObjectURL() blob URL, dead on reload --
+// this is the real upload it never had. Own bucket (opportunity-covers,
+// add_opportunity_lifecycle.sql), same own-folder/public-read shape as
+// every other bucket here.
+export async function uploadOpportunityCoverImage(blob) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to upload a cover image.");
+  return uploadToBucket("opportunity-covers", uid, blob, "jpg");
+}
+
 // Local-only mutation -- mediaIndex ("which photo am I looking at") is
 // pure viewer navigation state, never written to Supabase for either demo
 // carousel posts or real multi-photo posts. NOTE: since real multi-photo
@@ -1841,10 +1852,29 @@ export async function subscribeToMessages(onChange) {
 // a broken one, and shows the empty state instead of pretending there are
 // listings.
 
-// UI statuses are active|closed; the table's are draft|published|paused|
-// closed|expired. Everything published-and-not-closed reads as active.
+// UI statuses are active|closed; the table's are draft|published|closed|
+// cancelled. Everything published-and-not-closed reads as active. Kept
+// as-is (not folded into getOpportunityEffectiveStatus below) so every
+// existing consumer of `.status` (ExplorePage's board filter, the
+// Card/Detail "Applied"/"Registered" toggle) keeps working unchanged until
+// they're migrated to read `.lifecycleStatus` instead.
 function oppStatusToUi(dbStatus) {
-  return dbStatus === "closed" || dbStatus === "expired" ? "closed" : "active";
+  return dbStatus === "closed" || dbStatus === "cancelled" ? "closed" : "active";
+}
+
+// Single source of truth for what a listing's status *means* right now.
+// draft/published/closed/cancelled are what's stored (see
+// supabase/add_opportunity_lifecycle.sql); "expired" is derived here and
+// never written anywhere, so it can't drift from the clock the way a
+// cron-maintained column could. Every badge/CTA should read through this
+// rather than comparing `row.status`/`.status` directly.
+export function getOpportunityEffectiveStatus(row) {
+  if (row.status !== "published") return row.status;
+  const today = new Date().toISOString().slice(0, 10);
+  if ((row.deadline && row.deadline < today) || (row.event_date && row.event_date < today)) {
+    return "expired";
+  }
+  return "published";
 }
 
 function agoLabel(iso) {
@@ -1876,11 +1906,17 @@ function rowToOpportunity(row, uid, applicationCount = 0) {
     deadline: row.deadline || undefined,
     date: row.event_date || d.date,
     registrationUrl: row.registration_url || undefined,
+    maxParticipants: row.max_participants ?? undefined,
     status: oppStatusToUi(row.status),
+    lifecycleStatus: getOpportunityEffectiveStatus(row),
+    rawStatus: row.status,
     postedByMe: !!uid && row.creator_id === uid,
     creatorId: row.creator_id,
     postedAgo: agoLabel(row.created_at),
     createdAt: row.created_at,
+    publishedAt: row.published_at || undefined,
+    closedAt: row.closed_at || undefined,
+    cancelledAt: row.cancelled_at || undefined,
     stats: { views: d.views || 0, applications: applicationCount, chats: d.chats || 0 },
   };
 }
@@ -1915,20 +1951,21 @@ export async function getOpportunities() {
   }
 }
 
-// Publishing is a real write -- it throws rather than faking success, same
-// contract as createPost(). `fields` is the object PostOpportunityModal
-// already builds; the scalars it knows about become columns and the rest
-// rides along in details.
-export async function publishOpportunity(fields) {
-  const uid = await currentUserId();
-  if (!uid) throw new Error("Sign in to post an opportunity.");
+// Shared by createOpportunity()/updateOpportunity() -- the scalars either
+// one knows about become columns, everything else rides along in details,
+// same convention as posts.media. Stripping the fields rowToOpportunity()
+// adds back on read (postedByMe, stats, ...) means a round-tripped object
+// (edit form pre-filled from a fetched opportunity) can be handed straight
+// back in without the caller un-shaping it first.
+function fieldsToRow(fields) {
   const {
     type, title, org, description, location, locationType, specialty, tags,
-    deadline, date, registrationUrl, id: _ignoredId, postedByMe: _pbm, postedAgo: _pa,
-    status: _st, stats: _stats, creatorId: _cid, createdAt: _ca, ...details
+    deadline, date, registrationUrl, maxParticipants,
+    id: _id, postedByMe: _pbm, postedAgo: _pa, status: _st, lifecycleStatus: _ls,
+    rawStatus: _rs, stats: _stats, creatorId: _cid, createdAt: _ca,
+    publishedAt: _pubA, closedAt: _closA, cancelledAt: _cancA, ...details
   } = fields;
-  const row = {
-    creator_id: uid,
+  return {
     org_name: (org || "").trim(),
     type: type || "job",
     title: (title || "").trim(),
@@ -1942,16 +1979,57 @@ export async function publishOpportunity(fields) {
     // date can go in the date column, the rest stays in details.
     event_date: /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : null,
     registration_url: registrationUrl || "",
-    status: "published",
+    max_participants: maxParticipants || null,
     details,
+  };
+}
+
+// The one write path every create-opportunity form (wizard or otherwise)
+// goes through -- it throws rather than faking success, same contract as
+// createPost(). `publish:false` saves a draft (invisible to everyone but
+// the creator, per opportunities_select_visible RLS); `publish:true` is
+// what publishOpportunity() below always did.
+export async function createOpportunity(fields, { publish = true } = {}) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to post an opportunity.");
+  const row = {
+    ...fieldsToRow(fields),
+    creator_id: uid,
+    status: publish ? "published" : "draft",
+    published_at: publish ? new Date().toISOString() : null,
   };
   const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
   if (error) throw error;
-  invalidateSearchCorpus(); // P8: a listing you just posted must be findable now, not in 30s
+  if (publish) invalidateSearchCorpus(); // P8: a listing you just posted must be findable now, not in 30s
+  return rowToOpportunity(data, uid, 0);
+}
+
+// Kept as a thin wrapper -- PostOpportunityModal (and anything else that
+// only ever publishes, never drafts) doesn't need to know createOpportunity
+// exists.
+export async function publishOpportunity(fields) {
+  return createOpportunity(fields, { publish: true });
+}
+
+// Edit an existing listing. Creator-only by RLS (opportunities_update_own);
+// an update that matches 0 rows because RLS blocked it surfaces as a real
+// error here (.single() throws on 0 rows returned), not a silent no-op.
+export async function updateOpportunity(oppId, fields) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your listing.");
+  const row = { ...fieldsToRow(fields), updated_at: new Date().toISOString() };
+  const { data, error } = await supabase
+    .from("opportunities").update(row).eq("id", oppId).select("*").single();
+  if (error) throw error;
+  invalidateSearchCorpus();
   return rowToOpportunity(data, uid, 0);
 }
 
 // Open/close a listing from MyPostingsPage. Creator-only by RLS.
+// Superseded by closeOpportunity()/reopenOpportunity()/cancelOpportunity()
+// below (which also stamp the matching *_at column) -- kept as-is because
+// MyPostingsPage's current Close/Reopen toggle still calls this; it's
+// rewired to the named actions when the status-aware action menu lands.
 export async function setOpportunityStatus(oppId, uiStatus) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
@@ -1962,14 +2040,80 @@ export async function setOpportunityStatus(oppId, uiStatus) {
   if (error) throw error;
 }
 
-// Permanently remove a listing from MyPostingsPage (2026-09-23, "everything
-// should have delete option"). Creator-only by RLS (opportunities_delete_own);
-// existing applications/saves cascade per the FK, same as closing doesn't
-// touch them but deleting necessarily does.
+// Stop taking new registrations/applications on purpose, without saying
+// the workshop/job/etc. itself isn't happening -- distinct from cancel.
+export async function closeOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ status: "closed", closed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", oppId);
+  if (error) throw error;
+}
+
+export async function reopenOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ status: "published", closed_at: null, updated_at: new Date().toISOString() })
+    .eq("id", oppId);
+  if (error) throw error;
+}
+
+// The thing itself isn't happening -- fans out a notification to everyone
+// who already applied/registered (trg_notify_opportunity_status_change,
+// add_opportunity_lifecycle.sql), which closeOpportunity() deliberately
+// does NOT do.
+export async function cancelOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", oppId);
+  if (error) throw error;
+}
+
+// Re-post an expired/cancelled/closed listing as a fresh draft rather than
+// reopening the old one (which would silently un-cancel it for anyone who
+// already saw the cancellation notice).
+export async function duplicateOpportunity(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const { data: existing, error: fetchErr } = await supabase
+    .from("opportunities").select("*").eq("id", oppId).maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!existing) throw new Error("That listing no longer exists.");
+  const {
+    id: _id, created_at: _ca, updated_at: _ua, published_at: _pa, closed_at: _cla,
+    cancelled_at: _cna, deleted_at: _da, creator_id: _cid, ...rest
+  } = existing;
+  const row = {
+    ...rest, creator_id: uid, title: `${existing.title} (Copy)`, status: "draft",
+    published_at: null, closed_at: null, cancelled_at: null, deleted_at: null,
+  };
+  const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
+  if (error) throw error;
+  return rowToOpportunity(data, uid, 0);
+}
+
+// Soft delete (2026-09-24): a hard DELETE cascades to applications/
+// saved_items via FK, destroying every registration/application's history
+// the moment an organiser deletes the listing -- the opposite of what the
+// spec calls for. Setting deleted_at instead, and folding "is this
+// deleted" into opportunities_select_visible (add_opportunity_lifecycle.sql)
+// means the listing vanishes from Explore/search for everyone -- including
+// the creator's own My Postings -- while the applications rows referencing
+// it stay exactly as they were.
 export async function deleteOpportunity(oppId) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
-  const { error } = await supabase.from("opportunities").delete().eq("id", oppId);
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", oppId);
   if (error) throw error;
 }
 
@@ -1991,6 +2135,39 @@ export async function getSavedOpportunityIds() {
     return (data || []).map((r) => r.item_id);
   } catch (e) {
     console.error("getSavedOpportunityIds(): --", e?.message || e);
+    return [];
+  }
+}
+
+// Full saved opportunity objects, for the student "Saved" tab -- the ids-
+// only getSavedOpportunityIds() above only ever drove the bookmark icon's
+// on/off state, nothing rendered a list of them. Two queries, not a
+// PostgREST embed (saved_items.item_id is a plain text column, not a real
+// FK, because it's polymorphic across post/evidence/opportunity -- so
+// there's no relationship for `opportunities:item_id(*)` to walk).
+export async function getSavedOpportunities() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data: saves, error } = await supabase
+      .from("saved_items")
+      .select("item_id, created_at")
+      .eq("user_id", uid)
+      .eq("item_type", "opportunity")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const ids = (saves || []).map((s) => s.item_id);
+    if (!ids.length) return [];
+    const { data: rows, error: oppErr } = await supabase
+      .from("opportunities").select("*").in("id", ids);
+    if (oppErr) throw oppErr;
+    const byId = Object.fromEntries((rows || []).map((r) => [String(r.id), r]));
+    // Preserve saved-newest-first order; a save whose opportunity is gone
+    // (deleted, or RLS-hidden because it's someone else's draft) is
+    // dropped rather than rendered as a broken card.
+    return ids.map((id) => byId[id]).filter(Boolean).map((r) => rowToOpportunity(r, uid));
+  } catch (e) {
+    console.error("getSavedOpportunities(): --", e?.message || e);
     return [];
   }
 }
