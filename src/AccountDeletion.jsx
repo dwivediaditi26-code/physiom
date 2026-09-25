@@ -13,6 +13,7 @@
 
 import React, { useState } from "react";
 import { supabase, authHeader } from "./supabase.js";
+import { apiUrl } from "./apiUrl.js";
 import { clearSessionKey } from "./localCrypto.js";
 import { clearPatientCache } from "./PatientDatabase.jsx";
 
@@ -39,7 +40,7 @@ export default function DeleteAccountButton({ patients, buttonStyle }) {
   const handleDelete = async () => {
     setBusy(true); setError("");
     try {
-      const res = await fetch("/api/deleteAccount", {
+      const res = await fetch(apiUrl("/api/deleteAccount"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
       });

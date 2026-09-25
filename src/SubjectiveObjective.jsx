@@ -9,6 +9,7 @@ import { FunctionalScreenHub } from "./RegionalFunctionalScreens.jsx";
 import { KineticChainSection, MOVEMENTS } from "./KineticChainFMS.jsx";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { authHeader } from "./supabase.js";
+import { apiUrl } from "./apiUrl.js";
 import { extractLumbarVariablesStructured, mergeLumbarVariables } from "./lumbarVariableExtractor.js";
 import { runLumbarReasoningEngine } from "./lumbarReasoningEngine.js";
 import { extractCervicalVariablesStructured, mergeCervicalVariables } from "./cervicalVariableExtractor.js";
@@ -3745,7 +3746,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
     setAiStatus("processing");
 
     try {
-      const res = await fetch("/api/parse", {
+      const res = await fetch(apiUrl("/api/parse"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ text: textToParse.trim() }),
@@ -3967,7 +3968,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       const hasAnyNote = Object.values(lv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNote && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setLumbarNotesLoading(true);
-        authHeader().then(h => fetch("/api/extractLumbarNoteVariables", {
+        authHeader().then(h => fetch(apiUrl("/api/extractLumbarNoteVariables"), {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: lv._notesForAiPass, alreadyKnown: already }),
         })).then(r => r.json()).then(j => {
@@ -4047,7 +4048,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       const hasAnyNoteC = Object.values(cv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNoteC && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setCervicalNotesLoading(true);
-        authHeader().then(h => fetch("/api/extractCervicalNoteVariables", {
+        authHeader().then(h => fetch(apiUrl("/api/extractCervicalNoteVariables"), {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: cv._notesForAiPass, alreadyKnown: alreadyC }),
         })).then(r => r.json()).then(j => {
@@ -4114,7 +4115,7 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
       const hasAnyNoteT = Object.values(tv._notesForAiPass || {}).some(t => t && t.trim());
       if (hasAnyNoteT && (!requireAuth || requireAuth("AI Note Analysis"))) {
         setThoracicNotesLoading(true);
-        authHeader().then(h => fetch("/api/extractThoracicNoteVariables", {
+        authHeader().then(h => fetch(apiUrl("/api/extractThoracicNoteVariables"), {
           method: "POST", headers: { "Content-Type": "application/json", ...h },
           body: JSON.stringify({ notes: tv._notesForAiPass, alreadyKnown: alreadyT }),
         })).then(r => r.json()).then(j => {

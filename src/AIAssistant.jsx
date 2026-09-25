@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { authHeader } from "./supabase.js";
+import { apiUrl } from "./apiUrl.js";
 
 function formatExerciseList(exercises) {
   return exercises.map(ex => {
@@ -215,7 +216,7 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
     setMessages(newMessages);
     setLoading(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({
@@ -252,7 +253,7 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
     setMessages(prev => [...prev, { role: "user", content: narrative }]);
     setLoading(true);
     try {
-      const res = await fetch("/api/parse", {
+      const res = await fetch(apiUrl("/api/parse"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ text: narrative }),

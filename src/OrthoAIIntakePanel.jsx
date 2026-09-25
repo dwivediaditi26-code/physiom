@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Hint } from "./orthoFieldKit.jsx";
 import { authHeader } from "./supabase.js";
+import { apiUrl } from "./apiUrl.js";
 import { mapParseResultToOrthoUpdates } from "./orthoAiIntake.js";
 
 /* ============================================================
@@ -69,7 +70,7 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
     setErrorMsg("");
     try {
       const headers = await authHeader();
-      const res = await fetch("/api/parse", {
+      const res = await fetch(apiUrl("/api/parse"), {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ text }),

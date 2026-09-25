@@ -30,6 +30,7 @@
 
 import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { authHeader } from "./supabase.js";
+import { apiUrl } from "./apiUrl.js";
 
 // 15 cases: 5 fracture/post-surgical, 5 lumbar (varied presentations,
 // one with a genuine red flag), 5 other conditions across the
@@ -144,7 +145,7 @@ async function callParseOnce(narrative) {
   // <token>) -- see api/_lib/rateLimit.js. Without being signed in on this
   // tab, this call now gets a 401 instead of a real result; that's expected,
   // not a bug in the harness.
-  const res = await fetch("/api/parse", {
+  const res = await fetch(apiUrl("/api/parse"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify({ text: narrative }),

@@ -25,6 +25,7 @@ import {
   PUBLICATIONS, CONTRIBUTIONS,
 } from "./mockData.js";
 import { supabase, authHeader } from "../../supabase.js";
+import { apiUrl } from "../../apiUrl.js";
 import { initialsOf } from "../components/shared/constants.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
@@ -1714,7 +1715,7 @@ async function readApiJson(res) {
 }
 
 export async function searchPubMedForEvidence(query) {
-  const res = await fetch("/api/pubmedSearch", {
+  const res = await fetch(apiUrl("/api/pubmedSearch"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify({ query }),
@@ -1725,7 +1726,7 @@ export async function searchPubMedForEvidence(query) {
 }
 
 export async function draftEvidenceFromPubMed(result) {
-  const res = await fetch("/api/pubmedDraft", {
+  const res = await fetch(apiUrl("/api/pubmedDraft"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(result),
@@ -1741,7 +1742,7 @@ export async function draftEvidenceFromPubMed(result) {
 // also reaches PMC full-text, restricted server-side to peer-reviewed
 // sources (MEDLINE/PMC, preprints excluded).
 export async function searchEuropePMCForEvidence(query) {
-  const res = await fetch("/api/europepmcSearch", {
+  const res = await fetch(apiUrl("/api/europepmcSearch"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify({ query }),
@@ -1752,7 +1753,7 @@ export async function searchEuropePMCForEvidence(query) {
 }
 
 export async function draftEvidenceFromEuropePMC(result) {
-  const res = await fetch("/api/europepmcDraft", {
+  const res = await fetch(apiUrl("/api/europepmcDraft"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(result),

@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "./supabase.js";
+import { siteOrigin } from "./apiUrl.js";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import DemoWalkthrough from "./DemoWalkthrough.jsx";
 
@@ -123,7 +124,7 @@ function Forgot({onSwitch}){
   const [error,setError]=useState("");
   const submit=async(e)=>{
     e.preventDefault();setError("");setMsg("");setLoading(true);
-    const{error:er}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+"/?reset=1"});
+    const{error:er}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:siteOrigin()+"/?reset=1"});
     setLoading(false);
     if(er){setError(er.message);return;}
     setMsg("Reset link sent! Check your inbox.");
