@@ -153,8 +153,17 @@ export default function TesterEntry() {
   // itself for a full-screen assessment (no header to sit under); this page
   // never sets it at all, so the topbar fell back to the raw 64px default
   // and stuck too low, leaving scrolled content poking out above/behind it.
+  //
+  // Same problem, bottom edge: Ortho's .bottombar (Back/Next) is
+  // `position: fixed; bottom: var(--pm-bnav-h, calc(60px + safe-area))`.
+  // AppFull.jsx measures its own real bottom nav bar with a ResizeObserver
+  // and writes --pm-bnav-h so the Back/Next bar sits flush on top of it.
+  // This page has no bottom nav bar and never sets that variable either, so
+  // the Back/Next bar floated ~60px+ above the true screen bottom, leaving a
+  // gap the next section's content (e.g. "Surgical / Medical Details") was
+  // visible through -- reported as the buttons "cutting" into that content.
   return (
-    <div style={{ "--pm-mobile-hdr-h": "0px" }}>
+    <div style={{ "--pm-mobile-hdr-h": "0px", "--pm-bnav-h": "0px" }}>
       <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: MUTED }}>Loading…</div>}>
         <Component patientData={data} activePatientId={null} onSave={set} onNav={onNav} navContext={{}} requireAuth={requireAuth} hideAiPathway={toolKey === "ortho"} />
       </Suspense>
