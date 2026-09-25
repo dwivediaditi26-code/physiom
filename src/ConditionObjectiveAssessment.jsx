@@ -898,11 +898,23 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
 // mechanism (no database write needed): whoever uploads a photo for
 // "Localised guarding" and whoever later views "Localised guarding"
 // compute the identical Cloudinary URL.
+//
+// FIX (2026-09-25, Aditi: "why observation of lumbar showing the cervical
+// tautband image that i uploaded here"): the condition library reuses
+// identical finding wording across different regions (e.g. "Taut bands/
+// trigger points reproducing referred pain" appears in both Cervical and
+// Lumbar). With no region in the id, category+label alone collided --
+// uploading a photo under one region's occurrence of that wording made it
+// appear under every other region using the same wording. regionKey (the
+// REGION_CONFIGS key, e.g. "cervical"/"lumbar") is now part of the id, so
+// only the same finding within the same region shares a photo. This does
+// orphan photos already uploaded under the old, region-less ids -- an
+// accepted tradeoff to stop the cross-region mixups.
 function slugifyFinding(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
-function findingPhotoId(category, label) {
-  return `physiom_findings/${category}/${slugifyFinding(label)}`;
+function findingPhotoId(regionKey, category, label) {
+  return `physiom_findings/${regionKey}/${category}/${slugifyFinding(label)}`;
 }
 
 // Compact version of FindingCard's photo tile -- same upload-your-own-photo
@@ -1251,7 +1263,7 @@ const PALPATION_HOW_TO = {
   "Upper trapezius": "Palpate the upper trapezius from the occiput to the shoulder for tone/trigger points.",
 };
 
-function FindingCardList({ category, options, selected, onToggle, interpretations }) {
+function FindingCardList({ category, options, selected, onToggle, interpretations, regionKey }) {
   const values = selected ? selected.split(", ").filter(Boolean) : [];
   const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
   const howTo = category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null;
@@ -1266,7 +1278,7 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
           active={values.includes(o)}
           instruction={howTo?.[o]}
           interpretation={interpretations?.[o]?.text}
-          photoId={findingPhotoId(category, o)}
+          photoId={findingPhotoId(regionKey, category, o)}
           onToggle={() => onToggle(o)}
         />
       ))}
@@ -1507,11 +1519,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
           <>
           <ModuleCard label="Observation" subtitle="General findings on visual inspection" count={obsOptions?.length || 0}>
-            <FindingCardList category="observation" options={obsOptions} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} />
+            <FindingCardList category="observation" options={obsOptions} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} regionKey={config.key} />
           </ModuleCard>
 
           <ModuleCard label="Posture & Structural Alignment" subtitle="Record observed positional adaptations" count={pOptions?.length || 0}>
-            <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} />
+            <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} regionKey={config.key} />
           </ModuleCard>
           </>
           ); })()}
@@ -1527,7 +1539,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {(() => { const palpOptions = isV1 ? condition.palpationZones : condition.palpation; return (
           <ModuleCard label="Palpation" subtitle="Findings on manual palpation" count={palpOptions?.length || 0}>
             {palpOptions?.length > 0 ? (
-              <FindingCardList category="palpation" options={palpOptions} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} />
+              <FindingCardList category="palpation" options={palpOptions} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} regionKey={config.key} />
             ) : (
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
@@ -1728,7 +1740,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                         <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={specialRichItemFor(config.key, t)} />
-                        <PatientPhotoTile photoId={findingPhotoId("special", `${config.key} ${t}`)} />
+                        <PatientPhotoTile photoId={findingPhotoId(config.key, "special", t)} />
                         <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
                       </div>
                       <CategoryLabel>Side</CategoryLabel>
