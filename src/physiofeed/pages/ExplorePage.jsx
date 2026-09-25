@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Plus, Briefcase, ChevronRight, ChevronLeft, FileText } from "lucide-react";
+import { Search, Plus, Briefcase, ChevronRight, FileText, SlidersHorizontal } from "lucide-react";
 import { OPPORTUNITY_CATEGORIES } from "../data/opportunitiesMock.js";
 import * as db from "../data/db.js";
 import OpportunityCard from "../components/opportunities/OpportunityCard.jsx";
@@ -11,6 +11,7 @@ import CreateOpportunityTypePicker from "../components/opportunities/CreateOppor
 import WorkshopWizard from "../components/opportunities/wizard/WorkshopWizard.jsx";
 import ApplicationOpportunityForm from "../components/opportunities/wizard/ApplicationOpportunityForm.jsx";
 import MyPostingsPage from "../components/opportunities/MyPostingsPage.jsx";
+import MyOpportunitiesPage from "../components/opportunities/MyOpportunitiesPage.jsx";
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
 import ApplicantChatModal from "../components/opportunities/ApplicantChatModal.jsx";
@@ -35,10 +36,17 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [pipelineApplicants, setPipelineApplicants] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
+  const [savedOpportunities, setSavedOpportunities] = useState([]); // full objects, for My Opportunities' Saved tab
   const [myApplications, setMyApplications] = useState([]);
   const [actionError, setActionError] = useState(null);
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
+  // Basic filter sheet (Phase G, 2026-09-25) -- client-side over the
+  // already-loaded board, no server-side search function needed at this size.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [priceFilter, setPriceFilter] = useState("all"); // all | free | paid (workshops only)
+  const [modeFilter, setModeFilter] = useState("all"); // all | Online | In-person | Hybrid
+  const [dateFilter, setDateFilter] = useState("all"); // all | week | month
   const [active, setActive] = useState(null); // the opportunity object, or null = hub
   const [chatFor, setChatFor] = useState(null); // opportunity being messaged about, or null
   // "+ Post" now opens a type picker first (2026-09-24) -- Workshop hands
@@ -114,17 +122,21 @@ export default function ExplorePage() {
     try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
   }, [view]);
 
-  // Board + your saves + your applications, all real (P4/P5).
+  // Board + your saves + your applications, all real (P4/P5). Saved
+  // opportunities' full objects (Phase G) are fetched alongside everything
+  // else -- getSavedOpportunities() existed since Phase A but had no caller
+  // until the Saved tab needed real cards instead of just the id list.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [opps, saves, apps] = await Promise.all([
-        db.getOpportunities(), db.getSavedOpportunityIds(), db.getMyApplications(),
+      const [opps, saves, apps, savedOpps] = await Promise.all([
+        db.getOpportunities(), db.getSavedOpportunityIds(), db.getMyApplications(), db.getSavedOpportunities(),
       ]);
       if (cancelled) return;
       setOpportunities(opps);
       setSavedIds(saves);
       setMyApplications(apps);
+      setSavedOpportunities(savedOpps);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -143,6 +155,9 @@ export default function ExplorePage() {
     return () => { cancelled = true; };
   }, [pipelineFor]);
 
+  const hasActiveFilters = priceFilter !== "all" || modeFilter !== "all" || dateFilter !== "all";
+  const clearFilters = () => { setPriceFilter("all"); setModeFilter("all"); setDateFilter("all"); };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return opportunities.filter((o) => {
@@ -153,14 +168,49 @@ export default function ExplorePage() {
       // disabled-CTA doing the explaining instead of quietly vanishing.
       if (o.lifecycleStatus === "closed" || o.lifecycleStatus === "cancelled") return false;
       if (category !== "all" && o.type !== category) return false;
+      // Price only means anything on a workshop (the only type with a real
+      // Free/Paid fee) -- leave every other type alone rather than hiding
+      // every job the moment someone picks "Free".
+      if (priceFilter !== "all" && o.type === "workshop") {
+        const free = o.fee === "Free";
+        if (priceFilter === "free" && !free) return false;
+        if (priceFilter === "paid" && free) return false;
+      }
+      // Mode (Online/In-person/Hybrid) lives on workshops as `.mode` and on
+      // collaborations as `.locationType` -- a type with neither (job,
+      // internship) just isn't affected by this filter.
+      if (modeFilter !== "all") {
+        const mode = o.mode || o.locationType;
+        if (mode && mode !== modeFilter) return false;
+      }
+      if (dateFilter !== "all") {
+        const iso = /^\d{4}-\d{2}-\d{2}$/.test(o.date || "") ? o.date : o.deadline;
+        if (iso) {
+          const days = (new Date(`${iso}T00:00:00`) - new Date()) / 86400000;
+          const withinWeek = days >= -1 && days <= 7;
+          const withinMonth = days >= -1 && days <= 31;
+          if (dateFilter === "week" && !withinWeek) return false;
+          if (dateFilter === "month" && !withinMonth) return false;
+        }
+      }
       if (!q) return true;
       return o.title.toLowerCase().includes(q) || o.org.toLowerCase().includes(q) || (o.location || "").toLowerCase().includes(q) || o.tags?.some((t) => t.toLowerCase().includes(q));
     });
-  }, [opportunities, category, query]);
+  }, [opportunities, category, query, priceFilter, modeFilter, dateFilter]);
 
   const myPostings = useMemo(() => opportunities.filter((o) => o.postedByMe), [opportunities]);
   const appliedIds = useMemo(() => new Set(myApplications.map((a) => String(a.opportunityId))), [myApplications]);
   const isSaved = (opp) => savedIds.includes(String(opp?.id));
+
+  // My Opportunities' four tabs (Phase G) -- an item's home is decided by
+  // status first (past beats everything else) and by source second
+  // (workshop registration vs. everything-else application vs. saved).
+  const isPastOpp = (opp) => !opp || ["closed", "expired", "cancelled"].includes(opp.lifecycleStatus);
+  const registeredItems = useMemo(() => myApplications.filter((a) => a.opportunity?.type === "workshop" && !isPastOpp(a.opportunity)), [myApplications]);
+  const applicationItems = useMemo(() => myApplications.filter((a) => a.opportunity?.type !== "workshop" && !isPastOpp(a.opportunity)), [myApplications]);
+  const pastApplicationItems = useMemo(() => myApplications.filter((a) => isPastOpp(a.opportunity)), [myApplications]);
+  const savedActiveItems = useMemo(() => savedOpportunities.filter((o) => !isPastOpp(o)), [savedOpportunities]);
+  const pastSavedItems = useMemo(() => savedOpportunities.filter((o) => isPastOpp(o)), [savedOpportunities]);
 
   useEffect(() => {
     if (view !== "hub" || postOpen) return;
@@ -286,6 +336,11 @@ export default function ExplorePage() {
     try {
       const nowSaved = await db.toggleSaveOpportunity(opp.id);
       setSavedIds((prev) => nowSaved ? [...prev, String(opp.id)] : prev.filter((id) => id !== String(opp.id)));
+      // Keep the Saved tab's full objects in sync the same way -- opp is
+      // already in the shape getSavedOpportunities() itself returns.
+      setSavedOpportunities((prev) => nowSaved
+        ? [opp, ...prev.filter((o) => o.id !== opp.id)]
+        : prev.filter((o) => o.id !== opp.id));
     } catch (e) {
       setActionError(e.message || "Couldn't save that.");
     }
@@ -379,33 +434,15 @@ export default function ExplorePage() {
 
   if (myAppsOpen) {
     return (
-      <main className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-5">
-          <button type="button" onClick={() => setMyAppsOpen(false)} aria-label="Back" className="p-1.5 -ml-1.5 rounded-lg hover:bg-[#F7F5FF] text-[#8A7FA3]"><ChevronLeft size={20} /></button>
-          <h1 className="pf-font-head text-xl font-bold text-[#2B2140] flex-1">My Applications</h1>
-        </div>
-        {myApplications.length === 0 ? (
-          <p className="pf-font-body text-sm text-[#A79CC4]">You haven't applied to anything yet.</p>
-        ) : (
-          <div className="space-y-3 pb-6">
-            {myApplications.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => { if (a.opportunity) { setMyAppsOpen(false); openOpportunity(a.opportunity); } }}
-                className="w-full text-left bg-white border-2 border-[#F1EEFB] rounded-2xl px-4 py-3.5 hover:bg-[#FBFAFF] transition"
-              >
-                <p className="pf-font-head text-sm font-bold text-[#2B2140] leading-snug">{a.opportunity?.title || "Opportunity"}</p>
-                <p className="pf-font-body text-xs text-[#8A7FA3] mb-2">{a.opportunity?.org || ""}</p>
-                <span className={`pf-font-head inline-block text-[10.5px] font-bold px-2 py-0.5 rounded-full ${a.status === "shortlisted" ? "bg-[#FFF4DC] text-[#8A6100]" : a.status === "passed" ? "bg-[#F4F2FA] text-[#8A7FA3]" : "bg-[#F7F5FF] text-[#6E5CC7]"}`}>
-                  {a.status === "shortlisted" ? "Shortlisted" : a.status === "passed" ? "Not selected" : "Applied"}
-                </span>
-                <span className="pf-font-body text-[11px] text-[#A79CC4] ml-2">{a.appliedAgo}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </main>
+      <MyOpportunitiesPage
+        registeredItems={registeredItems}
+        applicationItems={applicationItems}
+        savedItems={savedActiveItems}
+        pastApplicationItems={pastApplicationItems}
+        pastSavedItems={pastSavedItems}
+        onBack={() => setMyAppsOpen(false)}
+        onOpen={(opp) => { setMyAppsOpen(false); openOpportunity(opp); }}
+      />
     );
   }
 
@@ -463,24 +500,50 @@ export default function ExplorePage() {
       >
         <span className="w-9 h-9 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><FileText size={16} className="text-[#6E5CC7]" /></span>
         <span className="min-w-0 flex-1 text-left">
-          <span className="pf-font-head block text-sm font-bold text-[#2B2140]">My Applications</span>
-          <span className="pf-font-body block text-xs text-[#8A7FA3]">Track the roles you've applied to</span>
+          <span className="pf-font-head block text-sm font-bold text-[#2B2140]">My Opportunities</span>
+          <span className="pf-font-body block text-xs text-[#8A7FA3]">Registered, applied, saved and past</span>
         </span>
-        {myApplications.length > 0 && <span className="pf-font-head text-xs font-bold text-white bg-[#6E5CC7] rounded-full px-2 py-0.5 shrink-0">{myApplications.length}</span>}
+        {(registeredItems.length + applicationItems.length + savedActiveItems.length) > 0 && (
+          <span className="pf-font-head text-xs font-bold text-white bg-[#6E5CC7] rounded-full px-2 py-0.5 shrink-0">
+            {registeredItems.length + applicationItems.length + savedActiveItems.length}
+          </span>
+        )}
         <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
       </button>
 
       {actionError && <p className="pf-font-body text-xs text-rose-600 mb-3">{actionError}</p>}
 
-      <div className="flex items-center gap-2 bg-[#F7F5FF] border-2 border-[#EFE9FF] rounded-2xl px-3.5 h-11 mb-3.5">
-        <Search size={16} className="text-[#8A7FA3] shrink-0" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search opportunities, clinics, cities…"
-          className="pf-font-body bg-transparent text-sm outline-none w-full placeholder:text-[#A79CC4] text-[#2B2140]"
-        />
+      <div className="flex items-center gap-2 mb-3.5">
+        <div className="flex-1 flex items-center gap-2 bg-[#F7F5FF] border-2 border-[#EFE9FF] rounded-2xl px-3.5 h-11">
+          <Search size={16} className="text-[#8A7FA3] shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search opportunities, clinics, cities…"
+            className="pf-font-body bg-transparent text-sm outline-none w-full placeholder:text-[#A79CC4] text-[#2B2140]"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-expanded={filterOpen}
+          aria-label="Filters"
+          className={`shrink-0 w-11 h-11 rounded-2xl border-2 flex items-center justify-center transition-colors ${filterOpen || hasActiveFilters ? "bg-[#FFB020] border-[#FFB020] text-[#3A2A00]" : "bg-white border-[#F1EEFB] text-[#6E5CC7]"}`}
+        >
+          <SlidersHorizontal size={16} />
+        </button>
       </div>
+
+      {filterOpen && (
+        <div className="bg-white border-2 border-[#F1EEFB] rounded-2xl p-3.5 mb-3.5 space-y-3">
+          <FilterRow label="Price (workshops)" value={priceFilter} onChange={setPriceFilter} options={[{ key: "all", label: "Any" }, { key: "free", label: "Free" }, { key: "paid", label: "Paid" }]} />
+          <FilterRow label="Mode" value={modeFilter} onChange={setModeFilter} options={[{ key: "all", label: "Any" }, { key: "Online", label: "Online" }, { key: "In-person", label: "In-person" }, { key: "Hybrid", label: "Hybrid" }]} />
+          <FilterRow label="When" value={dateFilter} onChange={setDateFilter} options={[{ key: "all", label: "Any time" }, { key: "week", label: "This week" }, { key: "month", label: "This month" }]} />
+          {hasActiveFilters && (
+            <button type="button" onClick={clearFilters} className="pf-font-head text-xs font-bold text-[#6E5CC7]">Clear filters</button>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 pb-0.5">
         {OPPORTUNITY_CATEGORIES.map((c) => {
@@ -535,5 +598,28 @@ export default function ExplorePage() {
         <WorkshopWizard editingOpp={editingOpp} onClose={closeCreateFlow} onSubmit={submitFromWizard} />
       )}
     </main>
+  );
+}
+
+// One labeled pill row in the filter sheet above (Price/Mode/When) --
+// same PillSelect shape used throughout the create wizards, kept local
+// here since it's presentational and this is its only caller.
+function FilterRow({ label, value, onChange, options }) {
+  return (
+    <div>
+      <span className="pf-font-head block text-[11px] font-bold text-[#8A7FA3] mb-1.5">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            className={`pf-font-head text-xs font-bold rounded-full px-3 py-1.5 border-2 transition-colors ${value === o.key ? "bg-[#6E5CC7] border-[#6E5CC7] text-white" : "bg-white border-[#F1EEFB] text-[#6E5CC7]"}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
