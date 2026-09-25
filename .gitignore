@@ -26,3 +26,10 @@ ios/App/DerivedData/
 ios/App/App/public/
 ios/**/*.xcuserstate
 ios/**/xcuserdata/
+
+# App signing keys -- never commit these. CI gets the Android keystore from
+# the ANDROID_KEYSTORE_BASE64 secret (see .github/workflows/android-build.yml).
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
