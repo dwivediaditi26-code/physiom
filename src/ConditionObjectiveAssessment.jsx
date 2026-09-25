@@ -36,9 +36,9 @@
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE } from "./orthoFieldKit.jsx";
-import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
-import { romRichItem, specialRichItem } from "./orthoRegionAssessments.jsx";
+import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE, SelectField, NumberField, ScaleField } from "./orthoFieldKit.jsx";
+import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
+import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
@@ -141,6 +141,23 @@ function romRichItemFor(regionKey, movementId) {
     if (entry) return romRichItem(entry);
   }
   return null;
+}
+
+// Manual Muscle Testing -- no per-condition muscle list exists in the
+// condition-library JSON (2026-09-24, Aditi: "put mmt also here"), so this
+// reuses the app's own real MMT_DATA (sharedClinicalData.js, same source
+// the standalone MmtSection uses) keyed per region, same bucket-mapping
+// pattern as ROM_DATA_BUCKET/SPECIAL_TEST_DATA_BUCKET above. Ankle/Foot and
+// Elbow/Wrist/Hand again combine two of MMT_DATA's own buckets; Thoracic
+// and Lumbar share MMT_DATA's single "Spine & Core" bucket since MMT_DATA
+// doesn't split the trunk further than that.
+const MMT_DATA_BUCKET = {
+  cervical: ["Cervical"], thoracic: ["Spine & Core"], lumbar: ["Spine & Core"],
+  shoulder: ["Shoulder & Scapula"], hip: ["Hip & Pelvis"], knee: ["Knee"],
+  ankleFoot: ["Ankle & Foot"], elbowWristHand: ["Elbow & Forearm", "Wrist & Hand"],
+};
+function mmtMusclesFor(regionKey) {
+  return (MMT_DATA_BUCKET[regionKey] || []).flatMap((bucket) => MMT_DATA[bucket] || []);
 }
 
 // Special Tests photo library has a shared bucket per region, including
@@ -491,60 +508,20 @@ function tierLevel(m) {
 }
 const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 
-// Target Hypotheses -- compact 3-card grid (top-ranked condition + next two)
-// mirroring the Stitch reference mockup, in front of the full scrollable
-// ConditionTabs list rather than replacing it: "Customize" reveals the rest
-// of `order` below for picking any other condition, same selection/data as
-// before (2026-09-24, Aditi: "make the AI page of ortho like this same to
-// same").
-function HypothesisGrid({ conditions, order, matchById, activeId, onSelect, expanded, onToggleExpanded }) {
-  const top3 = order.slice(0, 3);
+// Target Hypotheses -- the earlier top-3 PRIMARY/DIFF card grid sat directly
+// above this same scrollable ConditionTabs list, and whenever a region had
+// 3 or fewer ranked conditions (e.g. Cervical) the two showed the literal
+// same 3 conditions twice in a row (2026-09-24, Aditi, on a real device:
+// "remove this upper [grid] only three comming... make the 2nd below it
+// permanant"). Now just the one always-visible list, no top grid, no
+// Customize toggle.
+function HypothesisGrid({ conditions, order, matchById, activeId, onSelect }) {
   return (
     <div>
       <div className="obj-hypo-head">
         <span className="obj-hypo-label">Target Hypotheses</span>
-        {order.length > 3 && (
-          <button type="button" className="obj-hypo-customize" onClick={onToggleExpanded}>
-            {expanded ? "Show top 3" : `Customize (${order.length})`}
-          </button>
-        )}
       </div>
-      <div className="obj-hypo-grid">
-        {top3.map((id, i) => {
-          const c = conditions[id];
-          if (!c) return null;
-          const m = matchById[id];
-          const pct = conditionMatchPct(m);
-          const level = tierLevel(m);
-          const isPrimary = i === 0;
-          const isActive = id === activeId;
-          return (
-            <button
-              key={id}
-              type="button"
-              className={"obj-hypo-card" + (isPrimary ? " obj-hypo-card-primary" : "") + (isActive && !isPrimary ? " obj-hypo-card-primary" : "")}
-              onClick={() => onSelect(id)}
-            >
-              <span className={"obj-hypo-tag " + (isPrimary ? "obj-hypo-tag-primary" : "obj-hypo-tag-diff")}>{isPrimary ? "Primary" : "Diff"}</span>
-              <span>
-                <span className="obj-hypo-id">{id}</span>
-                <span className="obj-hypo-name">{c.name}</span>
-              </span>
-              <span className="obj-hypo-foot">
-                <span className="obj-hypo-icon">🦴</span>
-                <span className={"obj-hypo-tier" + (isPrimary && level ? ` obj-hypo-tier-${level}` : "")}>
-                  {pct != null ? `${pct}%` : level ? TIER_TEXT[level] : m ? m.matchTier : "—"}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {expanded && (
-        <div className="obj-hypo-more">
-          <ConditionTabs conditions={conditions} order={order} matchById={matchById} activeId={activeId} onSelect={onSelect} />
-        </div>
-      )}
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} activeId={activeId} onSelect={onSelect} />
     </div>
   );
 }
@@ -594,9 +571,11 @@ function ModuleCard({ label, subtitle, count, color, defaultOpen = true, childre
 // Aditi: "put the CPA functional and kinetic seprate in ai") -- each is
 // its own clinical module, not a sub-finding of the tab it was sharing.
 const SUBTOPICS = [
+  { key: "pain", label: "Pain", icon: "ti-mood-sad" },
   { key: "observation", label: "Observation", icon: "ti-eye" },
   { key: "palpation", label: "Palpation", icon: "ti-hand-stop" },
   { key: "rom", label: "ROM", icon: "ti-arrows-maximize" },
+  { key: "mmt", label: "MMT", icon: "ti-activity" },
   { key: "special", label: "Special tests", icon: "ti-clipboard-check" },
   { key: "cpa", label: "CPA / NKT", icon: "ti-brain" },
   { key: "kinetic", label: "Kinetic chain", icon: "ti-link" },
@@ -1310,12 +1289,19 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   const config = matchedConfigs.find((c) => c.key === activeConfigKey) || matchedConfigs[0] || REGION_CONFIGS[0];
 
   const [state, setField] = useSectionData(data, setData, `conditionAssessment_${config.key}`);
+  // Same global data.pain the wizard's own Pain step (PainSection,
+  // orthoCommonSections.jsx) reads/writes -- pain isn't condition-specific,
+  // so this shares that one record rather than forking a second copy per
+  // condition. Body Chart deliberately left out here (2026-09-24, Aditi:
+  // "pain only not body chart, only pain tab") -- that stays the wizard's
+  // own Pain step's job; this tab is just the character/severity/pattern
+  // fields, quick to fill while already looking at a specific condition.
+  const [painData, setPain] = useSectionData(data, setData, "pain");
   const [activeId, setActiveId] = useState(null);
   const [activeSubtopic, setActiveSubtopic] = useState("observation");
-  const [showAllHypotheses, setShowAllHypotheses] = useState(false);
   // Switching regions should land on that region's own front screen, not
   // whatever condition state the previous region was showing.
-  useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); setShowAllHypotheses(false); }, [config.key]);
+  useEffect(() => { setActiveId(null); setActiveSubtopic("observation"); }, [config.key]);
   // Content used to stay hidden behind this tap -- Aditi wants it visible
   // immediately since the ranking is already computed synchronously from
   // Subjective data (engineResult/rankedIds below), so the button is now
@@ -1476,8 +1462,6 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               matchById={matchById}
               activeId={selectedId}
               onSelect={setActiveId}
-              expanded={showAllHypotheses}
-              onToggleExpanded={() => setShowAllHypotheses((v) => !v)}
             />
           </div>
 
@@ -1504,6 +1488,20 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               -- still on condition.required/recommended/keyExams (or
               requiredTests/recommendedTests for v1 regions) -- so that future
               view can read it directly, same as this block did. */}
+
+          {activeSubtopic === "pain" && (
+            <ModuleCard label="Pain" subtitle="Character, severity & pattern">
+              <div style={{ marginBottom: 10 }}>
+                <ScaleField label="Current" value={painData.current} onChange={(v) => setPain("current", v)} />
+              </div>
+              <div className="vitals-grid" style={{ marginBottom: 10 }}>
+                <NumberField label="Best (24h)" value={painData.best} onChange={(v) => setPain("best", v)} unit="/10" width="45%" />
+                <NumberField label="Worst (24h)" value={painData.worst} onChange={(v) => setPain("worst", v)} unit="/10" width="45%" />
+              </div>
+              <SelectField label="Character" type="multi" options={["Dull", "Sharp", "Burning", "Throbbing", "Aching", "Shooting", "Stabbing"]} value={painData.character} onChange={(v) => setPain("character", v)} />
+              <SelectField label="Pattern" type="single" options={["Constant", "Intermittent", "Activity-related", "Night pain"]} value={painData.pattern} onChange={(v) => setPain("pattern", v)} />
+            </ModuleCard>
+          )}
 
           {activeSubtopic === "observation" && <>
           {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
@@ -1619,8 +1617,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       <div key={m.id} style={rowStyle}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 68px 68px", alignItems: "center", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                            <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
-                            <PatientPhotoTile photoId={findingPhotoId("rom", `${config.key} ${m.label}`)} />
+                            <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</div>
                               <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</div>
@@ -1628,11 +1625,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                             <Stepper value={valL} onChange={(nv) => sv("rom", m.id + "_left", nv)} min={0} max={max} />
-                            {gradeL && <span style={{ fontSize: "0.53rem", fontWeight: 700, color: gradeL.color }}>{gradeL.label}</span>}
+                            {gradeL && <span style={{ fontSize: "0.92rem", fontWeight: 800, color: gradeL.color }}>{gradeL.label}</span>}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                             <Stepper value={valR} onChange={(nv) => sv("rom", m.id + "_right", nv)} min={0} max={max} />
-                            {gradeR && <span style={{ fontSize: "0.53rem", fontWeight: 700, color: gradeR.color }}>{gradeR.label}</span>}
+                            {gradeR && <span style={{ fontSize: "0.92rem", fontWeight: 800, color: gradeR.color }}>{gradeR.label}</span>}
                           </div>
                         </div>
                         {m.normal != null && (
@@ -1656,8 +1653,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={m.id} style={rowStyle}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                          <InfoButton imageTrigger fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
-                          <PatientPhotoTile photoId={findingPhotoId("rom", `${config.key} ${m.label}`)} />
+                          <InfoButton imageTrigger size="md" fallbackIcon="ti-arrows-maximize" title={m.label} richItem={romRichItemFor(config.key, m.id)} />
                           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.label}</span>
                             <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
@@ -1666,7 +1662,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                         <Stepper value={val} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
                       </div>
                       {grade && (
-                        <div style={{ fontSize: "0.53rem", fontWeight: 700, color: grade.color, textAlign: "right", marginTop: 1 }}>{grade.label}</div>
+                        <div style={{ fontSize: "0.92rem", fontWeight: 800, color: grade.color, textAlign: "right", marginTop: 2 }}>{grade.label}</div>
                       )}
                       {m.normal != null && (
                         <div style={{ marginTop: 7 }}>
@@ -1681,6 +1677,44 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               </div>
             </ModuleCard>
           )}
+
+          {activeSubtopic === "mmt" && (() => { const muscles = mmtMusclesFor(config.key); return (
+            <ModuleCard label="MMT" subtitle="Muscle strength grading (0–5)" count={muscles.length}>
+              {muscles.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {muscles.map((m, i) => {
+                    const valL = v("mmt", m.id + "_left");
+                    const valR = v("mmt", m.id + "_right");
+                    return (
+                      <div key={m.id} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginBottom: 8 }}>
+                          <InfoButton imageTrigger size="md" fallbackIcon="ti-activity" title={m.muscle} richItem={mmtRichItem(m)} />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.845rem", color: BRAND.ink, letterSpacing: "-0.01em" }}>{m.muscle}</div>
+                            {(m.nerve || m.root) && (
+                              <div style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>{[m.nerve, m.root].filter(Boolean).join(" · ")}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 20, paddingLeft: 70 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: BRAND.grayLight }}>L</span>
+                            <GradeSelect value={valL} onChange={(nv) => sv("mmt", m.id + "_left", nv)} />
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: BRAND.grayLight }}>R</span>
+                            <GradeSelect value={valR} onChange={(nv) => sv("mmt", m.id + "_right", nv)} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyNote>Not specified in condition library.</EmptyNote>
+              )}
+            </ModuleCard>
+          ); })()}
 
           {activeSubtopic === "special" && <>
           <ModuleCard label="Special Tests" color="#8B5CF6">
