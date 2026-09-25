@@ -37,7 +37,22 @@ export function useWizardStepHistory({ wizardKey, stepId, onNav, navContext, onE
   // Browser moved first (Back/Forward) -> `navContext.wizardStep` prop
   // changes without us having pushed it -- replay through the wizard's own
   // existing jump/exit functions instead of touching step state directly.
+  //
+  // `navContext` itself goes `undefined` while AppFull.jsx is showing a
+  // DIFFERENT tab and just keeping this wizard mounted in the background
+  // (2026-09-24, see AppFull.jsx's own deferred-mount comment for
+  // ortho_new_assessment/neuro_assessment/cardio_assessment) -- that
+  // undefined is indistinguishable from a real `wizardStep` disappearing
+  // UNLESS we check for it explicitly: without this guard, merely switching
+  // to Learn/PhysioFeed and back looked exactly like "browser Back past the
+  // first step" to this effect, wrongly firing onBeforeFirstStep and
+  // resetting the wizard to its Setting/Mode picker every time (Aditi,
+  // "whatever page I left off it should be on that page"). Skipping the
+  // whole check while hidden -- rather than just no-oping on the
+  // undefined case -- also leaves `lastRef` untouched, so the matching
+  // "shown again" transition still reads as our own echo below.
   useEffect(() => {
+    if (navContext === undefined) return;
     const incoming = navContext?.wizardStep || null;
     // Skip the synthetic first run: on mount `incoming` is still whatever
     // AppFull had BEFORE our own first push above lands back down as a prop.

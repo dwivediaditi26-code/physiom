@@ -299,6 +299,14 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   // last page... not to pathway or region selection") -- resuming via
   // Edit lands straight on Review with the saved data.
   const [step, setStep] = useState(() => {
+    // navContext.wizardStep (2026-09-24, Aditi: reload should leave the
+    // assessment exactly where it was) -- useWizardStepHistory below keeps
+    // this in sync with the real step on every change and OrthoAssessment.jsx
+    // now restores pathway/region/condition/data from the same reload, so
+    // this takes priority over initialStep (which only ever fires once, from
+    // the Edit button's fixed "review" resume target).
+    const restoredIdx = navContext?.wizardStep ? stepOrder.indexOf(navContext.wizardStep) : -1;
+    if (restoredIdx >= 0) return restoredIdx;
     if (!initialStep) return 0;
     const idx = stepOrder.indexOf(initialStep);
     return idx >= 0 ? idx : 0;

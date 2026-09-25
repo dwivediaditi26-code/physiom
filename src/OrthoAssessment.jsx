@@ -41,6 +41,11 @@ const PATHWAY_META = {
   outpatient: { Component: OrthoOutpatientAssessment, conditions: OUTPATIENT_CONDITIONS, label: "Outpatient / Musculoskeletal" },
 };
 
+// Where each pathway's own saveAssessment() (OrthoOutpatient/IPD/PostOpAssessment.jsx)
+// autosaves its snapshot on the patient record -- same keys SpecialtyPatientProfile.jsx
+// reads to build the "✏️ Edit" button's `resume` object.
+const ORTHO_SNAPSHOT_KEYS = { outpatient: "ortho_outpatient_assessment", ipd: "ortho_ipd_assessment", postop: "ortho_postop_assessment" };
+
 // All 5 stages are jumpable from here, including AI Objective/Summary
 // (3-4) -- those used to render as plain, unclickable labels because the
 // wizard they live in only mounted once Subjective was finished. Jumping
@@ -76,11 +81,46 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   // choose there yet), landing the therapist on region selection -- the one
   // question that genuinely can't be skipped -- then straight into the
   // wizard. Reached the normal way (no entryMode, no resume), nothing changes.
-  const [step, setStep] = useState(resume ? 3 : entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
-  const [pathway, setPathway] = useState(resume ? resume.pathway : entryMode ? "outpatient" : null);
-  const [selectedRegions, setSelectedRegions] = useState(resume ? resume.selectedRegions || [] : []);
-  const [condition, setCondition] = useState(resume ? resume.condition || "general" : entryMode ? "general" : null);
-  const [customConditionLabel, setCustomConditionLabel] = useState(resume?.customConditionLabel || "");
+  // Reload-resume (2026-09-24, Aditi: "whatever page we are it should be we
+  // are stuck there... even if reload") -- this screen's own pathway/
+  // region/condition picker (steps 0-2) has no history/URL binding, so a
+  // genuine page reload while already inside the wizard (step 3) used to
+  // remount this component back at step 0 with no memory of which pathway/
+  // region/condition got it there, even though `resume` already solves the
+  // exact same problem for the "✏️ Edit" button (SpecialtyPatientProfile.jsx
+  // builds it from a saved snapshot). `navContext.wizardStep` is the one
+  // thing that DOES survive a reload here (useWizardStepHistory.js pushes
+  // it into the same navContext object AppFull.jsx already persists to
+  // localStorage) -- its mere presence means the wizard was already reached
+  // this session, so `patientData.care_setting` (mirrored by every
+  // pathway's own saveAssessment() on its 2s autosave) says which pathway
+  // that was, and that pathway's own autosaved snapshot has everything else
+  // needed to rebuild the exact same resume object the Edit button would
+  // have built -- computed once at mount, not on every render, since
+  // `patientData` itself changes on every keystroke once the wizard is up.
+  const [reloadResume] = useState(() => {
+    if (resume || entryMode || !navContext?.wizardStep) return null;
+    const reloadPathway = patientData?.care_setting;
+    const snapshotKey = reloadPathway && ORTHO_SNAPSHOT_KEYS[reloadPathway];
+    if (!snapshotKey) return null;
+    try {
+      const snap = JSON.parse(patientData?.[snapshotKey] || "null");
+      if (!snap) return null;
+      return {
+        pathway: reloadPathway,
+        selectedRegions: snap.selectedRegions || [],
+        condition: snap.rawCondition || "general",
+        customConditionLabel: snap.customConditionLabel,
+        data: snap.data || {},
+      };
+    } catch { return null; }
+  });
+  const effectiveResume = resume || reloadResume;
+  const [step, setStep] = useState(effectiveResume ? 3 : entryMode ? 1 : 0); // 0 pathway, 1 region, 2 condition, 3 assessment
+  const [pathway, setPathway] = useState(effectiveResume ? effectiveResume.pathway : entryMode ? "outpatient" : null);
+  const [selectedRegions, setSelectedRegions] = useState(effectiveResume ? effectiveResume.selectedRegions || [] : []);
+  const [condition, setCondition] = useState(effectiveResume ? effectiveResume.condition || "general" : entryMode ? "general" : null);
+  const [customConditionLabel, setCustomConditionLabel] = useState(effectiveResume?.customConditionLabel || "");
   const [opdMode, setOpdMode] = useState(entryMode ? "general" : null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   // "✨ AI Assisted Assessment" as a 4th pathway-screen option, alongside
@@ -216,7 +256,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             : pendingAiUpdates
         }
         entryMode={effectiveEntryMode}
-        initialData={resume?.data}
+        initialData={effectiveResume?.data}
         initialStep={pendingInitialStep || (resume ? resume.initialStep || "review" : undefined)}
       />
     );

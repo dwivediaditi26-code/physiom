@@ -183,6 +183,11 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
 // redirectable back to its own Demographics step on an incomplete-data
 // leave -- plus the three self-contained specialty tools, which aren't).
 const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "clinical"]);
+// The 4 bottom-nav tabs that sit OUTSIDE Clinical -- everything else (the
+// Clinical landing page itself, plus every assessment step/wizard reached
+// from it) counts as "inside Clinical" for the resume-on-return behavior
+// below (see lastClinicalNavRef).
+const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile"]);
 const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise"]);
 const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
 const ASSESSMENT_ACTIVE_KEYS = new Set([...ORTHO_WF_KEYS, ...OPAQUE_ASSESSMENT_KEYS]);
@@ -303,6 +308,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // why this matters: without this, two students sharing one browser/device
   // would silently read and overwrite each other's local patient cache.
   const DRAFT_KEY = draftKey(currentUser?.id);
+  // Per-user, same reasoning as DRAFT_KEY above -- remembers which screen
+  // (`active`) and routing detail (`navContext`, e.g. an opaque assessment
+  // wizard's current step) was showing, so a real browser reload lands back
+  // there instead of Home (2026-09-24, Aditi: "remember the recent page even
+  // if reload... wherever page we are it should be we are stuck there only
+  // if we press back or double click clinical"). Written by navTo (the one
+  // real-navigation choke point) and read once at mount just below.
+  const NAV_KEY = `physio_nav_v1_${currentUser?.id || "anon"}`;
 
   const { theme, toggle: toggleTheme, C: TC } = useTheme();
 
@@ -318,8 +331,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Override module-level C with live theme colors for this render
   Object.assign(C, TC);
 
-  const [active, setActive] = useState("home");
-  const [navContext, setNavContext] = useState({});
+  const [active, setActive] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(NAV_KEY) || "null");
+      if (raw && typeof raw.active === "string") return raw.active;
+    } catch {}
+    return "home";
+  });
+  const [navContext, setNavContext] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(NAV_KEY) || "null");
+      if (raw && raw.navContext && typeof raw.navContext === "object") return raw.navContext;
+    } catch {}
+    return {};
+  });
   // Unread dot for the relocated bell icon in the mobile header (see
   // pm-mobile-hdr below) -- fetched the same standalone way Home's
   // Evidence preview already reads PhysioFeed data (getEvidence()) without
@@ -345,6 +370,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // below) without putting navContext in its own dependency array.
   const navContextRef = useRef({});
   useEffect(() => { navContextRef.current = navContext; }, [navContext]);
+  // Wherever Clinical was last showing -- its own landing page, or any
+  // assessment step/wizard reached from it (demographics/subjective/rom/
+  // neuro_assessment/etc). Restored when the Clinical bottom-nav tab is
+  // tapped from Home/PhysioFeed/Learn/Profile, instead of always resetting
+  // to Clinical's landing page (Aditi, 2026-09-23: "whatever page I left
+  // off it should be on that page until... I double click the clinical or
+  // go back"). A genuine re-tap while already inside Clinical still resets
+  // to its landing page -- see the bottom nav's handleClick below -- same
+  // "re-tap to go home" pattern already used for Learn/PhysioFeed.
+  const lastClinicalNavRef = useRef({ key: "clinical", ctx: {} });
+  useEffect(() => {
+    if (!OUTER_TAB_KEYS.has(active)) lastClinicalNavRef.current = { key: active, ctx: navContext };
+  }, [active, navContext]);
   const [canGoBack, setCanGoBack] = useState(false);
   // PhysioFeedEntry.jsx's BackBridge writes { canGoBack, goBack } here on
   // every internal navigation -- lets goBack() below unwind PhysioFeed's
@@ -442,7 +480,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // ── Deferred mounting: heavy tabs only render after first visit ──────────
   // This cuts initial render time dramatically
   // Once mounted, component stays mounted (data preserved)
-  const [mountedTabs, setMountedTabs] = useState(new Set(["home", "demographics", "subjective"]));
+  // `active` may already be a restored-from-reload screen (see NAV_KEY
+  // above) by the time this runs -- include it so that screen's real
+  // component renders immediately instead of the "not yet mounted"
+  // TabLoader placeholder some tabs (e.g. the opaque assessment wizards)
+  // show until a real navTo() call adds them.
+  const [mountedTabs, setMountedTabs] = useState(() => new Set(["home", "demographics", "subjective", active]));
   const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
   const [chartPalpTab, setChartPalpTab] = useState("chart");  // "chart" | "palpation" -- combined Body Chart/Palpation step
   const [txTab, setTxTab] = useState("exercise");  // "exercise" | "tx" | "hep"
@@ -570,6 +613,26 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     } catch {}
     return {};
   });
+  // Declared here (not down near activePatientIdRef/the rest of the patient-
+  // switching helpers below) so the two autosave effects right after it can
+  // put it in their own dependency arrays -- putting it in an array literal
+  // built during render requires its `const` binding to already exist at
+  // THIS point in the function's top-to-bottom execution, and it used to be
+  // declared much further down, past those effects, which crashed with
+  // "Cannot access 'activePatientId' before initialization" (2026-09-24
+  // investigation: a brand-new patient auto-created mid-Ortho-assessment
+  // reloaded back to a blank draft, traced to this same staleness -- the old
+  // workaround read activePatientId through a closure instead, which meant
+  // whichever value was current the LAST time `data` itself changed silently
+  // stuck around in the saved draft until some unrelated edit changed `data`
+  // again, so a reload in that narrow window restored to no active patient
+  // at all even though the assessment data was already saved under one).
+  const [activePatientId, setActivePatientId] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      return (raw && raw.pid) ? raw.pid : null;
+    } catch { return null; }
+  });
   const [infoModal, setInfoModal] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   // bnavHidden removed — bottom nav is now always visible
@@ -624,7 +687,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   }, []);
 
   // ── Auto-save draft to localStorage (2s debounce) ─────────────────────
-  // activePatientId captured via closure — NOT in deps to avoid Rollup TDZ bug
+  // activePatientId is a real dep now (2026-09-24) -- see its own declaration
+  // above for why it had to move up above this effect first.
   useEffect(() => {
     if (!data || Object.keys(data).length === 0) return;
     const pid = activePatientId;
@@ -635,13 +699,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       } catch {}
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data, activePatientId]);
 
   // ── Auto-save to the CLOUD (debounced, ~2s after typing stops) ────────────
   // This is what makes Supabase the real source of truth instead of local
   // storage: every change to the active patient gets pushed up here, not
-  // just cached on this device. Same TDZ-avoidance reason as above for why
-  // activePatientId/currentUser are captured via closure, not in deps.
+  // just cached on this device. activePatientId is a real dep now (2026-09-24,
+  // same fix as the localStorage draft-save effect above).
   useEffect(() => {
     if (!data || Object.keys(data).length === 0) return;
     if (!activePatientId || !currentUser?.id) return;
@@ -660,7 +724,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       });
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data, activePatientId]);
 
   // ── Task helpers ─────────────────────────────────────────────────────────
   const saveTasks = (tasks) => { setTaskDB(tasks); saveTaskDB(tasks); };
@@ -695,12 +759,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       return updated;
     });
   };
-  const [activePatientId, setActivePatientId] = useState(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
-      return (raw && raw.pid) ? raw.pid : null;
-    } catch { return null; }
-  });
   // Leave-assessment save/demographics gate (see navTo below): refs mirror
   // the live values navTo needs but can't have in its own dep array
   // without recreating the stable callback every render.
@@ -1114,6 +1172,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
+    // Persist so a real browser reload (not just an in-app tab switch)
+    // lands back on this exact screen too -- see NAV_KEY above.
+    try { localStorage.setItem(NAV_KEY, JSON.stringify({ active: key, navContext: ctx || {} })); } catch {}
     // Every tab stays mounted (display:none/block, not unmounted) inside
     // the one shared .pm-main scroll container, so it never gets a fresh
     // scrollTop of its own the way a real page load would -- without this,
@@ -1396,10 +1457,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   // Top-level nav item (no indent)
-  const SidebarTopItem = ({ navKey, navCtx, icon, label }) => {
+  const SidebarTopItem = ({ navKey, navCtx, icon, label, onClick }) => {
     const isAct = active === navKey;
     return (
-      <div onClick={()=>navTo(navKey, navCtx||{})} style={{
+      <div onClick={onClick || (()=>navTo(navKey, navCtx||{}))} style={{
         display:"flex",alignItems:"center",gap:8,
         padding:"9px 14px",margin:"1px 6px",cursor:"pointer",borderRadius:9,
         background:isAct?"rgba(124,58,237,0.10)":"transparent",
@@ -1475,7 +1536,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           already on the bottom nav and inside Clinical's own sub-tabs. */}
       <SidebarTopItem navKey="home" icon="🏠" label="Home"/>
       <SidebarTopItem navKey="clinical" navCtx={{clinicalSubTab:"patients"}} icon="👥" label="Patients"/>
-      <SidebarTopItem navKey="clinical" icon="🩺" label="Clinical"/>
+      {/* Same resume-on-return behavior as the mobile bottom nav's Clinical
+          tab (see lastClinicalNavRef above): from Home/Learn/PhysioFeed/
+          Settings this returns to wherever Clinical was left, not always
+          its landing page. Clicked while already inside Clinical, it's a
+          deliberate "take me home" -- same "re-tap to go home" pattern as
+          the other tabs. */}
+      <SidebarTopItem navKey="clinical" icon="🩺" label="Clinical" onClick={()=>{
+        if (OUTER_TAB_KEYS.has(active)) {
+          const { key, ctx } = lastClinicalNavRef.current;
+          navTo(key, ctx);
+        } else {
+          navTo("clinical");
+        }
+      }}/>
       <SidebarTopItem navKey="learn" icon="📚" label="Learn"/>
       <SidebarTopItem navKey="physiofeed" icon="📰" label="PhysioFeed"/>
 
@@ -2283,11 +2357,23 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed, and the standard pm-main side padding is negated the
               same way CLINICAL_MODULE above does, so this fills the full
               tab width like every other assessment screen instead of
-              floating in a narrower column. */}
-          {active==="cardio_assessment" && (
-            <div className="pm-bleed">
+              floating in a narrower column.
+              Deferred-mount/hidden-when-not-active (2026-09-24, Aditi:
+              "whatever page I left off it should be on that page until...
+              I double click the clinical or go back") -- this used to be a
+              plain `{active==="cardio_assessment" && (...)}` conditional,
+              which fully UNMOUNTED the whole module (losing its internal
+              wizard step -- see its own `useState(() => hasExisting ? 1 :
+              0)` initializer) every time you so much as glanced at Learn or
+              PhysioFeed and came back. Same fix, same reasoning as
+              PhysioFeed's own deferred-mount comment just above. */}
+          {mountedTabs.has("cardio_assessment") && (
+            <div className="pm-bleed" style={{display: active==="cardio_assessment" ? "block" : "none"}}>
               <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined}/></Suspense>
             </div>
+          )}
+          {active==="cardio_assessment" && !mountedTabs.has("cardio_assessment") && (
+            <div className="pm-bleed"><TabLoader/></div>
           )}
 
           {/* Neurological Assessment -- replaces the old config-driven
@@ -2300,22 +2386,30 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               neuro screen usable within any specialty's assessment and is
               untouched; this is the full Neuro specialty stream, same
               relationship Cardiopulmonary Assessment already has to
-              Special Tests/ROM/etc. */}
-          {active==="neuro_assessment" && (
-            <div className="pm-bleed">
+              Special Tests/ROM/etc.
+              Same deferred-mount fix as Cardiopulmonary just above. */}
+          {mountedTabs.has("neuro_assessment") && (
+            <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
               <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined}/></Suspense>
             </div>
+          )}
+          {active==="neuro_assessment" && !mountedTabs.has("neuro_assessment") && (
+            <div className="pm-bleed"><TabLoader/></div>
           )}
 
           {/* New Ortho Assessment -- standalone tool, same pattern as
               Cardiopulmonary/Neurological Assessment above. The old
               config-driven "ortho" stream (demographics -> subjective ->
               objective stepper) stays reachable, relabeled "Old Ortho" in
-              STREAMS, untouched below. */}
-          {active==="ortho_new_assessment" && (
-            <div className="pm-bleed">
+              STREAMS, untouched below.
+              Same deferred-mount fix as Cardiopulmonary/Neurological above. */}
+          {mountedTabs.has("ortho_new_assessment") && (
+            <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
               <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
             </div>
+          )}
+          {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
+            <div className="pm-bleed"><TabLoader/></div>
           )}
 
           {/* Full documented assessment report -- lives ONLY in Clinical
@@ -2890,7 +2984,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               if (name==="profile") return (<svg {...common}><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>);
               return null;
             };
-            const outerKeys = ["home","physiofeed","learn","profile"];
+            const outerKeys = [...OUTER_TAB_KEYS];
             return [
               {key:"home",       icon:"home",       label:"Home"},
               {key:"__clinical", icon:"clinical",   label:"Clinical"},
@@ -2912,7 +3006,19 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               // assessment screen reached from it (demographics/subjective/
               // objective/etc, none of which have their own bottom-nav tab).
               const isActive = isClinical ? !outerKeys.includes(active) : active===item.key;
-              const handleClick = () => { if (isClinical) navTo("clinical"); else navTo(item.key); };
+              // Tapping Clinical FROM Home/PhysioFeed/Learn/Profile resumes
+              // wherever Clinical was left (its landing page, or an
+              // in-progress assessment step/wizard) instead of always
+              // jumping to the landing page. Tapping it again while already
+              // inside Clinical (isActive) is a deliberate re-tap -- that
+              // still resets to the landing page, same "re-tap to go home"
+              // pattern already used for Learn/PhysioFeed above.
+              const handleClick = () => {
+                if (!isClinical) { navTo(item.key); return; }
+                if (isActive) { navTo("clinical"); return; }
+                const { key, ctx } = lastClinicalNavRef.current;
+                navTo(key, ctx);
+              };
               return item.center ? (
                 <button key={item.key} data-testid={`bnav-tab-${item.key}`} onClick={handleClick} style={{flex:"1 0 auto",display:"flex",flexDirection:"column",
                   alignItems:"center",justifyContent:"flex-end",gap:2,background:"none",border:"none",cursor:"pointer",padding:"0 0 6px"}}>

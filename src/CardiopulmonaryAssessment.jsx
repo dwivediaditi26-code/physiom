@@ -2174,11 +2174,19 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
 export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
+  // AppFull.jsx now keeps this module mounted in the background instead of
+  // unmounting it on every tab switch (2026-09-24, so the wizard step/data
+  // below survives a glance at Learn/PhysioFeed) -- it signals "not the
+  // active tab" by passing navContext as `undefined` rather than unmounting.
+  // Reusing that here so the pinch-zoom lock right below only applies while
+  // this screen is actually showing, not for the rest of the session.
+  const isActive = navContext !== undefined;
   // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
   // which is what causes the "whole page jumps/zooms while filling" feeling
   // on mobile (2026-08-20, Aditi). Mirrors NeurologicalAssessment.jsx's own
   // effect -- this file was missing it entirely.
   useEffect(() => {
+    if (!isActive) return;
     let tag = document.querySelector('meta[name="viewport"]');
     const created = !tag;
     if (!tag) {
@@ -2192,7 +2200,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
       if (created) tag.remove();
       else if (prevContent) tag.setAttribute("content", prevContent);
     };
-  }, []);
+  }, [isActive]);
 
   // Editing an existing assessment (2026-08-20, Aditi: "clicking on edit
   // assessment take us to same as new assessment...it should take us to
@@ -2204,12 +2212,22 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   // Outpatient/Combined for records saved before data.meta existed.
   const seed = patientData?.cardio || {};
   const hasExisting = Object.keys(seed).length > 0;
-  const [step, setStep] = useState(() => (hasExisting ? 2 : 0));
+  // Reload-resume (2026-09-24, Aditi: "remember the recent page even if
+  // reload... wherever page we are it should be stuck there"): AppFull.jsx
+  // now persists `active`/`navContext` across a real browser reload (see
+  // its own NAV_KEY comment), so a cold reload can land THIS component's
+  // very first mount already holding the wizardStep it was on. Mirrors
+  // NeurologicalAssessment.jsx's identical fix -- see its own comment for
+  // why this has to be read directly here rather than left to
+  // useWizardStepHistory's own external-step effect.
+  const initialStepOrder = hasExisting ? ensureCarePlanSteps(seed.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS;
+  const restoredStepIdx = navContext?.wizardStep ? initialStepOrder.indexOf(navContext.wizardStep) : -1;
+  const [step, setStep] = useState(() => (restoredStepIdx >= 0 ? 2 + restoredStepIdx : (hasExisting ? 2 : 0)));
   const [setting, setSetting] = useState(() => (hasExisting ? seed.meta?.setting || "outpatient" : null));
   const [system, setSystem] = useState(() => (hasExisting ? seed.meta?.system || "combined" : null));
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExisting ? ensureCarePlanSteps(seed.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS));
+  const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -2235,7 +2253,14 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   // Re-hydrate when switching to a different patient -- deliberately keyed
   // on activePatientId only (not on every patientData change), otherwise
   // this would fight with the push-up effect below and reset mid-typing.
+  // Skips its own very first run (2026-09-24) -- same fix as
+  // NeurologicalAssessment.jsx's identical effect: a dependency-array
+  // effect fires once right after mount too, which used to immediately
+  // clobber the lazy useState initializers' own reload-resume result
+  // (`restoredStepIdx` above) back to the plain `existing ? 2 : 0` default.
+  const isFirstPatientHydration = useRef(true);
   useEffect(() => {
+    if (isFirstPatientHydration.current) { isFirstPatientHydration.current = false; return; }
     const s = patientData?.cardio || {};
     const existing = Object.keys(s).length > 0;
     setData(s);

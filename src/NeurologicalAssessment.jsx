@@ -2138,7 +2138,15 @@ function saveMyTemplatesToStorage(list) {
 // field into the shared bag -- this file owns its own deeply nested
 // step/section data model, not worth rewriting.
 export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
+  // AppFull.jsx now keeps this module mounted in the background instead of
+  // unmounting it on every tab switch (2026-09-24, so the wizard step/data
+  // below survives a glance at Learn/PhysioFeed) -- it signals "not the
+  // active tab" by passing navContext as `undefined` rather than unmounting.
+  // Reusing that here so the pinch-zoom lock right below only applies while
+  // this screen is actually showing, not for the rest of the session.
+  const isActive = navContext !== undefined;
   useEffect(() => {
+    if (!isActive) return;
     // Lock the page from pinch-zoom and from iOS's auto-zoom-on-input-focus,
     // which is what causes the "whole page jumps/zooms" feeling on mobile.
     let tag = document.querySelector('meta[name="viewport"]');
@@ -2154,7 +2162,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       if (created) tag.remove();
       else if (prevContent) tag.setAttribute("content", prevContent);
     };
-  }, []);
+  }, [isActive]);
 
   // Editing an existing assessment (2026-08-20, Aditi: "clicking on edit
   // assessment take us to same as new assessment...it should take us to
@@ -2166,19 +2174,31 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // phase="assess" at step 1 always lands on Patient Information.
   const neuroSeed = patientData?.neuro || {};
   const hasExistingNeuro = Object.keys(neuroSeed).length > 0;
-  const [step, setStep] = useState(() => (hasExistingNeuro ? 1 : 0));
+  // Reload-resume (2026-09-24, Aditi: "remember the recent page even if
+  // reload... wherever page we are it should be stuck there"): AppFull.jsx
+  // now persists `active`/`navContext` across a real browser reload (see
+  // its own NAV_KEY comment), so a cold reload can land THIS component's
+  // very first mount already holding the wizardStep it was on when the
+  // page was reloaded. useWizardStepHistory's own "browser moved first"
+  // effect deliberately ignores a wizardStep that's already there on mount
+  // (see its own comment -- honoring it there would race this component's
+  // own first-render push and get immediately clobbered), so it has to be
+  // read directly here, before that hook ever runs.
+  const initialStepOrder = hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS;
+  const restoredStepIdx = navContext?.wizardStep ? initialStepOrder.indexOf(navContext.wizardStep) : -1;
+  const [step, setStep] = useState(() => (restoredStepIdx >= 0 ? 1 + restoredStepIdx : (hasExistingNeuro ? 1 : 0)));
   const [setting, setSetting] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.setting || "outpatient" : null));
   const [condition, setCondition] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.condition || null : null));
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
-  const [stepOrder, setStepOrder] = useState(() => (hasExistingNeuro ? ensureAlwaysSteps(neuroSeed.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS));
+  const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
   const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
   // phase: "setting" -> "mode" -> ("template" | "region" | "mytemplates") -> "assess"
-  const [phase, setPhase] = useState(() => (hasExistingNeuro ? "assess" : "setting"));
+  const [phase, setPhase] = useState(() => (restoredStepIdx >= 0 ? "assess" : (hasExistingNeuro ? "assess" : "setting")));
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [myTemplates, setMyTemplates] = useState(() => loadMyTemplatesFromStorage());
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -2199,7 +2219,17 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   // CardiopulmonaryAssessment.jsx's own re-hydration effect. Keyed only on
   // activePatientId (not on every patientData change) so it doesn't fight
   // with the push-up effect below mid-typing.
+  // Skips its own very first run (2026-09-24): a dependency-array effect
+  // like this ALWAYS fires once right after mount too, not just on a real
+  // subsequent patient switch -- which used to blindly re-run the same
+  // `existing ? 1 : 0` step/phase logic the lazy useState initializers
+  // above already computed, clobbering their more nuanced result (in
+  // particular the reload-resume `restoredStepIdx` above, which landed on
+  // the right step for one render and then got immediately stomped back to
+  // step 1 by this effect's very first, redundant firing).
+  const isFirstPatientHydration = useRef(true);
   useEffect(() => {
+    if (isFirstPatientHydration.current) { isFirstPatientHydration.current = false; return; }
     const s = patientData?.neuro || {};
     const existing = Object.keys(s).length > 0;
     setData(s);
