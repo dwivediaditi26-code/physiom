@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 // "My Posted Opportunities" (2026-09-22, Aditi's brief + real mockup
 // reference) -- the recruiter/poster dashboard, reachable from a banner on
@@ -8,7 +8,7 @@ import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle, MoreHorizont
 // vs closed. The applicant count is `stats.applications`, which db.js
 // derives by counting real `applications` rows, so it can never drift
 // from the pipeline itself.
-export default function MyPostingsPage({ postings, onBack, onNewPost, onViewApplicants, onToggleStatus, onDelete }) {
+export default function MyPostingsPage({ postings, onBack, onNewPost, onViewApplicants, onToggleStatus, onDelete, onEdit }) {
   const [showClosed, setShowClosed] = useState(false);
   const active = postings.filter((o) => o.status !== "closed");
   const closed = postings.filter((o) => o.status === "closed");
@@ -31,7 +31,7 @@ export default function MyPostingsPage({ postings, onBack, onNewPost, onViewAppl
       {active.length === 0 && <p className="text-sm text-slate-400 mb-5">You don't have any active postings yet.</p>}
       <div className="space-y-3 mb-6">
         {active.map((o) => (
-          <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} onDelete={onDelete} />
+          <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} onDelete={onDelete} onEdit={onEdit} />
         ))}
       </div>
 
@@ -43,7 +43,7 @@ export default function MyPostingsPage({ postings, onBack, onNewPost, onViewAppl
           {showClosed && (
             <div className="space-y-3">
               {closed.map((o) => (
-                <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} onDelete={onDelete} closed />
+                <PostingCard key={o.id} opp={o} count={o.stats?.applications ?? 0} onViewApplicants={onViewApplicants} onToggleStatus={onToggleStatus} onDelete={onDelete} onEdit={onEdit} closed />
               ))}
             </div>
           )}
@@ -53,7 +53,7 @@ export default function MyPostingsPage({ postings, onBack, onNewPost, onViewAppl
   );
 }
 
-function PostingCard({ opp, count, onViewApplicants, onToggleStatus, onDelete, closed }) {
+function PostingCard({ opp, count, onViewApplicants, onToggleStatus, onDelete, onEdit, closed }) {
   const stats = opp.stats || { views: 0, applications: 0, chats: 0 };
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -62,7 +62,7 @@ function PostingCard({ opp, count, onViewApplicants, onToggleStatus, onDelete, c
           <span className={`w-1.5 h-1.5 rounded-full ${closed ? "bg-slate-400" : "bg-emerald-500"}`} />
           {closed ? "Closed" : `Active${opp.daysRemaining != null ? ` · ${opp.daysRemaining} days left` : ""}`}
         </div>
-        <DeleteListingButton oppId={opp.id} count={count} onDelete={onDelete} />
+        <PostingOptionsMenu opp={opp} count={count} onEdit={onEdit} onDelete={onDelete} />
       </div>
       <p className="text-sm font-bold text-slate-900 leading-snug">{opp.title}</p>
       <p className="text-xs text-slate-500 mb-2.5">{opp.orgShort || opp.org}</p>
@@ -90,11 +90,14 @@ function PostingCard({ opp, count, onViewApplicants, onToggleStatus, onDelete, c
   );
 }
 
-// Mirrors DeletePostButton.jsx's one-menu-click pattern (2026-08-18): a
-// second tap to confirm, since deleting a listing is permanent and
-// cascades its applications/registrations too (opportunities_delete_own
-// RLS + applications' on-delete-cascade FK).
-function DeleteListingButton({ oppId, count, onDelete }) {
+// Edit (Phase D, 2026-09-25) + delete, in one menu. Delete keeps
+// DeletePostButton.jsx's one-menu-click-then-confirm pattern (2026-08-18):
+// a second tap to confirm, since it's the one destructive action here --
+// though "destructive" now just means "no longer visible to anyone"
+// (opportunities_select_visible checks deleted_at), not gone: deleteOpportunity
+// is a soft delete precisely so the applications/registrations it's attached
+// to survive it (add_opportunity_lifecycle.sql).
+function PostingOptionsMenu({ opp, count, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -118,16 +121,24 @@ function DeleteListingButton({ oppId, count, onDelete }) {
         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-20">
           <button
             type="button"
+            onClick={() => { setOpen(false); onEdit(opp); }}
+            className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Pencil size={13} />
+            Edit listing
+          </button>
+          <button
+            type="button"
             onClick={() => {
               if (!confirming) { setConfirming(true); return; }
               setOpen(false);
               setConfirming(false);
-              onDelete(oppId);
+              onDelete(opp.id);
             }}
             className="w-full flex items-center gap-2 text-left px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
           >
             <Trash2 size={13} />
-            {confirming ? `Tap again to confirm${count > 0 ? ` (removes ${count})` : ""}` : "Delete listing"}
+            {confirming ? `Tap again to confirm${count > 0 ? ` (${count} already registered)` : ""}` : "Delete listing"}
           </button>
         </div>
       )}

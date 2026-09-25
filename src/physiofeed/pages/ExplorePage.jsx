@@ -47,15 +47,20 @@ export default function ExplorePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "job" | "internship" | "collaboration" | null
   const [workshopOpen, setWorkshopOpen] = useState(false);
-  const postOpen = pickerOpen || !!modalType || workshopOpen; // any create-flow open, for FAB-hiding below
+  // Edit (Phase D, 2026-09-25): reopens the same wizard/form as create, just
+  // pre-filled and pointed at updateOpportunity instead -- editingOpp's own
+  // `type` picks the wizard directly, skipping the type picker entirely.
+  const [editingOpp, setEditingOpp] = useState(null);
+  const postOpen = pickerOpen || !!modalType || workshopOpen || !!editingOpp; // any create/edit flow open, for FAB-hiding below
 
   const openCreateFlow = () => setPickerOpen(true);
-  const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); };
+  const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); setEditingOpp(null); };
   const pickCreateType = (type) => {
     setPickerOpen(false);
     if (type === "workshop") setWorkshopOpen(true);
     else setModalType(type);
   };
+  const openEditFlow = (opp) => { setMyPostingsOpen(false); setEditingOpp(opp); };
 
   const [myPostingsOpen, setMyPostingsOpen] = useState(false);
   const [myAppsOpen, setMyAppsOpen] = useState(false);
@@ -191,17 +196,28 @@ export default function ExplorePage() {
   const closeChat = () => setChatFor(null);
 
   // Every create form's Save Draft / Publish, funneled through
-  // createOpportunity(fields, {publish}). A draft won't come back on the
-  // next getOpportunities() fetch (that query excludes drafts -- My
-  // Postings' own "show my drafts" fetch is a later piece of work), but
-  // appending it here means it shows up immediately, this session, rather
-  // than the form closing with no visible trace that anything saved. Left
+  // createOpportunity(fields, {publish}) -- or, when editingOpp is set,
+  // through updateOpportunity(id, fields, {publish}) instead (Phase D,
+  // 2026-09-25). A draft won't come back on the next getOpportunities()
+  // fetch (that query excludes drafts -- My Postings' own "show my drafts"
+  // fetch is a later piece of work), but updating/inserting into local
+  // state here means it shows up immediately, this session, rather than
+  // the form closing with no visible trace that anything saved. Left
   // uncaught here on purpose -- WorkshopWizard/ApplicationOpportunityForm
   // each keep their own try/catch around this call so the error renders
   // inside the still-open form instead of vanishing with it.
-  const createFromWizard = async (fields, { publish }) => {
-    const saved = await db.createOpportunity(fields, { publish });
-    setOpportunities((prev) => [saved, ...prev]);
+  const submitFromWizard = async (fields, { publish }) => {
+    if (editingOpp) {
+      // Only carry a draft-in-progress over the publish line here; a
+      // listing that's already published/closed/cancelled keeps its status
+      // exactly as-is -- Phase E's own actions own every other transition.
+      const shouldPublish = editingOpp.rawStatus === "draft" && publish;
+      const updated = await db.updateOpportunity(editingOpp.id, fields, { publish: shouldPublish });
+      setOpportunities((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+    } else {
+      const saved = await db.createOpportunity(fields, { publish });
+      setOpportunities((prev) => [saved, ...prev]);
+    }
     closeCreateFlow();
   };
 
@@ -319,6 +335,7 @@ export default function ExplorePage() {
         onViewApplicants={openPipeline}
         onToggleStatus={toggleListingStatus}
         onDelete={deleteListing}
+        onEdit={openEditFlow}
       />
     );
   }
@@ -474,8 +491,12 @@ export default function ExplorePage() {
       )}
 
       {pickerOpen && <CreateOpportunityTypePicker onClose={closeCreateFlow} onPick={pickCreateType} />}
-      {modalType && <ApplicationOpportunityForm type={modalType} onClose={closeCreateFlow} onSubmit={createFromWizard} />}
-      {workshopOpen && <WorkshopWizard onClose={closeCreateFlow} onSubmit={createFromWizard} />}
+      {(modalType || (editingOpp && editingOpp.type !== "workshop")) && (
+        <ApplicationOpportunityForm type={editingOpp?.type || modalType} editingOpp={editingOpp} onClose={closeCreateFlow} onSubmit={submitFromWizard} />
+      )}
+      {(workshopOpen || editingOpp?.type === "workshop") && (
+        <WorkshopWizard editingOpp={editingOpp} onClose={closeCreateFlow} onSubmit={submitFromWizard} />
+      )}
     </main>
   );
 }

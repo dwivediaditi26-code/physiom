@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import OpportunityDetail from "../OpportunityDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -15,11 +15,24 @@ import { initialsOf, GRADIENTS } from "../../shared/constants.js";
 const GRAD_KEYS = Object.keys(GRADIENTS);
 const TITLE_LABEL = { job: "Job title *", internship: "Internship title *", collaboration: "Title *" };
 const TITLE_PLACEHOLDER = { job: "e.g. Junior Physiotherapist", internship: "e.g. Sports Physiotherapy Internship", collaboration: "e.g. Physiotherapy Research Collaboration" };
-const HEADING = { job: "Create Job", internship: "Create Internship", collaboration: "Create Collaboration" };
+const TYPE_LABEL = { job: "Job", internship: "Internship", collaboration: "Collaboration" };
 
 function fmtDate(iso) {
   if (!iso) return "";
   return new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// Reverses a job's saved `salary` display string ("Not disclosed" /
+// "₹X/mo" / "₹min – ₹max/mo") back into the three fields the Salary step
+// actually edits -- editingOpp only carries the formatted string, not the
+// mode/min/max/fixed that produced it.
+function parseSalary(salary) {
+  if (!salary || salary === "Not disclosed") return { mode: "Not disclosed", min: "", max: "", fixed: "" };
+  if (salary.includes("–")) {
+    const [min, max] = salary.split("–").map((s) => s.trim());
+    return { mode: "Range", min: parseAmount(min), max: parseAmount(max), fixed: "" };
+  }
+  return { mode: "Fixed", min: "", max: "", fixed: parseAmount(salary) };
 }
 
 // Job/Internship/Collaboration each get their own field set here rather
@@ -28,42 +41,54 @@ function fmtDate(iso) {
 // only the middle of the Details step branches on `type`. (2026-09-24,
 // same day the Workshop-only wizard shipped -- these three still opened
 // PostOpportunityModal's single flat screen until now.)
-export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) {
+//
+// `editingOpp` (Phase D, 2026-09-25): same shape as WorkshopWizard's edit
+// mode -- prefill from it, collapse Save Draft/Publish into one "Save
+// Changes" once the listing is past draft. Salary/startDate/duration/etc.
+// only exist as display strings on a saved opportunity (detailHighlights,
+// or a formatted `salary`), so parseSalary()/highlightValue() reverse them
+// back into the raw values this form edits.
+export default function ApplicationOpportunityForm({ type, onClose, onSubmit, editingOpp }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(null);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
 
-  const [title, setTitle] = useState("");
-  const [org, setOrg] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
-  const [deadline, setDeadline] = useState("");
-  const [registrationMethod, setRegistrationMethod] = useState(type === "collaboration" ? "contact" : "physiofeed");
-  const [registrationUrl, setRegistrationUrl] = useState("");
-  const [requirements, setRequirements] = useState([""]);
+  const editingDraft = editingOpp && editingOpp.rawStatus === "draft";
+  const singleSaveMode = editingOpp && !editingDraft;
+
+  const [title, setTitle] = useState(editingOpp?.title || "");
+  const [org, setOrg] = useState(editingOpp?.org || "");
+  const [description, setDescription] = useState(editingOpp?.description || "");
+  const [location, setLocation] = useState(editingOpp?.location || "");
+  const [deadline, setDeadline] = useState(editingOpp?.deadline || "");
+  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod || (type === "collaboration" ? "contact" : "physiofeed"));
+  const [registrationUrl, setRegistrationUrl] = useState(editingOpp?.registrationUrl || "");
+  const [requirements, setRequirements] = useState(editingOpp?.requirements?.length ? editingOpp.requirements : [""]);
 
   // Job
-  const [jobType, setJobType] = useState(JOB_TYPES[0]);
-  const [department, setDepartment] = useState(SPECIALTIES[0]);
-  const [experience, setExperience] = useState("");
-  const [salaryMode, setSalaryMode] = useState(SALARY_MODES[0]);
-  const [salaryMin, setSalaryMin] = useState("");
-  const [salaryMax, setSalaryMax] = useState("");
-  const [salaryFixed, setSalaryFixed] = useState("");
+  const [parsedSalary] = useState(() => parseSalary(editingOpp?.salary));
+  const [jobType, setJobType] = useState(editingOpp?.employment || JOB_TYPES[0]);
+  const [department, setDepartment] = useState(editingOpp?.specialty || SPECIALTIES[0]);
+  const [experience, setExperience] = useState(highlightValue(editingOpp, "Experience"));
+  const [salaryMode, setSalaryMode] = useState(parsedSalary.mode || SALARY_MODES[0]);
+  const [salaryMin, setSalaryMin] = useState(parsedSalary.min);
+  const [salaryMax, setSalaryMax] = useState(parsedSalary.max);
+  const [salaryFixed, setSalaryFixed] = useState(parsedSalary.fixed);
 
   // Internship
-  const [duration, setDuration] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [paid, setPaid] = useState(true);
-  const [stipend, setStipend] = useState("");
-  const [audience, setAudience] = useState(["BPT", "MPT"]);
-  const [learningOutcomes, setLearningOutcomes] = useState([""]);
+  const [duration, setDuration] = useState(highlightValue(editingOpp, "Duration"));
+  const [startDate, setStartDate] = useState(editingOpp?.startDate || "");
+  const [paid, setPaid] = useState(editingOpp ? editingOpp.stipend !== "Unpaid" : true);
+  const [stipend, setStipend] = useState(editingOpp && editingOpp.stipend !== "Unpaid" ? parseAmount(editingOpp.stipend) : "");
+  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT", "MPT"]);
+  const [learningOutcomes, setLearningOutcomes] = useState(editingOpp?.learningOutcomes?.length ? editingOpp.learningOutcomes : [""]);
 
   // Collaboration
-  const [collabType, setCollabType] = useState(COLLAB_TYPES[0]);
-  const [lookingFor, setLookingFor] = useState(["BPT students", "Physiotherapists"]);
-  const [collabLocationType, setCollabLocationType] = useState(COLLAB_LOCATION_TYPES[0]);
+  const [collabType, setCollabType] = useState(editingOpp?.tags?.[0] || COLLAB_TYPES[0]);
+  const [lookingFor, setLookingFor] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT students", "Physiotherapists"]);
+  const [collabLocationType, setCollabLocationType] = useState(editingOpp?.locationType || COLLAB_LOCATION_TYPES[0]);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +153,10 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
         stipend: paid ? `₹${stipend.trim()}/mo` : "Unpaid",
         audience: audience.join(", "),
         learningOutcomes: learningOutcomes.map((o) => o.trim()).filter(Boolean),
+        // fmtDate() below is display-only (locale-formatted); this raw copy
+        // is what lets editing the same listing later re-populate the
+        // <input type="date"> instead of showing it blank.
+        startDate: startDate || undefined,
         detailHighlights: [
           duration.trim() && { label: "Duration", value: duration.trim() },
           startDate && { label: "Start date", value: fmtDate(startDate) },
@@ -154,8 +183,42 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
     };
   }
 
+  // Same idea as WorkshopWizard's criticalChanges() -- warn before saving
+  // over a field someone already applied against. Salary/stipend live in
+  // `details` jsonb, so trg_notify_opportunity_details_changed can't see
+  // them either; this dialog is the only warning those two ever get.
+  function criticalChanges() {
+    if (!editingOpp) return [];
+    const changes = [];
+    if (deadline !== (editingOpp.deadline || "")) changes.push("the deadline");
+    if (type !== "collaboration" && location.trim() !== (editingOpp.location || "")) changes.push("the location");
+    if (type === "collaboration" && collabLocationType !== (editingOpp.locationType || COLLAB_LOCATION_TYPES[0])) changes.push("the location");
+    if (registrationMethod === "external" && registrationUrl.trim() !== (editingOpp.registrationUrl || "")) changes.push("the application link");
+    if (type === "job") {
+      const currentSalary = salaryMode === "Not disclosed" ? "Not disclosed"
+        : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
+        : `₹${salaryMin.trim()} – ₹${salaryMax.trim()}/mo`;
+      if (currentSalary !== (editingOpp.salary || "Not disclosed")) changes.push("the salary");
+    }
+    if (type === "internship") {
+      const currentStipend = paid ? `₹${stipend.trim()}/mo` : "Unpaid";
+      if (currentStipend !== (editingOpp.stipend || "Unpaid")) changes.push("the stipend");
+    }
+    return changes;
+  }
+
   const submit = async (publish) => {
     if (publish ? !canPublish : !canSaveDraft) return;
+    const applicantCount = editingOpp?.stats?.applications ?? 0;
+    const changes = criticalChanges();
+    if (applicantCount > 0 && changes.length > 0) {
+      setPendingConfirm({ publish, changes });
+      return;
+    }
+    await doSave(publish);
+  };
+
+  const doSave = async (publish) => {
     setSaving(publish ? "publish" : "draft");
     setError(null);
     try {
@@ -164,6 +227,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
       setError(e.message || "Couldn't save this listing -- please try again.");
     } finally {
       setSaving(null);
+      setPendingConfirm(null);
     }
   };
 
@@ -173,7 +237,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-slate-900">{HEADING[type]}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{editingOpp ? "Edit " : "Create "}{TYPE_LABEL[type]}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
         <div className="sticky top-[52px] bg-white z-10 border-b border-slate-100">
@@ -342,6 +406,10 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
               >
                 Preview →
               </button>
+            ) : singleSaveMode ? (
+              <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
             ) : (
               <>
                 <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving} className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40">
@@ -355,6 +423,16 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit }) 
           </div>
         </div>
       </div>
+      {pendingConfirm && (
+        <CriticalChangeConfirm
+          count={editingOpp?.stats?.applications ?? 0}
+          noun="applicant"
+          changes={pendingConfirm.changes}
+          busy={!!saving}
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => doSave(pendingConfirm.publish)}
+        />
+      )}
     </div>,
     document.body
   );

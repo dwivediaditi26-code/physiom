@@ -2082,10 +2082,15 @@ export async function createOpportunity(fields, { publish = true } = {}) {
 // Edit an existing listing. Creator-only by RLS (opportunities_update_own);
 // an update that matches 0 rows because RLS blocked it surfaces as a real
 // error here (.single() throws on 0 rows returned), not a silent no-op.
-export async function updateOpportunity(oppId, fields) {
+// `publish:true` also carries a draft over the draft->published line (the
+// wizard's own "Publish" button, reused for edits) -- otherwise status is
+// left untouched, since Phase E's dedicated close/reopen/cancel actions own
+// every other status transition.
+export async function updateOpportunity(oppId, fields, { publish } = {}) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your listing.");
   const row = { ...fieldsToRow(fields), updated_at: new Date().toISOString() };
+  if (publish) { row.status = "published"; row.published_at = new Date().toISOString(); }
   const { data, error } = await supabase
     .from("opportunities").update(row).eq("id", oppId).select("*").single();
   if (error) throw error;

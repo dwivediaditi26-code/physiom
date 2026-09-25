@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ImagePlus, Folder } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, PillSelect, CheckboxGroup } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import WorkshopDetail from "../WorkshopDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -16,59 +16,81 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Reverses the `${startTime} – ${endTime}` label buildFields() writes into
+// details.time -- the only place a workshop's start/end time is stored.
+function splitTime(label) {
+  if (!label || label === "TBA") return ["", ""];
+  const [start = "", end = ""] = label.split("–").map((s) => s.trim());
+  return [start, end];
+}
+
 // The real, multi-step Create Workshop flow (2026-09-24), replacing the old
 // single-screen PostOpportunityModal path for workshops (retired -- it had
 // a stale "Step 1 of 2" label with no step 2 and published with only 9
 // generic fields). Workshop is PhysioFeed's primary opportunity type per
 // the brief, so it gets its own 7-step wizard; Job/Internship/Collaboration
 // share the shorter wizard/ApplicationOpportunityForm.jsx instead.
-export default function WorkshopWizard({ onClose, onSubmit }) {
+//
+// `editingOpp` (Phase D, 2026-09-25) turns the same flow into the edit
+// form: every field below prefills from it, the footer collapses to one
+// "Save Changes" button once the listing is past draft, and `onSubmit`
+// carries the same fields shape either way -- ExplorePage decides
+// createOpportunity vs. updateOpportunity based on whether editingOpp is set.
+export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(null); // null | "draft" | "publish"
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
+
+  const editingDraft = editingOpp && editingOpp.rawStatus === "draft";
+  const singleSaveMode = editingOpp && !editingDraft;
 
   // Step 1 -- Basic Info
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [category, setCategory] = useState(WORKSHOP_CATEGORIES[0]);
-  const [format, setFormat] = useState(WORKSHOP_FORMATS[0]);
-  const [orgName, setOrgName] = useState("");
+  const [title, setTitle] = useState(editingOpp?.title || "");
+  const [shortDescription, setShortDescription] = useState(editingOpp?.description || "");
+  const [category, setCategory] = useState(editingOpp?.specialty || WORKSHOP_CATEGORIES[0]);
+  const [format, setFormat] = useState(editingOpp?.locationType || WORKSHOP_FORMATS[0]);
+  const [orgName, setOrgName] = useState(editingOpp?.org || "");
 
   // Step 2 -- Date & Location
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [platform, setPlatform] = useState("Zoom");
-  const [meetingLink, setMeetingLink] = useState("");
-  const [venue, setVenue] = useState("");
-  const [city, setCity] = useState("");
-  const [address, setAddress] = useState("");
+  const [date, setDate] = useState(/^\d{4}-\d{2}-\d{2}$/.test(editingOpp?.date || "") ? editingOpp.date : "");
+  const [[initStartTime, initEndTime]] = useState(() => splitTime(editingOpp?.time));
+  const [startTime, setStartTime] = useState(initStartTime);
+  const [endTime, setEndTime] = useState(initEndTime);
+  const [platform, setPlatform] = useState(editingOpp?.platform || "Zoom");
+  const [meetingLink, setMeetingLink] = useState(editingOpp?.meetingLink || "");
+  const [venue, setVenue] = useState(editingOpp?.venue || "");
+  const [city, setCity] = useState(editingOpp?.city || "");
+  const [address, setAddress] = useState(editingOpp?.address || "");
 
   // Step 3 -- Learning Details
-  const [outcomes, setOutcomes] = useState([""]);
-  const [audience, setAudience] = useState(["BPT Students", "MPT Students", "Physiotherapists"]);
-  const [experienceLevel, setExperienceLevel] = useState(EXPERIENCE_LEVELS[3]);
+  const [outcomes, setOutcomes] = useState(editingOpp?.syllabus?.length ? editingOpp.syllabus : [""]);
+  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT Students", "MPT Students", "Physiotherapists"]);
+  const [experienceLevel, setExperienceLevel] = useState(editingOpp?.experienceLevel || EXPERIENCE_LEVELS[3]);
 
-  // Step 4 -- Instructor
-  const [useMyProfile, setUseMyProfile] = useState(true);
-  const [instructorName, setInstructorName] = useState("");
-  const [instructorRole, setInstructorRole] = useState("");
+  // Step 4 -- Instructor. Defaults to the editable "someone else" fields
+  // when editing (we can't know it was "my profile" until profile loads --
+  // see the effect below), true otherwise.
+  const [useMyProfile, setUseMyProfile] = useState(!editingOpp);
+  const [instructorName, setInstructorName] = useState(editingOpp?.instructor?.name || "");
+  const [instructorRole, setInstructorRole] = useState(editingOpp?.instructor?.role || "");
 
   // Step 5 -- Pricing & Registration
-  const [isFree, setIsFree] = useState(true);
-  const [fee, setFee] = useState("");
-  const [earlyBird, setEarlyBird] = useState(false);
-  const [earlyBirdFee, setEarlyBirdFee] = useState("");
-  const [earlyBirdDeadline, setEarlyBirdDeadline] = useState("");
-  const [hasLimit, setHasLimit] = useState(false);
-  const [maxParticipants, setMaxParticipants] = useState("");
-  const [registrationMethod, setRegistrationMethod] = useState("physiofeed");
-  const [registrationUrl, setRegistrationUrl] = useState("");
+  const [isFree, setIsFree] = useState(editingOpp ? editingOpp.fee === "Free" : true);
+  const [fee, setFee] = useState(editingOpp && editingOpp.fee !== "Free" ? parseAmount(editingOpp.fee) : "");
+  const [earlyBird, setEarlyBird] = useState(!!editingOpp?.earlyBirdFee);
+  const [earlyBirdFee, setEarlyBirdFee] = useState(parseAmount(editingOpp?.earlyBirdFee));
+  const [earlyBirdDeadline, setEarlyBirdDeadline] = useState(editingOpp?.earlyBirdDeadline || "");
+  const [hasLimit, setHasLimit] = useState(editingOpp?.maxParticipants != null);
+  const [maxParticipants, setMaxParticipants] = useState(editingOpp?.maxParticipants != null ? String(editingOpp.maxParticipants) : "");
+  const [registrationMethod, setRegistrationMethod] = useState(editingOpp?.registrationMethod || "physiofeed");
+  const [registrationUrl, setRegistrationUrl] = useState(editingOpp?.registrationUrl || "");
 
   // Step 6 -- Cover Image
   const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(editingOpp?.bannerUrl || null);
+  const [coverRemoved, setCoverRemoved] = useState(false); // explicit "remove" vs. "never had one"
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +98,14 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => () => { if (coverPreview) URL.revokeObjectURL(coverPreview); }, [coverPreview]);
+  // Only correct the Step 4 default once profile has loaded -- if the
+  // instructor on file matches it, this really was "my profile".
+  useEffect(() => {
+    if (!profile || !editingOpp) return;
+    if (editingOpp.instructor?.name && editingOpp.instructor.name === profile.name) setUseMyProfile(true);
+  }, [profile, editingOpp]);
+
+  useEffect(() => () => { if (coverFile && coverPreview) URL.revokeObjectURL(coverPreview); }, [coverFile, coverPreview]);
 
   const needsOnline = format !== "In-person";
   const needsInPerson = format !== "Online";
@@ -103,7 +132,7 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
     : "TBA";
 
   async function buildFields() {
-    let bannerUrl;
+    let bannerUrl = coverRemoved ? undefined : editingOpp?.bannerUrl;
     if (coverFile) bannerUrl = await db.uploadOpportunityCoverImage(coverFile);
     const org = orgDisplayName || "PhysioFeed member";
     return {
@@ -140,8 +169,35 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
     };
   }
 
+  // What changed since editingOpp, worth warning an organiser about before
+  // they save over data people already registered against. Fee changes
+  // aren't covered by trg_notify_opportunity_details_changed (it only sees
+  // real columns -- date/deadline/location/registration_url), so this is
+  // the only place that warning happens for them.
+  function criticalChanges() {
+    if (!editingOpp) return [];
+    const changes = [];
+    if (date !== (editingOpp.date || "")) changes.push("the date");
+    if (needsInPerson && (venue.trim() !== (editingOpp.venue || "") || city.trim() !== (editingOpp.city || "") || address.trim() !== (editingOpp.address || ""))) changes.push("the venue");
+    if (needsOnline && meetingLink.trim() !== (editingOpp.meetingLink || "")) changes.push("the meeting link");
+    if (registrationMethod === "external" && registrationUrl.trim() !== (editingOpp.registrationUrl || "")) changes.push("the registration link");
+    const currentFee = isFree ? "Free" : `₹${fee.trim()}`;
+    if (currentFee !== (editingOpp.fee || "Free")) changes.push("the fee");
+    return changes;
+  }
+
   const submit = async (publish) => {
     if (publish ? !canPublish : !canSaveDraft) return;
+    const registeredCount = editingOpp?.stats?.applications ?? 0;
+    const changes = criticalChanges();
+    if (registeredCount > 0 && changes.length > 0) {
+      setPendingConfirm({ publish, changes });
+      return;
+    }
+    await doSave(publish);
+  };
+
+  const doSave = async (publish) => {
     setSaving(publish ? "publish" : "draft");
     setError(null);
     try {
@@ -151,6 +207,7 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
       setError(e.message || "Couldn't save this workshop -- please try again.");
     } finally {
       setSaving(null);
+      setPendingConfirm(null);
     }
   };
 
@@ -167,7 +224,7 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-slate-900">Create Workshop</h2>
+          <h2 className="text-lg font-bold text-slate-900">{editingOpp ? "Edit Workshop" : "Create Workshop"}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
         <div className="sticky top-[52px] bg-white z-10 border-b border-slate-100">
@@ -366,8 +423,8 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
           {step === 5 && (
             <CoverImageStep
               preview={coverPreview}
-              onPick={(file) => { setCoverFile(file); setCoverPreview(URL.createObjectURL(file)); }}
-              onClear={() => { setCoverFile(null); setCoverPreview(null); }}
+              onPick={(file) => { setCoverFile(file); setCoverPreview(URL.createObjectURL(file)); setCoverRemoved(false); }}
+              onClear={() => { setCoverFile(null); setCoverPreview(null); setCoverRemoved(true); }}
             />
           )}
 
@@ -408,6 +465,15 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
               >
                 Next →
               </button>
+            ) : singleSaveMode ? (
+              <button
+                type="button"
+                onClick={() => submit(true)}
+                disabled={!canPublish || !!saving}
+                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
+              >
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
             ) : (
               <>
                 <button
@@ -431,6 +497,16 @@ export default function WorkshopWizard({ onClose, onSubmit }) {
           </div>
         </div>
       </div>
+      {pendingConfirm && (
+        <CriticalChangeConfirm
+          count={editingOpp?.stats?.applications ?? 0}
+          noun="registrant"
+          changes={pendingConfirm.changes}
+          busy={!!saving}
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => doSave(pendingConfirm.publish)}
+        />
+      )}
     </div>,
     document.body
   );
