@@ -4,8 +4,9 @@ import Avatar from "../shared/Avatar.jsx";
 
 // The "Applicant Clinical Dossier" sheet (2026-09-22, Aditi's brief + real
 // mockup references) -- a poster's full structured view of one applicant,
-// opened from ApplicantPipeline.jsx. Read-only demo data from
-// applicantsMock.js; actions just update local status in ExplorePage.
+// opened from ApplicantPipeline.jsx. Applicants come from
+// db.getApplicantsForOpportunity (ExplorePage.jsx); status actions are saved
+// through db.setApplicationStatus.
 //
 // Portaled to document.body (2026-09-22) so this always mounts as a direct
 // body child, same pattern as InfoCard.jsx's modal. z-[200] (2026-09-22,

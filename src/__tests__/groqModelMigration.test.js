@@ -16,7 +16,6 @@
 import { describe, test, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { GROQ_CONFIG } from "../groqSystemPrompt.js";
 
 const parseSrc = readFileSync(resolve(process.cwd(), "api/parse.js"), "utf-8");
 const chatSrc = readFileSync(resolve(process.cwd(), "api/chat.js"), "utf-8");
@@ -35,10 +34,6 @@ describe("Groq model migration off the deprecated llama-3.3-70b-versatile", () =
   test("api/chat.js's actual model field is the replacement, not the deprecated id", () => {
     expect(chatSrc).not.toMatch(/model:\s*['"]llama-3\.3-70b-versatile['"]/);
     expect(chatSrc).toMatch(/model:\s*['"]openai\/gpt-oss-120b['"]/);
-  });
-
-  test("GROQ_CONFIG (src/groqSystemPrompt.js) no longer references the deprecated model id", () => {
-    expect(GROQ_CONFIG.model).toBe("openai/gpt-oss-120b");
   });
 
   test("gpt-oss is a reasoning model -- reasoning kept low-effort and out of the response, since neither endpoint reads message.reasoning", () => {

@@ -8,8 +8,8 @@ const DemoConversationsContext = createContext(null);
 // Messages tab). The real inbox (db.js's getConversations/sendMessage) is
 // hard-wired to Supabase's `direct_messages` + `profiles` tables and
 // throws if you're signed out or the recipient isn't a real account --
-// applicants here are demo people (applicantsMock.js) with no account to
-// message, so writing into that table isn't possible. This mirrors the
+// applicants on the demo board have no account to message, so writing into
+// that table isn't possible. This mirrors the
 // same shape locally and MessagesPage.jsx merges it into the real list,
 // clearly tagged as demo, so a conversation started from ApplicantChatModal
 // keeps showing up there instead of only living inside the one-off popup.
