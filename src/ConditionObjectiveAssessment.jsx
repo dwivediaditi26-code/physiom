@@ -1753,6 +1753,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={testEntry ? specialRichItem(testEntry) : null} />
+                        <PatientPhotoTile photoId={findingPhotoId(config.key, "special", t)} />
                         <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
                           <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
                           {(testEntry?.structure || testEntry?.sensitivity) && (
