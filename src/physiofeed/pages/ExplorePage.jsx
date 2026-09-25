@@ -7,9 +7,9 @@ import OpportunityCard from "../components/opportunities/OpportunityCard.jsx";
 import OpportunityDetail from "../components/opportunities/OpportunityDetail.jsx";
 import WorkshopDetail from "../components/opportunities/WorkshopDetail.jsx";
 import OpportunityChat from "../components/opportunities/OpportunityChat.jsx";
-import PostOpportunityModal from "../components/opportunities/PostOpportunityModal.jsx";
 import CreateOpportunityTypePicker from "../components/opportunities/CreateOpportunityTypePicker.jsx";
 import WorkshopWizard from "../components/opportunities/wizard/WorkshopWizard.jsx";
+import ApplicationOpportunityForm from "../components/opportunities/wizard/ApplicationOpportunityForm.jsx";
 import MyPostingsPage from "../components/opportunities/MyPostingsPage.jsx";
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
@@ -41,10 +41,9 @@ export default function ExplorePage() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(null); // the opportunity object, or null = hub
   const [chatFor, setChatFor] = useState(null); // opportunity being messaged about, or null
-  // "+ Post" now opens a type picker first (2026-09-24) rather than jumping
-  // straight into PostOpportunityModal -- Workshop hands off to its own
-  // wizard (WorkshopWizard.jsx); Job/Internship/Collaboration still open
-  // PostOpportunityModal, pre-set to that type via modalType.
+  // "+ Post" now opens a type picker first (2026-09-24) -- Workshop hands
+  // off to its own wizard (WorkshopWizard.jsx); Job/Internship/Collaboration
+  // share ApplicationOpportunityForm, parameterized by modalType.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "job" | "internship" | "collaboration" | null
   const [workshopOpen, setWorkshopOpen] = useState(false);
@@ -191,27 +190,19 @@ export default function ExplorePage() {
   const openChat = (opp) => setChatFor(opp);
   const closeChat = () => setChatFor(null);
 
-  const publish = async (opp) => {
-    setActionError(null);
-    try {
-      const saved = await db.publishOpportunity(opp);
-      setOpportunities((prev) => [saved, ...prev]);
-      setModalType(null);
-    } catch (e) {
-      setActionError(e.message || "Couldn't publish that listing -- please try again.");
-    }
-  };
-
-  // WorkshopWizard's Save Draft / Publish Workshop, both funneled through
+  // Every create form's Save Draft / Publish, funneled through
   // createOpportunity(fields, {publish}). A draft won't come back on the
   // next getOpportunities() fetch (that query excludes drafts -- My
   // Postings' own "show my drafts" fetch is a later piece of work), but
   // appending it here means it shows up immediately, this session, rather
-  // than the wizard closing with no visible trace that anything saved.
+  // than the form closing with no visible trace that anything saved. Left
+  // uncaught here on purpose -- WorkshopWizard/ApplicationOpportunityForm
+  // each keep their own try/catch around this call so the error renders
+  // inside the still-open form instead of vanishing with it.
   const createFromWizard = async (fields, { publish }) => {
     const saved = await db.createOpportunity(fields, { publish });
     setOpportunities((prev) => [saved, ...prev]);
-    setWorkshopOpen(false);
+    closeCreateFlow();
   };
 
   const toggleListingStatus = async (oppId) => {
@@ -483,7 +474,7 @@ export default function ExplorePage() {
       )}
 
       {pickerOpen && <CreateOpportunityTypePicker onClose={closeCreateFlow} onPick={pickCreateType} />}
-      {modalType && <PostOpportunityModal initialType={modalType} onClose={closeCreateFlow} onPublish={publish} />}
+      {modalType && <ApplicationOpportunityForm type={modalType} onClose={closeCreateFlow} onSubmit={createFromWizard} />}
       {workshopOpen && <WorkshopWizard onClose={closeCreateFlow} onSubmit={createFromWizard} />}
     </main>
   );

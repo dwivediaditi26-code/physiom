@@ -2,11 +2,10 @@ import { createPortal } from "react-dom";
 import { X, GraduationCap, Briefcase, Users2, Handshake } from "lucide-react";
 
 // "What do you want to post?" (2026-09-24) -- the entry point the Explore
-// FAB now opens instead of jumping straight into PostOpportunityModal.
-// Workshop first: it's PhysioFeed's primary opportunity type per the brief,
-// and it's the only type with a real multi-step wizard so far (see
-// wizard/WorkshopWizard.jsx) -- the other three still hand off to
-// PostOpportunityModal until they get their own dedicated forms.
+// FAB opens before any create form. Workshop first: it's PhysioFeed's
+// primary opportunity type per the brief. Workshop hands off to its own
+// wizard (WorkshopWizard.jsx); the other three share
+// wizard/ApplicationOpportunityForm.jsx, parameterized by type.
 const TYPES = [
   { key: "workshop", label: "Workshop", sub: "Course / webinar", icon: GraduationCap },
   { key: "job", label: "Job", sub: "Full-time / part-time", icon: Briefcase },

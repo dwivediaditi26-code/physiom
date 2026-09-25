@@ -1984,11 +1984,12 @@ function fieldsToRow(fields) {
   };
 }
 
-// The one write path every create-opportunity form (wizard or otherwise)
-// goes through -- it throws rather than faking success, same contract as
-// createPost(). `publish:false` saves a draft (invisible to everyone but
-// the creator, per opportunities_select_visible RLS); `publish:true` is
-// what publishOpportunity() below always did.
+// The one write path every create-opportunity form (WorkshopWizard,
+// ApplicationOpportunityForm) goes through -- it throws rather than faking
+// success, same contract as createPost(). `publish:false` saves a draft
+// (invisible to everyone but the creator, per opportunities_select_visible
+// RLS); `publish:true` is what the old insert-only publishOpportunity()
+// always did before every create form gained a real Save Draft option.
 export async function createOpportunity(fields, { publish = true } = {}) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to post an opportunity.");
@@ -2002,13 +2003,6 @@ export async function createOpportunity(fields, { publish = true } = {}) {
   if (error) throw error;
   if (publish) invalidateSearchCorpus(); // P8: a listing you just posted must be findable now, not in 30s
   return rowToOpportunity(data, uid, 0);
-}
-
-// Kept as a thin wrapper -- PostOpportunityModal (and anything else that
-// only ever publishes, never drafts) doesn't need to know createOpportunity
-// exists.
-export async function publishOpportunity(fields) {
-  return createOpportunity(fields, { publish: true });
 }
 
 // Edit an existing listing. Creator-only by RLS (opportunities_update_own);

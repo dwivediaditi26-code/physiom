@@ -16,12 +16,12 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// The real, multi-step Create Workshop flow (2026-09-24), replacing the
-// single-screen PostOpportunityModal path for workshops (see its own header
-// comment for why that one screen was a real, reported bug). Workshop is
-// PhysioFeed's primary opportunity type per the brief, so it's the first
-// one to get a dedicated wizard; Job/Internship/Collaboration still go
-// through PostOpportunityModal until they get their own.
+// The real, multi-step Create Workshop flow (2026-09-24), replacing the old
+// single-screen PostOpportunityModal path for workshops (retired -- it had
+// a stale "Step 1 of 2" label with no step 2 and published with only 9
+// generic fields). Workshop is PhysioFeed's primary opportunity type per
+// the brief, so it gets its own 7-step wizard; Job/Internship/Collaboration
+// share the shorter wizard/ApplicationOpportunityForm.jsx instead.
 export default function WorkshopWizard({ onClose, onSubmit }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(null); // null | "draft" | "publish"

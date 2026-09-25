@@ -97,6 +97,38 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
           </div>
         )}
 
+        {/* Same bulleted-list treatment as WorkshopDetail's syllabus, reused
+            here for the Job/Internship/Collaboration create forms' "what
+            you'll learn" and "requirements" fields (2026-09-24) -- without
+            this those fields had nowhere to render at all. */}
+        {opp.learningOutcomes?.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2.5">What you'll learn</p>
+            <div className="space-y-2">
+              {opp.learningOutcomes.map((s) => (
+                <div key={s} className="flex items-start gap-2.5">
+                  <span className="w-4 h-4 rounded-full border-2 mt-0.5 shrink-0" style={{ borderColor: c.solid }} />
+                  <span className="text-sm text-slate-700 leading-snug">{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {opp.requirements?.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2.5">Requirements</p>
+            <div className="space-y-2">
+              {opp.requirements.map((s) => (
+                <div key={s} className="flex items-start gap-2.5">
+                  <span className="w-4 h-4 rounded-full border-2 mt-0.5 shrink-0" style={{ borderColor: c.solid }} />
+                  <span className="text-sm text-slate-700 leading-snug">{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {opp.mentor && (
           <div className="border border-slate-200 rounded-2xl p-3.5">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2.5">{opp.type === "collaboration" ? "Lead researcher" : "Mentor"}</p>
@@ -117,18 +149,47 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
         className="fixed inset-x-0 lg:sticky lg:inset-x-auto bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2.5 z-[130]"
         style={{ bottom: barOffsets.bnav }}
       >
-        <button type="button" onClick={() => onMessage(opp)} className="flex-1 text-sm font-bold text-center text-slate-700 border border-slate-200 rounded-xl py-3 hover:bg-slate-50">
-          Message {opp.mentor ? opp.mentor.name.split(",")[0].replace("Dr. ", "") : "Lead"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setApplyOpen(true)}
-          disabled={applied}
-          className={`pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm transition ${applied ? "bg-emerald-50 text-emerald-700" : "text-white active:scale-[0.98]"}`}
-          style={applied ? undefined : { background: c.solid }}
-        >
-          {applied ? <><Check size={16} /> Applied (Review Pending)</> : "Apply with Profile"}
-        </button>
+        {/* registrationMethod (2026-09-24, the Job/Internship/Collaboration
+            forms): 'external' opens the poster's own link instead of the
+            in-app apply flow; 'contact' drops the Apply button entirely --
+            same reasoning as WorkshopDetail's own branching. Older/seeded
+            listings have no registrationMethod at all, which falls through
+            to the original PhysioFeed apply flow below (the default). */}
+        {opp.registrationMethod === "external" ? (
+          <a
+            href={opp.registrationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm text-white active:scale-[0.98] transition"
+            style={{ background: c.solid }}
+          >
+            Open Application Link
+          </a>
+        ) : opp.registrationMethod === "contact" ? (
+          <button
+            type="button"
+            onClick={() => onMessage(opp)}
+            className="pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm text-white active:scale-[0.98] transition"
+            style={{ background: c.solid }}
+          >
+            {opp.type === "collaboration" ? "Connect" : "Message Organiser"}
+          </button>
+        ) : (
+          <>
+            <button type="button" onClick={() => onMessage(opp)} className="flex-1 text-sm font-bold text-center text-slate-700 border border-slate-200 rounded-xl py-3 hover:bg-slate-50">
+              Message {opp.mentor ? opp.mentor.name.split(",")[0].replace("Dr. ", "") : "Lead"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setApplyOpen(true)}
+              disabled={applied}
+              className={`pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm transition ${applied ? "bg-emerald-50 text-emerald-700" : "text-white active:scale-[0.98]"}`}
+              style={applied ? undefined : { background: c.solid }}
+            >
+              {applied ? <><Check size={16} /> Applied (Review Pending)</> : "Apply with Profile"}
+            </button>
+          </>
+        )}
       </div>
 
       {applyOpen && (

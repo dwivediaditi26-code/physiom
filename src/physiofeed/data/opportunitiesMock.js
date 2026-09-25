@@ -31,6 +31,19 @@ export const WORKSHOP_FORMATS = ["Online", "In-person", "Hybrid"];
 export const WORKSHOP_AUDIENCE = ["BPT Students", "MPT Students", "Physiotherapists", "Other healthcare professionals"];
 export const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Advanced", "No experience required"];
 
+// Job / Internship / Collaboration form pickers (2026-09-24, their own
+// dedicated forms replacing the shared PostOpportunityModal for these
+// types too). SALARY_MODES/COLLAB_LOOKING_FOR intentionally overlap
+// WORKSHOP_AUDIENCE's wording where the concept is the same ("BPT
+// Students" etc.) so the same CheckboxGroup options read consistently
+// across every create form.
+export const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Freelance"];
+export const SALARY_MODES = ["Not disclosed", "Range", "Fixed"];
+export const INTERNSHIP_AUDIENCE = ["BPT", "MPT", "Physiotherapists", "Other"];
+export const COLLAB_TYPES = ["Research", "Clinical project", "Content", "Event", "Academic", "Other"];
+export const COLLAB_LOOKING_FOR = ["BPT students", "MPT students", "Physiotherapists", "Researchers", "Other"];
+export const COLLAB_LOCATION_TYPES = ["Remote", "In-person", "Hybrid"];
+
 // "Candy Coat" type colors (2026-09-22, Aditi's pick from three restyle
 // directions) -- each opportunity type owns a real color carried through
 // its card tint, badge and CTA button, instead of one flat violet for
