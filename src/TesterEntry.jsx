@@ -150,7 +150,7 @@ export default function TesterEntry() {
   return (
     <>
       <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: MUTED }}>Loading…</div>}>
-        <Component patientData={data} activePatientId={null} onSave={set} onNav={onNav} navContext={{}} requireAuth={requireAuth} />
+        <Component patientData={data} activePatientId={null} onSave={set} onNav={onNav} navContext={{}} requireAuth={requireAuth} hideAiPathway={toolKey === "ortho"} />
       </Suspense>
       <Notice text={notice} onClose={() => setNotice("")} />
     </>

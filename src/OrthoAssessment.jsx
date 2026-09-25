@@ -57,7 +57,7 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway } = {}) {
   // resume (2026-09-02, Aditi: "edit assessment... should take us to last
   // page of assessment summary and review, not to pathway selection or
   // region selection") -- SpecialtyPatientProfile.jsx's "Edit" button
@@ -288,13 +288,15 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             <>
               <SectionIntro title="Which pathway is this assessment for?" sub="This determines the base template — precautions and structure differ between a ward patient, a post-surgical rehab case, and an OPD visit." />
               <PickerList items={PATHWAYS} value={pathway} onSelect={setPathway} />
-              <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
-                <PickerIcon icon="ti-sparkles" />
-                <div>
-                  <div className="picker-label">AI Assisted Assessment</div>
-                  <div className="picker-desc">Say the assessment in your own words — AI fills Subjective and suggests Objective tests. Uses the Outpatient workflow.</div>
-                </div>
-              </button>
+              {!hideAiPathway && (
+                <button type="button" className="picker-card picker-card-ai" onClick={selectAiAssisted} style={{ width: "100%", marginTop: 8 }}>
+                  <PickerIcon icon="ti-sparkles" />
+                  <div>
+                    <div className="picker-label">AI Assisted Assessment</div>
+                    <div className="picker-desc">Say the assessment in your own words — AI fills Subjective and suggests Objective tests. Uses the Outpatient workflow.</div>
+                  </div>
+                </button>
+              )}
             </>
           )}
 
