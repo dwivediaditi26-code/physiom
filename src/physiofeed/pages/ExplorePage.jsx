@@ -146,7 +146,12 @@ export default function ExplorePage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return opportunities.filter((o) => {
-      if (o.status === "closed") return false;
+      // Phase F (2026-09-25): reads lifecycleStatus, not the coarse .status
+      // (which lumped closed+cancelled together and had no idea "expired"
+      // existed) -- closed/cancelled stay off the board same as before,
+      // but expired now stays ON it, with OpportunityCard's own badge/
+      // disabled-CTA doing the explaining instead of quietly vanishing.
+      if (o.lifecycleStatus === "closed" || o.lifecycleStatus === "cancelled") return false;
       if (category !== "all" && o.type !== category) return false;
       if (!q) return true;
       return o.title.toLowerCase().includes(q) || o.org.toLowerCase().includes(q) || (o.location || "").toLowerCase().includes(q) || o.tags?.some((t) => t.toLowerCase().includes(q));
@@ -479,7 +484,7 @@ export default function ExplorePage() {
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 pb-0.5">
         {OPPORTUNITY_CATEGORIES.map((c) => {
-          const live = opportunities.filter((o) => o.status !== "closed");
+          const live = opportunities.filter((o) => o.lifecycleStatus !== "closed" && o.lifecycleStatus !== "cancelled");
           const count = c.key === "all" ? live.length : live.filter((o) => o.type === c.key).length;
           const on = category === c.key;
           return (

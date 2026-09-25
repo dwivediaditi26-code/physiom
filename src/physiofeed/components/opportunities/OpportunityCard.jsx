@@ -1,7 +1,17 @@
 import { MapPin, IndianRupee, Clock, Video } from "lucide-react";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
+import { isRegistrationBlocked } from "./StatusBanner.jsx";
 
 const TYPE_LABEL = { job: "Job", internship: "Internship", collaboration: "Collaboration", workshop: "Workshop" };
+// Phase F (2026-09-25): a card only ever shows one of these three, driven
+// by lifecycleStatus -- draft never reaches this component (getOpportunities()
+// excludes drafts, and the wizards' own preview step passes a fake
+// "preview" opp with no lifecycleStatus at all, which matches none of these).
+const STATUS_BADGE = {
+  closed: { label: "Registration closed", cls: "bg-slate-100 text-slate-600" },
+  expired: { label: "Expired", cls: "bg-amber-50 text-amber-700" },
+  cancelled: { label: "Cancelled by organiser", cls: "bg-rose-50 text-rose-600" },
+};
 
 // "Candy Coat" (2026-09-22, Aditi's pick from three Explore restyle
 // directions): each opportunity type owns a real color, carried through
@@ -19,6 +29,8 @@ function Pill({ children, icon: Icon }) {
 export default function OpportunityCard({ opp, onOpen }) {
   const isWorkshop = opp.type === "workshop";
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
+  const badge = STATUS_BADGE[opp.lifecycleStatus];
+  const ctaDisabled = isRegistrationBlocked(opp);
 
   return (
     <div
@@ -50,6 +62,12 @@ export default function OpportunityCard({ opp, onOpen }) {
         <p className="pf-font-body text-sm text-slate-500 leading-snug mb-3 line-clamp-2">{opp.description}</p>
       </button>
 
+      {badge && (
+        <span className={`pf-font-body inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 ${badge.cls}`}>
+          {badge.label}
+        </span>
+      )}
+
       <div className="flex flex-wrap gap-1.5 mb-3.5">
         {isWorkshop ? (
           <>
@@ -68,15 +86,22 @@ export default function OpportunityCard({ opp, onOpen }) {
 
       <div className="flex items-center justify-between">
         <button type="button" onClick={() => onOpen(opp)} className="pf-font-body text-xs font-bold text-slate-500 hover:text-slate-700">View details</button>
-        <button
-          type="button"
-          onClick={() => onOpen(opp)}
-          data-opp-cta
-          className="pf-font-head text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm active:scale-[0.97] transition"
-          style={{ background: c.solid }}
-        >
-          {isWorkshop ? "Register" : "Apply"}
-        </button>
+        {/* Expired drops the CTA entirely rather than showing a disabled
+            Register/Apply button that invites a tap for nothing -- closed/
+            cancelled keep the button visible (so the card still reads as
+            "this existed"), just disabled. */}
+        {opp.lifecycleStatus !== "expired" && (
+          <button
+            type="button"
+            onClick={ctaDisabled ? undefined : () => onOpen(opp)}
+            disabled={ctaDisabled}
+            data-opp-cta={ctaDisabled ? undefined : true}
+            className={`pf-font-head text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm transition ${ctaDisabled ? "opacity-40 cursor-not-allowed" : "active:scale-[0.97]"}`}
+            style={{ background: c.solid }}
+          >
+            {isWorkshop ? "Register" : "Apply"}
+          </button>
+        )}
       </div>
     </div>
   );

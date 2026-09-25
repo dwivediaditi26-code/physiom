@@ -3,6 +3,7 @@ import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react"
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
+import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
 
 // `applied` and `saved` are owned by ExplorePage now (P4/P5) -- they come
 // from the real applications / saved_items tables, so they survive a
@@ -10,6 +11,7 @@ import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 export default function OpportunityDetail({ opp, onBack, onMessage, applied, onApplied, saved, onToggleSave }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
+  const blocked = isRegistrationBlocked(opp);
 
   // Message/Apply bar made truly fixed below the desktop breakpoint
   // (2026-09-23, "make this button constant") -- it was `sticky bottom-0`,
@@ -71,6 +73,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
         </div>
 
         <h1 className="text-xl font-bold text-slate-900 leading-tight mb-2">{opp.title}</h1>
+        <LifecycleBanner opp={opp} />
         <p className="text-sm text-slate-600 leading-relaxed mb-5">{opp.description}</p>
 
         <div className="grid grid-cols-1 gap-2 mb-5">
@@ -154,8 +157,15 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
             in-app apply flow; 'contact' drops the Apply button entirely --
             same reasoning as WorkshopDetail's own branching. Older/seeded
             listings have no registrationMethod at all, which falls through
-            to the original PhysioFeed apply flow below (the default). */}
-        {opp.registrationMethod === "external" ? (
+            to the original PhysioFeed apply flow below (the default).
+            `blocked` (Phase F) takes priority over all three -- closed/
+            expired/cancelled means there's nothing to open, message or
+            apply to any more. */}
+        {blocked ? (
+          <div className="flex-1 text-center text-sm font-semibold text-slate-400 rounded-xl py-3 bg-slate-50">
+            {opp.lifecycleStatus === "cancelled" ? "This opportunity was cancelled." : "No longer accepting applications."}
+          </div>
+        ) : opp.registrationMethod === "external" ? (
           <a
             href={opp.registrationUrl}
             target="_blank"

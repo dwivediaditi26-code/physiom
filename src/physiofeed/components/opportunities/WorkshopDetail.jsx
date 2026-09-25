@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Calendar, Clock, Video, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
+import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
 
 // `registered` is owned by ExplorePage (2026-09-23), read from the real
 // `applications` table -- this used to be local useState, so "Registered"
@@ -17,6 +18,7 @@ import * as db from "../../data/db.js";
 export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const blocked = isRegistrationBlocked(opp);
 
   const register = async () => {
     if (busy || registered) return;
@@ -52,6 +54,7 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
 
       <div className="p-5 pb-28">
         <h1 className="text-xl font-bold text-slate-900 leading-tight mb-3">{opp.title}</h1>
+        <LifecycleBanner opp={opp} />
 
         <div className="flex gap-2 mb-4">
           <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
@@ -126,7 +129,15 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
             )}
           </div>
 
-          {opp.registrationMethod === "external" ? (
+          {/* blocked (Phase F) wins over registrationMethod -- once closed/
+              expired/cancelled there's no link to open or organiser to
+              contact any more. Someone who already registered before that
+              happened still sees their green "Registered" state, not this. */}
+          {blocked && !registered ? (
+            <span className="pf-font-head text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl px-4 py-3">
+              {opp.lifecycleStatus === "cancelled" ? "This workshop was cancelled." : "Registration closed"}
+            </span>
+          ) : opp.registrationMethod === "external" ? (
             <a
               href={opp.registrationUrl}
               target="_blank"
