@@ -2,7 +2,7 @@
 
 Read this once at the start of a new chat instead of re-exploring the repo.
 Covers only the **PhysioFeed** social feature (`src/physiofeed/`). The
-pre-existing `HANDOFF.md` at repo root covers the clinical assessment
+older `docs/history/HANDOFF.md` covers the clinical assessment
 engine (Subjective/Objective/SOAP/etc.) — a separate, unrelated part of
 the app; you don't need it for PhysioFeed work.
 
@@ -190,7 +190,7 @@ before assuming it's a code bug.
 | `add_profile_avatar.sql` | `profiles.avatar_url` column | Real profile photo upload |
 | `add_direct_messages.sql` | `direct_messages` table + notify trigger | The Messages feature |
 | `api_rate_limit_setup.sql`, `soft_delete_patients.sql` | Unrelated to PhysioFeed (clinical/patients side) | — |
-| `/supabase_rls_setup.sql` (repo root, not in `supabase/`) | Locks down `patients` RLS to `auth.uid() = user_id`, explicitly drops the old `allow_all_patients` policy | Patient data isolation — **flagged open, unconfirmed whether run** (see Known Issues) |
+| `supabase_rls_setup.sql` | Locks down `patients` RLS to `auth.uid() = user_id`, explicitly drops the old `allow_all_patients` policy | Patient data isolation — **flagged open, unconfirmed whether run** (see Known Issues) |
 
 ## Verifying SQL/RLS locally (do this before handing Aditi any new migration)
 

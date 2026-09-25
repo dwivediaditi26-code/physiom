@@ -2,6 +2,25 @@
 
 **Date:** 2026-09-25 · **Based on:** [AUDIT_REPORT.md](AUDIT_REPORT.md) (commit `9e049f9`)
 
+## In simple words
+
+**Done so far:**
+
+- Backup copy saved.
+- Phone-app problems fixed (server calls, password reset, icon).
+- Old unused code removed.
+- GitHub's automatic Android build and checks work again.
+- Main folder tidied and a guide added (`README.md`).
+
+**Next, in this order:**
+
+1. **Update the 58 old automatic checks** and make GitHub run them on every change. This comes first because the checks catch mistakes during steps 2 and 5.
+2. **Merge copy-pasted code** (form boxes, voice input, photo upload) into one shared version each.
+3. **Small phone-app settings**: app version number for the Play Store, backup setting for patient data, offline support inside the app.
+4. **Set up the iPhone build** on GitHub.
+5. **Reorganise the folders by feature** (Ortho, Neuro, Feed, Learn…). This is the biggest move, so it's last.
+6. **Store release**: developer accounts, signing keys, store listings.
+
 ## Progress
 
 | Done | Commit |
@@ -12,8 +31,9 @@
 | Compare screen removed (your call); 2b + a wider scan of unused code inside live files (~3,600 lines) | `39c221b` |
 | CI on Node 24: `npm ci` works again (Android build + the nightly AI check were failing on it) | `1a2b2e4` |
 | Real app icon + splash for Android and iOS (source: `assets/logo.png`) | `3c894d2` |
+| Section 3 root tidy-up + `README.md`; `vercel.json` build command simplified (the Vite plugin already stamps `sw.js`) | this commit, "Tidy the repo root" |
 
-Still open: section 3 (root tidy-up + README), section 4 (merge duplicates), the rest of section 5 (service worker in the app, versionCode, `allowBackup`), the 58 stale tests + `test.yml`, section 7 (restructure), iOS workflow. `ConditionObjectiveAssessment.jsx` was skipped throughout because another session is working in it.
+`ConditionObjectiveAssessment.jsx` was skipped throughout because another session is working in it.
 
 Rules for carrying out the rest:
 
@@ -83,7 +103,7 @@ Evidence columns: **Imp** = imported by anything the app loads · **Route** = re
 | From | To | Why |
 |---|---|---|
 | `supabase_rls_setup.sql`, `supabase_clinic_protocols_setup.sql` | `supabase/` | all the other SQL is already there |
-| `HANDOFF.md`, `PHYSIOFEED_HANDOFF.md`, `PHYSIOFEED_MVP_MAP.md` | `docs/history/` | historical session notes, not current docs |
+| `HANDOFF.md` → `docs/history/`; `PHYSIOFEED_HANDOFF.md`, `PHYSIOFEED_MVP_MAP.md` → `docs/` | | older clinical notes are history; the PhysioFeed notes are still in use |
 | `palpation-cloudinary-uploader.html` | `tools/` | content-authoring tool, not part of the app (not in the Vite build) |
 | *(new)* `README.md` | repo root | there isn't one; it will point to `docs/` |
 

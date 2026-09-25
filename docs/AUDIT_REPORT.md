@@ -5,6 +5,24 @@
 This is Phase 1 of the cleanup: what the repo contains today, what is actually used, and what is stale.
 The actions that follow from it are in [CLEANUP_PLAN.md](CLEANUP_PLAN.md).
 
+## In simple words
+
+A full check-up of the app, like an assessment before treatment. It found:
+
+1. **The app is healthy.** It builds, and the website works.
+2. **Old code was lying around**: 13 whole files and a lot of smaller pieces that the app never uses, left behind by features you removed earlier. ✅ *Removed on 2026-09-25.*
+3. **Three problems only in the phone app:**
+   - AI features, evidence search and delete-account couldn't reach the server
+   - the "Forgot password" link went nowhere
+   - the icon was Capacitor's default placeholder
+
+   ✅ *All three fixed on 2026-09-25.*
+4. **Some code is copy-pasted** in 3–4 places (form boxes, voice input, photo upload), so a fix in one copy doesn't reach the others. *Still to do.*
+5. **58 automatic checks fail** because they still expect old screen designs. They aren't app bugs. *Still to do.*
+6. **No passwords or secret keys were found in the code.** Good.
+
+The rest of this page is the detailed evidence behind each point. It's a snapshot of 2026-09-25, so some items listed below are already fixed; [CLEANUP_PLAN.md](CLEANUP_PLAN.md) tracks what's done.
+
 ## How this was checked (so the "unused" claims can be trusted)
 
 | Check | Method |
