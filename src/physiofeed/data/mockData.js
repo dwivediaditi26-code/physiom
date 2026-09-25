@@ -259,15 +259,13 @@ export const PUBLICATIONS = [
   { id: "demo-pub-4", title: "Effectiveness of Manual Therapy in Mechanical Low Back Pain", journal: "Dissertation", year: "2023", authors: "Sharma A", doiUrl: "" },
 ];
 
-// Professional Contributions (2026-09-22 redesign) -- workshops run,
-// conference talks, guest lectures, awards. Read-only/display-only for now
-// (own profile only): there's no backing Supabase table for this yet (see
-// ProfessionalContributionsSection.jsx), so unlike EDUCATION/ACHIEVEMENTS/
-// PUBLICATIONS above this never goes through db.js's real-row-first,
-// demo-fallback-on-failure pattern -- it's just this list, always. Adding
-// real per-user persistence is a later pass once there's a table to
-// migrate to, same as Explore's Opportunities board started as
-// local-only state before it had one.
+// Professional Contributions (2026-09-22 redesign, 2026-09-24 backed
+// per-user) -- workshops run, conference talks, guest lectures, awards.
+// Same real-first/demo-fallback shape as EDUCATION/ACHIEVEMENTS/
+// PUBLICATIONS above now that supabase/add_profile_contributions.sql
+// gives it a real table; before that migration ran, this section was
+// display-only on your own profile. "demo-" ids surface for signed-out
+// or pre-migration reads (see db.js's getContributions()).
 export const CONTRIBUTIONS = [
   { id: "demo-con-1", type: "Workshop", title: "Movement Assessment in Sports Injuries", year: "2024", location: "Bengaluru" },
   { id: "demo-con-2", type: "Conference Presentation", title: "Annual Conference of Indian Association of Physiotherapists", year: "2023", location: "" },

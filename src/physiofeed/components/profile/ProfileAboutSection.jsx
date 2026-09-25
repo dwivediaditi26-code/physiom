@@ -3,7 +3,7 @@ import { FileText, Download, Pencil } from "lucide-react";
 import EditProfileModal from "./EditProfileModal.jsx";
 import EditClinicalProfileModal from "./EditClinicalProfileModal.jsx";
 
-// The About tab (2026-09-22 "LinkedIn for physiotherapists" redesign,
+// The About section (2026-09-22 "LinkedIn for physiotherapists" redesign,
 // Aditi's brief) -- kept deliberately short: a professional intro and a
 // résumé link, nothing else. The brief is explicit that About should NOT
 // carry Clinical Expertise / Clinical Interests / Skill Badges chip lists

@@ -27,12 +27,12 @@ import "./physiofeed.css";
 // profile card since that's the one genuinely real, necessary action this
 // screen needs regardless of demo content.
 //
-// `pf-bare-entry` (2026-09-22, ProfileTabs.jsx's new sticky tab bar):
-// unlike PhysioFeedEntry.jsx (the real PhysioFeed tab), this route renders
-// ProfilePage with no AppShell/Header.jsx above it -- so there's no
-// .pf-header for the new sticky tab strip to stack under. Marks that for
-// physiofeed.css so it clears physiom's own top bar directly instead of
-// leaving a gap sized for a header that isn't here.
+// `pf-bare-entry`: unlike PhysioFeedEntry.jsx (the real PhysioFeed tab),
+// this route renders ProfilePage with no AppShell/Header.jsx above it, so
+// the marker class is available on the root should any sticky child ever
+// need to clear physiom's own top bar directly rather than a .pf-header
+// that isn't here. The sticky sub-header this originally paired with
+// (ProfileTabs.jsx) is gone in the 2026-09-24 single-scroll redesign.
 export default function ProfileTabEntry({ onSignOut }) {
   return (
     <div className="physiofeed-root pf-bare-entry">

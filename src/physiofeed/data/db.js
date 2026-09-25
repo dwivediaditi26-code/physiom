@@ -22,7 +22,7 @@
 import {
   INITIAL_POSTS, PEOPLE, NOTIFICATIONS, EXERCISES, EDUCATION,
   ACHIEVEMENTS, EXPERTISE, EVIDENCE, COMMUNITIES, CURRENT_USER, ROTATIONS,
-  PUBLICATIONS,
+  PUBLICATIONS, CONTRIBUTIONS,
 } from "./mockData.js";
 import { supabase, authHeader } from "../../supabase.js";
 import { initialsOf } from "../components/shared/constants.js";
@@ -1078,6 +1078,80 @@ export async function deletePublication(id) {
   const { error } = await supabase.from("publications").delete().eq("id", id).eq("user_id", uid);
   if (error) throw error;
   return getPublications();
+}
+
+// Professional Contributions (2026-09-24), backed by
+// supabase/add_profile_contributions.sql's contributions table. Same
+// real-first/demo-fallback-on-read, real-error-on-write shape as
+// achievements/publications above.
+export async function getContributions() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return clone(CONTRIBUTIONS);
+    const { data, error } = await supabase
+      .from("contributions")
+      .select("id, type, title, year, location")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, type: r.type, title: r.title, year: r.year || "", location: r.location || "" }));
+  } catch (e) {
+    console.error("getContributions(): falling back to demo list --", e?.message || e);
+    return clone(CONTRIBUTIONS);
+  }
+}
+
+// Read-only variant for viewing someone else's profile -- empty for demo
+// people (short-circuited via isRealUserId) and empty rather than the
+// demo list on any real failure, same reasoning as
+// getPublicationsByUser()/getAchievementsByUser() above.
+export async function getContributionsByUser(userId) {
+  if (!isRealUserId(userId)) return [];
+  try {
+    const { data, error } = await supabase
+      .from("contributions")
+      .select("id, type, title, year, location")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map((r) => ({ id: r.id, type: r.type, title: r.title, year: r.year || "", location: r.location || "" }));
+  } catch (e) {
+    console.error("getContributionsByUser(): --", e?.message || e);
+    return [];
+  }
+}
+
+export async function addContribution({ type, title, year, location }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your professional contributions.");
+  const { error } = await supabase.from("contributions").insert({
+    user_id: uid,
+    type: (type || "Workshop").trim(),
+    title: title.trim(),
+    year: (year || "").trim(),
+    location: (location || "").trim(),
+  });
+  if (error) throw error;
+  return getContributions();
+}
+export async function updateContribution(id, { type, title, year, location }) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your professional contributions.");
+  const patch = {};
+  if (type !== undefined) patch.type = type.trim();
+  if (title !== undefined) patch.title = title.trim();
+  if (year !== undefined) patch.year = year.trim();
+  if (location !== undefined) patch.location = location.trim();
+  const { error } = await supabase.from("contributions").update(patch).eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getContributions();
+}
+export async function deleteContribution(id) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to edit your professional contributions.");
+  const { error } = await supabase.from("contributions").delete().eq("id", id).eq("user_id", uid);
+  if (error) throw error;
+  return getContributions();
 }
 
 export async function getExercises() { return clone(EXERCISES); }

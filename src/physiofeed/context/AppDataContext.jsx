@@ -21,6 +21,7 @@ export function AppDataProvider({ children }) {
   const [achievements, setAchievements] = useState([]);
   const [rotations, setRotations] = useState([]);
   const [publications, setPublications] = useState([]);
+  const [contributions, setContributions] = useState([]);
   const [exercises, setExercises] = useState([]);
   // P2 connections: `connectionStates` is { otherUserId: none | pending_sent
   // | pending_received | connected }, one query for everyone rather than one
@@ -44,15 +45,17 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     (async () => {
-      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, exr, pr, cs, cr, um] = await Promise.all([
+      const [p, pe, no, ev, co, ex, ed, ac, rt, pu, ct, exr, pr, cs, cr, um] = await Promise.all([
         db.getPosts(), db.getPeople(), db.getNotifications(),
         db.getEvidence(), db.getCommunities(), db.getExpertise(), db.getEducation(),
-        db.getAchievements(), db.getRotations(), db.getPublications(), db.getExercises(), db.getProfile(),
+        db.getAchievements(), db.getRotations(), db.getPublications(), db.getContributions(),
+        db.getExercises(), db.getProfile(),
         db.getConnectionStates(), db.getConnectionRequests(), db.getUnreadMessageCount(),
       ]);
       setPosts(p); setPeople(pe); setNotifications(no);
       setEvidence(ev); setCommunities(co); setExpertise(ex); setEducation(ed);
-      setAchievements(ac); setRotations(rt); setPublications(pu); setExercises(exr); setProfile(pr);
+      setAchievements(ac); setRotations(rt); setPublications(pu); setContributions(ct);
+      setExercises(exr); setProfile(pr);
       setConnectionStates(cs); setConnectionRequests(cr); setUnreadMessages(um);
       setLoading(false);
     })();
@@ -211,9 +214,15 @@ export function AppDataProvider({ children }) {
   const updatePublication = useCallback(async (id, fields) => { setPublications(await db.updatePublication(id, fields)); }, []);
   const deletePublication = useCallback(async (id) => { setPublications(await db.deletePublication(id)); }, []);
 
+  // Professional Contributions (2026-09-24) -- workshops, talks, guest
+  // lectures, awards. Same wrapper shape as publications above.
+  const addContribution = useCallback(async (fields) => { setContributions(await db.addContribution(fields)); }, []);
+  const updateContribution = useCallback(async (id, fields) => { setContributions(await db.updateContribution(id, fields)); }, []);
+  const deleteContribution = useCallback(async (id) => { setContributions(await db.deleteContribution(id)); }, []);
+
   const value = {
     loading, posts, people, notifications, evidence, communities,
-    expertise, education, achievements, rotations, publications, exercises, profile,
+    expertise, education, achievements, rotations, publications, contributions, exercises, profile,
     connectionStates, connectionRequests, unreadMessages, refreshUnreadMessages,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
@@ -225,6 +234,7 @@ export function AppDataProvider({ children }) {
     addAchievement, updateAchievement, deleteAchievement,
     addRotation, updateRotation, deleteRotation, uploadResume,
     addPublication, updatePublication, deletePublication,
+    addContribution, updateContribution, deleteContribution,
     composerOpen, setComposerOpen, composerType, setComposerType,
     composerPrefill, setComposerPrefill,
   };

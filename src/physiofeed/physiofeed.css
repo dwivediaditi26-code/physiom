@@ -141,49 +141,14 @@
   }
 }
 
-/* Profile page's own sticky tab bar (ProfileTabs.jsx, 2026-09-22 redesign)
-   -- stacks directly under .pf-header, same offset-stacking reasoning as
-   .pf-header's own comment above (it in turn sits under physiom's outer
-   pm-mobile-hdr on mobile). .pf-header's OWN rendered height differs by
-   breakpoint (mobile: back-button + section-nav row; desktop: the 64px
-   logo row), so this can't reuse one constant top value across both --
-   two separate offsets, same as .pf-header splits itself at 1023px. */
-.pf-profile-tabs {
-  position: sticky;
-  top: 64px;
-  z-index: 15;
-}
-@media (max-width: 1023px) {
-  .pf-profile-tabs {
-    /* .pf-header's own mobile row (back button + SectionNav) measures
-       72px tall in the browser -- not a guess, checked via
-       getBoundingClientRect() against the profile pages this actually
-       renders on. */
-    top: calc(var(--pm-mobile-hdr-h, 64px) + 72px);
-  }
-}
-
-/* ProfileTabEntry.jsx (physiom's own bottom-nav Profile tab) renders
-   ProfilePage with no Header.jsx/.pf-header above it at all -- see that
-   file's `pf-bare-entry` comment. Clear physiom's own top bar directly
-   instead of also leaving room for a .pf-header that was never rendered.
-   No media-query split needed here the way .pf-header/.pf-profile-tabs
-   above have one -- this entry point is itself only ever reached through
-   physiom's mobile bottom nav (hidden at desktop widths, see .pm-bnav in
-   utils.jsx), so it never hits the desktop case those two are splitting for. */
-.pf-bare-entry .pf-profile-tabs {
-  top: var(--pm-mobile-hdr-h, 64px);
-}
-
-/* Profile pages briefly rendered every section inline on one scroll, with
-   ProfileTabs jumping between them via scrollIntoView() (2026-09-22,
-   Aditi: "i want inline wise") -- reverted the same day once a profile
-   with real posts made that scroll long enough to bury About/Experience/
-   etc. below the post grid ("about experience, education, research in a
-   different tab"). ProfilePage.jsx/OtherProfilePage.jsx are back to
-   swapping which single section renders, so there's no scroll-jump target
-   to offset here any more -- see git history (useProfileSections.js,
-   deleted this same pass) if this ever needs reviving. */
+/* The profile page's tab bar and its scroll-jump predecessor both lived
+   here (see git history for .pf-profile-tabs and useProfileSections.js).
+   Removed 2026-09-24: ProfilePage.jsx/OtherProfilePage.jsx now render
+   every section in one continuous scroll (Aditi's "clean professional
+   clinician profile" brief), so there's no sticky sub-header stacking
+   under .pf-header any more. .pf-bare-entry stays because
+   ProfileTabEntry.jsx still uses the marker class for future page-level
+   overrides. */
 
 /* PhysioFeed mobile/tablet section nav -- sliding segmented control
    (2026-09-20, Aditi: "i dnt like these button can suggest some other
