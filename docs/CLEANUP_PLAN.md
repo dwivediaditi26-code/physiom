@@ -2,7 +2,20 @@
 
 **Date:** 2026-09-25 · **Based on:** [AUDIT_REPORT.md](AUDIT_REPORT.md) (commit `9e049f9`)
 
-Nothing in this plan has been executed yet. Rules for carrying it out:
+## Progress
+
+| Done | Commit |
+|---|---|
+| Safety branch `cleanup/before-architecture-cleanup` (pushed) | at `6b41146` |
+| Native app calls the live `/api/*`; password-reset link works in the app | `c263d49` |
+| 2a dead files, R2 scaffold (your call: remove), 2c unused packages | `ff1a8fa` |
+| Compare screen removed (your call); 2b + a wider scan of unused code inside live files (~3,600 lines) | `39c221b` |
+| CI on Node 24: `npm ci` works again (Android build + the nightly AI check were failing on it) | `1a2b2e4` |
+| Real app icon + splash for Android and iOS (source: `assets/logo.png`) | `3c894d2` |
+
+Still open: section 3 (root tidy-up + README), section 4 (merge duplicates), the rest of section 5 (service worker in the app, versionCode, `allowBackup`), the 58 stale tests + `test.yml`, section 7 (restructure), iOS workflow. `ConditionObjectiveAssessment.jsx` was skipped throughout because another session is working in it.
+
+Rules for carrying out the rest:
 
 - Before step 1: create the safety branch `cleanup/before-architecture-cleanup` at the current `main` and push it.
 - One small commit per step. Each commit must pass `npm run build`, `npm run typecheck` and `npx vitest run` with no **new** failures (the 58 known failures are listed in the audit).
