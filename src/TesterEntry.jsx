@@ -28,7 +28,7 @@ import React, { useState, useCallback, lazy, Suspense } from "react";
 // (or who reads the deployed JS bundle) can get in — this is a soft
 // deterrent against the link being casually forwarded/crawled, not real
 // access control, since it's checked entirely client-side.
-const TESTER_PASSCODE = "physiomind-preview";
+const TESTER_PASSCODE = "12345";
 const SESSION_KEY = "pm_tester_unlocked";
 
 const LazyOrtho = lazy(() => import("./OrthoAssessmentNew.jsx"));
