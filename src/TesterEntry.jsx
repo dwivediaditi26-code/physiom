@@ -58,7 +58,7 @@ function PasscodeGate({ onUnlock }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#faf8fc", padding: 20 }}>
       <form onSubmit={submit} style={{ width: "100%", maxWidth: 360, background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 16, padding: 28, boxShadow: "0 4px 24px rgba(90,40,130,0.10)" }}>
-        <div style={{ fontWeight: 800, fontSize: "1.1rem", color: TEXT, marginBottom: 4 }}>PhysioMind — Assessment Preview</div>
+        <div style={{ fontWeight: 800, fontSize: "1.1rem", color: TEXT, marginBottom: 4 }}>Assessment Preview</div>
         <div style={{ fontSize: "0.85rem", color: MUTED, marginBottom: 18 }}>Enter the access code you were given to continue.</div>
         <input
           type="password" value={val} autoFocus
@@ -79,7 +79,7 @@ function Picker({ onPick }) {
   return (
     <div style={{ minHeight: "100vh", background: "#faf8fc", padding: "40px 20px" }}>
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <div style={{ fontWeight: 800, fontSize: "1.4rem", color: TEXT, marginBottom: 6 }}>PhysioMind — Assessment Preview</div>
+        <div style={{ fontWeight: 800, fontSize: "1.4rem", color: TEXT, marginBottom: 6 }}>Assessment Preview</div>
         <div style={{ fontSize: "0.9rem", color: MUTED, marginBottom: 28 }}>
           Pick an assessment to try. This is a preview build — nothing you enter here is saved, and it resets if you reload.
         </div>
