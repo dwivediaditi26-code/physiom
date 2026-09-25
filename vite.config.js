@@ -36,6 +36,14 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {
+      // Multi-page build: tester.html is a separate, unlinked entry point
+      // (standalone Ortho/Neuro/Cardio preview for external testers, see
+      // src/TesterEntry.jsx) -- Vite only builds index.html by default, so
+      // it has to be listed explicitly to get its own bundle at all.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        tester: path.resolve(__dirname, 'tester.html'),
+      },
       output: {
         manualChunks: (id) => {
           // Real incident (PhysioFeed integration, this session): splitting

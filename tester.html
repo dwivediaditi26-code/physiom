@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#7c3aed" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="PhysioMind — Assessment Preview" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
+
+    <!-- Ortho's Objective Assessment step uses <i class="ti ti-*"> icons --
+         without this stylesheet those render as blank glyphs. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { height: 100%; background: #faf8fc; }
+      body {
+        min-height: 100%;
+        min-height: 100dvh;
+        background: #faf8fc;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+      }
+      * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
+      input, select, textarea { font-size: 16px; } /* prevents iOS zoom on focus */
+      @media (min-width: 768px) { input, select, textarea { font-size: inherit; } }
+    </style>
+
+    <title>PhysioMind — Assessment Preview</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main-tester.jsx"></script>
+  </body>
+</html>
