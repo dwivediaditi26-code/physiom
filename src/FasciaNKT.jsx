@@ -1,6 +1,6 @@
 // FasciaNKT.jsx — Fascia, NKT, Cyriax region tests, and FMA section
 // Extracted verbatim from SubjectiveObjective.jsx (mechanical split, no logic changes).
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { C, RegionChips, applyPersistentHighlight } from "./utils.jsx";
 import { NKT_REGIONS } from "./sharedClinicalData.js";
 // Shared components that remain in SubjectiveObjective.jsx (render-time only; safe cycle).

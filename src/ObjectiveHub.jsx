@@ -66,8 +66,7 @@ export default function ObjectiveHub({ data, set, navTo, PC, requireAuth }) {
           the old Subjective form's own "Suggested assessment" button and
           "🧠 Interpretation" tab, and became unreachable in the live app
           once SubjectiveAssessmentNew.jsx replaced that form as the real
-          Subjective screen (it only survives in the standalone "Subjective
-          — New vs Old" comparison view). Per request, that engine now
+          Subjective screen. Per request, that engine now
           lives here instead -- reusing SubjectiveModule itself in
           `resultsOnly` mode (see SubjectiveObjective.jsx) rather than
           duplicating its ~1000 lines of per-region reasoning JSX, so

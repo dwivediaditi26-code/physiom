@@ -23,7 +23,6 @@ const J = (v) => toArr(v).join(" | ").toLowerCase();
 const hasReal = (v, negRe) =>
   toArr(v).some((x) => x && !negRe.test(String(x).toLowerCase()));
 
-const NEG_GENERIC = /^(no\b|no\s|none|not applicable|n\/a|not )/i;
 const NEG_RADIATION = /^(no radiation|no\b|not applicable|not dermatomal)/i;
 const NEG_MECH = /^(no clear|insidious|no identified|no\b)/i;
 

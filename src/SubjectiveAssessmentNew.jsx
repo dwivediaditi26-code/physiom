@@ -448,10 +448,9 @@ function FieldRow({
 
 // `data`/`set` are optional -- pass them (the same props the old
 // SubjectiveModule took) to wire this into a real patient record; the real
-// Subjective Assessment tab in AppFull.jsx does this now. Omit them (as
-// SubjectiveCompare.jsx's preview column still does) to get the original
-// self-contained demo behaviour with its own local state and demo AI-fill
-// button -- nothing about the preview screen changes.
+// Subjective Assessment tab in AppFull.jsx does this now. Omit them to get
+// the original self-contained demo behaviour with its own local state and
+// demo AI-fill button.
 export default function SubjectiveAssessmentDemo({ data, set } = {}) {
   const connected = !!(data && set);
 

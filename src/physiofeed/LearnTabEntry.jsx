@@ -57,15 +57,6 @@ const EXERCISE = [
   { key: "exercise", label: "Exercise Prescription", desc: "Treatment plan", icon: Dumbbell, tint: "violet" },
 ];
 
-const TINTS = {
-  violet: "bg-violet-50 text-violet-600",
-  blue: "bg-blue-50 text-blue-600",
-  green: "bg-emerald-50 text-emerald-600",
-  amber: "bg-amber-50 text-amber-600",
-  rose: "bg-rose-50 text-rose-600",
-  teal: "bg-teal-50 text-teal-600",
-  indigo: "bg-indigo-50 text-indigo-600",
-};
 
 // Solid gradient badges for list rows and home cards (literal class names).
 const TINT_GRAD = {

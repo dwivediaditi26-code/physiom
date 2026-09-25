@@ -1,7 +1,7 @@
 // SubjectiveObjective.jsx — Special Tests, Subjective, CPA, KineticChain, FMS, Fascia, Ergo
-import React, { useState, useEffect, useCallback, useRef, useMemo, Component } from "react";
-import { r1, r2, mid, vis, px, MIN_VIS, calcAngleDeg, C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
-import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage, classifyField, coreProgress } from "./sharedClinicalData.js";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { C, getC, RegionChips, applyPersistentHighlight } from "./utils.jsx";
+import { SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, needsBPS_S, needsSleep_S, needsSport_S, needsHypermobility_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, PDF_BASE_STYLES, makePDFPage, classifyField, coreProgress } from "./sharedClinicalData.js";
 import { ErgoModule } from "./ErgoModule.jsx";
 import { generateDiagnosis } from "./generateDiagnosis.jsx";
 import { FMASection, FasciaSection, NKTSection, CyriaxRegionTests } from "./FasciaNKT.jsx";
@@ -1681,7 +1681,6 @@ function CyriaxModule({ data, set, navContext={} }) {
 
 const SEP_S="|||";
 const RC_S={"Cervical spine":"#7c3aed","Thoracic spine":"#d97706","Lumbar / SI":"#dc2626","Shoulder (L)":"#0891b2","Shoulder (R)":"#06b6d4","Elbow/Wrist/Hand":"#059669","Hip / Groin":"#FBCFE8","Knee (L)":"#f59e0b","Knee (R)":"#eab308","Ankle / Foot":"#16a34a"};
-const ALL_REGIONS_S=Object.keys(RC_S);
 // Baby-pink (Hip/Groin) is too light for white text/labels to stay
 // readable against it -- everywhere regCol is used as a *text* color
 // (region header title/tags, active region-tab label) needs a darker
@@ -1734,7 +1733,6 @@ function NavActionBtn({ btn, onNav, PC, alwaysShowWhy = false }) {
     </div>
   );
 }
-
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -3115,71 +3113,6 @@ function runEngineV6(data, selectedRegions) {
 // CollapsibleNavGroup kept for compatibility but replaced by compact 2-row nav below
 
 
-function CollapsibleMulticheck({ f, val, PC, toggleMulti, searchTerm, SEP_S }) {
-  const VISIBLE = 6; // always-visible options
-  const selected = val ? String(val).split(SEP_S).filter(Boolean) : [];
-  const opts = searchTerm
-    ? f.options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()))
-    : f.options;
-  const hasSelected = selected.length > 0;
-  const [showMore, setShowMore] = React.useState(false);
-
-  // Sort: selected options first, then rest in original order
-  const sortedOpts = [
-    ...opts.filter(o => selected.includes(o)),
-    ...opts.filter(o => !selected.includes(o)),
-  ];
-  const visibleOpts = showMore ? sortedOpts : sortedOpts.slice(0, VISIBLE);
-  const hiddenCount = sortedOpts.length - VISIBLE;
-
-  const PillBtn = ({ opt }) => {
-    const on = selected.includes(opt);
-    const isUrgent = opt.toLowerCase().includes("urgent") || opt.startsWith("⚠");
-    return (
-      <button type="button" onClick={() => toggleMulti(f.id, opt)}
-        style={{
-          padding:"9px 14px", borderRadius:99, cursor:"pointer",
-          border:`1.5px solid ${on ? (isUrgent ? PC.red : PC.accent) : PC.border}`,
-          background: on ? (isUrgent ? PC.red+"15" : PC.accent+"15") : PC.s2,
-          color: on ? (isUrgent ? PC.red : PC.accent) : PC.muted,
-          fontSize:"0.88rem", fontWeight: on ? 700 : 500,
-          lineHeight:1.4, minHeight:38, transition:"all 110ms",
-        }}>
-        {opt}
-      </button>
-    );
-  };
-
-  return (
-    // Flat, unboxed pill row -- no outer card/border, no separate "selected
-    // tags" summary strip. Selection state shows purely via each pill's own
-    // filled/highlighted style, matching the confirmed lightweight mockup
-    // (numbered line-wise fields, no boxed containers around chip choices).
-    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-      {visibleOpts.map(opt => <PillBtn key={opt} opt={opt} />)}
-      {!showMore && hiddenCount > 0 && (
-        <button type="button" onClick={() => setShowMore(true)}
-          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-            border:`1.5px dashed ${PC.border}`, background:"transparent",
-            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-            lineHeight:1.4, minHeight:38 }}>
-          +{hiddenCount} more
-        </button>
-      )}
-      {showMore && hiddenCount > 0 && (
-        <button type="button" onClick={() => setShowMore(false)}
-          style={{ padding:"9px 14px", borderRadius:99, cursor:"pointer",
-            border:`1.5px dashed ${PC.border}`, background:"transparent",
-            color:PC.muted, fontSize:"0.82rem", fontWeight:600,
-            lineHeight:1.4, minHeight:38 }}>
-          Show less ▲
-        </button>
-      )}
-    </div>
-  );
-}
-
-
 // ── Field-level clinical help text (shown as ⓘ tooltip) ──────────────────────
 const FIELD_HELP = {
   // Pain descriptors
@@ -3215,44 +3148,6 @@ const FIELD_HELP = {
 // Suggestions live in a bottom sheet instead of on-screen at all times)
 // ══════════════════════════════════════════════════════════════════
 
-// Kept only for backward compatibility with any external caller —
-// per-row icons were removed from the redesign (icons now live only
-// in section headers, per feedback that per-row emoji stopped adding
-// value after the first row).
-// Best-effort icon per field, based on id/label keywords. Falls back
-// to a neutral dot so every row still has a left-hand anchor even for
-// fields this map doesn't recognise (custom/region-specific fields).
-function fieldIcon_S(f) {
-  const id = (f.id || "").toLowerCase();
-  const label = (f.label || "").toLowerCase();
-  const has = (s) => id.includes(s) || label.includes(s);
-  if (has("chief") || has("main complaint")) return "🎯";
-  if (has("goal")) return "🎯";
-  if (has("onset")) return "📅";
-  if (has("duration")) return "⏳";
-  if (has("mechanism")) return "🚗";
-  if (has("radiat")) return "☀️";
-  if (has("location") || has("site")) return "📍";
-  if (has("worst") && has("pain")) return "⚡";
-  if (has("behav")) return "↗️";
-  if (has("aggravat")) return "📈";
-  if (has("reliev")) return "🍃";
-  if (has("associated")) return "👤";
-  if (has("red flag") || has("rf_") || has("_rf")) return "🚩";
-  if (has("previous") || has("episode") || has("past history")) return "📋";
-  if (has("medication")) return "💊";
-  if (has("imaging") || has("report")) return "🖼️";
-  if (has("occupation") || has("work")) return "💼";
-  if (has("sleep") || has("night")) return "🌙";
-  if (has("sport")) return "🏃";
-  if (has("note") || has("detail")) return "📝";
-  if (has("quality")) return "〰️";
-  if (has("pain")) return "⚡";
-  if (f.type === "range") return "⚡";
-  if (f.type === "multicheck") return "📈";
-  if (f.type === "textarea") return "📝";
-  return "•";
-}
 
 // One row: small icon + label on the left (~30% width, fixed so
 // every row lines up), the field's input on the right (~70%). A
@@ -6427,16 +6322,6 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
     </div>
   );
 }
-
-
-
-
-
-
-// ─── MAIN FMA SECTION ─────────────────────────────────────────────────────────
-const FMS_STORAGE_KEY2="fms_clinical_v1";
-function loadFMSReport(){try{return JSON.parse(localStorage.getItem(FMS_STORAGE_KEY2)||"{}");}catch{return{};}}
-function saveFMSReport(r){try{localStorage.setItem(FMS_STORAGE_KEY2,JSON.stringify(r));}catch{}}
 
 
 // ─── DIAGNOSIS ENGINE ────────────────────────────────────────────────────────

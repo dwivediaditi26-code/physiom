@@ -234,20 +234,5 @@ export function RegionPicker({ selectedRegions, setSelectedRegions, excludeIds }
   );
 }
 
-/* Kept for callers that still want a compact card grid (e.g. the embedded
-   Setup screen inside a pathway module when used outside the unified
-   3-screen picker). */
-export function ConditionGrid({ conditions, condition, setCondition }) {
-  return (
-    <div className="condition-grid">
-      {conditions.map((c) => (
-        <button type="button" key={c.id} className={"condition-card" + (condition === c.id ? " condition-card-active" : "")} onClick={() => setCondition(c.id)}>
-          <span className="condition-icon">{c.icon}</span>
-          <span className="condition-label">{c.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export { REGION_LABEL, regionDisplayLabel, regionLabelList };

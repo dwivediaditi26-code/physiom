@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { SectionIntro, Hint, useSectionData, BRAND } from "./orthoFieldKit.jsx";
 import { suggestObjectiveTests } from "./orthoObjectiveSuggestions.js";
 import { OBJECTIVE_CONTENT } from "./orthoObjectiveContent.js";
-import { suggestIndividualItems, defaultSideFor, romWhy, romHow, mmtWhy, mmtHow, specialWhy, specialHow, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
+import { suggestIndividualItems, defaultSideFor, obsWhy, obsHow } from "./orthoIndividualSuggestions.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 import { RESTRICTION_GRADE, MMT_GRADES, spineRegionData } from "./orthoClinicalData.js";
 
@@ -28,7 +28,7 @@ function groupByRegion(items, selectedRegions) {
 // it is normally presented"). Everything visual here is now imported from
 // orthoRegionAssessments.jsx rather than re-implemented, so the two screens
 // cannot drift apart again.
-import { RomMovementCard, GradeSelect, romInfoText, romRichItem, mmtInfoText, mmtRichItem, specialRichItem, SpecialTestOptionPicker } from "./orthoRegionAssessments.jsx";
+import { RomMovementCard, GradeSelect, mmtInfoText, mmtRichItem, specialRichItem, SpecialTestOptionPicker } from "./orthoRegionAssessments.jsx";
 import { PalpationSection } from "./orthoOutpatientSections.jsx";
 import { palpationFocusZoneIds, palpationZonesForRegions } from "./orthoPalpationData.js";
 import { InfoButton } from "./orthoFieldKit.jsx";

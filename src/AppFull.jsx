@@ -1,48 +1,18 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
-import React, { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
+import React, { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
-import { createPortal } from "react-dom";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
 import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfUnreadMessages } from "./physiofeed/data/db.js";
-import { r2, mid, px, C, getC, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
+import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
 import {
   NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
 } from "./sharedClinicalData.js";
-// NOTE: SpecialTestsSection, FMASection, FasciaSection, KineticChainSection,
-// CyriaxRegionTests, SubjectiveModule, NKTSection, ErgoModule, CyriaxModule,
-// PDF_BASE_STYLES, makePDFPage, MOVEMENTS, downloadPDFFromHTML used to be
-// imported here too. SubjectiveModule/NKTSection/ErgoModule/CyriaxModule were
-// dead imports (only ever rendered via their existing lazy_*.jsx wrappers
-// below); PDF_BASE_STYLES/makePDFPage/downloadPDFFromHTML were unused
-// entirely; MOVEMENTS only fed a dead percentage calc for the old, already-
-// removed classic-FMS scoring (see getSectionPct's old fmaKeys). The 5 real,
-// actively-rendered components moved to lazy()+Suspense below -- this file
-// (SubjectiveObjective.jsx) is ~15k lines and was the single largest bundle
-// chunk (~1MB), forced eager on every single page load purely because these
-// 5 components were statically imported/rendered here without the lazy
-// wrapper every sibling screen already uses.
-// NOTE: GaitModule, OutcomeMeasuresModule, SOAPNoteModule,
-// ExercisePrescriptionModule, LiveSOAPPanel, PalpationModule,
-// TreatmentTechniquesModule, TreatmentSessionLogModule, ObservationModule,
-// buildClinicalInterpretation, Sparkline, EXERCISE_DB, ALL_EXERCISES,
-// PROGRAMME_TEMPLATES, TEMPLATE_TX used to be imported here. GaitModule/
-// OutcomeMeasuresModule/ExercisePrescriptionModule/PalpationModule/
-// TreatmentTechniquesModule/TreatmentSessionLogModule/buildClinicalInterpretation/
-// Sparkline/EXERCISE_DB/ALL_EXERCISES/PROGRAMME_TEMPLATES/TEMPLATE_TX were
-// dead imports (unused directly, or only rendered via their existing
-// lazy_*.jsx wrappers). SOAPNoteModule, LiveSOAPPanel, and ObservationModule
-// WERE actively rendered directly (not lazy) -- moved to lazy()+Suspense
-// below, same reasoning as the SubjectiveObjective.jsx cleanup above:
-// ClinicalModules.jsx (~530KB) was forced eager on every page load only
-// because of these 3 direct renders.
-import BodyChartPro from "./BodyChartPro.jsx";
-import OutcomeMeasuresPro from "./OutcomeMeasuresPro.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
-import { NeurologicalModule, NeuroTemplatesHub } from "./PhysioNeuro.jsx";
+import { NeuroTemplatesHub } from "./PhysioNeuro.jsx";
 import AssessmentEngine from "./streams/engine.jsx";
 // Dynamic import -- ObjectiveHub statically imports REGION_NAV/REGION_FAMILY_KEY
 // from SubjectiveObjective.jsx (the same big shared file lazy_special.jsx,
@@ -52,7 +22,7 @@ import AssessmentEngine from "./streams/engine.jsx";
 const LazyObjectiveHub = lazy(() => import("./ObjectiveHub.jsx"));
 import neuroStream from "./streams/neuro.js";
 import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget, SensoryRegionWidget } from "./streams/neuroWidgets.jsx";
-import { ALL_TESTS, MMT_DATA, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
+import { ALL_TESTS, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
 import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
@@ -201,7 +171,6 @@ const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"
 const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
 const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
 const LazySubjectiveNew = lazy(() => import("./SubjectiveAssessmentNew.jsx"));
-const LazySubjectiveCompare = lazy(() => import("./SubjectiveCompare.jsx"));
 const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"));
 // Replaces the old config-driven Neuro stream engine (STREAM_CONFIGS.neuro
 // below, now unreachable from the UI -- see the specialty-picker and
@@ -2331,17 +2300,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             </div>
           )}
 
-          {/* Subjective — New vs Old comparison. Review-only screen for
-              evaluating a proposed redesign against the current live
-              Subjective Assessment, side by side. Fully isolated from any
-              real patient data (own local state inside SubjectiveCompare.jsx)
-              -- nothing entered on either side here is saved. */}
-          {active==="subjective_compare" && (
-            <div style={{marginBottom:22}}>
-              <Suspense fallback={<TabFallback/>}><LazySubjectiveCompare onBack={()=>navTo("subjective")}/></Suspense>
-            </div>
-          )}
-
           {/* Cardiopulmonary Assessment -- was uploaded as a fully
               standalone tool taking no props at all, so nothing it did
               ever reached the real patient record (Aditi: "when I have
@@ -2816,10 +2774,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       chiefComplaint is mirrored into cc_main so the
                       workflow-stepper "done" check and the patient-list
                       chief-complaint preview still light up. The old
-                      SubjectiveModule/LazySubjective is untouched and still
-                      reachable from the sidebar's "Subjective — New vs Old"
-                      compare screen (SubjectiveCompare.jsx) -- not removed,
-                      per instruction. Body Chart is no longer inlined here
+                      SubjectiveModule still runs the region picker
+                      (subj_region) and, in results-only mode, the reasoning
+                      inside Objective (ObjectiveHub.jsx). Body Chart is no longer inlined here
                       (the new design has no internal tab for it) -- still
                       available via the separate "Chart/Palp" workflow step. */}
                   <Suspense fallback={<TabFallback/>}><LazySubjectiveNew data={data} set={set}/></Suspense>

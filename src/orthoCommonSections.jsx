@@ -1,5 +1,5 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField, InfoButton, InfoCard } from "./orthoFieldKit.jsx";
+import React, { useEffect, lazy, Suspense } from "react";
+import { SectionIntro, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, AssistField, Hint, LRGrid, VitalRow, useSectionData, DateField, InfoCard } from "./orthoFieldKit.jsx";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 
 // Typical resting adult values -- Vitals now opens already filled with
@@ -368,51 +368,6 @@ export function ActivityToleranceSection({ data, setData }) {
   );
 }
 
-const OUTCOME_SCALES = ["Barthel Index", "Modified Rankin Scale", "Lower Extremity Functional Scale", "DASH", "Oxford Knee Score", "Oxford Hip Score", "Knee Society Score", "Harris Hip Score", "WOMAC", "Berg Balance Scale", "Functional Independence Measure (FIM)"];
-export function OutcomeMeasureSection({ data, setData }) {
-  const [d, set] = useSectionData(data, setData, "outcomeMeasure");
-  const [q, setQ] = useState("");
-  const added = d.scales || [];
-  const query = q.trim().toLowerCase();
-  const suggestions = query ? OUTCOME_SCALES.filter((s) => s.toLowerCase().includes(query) && !added.includes(s)) : [];
-  function addScale(name) {
-    set("scales", [...added, name]);
-    set(name, "");
-    setQ("");
-  }
-  function removeScale(name) {
-    set("scales", added.filter((s) => s !== name));
-  }
-  return (
-    <>
-      <SectionIntro icon="📊" title="Outcome Measure" info="Choose the scale relevant to the region and condition — no scale is auto-applied, so scoring stays deliberate." />
-      <div className="text-input-wrap" style={{ marginBottom: 10 }}>
-        <input className="text-input" placeholder="🔍 Search scale..." value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      {suggestions.length > 0 && (
-        <div className="outcome-suggestions">
-          {suggestions.map((s) => (
-            <button type="button" key={s} className="outcome-suggestion" onClick={() => addScale(s)}>
-              ＋ {s}
-            </button>
-          ))}
-        </div>
-      )}
-      {added.map((s) => (
-        <div className="rom-card" key={s}>
-          <div className="rom-card-title">
-            {s}
-            <button type="button" className="outcome-remove" onClick={() => removeScale(s)}>
-              Remove
-            </button>
-          </div>
-          <TextField label="Score" value={d[s]} onChange={(v) => set(s, v)} placeholder="Enter score" />
-        </div>
-      ))}
-      {!added.length && <Hint>Search above or tap a suggestion to add an outcome measure.</Hint>}
-    </>
-  );
-}
 
 export function ImpressionSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "impression");

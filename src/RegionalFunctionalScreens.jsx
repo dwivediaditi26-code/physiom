@@ -1,6 +1,6 @@
 // RegionalFunctionalScreens.jsx — 10 per-region functional screens + hub
 // Extracted verbatim from SubjectiveObjective.jsx (mechanical split, no logic changes).
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { C } from "./utils.jsx";
 // Shared component that remains in SubjectiveObjective.jsx (render-time only; safe cycle).
 import { SmallClinicalImg } from "./SubjectiveObjective.jsx";

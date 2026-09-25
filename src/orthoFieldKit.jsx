@@ -586,58 +586,6 @@ export function DateField({ label, value, onChange, hint, howTo }) {
   );
 }
 
-/* Compact tap-to-open picker — a small pill trigger that opens a short
-   popover list, instead of a full row of always-visible chips. Used for
-   ROM pain/end-feel and MMT grade, where a wall of chip buttons would eat
-   the whole card. */
-export function MiniSelect({ label, value, options, onChange, placeholder, tone }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  return (
-    <span className="mini-select-wrap" ref={ref}>
-      <button type="button" className={"mini-select-trigger" + (value ? " mini-select-filled" : "") + (tone ? " mini-select-" + tone : "")} onClick={() => setOpen((o) => !o)}>
-        {value || placeholder || label}
-        <span className="mini-select-caret">⌄</span>
-      </button>
-      {open && (
-        <div className="select-popover mini-select-popover">
-          <div className="popover-head">
-            <span>{label}</span>
-            <button type="button" className="popover-close" onClick={() => setOpen(false)} aria-label="Close">
-              ✕
-            </button>
-          </div>
-          <div className="popover-list">
-            {options.map((opt) => {
-              const isSel = value === opt;
-              return (
-                <button
-                  type="button"
-                  key={opt}
-                  className={"popover-item" + (isSel ? " popover-item-active" : "")}
-                  onClick={() => {
-                    onChange(isSel ? "" : opt);
-                    setOpen(false);
-                  }}
-                >
-                  <span>{opt}</span>
-                  {isSel && <span className="popover-check">✓</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </span>
-  );
-}
 
 // variant="chips" is an opt-in alternate look -- individually bordered
 // pills with a solid-purple selected state, instead of the default shared
@@ -798,24 +746,6 @@ export function YesNo({ label, value, onChange, hint, howTo }) {
   );
 }
 
-/* 0-5 MMT grade chip row, selected value highlighted */
-export function GradeField({ label, value, onChange, howTo }) {
-  return (
-    <div className="grade-row">
-      <div className="grade-row-label">
-        <span>{label}</span>
-        {howTo && <InfoButton text={howTo} />}
-      </div>
-      <div className="grade-chips">
-        {["0", "1", "2", "3", "4", "5"].map((g) => (
-          <button type="button" key={g} className={"grade-chip" + (value === g ? " grade-chip-active" : "")} onClick={() => onChange(value === g ? "" : g)}>
-            {g}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* Compact L/R numeric stepper — value + up/down mini-buttons. Colour
    communicates clinical meaning, never decoration: pass `colorize` for the

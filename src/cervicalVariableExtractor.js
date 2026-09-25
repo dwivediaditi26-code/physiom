@@ -47,12 +47,6 @@ function selectState(data, key) {
   if (!v) return { state: "unknown", value: null };
   return { state: "answered", value: v };
 }
-function boolFromMulticheck(data, key, negativeOptions, positiveMatch) {
-  const s = multicheckState(data, key, negativeOptions);
-  if (s.state === "unknown") return "unknown";
-  if (s.state === "absent") return false;
-  return positiveMatch ? s.values.some((v) => positiveMatch(v)) : true;
-}
 
 /**
  * Pass 1: deterministic extraction from the structured Cervical spine

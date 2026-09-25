@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields, BRAND } from "./orthoFieldKit.jsx";
+import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";

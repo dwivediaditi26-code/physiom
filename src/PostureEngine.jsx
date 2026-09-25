@@ -1,11 +1,11 @@
 // PostureEngine.jsx — Camera, pose analysis, posture scoring, overlay drawing
 // Extracted from AppFull.jsx — pure extraction, no logic changes
-import React, { useState, useCallback, useRef, useEffect, useMemo, Component } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { r1, r2, mid, vis, px, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg, C } from "./utils.jsx";
+import { r1, r2, mid, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg } from "./utils.jsx";
 import { runViTPoseLateral, warmupViTPose } from "./vitposeEngine";
-import { analyzeSagittalContour, warmupContourEngine } from "./contourEngine";
-import { buildSagittalFindings, isDeprecatedLateralFinding } from "./sagittalFindings";
+import { analyzeSagittalContour } from "./contourEngine";
+import { buildSagittalFindings } from "./sagittalFindings";
 import {
   plumbOffsetNormX, plumbOffsetPx, deviationFromIdealCm, KENDALL_EXPECTED_OFFSET_CM,
 } from "./kendallPlumb.js";
@@ -13,15 +13,6 @@ import { compareMeasurement, capturesComparable, protocolQuality } from "./measu
 import HybridKendall from "./HybridKendall";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 import PatientCameraConsent from "./PatientCameraConsent.jsx";
-// ─── Constants ────────────────────────────────────────────────────────────────
-const POSE_CONNECTIONS = [
-  [11,12],[11,13],[13,15],[12,14],[14,16],   // shoulders + arms
-  [15,17],[15,19],[15,21],[17,19],            // left hand
-  [16,18],[16,20],[16,22],[18,20],            // right hand
-  [11,23],[12,24],[23,24],                    // torso
-  [23,25],[25,27],[27,29],[29,31],[27,31],   // left leg
-  [24,26],[26,28],[28,30],[30,32],[28,32],   // right leg
-];
 // ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
@@ -89,7 +80,6 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMea
     />
   );
 }
-
 
 
 // ════════════════════════════════════════════════════════════════════════
@@ -1309,70 +1299,6 @@ const CVA = POSTURE_THRESHOLDS.cvaAngle;
 const CVA_SUBTHRESHOLD = CVA.mild + 3;
 const CVA_NORM_LABEL = `>${CVA.mild}°`;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SPINE INTERPOLATION ENGINE
-// Estimates T1-T12, L1-L5 positions from available MediaPipe landmarks
-// Uses anatomical ratios (Kapandji / White & Panjabi)
-// ═══════════════════════════════════════════════════════════════════════════
-function interpolateSpineLandmarks(lm) {
-  if (!lm || lm.length < 33) return null;
-  const g = i => lm[i];
-  const V = i => (lm[i]?.visibility || 0) >= 0.4;
-
-  // Use the most visible side for sagittal
-  const earL = g(7), earR = g(8);
-  const sagEar = ((earL?.visibility||0) >= (earR?.visibility||0)) ? earL : earR;
-  const shL = g(11), shR = g(12);
-  const sagSh = ((shL?.visibility||0) >= (shR?.visibility||0)) ? shL : shR;
-  const hipL = g(23), hipR = g(24);
-  const sagHip = ((hipL?.visibility||0) >= (hipR?.visibility||0)) ? hipL : hipR;
-
-  if (!sagSh || !sagHip) return null;
-
-  const shX = sagSh.x, shY = sagSh.y;
-  const hipX = sagHip.x, hipY = sagHip.y;
-
-  // Anatomical ratios along the spine (shoulder=T1, hip=S1)
-  // T1(0%) T4(25%) T7(45%) T10(65%) T12(78%) L1(82%) L3(90%) L5(97%) S1(100%)
-  const ratios = {
-    T1:  { r: 0.00, label: "T1"  },
-    T4:  { r: 0.25, label: "T4"  },
-    T7:  { r: 0.45, label: "T7"  },
-    T10: { r: 0.65, label: "T10" },
-    T12: { r: 0.78, label: "T12" },
-    L1:  { r: 0.82, label: "L1"  },
-    L3:  { r: 0.90, label: "L3"  },
-    L5:  { r: 0.97, label: "L5"  },
-  };
-
-  const spine = {};
-  Object.entries(ratios).forEach(([key, { r, label }]) => {
-    spine[key] = {
-      x: shX + r * (hipX - shX),
-      y: shY + r * (hipY - shY),
-      label,
-      visibility: Math.min(sagSh.visibility || 0.5, sagHip.visibility || 0.5),
-    };
-  });
-
-  // Estimate cervical curve: C4 is midpoint between ear and T1 offset
-  if (sagEar) {
-    spine.C4 = {
-      x: sagEar.x * 0.3 + shX * 0.7,
-      y: sagEar.y * 0.3 + shY * 0.7,
-      label: "C4",
-      visibility: sagEar.visibility || 0.5,
-    };
-    spine.C7 = {
-      x: sagEar.x * 0.05 + shX * 0.95,
-      y: sagEar.y * 0.05 + shY * 0.95,
-      label: "C7",
-      visibility: Math.min(sagEar.visibility || 0.5, sagSh.visibility || 0.5),
-    };
-  }
-
-  return spine;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // KENDALL POSTURAL TYPE CLASSIFIER
@@ -1770,7 +1696,6 @@ function prioritiseFindings(findings) {
 // Clinical significance filter: limit output to top findings to reduce noise
 const MAX_FINDINGS_FRONTAL  = 7;
 const MAX_FINDINGS_SAGITTAL = 6;
-const MAX_FINDINGS_TOTAL    = 10;
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -3148,19 +3073,6 @@ function drawAngleBadge(ctx, W, y, angleDeg, color) {
 }
 
 
-// Helper: draw a horizontal level line between two points with label
-function drawLevelLine(ctx, x1, y1, x2, y2, color, label) {
-  const my=(y1+y2)/2;
-  ctx.save();
-  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
-  ctx.beginPath(); ctx.moveTo(x1,my); ctx.lineTo(x2,my); ctx.stroke();
-  ctx.restore(); ctx.setLineDash([]);
-  if(label){
-    const mx=(x1+x2)/2;
-    drawBadge(ctx, mx, my-12, label, color);
-  }
-}
-
 // Patient facial de-identification (DPDP Act 2023 Sec 3 — facial anonymisation
 // — and Apple Guideline 1.4.1). Facial features are clinically irrelevant to a
 // posture assessment: this draws an opaque bar over the frame from the top
@@ -3935,21 +3847,6 @@ function drawOverlay({ctx,W,H,lm,view,showGrid,measurements,clearFirst=false}) {
     grad.addColorStop(1,"rgba(255,77,109,0)");
     ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
   });
-}
-
-// ─── renderPostureOverlay — alias for drawOverlay used throughout app ──────────
-// Maps the showHeatmap/showLabels/view params to drawOverlay signature
-function renderPostureOverlay({ ctx, W, H, lm, measurements, showGrid, showHeatmap, showLabels, view }) {
-  // Map view names to drawOverlay's expected format
-  const viewMap = {
-    anterior: "anterior", posterior: "posterior",
-    left: "left", right: "right",
-    frontal: "anterior", sagittal: "left",
-    "sag l": "left", "sag r": "right",
-    "sag_l": "left", "sag_r": "right",
-  };
-  const mappedView = viewMap[String(view || "anterior").toLowerCase()] || "anterior";
-  drawOverlay({ ctx, W, H, lm, view: mappedView, showGrid: showGrid !== false, measurements: measurements || {} });
 }
 
 
@@ -5274,13 +5171,6 @@ function useHistory(){
   return {sessions,save,clear};
 }
 
-// ─── usePostureHistory — posture session history hook ─
-function usePostureHistory(){
-  const [sessions,setSessions]=useState([]);
-  const saveSession=useCallback((s)=>setSessions(prev=>[...prev.slice(-19),s]),[]);
-  const clearHistory=useCallback(()=>setSessions([]),[]);
-  return {sessions,saveSession,clearHistory};
-}
 
 // ─── Responsive hook ──────────────────────────────────────────────────────────
 function useBreakpoint() {

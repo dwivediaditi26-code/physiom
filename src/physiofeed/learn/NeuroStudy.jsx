@@ -1,8 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
-import {
-  Brain, Activity, Zap, Eye, Wind, Move, Mic, Milestone, Scale, Vibrate,
-  Footprints, Route, RotateCw, Gauge, Puzzle,
-} from "lucide-react";
+import { Brain, Zap, Eye, Wind, Move, Mic, Milestone, Scale, Vibrate, Footprints, Route, RotateCw, Gauge, Puzzle } from "lucide-react";
 import { DERMATOMES, MYOTOMES, REFLEXES, CRANIAL_NERVES } from "../../sharedClinicalData.js";
 import { neuroConditionLibraryData } from "../../neuroConditionLibraryData.js";
 import StudyShell from "./StudyShell.jsx";

@@ -1,7 +1,6 @@
 // DashboardModules.jsx — Posture defect guide, Home module, Therapist dashboard
 // Extracted from AppFull.jsx — pure extraction, no logic changes
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { getC } from "./utils.jsx";
+import React, { useState, useCallback, useEffect } from "react";
 import { makePDFPage, downloadPDFFromHTML } from "./sharedClinicalData.js";
 import { getEvidence } from "./physiofeed/data/db.js";
 const POSTURE_DEFECTS = {

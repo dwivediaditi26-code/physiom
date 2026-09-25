@@ -1,7 +1,7 @@
 // PhysioNeuro.jsx — ALL_TESTS, ROM, MMT, Neurological
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { C, getC, RegionPickerButton, RegionChips, applyPersistentHighlight } from "./utils.jsx";
-import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
+import React, { useState, useRef } from "react";
+import { C, getC, RegionChips, applyPersistentHighlight } from "./utils.jsx";
+import { ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SCALES } from "./sharedClinicalData.js";
 
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";

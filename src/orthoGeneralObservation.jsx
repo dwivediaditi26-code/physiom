@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SectionIntro, Segmented, SelectField, TextField, TextArea, NumberField, InfoButton, AddMovementRow, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
+import { SectionIntro, Segmented, SelectField, TextField, NumberField, InfoButton, AddMovementRow, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { postureFieldsForRegion, POSTURE_VIEWS, OBSERVATION_INFO } from "./orthoObservationData.js";
 
 /* ============================================================

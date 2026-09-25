@@ -10,7 +10,7 @@
 // SubjectiveObjective.jsx ~line 4640) so this can line up with the real
 // engine's region taxonomy later if/when this design gets wired to real
 // data -- for now this file is only consumed by the standalone preview
-// (SubjectiveAssessmentNew.jsx / SubjectiveCompare.jsx), nothing here
+// (SubjectiveAssessmentNew.jsx), nothing here
 // touches Supabase or the real patient record.
 
 export const REGIONS = [

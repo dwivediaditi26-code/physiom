@@ -43,7 +43,6 @@
 //    contract to lumbar/cervicalReasoningEngine.js's helpers) ───────────
 const present = (field) => field && field.state === "present";
 const absent  = (field) => field && field.state === "absent";
-const unknown = (field) => !field || field.state === "unknown";
 
 function textIncludes(text, ...needles) {
   const t = String(text || "").toLowerCase();

@@ -102,7 +102,6 @@ export function needsAssistance(level) {
 }
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
-const asArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
 // MMT is stored as an object of { muscleKey: "5"|"4"|"3"|"2"|"1"|"0" }.
 // Returns the weak entries only, so a suggested problem can cite the

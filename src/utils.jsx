@@ -1,6 +1,5 @@
 // PhysioMind Pro AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
-import React, { useState, useCallback, useRef, useEffect, useMemo, Component, Suspense, lazy } from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect, Component, Suspense } from "react";
 import * as Sentry from "@sentry/react";
 
 // ─── Math Utilities (hoisted to top — used throughout app) ───────────────────

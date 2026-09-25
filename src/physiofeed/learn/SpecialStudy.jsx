@@ -2,7 +2,6 @@ import { useState, useMemo, Fragment } from "react";
 import { SPECIAL_TESTS_DATA } from "../../sharedClinicalData.js";
 import StudyShell from "./StudyShell.jsx";
 import StudyGrid from "./StudyGrid.jsx";
-import StudyDetail from "./StudyDetail.jsx";
 import InfoBox from "./InfoBox.jsx";
 import SpecialTestDetail from "./SpecialTestDetail.jsx";
 

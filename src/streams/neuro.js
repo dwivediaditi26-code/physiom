@@ -15,12 +15,7 @@
 const LIMBS = ["Right UE", "Left UE", "Right LE", "Left LE"];
 const ASHWORTH = ["0", "1", "1+", "2", "3", "4"];
 const OXFORD = ["0", "1", "2", "3", "4", "5"];
-const DTR = ["0 Absent", "1+ Diminished", "2+ Normal", "3+ Brisk", "4+ Clonus"];
 const BRUNNSTROM = ["1", "2", "3", "4", "5", "6"];
-const SENS_GRADE = ["Intact", "Decreased", "Absent", "Exaggerated", "Inaccurate", "Untested"];
-const SENS_REGIONS = ["Face", "Right UE", "Left UE", "Trunk", "Right LE", "Left LE"];
-const SENS_MODES = ["Light touch", "Pain", "Temperature", "Proprioception", "Vibration"];
-const NA = ["Normal", "Abnormal", "Untested"];
 const ASSIST = ["Independent", "Supervision", "Min assist", "Mod assist", "Max assist", "Unable"];
 const BAL_GRADE = ["Normal", "Good", "Fair", "Poor", "Nil"];
 const SETTINGS = ["ICU / bedside", "Ward", "OPD / clinic", "Home / community"];

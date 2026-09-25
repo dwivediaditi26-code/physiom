@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
-import { SectionIntro, TextArea, InfoButton, InfoCard, InfoCardGrid, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
   KC_REGIONS,

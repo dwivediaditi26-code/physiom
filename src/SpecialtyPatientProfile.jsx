@@ -583,45 +583,6 @@ function ReassessModal({ cp, planLabel, onClose, onConfirm }) {
   );
 }
 
-// Vertical Clinical Journey timeline: current plan -> its sessions (newest
-// first) -> each closed plan -> its sessions, all the way back to the
-// first plan. Read-only; tapping a plan or session jumps to its detail via
-// the same viewers ClinicalPlanPage already has (onViewPlan/onViewSession).
-function ClinicalJourney({ cp, history, planLabel, onViewPlan, onViewSession }) {
-  const blocks = [
-    { kind: "plan", id: null, label: planLabel, active: true, sessions: Array.isArray(cp.sessions) ? cp.sessions : [] },
-    ...[...history].reverse().map((h) => ({ kind: "plan", id: h.id, label: h.label, active: false, sessions: Array.isArray(h.sessions) ? h.sessions : [] })),
-  ];
-  const anySessions = blocks.some((b) => b.sessions.length);
-  if (!blocks.some((b) => b.active === false) && !anySessions) return null; // nothing to show beyond the plain Current Plan card yet
-
-  return (
-    <Card>
-      <CardTitle>Clinical Journey</CardTitle>
-      <div style={{ position: "relative", paddingLeft: 18 }}>
-        <div style={{ position: "absolute", left: 5, top: 4, bottom: 4, width: 2, background: C.border }} />
-        {blocks.map((b) => (
-          <div key={b.id || "current"}>
-            <div style={{ position: "relative", padding: "6px 0" }}>
-              <div style={{ position: "absolute", left: -18, top: 9, width: 10, height: 10, borderRadius: "50%", background: b.active ? C.primary : C.faint, border: "2px solid #fff", boxShadow: `0 0 0 1px ${b.active ? C.primary : C.faint}` }} />
-              <button onClick={() => b.id && onViewPlan(b.id)} disabled={!b.id} style={{ background: "none", border: "none", padding: 0, textAlign: "left", cursor: b.id ? "pointer" : "default", fontSize: 13.5, fontWeight: 800, color: b.active ? C.primary : C.text }}>
-                {b.label}{b.active ? " — Active" : ""}
-              </button>
-            </div>
-            {[...b.sessions].reverse().map((s) => (
-              <div key={s.id} style={{ position: "relative", padding: "3px 0 3px 4px" }}>
-                <div style={{ position: "absolute", left: -15, top: 8, width: 6, height: 6, borderRadius: "50%", background: C.border }} />
-                <button onClick={() => onViewSession(b.id, s)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: C.muted }}>
-                  Session {s.no} · {s.date}
-                </button>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
 
 // Read-only detail for one session, opened from the Clinical Journey
 // timeline. Deliberately simple (no KBContext/goalProgress dependency,

@@ -27,7 +27,6 @@ function Row({ label, icon, children }) {
   );
 }
 
-const TABS = ["Learn", "Technique", "Video", "Quiz"];
 
 // The Quiz tab asks several questions built from the structure's own data
 // (origin, insertion, action, position, what you feel for, hand placement --

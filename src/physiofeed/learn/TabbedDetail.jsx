@@ -9,7 +9,6 @@ import { DetailHeader, DetailTabs, MediaFrame, VideoTab, NextButton } from "./le
 // conditions all have different fields). Same look as the Special Test, ROM,
 // MMT and Palpation detail screens.
 
-const TABS = ["Learn", "Technique", "Video", "Quiz"];
 
 // Builds a 4-option Quick Check from an answer and a pool of wrong answers,
 // picking and ordering the distractors by a stable hash so a test always
