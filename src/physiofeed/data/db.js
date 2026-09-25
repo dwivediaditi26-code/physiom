@@ -1565,6 +1565,18 @@ export async function getNotifications() {
           : n.kind === "connection_accepted" ? (n.actor_id ? `/profile/${n.actor_id}` : "/people")
           : n.kind === "application_received" ? "/explore?view=postings"
           : n.kind === "application_status" ? "/explore?view=applications"
+          // Phase H (2026-09-25): the opportunity-lifecycle triggers added in
+          // Phase A/D (add_opportunity_lifecycle.sql,
+          // add_opportunity_change_notifications.sql) had text but no link at
+          // all -- tapping "X has been cancelled" did nothing. Cancelled/
+          // closed/updated carry the opportunity's own id as entity_id (the
+          // trigger fires on the opportunities table itself), so those go
+          // straight to it; workshop_registered's entity_id is the
+          // *application* row's id instead (notify_on_registration fires on
+          // applications), so that one lands on the Registered tab like
+          // application_status does rather than a wrong/missing opportunity id.
+          : (n.kind === "opportunity_cancelled" || n.kind === "opportunity_closed" || n.kind === "opportunity_updated") && n.entity_id ? `/explore?opp=${n.entity_id}`
+          : n.kind === "workshop_registered" ? "/explore?view=applications"
           : null,
     }));
   } catch (e) {
