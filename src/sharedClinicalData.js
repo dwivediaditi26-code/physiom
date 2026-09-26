@@ -5147,25 +5147,34 @@ const PDF_BASE_STYLES = `
     font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
     font-size: 11px; line-height: 1.6; margin: 0; padding: 0;
   }
-  h2 {
-    font-size: 13px; font-weight: 800; color: #0369a1;
-    border-left: 4px solid #0ea5e9; padding-left: 10px;
-    margin: 16px 0 8px; letter-spacing: -0.2px;
-  }
-  h3 { font-size: 11.5px; font-weight: 700; color: #1e293b; margin: 10px 0 5px; }
+  /* Purple masthead banner (matches the app's own brand purple, orthoFieldKit.jsx's
+     BRAND.purple/purpleDark) instead of the old plain-white/sky-blue header --
+     Aditi: "make the pdf very good colourful". */
   .page-header {
     display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 2.5px solid #0ea5e9; padding-bottom: 12px; margin-bottom: 16px;
+    background: linear-gradient(120deg, #6D28D9 0%, #7C3AED 55%, #9F67F5 100%);
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
+    box-shadow: 0 4px 14px rgba(109,40,217,0.25);
   }
-  .logo { font-size: 20px; font-weight: 900; color: #0369a1; letter-spacing: -1px; }
-  .logo em { color: #0ea5e9; font-style: normal; }
-  .logo-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
-  .meta-block { text-align: right; font-size: 10px; color: #374151; line-height: 1.7; }
-  .meta-block strong { color: #111827; }
+  .logo { font-size: 21px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+  .logo em { color: #FFD37A; font-style: normal; }
+  .logo-sub { font-size: 10px; color: #E9D9FF; margin-top: 2px; font-weight: 600; }
+  .meta-block { text-align: right; font-size: 10px; color: #F3EBFF; line-height: 1.7; }
+  .meta-block strong { color: #fff; }
   .confid {
-    display: inline-block; padding: 2px 8px; border-radius: 4px;
-    background: #dcfce7; color: #15803d; font-weight: 700;
+    display: inline-block; padding: 2px 9px; border-radius: 20px;
+    background: rgba(255,255,255,0.92); color: #6D28D9; font-weight: 800;
     font-size: 9px; margin-top: 4px; letter-spacing: 0.3px;
+  }
+  h2 {
+    font-size: 13px; font-weight: 800; color: #fff;
+    background: linear-gradient(90deg, #7C3AED, #A855F7);
+    border-radius: 7px; padding: 6px 12px;
+    margin: 18px 0 9px; letter-spacing: -0.1px;
+  }
+  h3 {
+    font-size: 11.5px; font-weight: 700; color: #6D28D9; margin: 11px 0 5px;
+    border-bottom: 1.5px solid #E9D9FF; padding-bottom: 3px;
   }
   .disclaimer {
     background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
@@ -5173,12 +5182,15 @@ const PDF_BASE_STYLES = `
     line-height: 1.5;
   }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .info-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 9px 12px; }
-  .info-label { font-size: 8.5px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .info-box {
+    background: #F6F1FF; border: 1px solid #DCC9FF; border-left: 3px solid #7C3AED;
+    border-radius: 8px; padding: 9px 12px;
+  }
+  .info-label { font-size: 8.5px; font-weight: 700; color: #6D28D9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
   .info-value { font-size: 12px; font-weight: 700; color: #111827; }
   .section-box {
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px;
-    padding: 11px 14px; margin-bottom: 12px; white-space: pre-wrap;
+    background: #FAF8FF; border: 1px solid #EAE0FB; border-left: 3px solid #C4A6F5;
+    border-radius: 9px; padding: 11px 14px; margin-bottom: 12px; white-space: pre-wrap;
     font-size: 10.5px; line-height: 1.7;
   }
   .badge {
@@ -5190,13 +5202,13 @@ const PDF_BASE_STYLES = `
   .badge-amber { background: #fef3c7; color: #92400e; }
   .badge-red { background: #fee2e2; color: #b91c1c; }
   .badge-purple { background: #ede9fe; color: #6d28d9; }
-  .sig-row { margin-top: 28px; display: flex; gap: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+  .sig-row { margin-top: 28px; display: flex; gap: 30px; border-top: 2px solid #EAE0FB; padding-top: 14px; }
   .sig-col { flex: 1; }
   .sig-line { height: 32px; border-bottom: 1px solid #94a3b8; margin-bottom: 5px; }
   .sig-label { font-size: 8.5px; color: #64748b; }
   .page-footer {
-    margin-top: 18px; padding-top: 10px; border-top: 1px solid #e2e8f0;
-    font-size: 8.5px; color: #94a3b8; text-align: center; line-height: 1.6;
+    margin-top: 18px; padding-top: 10px; border-top: 2px solid #EAE0FB;
+    font-size: 8.5px; color: #8B7BA8; text-align: center; line-height: 1.6;
   }
 `;
 
