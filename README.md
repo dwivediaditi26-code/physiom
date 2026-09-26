@@ -53,6 +53,7 @@ Run these in Terminal, inside this folder.
 ## How changes go live
 
 - **Website:** push to the `main` branch on GitHub, and Vercel builds and publishes it by itself in 1–2 minutes. If a build fails, the live site keeps showing the last working version.
+- **Automatic checks:** every push to `main` also runs all the checks. GitHub → **Actions** → **Checks** shows a green tick or a red cross; a red cross means something broke, so look before carrying on.
 - **Android app:** every push to `main` also builds a test app. Open GitHub → **Actions** → **Android build** → newest run, and download `physiomind-debug-apk` at the bottom. For the Play Store version, see the notes at the top of `.github/workflows/android-build.yml`.
 - **iPhone app:** not set up yet.
 

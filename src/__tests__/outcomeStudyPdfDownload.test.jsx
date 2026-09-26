@@ -12,6 +12,17 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
+// The real downloadPDFFromHTML loads html2pdf asynchronously and logs after
+// the test has already finished, which made the whole run report a stray
+// "unhandled error" at teardown. Swap just that function for a spy: the
+// form HTML is still built by the real code (makePDFPage etc.), and the
+// spy proves it was actually handed over for download.
+const downloadPDFFromHTML = vi.hoisted(() => vi.fn());
+vi.mock("../sharedClinicalData.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  downloadPDFFromHTML: (...args) => downloadPDFFromHTML(...args),
+}));
+
 import OutcomeStudy from "../physiofeed/learn/OutcomeStudy.jsx";
 
 describe("OutcomeStudy -- blank-form PDF download", () => {
@@ -22,10 +33,10 @@ describe("OutcomeStudy -- blank-form PDF download", () => {
     fireEvent.click(firstCard);
 
     const dlBtn = await screen.findByText(/Download PDF \(blank form\)/);
-    // downloadPDFFromHTML resolves internally (try/catch'd, no real popup
-    // in jsdom) -- this just proves buildBlankFormHTML/makePDFPage don't
-    // throw on a real SCALES entry.
+    // Proves buildBlankFormHTML/makePDFPage don't throw on a real SCALES
+    // entry and the result reaches the download helper.
     expect(() => fireEvent.click(dlBtn)).not.toThrow();
+    expect(downloadPDFFromHTML).toHaveBeenCalledWith(expect.stringContaining("<"), expect.stringMatching(/_Blank_Form\.pdf$/));
   });
 
   it("does not crash for a scale with no per-item fields (clinician-scored only)", async () => {

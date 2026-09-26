@@ -9,14 +9,13 @@
 // never-updated persisted value), and ObjectiveHub -- a separate component
 // that reads data.cx_selected_regions directly -- never saw a region at
 // all, always showing "No body region selected yet".
-import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
-import App from "../App.jsx";
 import { supabase } from "../supabase.js";
+import { renderLoggedIn, createOrthoPatient, openScreeningWorkflow } from "./clinicalFlow.js";
 
 describe("region selection persists across navigation", () => {
   // 2026-08-19: Objective now mounts the real interpretation engine
@@ -32,21 +31,9 @@ describe("region selection persists across navigation", () => {
       error: null,
     });
     localStorage.clear();
-    render(<App />);
-    await waitFor(() => {
-      expect(document.body.textContent).toMatch(/Hello, Dr\s*student/i);
-    });
-    fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByPlaceholderText("Search patients…");
-    fireEvent.click(screen.getByText("＋ New Assessment"));
-    const picker = within(await screen.findByTestId("specialty-picker-modal"));
-    fireEvent.click(picker.getByText("Ortho"));
-    fireEvent.change(await screen.findByLabelText(/^Full Name/), { target: { value: "Region Test Patient" } });
-    fireEvent.change(screen.getByLabelText(/^Age/), { target: { value: "30" } });
-    fireEvent.click(screen.getByRole("button", { name: "Male" }));
-    fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "9876543210" } });
-    fireEvent.click(screen.getByRole("button", { name: /Create Patient & Continue/i }));
-    await screen.findByText("Screening Workflow");
+    await renderLoggedIn();
+    await createOrthoPatient("Region Test Patient");
+    await openScreeningWorkflow();
 
     fireEvent.click(screen.getByTestId("wf-step-region"));
     await screen.findByText("Select Body Region");
@@ -72,5 +59,5 @@ describe("region selection persists across navigation", () => {
     await waitFor(() => {
       expect(screen.queryByText("No body region selected yet")).not.toBeInTheDocument();
     });
-  }, 15000);
+  }, 30000);
 });

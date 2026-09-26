@@ -18,7 +18,7 @@ A full check-up of the app, like an assessment before treatment. It found:
 
    ✅ *All three fixed on 2026-09-25.*
 4. **Some code is copy-pasted** in 3–4 places (form boxes, voice input, photo upload), so a fix in one copy doesn't reach the others. *Still to do.*
-5. **58 automatic checks fail** because they still expect old screen designs. They aren't app bugs. *Still to do.*
+5. **58 automatic checks fail** because they still expect old screen designs. They aren't app bugs. *Fixed 2026-09-25: all updated, and GitHub now runs them on every change.*
 6. **No passwords or secret keys were found in the code.** Good.
 
 The rest of this page is the detailed evidence behind each point. It's a snapshot of 2026-09-25, so some items listed below are already fixed; [CLEANUP_PLAN.md](CLEANUP_PLAN.md) tracks what's done.

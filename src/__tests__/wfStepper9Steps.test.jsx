@@ -9,14 +9,13 @@
 // already existed (viewStep prop just controls what's visible).
 // The SOAP step was removed when SOAP note generation was removed from
 // the app entirely.
-import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup, waitFor, within } from "@testing-library/react";
+import { screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
-import App from "../App.jsx";
 import { supabase } from "../supabase.js";
+import { renderLoggedIn, createOrthoPatient, openScreeningWorkflow, leaveAssessment } from "./clinicalFlow.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -27,45 +26,27 @@ beforeEach(() => {
   });
 });
 
-async function renderLoggedIn() {
-  render(<App />);
-  await waitFor(() => {
-    expect(document.body.textContent).toMatch(/Hello, Dr\s*student/i);
-  });
-}
-
-// Creates a real patient through the actual Clinical -> New Assessment ->
-// Ortho -> full-page Demographics step flow (same one clinicalTabRedesign
-// .test.jsx already exercises), so the master stepper has an activePatient
-// to render for.
-async function createOrthoPatient() {
+// Creates a real patient through Clinical -> Assess -> New Assessment ->
+// Ortho, then opens the Screening Workflow so the stepper has an active
+// patient to render for (see clinicalFlow.js for the exact taps).
+async function openWorkflowWithPatient() {
   await renderLoggedIn();
-  fireEvent.click(screen.getByText("Clinical"));
-  await screen.findByPlaceholderText("Search patients…");
-  fireEvent.click(screen.getByText("＋ New Assessment"));
-  const picker = within(await screen.findByTestId("specialty-picker-modal"));
-  fireEvent.click(picker.getByText("Ortho"));
-  // Lands directly on the full-page Demographics step now -- fill the
-  // required fields (Name/DOB/Gender/Phone) and continue.
-  fireEvent.change(await screen.findByLabelText(/^Full Name/), { target: { value: "Test Patient" } });
-  fireEvent.change(screen.getByLabelText(/^Date of Birth/), { target: { value: "1996-07-17" } });
-  fireEvent.change(screen.getByLabelText(/^Age/), { target: { value: "28" } });
-  fireEvent.click(screen.getByRole("button", { name: "Male" }));
-  fireEvent.change(screen.getByLabelText(/^Phone/), { target: { value: "9876543210" } });
-  fireEvent.click(screen.getByRole("button", { name: /Create Patient & Continue/i }));
-  await screen.findByText("Screening Workflow");
+  await createOrthoPatient();
+  await openScreeningWorkflow();
 }
 
-describe("Screening Workflow stepper — 8 steps, each its own page", () => {
+// Each test walks the whole app from sign-in to the workflow (~3-4s of
+// rendering), so allow more than the default 5s.
+describe("Screening Workflow stepper — 8 steps, each its own page", { timeout: 20_000 }, () => {
   it("shows all 8 step dots once a patient is active", async () => {
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     for (const key of ["demographics","region","subjective","ai","chart","objective","treatment","home"]) {
       expect(screen.getByTestId(`wf-step-${key}`)).toBeInTheDocument();
     }
   });
 
   it("Body Regions step shows the flat region picker without the AI buttons", async () => {
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     fireEvent.click(screen.getByTestId("wf-step-region"));
     // Region selector (flat searchable list, redesigned 2026-08-18) lives
     // under this step; the hero AI/mic buttons and hero title text must
@@ -82,7 +63,7 @@ describe("Screening Workflow stepper — 8 steps, each its own page", () => {
   });
 
   it("AI step shows the AI/mic buttons without the region accordion", async () => {
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     fireEvent.click(screen.getByTestId("wf-step-ai"));
     await waitFor(() => {
       expect(screen.getByText("History & Complaint")).toBeInTheDocument();
@@ -100,7 +81,7 @@ describe("Screening Workflow stepper — 8 steps, each its own page", () => {
     // "✨ AI Extracted" fill button is hidden when connected to a real
     // patient (see SubjectiveAssessmentNew.jsx) -- both still correctly
     // absent here, just for a different reason than before.
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     fireEvent.click(screen.getByTestId("wf-step-subjective"));
     await waitFor(() => {
       expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
@@ -112,14 +93,14 @@ describe("Screening Workflow stepper — 8 steps, each its own page", () => {
   });
 
   it("Chart/Palp step shows a Body Chart / Palpation toggle", async () => {
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     fireEvent.click(screen.getByTestId("wf-step-chart"));
     expect(await screen.findByText("🧍 Body Chart")).toBeInTheDocument();
     expect(screen.getByText("🤚 Palpation")).toBeInTheDocument();
   });
 
   it("Home Protocol step opens Treatment on its HEP tab", async () => {
-    await createOrthoPatient();
+    await openWorkflowWithPatient();
     fireEvent.click(screen.getByTestId("wf-step-home"));
     await waitFor(() => {
       // Treatment screen's own HEP tab button, already existed pre-redesign.
@@ -131,10 +112,11 @@ describe("Screening Workflow stepper — 8 steps, each its own page", () => {
   // patient existed it kept showing at the top of Home/PhysioFeed/Learn/
   // Profile too -- screens that have nothing to do with this workflow.
   it("does not show on Home, PhysioFeed, Learn, or Profile once a patient is active", async () => {
-    await createOrthoPatient();
-    for (const label of ["Home", "PhysioFeed", "Learn", "Profile"]) {
-      const [navItem] = screen.getAllByText(label);
-      fireEvent.click(navItem);
+    await openWorkflowWithPatient();
+    for (const [i, key] of ["home", "physiofeed", "learn", "profile"].entries()) {
+      fireEvent.click(screen.getByTestId(`bnav-tab-${key}`));
+      // The first tap leaves the workflow, which asks "Save this assessment?".
+      if (i === 0) await leaveAssessment();
       await waitFor(() => {
         expect(screen.queryByText("Screening Workflow")).not.toBeInTheDocument();
       });

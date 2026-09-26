@@ -2,7 +2,7 @@ import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
-import { AiExtractedPanel } from "./OrthoOldDataPicker.jsx";
+import { AiExtractedPanel } from "./OrthoAiExtractedPanel.jsx";
 
 // AI text/voice intake for Subjective -- lazy-loaded since most sessions
 // won't open it, and it pulls in its own fetch/speech-recognition logic.

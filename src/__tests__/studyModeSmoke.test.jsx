@@ -5,11 +5,11 @@
 // with a large image + all of that item's real data when a thumbnail is
 // tapped -- distinct from tapping the ROM card itself, which still opens
 // the real data-entry screen (covered by learnTabSmoke.test.jsx via the
-// full App). Rendered standalone (not through App) to isolate this from
+// full App -- as of 2026-09-19 tapping a studyable row opens study mode too). Rendered standalone (not through App) to isolate this from
 // the rest of the app shell.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import LearnTabEntry from "../physiofeed/LearnTabEntry.jsx";
 
 describe("Learn tab — Study mode", () => {
@@ -17,17 +17,17 @@ describe("Learn tab — Study mode", () => {
     const onNav = vi.fn();
     render(<LearnTabEntry onNav={onNav} />);
 
-    expect(screen.getByText("Assessment Library")).toBeTruthy();
+    // Learn opens on a home grid of cards (2026-09-18 redesign); the
+    // assessment list now lives behind "Practical Skills".
+    fireEvent.click(screen.getByText("Practical Skills"));
+    expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();
 
-    // ROM/MMT/Special/Neuro (Assessment Library) plus, as of 2026-08-19,
-    // Outcome Measures (Assessment Library) and Kinetic Chain/Functional
-    // Movement (Advanced Assessment) all get a "Study mode" button -- 7
-    // total. ROM is the first of those seven in display order
-    // (Demographics/Subjective/Posture/Observation/Palpation come first
-    // but aren't studyable) -- so the first match is still ROM's.
-    const studyBtns = screen.getAllByText(/study mode/i);
-    expect(studyBtns.length).toBe(7);
-    fireEvent.click(studyBtns[0]);
+    // Every item with real per-item data (palpation, ROM, MMT, special,
+    // neuro, outcome, cardio, functional movement, kinetic chain, CPA) gets
+    // its own "Study" pill -- 10 in total. Tap ROM's.
+    expect(screen.getAllByRole("button", { name: /^Study$/ }).length).toBe(10);
+    const romRow = screen.getByText("ROM").closest("button").parentElement;
+    fireEvent.click(within(romRow).getByRole("button", { name: /^Study$/ }));
 
     // Grid overview: real ROM region pills + square thumbnails, each
     // exposing an accessible "Open <name>" label. Tapping the card never
@@ -46,8 +46,12 @@ describe("Learn tab — Study mode", () => {
     fireEvent.click(thumbnails[0]);
     await waitFor(() => {
       expect(screen.getByText("Back")).toBeTruthy();
-      expect(screen.getByText(/goniometer placement/i)).toBeTruthy();
+      expect(screen.getByText(/• Range of motion/)).toBeTruthy();
     });
+    // The detail page is split into Learn / Technique / Video / Quiz tabs
+    // (2026-09 redesign); goniometer placement lives on Technique.
+    fireEvent.click(screen.getByRole("button", { name: "Technique" }));
+    expect(screen.getByText(/goniometer placement/i)).toBeTruthy();
 
     // Back returns to the grid, not all the way out to Learn.
     fireEvent.click(screen.getByText("Back"));

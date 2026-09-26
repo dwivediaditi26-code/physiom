@@ -14,6 +14,14 @@
 // the behaviour that makes verification a strict improvement layer
 // instead of a new single point of failure.
 import { describe, test, expect, vi, beforeEach } from "vitest";
+
+// The handler now sits behind a login + rate-limit gate (54fb101). That gate
+// is not what this file tests, so let every request through as a signed-in
+// user and keep global.fetch counting only the Groq calls.
+vi.mock("../../api/_lib/rateLimit.js", () => ({
+  authenticateAndRateLimit: vi.fn(async () => "test-user"),
+}));
+
 import handler from "../../api/parse.js";
 
 function mockReqRes(body) {

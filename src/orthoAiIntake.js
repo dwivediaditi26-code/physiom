@@ -110,9 +110,7 @@ export function mapParseResultToOrthoUpdates(result = {}) {
   if (result.chiefComplaint) subjective.chiefComplaint = result.chiefComplaint;
   // SelectField (orthoFieldKit.jsx) is a free-text input with a suggestion
   // popover, not a locked enum -- so onset's own fixed option list doesn't
-  // block writing the AI's specific mechanism string here, same as this
-  // wizard's own "Load from old Subjective Assessment" import already does
-  // with the old flow's free-text onset. onsetContext (hedged/uncertain
+  // block writing the AI's specific mechanism string here. onsetContext (hedged/uncertain
   // cause) only exists when onset itself is a vague fallback like "Gradual
   // — insidious", so appending it keeps that nuance instead of losing it.
   if (result.onset) subjective.onset = result.onset + (result.onsetContext ? ` — ${result.onsetContext}` : "");
@@ -135,9 +133,8 @@ export function mapParseResultToOrthoUpdates(result = {}) {
 
   // Aggravating/relieving factors have no dedicated field in this wizard's
   // top-level Subjective (only inside each region's own checklist, which
-  // this mapper deliberately never guesses at -- see the old-flow-import
-  // comment on why silently picking the wrong region's field is worse than
-  // not filling it). "Functional limitations" is the closest fit already
+  // this mapper deliberately never guesses at -- silently picking the wrong
+  // region's field is worse than not filling it). "Functional limitations" is the closest fit already
   // reviewed by the clinician before Apply, since aggravating/relieving
   // factors are exactly what's driving those limitations day to day.
   const functionalParts = [];
@@ -269,53 +266,6 @@ export function mapParseResultToOrthoUpdates(result = {}) {
   };
 }
 
-// ── Import from the OLD flow's Subjective Assessment for this same patient ──
-//
-// patientData is the app's single shared per-patient `data` object -- the
-// same one SubjectiveAssessmentNew.jsx (the old flow's live Subjective
-// screen) reads/writes using flat field ids (cc_main, cc_onset, ..., see
-// sharedClinicalData.js). If this patient already has an old-flow
-// Subjective Assessment on file, the new tool's AI-intake landing screen
-// offers to pull it forward instead of re-typing or re-dictating it.
-//
-// Deliberately limited to the handful of shared, unambiguous free-text/
-// single-value fields (chief complaint, onset, duration, medical history,
-// medications, goals) -- NOT the ~100+ region-prefixed structured fields
-// (lx_*/cx_*/shl_*/etc). Those use a completely different id scheme per
-// region-and-side (e.g. "Shoulder (L)" vs this tool's {id:"shoulder",
-// side:"Left"}) with no reliable 1:1 mapping, so guessing at that
-// translation risks silently importing the wrong region's data. The
-// region-specific checklist (see orthoSubjectiveRegionData.js) still gets
-// filled fresh in this tool either way.
-const OLD_FLOW_FIELD_MAP = {
-  chiefComplaint: "cc_main",
-  onset: "cc_onset",
-  duration: "cc_duration",
-  medicalHistory: "pmh_notes",
-  medication: "med_current",
-  patientGoals: "goal_main",
-};
-
-export function hasOldSubjectiveData(patientData) {
-  if (!patientData) return false;
-  return Object.values(OLD_FLOW_FIELD_MAP).some((k) => String(patientData[k] || "").trim());
-}
-
-export function importOldSubjectiveData(patientData) {
-  const subjective = {};
-  if (patientData) {
-    Object.entries(OLD_FLOW_FIELD_MAP).forEach(([newKey, oldKey]) => {
-      // med_current is the old flow's multicheck field ("|||"-joined,
-      // see sharedClinicalData.js) -- every other mapped field here is
-      // already a plain single string in the old flow too.
-      const raw = String(patientData[oldKey] || "").trim();
-      const v = oldKey === "med_current" ? raw.split("|||").filter(Boolean).join(", ") : raw;
-      if (v) subjective[newKey] = v;
-    });
-  }
-  return { subjective, pain: {} };
-}
-
 /* ============================================================
    REGION RESOLUTION — /api/parse already returns the body area it
    heard ("region" + up to 2 "additionalRegions", from its own fixed
@@ -373,116 +323,4 @@ export function regionsFromParseResult(result = {}) {
     out.push({ id, side: mapped.sideless ? "" : mapped.side || laterality || "" });
   });
   return out;
-}
-
-/* ============================================================
-   OLD PATIENT DATA — every prior record on this patient that can
-   seed a new Subjective, as a real selectable list (2026-09-03,
-   Aditi: "when I click on select from old patient data it is not
-   giving me the list of old patient data to select from"). Before
-   this, the one "Load existing Subjective" button imported the
-   old-flow fields blindly with no list, no preview, and no way to
-   pick a different (e.g. more recent) record.
-
-   Sources, newest first:
-     - each saved Ortho assessment snapshot on this patient
-       (data.ortho_outpatient_assessment / _ipd_ / _postop_, the same
-       JSON-stringified snapshots SpecialtyPatientProfile.jsx reads)
-     - the old-flow Subjective Assessment (cc_main/cc_onset/... flat
-       fields), when it has anything in it
-   Each record carries its own ready-to-apply { subjective, pain }
-   payload plus preview rows, so the picker never has to know how any
-   one source is shaped.
-   ============================================================ */
-const SNAPSHOT_SOURCES = [
-  { key: "ortho_outpatient_assessment", label: "Outpatient / Musculoskeletal assessment", icon: "🚶" },
-  { key: "ortho_ipd_assessment", label: "IPD assessment", icon: "🏥" },
-  { key: "ortho_postop_assessment", label: "Post-operative Rehab assessment", icon: "🛏️" },
-];
-
-const SUBJECTIVE_PREVIEW_LABELS = {
-  chiefComplaint: "Chief complaint",
-  onset: "Onset",
-  duration: "Duration",
-  previousTreatment: "Previous treatment",
-  medicalHistory: "Medical history",
-  medication: "Medication",
-  functionalLimitations: "Functional limitations",
-  patientGoals: "Patient goals",
-};
-
-function previewRows(subjective = {}, pain = {}) {
-  const rows = Object.entries(SUBJECTIVE_PREVIEW_LABELS)
-    .filter(([k]) => String(subjective[k] || "").trim())
-    .map(([k, label]) => ({ label, value: String(subjective[k]) }));
-  if (pain.current) rows.push({ label: "Pain (NRS now)", value: String(pain.current) });
-  return rows;
-}
-
-function formatSavedAt(raw) {
-  if (!raw) return "";
-  const dt = new Date(raw);
-  if (Number.isNaN(dt.getTime())) return "";
-  return dt.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
-export function listOldPatientRecords(patientData) {
-  if (!patientData) return [];
-  const records = [];
-
-  SNAPSHOT_SOURCES.forEach((src) => {
-    let parsed = null;
-    try { parsed = patientData[src.key] ? JSON.parse(patientData[src.key]) : null; } catch { parsed = null; }
-    const subjective = parsed?.data?.subjective || null;
-    const pain = parsed?.data?.pain || {};
-    if (!subjective) return;
-    // Region-specific checklist answers travel with the record too, but
-    // only as part of a whole-record import -- never re-keyed onto a
-    // different region (same reason the old-flow import below stays
-    // limited to the shared, unambiguous fields).
-    const flat = Object.fromEntries(Object.entries(subjective).filter(([k, v]) => k !== "regions" && !k.startsWith("__") && typeof v === "string" && v.trim()));
-    if (!Object.keys(flat).length && !Object.keys(pain).length) return;
-    const savedAt = formatSavedAt(parsed?.savedAt || parsed?.date || parsed?.updatedAt);
-    records.push({
-      id: src.key,
-      icon: src.icon,
-      label: src.label,
-      sublabel: [savedAt && `Saved ${savedAt}`, parsed?.regions, parsed?.condition].filter(Boolean).join(" · "),
-      subjective: flat,
-      pain: typeof pain === "object" ? pain : {},
-      regionChecklist: subjective.regions && typeof subjective.regions === "object" ? subjective.regions : null,
-      // The case-level region selection this assessment was run with --
-      // saved verbatim by each pathway's saveAssessment, so importing an
-      // old record can pre-tick the same regions instead of asking again.
-      caseRegions: Array.isArray(parsed?.selectedRegions) ? parsed.selectedRegions : [],
-      rows: previewRows(flat, pain),
-    });
-  });
-
-  if (hasOldSubjectiveData(patientData)) {
-    const { subjective } = importOldSubjectiveData(patientData);
-    records.push({
-      id: "old_flow_subjective",
-      icon: "📋",
-      label: "Subjective Assessment (earlier flow)",
-      sublabel: "Chief complaint, history, medication and goals already on file",
-      subjective,
-      pain: {},
-      regionChecklist: null,
-      caseRegions: [],
-      rows: previewRows(subjective),
-    });
-  }
-
-  return records.filter((r) => r.rows.length > 0);
-}
-
-// The { subjective, pain } payload for one record from listOldPatientRecords
-// -- same shape mapParseResultToOrthoUpdates returns, so both paths merge
-// through the exact same caller-side code.
-export function updatesFromOldRecord(record) {
-  if (!record) return { subjective: {}, pain: {}, regions: [] };
-  const subjective = { ...record.subjective };
-  if (record.regionChecklist) subjective.regions = record.regionChecklist;
-  return { subjective, pain: { ...record.pain }, regions: record.caseRegions || [] };
 }

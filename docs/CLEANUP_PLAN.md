@@ -11,10 +11,12 @@
 - Old unused code removed.
 - GitHub's automatic Android build and checks work again.
 - Main folder tidied and a guide added (`README.md`).
+- All 58 broken automatic checks updated to match today's screens; GitHub now runs every check on each change (the "Checks" job).
+- Leftover code behind the removed "Select from old patient data" button deleted.
 
 **Next, in this order:**
 
-1. **Update the 58 old automatic checks** and make GitHub run them on every change. This comes first because the checks catch mistakes during steps 2 and 5.
+1. ~~**Update the 58 old automatic checks** and make GitHub run them on every change.~~ Done.
 2. **Merge copy-pasted code** (form boxes, voice input, photo upload) into one shared version each.
 3. **Small phone-app settings**: app version number for the Play Store, backup setting for patient data, offline support inside the app.
 4. **Set up the iPhone build** on GitHub.
@@ -31,14 +33,19 @@
 | Compare screen removed (your call); 2b + a wider scan of unused code inside live files (~3,600 lines) | `39c221b` |
 | CI on Node 24: `npm ci` works again (Android build + the nightly AI check were failing on it) | `1a2b2e4` |
 | Real app icon + splash for Android and iOS (source: `assets/logo.png`) | `3c894d2` |
-| Section 3 root tidy-up + `README.md`; `vercel.json` build command simplified (the Vite plugin already stamps `sw.js`) | this commit, "Tidy the repo root" |
+| Section 3 root tidy-up + `README.md`; `vercel.json` build command simplified (the Vite plugin already stamps `sw.js`) | `4bb6664` |
+| Step 1: the 58 stale checks updated to the current screens (see below); new "Checks" GitHub job runs typecheck + all tests on every push/PR; the "old patient data" list (`OrthoOldDataPicker`, `listOldPatientRecords`, old-flow import), unreachable since `b7fe240`, removed | this commit, "Bring the automatic checks up to date" |
+
+What changed in the checks, in short: Home, Learn, Clinical (Today / Assess / Patients / Treatment), the New Assessment quick form and the Objective page's topic tabs were all redesigned in August–September, and the checks still looked for the old buttons and titles. They now follow the same taps a clinician makes today; the shared steps live in `src/__tests__/clinicalFlow.js`. PhysioFeed checks now expect the intended "signed-in failures show an error instead of faking success" behaviour (P7/P9), `/api/parse` checks go through its new login gate, and one check that printed after finishing (and made the whole run look failed) was fixed. Result: 1,193 pass, 0 fail.
+
+Still marked "skipped" on purpose (16): 15 cover the AI chat's "Fill patient record" button you hid from students on 2026-07-30 (kept in case it comes back), and 1 tracks a known engine bug in the older Subjective analysis (region names with L/R don't match, see `lumbarReviewRunAnalysis.test.jsx`).
 
 `ConditionObjectiveAssessment.jsx` was skipped throughout because another session is working in it.
 
 Rules for carrying out the rest:
 
 - Before step 1: create the safety branch `cleanup/before-architecture-cleanup` at the current `main` and push it.
-- One small commit per step. Each commit must pass `npm run build`, `npm run typecheck` and `npx vitest run` with no **new** failures (the 58 known failures are listed in the audit).
+- One small commit per step. Each commit must pass `npm run build`, `npm run typecheck` and `npx vitest run` (all green since step 1; GitHub's "Checks" job shows it on every push).
 - If a claim below turns out to be wrong while doing it (something *is* used), stop and keep the file.
 - Never touch the uncommitted work of a parallel session. **`src/AppFull.jsx` changes need explicit permission.**
 

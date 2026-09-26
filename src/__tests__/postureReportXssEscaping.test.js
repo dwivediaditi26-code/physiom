@@ -27,6 +27,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const src = readFileSync(resolve(process.cwd(), "src/PostureEngine.jsx"), "utf-8");
+// Same source with comments stripped, for "this must not appear in code"
+// checks -- a comment that explains the old d.patient block is not a leak.
+const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 describe("PostureEngine.jsx report generator — patient/clinician free text is HTML-escaped before it reaches the printable report", () => {
   test("defines an HTML-escaping helper that covers the 5 dangerous characters", () => {
@@ -66,7 +69,7 @@ describe("PostureEngine.jsx report generator — patient/clinician free text is 
     expect(dBlock).not.toMatch(/patientInfo\.age/);
     expect(dBlock).not.toMatch(/patientInfo\.sex/);
     // ...and the report body must not print a patient block either.
-    expect(src).not.toMatch(/d\.patient\./);
+    expect(code).not.toMatch(/d\.patient\./);
   });
 
   test("patient name is gone from the report entirely, and the occupation that remains is escaped", () => {

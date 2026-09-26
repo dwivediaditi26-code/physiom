@@ -1,0 +1,55 @@
+name: Checks
+
+# Runs the app's automatic checks on every change to main and every pull
+# request, so a change that breaks something shows a red cross on GitHub
+# before (or right as) it goes live:
+#   - typecheck: catches obvious code mistakes (wrong names, bad imports)
+#   - tests:     the ~1,200 Vitest checks in src/__tests__/ (same as
+#                `npm test` on your computer)
+#
+# The tests never touch the real Supabase project -- every test that needs
+# it uses the mock in src/__mocks__/supabase.js -- so no secrets are needed.
+# Building the app itself is already covered by Vercel and by the Android
+# build workflow, so it isn't repeated here.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'supabase/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'supabase/**'
+  workflow_dispatch: {}
+
+# A newer push to the same branch cancels the older, now-pointless run.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 ships npm 11, which the committed package-lock.json needs
+      # (npm 10 rejects it -- see the note in android-build.yml).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test

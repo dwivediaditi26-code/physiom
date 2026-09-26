@@ -42,6 +42,12 @@ if (!window.matchMedia) {
 // jsdom doesn't implement scrollTo / IntersectionObserver / ResizeObserver,
 // which several UI components in this app call defensively.
 window.scrollTo = window.scrollTo || (() => {});
+// Same for elements: tab strips call el.scrollTo(...) / el.scrollIntoView(...)
+// to bring the active tab into view. Without these, every test rendering
+// such a strip crashed ("track.scrollTo is not a function").
+Element.prototype.scrollTo = Element.prototype.scrollTo || function () {};
+Element.prototype.scrollBy = Element.prototype.scrollBy || function () {};
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || function () {};
 global.IntersectionObserver = global.IntersectionObserver || class {
   observe() {} unobserve() {} disconnect() {}
 };

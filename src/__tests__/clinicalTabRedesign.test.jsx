@@ -1,17 +1,16 @@
 // clinicalTabRedesign.test.jsx
 // Regression coverage for the Clinical tab redesign: tapping "Clinical" in
-// the bottom nav must land on the patient list + specialty picker instead
-// of jumping straight into an empty Subjective wizard with no patient
-// loaded, and "+ New Assessment" must ask which specialty (Ortho/Neuro/
-// Sports/Pedia/Cardio) before creating the patient.
-import React from "react";
+// the bottom nav must land on the Clinical hub (Today / Assess / Patients /
+// Treatment) instead of jumping straight into an empty Subjective wizard
+// with no patient loaded, and "+ New Assessment" must ask a few quick
+// details and then which specialty before opening that specialty's tool.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup, waitFor, within } from "@testing-library/react";
+import { screen, fireEvent, cleanup } from "@testing-library/react";
 
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 
-import App from "../App.jsx";
 import { supabase } from "../supabase.js";
+import { renderLoggedIn, openClinical, openSubTab, openSpecialtyStep } from "./clinicalFlow.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -22,69 +21,50 @@ beforeEach(() => {
   });
 });
 
-async function renderLoggedIn() {
-  render(<App />);
-  await waitFor(() => {
-    expect(document.body.textContent).toMatch(/Hello, Dr\s*student/i);
-  });
-}
-
 describe("Clinical tab — patient list + specialty picker", () => {
-  it("tapping Clinical opens the patient database panel, not the empty Subjective wizard", async () => {
+  it("tapping Clinical opens the Clinical hub, not the empty Subjective wizard, and Patients shows the list", async () => {
     await renderLoggedIn();
-    fireEvent.click(screen.getByText("Clinical"));
-    expect(await screen.findByPlaceholderText("Search patients…")).toBeInTheDocument();
+    await openClinical();
     // The old behaviour landed on Subjective step 2 with no patient loaded --
     // that specific "no patient" wizard heading must not be what's shown.
     expect(screen.queryByText(/No patient loaded/i)).not.toBeInTheDocument();
+    openSubTab("Patients");
+    expect(await screen.findByTestId("clinical-panel")).toBeInTheDocument();
+    // Search is tucked behind the magnifier button.
+    fireEvent.click(screen.getByTitle("Search"));
+    expect(screen.getByPlaceholderText("Search patients…")).toBeInTheDocument();
   });
 
-  it("+ New Assessment opens the specialty picker (Ortho/Neuro live, others marked SOON)", async () => {
+  it("+ New Assessment asks the quick details, then offers Ortho/Neuro/Cardio live and Sports as SOON", async () => {
     await renderLoggedIn();
-    fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByPlaceholderText("Search patients…");
-    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
-    // so the default "Patients" sub-tab shows only the patient list.
-    fireEvent.click(screen.getByText("📋 Assessment"));
-    fireEvent.click(screen.getByText("＋ New Assessment"));
-    const picker = within(await screen.findByTestId("specialty-picker-modal"));
-    expect(picker.getByText("New assessment")).toBeInTheDocument();
-    expect(picker.getByText("Ortho")).toBeInTheDocument();
-    expect(picker.getByText("Neuro")).toBeInTheDocument();
-    const soonBadges = picker.getAllByText("SOON");
-    expect(soonBadges.length).toBe(3); // Sports, Pedia, Cardio
+    await openClinical();
+    const modal = await openSpecialtyStep();
+    expect(modal.getByText("Ortho")).toBeInTheDocument();
+    expect(modal.getByText("Neuro")).toBeInTheDocument();
+    expect(modal.getByText("Cardio")).toBeInTheDocument();
+    expect(modal.getByText("Sports")).toBeInTheDocument();
+    expect(modal.getAllByText("SOON")).toHaveLength(1); // Sports
   });
 
-  it("picking Ortho in the specialty picker lands on the real full-page Demographics step, not a floating popup", async () => {
+  it("picking Ortho closes the picker and opens the real Ortho assessment (pathway step), not a floating popup", async () => {
     await renderLoggedIn();
-    fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByPlaceholderText("Search patients…");
-    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
-    // so the default "Patients" sub-tab shows only the patient list.
-    fireEvent.click(screen.getByText("📋 Assessment"));
-    fireEvent.click(screen.getByText("＋ New Assessment"));
-    const picker = within(await screen.findByTestId("specialty-picker-modal"));
-    fireEvent.click(picker.getByText("Ortho"));
+    await openClinical();
+    const modal = await openSpecialtyStep();
+    fireEvent.click(modal.getByText("Ortho"));
     // No floating modal of any kind -- a real page in the normal tab flow.
     expect(screen.queryByTestId("intake-modal")).not.toBeInTheDocument();
     expect(screen.queryByTestId("specialty-picker-modal")).not.toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /Create Patient & Continue/i })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("e.g. Riya Sharma")).toBeInTheDocument(); // Full Name field, blank
+    expect(await screen.findByText("Which pathway is this assessment for?")).toBeInTheDocument();
   });
 
   it("picking a SOON specialty (Sports) does not close the picker or create a patient", async () => {
     await renderLoggedIn();
-    fireEvent.click(screen.getByText("Clinical"));
-    await screen.findByPlaceholderText("Search patients…");
-    // "+ New Assessment" moved to its own "Assessment" sub-tab (2026-08-23)
-    // so the default "Patients" sub-tab shows only the patient list.
-    fireEvent.click(screen.getByText("📋 Assessment"));
-    fireEvent.click(screen.getByText("＋ New Assessment"));
-    const picker = within(await screen.findByTestId("specialty-picker-modal"));
-    fireEvent.click(picker.getByText("Sports"));
+    await openClinical();
+    const modal = await openSpecialtyStep();
+    fireEvent.click(modal.getByText("Sports"));
     // Still on the picker -- Sports isn't live yet, nothing should happen.
     expect(screen.getByTestId("specialty-picker-modal")).toBeInTheDocument();
-    expect(screen.getByText("New assessment")).toBeInTheDocument();
+    expect(screen.getByText("Which specialty?")).toBeInTheDocument();
     expect(screen.queryByTestId("intake-modal")).not.toBeInTheDocument();
   });
 });

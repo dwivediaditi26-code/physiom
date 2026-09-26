@@ -1,9 +1,8 @@
 // learnTabSmoke.test.jsx
-// Smoke test for the new Learn tab (real assessment library grid, built
-// from physiom's own ALL_TESTS labels -- no fabricated categories). Confirms
-// it renders, search filters the grid, and tapping a real card (ROM) calls
-// the real navTo("rom") -- lands on the exact same screen the desktop
-// sidebar's "Range of Motion" link already opens.
+// Smoke test for the Learn tab (home card grid, then the Practical Skills
+// list built from physiom's own ALL_TESTS labels -- no fabricated
+// categories). Confirms it renders, search filters the list, and tapping a
+// row with no study mode (Exercise Prescription) opens the real screen.
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
@@ -30,16 +29,18 @@ describe("Learn tab", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Learn").length).toBeGreaterThan(0);
     }, { timeout: 10_000 });
-    const learnTab = screen.getAllByText("Learn").find(el => el.closest("button"));
-    fireEvent.click(learnTab);
+    fireEvent.click(screen.getByTestId("bnav-tab-learn"));
 
+    // Learn opens on a home grid of cards (2026-09-18 redesign). Only
+    // Practical Skills and Clinical Learning have content; the rest say Soon.
     await waitFor(() => {
-      expect(screen.getByText("Assessment Library")).toBeTruthy();
+      expect(screen.getByText("Practical Skills")).toBeTruthy();
     }, { timeout: 10_000 });
-    // "Advanced Assessment" also matches the desktop sidebar's own group
-    // header (same dual-render pattern as elsewhere in this app) -- use
-    // getAllByText rather than getByText, which throws on multiple matches.
-    expect(screen.getAllByText("Advanced Assessment").length).toBeGreaterThan(0);
+    expect(screen.getByText("Clinical Learning")).toBeTruthy();
+    expect(screen.getByText("Exam Ready").closest("button").disabled).toBe(true);
+
+    fireEvent.click(screen.getByText("Practical Skills"));
+    expect(screen.getByRole("heading", { name: "Practical Skills" })).toBeTruthy();
     // Treatment and Tx Techniques cards (and the "Observation" card) were
     // removed from Learn (2026-09-02, Aditi: "remove the technique or
     // treatment section from learn and also observation ... let the
@@ -47,29 +48,28 @@ describe("Learn tab", () => {
     // own section instead of sharing "Treatment & Exercise".
     expect(screen.queryByText("Treatment & Exercise")).toBeNull();
     // "Observation" itself also matches the always-present desktop sidebar
-    // (dual-render pattern, same as "Advanced Assessment" above) -- its
-    // Learn card's unique description text is the reliable signal instead.
+    // (dual-render pattern) -- its old Learn card's unique description text
+    // is the reliable signal instead.
     expect(screen.queryByText("Visual inspection")).toBeNull();
-    expect(screen.getAllByText("Exercise Prescription").length).toBeGreaterThan(0);
+    expect(screen.getByText("Tissue assessment")).toBeTruthy(); // Palpation row
+    expect(screen.getByText("Joint-by-joint")).toBeTruthy();    // Kinetic Chain row
 
-    // Search narrows the grid down to a real match. Note: "Demographics"
-    // also exists in the always-present real desktop sidebar (separate
-    // component, unaffected by this local search state), so this only
-    // checks that the search term's own match still shows -- not that
-    // every other label vanishes app-wide.
-    const search = screen.getByPlaceholderText(/search assessments/i);
-    fireEvent.change(search, { target: { value: "gait" } });
+    // Search narrows the list to real matches. Checked by each row's own
+    // description text, since labels like "Palpation" also appear in the
+    // always-present desktop sidebar.
+    const search = screen.getByPlaceholderText(/search topics/i);
+    fireEvent.change(search, { target: { value: "kinetic" } });
     await waitFor(() => {
-      expect(screen.getByText("Gait Analysis")).toBeTruthy();
+      expect(screen.queryByText("Tissue assessment")).toBeNull();
     }, { timeout: 5_000 });
+    expect(screen.getByText("Joint-by-joint")).toBeTruthy();
 
-    // Clear the search, then tap ROM -- should land on the real ROM screen
-    // (same one the desktop sidebar's "Range of Motion" link opens).
+    // Clear the search, then tap Exercise Prescription -- it has no study
+    // mode, so it opens the real Exercise Prescription screen.
     fireEvent.change(search, { target: { value: "" } });
-    const romCards = await waitFor(() => screen.getAllByText("ROM"), { timeout: 5_000 });
-    fireEvent.click(romCards[0]);
+    fireEvent.click(await screen.findByText("Treatment plan"));
     await waitFor(() => {
-      expect(screen.getAllByText(/Range of Motion/i).length).toBeGreaterThan(0);
+      expect(screen.getByText("Protocols & Templates")).toBeTruthy();
     }, { timeout: 10_000 });
   }, 20_000);
 });

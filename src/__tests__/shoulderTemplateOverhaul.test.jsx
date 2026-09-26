@@ -21,8 +21,18 @@ import { ExercisePrescriptionModule } from "../ClinicalModules.jsx";
 describe("Shoulder template data integrity", () => {
   const shoulderKeys = Object.entries(PROGRAMME_TEMPLATES).filter(([,t]) => t.region === "Shoulder").map(([k]) => k);
 
-  it("has 11 shoulder templates (up from the original 3)", () => {
-    expect(shoulderKeys.length).toBe(11);
+  // The 11 templates from this overhaul. Surgical-protocol phases added
+  // later (e.g. tsa_phase1-4, rsa_phase1-4) are extra, so check these 11
+  // are all still here rather than an exact total.
+  const OVERHAUL_KEYS = [
+    "shoulder_imp", "frozen_shoulder_freezing", "frozen_shoulder_frozen", "frozen_shoulder_thawing",
+    "rct_conservative", "rct_postop_protected", "rct_postop_active", "rct_postop_strength",
+    "shoulder_instability", "ac_joint", "slap_conservative",
+  ];
+
+  it("keeps all 11 overhaul shoulder templates (up from the original 3)", () => {
+    expect(OVERHAUL_KEYS.filter(k => !shoulderKeys.includes(k))).toEqual([]);
+    expect(shoulderKeys.length).toBeGreaterThanOrEqual(11);
   });
 
   it("old ambiguous frozen_shoulder and rct_tear keys no longer exist", () => {
@@ -40,8 +50,8 @@ describe("Shoulder template data integrity", () => {
     expect(failures).toEqual([]);
   });
 
-  it("every shoulder template has a matching TEMPLATE_TX entry", () => {
-    const failures = shoulderKeys.filter(key => !TEMPLATE_TX[key]);
+  it("every overhaul shoulder template has a matching TEMPLATE_TX entry", () => {
+    const failures = OVERHAUL_KEYS.filter(key => !TEMPLATE_TX[key]);
     expect(failures).toEqual([]);
   });
 

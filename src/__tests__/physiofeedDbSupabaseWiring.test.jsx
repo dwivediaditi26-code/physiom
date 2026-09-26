@@ -100,7 +100,10 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(p.likes).toBe(2);
     expect(p.liked).toBe(true); // u-me is in post_likes
     expect(p.saved).toBe(true);
-    expect(p.commentList).toEqual([{ id: "1", author: "Dr Author", text: "Nice work", isSelf: false }]);
+    // Comments carry more fields now (author id/avatar, replies, case
+    // updates), so check the core ones rather than the exact object.
+    expect(p.commentList).toHaveLength(1);
+    expect(p.commentList[0]).toMatchObject({ id: "1", author: "Dr Author", text: "Nice work", isSelf: false });
     expect(p.time).toMatch(/^\d+h$/);
   });
 
@@ -216,18 +219,31 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(Array.isArray(posts)).toBe(true);
   });
 
-  it("deleteComment() falls back to a local mock removal without throwing when the real delete fails", async () => {
+  // P7 (2026-09-22): the local fallback is guest mode only. A signed-in
+  // user whose delete fails now gets the error instead of a fake success.
+  it("deleteComment() surfaces a failed real delete for a signed-in user instead of faking it", async () => {
     currentUser = { id: "u-me" };
     setTable("posts", { data: [], error: null });
     setTable("comments", { data: null, error: { message: "not found" } });
+    await expect(db.deleteComment("p_any", "c_nonexistent")).rejects.toMatchObject({ message: "not found" });
+  });
+
+  it("deleteComment() in guest mode removes the comment from the local demo feed without throwing", async () => {
+    currentUser = null;
+    setTable("posts", { data: [], error: null });
     const posts = await db.deleteComment("p_nonexistent_demo_post_for_comment_delete_test", "c_nonexistent");
     expect(Array.isArray(posts)).toBe(true);
   });
 
-  it("toggleLike() on a demo post (not in the real table) falls back to the local mock toggle without throwing", async () => {
+  it("toggleLike() surfaces a failed like for a signed-in user instead of flipping the heart anyway (P7)", async () => {
     currentUser = { id: "u-me" };
-    setTable("posts", { data: [], error: null }); // keeps getPosts() on the demo feed
     setTable("post_likes", { data: null, error: { message: "insert or update on table violates foreign key constraint" } });
+    await expect(db.toggleLike("p1")).rejects.toMatchObject({ message: /foreign key/ });
+  });
+
+  it("toggleLike() in guest mode flips the like on a demo post locally", async () => {
+    currentUser = null;
+    setTable("posts", { data: [], error: null }); // keeps getPosts() on the demo feed
 
     const before = (await db.getPosts()).find((p) => p.id === "p1");
     await db.toggleLike("p1");
@@ -258,7 +274,9 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(people[0]).toHaveProperty("mutual");
   });
 
-  it("getPeople() maps real profiles + follows and keeps demo people alongside them", async () => {
+  // P9 (2026-09-22): signed in, you see only real clinicians -- the demo
+  // people are for guest mode, which has no real network to show.
+  it("getPeople() maps real profiles + follows, and shows only real people when signed in", async () => {
     currentUser = { id: "u-me" };
     setTable("profiles", { data: [{ id: "u-other", name: "Dr Other", role: "PT", location: "Pune", gradient: "blue" }], error: null });
     setTable("follows", { data: [{ following_id: "u-other" }], error: null });
@@ -267,7 +285,14 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(real).toBeTruthy();
     expect(real.following).toBe(true);
     expect(real.location).toBe("Pune");
-    // demo people (u-priya etc.) still present
+    expect(people.some((p) => p.id === "u-priya")).toBe(false);
+  });
+
+  it("getPeople() in guest mode keeps the demo people alongside any real profiles", async () => {
+    currentUser = null;
+    setTable("profiles", { data: [{ id: "u-other", name: "Dr Other", role: "PT", location: "Pune", gradient: "blue" }], error: null });
+    const people = await db.getPeople();
+    expect(people.some((p) => p.id === "u-other")).toBe(true);
     expect(people.some((p) => p.id === "u-priya")).toBe(true);
   });
 
@@ -283,10 +308,15 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(real.avatarUrl).toBe("https://fake.test/storage/profile-images/u-other/photo.jpg");
   });
 
-  it("toggleFollowPerson() on a demo person falls back to the local mock toggle", async () => {
+  it("toggleFollowPerson() surfaces a failed follow for a signed-in user instead of faking it (P9)", async () => {
     currentUser = { id: "u-me" };
-    setTable("profiles", { data: [], error: null });
     setTable("follows", { data: null, error: { message: "foreign key violation" } });
+    await expect(db.toggleFollowPerson("u-other")).rejects.toMatchObject({ message: "foreign key violation" });
+  });
+
+  it("toggleFollowPerson() in guest mode flips following on a demo person locally", async () => {
+    currentUser = null;
+    setTable("profiles", { data: [], error: null });
     const before = (await db.getPeople()).find((p) => p.id === "u-priya");
     const after = (await db.toggleFollowPerson("u-priya")).find((p) => p.id === "u-priya");
     expect(after.following).toBe(!before.following);

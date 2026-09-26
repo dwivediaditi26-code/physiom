@@ -33,28 +33,18 @@ describe("Guest Mode -- real app, no login wall on entry", () => {
   it("renders the real app (Home screen), not the scripted demo or the login form", async () => {
     await enterGuestMode();
     expect(screen.queryByText(/Welcome back/i)).not.toBeInTheDocument();
-    // HomeModule's Quick Start grid is real-app content, not the walkthrough
-    expect(screen.getByText("New Patient")).toBeInTheDocument();
+    // Home's main tiles (2026-08-25 redesign) are real-app content, not the walkthrough
+    expect(screen.getByTestId("home-tile-clinical")).toBeInTheDocument();
     expect(screen.getByText(/Guest mode/i)).toBeInTheDocument();
   });
 
-  it("Home's 'Patient Intake' quick action opens the Subjective form for a guest with no sign-in gate", async () => {
-    // 2026-08-19: the Subjective tab now renders the new simplified design
-    // (SubjectiveAssessmentNew.jsx), which has no AI-triggering action at
-    // all (its own demo-only "AI Extracted" fill button only exists when
-    // NOT connected to a real patient -- see that file). The old
-    // SubjectiveModule's requireAuth("AI Patient Intake") gate lived
-    // entirely inside that removed AI panel, so there's nothing left here
-    // for a guest to be gated on -- "Patient Intake" now behaves like any
-    // other ordinary navigation for guests, same as "Assess Patient" below.
-    // Real AI gating for guests is still covered separately -- AIAssistant
-    // ("Clinical Assistant" quick action) keeps its own requireAuth check
-    // untouched by this change.
+  it("Home's Assessment tile opens Clinical's Assess tab for a guest with no sign-in gate", async () => {
+    // Starting a manual assessment is ordinary navigation -- only the
+    // AI-backed features (which need a real Supabase login server-side)
+    // show the "Sign in to use" prompt for a guest.
     await enterGuestMode();
-    fireEvent.click(screen.getByText("Patient Intake"));
-    await waitFor(() => {
-      expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByTestId("home-tile-assessment"));
+    expect(await screen.findByText(/New Assessment/)).toBeInTheDocument();
     expect(screen.queryByText(/Sign in to use/i)).not.toBeInTheDocument();
   });
 
@@ -68,14 +58,9 @@ describe("Guest Mode -- real app, no login wall on entry", () => {
 
   it("non-AI navigation works normally for a guest -- no prompt on an ordinary nav click", async () => {
     await enterGuestMode();
-    fireEvent.click(screen.getByText("Assess Patient")); // Quick Start -> subjective, no AI
-    // "Subjective Assessment" also appears as a nav-item label regardless
-    // of which screen is active, so assert on content unique to the
-    // rendered Subjective screen itself.
-    // (2026-08-19: new design's header text, was "History & Complaint".)
-    await waitFor(() => {
-      expect(screen.getByText("History & Patient Report")).toBeInTheDocument();
-    });
+    fireEvent.click(screen.getByTestId("home-tile-clinical"));
+    // Clinical opens on its "Today" view (2026-09-10 redesign).
+    expect(await screen.findByText(/\d+ patients? today/)).toBeInTheDocument();
     expect(screen.queryByText(/Sign in to use/i)).not.toBeInTheDocument();
   });
 });
