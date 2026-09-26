@@ -48,10 +48,27 @@ export default function OrthoAIIntakePanel({ onApply, requireAuth, defaultOpen }
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = "en-IN";
+    // Summing e.results[0..length] on every event (the old code) double-
+    // counts on a long dictation: continuous mode periodically re-segments
+    // and the browser/webview can hand back already-finalized entries again
+    // alongside new ones, so re-flattening the whole array each time
+    // re-appends old text on top of itself -- "I have I have a I have a
+    // serious..." (2026-09-25, Aditi, speaking the Subjective narrative).
+    // `finalTranscript` is a plain closure variable (one per recording
+    // session, since `start`/`onresult` are recreated fresh each press) that
+    // only ever grows by appending truly-final segments starting at
+    // `e.resultIndex` -- the one index the API guarantees is where THIS
+    // event's new/changed results begin -- so older, already-committed
+    // indices are never re-summed no matter how the engine re-emits them.
+    let finalTranscript = "";
     rec.onresult = (e) => {
-      let combined = "";
-      for (let i = 0; i < e.results.length; i++) combined += e.results[i][0].transcript + " ";
-      setText(combined.trim());
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscript += transcript + " ";
+        else interim += transcript;
+      }
+      setText((finalTranscript + interim).trim());
     };
     rec.onerror = () => setStatus("idle");
     rec.onend = () => setStatus((s) => (s === "recording" ? "idle" : s));

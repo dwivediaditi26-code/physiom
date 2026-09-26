@@ -71,12 +71,17 @@ function useVoiceInput(baseValue, onChange) {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = "en-IN";
+    // See orthoFieldKit.jsx's matching useVoiceInput fix: e.resultIndex is
+    // where THIS event's new/changed results begin, so accumulating from
+    // there into a plain per-session closure variable avoids re-summing an
+    // already-committed index the engine re-emits on a long dictation
+    // (2026-09-25, Aditi: voice dictation repeating itself).
+    let finalTranscript = "";
     rec.onresult = (e) => {
-      let final = "";
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
       }
-      if (final) onChange((base + " " + final).trim());
+      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
     };
     rec.onend = () => setRecording(false);
     rec.onerror = () => setRecording(false);
