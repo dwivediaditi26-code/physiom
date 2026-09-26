@@ -148,6 +148,37 @@ export function buildCumulativeSeries(timestamps, baselineCount, since, until) {
   return series;
 }
 
+// How complete a clinician's public profile/CV is -- the fields a recruiter
+// or another clinician would actually look for, not internal bookkeeping
+// fields like `verified` or `gradient`. Picked from the same field list
+// getProfile() seeds on first login (see src/physiofeed/data/db.js).
+const PROFILE_COMPLETENESS_FIELDS = [
+  { key: 'bio', kind: 'text' },
+  { key: 'headline', kind: 'text' },
+  { key: 'clinical_title', kind: 'text' },
+  { key: 'college', kind: 'text' },
+  { key: 'experience', kind: 'text' },
+  { key: 'location', kind: 'text' },
+  { key: 'phone', kind: 'text' },
+  { key: 'skills', kind: 'array' },
+  { key: 'area_of_practice', kind: 'array' },
+  { key: 'resume_url', kind: 'text' },
+];
+
+export function computeProfileCompleteness(profile) {
+  if (!profile) return 0;
+  let filled = 0;
+  for (const f of PROFILE_COMPLETENESS_FIELDS) {
+    const v = profile[f.key];
+    if (f.kind === 'array') {
+      if (Array.isArray(v) && v.length > 0) filled++;
+    } else if (typeof v === 'string' && v.trim().length > 0) {
+      filled++;
+    }
+  }
+  return Math.round((filled / PROFILE_COMPLETENESS_FIELDS.length) * 100);
+}
+
 export function buildInsights(currentEvents, previousEvents) {
   const metrics = [
     { label: 'Workshop registrations', match: (n) => n === 'workshop_registered' },

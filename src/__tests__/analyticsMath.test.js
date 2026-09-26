@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity, buildCumulativeSeries } from "../../api/admin/_lib/analyticsMath.js";
+import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness } from "../../api/admin/_lib/analyticsMath.js";
 
 const NOW = new Date("2026-09-26T12:00:00.000Z");
 
@@ -179,5 +179,34 @@ describe("buildCumulativeSeries", () => {
       { date: "2026-09-20", total: 0 },
       { date: "2026-09-21", total: 1 },
     ]);
+  });
+});
+
+describe("computeProfileCompleteness", () => {
+  it("is 0 for a brand-new blank profile", () => {
+    const profile = { bio: "", headline: "", clinical_title: "", college: "", experience: "", location: "", phone: "", skills: [], area_of_practice: [], resume_url: null };
+    expect(computeProfileCompleteness(profile)).toBe(0);
+  });
+
+  it("counts filled text fields and non-empty arrays, ignores whitespace-only text", () => {
+    const profile = {
+      bio: "10 years in ortho rehab", headline: "", clinical_title: "  ", college: "AIIMS",
+      experience: "10 years", location: "Indore", phone: "", skills: ["manual therapy"], area_of_practice: [], resume_url: null,
+    };
+    // filled: bio, college, experience, location, skills = 5 of 10
+    expect(computeProfileCompleteness(profile)).toBe(50);
+  });
+
+  it("is 100 when every tracked field is filled", () => {
+    const profile = {
+      bio: "x", headline: "x", clinical_title: "x", college: "x", experience: "x",
+      location: "x", phone: "x", skills: ["x"], area_of_practice: ["x"], resume_url: "https://example.com/cv.pdf",
+    };
+    expect(computeProfileCompleteness(profile)).toBe(100);
+  });
+
+  it("treats a missing profile as 0% rather than throwing", () => {
+    expect(computeProfileCompleteness(null)).toBe(0);
+    expect(computeProfileCompleteness(undefined)).toBe(0);
   });
 });

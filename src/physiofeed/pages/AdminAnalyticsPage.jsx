@@ -231,6 +231,16 @@ export default function AdminAnalyticsPage() {
                       </div>
                       <span className="text-xs font-semibold text-slate-600">{u.totalPatients} patient{u.totalPatients === 1 ? "" : "s"}</span>
                     </div>
+                    <div className="flex items-center gap-4 px-4 py-2 text-xs text-slate-500 border-b border-slate-100 flex-wrap">
+                      <span>{u.totalPosts} post{u.totalPosts === 1 ? "" : "s"}</span>
+                      <span>{u.totalClinicalCases} clinical case{u.totalClinicalCases === 1 ? "" : "s"}</span>
+                      <span className="flex items-center gap-1.5">
+                        Profile {u.profileCompletionPct}% complete
+                        <span className="inline-block w-16 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                          <span className="block h-full bg-violet-500" style={{ width: `${u.profileCompletionPct}%` }} />
+                        </span>
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-100">
                       {u.days.length > 0 ? (
                         u.days.map((d) => (

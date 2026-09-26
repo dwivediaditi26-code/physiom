@@ -8,7 +8,7 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
-import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries } from './_lib/analyticsMath.js';
+import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,6 +60,7 @@ export default async function handler(req, res) {
     { data: previousEvents, error: prevErr },
     { data: patientRows, error: patientRowsErr },
     { data: profileRows, error: profileRowsErr },
+    { data: postAuthorRows, error: postAuthorRowsErr },
     // Growth chart: how many of each existed before this range started
     // (the running total's starting point)...
     { count: usersBeforeRange },
@@ -82,7 +83,10 @@ export default async function handler(req, res) {
     // below -- patients is RLS-scoped to "your own rows" so, same reasoning
     // as totalPatients above, this has to go through the service role.
     admin.from('patients').select('user_id'),
-    admin.from('profiles').select('id, name'),
+    admin.from('profiles').select('id, name, bio, headline, clinical_title, college, experience, location, phone, skills, area_of_practice, resume_url'),
+    // "post" = a regular feed post, "discussion" = a clinical case (same
+    // split used for the case_created/post_created analytics events).
+    admin.from('posts').select('author_id, post_type'),
     admin.from('profiles').select('id', { count: 'exact', head: true }).lt('created_at', since),
     admin.from('patients').select('id', { count: 'exact', head: true }).lt('created_at', since),
     admin.from('posts').select('id', { count: 'exact', head: true }).lt('created_at', since),
@@ -94,6 +98,7 @@ export default async function handler(req, res) {
   if (prevErr) return res.status(500).json({ error: prevErr.message });
   if (patientRowsErr) return res.status(500).json({ error: patientRowsErr.message });
   if (profileRowsErr) return res.status(500).json({ error: profileRowsErr.message });
+  if (postAuthorRowsErr) return res.status(500).json({ error: postAuthorRowsErr.message });
   if (usersInRangeErr) return res.status(500).json({ error: usersInRangeErr.message });
   if (patientsInRangeErr) return res.status(500).json({ error: patientsInRangeErr.message });
   if (postsInRangeErr) return res.status(500).json({ error: postsInRangeErr.message });
@@ -111,7 +116,20 @@ export default async function handler(req, res) {
     patientCountByUser[p.user_id] = (patientCountByUser[p.user_id] || 0) + 1;
   }
   const nameById = {};
-  for (const p of profileRows || []) nameById[p.id] = p.name;
+  const completenessById = {};
+  for (const p of profileRows || []) {
+    nameById[p.id] = p.name;
+    completenessById[p.id] = computeProfileCompleteness(p);
+  }
+
+  const postsCountByUser = {};
+  const casesCountByUser = {};
+  for (const row of postAuthorRows || []) {
+    if (!row.author_id) continue;
+    if (row.post_type === 'discussion') casesCountByUser[row.author_id] = (casesCountByUser[row.author_id] || 0) + 1;
+    else postsCountByUser[row.author_id] = (postsCountByUser[row.author_id] || 0) + 1;
+  }
+
   // Email lives on auth.users, not profiles -- only the service-role client
   // can read it, and only via the auth admin API (no direct table access).
   let emailById = {};
@@ -132,13 +150,21 @@ export default async function handler(req, res) {
     daysByUser.get(row.userId).push({ date: row.date, loginTimes: row.loginTimes, activeMinutes: row.activeMinutes, eventCount: row.eventCount });
   }
 
-  const allUserIds = new Set([...(profileRows || []).map((p) => p.id), ...Object.keys(patientCountByUser)]);
+  const allUserIds = new Set([
+    ...(profileRows || []).map((p) => p.id),
+    ...Object.keys(patientCountByUser),
+    ...Object.keys(postsCountByUser),
+    ...Object.keys(casesCountByUser),
+  ]);
   const userActivity = Array.from(allUserIds)
     .map((userId) => ({
       userId,
       name: nameById[userId] || 'Unknown',
       email: emailById[userId] || '',
       totalPatients: patientCountByUser[userId] || 0,
+      totalPosts: postsCountByUser[userId] || 0,
+      totalClinicalCases: casesCountByUser[userId] || 0,
+      profileCompletionPct: completenessById[userId] ?? 0,
       days: (daysByUser.get(userId) || []).sort((a, b) => (a.date < b.date ? 1 : -1)),
     }))
     .sort((a, b) => b.totalPatients - a.totalPatients);
