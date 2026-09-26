@@ -181,7 +181,12 @@ const GENERAL_BASE_IDS = BASE_IDS.filter((id) => !GENERAL_TRIMMED_IDS.includes(i
 // data") -- OrthoAssessment.jsx now collects it pre-wizard, one screen
 // before Region, and feeds it in via initialAiUpdates.demographics exactly
 // like an AI-parsed narrative already did.
-const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma"];
+// "functionalAssessment" (gait/balance/activity-tolerance tasks) dropped
+// from AI entry too (2026-09-26, Aditi: "remove this functional assessment
+// in summary") -- not the same step as "fma" above (AI Objective's own
+// per-condition Functional tab, already skipped), just also unwanted as a
+// separate pill in the AI journey's post-Objective Summary hub.
+const AI_ENTRY_SKIP_IDS = ["demographics", "redFlags", "pain", "observation", "palpation", "rom", "mmt", "specialTests", "kineticChain", "cpa", "sttt", "fma", "functionalAssessment"];
 const OPTIONAL_IDS = ["vitals", "edema", "fascia", "gait", "balance", "activityTolerance", "progress"];
 // The AI-assisted journey's "Summary" stage (5th dot) -- everything after AI
 // Objective Assessment, freely jumpable rather than forced Next-Next-Next

@@ -251,7 +251,7 @@ export function InfoButton(props) {
   const heading = richItem?.title || title;
   const openSheet = () => { setTab(availableTabs[0]?.key); setOpen(true); };
   const imgSrc = richItem?.image ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_200,h_200,c_fill/${richItem.image}` : null;
-  const sizeClass = size === "md" ? " info-img-trigger-md" : small ? " info-img-trigger-sm" : "";
+  const sizeClass = size === "lg" ? " info-img-trigger-lg" : size === "md" ? " info-img-trigger-md" : small ? " info-img-trigger-sm" : "";
   return (
     <span className={props.label ? "info-btn-wrap info-btn-wrap-full" : "info-btn-wrap"}>
       {imageTrigger ? (

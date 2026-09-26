@@ -192,8 +192,8 @@ export function GradeSelect({ value, onChange, children, style, className = "gra
   return (
     <>
       <button ref={btnRef} type="button" className={className} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, textAlign: "left", fontFamily: "inherit", ...style }} onClick={toggle}>
-        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: value ? undefined : "#6b7280", fontWeight: value ? 700 : 500 }}>{value ? (current?.label ?? value) : (placeholder?.label ?? "Select")}</span>
-        <span aria-hidden="true" style={{ fontSize: 10, color: "#6b7280" }}>▾</span>
+        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: value ? undefined : "#374151", fontWeight: value ? 700 : 500 }}>{value ? (current?.label ?? value) : (placeholder?.label ?? "Select")}</span>
+        <span aria-hidden="true" style={{ fontSize: 10, color: "#374151" }}>▾</span>
       </button>
       {open && pos && createPortal(
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100000 }}>
@@ -638,7 +638,7 @@ export function SttSection({ data, setData, sectionKey = "sttt" }) {
    components with hand-drawn SVGs; here every region reuses the
    same fast-fill card so the tool stays consistent + quick).
    ============================================================ */
-const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
+export const FMA_GRADE_COLOR = { 0: "#16A34A", 1: "#D97706", 2: "#DC2626" };
 
 // FMA tests carry a hand-drawn SVG stick-figure illustration (t.svgNormal,
 // from RegionalFunctionalScreens.jsx) that used to render inline here in
@@ -693,7 +693,7 @@ function fmaCount(entry, tests) {
 
 /* One-line "what this test helps find" per functional test id, shown at
    the top of an opened test. Draft clinical wording -- review before relying on it. */
-const FMA_HELPS = {
+export const FMA_HELPS = {
   lfs_sts: "Weak glutes/quads, poor hip hinge, and whether the spine or the hips take the load when rising. Shows compensation that overloads the low back.",
   lfs_fwd: "Painful or restricted lumbar flexion, a lateral shift, and whether symptoms centralise or peripheralise. Helps separate a disc/flexion-intolerant pattern from hip or hamstring tightness.",
   lfs_sls: "Weak gluteus medius and poor lumbopelvic or SIJ control. A pelvic drop or trunk lean points to hip abductor weakness (Trendelenburg).",

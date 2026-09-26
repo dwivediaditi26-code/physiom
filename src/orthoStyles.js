@@ -181,6 +181,12 @@ export function orthoStyles() {
            thumbnail and the full 96px AI Objective Assessment tile. */
         .info-img-trigger-md { width: 60px; height: 60px; border-radius: 14px; }
         .info-img-trigger-md i { font-size: 24px; }
+        /* Between md (60px) and the full 96px tile -- Kinetic Chain/
+           Functional Screen's title row wanted the full tile smaller
+           (2026-09-26, Aditi: "bigger little bit image" then "not that big
+           smaller little bit" after seeing the full 96px version). */
+        .info-img-trigger-lg { width: 78px; height: 78px; border-radius: 15px; }
+        .info-img-trigger-lg i { font-size: 28px; }
 
         /* Bottom sheet — used for "How to perform" so education is always a
            separate layer from the fast-fill assessment cards. */
@@ -780,10 +786,10 @@ export function orthoStyles() {
            different color") -- tinted background + matching border/%
            color, so conditions are visually distinguishable at a glance
            instead of every card reading identically until tapped. */
-        .obj-match-card { flex: 0 0 auto; min-width: 100px; max-width: 118px; text-align: left; border: 1.5px solid transparent; border-radius: 10px; padding: 7px 8px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
+        .obj-match-card { flex: 0 0 auto; min-width: 90px; max-width: 106px; text-align: left; border: 1.5px solid transparent; border-radius: 9px; padding: 5px 6px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
         .obj-match-card:active { transform: scale(0.97); }
-        .obj-match-pct { display: block; font-size: 14px; font-weight: 800; letter-spacing: -.01em; }
-        .obj-match-name { display: block; font-size: 10.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 1px; line-height: 1.2; }
+        .obj-match-pct { display: block; font-size: 12px; font-weight: 800; letter-spacing: -.01em; }
+        .obj-match-name { display: block; font-size: 9.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 1px; line-height: 1.15; }
         .obj-match-card-active { box-shadow: 0 3px 10px rgba(20,10,45,.14); }
         .obj-match-c0 { background: #EFF6FF; } .obj-match-c0 .obj-match-pct { color: #2563EB; } .obj-match-c0.obj-match-card-active { border-color: #2563EB; }
         .obj-match-c1 { background: #ECFDF5; } .obj-match-c1 .obj-match-pct { color: #059669; } .obj-match-c1.obj-match-card-active { border-color: #059669; }

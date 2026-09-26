@@ -36,11 +36,12 @@
 // `matchByName` below) — shoulderPhase05.js itself is untouched.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE, SelectField, NumberField, ScaleField } from "./orthoFieldKit.jsx";
+import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE, SelectField, NumberField, ScaleField, Hint } from "./orthoFieldKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoRegionAssessments.jsx";
-import { kcRichItem, cpaRichItem, fmaRichItem } from "./orthoAdvancedTools.jsx";
+import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
 import { KC_REGIONS, NKT_REGIONS, FMA_DATA, CYRIAX_REGIONS_DATA } from "./orthoAdvancedLibrary.js";
+import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { runCervicalDifferential, hasCervicalChecklistData } from "./orthoCervicalReasoning.js";
 import { runThoracicDifferential, hasThoracicChecklistData } from "./orthoThoracicReasoning.js";
 import { runLumbarDifferential, hasLumbarChecklistData } from "./orthoLumbarReasoning.js";
@@ -243,6 +244,138 @@ const ALL_FMA_TESTS = Object.values(FMA_DATA).flat();
 function kcRichItemFor(testName) {
   const t = findByNormalizedLabel(ALL_KC_TESTS, testName, "label");
   return t ? kcRichItem(t) : null;
+}
+// Raw KC_REGIONS/FMA_DATA test object (not the info-sheet-shaped richItem)
+// for the one test each condition's own library entry points to -- lets the
+// Kinetic Chain / Functional Screen tabs below render the *same* graded
+// Result picker / What-to-observe dropdowns the real Advanced Assessment
+// and Functional Movement Screen modules use, instead of a plainer
+// lookalike, whenever that condition's test has a real match there
+// (2026-09-25, Aditi, comparing screenshots: "I want this page of kinetic
+// chain page and this page of functional movement").
+// KC_REGIONS only has a small, fixed catalogue of real tests per region (2
+// for Cervical: Rotation Mobility, Flexion/Extension Mobility), while a
+// region's own conditions sometimes combine both concepts into one hybrid
+// name (2026-09-25, Aditi: "cervical have 10 or 11 conditions... integrate
+// this" -- e.g. Acute Cervical Strain/Torticollis's own kineticChain.name
+// is "Cervical Rotation / Flexion-Extension Mobility", which matches
+// neither real label as a clean substring, so it silently fell back to the
+// plain picker with no real graded data). When the exact/substring match
+// above finds nothing, score every real test by how many of ITS OWN
+// distinguishing words (ignoring generic ones like "mobility"/region
+// names) show up in the condition's combined name, and take whichever
+// shares the most -- catches a hybrid name without hand-listing every
+// condition that needs it.
+const KC_MATCH_STOPWORDS = new Set(["mobility", "test", "joint", "spine", "cervical", "thoracic", "lumbar", "shoulder", "hip", "knee", "ankle", "foot", "elbow", "wrist", "hand", "and"]);
+// KC_REGIONS' own bucket keys don't line up 1:1 with this screen's region
+// config.key values (shoulder->scapula, ankleFoot->foot_ankle) -- and
+// elbowWristHand has no KC_REGIONS bucket at all. The keyword-overlap
+// fallback below MUST be scoped to the condition's own region bucket, not
+// searched across every region's tests: scoring against the full
+// ALL_KC_TESTS list let a Cervical condition's hybrid name ("Cervical
+// Rotation / Flexion-Extension Mobility") match a same-scoring Lumbar test
+// by coincidental word overlap instead of either real cervical test
+// (caught live, 2026-09-25 -- Torticollis showed a Lumbar disc-loading
+// test under "Kinetic Chain").
+const KC_REGION_BUCKET = {
+  cervical: ["cervical"], thoracic: ["thoracic"], lumbar: ["lumbar"],
+  shoulder: ["scapula"], hip: ["hip"], knee: ["knee"],
+  ankleFoot: ["foot_ankle"], elbowWristHand: [],
+};
+function kcTestFor(testName, regionKey) {
+  const scoped = (KC_REGION_BUCKET[regionKey] || []).flatMap((b) => KC_REGIONS[b]?.tests || []);
+  const direct = findByNormalizedLabel(scoped, testName, "label");
+  if (direct) return direct;
+  const target = normalizeName(testName);
+  if (!target) return null;
+  let best = null, bestScore = 0;
+  for (const t of scoped) {
+    const words = normalizeName(t.label).split(" ").filter((w) => w && !KC_MATCH_STOPWORDS.has(w));
+    if (!words.length) continue;
+    const score = words.filter((w) => target.includes(w)).length;
+    if (score > bestScore) { bestScore = score; best = t; }
+  }
+  return best;
+}
+function fmaTestFor(testName) {
+  return findByNormalizedLabel(ALL_FMA_TESTS, testName, "label");
+}
+function kcHelpsFindLocal(t) {
+  const m = /^.*?[.!?](\s|$)/.exec(String(t.chainEffect || ""));
+  const first = m ? m[0].trim() : String(t.chainEffect || "");
+  return `Screens ${t.joint || "this joint"} (${String(t.role || "").toLowerCase()}). ${first}`.trim();
+}
+// Same colored-dot graded Result list the real Kinetic Chain module uses
+// (orthoAdvancedTools.jsx's KineticChainSection) -- reused verbatim rather
+// than re-derived, so a condition whose test has a real KC_REGIONS match
+// shows the exact same graded thresholds (not just a restyled version of
+// this screen's own plainer chip options).
+function KcResultPicker({ options, value, onChange }) {
+  const selected = options.find((o) => o.val === value);
+  return (
+    <div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {options.map((o) => {
+          const sel = value === o.val;
+          return (
+            <button
+              type="button" key={o.val} onClick={() => onChange(sel ? "" : o.val)}
+              style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", fontFamily: "inherit", cursor: "pointer", padding: "10px 12px", borderRadius: 10, background: sel ? `${o.color}18` : "#fff", border: `1.5px solid ${sel ? o.color : HAIRLINE}` }}
+            >
+              <span style={{ width: 14, height: 14, borderRadius: "50%", flexShrink: 0, border: `2px solid ${o.color}`, background: sel ? o.color : "transparent" }} />
+              <span style={{ fontSize: "0.82rem", fontWeight: sel ? 700 : 500, color: BRAND.ink, lineHeight: 1.3 }}>{o.val}</span>
+            </button>
+          );
+        })}
+      </div>
+      {/* Same per-option "meaning" text the real Kinetic Chain module shows
+          under the Result list, swapping to match whichever option is
+          currently picked (2026-09-25, Aditi, comparing screenshots: "it
+          shows when we select the option what does it interpret... it
+          should also have in AI"). Real KC_REGIONS options already carry
+          this field (sharedClinicalData.js) -- this picker just wasn't
+          reading it yet. */}
+      {selected?.meaning && <Hint>{selected.meaning}</Hint>}
+    </div>
+  );
+}
+// Same "What to observe" dropdown-per-fault + Normal/Compensated/Abnormal
+// graded chip row the real Functional Movement Screen module uses
+// (orthoAdvancedTools.jsx's FmaSection) -- reused verbatim when the
+// condition's own functionalScreen test has a real FMA_DATA match.
+function FmaObservePanel({ test, getVal, setVal }) {
+  const grade = getVal("grade");
+  return (
+    <>
+      <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: BRAND.grayLight, margin: "12px 0 2px" }}>What to observe</div>
+      {test.observations.map((obs) => {
+        const val = getVal("obs_" + obs.id);
+        const idx = obs.opts.indexOf(val);
+        const clue = idx > 0 ? obs.clues[idx] : "";
+        return (
+          <div key={obs.id} style={{ marginTop: 8 }}>
+            <ObserveSelect style={{ width: "100%" }} value={val || ""} onChange={(e) => setVal("obs_" + obs.id, e.target.value)}>
+              <option value="">{obs.q}</option>
+              {obs.opts.map((o) => <option key={o} value={o}>{o}</option>)}
+            </ObserveSelect>
+            {clue && <Hint>{clue}</Hint>}
+          </div>
+        );
+      })}
+      <div className="chip-mini-row" style={{ marginTop: 12 }}>
+        {test.grades.map((g, i) => {
+          const selected = grade === g;
+          const color = FMA_GRADE_COLOR[i];
+          const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
+          return (
+            <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => setVal("grade", selected ? "" : g)}>
+              {["Normal", "Compensated", "Abnormal"][i] || g}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
 }
 function nktRichItemFor(muscleName) {
   const t = findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "muscle") || findByNormalizedLabel(ALL_NKT_TESTS, muscleName, "label");
@@ -597,6 +730,7 @@ function ModuleCard({ label, subtitle, count, color, defaultOpen = true, childre
 const SUBTOPICS = [
   { key: "pain", label: "Pain", icon: "ti-mood-sad" },
   { key: "observation", label: "Observation", icon: "ti-eye" },
+  { key: "posture", label: "Posture", icon: "ti-walk" },
   { key: "palpation", label: "Palpation", icon: "ti-hand-stop" },
   { key: "rom", label: "ROM", icon: "ti-arrows-maximize" },
   { key: "mmt", label: "MMT", icon: "ti-activity" },
@@ -722,6 +856,22 @@ function EmptyNote({ children }) {
     <div style={{ padding: "10px 12px", border: `1px dashed ${HAIRLINE}`, borderRadius: 8, fontSize: "0.78rem", color: BRAND.grayLight, fontStyle: "italic" }}>
       {children}
     </div>
+  );
+}
+
+// Whenever Kinetic Chain falls back to a condition's own hand-written
+// fields/options (no real KC_REGIONS test matched -- currently every
+// Elbow/Wrist/Hand condition, since that dataset has no elbow/wrist/hand
+// bucket at all), flag it as a suggestion rather than presenting it as the
+// same verified library data the other regions show (2026-09-26, Aditi:
+// "the conditions' hand-written options... I want it as a suggestion" --
+// driven by the same hasReal check the fallback already uses, not a
+// per-condition flag, so it applies to any condition that ever falls back).
+function SuggestedBadge() {
+  return (
+    <span style={{ fontSize: "0.6rem", fontWeight: 700, color: BRAND.purple, background: BRAND.purpleFaint, border: `1px solid ${BRAND.purple}40`, borderRadius: 999, padding: "2px 7px", letterSpacing: ".02em", whiteSpace: "nowrap" }}>
+      ✨ AI Suggested
+    </span>
   );
 }
 
@@ -1576,6 +1726,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             onSelect={setActiveSubtopic}
             counts={{
               observation: (isV1 ? condition.observationChecklist : condition.observation)?.length || 0,
+              posture: (isV1 ? condition.postureChecklist : condition.posture)?.length || 0,
               palpation: (isV1 ? condition.palpationZones : condition.palpation)?.length || 0,
             }}
           />
@@ -1604,16 +1755,10 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           )}
 
           {activeSubtopic === "observation" && <>
-          {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
-          <>
+          {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; return (
           <ModuleCard label="Observation" subtitle="General findings on visual inspection" count={obsOptions?.length || 0}>
             <FindingCardList category="observation" options={obsOptions} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} regionKey={config.key} />
           </ModuleCard>
-
-          <ModuleCard label="Posture & Structural Alignment" subtitle="Record observed positional adaptations" count={pOptions?.length || 0}>
-            <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} regionKey={config.key} />
-          </ModuleCard>
-          </>
           ); })()}
 
           {condition.fascia && (
@@ -1621,6 +1766,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <div style={{ fontSize: "0.8rem", color: BRAND.ink, lineHeight: 1.5 }}>{condition.fascia}</div>
             </ModuleCard>
           )}
+          </>}
+
+          {activeSubtopic === "posture" && <>
+          {(() => { const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
+          <ModuleCard label="Posture & Structural Alignment" subtitle="Record observed positional adaptations" count={pOptions?.length || 0}>
+            <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} regionKey={config.key} />
+          </ModuleCard>
+          ); })()}
           </>}
 
           {activeSubtopic === "palpation" && <>
@@ -1659,7 +1812,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   return (
                     <div key={i} style={{ marginBottom: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <InfoButton imageTrigger fallbackIcon="ti-brain" title={m.name} richItem={nktRichItemFor(m.name)} />
+                        <InfoButton imageTrigger size="md" fallbackIcon="ti-brain" title={m.name} richItem={nktRichItemFor(m.name)} />
                         <SubLabel>{m.name} — <span style={{ color: BRAND.amber }}>{m.state}</span></SubLabel>
                       </div>
                       <ChipGroup options={["Facilitated", "Inhibited", "Overactive"]} selected={sel} onToggle={(o) => toggleSingle("cpa", "m" + i, o)} multi={false} />
@@ -1830,8 +1983,16 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   return (
                     <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        {/* No separate patient-photo upload tile here, on
+                            purpose (2026-09-25, Aditi: "this image camera
+                            button is showing remove it" -- confirmed again
+                            after a concurrent session restored it thinking
+                            the removal was accidental). The reference image
+                            above is tap-to-view only; Special Tests in this
+                            condition-wise AI screen doesn't carry its own
+                            patient-photo slot the way Observation/Palpation
+                            findings do. */}
                         <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={testEntry ? specialRichItem(testEntry) : null} />
-                        <PatientPhotoTile photoId={findingPhotoId(config.key, "special", t)} />
                         <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
                           <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
                           {(testEntry?.structure || testEntry?.sensitivity) && (
@@ -1982,62 +2143,136 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           </>}
 
           {activeSubtopic === "kinetic" && <>
-          {isV1 ? (
+          {isV1 ? (() => {
+            const kcMatch = kcTestFor(condition.kineticChain.testName, config.key);
+            const hasReal = !condition.kineticChain.notApplicable && kcMatch?.options?.length > 0;
+            return (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={!condition.kineticChain.notApplicable}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.testName} richItem={kcRichItemFor(condition.kineticChain.testName)} />
+              <div className="movement-name-row">
+                {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.testName}</span>
+                <InfoButton title={condition.kineticChain.testName} richItem={kcRichItemFor(condition.kineticChain.testName)} />
               </div>
+              {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
               {condition.kineticChain.notApplicable ? (
-                <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic" }}>{condition.kineticChain.chainEffect}</div>
+                <div style={{ fontSize: "0.8rem", color: BRAND.grayLight, lineHeight: 1.5, fontStyle: "italic", marginTop: 8 }}>{condition.kineticChain.chainEffect}</div>
               ) : (
                 <>
-                  <ChipGroup options={condition.kineticChain.chipOptions} selected={v("kineticChain", "state")} onToggle={(o) => toggleSingle("kineticChain", "state", o)} multi={false} />
-                  {interpretSttOption(v("kineticChain", "state")) && (
-                    <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, marginBottom: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "state"))}</div>
+                  <div style={{ marginTop: 8 }}>
+                    <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? kcHelpsFindLocal(kcMatch) : condition.kineticChain.chainEffect}</InfoCard>
+                  </div>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: BRAND.grayLight, margin: "12px 0 6px" }}>Result</div>
+                  {hasReal ? (
+                    <KcResultPicker options={kcMatch.options} value={v("kineticChain", "state")} onChange={(val) => sv("kineticChain", "state", val)} />
+                  ) : (
+                    <>
+                      <ChipGroup options={condition.kineticChain.chipOptions} selected={v("kineticChain", "state")} onToggle={(o) => toggleSingle("kineticChain", "state", o)} multi={false} />
+                      {interpretSttOption(v("kineticChain", "state")) && (
+                        <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "state"))}</div>
+                      )}
+                    </>
                   )}
-                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.kineticChain.chainEffect}</InfoCard>
                 </>
               )}
             </ModuleCard>
-          ) : (
+            ); })() : (() => {
+            const kcMatch = kcTestFor(condition.kineticChain.name, config.key);
+            const hasReal = condition.kineticChain.applicable !== false && kcMatch?.options?.length > 0;
+            return (
             <ModuleCard label="Kinetic Chain" color="#4F46E5" defaultOpen={condition.kineticChain.applicable !== false}>
               {condition.kineticChain.applicable === false ? (
                 <EmptyNote>{condition.kineticChain.reason}</EmptyNote>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <InfoButton imageTrigger fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcRichItemFor(condition.kineticChain.name)} />
-                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginBottom: 4 }}>
+                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-link" title={condition.kineticChain.name} richItem={kcRichItemFor(condition.kineticChain.name)} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="movement-name-row">
+                        {kcMatch && <FmaIcon pose={poseForJoint(kcMatch.joint)} size={22} />}
+                        <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.kineticChain.name}</span>
+                        {!hasReal && <SuggestedBadge />}
+                      </div>
+                      {kcMatch?.joint && <div className="muscle-subtitle">{kcMatch.joint}</div>}
+                    </div>
                   </div>
-                  {condition.kineticChain.fields.map((f, i) => (
-                    <div key={i} style={{ marginBottom: 12 }}>
-                      <SubLabel>{f.label}</SubLabel>
-                      <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
-                      {interpretSttOption(v("kineticChain", "f" + i)) && (
-                        <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
+                  <div style={{ marginTop: 8 }}>
+                    <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? kcHelpsFindLocal(kcMatch) : condition.kineticChain.chainEffect}</InfoCard>
+                  </div>
+                  {/* The condition library's own hand-written 2-3 option check
+                      (pre-existing, condition-specific) used to disappear
+                      entirely once a real KC_REGIONS test matched -- but the
+                      real test is shared across several conditions in a
+                      region (only ~2-3 real cervical tests for 8 conditions),
+                      so it can't carry the condition-specific nuance the
+                      library's own question does. Shown above the real Result
+                      picker, not replaced by or buried below it (2026-09-26,
+                      Aditi: "it shown and we can also select on that... AI
+                      suggested should be just above that, not at the bottom"),
+                      labeled as a suggestion since it isn't verified library
+                      data like the real test below it. */}
+                  {hasReal && (
+                    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px dashed ${HAIRLINE}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: BRAND.grayLight }}>This condition's own check</span>
+                        <SuggestedBadge />
+                      </div>
+                      {condition.kineticChain.fields.map((f, i) => (
+                        <div key={i} style={{ marginTop: i === 0 ? 0 : 12 }}>
+                          <SubLabel>{f.label}</SubLabel>
+                          <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
+                          {interpretSttOption(v("kineticChain", "f" + i)) && (
+                            <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
+                          )}
+                        </div>
+                      ))}
+                      {condition.kineticChain.chainEffect && (
+                        <div style={{ marginTop: 8, fontSize: "0.74rem", color: BRAND.gray, fontStyle: "italic", lineHeight: 1.4 }}>{condition.kineticChain.chainEffect}</div>
                       )}
                     </div>
-                  ))}
-                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.kineticChain.chainEffect}</InfoCard>
+                  )}
+                  {hasReal ? (
+                    <>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: BRAND.grayLight, margin: "12px 0 6px" }}>Result</div>
+                      <KcResultPicker options={kcMatch.options} value={v("kineticChain", "state")} onChange={(val) => sv("kineticChain", "state", val)} />
+                    </>
+                  ) : (
+                    condition.kineticChain.fields.map((f, i) => (
+                      <div key={i} style={{ marginTop: 12 }}>
+                        <SubLabel>{f.label}</SubLabel>
+                        <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
+                        {interpretSttOption(v("kineticChain", "f" + i)) && (
+                          <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </>
               )}
             </ModuleCard>
-          )}
+            ); })()}
           </>}
 
           {activeSubtopic === "functional" && <>
-          {isV1 ? (
+          {isV1 ? (() => {
+            const fmaMatch = fmaTestFor(condition.functionalScreen.testName);
+            const hasReal = fmaMatch?.observations?.length > 0;
+            return (
             <ModuleCard label="Functional Screen" color="#16A34A">
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
+              <div className="movement-name-row">
+                {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
                 <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.testName}</span>
+                <InfoButton title={condition.functionalScreen.testName} richItem={functionalRichItem(condition.functionalScreen.testName, condition.functionalScreen.note)} />
               </div>
-              {condition.functionalScreen.note && (
-                <div style={{ marginBottom: 10 }}>
-                  <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.functionalScreen.note}</InfoCard>
+              {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
+              {(condition.functionalScreen.note || hasReal) && (
+                <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 10 }}>
+                  <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
                 </div>
               )}
+              {hasReal ? (
+                <FmaObservePanel test={fmaMatch} getVal={(k) => v("functionalScreen", k)} setVal={(k, val) => sv("functionalScreen", k, val)} />
+              ) : (
+              <>
               {condition.functionalScreen.measure.type === "number" && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: condition.functionalScreen.secondaryChip ? 14 : 0 }}>
                   <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{condition.functionalScreen.measure.label}</span>
@@ -2073,44 +2308,94 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   )}
                 </div>
               )}
+              </>
+              )}
             </ModuleCard>
-          ) : (
+            ); })() : (() => {
+            const fmaMatch = fmaTestFor(condition.functionalScreen.name);
+            const hasReal = fmaMatch?.observations?.length > 0;
+            return (
             <ModuleCard label="Functional Screen" color="#16A34A">
               {condition.functionalScreen.applicable === false ? (
                 <EmptyNote>{condition.functionalScreen.reason}</EmptyNote>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <InfoButton imageTrigger fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note)} />
-                    <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginBottom: 4 }}>
+                    <InfoButton imageTrigger size="lg" fallbackIcon="ti-walk" title={condition.functionalScreen.name} richItem={functionalRichItem(condition.functionalScreen.name, condition.functionalScreen.note)} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="movement-name-row">
+                        {fmaMatch && <FmaIcon id={fmaMatch.id} size={22} />}
+                        <span style={{ fontWeight: 700, fontSize: "0.85rem", color: BRAND.ink }}>{condition.functionalScreen.name}</span>
+                        {!hasReal && <SuggestedBadge />}
+                      </div>
+                      {fmaMatch?.subtitle && <div className="muscle-subtitle">{fmaMatch.subtitle}</div>}
+                    </div>
                   </div>
-                  {condition.functionalScreen.note && (
-                    <div style={{ marginBottom: 12 }}>
-                      <InfoCard icon="🔎" label="Helps find" tint="violet">{condition.functionalScreen.note}</InfoCard>
+                  {(condition.functionalScreen.note || hasReal) && (
+                    <div style={{ marginTop: 8, marginBottom: hasReal ? 0 : 12 }}>
+                      <InfoCard icon="🔎" label="Helps find" tint="violet">{hasReal ? (FMA_HELPS[fmaMatch.id] || condition.functionalScreen.note) : condition.functionalScreen.note}</InfoCard>
                     </div>
                   )}
-                  {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
-                      <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{f.label}</span>
-                      <input
-                        type="number" value={v("functionalScreen", "f" + i)} onChange={(e) => sv("functionalScreen", "f" + i, e.target.value)}
-                        placeholder="—" style={{ width: 60, padding: "6px 8px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", textAlign: "center", outline: "none" }}
-                      />
-                      <span style={{ fontSize: "0.75rem", color: BRAND.grayLight }}>{f.unit} {f.normal}</span>
+                  {/* Same reasoning as Kinetic Chain: the real FMA_DATA test is
+                      shared across several conditions in a region, so the
+                      condition's own hand-written fields stay useful for the
+                      condition-specific nuance -- shown above the real panel,
+                      not replaced by or buried below it (2026-09-26, Aditi:
+                      "can you do same for the functional also" / "AI
+                      suggested should be just above that, not at the
+                      bottom"), labeled as a suggestion. */}
+                  {hasReal && (
+                    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px dashed ${HAIRLINE}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", color: BRAND.grayLight }}>This condition's own check</span>
+                        <SuggestedBadge />
+                      </div>
+                      {condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+                          <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{f.label}</span>
+                          <input
+                            type="number" value={v("functionalScreen", "f" + i)} onChange={(e) => sv("functionalScreen", "f" + i, e.target.value)}
+                            placeholder="—" style={{ width: 60, padding: "6px 8px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", textAlign: "center", outline: "none" }}
+                          />
+                          <span style={{ fontSize: "0.75rem", color: BRAND.grayLight }}>{f.unit} {f.normal}</span>
+                        </div>
+                      ) : (
+                        <div key={i} style={{ marginBottom: 14 }}>
+                          <SubLabel>{f.label}</SubLabel>
+                          <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
+                          {interpretSttOption(v("functionalScreen", "f" + i)) && (
+                            <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
+                          )}
+                        </div>
+                      ))}
                     </div>
+                  )}
+                  {hasReal ? (
+                    <FmaObservePanel test={fmaMatch} getVal={(k) => v("functionalScreen", k)} setVal={(k, val) => sv("functionalScreen", k, val)} />
                   ) : (
-                    <div key={i} style={{ marginBottom: 14 }}>
-                      <SubLabel>{f.label}</SubLabel>
-                      <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
-                      {interpretSttOption(v("functionalScreen", "f" + i)) && (
-                        <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
-                      )}
-                    </div>
-                  ))}
+                    condition.functionalScreen.fields.map((f, i) => f.type === "number" ? (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+                        <span style={{ fontSize: "0.78rem", color: BRAND.gray, flex: 1 }}>{f.label}</span>
+                        <input
+                          type="number" value={v("functionalScreen", "f" + i)} onChange={(e) => sv("functionalScreen", "f" + i, e.target.value)}
+                          placeholder="—" style={{ width: 60, padding: "6px 8px", borderRadius: 8, border: `1px solid ${HAIRLINE}`, fontSize: "0.8rem", textAlign: "center", outline: "none" }}
+                        />
+                        <span style={{ fontSize: "0.75rem", color: BRAND.grayLight }}>{f.unit} {f.normal}</span>
+                      </div>
+                    ) : (
+                      <div key={i} style={{ marginBottom: 14 }}>
+                        <SubLabel>{f.label}</SubLabel>
+                        <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
+                        {interpretSttOption(v("functionalScreen", "f" + i)) && (
+                          <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </>
               )}
             </ModuleCard>
-          )}
+            ); })()}
           </>}
 
           {activeSubtopic === "outcome" && <>

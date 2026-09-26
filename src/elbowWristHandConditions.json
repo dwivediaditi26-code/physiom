@@ -75,8 +75,19 @@
       "pattern": "Inhibited wrist extensors (ECRB/ECRL) with compensatory overactive wrist flexors — the literal documented interpretation for lateral epicondylalgia in this app's library. Fascial component (from source): Deep-back-arm line / common extensor fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Scapular Stability — Overhead Reach Screen",
+      "fields": [
+        {
+          "label": "Scapular control during reach/lift",
+          "options": [
+            "Stable, no compensation",
+            "Mild winging / early elevation",
+            "Marked winging / substitution pattern"
+          ]
+        }
+      ],
+      "chainEffect": "Poor scapular stabilization forces the wrist extensors to work harder controlling the hand during reaching tasks, increasing the eccentric ECRB load that drives lateral epicondylalgia — treat the proximal scapular fault, not just the elbow."
     },
     "functionalScreen": {
       "name": "Lateral Epicondyle Load Test (Cozen's / Mill's / Maudsley's)",
@@ -160,8 +171,18 @@
       "pattern": "Overactive wrist flexors (FCR/FCU) — check wrist extensor inhibition as the driver of this pattern. Fascial component (from source): Common flexor–pronator fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Forearm Flexor–Extensor Balance Screen",
+      "fields": [
+        {
+          "label": "Resisted wrist extension vs flexion balance",
+          "options": [
+            "Balanced",
+            "Extensors relatively weak / inhibited"
+          ]
+        }
+      ],
+      "chainEffect": "Overactive wrist flexors are frequently paired with inhibited wrist extensors — confirming extensor weakness points to a forearm muscle-balance driver worth correcting alongside the medial-sided treatment."
     },
     "functionalScreen": {
       "name": "Medial Elbow / Valgus Screen",
@@ -249,8 +270,18 @@
       "pattern": "If overactive proximally (rotator-cuff compensation) it can predispose to distal overload and tendinopathy; if ruptured, this is a structural injury, not a compensation pattern. Fascial component (from source): Deep-front arm line (biceps)."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Shoulder Rotator Cuff Compensation Screen",
+      "fields": [
+        {
+          "label": "Rotator cuff control during resisted elbow flexion/supination",
+          "options": [
+            "Normal cuff recruitment",
+            "Compensatory cuff overactivity / substitution"
+          ]
+        }
+      ],
+      "chainEffect": "Proximal rotator-cuff overactivity compensating for shoulder weakness can shift load distally onto the biceps tendon — screen the shoulder before assuming the distal tendon is the sole driver (not applicable once rupture is confirmed structurally)."
     },
     "functionalScreen": {
       "name": "Elbow AROM (supination component)",
@@ -345,8 +376,18 @@
       "reason": "Not primarily compensation-driven (joint OA); Triceps/Biceps facilitation supports function around the restricted arc. Fascial component (from source): Anterior capsule fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Fixed-Flexion Compensation Screen",
+      "fields": [
+        {
+          "label": "Functional reach with elbow held in habitual flexion",
+          "options": [
+            "Full reach, no compensation",
+            "Shoulder/wrist compensates for lost elbow extension"
+          ]
+        }
+      ],
+      "chainEffect": "A fixed-flexion elbow posture forces the shoulder and wrist to compensate for lost terminal extension during reaching — an abnormal finding here flags a compensatory overload pattern developing above or below the arthritic joint."
     },
     "functionalScreen": {
       "name": "Elbow AROM (flexion/extension/pronation/supination)",
@@ -445,8 +486,18 @@
       "reason": "Not a compensation-pattern condition (bursal inflammation, often trauma/pressure-related). Fascial component (from source): Posterior olecranon fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Elbow-Rest Loading Screen",
+      "fields": [
+        {
+          "label": "Habitual elbow-on-surface loading (desk/armrest)",
+          "options": [
+            "Minimal / none",
+            "Frequent, prolonged direct pressure"
+          ]
+        }
+      ],
+      "chainEffect": "Bursitis is a direct-pressure/friction problem rather than a joint-mobility one — this screen simply flags the repetitive elbow-loading habit (desk, armrest) perpetuating the bursal irritation, to be addressed alongside local treatment."
     },
     "functionalScreen": {
       "applicable": false,
@@ -531,8 +582,18 @@
       "pattern": "The medial flexor-pronator mass may become protectively overactive supporting a lax UCL — check once the acute phase allows. Fascial component (from source): Medial capsuloligamentous fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Flexor–Pronator Protective Guard Screen",
+      "fields": [
+        {
+          "label": "Flexor-pronator recruitment during light resisted pronation/wrist flexion at 30° elbow flexion",
+          "options": [
+            "Normal recruitment",
+            "Protective overactivity (guarding a lax UCL)"
+          ]
+        }
+      ],
+      "chainEffect": "The flexor-pronator mass often becomes protectively overactive to dynamically support a lax UCL — confirming overactivity here, once the acute phase allows loading, indicates a secondary stabilizer taking over for the ligament."
     },
     "functionalScreen": {
       "name": "Medial Elbow / Valgus Screen",
@@ -637,8 +698,18 @@
       "pattern": "Grip/Hand Intrinsics inhibited from a neurological (ulnar) cause — differentiate from a simple overuse-inhibition pattern. Fascial component (from source): Ulnar neural tension line."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Sustained-Flexion Ulnar Nerve Tolerance Screen",
+      "fields": [
+        {
+          "label": "Symptom reproduction with sustained elbow flexion (>1 min)",
+          "options": [
+            "No reproduction",
+            "Paraesthesia / ulnar-nerve symptoms reproduced"
+          ]
+        }
+      ],
+      "chainEffect": "Sustained elbow flexion narrows the cubital tunnel and reproduces ulnar-nerve symptoms when the nerve is compressed there — a positive finding differentiates this neurological grip/intrinsic inhibition from a simple overuse pattern."
     },
     "functionalScreen": {
       "name": "ULNT2 (ulnar bias)",
@@ -736,8 +807,18 @@
       "pattern": "Screen the same wrist extensor group as lateral epicondylalgia, but confirm the radial-nerve distribution before treating this as a simple tendinopathy. Fascial component (from source): Radial (PIN) neural tension."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Resisted Middle-Finger Extension (Radial Tunnel) Screen",
+      "fields": [
+        {
+          "label": "Resisted middle-finger extension with elbow extended",
+          "options": [
+            "Painless",
+            "Reproduces lateral forearm pain (radial nerve distribution)"
+          ]
+        }
+      ],
+      "chainEffect": "This isolates the same wrist-extensor group tested in lateral epicondylalgia, but a positive finding here — pain following the radial nerve's distribution rather than staying local to the epicondyle — flags a neural rather than pure tendinopathic driver."
     },
     "functionalScreen": {
       "name": "ULNT2b (radial bias)",
@@ -838,8 +919,18 @@
       "pattern": "Pronator Teres overactivity compresses the median nerve — check Biceps/Supinator facilitation as the antagonist pairing. Fascial component (from source): Median neural tension through pronator."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Pronator–Supinator Balance Screen",
+      "fields": [
+        {
+          "label": "Resisted pronation vs supination (biceps/supinator) balance",
+          "options": [
+            "Balanced",
+            "Pronator-dominant / supinator inhibited"
+          ]
+        }
+      ],
+      "chainEffect": "Pronator teres overactivity compressing the median nerve is often paired with a relatively inhibited biceps/supinator group — confirming this imbalance supports treating the antagonist pairing, not just releasing the pronator."
     },
     "functionalScreen": {
       "name": "Elbow AROM (pronation/supination) + ULNT2a (median bias)",
@@ -951,8 +1042,18 @@
       "pattern": "Grip/Hand Intrinsics inhibited from a neurological (median: thumb/index) cause — differentiate from Pronator Teres syndrome by symptom location and provocation. Fascial component (from source): Flexor retinaculum / median neural line."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Workstation Wrist-Posture Screen",
+      "fields": [
+        {
+          "label": "Wrist position sustained during typing/workstation tasks",
+          "options": [
+            "Neutral",
+            "Sustained flexion or extreme extension"
+          ]
+        }
+      ],
+      "chainEffect": "Sustained wrist flexion at a workstation is a well-documented aggravator of carpal tunnel pressure — an abnormal sustained posture here reinforces the median-nerve-at-the-wrist localization rather than a more proximal (pronator teres) entrapment."
     },
     "functionalScreen": {
       "name": "Carpal Tunnel Screen (Phalen's / Tinel's / compression test)",
@@ -1061,8 +1162,18 @@
       "reason": "Not primarily a compensation pattern (tenosynovitis, often repetitive-strain/postpartum) — Wrist Extensor facilitation supports recovery but isn't the root driver. Fascial component (from source): 1st dorsal-compartment fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Thumb-Loading Lift Screen",
+      "fields": [
+        {
+          "label": "Repetitive thumb-abduction lifting pattern (e.g. lifting a child under the arms)",
+          "options": [
+            "Not present",
+            "Present — repetitive thumb-loading lift pattern"
+          ]
+        }
+      ],
+      "chainEffect": "A repetitive thumb-abduction lifting pattern is the classic mechanical driver of De Quervain's — confirming it here identifies the specific movement habit to modify alongside first-dorsal-compartment treatment."
     },
     "functionalScreen": {
       "applicable": false,
@@ -1157,8 +1268,18 @@
       "reason": "Not a classic compensation pattern (intra-articular ligament/cartilage) — Wrist Flexor/Extensor balance supports the joint but doesn't address the structural tear. Fascial component (from source): Ulnocarpal / TFCC fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Ulnar-Deviation Grip Load Screen",
+      "fields": [
+        {
+          "label": "Grip/load tolerance in ulnar deviation (e.g. turning a doorknob, wringing)",
+          "options": [
+            "Tolerated",
+            "Reproduces ulnar-sided wrist pain"
+          ]
+        }
+      ],
+      "chainEffect": "Loading the wrist in ulnar deviation compresses the TFCC between the ulnar head and carpus — reproducing pain with this loading pattern reinforces the ulnar-sided mechanical diagnosis alongside the TFCC stress test above."
     },
     "functionalScreen": {
       "name": "TFCC / Ulnar Wrist Screen (ulnar fovea sign, DRUJ stability, piano-key test)",
@@ -1262,8 +1383,18 @@
       "reason": "Not a compensation-pattern condition (ligamentous instability, typically FOOSH-related)."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Loaded Wrist Extension (Push-Up Position) Screen",
+      "fields": [
+        {
+          "label": "Weight-bearing through an extended wrist (push-up/quadruped position)",
+          "options": [
+            "Tolerated, stable",
+            "Pain or a clunk with loaded extension"
+          ]
+        }
+      ],
+      "chainEffect": "Scapholunate instability often becomes symptomatic specifically under axial load in wrist extension (push-up/weight-bearing positions) — a painful clunk here supports the dynamic instability found on the Watson shift test rather than a purely structural finding at rest."
     },
     "functionalScreen": {
       "name": "Scaphoid / Carpal Screen (Watson scaphoid-shift test)",
@@ -1374,8 +1505,18 @@
       "pattern": "Wrist Extensor/Flexor facilitation supports remaining function around the restricted joint — not a primary driver (joint OA). Fascial component (from source): Radiocarpal capsular fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Wrist AROM Compensation Screen",
+      "fields": [
+        {
+          "label": "Forearm/finger compensation for lost wrist ROM during grip tasks",
+          "options": [
+            "Minimal compensation",
+            "Finger flexors or forearm rotation substituting for wrist motion"
+          ]
+        }
+      ],
+      "chainEffect": "As true wrist ROM narrows with OA, the finger flexors and forearm rotation commonly substitute to complete grip tasks — confirming this compensation flags a pattern worth addressing so distal structures aren't overloaded taking over for the joint."
     },
     "functionalScreen": {
       "name": "Wrist AROM + Grip",
@@ -1619,8 +1760,18 @@
       "reason": "Not primarily compensation-driven (joint OA); thumb intrinsic (Grip/Hand Intrinsics) facilitation supports function. Fascial component (from source): 1st CMC capsular fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Pinch-Load Compensation Screen",
+      "fields": [
+        {
+          "label": "Compensation pattern during pinch-loading (e.g. key/lateral pinch)",
+          "options": [
+            "Normal CMC-centered pinch",
+            "IP-joint hyperextension / wrist substitution"
+          ]
+        }
+      ],
+      "chainEffect": "As the arthritic CMC joint loses stable pinch mechanics, the thumb IP joint or wrist commonly substitutes to maintain pinch force — an abnormal substitution pattern here signals a secondary overload site to address alongside the CMC joint itself."
     },
     "functionalScreen": {
       "applicable": false,
@@ -1709,8 +1860,18 @@
       "pattern": "Same muscle group as lateral epicondylalgia, but confirm the ulnar-sided, extensor tendinopathy-specific pattern before treating as generic extensor tendinopathy. Fascial component (from source): ECU sheath fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Ulnar-Deviation Grip Habit Screen",
+      "fields": [
+        {
+          "label": "Habitual ulnar-deviated grip during gripping/racquet-type activities",
+          "options": [
+            "Neutral grip pattern",
+            "Sustained ulnar-deviated grip pattern"
+          ]
+        }
+      ],
+      "chainEffect": "A sustained ulnar-deviated grip position increases ECU tendon excursion and sheath friction with every repetition — confirming this habitual pattern identifies the mechanical driver to correct alongside direct tendon treatment."
     },
     "functionalScreen": {
       "name": "TFCC / Ulnar Wrist Screen",
@@ -1804,8 +1965,18 @@
       "reason": "Not a classic compensation pattern (tendon stenosis, often repetitive-grip driven) — Grip/Hand Intrinsics facilitation is supportive, not corrective. Fascial component (from source): Flexor tendon-sheath (A1 pulley) fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Repetitive Grip-Load Screen",
+      "fields": [
+        {
+          "label": "Repetitive gripping/tool-use load on the affected digit",
+          "options": [
+            "Minimal",
+            "Frequent, sustained gripping load"
+          ]
+        }
+      ],
+      "chainEffect": "Repetitive gripping increases flexor tendon excursion through the A1 pulley, the mechanical driver behind nodule formation and triggering — confirming a high-repetition grip load identifies the habit to modify alongside local treatment."
     },
     "functionalScreen": {
       "name": "Finger / Digit Screen",
@@ -1915,8 +2086,18 @@
       "pattern": "Grip/Hand Intrinsics facilitation supports function around the restricted joints — not a primary driver (joint OA). Fascial component (from source): Peri-articular digital fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Grip Compensation Screen",
+      "fields": [
+        {
+          "label": "Intrinsic/grip compensation around the arthritic DIP/PIP joints",
+          "options": [
+            "Minimal compensation",
+            "Compensatory intrinsic overactivity maintaining grip"
+          ]
+        }
+      ],
+      "chainEffect": "Hand-intrinsic facilitation typically increases to preserve grip function around the restricted DIP/PIP joints — a supportive compensation rather than the primary driver, but confirming it helps explain any intrinsic-muscle fatigue or overload the patient reports."
     },
     "functionalScreen": {
       "name": "Finger / Digit Screen (PIP/DIP AROM, composite fist)",
@@ -2004,8 +2185,18 @@
       "reason": "Not a compensation-pattern condition (acute ligament sprain) — imaging to exclude a Stener lesion takes priority. Fascial component (from source): Ulnar MCP capsuloligamentous fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Guarded Pinch-Grip Screen",
+      "fields": [
+        {
+          "label": "Pinch-grip pattern avoiding thumb MCP valgus load",
+          "options": [
+            "Normal pinch mechanics",
+            "Guarded / avoidant pinch pattern, thenar under-recruitment"
+          ]
+        }
+      ],
+      "chainEffect": "Guarding against MCP valgus stress commonly leads to thenar under-recruitment during pinch — confirming an avoidant pinch pattern flags a compensation to address once ligament healing allows progressive loading."
     },
     "functionalScreen": {
       "applicable": false,
@@ -2094,8 +2285,18 @@
       "pattern": "Grip/Hand Intrinsics facilitation is supportive only here, not corrective for the underlying tendon stenosis. Fascial component (from source): Flexor tendon-sheath (A1 pulley) fascia."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Repetitive Grip-Load Screen",
+      "fields": [
+        {
+          "label": "Repetitive gripping/tool-use load on the affected digit",
+          "options": [
+            "Minimal",
+            "Frequent, sustained gripping load"
+          ]
+        }
+      ],
+      "chainEffect": "As with the wrist-model trigger finger, repetitive gripping increases flexor tendon excursion through the A1 pulley — confirming a high-repetition grip load identifies the mechanical habit driving the triggering."
     },
     "functionalScreen": {
       "name": "Finger / Digit Screen",
@@ -2193,8 +2394,18 @@
       "reason": "Not a compensation-pattern condition (fascial disease process)."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Composite Extension Compensation Screen",
+      "fields": [
+        {
+          "label": "Compensation for fixed MCP/PIP flexion during grip-release / open-hand tasks",
+          "options": [
+            "Minimal compensation",
+            "Wrist/forearm substituting for lost finger extension"
+          ]
+        }
+      ],
+      "chainEffect": "As the palmar cord fixes the digit in flexion, the wrist or forearm often substitutes to achieve an open-hand position for tasks like releasing objects — confirming this substitution flags a compensation pattern developing alongside the contracture."
     },
     "functionalScreen": {
       "name": "Finger / Digit Screen",
@@ -2280,8 +2491,18 @@
       "reason": "Not a compensation-pattern condition (acute ligament sprain)."
     },
     "kineticChain": {
-      "applicable": false,
-      "reason": "Not applicable — not modelled in this app's Kinetic Chain library"
+      "applicable": true,
+      "name": "Guarded Grip Pattern Screen",
+      "fields": [
+        {
+          "label": "Grip pattern avoiding load through the injured digit",
+          "options": [
+            "Normal grip distribution",
+            "Load shifted away from injured digit onto adjacent fingers"
+          ]
+        }
+      ],
+      "chainEffect": "Protective guarding after a collateral ligament sprain commonly shifts grip load onto the adjacent fingers — confirming this shifted pattern flags an overload risk to the neighbouring digits during the guarding phase."
     },
     "functionalScreen": {
       "name": "Finger / Digit Screen",
