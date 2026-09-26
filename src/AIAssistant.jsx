@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { mapParseResultToUpdates } from "./aiIntakeParser.js";
 import { authHeader } from "./supabase.js";
 import { apiUrl } from "./apiUrl.js";
 
@@ -171,7 +170,7 @@ function renderAnswerContent(content, textColor) {
   return elements;
 }
 
-export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
+export default function AIAssistant({ data, PC, onClose, requireAuth }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -235,106 +234,9 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
     }
   }
 
-  // ── Fill patient record from a dictated/typed narrative ──────────────
-  // Separate code path from send(): this never goes through /api/chat's
-  // conversational reply, and never touches patientContext (the earlier
-  // privacy whitelist) since /api/parse only needs the raw narrative
-  // text, nothing about the existing patient. Reuses the exact same
-  // extraction endpoint and field-mapping logic already proven inside
-  // the Subjective tab's own dictation feature (see
-  // SubjectiveObjective.jsx + aiIntakeParser.js) -- this is the same
-  // capability, made reachable from the chat window the user actually
-  // asked for, not a second, different implementation of it.
-  async function extractToRecord(text) {
-    const narrative = text || input.trim();
-    if (!narrative || loading) return;
-    setInput("");
-    setError("");
-    setMessages(prev => [...prev, { role: "user", content: narrative }]);
-    setLoading(true);
-    try {
-      const res = await fetch(apiUrl("/api/parse"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeader()) },
-        body: JSON.stringify({ text: narrative }),
-      });
-      const result = await res.json();
-      if (!res.ok || result.error) throw new Error(result.error || "Request failed");
-      const mapped = mapParseResultToUpdates(result, data, narrative);
-      setMessages(prev => [...prev, { role: "extraction", ...mapped, rawResult: result, applied: false, showAudit: false }]);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      inputRef.current?.focus();
-    }
-  }
-
-  function confirmExtraction(msgIndex) {
-    setMessages(prev => prev.map((m, i) => {
-      if (i !== msgIndex || m.role !== "extraction") return m;
-      const updates = { ...m.updates };
-      if (m.redFlagsToReview?.length) {
-        const existingNotes = data.neuro_clinician_notes || "";
-        const aiNote = "AI noticed in intake narrative, please screen: " + m.redFlagsToReview.join("; ");
-        updates.neuro_clinician_notes = existingNotes ? (existingNotes + String.fromCharCode(10) + aiNote) : aiNote;
-        // Also surface in the Subjective tab's Red Flag Alert Banner, which
-        // reads the structured ai_red_flags field (not the free-text notes).
-        const SEP_S = "|||";
-        const existingAiRF = data.ai_red_flags ? String(data.ai_red_flags).split(SEP_S).filter(Boolean) : [];
-        const mergedAiRF = [...existingAiRF];
-        for (const rf of m.redFlagsToReview) { if (rf && !mergedAiRF.includes(rf)) mergedAiRF.push(rf); }
-        updates.ai_red_flags = mergedAiRF.join(SEP_S);
-      }
-      // The Subjective tab's "Review & Run Analysis" button stays disabled
-      // until at least one region is in cx_selected_regions. That list is
-      // ordinary local state inside SubjectiveModule, seeded once from
-      // data.cx_selected_regions on mount -- this chat isn't mounted
-      // alongside it, so the only way a region filled here actually shows
-      // up (and unlocks analysis) once the clinician opens Subjective is
-      // to merge it into the persisted field directly, same dedupe/cap-at-3
-      // rule SubjectiveObjective.jsx's own applyAiResult uses.
-      const regionsToAdd = (m.regions && m.regions.length) ? m.regions : (m.region ? [m.region] : []);
-      if (regionsToAdd.length) {
-        let existing = [];
-        try { existing = JSON.parse(data.cx_selected_regions || "[]"); } catch {}
-        const merged = [...existing];
-        for (const r of regionsToAdd) {
-          if (r && !merged.includes(r) && merged.length < 3) merged.push(r);
-        }
-        if (merged.length !== existing.length) {
-          updates.cx_selected_regions = JSON.stringify(merged);
-        }
-      }
-      // Extraction audit trail (zero-hallucination spec): the verbatim
-      // narrative, the AI's own per-field confidence + source quotes, and
-      // the missing-information checklist -- stored as ONE new field, not
-      // written into any existing field, so cc_main/dem_age/etc. keep
-      // storing plain values exactly as every other part of the app
-      // (SOAP, interpretation engine, Patient Profile) already expects.
-      if (m.extractionMeta) {
-        updates.ai_extraction_audit = JSON.stringify({
-          ...m.extractionMeta,
-          appliedAt: new Date().toISOString(),
-        });
-      }
-      set && set(updates);
-      return { ...m, applied: true };
-    }));
-  }
-
   function clearChat() {
     setMessages([]);
     setError("");
-  }
-
-  function toggleAudit(msgIndex) {
-    setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, showAudit: !m.showAudit } : m));
-  }
-
-  // Turns a raw AI field name into a readable label -- "chiefComplaint" -> "Chief Complaint"
-  function humanizeKey(key) {
-    return key.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()).trim();
   }
 
   // Colors — fallback if PC not passed
@@ -492,126 +394,6 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
         )}
 
         {messages.map((m, i) => (
-          m.role === "extraction" ? (
-            <div key={i} style={{
-              maxWidth: "92%", alignSelf: "flex-start",
-              background: surface, border: `1.5px solid ${m.applied ? "#86efac" : accent + "40"}`,
-              borderRadius: "4px 12px 12px 12px", padding: "12px 14px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: "0.85rem" }}>{m.applied ? "✅" : "📋"}</span>
-                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: m.applied ? "#166534" : accent }}>
-                  {m.applied ? `Filled ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} into the patient record` : `Found ${m.filledLabels.length} field${m.filledLabels.length===1?"":"s"} to fill`}
-                </span>
-              </div>
-              {(m.regions && m.regions.length ? m.regions : (m.region ? [m.region] : [])).length > 0 && (
-                <div style={{ fontSize: "0.74rem", color: muted, marginBottom: 6 }}>{((m.regions && m.regions.length ? m.regions : [m.region]).length > 1) ? "Regions detected: " : "Region detected: "}<strong style={{ color: text }}>{(m.regions && m.regions.length ? m.regions : [m.region]).join(", ")}</strong></div>
-              )}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
-                {m.filledLabels.map((label, li) => (
-                  <span key={li} style={{
-                    fontSize: "0.68rem", padding: "3px 8px", borderRadius: 99,
-                    background: isDark ? `${accent}18` : `${accent}0d`, color: accent,
-                    border: `1px solid ${accent}30`,
-                  }}>{label}</span>
-                ))}
-              </div>
-
-              {/* Zero-hallucination review: original narrative side by
-                  side with what was extracted, per-field confidence and
-                  the source quote it came from, and what's still
-                  missing -- so nothing is taken on faith. */}
-              {m.rawResult && (
-                <button type="button" onClick={() => toggleAudit(i)} style={{
-                  display: "block", width: "100%", textAlign: "left", padding: "6px 10px",
-                  marginBottom: 8, borderRadius: 8, border: `1px solid ${border}`,
-                  background: "transparent", color: muted, fontSize: "0.7rem", fontWeight: 700,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>
-                  {m.showAudit ? "▾ Hide" : "▸ Show"} original speech vs. extracted fields (confidence + source per field)
-                </button>
-              )}
-              {m.showAudit && m.rawResult && (
-                <div style={{
-                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
-                  marginBottom: 10, padding: "10px", borderRadius: 8,
-                  background: isDark ? "rgba(255,255,255,0.03)" : "#FAFAFA",
-                  border: `1px solid ${border}`,
-                }}>
-                  <div>
-                    <div style={{ fontSize: "0.66rem", fontWeight: 800, color: muted, textTransform: "uppercase", marginBottom: 5 }}>Original speech</div>
-                    <div style={{ fontSize: "0.74rem", color: text, lineHeight: 1.5, fontStyle: "italic" }}>
-                      "{m.extractionMeta?.narrative || "(not available)"}"
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "0.66rem", fontWeight: 800, color: muted, textTransform: "uppercase", marginBottom: 5 }}>Extracted fields</div>
-                    {Object.entries(m.rawResult)
-                      .filter(([k, v]) => !k.startsWith("_") && v != null && v !== "" && !(Array.isArray(v) && v.length === 0))
-                      .map(([k, v]) => {
-                        const conf = m.extractionMeta?.confidence?.[k];
-                        const src = m.extractionMeta?.sourceQuotes?.[k];
-                        const needsReview = conf != null && conf < 90;
-                        const displayVal = Array.isArray(v) ? v.join(", ") : String(v);
-                        return (
-                          <div key={k} style={{ marginBottom: 6, paddingBottom: 6, borderBottom: `1px solid ${border}` }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
-                              <span style={{ fontSize: "0.72rem", fontWeight: 700, color: text }}>{humanizeKey(k)}: {displayVal}</span>
-                              {conf != null && (
-                                <span style={{
-                                  fontSize: "0.62rem", fontWeight: 800, padding: "1px 6px", borderRadius: 99, flexShrink: 0,
-                                  background: needsReview ? "#FEF2F2" : "#f0fdf4",
-                                  color: needsReview ? "#B91C1C" : "#166534",
-                                }}>{needsReview ? `⚠ ${conf}% — Needs Review` : `${conf}%`}</span>
-                              )}
-                            </div>
-                            {src && <div style={{ fontSize: "0.68rem", color: muted, marginTop: 2 }}>"{src}"</div>}
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
-              {m.extractionMeta?.missingInfo?.length > 0 && (
-                <div style={{
-                  padding: "8px 10px", borderRadius: 8, marginBottom: 8,
-                  background: isDark ? "rgba(180,83,9,0.12)" : "#FFFBEB",
-                  border: "1px solid #FDE68A",
-                }}>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#92400E", marginBottom: 3 }}>Not mentioned — worth asking about:</div>
-                  <div style={{ fontSize: "0.72rem", color: "#92400E" }}>{m.extractionMeta.missingInfo.join(" · ")}</div>
-                </div>
-              )}
-              {m.redFlagsToReview?.length > 0 && (
-                <div style={{
-                  display: "flex", gap: 8, alignItems: "flex-start",
-                  padding: "8px 10px", borderRadius: 8, marginBottom: 10,
-                  background: isDark ? "rgba(220,38,38,0.14)" : "#FEF2F2",
-                  border: "1px solid #FCA5A5",
-                }}>
-                  <span style={{ flexShrink: 0 }}>⚠</span>
-                  <div style={{ fontSize: "0.74rem", color: "#B91C1C", lineHeight: 1.5 }}>
-                    <strong>Worth screening:</strong> {m.redFlagsToReview.join("; ")}. Not auto-marked — that's your call, but it'll be noted in Red Flags for you to check.
-                  </div>
-                </div>
-              )}
-              {!m.applied ? (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => confirmExtraction(i)} style={{
-                    flex: 1, padding: "8px", borderRadius: 8, border: "none",
-                    background: `linear-gradient(135deg,${accent},${a2})`, color: "#fff",
-                    fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  }}>✓ Confirm and fill record</button>
-                  <button onClick={() => setMessages(prev => prev.filter((_, idx) => idx !== i))} style={{
-                    padding: "8px 12px", borderRadius: 8, border: `1px solid ${border}`,
-                    background: "transparent", color: muted, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit",
-                  }}>Discard</button>
-                </div>
-              ) : (
-                <div style={{ fontSize: "0.72rem", color: "#166534" }}>Saved. Check Demographics and Subjective to review what was filled.</div>
-              )}
-            </div>
-          ) : (
           <div key={i}
             ref={(i === messages.length - 1 && m.role === "user") ? questionAnchorRef : null}
             style={{
@@ -655,7 +437,6 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
               </div>
             )}
           </div>
-          )
         ))}
 
         {loading && (
@@ -739,9 +520,6 @@ export default function AIAssistant({ data, set, PC, onClose, requireAuth }) {
             {loading ? "..." : "Send"}
           </button>
         </div>
-        {/* "📋 Fill patient record from this instead" button removed (2026-07-30)
-            — hidden from students. extractToRecord() below is untouched and
-            still callable if this gets wired back in later. */}
         <div style={{ fontSize: "0.72rem", color: muted, marginTop: 6, textAlign: "center" }}>
           Press Enter to send · Shift+Enter for new line · AI responses are assistive only
         </div>

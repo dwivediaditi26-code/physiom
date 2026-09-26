@@ -49,9 +49,9 @@ describe("Accessibility — AI Assistant chat", () => {
     expect(results).toHaveNoViolations();
   });
 
-  test("no axe violations with a patient loaded and set() available", async () => {
+  test("no axe violations with a patient loaded", async () => {
     const { container } = render(
-      <AIAssistant data={{ dem_name: "Test Patient", cc_main: "Left shoulder pain" }} set={() => {}} onClose={() => {}} />
+      <AIAssistant data={{ dem_name: "Test Patient", cc_main: "Left shoulder pain" }} onClose={() => {}} />
     );
     const results = await axe(container);
     expect(results).toHaveNoViolations();

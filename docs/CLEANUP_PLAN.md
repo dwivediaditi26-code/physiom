@@ -34,11 +34,12 @@
 | CI on Node 24: `npm ci` works again (Android build + the nightly AI check were failing on it) | `1a2b2e4` |
 | Real app icon + splash for Android and iOS (source: `assets/logo.png`) | `3c894d2` |
 | Section 3 root tidy-up + `README.md`; `vercel.json` build command simplified (the Vite plugin already stamps `sw.js`) | `4bb6664` |
-| Step 1: the 58 stale checks updated to the current screens (see below); new "Checks" GitHub job runs typecheck + all tests on every push/PR; the "old patient data" list (`OrthoOldDataPicker`, `listOldPatientRecords`, old-flow import), unreachable since `b7fe240`, removed | this commit, "Bring the automatic checks up to date" |
+| Step 1: the 58 stale checks updated to the current screens (see below); new "Checks" GitHub job runs typecheck + all tests on every push/PR; the "old patient data" list (`OrthoOldDataPicker`, `listOldPatientRecords`, old-flow import), unreachable since `b7fe240`, removed | `ab8152a` |
+| Your call: the AI chat's hidden "Fill patient record" feature removed (review card, confirm/fill code, and the 15 skipped checks that only covered it). The shared mapping in `aiIntakeParser.js` stays, the older Subjective screen still uses it | this commit, "Remove the AI chat's hidden Fill patient record feature" |
 
 What changed in the checks, in short: Home, Learn, Clinical (Today / Assess / Patients / Treatment), the New Assessment quick form and the Objective page's topic tabs were all redesigned in August–September, and the checks still looked for the old buttons and titles. They now follow the same taps a clinician makes today; the shared steps live in `src/__tests__/clinicalFlow.js`. PhysioFeed checks now expect the intended "signed-in failures show an error instead of faking success" behaviour (P7/P9), `/api/parse` checks go through its new login gate, and one check that printed after finishing (and made the whole run look failed) was fixed. Result: 1,193 pass, 0 fail.
 
-Still marked "skipped" on purpose (16): 15 cover the AI chat's "Fill patient record" button you hid from students on 2026-07-30 (kept in case it comes back), and 1 tracks a known engine bug in the older Subjective analysis (region names with L/R don't match, see `lumbarReviewRunAnalysis.test.jsx`).
+Still marked "skipped" on purpose (1): it tracks a known engine bug in the older Subjective analysis (region names with L/R don't match, see `lumbarReviewRunAnalysis.test.jsx`). The other 15 skipped checks covered the AI chat's "Fill patient record" button and were removed with it.
 
 `ConditionObjectiveAssessment.jsx` was skipped throughout because another session is working in it.
 

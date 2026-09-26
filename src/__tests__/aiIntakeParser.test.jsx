@@ -1,28 +1,15 @@
 // aiIntakeParser.test.jsx
-// Covers wiring the AI dictation/intake feature into the AI Assistant
-// chat window. The user reported "when speaking to AI it is not taking
-// my word" -- investigation found the AI Assistant chat had no write
-// path to the patient record at all (no `set` prop, /api/chat only ever
-// returns a text reply). Meanwhile SubjectiveObjective.jsx already had a
-// complete, working dictation feature (mic/text button -> /api/parse ->
-// review -> apply), just not reachable from the chat the user was
-// actually using.
+// Covers mapParseResultToUpdates (aiIntakeParser.js): the field mapping
+// that turns an /api/parse result into the older Subjective screen's
+// field ids (SubjectiveObjective.jsx's dictation feature uses it). It also
+// surfaces the AI's `flags` array of red-flag phrases as a prompt to
+// screen, appended to the visible neuro_clinician_notes field -- never
+// auto-marked positive/negative.
 //
-// Extracted that feature's field-mapping logic into aiIntakeParser.js so
-// both surfaces share exactly one implementation (no drift risk), wired
-// a new extraction path into AIAssistant.jsx reusing it, and fixed a
-// real gap found while extracting: the AI already returns a `flags`
-// array of red-flag phrases it noticed, but the original code silently
-// discarded it. Now surfaced as a prompt to screen, appended to the
-// real, visible neuro_clinician_notes field -- never auto-marked
-// positive/negative.
-import React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-
-Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
+// (The AI chat's own "Fill patient record" path that also used this was
+// hidden from students on 2026-07-30 and removed on 2026-09-25.)
+import { describe, it, expect } from "vitest";
 import { mapParseResultToUpdates, REGION_PREFIX_MAP } from "../aiIntakeParser.js";
-import AIAssistant from "../AIAssistant.jsx";
 
 // The user's own real dictation example, as /api/parse would plausibly
 // structure it from "25 year old, post-op stiffness and limited ROM
@@ -97,63 +84,5 @@ describe("mapParseResultToUpdates — the shared extraction logic", () => {
     // Unspecified side defaults to a resolvable prefix too
     expect(mapParseResultToUpdates({ region: "Knee" }, {}).region).toBe("Knee (R)");
     expect(mapParseResultToUpdates({ region: "Shoulder", laterality: "Both" }, {}).region).toBe("Shoulder (R)");
-  });
-});
-
-describe("AI Assistant chat — extraction flow", () => {
-  // The "Fill patient record from this instead" trigger button was
-  // deliberately removed from the chat UI on 2026-07-30 ("hidden from
-  // students" — see AIAssistant.jsx's removal comment above the chat
-  // input). extractToRecord()/confirmExtraction() themselves were left
-  // fully intact and are still callable if the button is wired back in
-  // later — this is a UI-visibility decision, not a deletion of the
-  // feature. Until that decision is revisited, the button has no
-  // reachable trigger in the rendered UI, so the 3 tests below that
-  // depend on clicking it are skipped rather than deleted (re-enable them
-  // if/when the button returns). The regression test in this block
-  // instead locks in that the button STAYS hidden, so it can't silently
-  // reappear without someone consciously updating this file.
-  it("never renders a 'Fill patient record' trigger button (intentionally hidden from students since 2026-07-30)", () => {
-    const { rerender } = render(<AIAssistant data={{}} onClose={() => {}} />);
-    expect(screen.queryByText(/Fill patient record/)).not.toBeInTheDocument();
-    rerender(<AIAssistant data={{}} set={vi.fn()} onClose={() => {}} />);
-    expect(screen.queryByText(/Fill patient record/)).not.toBeInTheDocument();
-  });
-
-  it.skip("extracting the user's narrative shows a review card with real fields, and confirming calls set() with the mapped updates", async () => {
-    const setMock = vi.fn();
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve(shoulderRTAResult) })
-    );
-
-    render(<AIAssistant data={{}} set={setMock} onClose={() => {}} />);
-    const textarea = screen.getByPlaceholderText(/Ask about this patient/);
-    fireEvent.change(textarea, { target: { value: "25 year old, post-op stiffness right shoulder, RTA fracture 2 months back" } });
-    fireEvent.click(screen.getByText(/Fill patient record from this instead/));
-
-    await waitFor(() => expect(screen.getByText(/Found \d+ field/)).toBeInTheDocument());
-    expect(screen.getByText(/Worth screening/)).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith("/api/parse", expect.objectContaining({ method: "POST" }));
-
-    fireEvent.click(screen.getByText("✓ Confirm and fill record"));
-    expect(setMock).toHaveBeenCalledTimes(1);
-    const savedUpdates = setMock.mock.calls[0][0];
-    expect(savedUpdates.dem_age).toBe("25");
-    expect(savedUpdates.neuro_clinician_notes).toContain("infection signs");
-    expect(screen.getByText(/Filled \d+ field/)).toBeInTheDocument();
-  });
-
-  it.skip("discarding a review card removes it without ever calling set()", async () => {
-    const setMock = vi.fn();
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve({ age: 30 }) })
-    );
-    render(<AIAssistant data={{}} set={setMock} onClose={() => {}} />);
-    fireEvent.change(screen.getByPlaceholderText(/Ask about this patient/), { target: { value: "30 year old with back pain" } });
-    fireEvent.click(screen.getByText(/Fill patient record from this instead/));
-    await waitFor(() => expect(screen.getByText(/Found \d+ field/)).toBeInTheDocument());
-    fireEvent.click(screen.getByText("Discard"));
-    expect(screen.queryByText(/Found \d+ field/)).not.toBeInTheDocument();
-    expect(setMock).not.toHaveBeenCalled();
   });
 });
