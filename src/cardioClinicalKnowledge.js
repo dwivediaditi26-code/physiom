@@ -126,7 +126,7 @@ export const CARDIO_PROBLEMS = [
       const findings = [];
       if (sub.cough) findings.push({ label: "Cough", value: sub.cough });
       if (sputum) findings.push({ label: "Sputum", value: [sub.sputumAmount, sub.sputumColour, sub.sputumConsistency].filter(Boolean).join(", ") });
-      if (crackly) findings.push({ label: "Auscultation", value: Object.entries(resp.auscultation || {}).filter(([, v]) => v === "Crackles" || v === "Rhonchi").map(([k, v]) => `${k}: ${v}`).join(", ") });
+      if (crackly) findings.push({ label: "Auscultation", value: Object.entries(resp.auscultation || {}).filter(([, v]) => v === "Crackles" || v === "Rhonchi").map(([k, v]) => `${k.replace(/__/g, " ")}: ${v}`).join(", ") });
       return { findings, baseline: { cough: sub.cough, sputumAmount: sub.sputumAmount } };
     },
     goals: [

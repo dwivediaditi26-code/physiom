@@ -1,4 +1,5 @@
 import React from "react";
+import { humanizeKey as humanize } from "./medicalAbbreviations.js";
 
 // Full documented assessment view (2026-08-20, Aditi's request) -- NOT a
 // tabbed/expandable summary (that's what Patient Profile's Assessment tab
@@ -17,10 +18,6 @@ const SECTION_ICONS = {
   precautions: "⚠️", vitals: "❤️", cardiovascular: "🫀", respiratory: "🫁",
   exercise: "🚶", exerciseTolerance: "🚶",
 };
-
-function humanize(k) {
-  return String(k).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
-}
 
 // LRGrid-shaped values look like {"Row__Col": "value", ...} -- rebuild
 // them into a real table instead of dumping "Row__Col: value" text rows.

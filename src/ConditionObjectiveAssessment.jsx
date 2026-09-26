@@ -429,10 +429,24 @@ const OBJECTIVE_MODULE_LABELS = {
   sttt: "STTT", kineticChain: "Kinetic Chain", functionalScreen: "Functional Screen",
   special: "Special Test", outcome: "Outcome Measure",
 };
-function objectiveFieldLabel(module, sub) {
+function objectiveFieldLabel(module, sub, condition) {
   const base = OBJECTIVE_MODULE_LABELS[module] || module;
   if (module === "special") return sub && sub.endsWith("_side") ? `${sub.slice(0, -5)} — side` : sub || base;
   if (module === "outcome") return sub || base;
+  // Multi-item findings (CPA muscles, Kinetic Chain/Functional Screen
+  // fields) key their state as a synthetic "m0"/"f0" index token, not a
+  // clinical name -- resolve it back to the real muscle/field name instead
+  // of showing rows like "CPA — NKT — m0".
+  const mIdx = /^m(\d+)$/.exec(sub || "");
+  if (mIdx && (module === "cpa" || module === "cpaNkt")) {
+    const name = condition?.cpa?.muscles?.[Number(mIdx[1])]?.name;
+    if (name) return `${base} — ${name}`;
+  }
+  const fIdx = /^f(\d+)$/.exec(sub || "");
+  if (fIdx && (module === "kineticChain" || module === "functionalScreen")) {
+    const label = condition?.[module]?.fields?.[Number(fIdx[1])]?.label;
+    if (label) return `${base} — ${label}`;
+  }
   if (!sub || ["chips", "state", "mode", "test", "r", "p", "m"].includes(sub)) return base;
   return `${base} — ${sub}`;
 }
@@ -452,7 +466,7 @@ export function formatConditionObjectiveSection(data) {
       const conditionName = cfg.conditions[conditionId]?.name || conditionId;
       groups.push({
         heading: `${cfg.label} — ${conditionName}`,
-        rows: fields.map(({ module, sub, val }) => ({ label: objectiveFieldLabel(module, sub), value: val })),
+        rows: fields.map(({ module, sub, val }) => ({ label: objectiveFieldLabel(module, sub, cfg.conditions[conditionId]), value: val })),
       });
     });
   });

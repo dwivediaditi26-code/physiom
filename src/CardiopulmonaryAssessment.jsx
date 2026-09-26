@@ -9,6 +9,7 @@ import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { getTemplates as getCardioTemplates, saveTemplate as saveCardioTemplate, deleteTemplate as deleteCardioTemplate } from "./cardioTemplates.js";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
+import { humanizeKey } from "./medicalAbbreviations.js";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -1991,7 +1992,7 @@ function rowsForStep(step, section, formatters) {
   const formatter = formatters?.[step.id];
   if (formatter) return formatter(section);
   return Object.entries(section)
-    .map(([k, v]) => [k, fmtVal(v)])
+    .map(([k, v]) => [humanizeKey(k), fmtVal(v)])
     .filter(([, v]) => v);
 }
 const isGroupedResult = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
