@@ -7,6 +7,7 @@ import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSectio
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
+import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
 import { Icon } from "./StepIcons.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
@@ -205,7 +206,7 @@ function FieldShell({ label, hint, howTo, info, children }) {
     <div className="field-block">
       {label && (
         <div className="field-label-row">
-          <span className="field-label">{label}</span>
+          <FieldLabel>{label}</FieldLabel>
           {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
         </div>
       )}
@@ -556,12 +557,12 @@ function Alert({ tone = "amber", children }) {
   return <div className={"alert alert-" + tone}>{children}</div>;
 }
 
-function SectionIntro({ icon, title, sub }) {
+function SectionIntro({ icon, title, sub, titleAs: TitleAs }) {
   return (
     <div className="section-intro">
       {icon && <div className="section-intro-icon">{icon}</div>}
       <div>
-        <div className="section-intro-title">{title}</div>
+        {TitleAs ? <TitleAs>{title}</TitleAs> : <div className="section-intro-title">{title}</div>}
         {sub && <div className="section-intro-sub">{sub}</div>}
       </div>
     </div>
@@ -1897,14 +1898,18 @@ export function SummaryStyles() {
     <style>{`
       .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
       .section-intro-icon { font-size: 26px; line-height: 1; }
-      .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
-      .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
-      .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
-      .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-      .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
+      .section-intro-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; letter-spacing: -0.01em; }
+      .section-intro-sub { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 2px; }
+      .assessment-title { font-weight: ${TYPO.assessmentTitle.weight}; font-size: ${TYPO.assessmentTitle.size}px; line-height: ${TYPO.assessmentTitle.lineHeight}; color: ${BRAND.ink}; }
+      .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: ${SPACING.cardPaddingV}px ${SPACING.cardPaddingH}px; margin-bottom: ${SPACING.betweenMajorSections}px; }
+      .summary-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+      .summary-row { display: flex; gap: 8px; padding: 5px 0; border-top: 1px solid #F5F3FB; }
       .summary-row:first-child { border-top: none; }
-      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: 600; }
-      .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
+      .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; }
+      .summary-val { flex: 1; font-weight: ${TYPO.clinicalValue.weight}; font-size: ${TYPO.clinicalValue.size}px; line-height: ${TYPO.clinicalValue.lineHeight}; word-break: break-word; color: ${BRAND.ink}; }
+      .summary-group { margin-top: 10px; }
+      .summary-group:first-child { margin-top: 0; }
+      .summary-group-heading { font-size: ${TYPO.subsectionHeading.size}px; font-weight: ${TYPO.subsectionHeading.weight}; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 4px; }
       .primary-btn {
         flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
         padding: 14px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer;
@@ -1977,7 +1982,7 @@ export function SummarySection({ setting, data, assessSteps, formatters, onShare
 
   return (
     <>
-      <SectionIntro icon={<Icon name="check" />} title="Summary & Review" sub={settingLabel} />
+      <SectionIntro icon={<Icon name="check" />} title="Summary & Review" sub={settingLabel} titleAs={AssessmentTitle} />
       {steps.filter((s) => s.id !== "summary").map((step) => {
         const rows = rowsForStep(step, data[step.id] || {}, formatters);
         if (!rows.length) return null;
@@ -1987,10 +1992,7 @@ export function SummarySection({ setting, data, assessSteps, formatters, onShare
               {step.icon} {step.label}
             </div>
             {rows.map(({ label, value }) => (
-              <div className="summary-row" key={label}>
-                <span className="summary-key">{label}</span>
-                <span className="summary-val">{value}</span>
-              </div>
+              <SummaryRow key={label} label={label} value={value} />
             ))}
           </div>
         );
@@ -2619,15 +2621,18 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
-        .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
-        .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
+        .section-intro-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; letter-spacing: -0.01em; }
+        .section-intro-sub { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 2px; }
 
-        .subheading { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; text-transform: uppercase; letter-spacing: .04em; margin: 22px 0 10px; }
+        .assessment-title { font-weight: ${TYPO.assessmentTitle.weight}; font-size: ${TYPO.assessmentTitle.size}px; line-height: ${TYPO.assessmentTitle.lineHeight}; color: ${BRAND.ink}; }
 
-        .field-block { margin-bottom: 16px; }
-        .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-        .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
-        .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
+        /* Normal case, not uppercase (2026-09-26, Aditi's typography pass). */
+        .subheading { font-weight: ${TYPO.subsectionHeading.weight}; font-size: ${TYPO.subsectionHeading.size}px; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin: ${SPACING.betweenSubsections}px 0 10px; }
+
+        .field-block { margin-bottom: ${SPACING.betweenRelatedFields}px; }
+        .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: ${SPACING.labelToValue}px; flex-wrap: wrap; }
+        .field-label { font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; color: ${BRAND.ink}; }
+        .hint { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; }
 
         .info-btn-wrap { display: inline-flex; }
         .info-btn { border: 1px solid ${BRAND.purple}; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
@@ -2723,12 +2728,15 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         .picker-label { font-weight: 700; font-size: 15px; }
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
 
-        .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
-        .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
-        .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
+        .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: ${SPACING.cardPaddingV}px ${SPACING.cardPaddingH}px; margin-bottom: ${SPACING.betweenMajorSections}px; }
+        .summary-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+        .summary-row { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
-        .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-        .summary-val { flex: 1; font-weight: 500; word-break: break-word; }
+        .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; }
+        .summary-val { flex: 1; font-weight: ${TYPO.clinicalValue.weight}; font-size: ${TYPO.clinicalValue.size}px; line-height: ${TYPO.clinicalValue.lineHeight}; word-break: break-word; }
+        .summary-group { margin-top: 10px; }
+        .summary-group:first-child { margin-top: 0; }
+        .summary-group-heading { font-size: ${TYPO.subsectionHeading.size}px; font-weight: ${TYPO.subsectionHeading.weight}; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 4px; }
 
         /* "position: sticky" here never actually stuck -- same root cause
            as CardiopulmonaryAssessment.jsx's matching fix: none of this
