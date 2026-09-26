@@ -296,7 +296,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // TabLoader placeholder some tabs (e.g. the opaque assessment wizards)
   // show until a real navTo() call adds them.
   const [mountedTabs, setMountedTabs] = useState(() => new Set(["home", active]));
-  const [txTab, setTxTab] = useState("exercise");  // "exercise" | "tx" | "hep"
+  const [txTab, setTxTab] = useState("tx");  // "tx" | "hep"
 
   const [data, setData] = useState(() => {
     try {
@@ -2092,13 +2092,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     return(
                       <div>
                         <div style={{display:"flex",gap:8,marginBottom:16}}>
-                          <button onClick={()=>setTxTab("exercise")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="exercise"?PC.accent:PC.border}`,background:txTab==="exercise"?`${PC.accent}15`:PC.s2,color:txTab==="exercise"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏋 Exercise</button>
                           <button onClick={()=>setTxTab("tx")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="tx"?PC.accent:PC.border}`,background:txTab==="tx"?`${PC.accent}15`:PC.s2,color:txTab==="tx"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🤲 Techniques</button>
                           <button onClick={()=>setTxTab("hep")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="hep"?PC.accent:PC.border}`,background:txTab==="hep"?`${PC.accent}15`:PC.s2,color:txTab==="hep"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏠 Home Protocol</button>
                         </div>
-                        {txTab==="exercise"
-                          ? <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>
-                          : txTab==="hep"
+                        {txTab==="hep"
                           ? <HomeProtocolTab data={data} set={set} PC={PC}/>
                           : <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
                         }
@@ -2107,15 +2104,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   }
                   return(
                     <div>
-                      {/* Desktop 3-tab row */}
+                      {/* Desktop tab row */}
                       <div style={{display:"flex",gap:6,marginBottom:16,background:PC.s2,borderRadius:10,padding:4,border:`1px solid ${PC.border}`}}>
-                        {[["exercise","🏋","Exercise Prescription"],["tx","🤲","Tx Techniques"],["hep","🏠","Home Protocol"]].map(([key,icon,label])=>(
+                        {[["tx","🤲","Tx Techniques"],["hep","🏠","Home Protocol"]].map(([key,icon,label])=>(
                           <button key={key} onClick={()=>setTxTab(key)} style={{flex:1,padding:"9px 8px",borderRadius:8,border:`1.5px solid ${txTab===key?PC.accent:PC.border}`,background:txTab===key?`${PC.accent}12`:PC.surface,color:txTab===key?PC.accent:PC.muted,fontWeight:700,fontSize:"0.8rem",cursor:"pointer",transition:"all 0.15s"}}>
                             {icon} {label}
                           </button>
                         ))}
                       </div>
-                      {txTab==="exercise" && <Suspense fallback={<TabFallback/>}><LazyExercise data={data} set={set}/></Suspense>}
                       {txTab==="tx"       && <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>}
                       {txTab==="hep"      && <HomeProtocolTab data={data} set={set} PC={PC}/>}
                     </div>

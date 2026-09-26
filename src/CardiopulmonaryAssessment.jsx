@@ -212,11 +212,24 @@ function InfoButton({ text }) {
 // tabs) -- replaces the plain-text InfoButton wherever a field has a
 // matching cardiovascularData/respiratoryData entry. Sits inline with the
 // label, same row, no extra vertical space.
+// Shows a square thumbnail of the card's own first Perform-tab photo when
+// one has actually been uploaded, falling back to the plain gradient ⓘ
+// circle when there's no photo yet or it 404s -- same pattern as
+// NeurologicalAssessment.jsx's InfoCardButton.
 function InfoCardButton({ data }) {
   const openCard = useContext(InfoCardContext);
+  const [imgFailed, setImgFailed] = useState(false);
+  const firstSlot = data?.perform?.images?.[0] ?? data?.perform?.image ?? null;
+  const thumbSrc = firstSlot && typeof firstSlot === "object" ? firstSlot.src : firstSlot;
   return (
-    <button type="button" className="info-card-btn" onClick={() => openCard?.(data)} title={`Learn: ${data.title}`} aria-label={`Learn: ${data.title}`}>
-      ⓘ
+    <button
+      type="button"
+      className={thumbSrc && !imgFailed ? "info-card-btn info-card-btn-img" : "info-card-btn"}
+      onClick={() => openCard?.(data)}
+      title={`Learn: ${data.title}`}
+      aria-label={`Learn: ${data.title}`}
+    >
+      {thumbSrc && !imgFailed ? <img src={thumbSrc} alt="" onError={() => setImgFailed(true)} /> : "ⓘ"}
     </button>
   );
 }
@@ -1967,7 +1980,7 @@ export function SummaryStyles() {
       .section-intro-sub { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 2px; }
       .assessment-title { font-weight: ${TYPO.assessmentTitle.weight}; font-size: ${TYPO.assessmentTitle.size}px; line-height: ${TYPO.assessmentTitle.lineHeight}; color: ${BRAND.ink}; }
       .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: ${SPACING.cardPaddingV}px ${SPACING.cardPaddingH}px; margin-bottom: ${SPACING.betweenMajorSections}px; }
-      .summary-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+      .summary-title { font-weight: ${TYPO.subsectionHeading.weight}; font-size: ${TYPO.subsectionHeading.size}px; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
       .summary-row { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
       .summary-row:first-child { border-top: none; }
       .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; }
@@ -2598,6 +2611,12 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            purple reads at a glance instead of purple-on-near-white. */
         .info-card-btn { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; border-radius: 50%; font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
         .info-card-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(108,77,255,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
+        /* Square photo-thumbnail variant -- same tap target/behavior as the
+           plain ⓘ circle above, just a small square preview of the card's
+           own first Perform-tab photo instead of a bare icon, same pattern
+           as NeurologicalAssessment.jsx's InfoCardButton. */
+        .info-card-btn-img { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: ${BRAND.purpleFaint}; box-shadow: 0 2px 6px rgba(108,77,255,0.25); }
+        .info-card-btn-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         .text-input-wrap, .select-wrap { position: relative; display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 4px 6px 4px 12px; }
         .text-input, .select-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: transparent; min-width: 0; }
@@ -2688,7 +2707,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         .picker-desc { font-size: 12px; color: ${BRAND.gray}; margin-top: 1px; }
 
         .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: ${SPACING.cardPaddingV}px ${SPACING.cardPaddingH}px; margin-bottom: ${SPACING.betweenMajorSections}px; }
-        .summary-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
+        .summary-title { font-weight: ${TYPO.subsectionHeading.weight}; font-size: ${TYPO.subsectionHeading.size}px; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin-bottom: 8px; }
         .summary-row { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
         .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; }
