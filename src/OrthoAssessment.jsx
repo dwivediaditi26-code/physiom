@@ -199,6 +199,21 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
         });
         return next;
       });
+    } else if (selectedRegions.length === 0) {
+      // AiJourneyDots (AI_PRE_WIZARD_JUMPABLE above) lets a clinician jump
+      // straight from Demographics to Subjective, past Region's own
+      // canProceedRegion gate entirely -- so reaching here with no region
+      // manually picked AND the narrative not naming one either (2026-09-26,
+      // Aditi: "region selection is not happening... while speaking... it's
+      // not taking the region") isn't guaranteed not to happen the way it
+      // would be if Region's gate were the only way through. Landing on
+      // step 3 with selectedRegions still empty leaves Objective/Summary
+      // with nothing to show and no visible explanation why -- send them
+      // back to Region instead, with a heads-up, rather than silently
+      // going nowhere.
+      setAiSubStep(1);
+      alert("Your narrative didn't clearly name a body region — please pick it manually so the assessment can continue.");
+      return;
     }
     setAiIntakeDone(true);
     setStep(3);
