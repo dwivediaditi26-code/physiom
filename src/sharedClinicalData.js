@@ -5062,7 +5062,16 @@ async function downloadPDFFromHTML(html, filename) {
     container.appendChild(bodyWrap);
     document.body.appendChild(container);
 
-    // Let fonts/images/layout settle before snapshotting.
+    // Let fonts/images/layout settle before snapshotting -- PDF_BASE_STYLES
+    // now @imports Inter (Aditi's request), which is a real network fetch,
+    // not just layout settling, so a blind short timeout risked capturing
+    // the fallback system font on a cold cache. document.fonts.ready
+    // resolves once every @font-face triggered by this document has
+    // actually finished loading; the short timeout stays as the fallback
+    // for browsers without the Font Loading API.
+    if (document.fonts && document.fonts.ready) {
+      try { await document.fonts.ready; } catch {}
+    }
     await new Promise((res) => setTimeout(res, 60));
 
     const A4W_MM = 210, A4H_MM = 297;
@@ -5134,83 +5143,173 @@ async function downloadPDFFromHTML(html, filename) {
 }
 
 // ── Shared page styles ─────────────────────────────────────────────────────
+// Minimal, premium clinical-document look (2026-09-26, Aditi's reference
+// image direction): white page, deep navy type, subtle lavender accents
+// (never a solid-fill purple bar), light grey-blue panels, thin 1px
+// dividers, Inter throughout. Design tokens live as CSS custom properties
+// on :root so every rule below (and any future rule) stays in sync
+// automatically instead of repeating hex values.
 const PDF_BASE_STYLES = `
-  @page { size: A4; margin: 18mm 20mm; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @page { size: A4; margin: 16mm 18mm; }
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .no-break { break-inside: avoid; page-break-inside: avoid; }
     .page-break { page-break-before: always; }
   }
+  :root {
+    --navy: #1B2340;
+    --slate: #64748B;
+    --slate-light: #97A1B4;
+    --lavender: #8B7FCB;
+    --lavender-text: #6E5FAE;
+    --lavender-pale: #EFEBFB;
+    --panel-bg: #F4F6FB;
+    --divider: #E3E7F1;
+  }
   * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
   body {
-    background: #fff; color: #111827;
-    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
-    font-size: 11px; line-height: 1.6; margin: 0; padding: 0;
+    background: #fff; color: var(--navy);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    font-size: 11px; line-height: 1.55; margin: 0; padding: 0;
   }
-  /* Purple masthead banner (matches the app's own brand purple, orthoFieldKit.jsx's
-     BRAND.purple/purpleDark) instead of the old plain-white/sky-blue header --
-     Aditi: "make the pdf very good colourful". */
-  .page-header {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    background: linear-gradient(120deg, #6D28D9 0%, #7C3AED 55%, #9F67F5 100%);
-    border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
-    box-shadow: 0 4px 14px rgba(109,40,217,0.25);
+
+  /* 3. Page header -- logo + wordmark left, small stacked tags right, thin
+     divider beneath. Compact and identical on every page; never a colored
+     banner. */
+  .doc-header { display: flex; justify-content: space-between; align-items: center; }
+  .doc-header-left { display: flex; align-items: center; gap: 8px; }
+  .doc-logo-mark { width: 24px; height: 24px; object-fit: contain; display: block; }
+  .doc-wordmark { font-size: 15px; font-weight: 700; color: var(--navy); letter-spacing: -0.2px; }
+  .doc-header-right { text-align: right; }
+  .doc-header-tag { font-size: 8.5px; font-weight: 600; letter-spacing: 0.6px; color: var(--slate); text-transform: uppercase; }
+  .doc-header-tag.confidential { color: var(--lavender-text); margin-top: 2px; }
+  .doc-header-rule { border: none; border-top: 1px solid var(--divider); margin: 10px 0 18px; }
+
+  /* 4. Document title + subtitle + compact summary row */
+  .doc-title { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.2; margin: 0 0 3px; letter-spacing: -0.3px; }
+  .doc-subtitle { font-size: 14px; font-weight: 400; color: var(--slate); margin: 0 0 14px; }
+  .summary-row { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 14px; }
+  .summary-row > div { padding: 0 14px; border-right: 1px solid var(--divider); font-size: 12.5px; font-weight: 500; color: var(--navy); }
+  .summary-row > div:first-child { padding-left: 0; }
+  .summary-row > div:last-child { border-right: none; }
+  .summary-row strong {
+    display: block; font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.4px; color: var(--slate); margin-bottom: 2px;
   }
-  .logo { font-size: 21px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
-  .logo em { color: #FFD37A; font-style: normal; }
-  .logo-sub { font-size: 10px; color: #E9D9FF; margin-top: 2px; font-weight: 600; }
-  .meta-block { text-align: right; font-size: 10px; color: #F3EBFF; line-height: 1.7; }
-  .meta-block strong { color: #fff; }
-  .confid {
-    display: inline-block; padding: 2px 9px; border-radius: 20px;
-    background: rgba(255,255,255,0.92); color: #6D28D9; font-weight: 800;
-    font-size: 9px; margin-top: 4px; letter-spacing: 0.3px;
+
+  /* 5. Patient details panel -- light grey-blue, never lavender/purple */
+  .patient-panel { background: var(--panel-bg); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; }
+  .patient-panel-title { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate); margin-bottom: 8px; }
+  .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+  .patient-grid .clinical-field { margin-bottom: 0; }
+
+  /* 6. Numbered section headings -- slim vertical lavender accent + thin
+     horizontal rule, never a full-width solid bar. */
+  .section-heading { display: flex; align-items: baseline; gap: 8px; border-left: 3px solid var(--lavender); padding-left: 10px; margin: 20px 0 7px; }
+  .section-heading .num { font-size: 11.5px; font-weight: 700; color: var(--lavender-text); }
+  .section-heading .title { font-size: 18px; font-weight: 600; color: var(--navy); }
+  .section-rule { border: none; border-top: 1px solid var(--divider); margin: 0 0 12px; }
+  h3 { font-size: 13px; font-weight: 600; color: var(--navy); margin: 13px 0 5px; }
+
+  /* Label + value clinical field row */
+  .clinical-field { margin-bottom: 8px; }
+  .clinical-field .field-label { font-size: 9.5px; font-weight: 500; color: var(--slate); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+  .clinical-field .field-value { font-size: 12.5px; font-weight: 400; color: var(--navy); line-height: 1.5; }
+
+  /* Compact clinical table (ROM, MMT, etc.) */
+  .clinical-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .clinical-table th {
+    font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+    color: var(--slate); text-align: left; padding: 4px 8px; border-bottom: 1.5px solid var(--divider);
   }
-  h2 {
-    font-size: 13px; font-weight: 800; color: #fff;
-    background: linear-gradient(90deg, #7C3AED, #A855F7);
-    border-radius: 7px; padding: 6px 12px;
-    margin: 18px 0 9px; letter-spacing: -0.1px;
+  .clinical-table td { font-size: 12.5px; color: var(--navy); padding: 6px 8px; border-bottom: 1px solid var(--divider); }
+  .clinical-table tr:last-child td { border-bottom: none; }
+
+  /* Special-test-style result row, restrained status pill */
+  .test-result { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--divider); }
+  .test-result:last-child { border-bottom: none; }
+  .test-status {
+    flex-shrink: 0; min-width: 62px; text-align: center; font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.4px; text-transform: uppercase; padding: 3px 7px; border-radius: 4px;
   }
-  h3 {
-    font-size: 11.5px; font-weight: 700; color: #6D28D9; margin: 11px 0 5px;
-    border-bottom: 1.5px solid #E9D9FF; padding-bottom: 3px;
-  }
+  .test-status.positive { background: var(--lavender-pale); color: var(--lavender-text); }
+  .test-status.negative { background: var(--panel-bg); color: var(--slate); }
+  .test-status.untested { background: var(--panel-bg); color: var(--slate-light); }
+  .test-name { font-size: 12.5px; font-weight: 500; color: var(--navy); flex: 1; }
+  .test-detail { font-size: 10.5px; color: var(--slate); }
+
   .disclaimer {
-    background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
-    padding: 8px 12px; font-size: 9.5px; color: #78350f; margin-bottom: 14px;
-    line-height: 1.5;
+    background: var(--panel-bg); border: 1px solid var(--divider); border-radius: 6px;
+    padding: 7px 12px; font-size: 10px; color: var(--slate); margin-bottom: 12px; line-height: 1.5;
   }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .info-box {
-    background: #F6F1FF; border: 1px solid #DCC9FF; border-left: 3px solid #7C3AED;
-    border-radius: 8px; padding: 9px 12px;
-  }
-  .info-label { font-size: 8.5px; font-weight: 700; color: #6D28D9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
-  .info-value { font-size: 12px; font-weight: 700; color: #111827; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .info-box { background: var(--panel-bg); border-radius: 6px; padding: 8px 12px; }
+  .info-label { font-size: 9.5px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .info-value { font-size: 13px; font-weight: 600; color: var(--navy); }
   .section-box {
-    background: #FAF8FF; border: 1px solid #EAE0FB; border-left: 3px solid #C4A6F5;
-    border-radius: 9px; padding: 11px 14px; margin-bottom: 12px; white-space: pre-wrap;
-    font-size: 10.5px; line-height: 1.7;
+    background: var(--panel-bg); border-radius: 6px;
+    padding: 11px 14px; margin-bottom: 12px; white-space: pre-wrap;
+    font-size: 10.5px; line-height: 1.6; color: var(--navy);
   }
   .badge {
-    display: inline-block; padding: 2px 7px; border-radius: 5px;
-    font-size: 9px; font-weight: 700; margin-bottom: 2px;
+    display: inline-block; padding: 2px 7px; border-radius: 4px;
+    font-size: 8.5px; font-weight: 700; margin-bottom: 2px;
   }
   .badge-blue { background: #dbeafe; color: #1d4ed8; }
   .badge-green { background: #dcfce7; color: #15803d; }
   .badge-amber { background: #fef3c7; color: #92400e; }
   .badge-red { background: #fee2e2; color: #b91c1c; }
-  .badge-purple { background: #ede9fe; color: #6d28d9; }
-  .sig-row { margin-top: 28px; display: flex; gap: 30px; border-top: 2px solid #EAE0FB; padding-top: 14px; }
+  .badge-purple { background: var(--lavender-pale); color: var(--lavender-text); }
+  .sig-row { margin-top: 28px; display: flex; gap: 30px; border-top: 1px solid var(--divider); padding-top: 14px; }
   .sig-col { flex: 1; }
-  .sig-line { height: 32px; border-bottom: 1px solid #94a3b8; margin-bottom: 5px; }
-  .sig-label { font-size: 8.5px; color: #64748b; }
+  .sig-line { height: 32px; border-bottom: 1px solid #B7BFCE; margin-bottom: 5px; }
+  .sig-label { font-size: 8.5px; color: var(--slate); }
   .page-footer {
-    margin-top: 18px; padding-top: 10px; border-top: 2px solid #EAE0FB;
-    font-size: 8.5px; color: #8B7BA8; text-align: center; line-height: 1.6;
+    margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--divider);
+    font-size: 8px; color: var(--slate-light); text-align: center; line-height: 1.6;
   }
 `;
+
+// Reusable string-building "components" -- every consumer of makePDFPage
+// composes bodyHTML from these instead of hand-rolling its own markup, so
+// a future design tweak only needs to happen once. Kept as plain functions
+// (not JSX) since the whole PDF pipeline works in HTML-string form end to
+// end (parsed by DOMParser, then either canvased or printed -- see
+// downloadPDFFromHTML above).
+function sectionHeading(num, title) {
+  return `<div class="section-heading"><span class="num">${String(num).padStart(2, '0')}</span><span class="title">${title}</span></div><hr class="section-rule" />`;
+}
+function clinicalField(label, value) {
+  if (value == null || value === '') return '';
+  return `<div class="clinical-field"><div class="field-label">${label}</div><div class="field-value">${value}</div></div>`;
+}
+function summaryRow(items) {
+  // items: [{label, value}] -- filters out anything not actually recorded
+  // rather than inventing a placeholder value.
+  const cells = (items || []).filter((i) => i && i.value != null && i.value !== '');
+  if (!cells.length) return '';
+  return `<div class="summary-row">${cells.map((i) => `<div><strong>${i.label}</strong>${i.value}</div>`).join('')}</div>`;
+}
+function patientDetailsPanel(fields) {
+  const cells = (fields || []).filter((f) => f && f.value != null && f.value !== '');
+  if (!cells.length) return '';
+  return `<div class="patient-panel"><div class="patient-panel-title">Patient Details</div><div class="patient-grid">${
+    cells.map((f) => `<div class="clinical-field"><div class="field-label">${f.label}</div><div class="field-value">${f.value}</div></div>`).join('')
+  }</div></div>`;
+}
+function clinicalTable(headers, rows) {
+  if (!rows || !rows.length) return '';
+  return `<table class="clinical-table"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+    rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')
+  }</tbody></table>`;
+}
+// status: "positive" | "negative" | "untested" -- never inferred, only
+// ever set by the caller from the clinician's own recorded result.
+function testResultRow(status, name, detail) {
+  const label = status === 'positive' ? 'Positive' : status === 'negative' ? 'Negative' : 'Not tested';
+  return `<div class="test-result"><span class="test-status ${status}">${label}</span><span class="test-name">${name}</span>${detail ? `<span class="test-detail">${detail}</span>` : ''}</div>`;
+}
 
 function makePDFPage(title, metaRight, bodyHTML, footerExtra = '') {
   const now = new Date().toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
@@ -5223,19 +5322,22 @@ function makePDFPage(title, metaRight, bodyHTML, footerExtra = '') {
 <style>${PDF_BASE_STYLES}</style>
 </head>
 <body>
-<div class="page-header">
-  <div>
-    <div class="logo">Physio<em>Pro</em></div>
-    <div class="logo-sub">${title}</div>
+<div class="doc-header">
+  <div class="doc-header-left">
+    <img class="doc-logo-mark" src="/logo.svg" alt="" />
+    <span class="doc-wordmark">PhysioMind</span>
   </div>
-  <div class="meta-block">
-    ${metaRight}
-    <div><span class="confid">CONFIDENTIAL — CLINICAL RECORD</span></div>
+  <div class="doc-header-right">
+    <div class="doc-header-tag">Clinical Assessment</div>
+    <div class="doc-header-tag confidential">Confidential</div>
   </div>
 </div>
+<hr class="doc-header-rule" />
+<div class="doc-title">${title}</div>
+<div class="summary-row">${metaRight}</div>
 ${bodyHTML}
 <div class="page-footer">
-  Generated by PhysioPro Assessment Platform &nbsp;·&nbsp; ${now} &nbsp;·&nbsp; For authorised clinical use only
+  Generated by PhysioMind &nbsp;·&nbsp; ${now} &nbsp;·&nbsp; For authorised clinical use only
   ${footerExtra}
 </div>
 </body>
@@ -6515,4 +6617,4 @@ function listRegionCatalogFields(prefix) {
   );
 }
 
-export { listGlobalCatalogFields, listRegionCatalogFields, SCALES, ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage, SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS };
+export { listGlobalCatalogFields, listRegionCatalogFields, SCALES, ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage, sectionHeading, clinicalField, summaryRow, patientDetailsPanel, clinicalTable, testResultRow, SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS };
