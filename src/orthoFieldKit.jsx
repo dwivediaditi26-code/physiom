@@ -38,6 +38,26 @@ export function Hint({ children }) {
 // location; same convention StudyImage.jsx itself already uses.
 export const CLOUDINARY_BASE = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 
+// Rejects a picked file before it reaches Cloudinary if it isn't a real
+// photo -- guards against a rare mobile-browser failure mode where the file
+// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
+// whose full-res version hadn't finished downloading yet) instead of the
+// actual photo. These slots are shared across every user of the app, so a
+// stub upload silently overwrites the real photo for everyone, not just
+// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
+// black after upload -- the stored file turned out to be a genuine, fully
+// opaque 1x1px image, not a broken render; same unguarded upload pattern
+// as SheetHero's own upload below).
+function isRealPhoto(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
+    img.src = url;
+  });
+}
+
 // `name` is always a deterministic Cloudinary public_id (ROM_DATA/MMT_DATA/
 // SPECIAL_TESTS_DATA/neuroExamLibraryData assign one to every movement,
 // muscle, test and nerve-root level up front -- id known before any photo
@@ -64,16 +84,33 @@ function SheetHero({ name }) {
     if (!file) return;
     setUploading(true);
     try {
+      if (!(await isRealPhoto(file))) throw new Error("empty-image");
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", "ml_default");
       fd.append("public_id", name);
       const res = await fetch("https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload", { method: "POST", body: fd });
       if (!res.ok) throw new Error("Upload failed");
+      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
+      // dashboard -- uploading to a public_id that already holds a photo is
+      // silently ignored: Cloudinary still answers 200 OK, but
+      // `existing: true` means it just handed back the OLD asset's info and
+      // stored nothing new. Needs the Overwrite toggle turned on for
+      // ml_default in the Cloudinary console to actually fix -- and
+      // Cloudinary hard-blocks that toggle for unsigned presets entirely
+      // (confirmed in-console: "Cannot set overwrite to true in unsigned
+      // presets"), so a real fix needs signed uploads from a server-side
+      // endpoint, not a preset setting.
+      const json = await res.json();
+      if (json.existing) throw new Error("blocked-overwrite");
       setFailed(false);
       setVersion(Date.now());
     } catch (err) {
-      alert("Photo upload failed — check your connection and try again.");
+      alert(err?.message === "empty-image"
+        ? "That photo didn't come through properly (it looked empty) — please try again."
+        : err?.message === "blocked-overwrite"
+        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
+        : "Photo upload failed — check your connection and try again.");
     } finally {
       setUploading(false);
     }
