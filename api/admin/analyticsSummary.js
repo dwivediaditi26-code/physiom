@@ -124,6 +124,10 @@ export default async function handler(req, res) {
     }))
     .sort((a, b) => b.totalPatients - a.totalPatients);
 
+  // TEMP DEBUG (2026-09-26): tracking down a client-side crash in the new
+  // per-user section -- remove once confirmed fixed.
+  console.log('[analyticsSummary] userActivity=', JSON.stringify(userActivity));
+
   res.status(200).json({
     generatedAt: new Date().toISOString(),
     range: { key: range, since, until },
