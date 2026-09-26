@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { SectionIntro, Segmented, SelectField, TextField, NumberField, InfoButton, AddMovementRow, Hint, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 import { postureFieldsForRegion, POSTURE_VIEWS, OBSERVATION_INFO } from "./orthoObservationData.js";
+import { humanizeKey } from "./medicalAbbreviations.js";
+import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 
 /* ============================================================
    GeneralObservationSection — Outpatient pathway only. Replaces
@@ -258,20 +260,24 @@ export function formatGeneralObservationSection(section) {
           return;
         }
         const v = fmtVal(v2);
-        if (v) rows.push({ label: `${key} — ${k2}`, value: v });
+        if (v) rows.push({ label: `${humanizeKey(key)} — ${humanizeKey(k2)}`, value: v });
       });
     } else {
       const v = fmtVal(val);
-      if (v) rows.push({ label: key, value: v });
+      if (v) rows.push({ label: humanizeKey(key), value: v });
     }
   });
   const postureRegions = section.posture?.regions || {};
   const viewLabel = (id) => POSTURE_VIEWS.find((v) => v.id === id)?.label || id;
   Object.entries(postureRegions).forEach(([regionId, regionData]) => {
+    const regionLabel = ALL_REGIONS.find((r) => r.id === regionId)?.label || humanizeKey(regionId);
     Object.entries(regionData).forEach(([view, viewData]) => {
+      const fields = postureFieldsForRegion({ id: regionId }, view);
       Object.entries(viewData || {}).forEach(([fieldId, v]) => {
         const val = fmtVal(v);
-        if (val) rows.push({ label: `${regionId} — ${viewLabel(view)} — ${fieldId}`, value: val });
+        if (!val) return;
+        const fieldLabel = fields.find((f) => f.id === fieldId)?.label || humanizeKey(fieldId);
+        rows.push({ label: `${regionLabel} — ${viewLabel(view)} — ${fieldLabel}`, value: val });
       });
     });
   });

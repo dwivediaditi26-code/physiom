@@ -3,6 +3,8 @@ import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField,
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
 import { subjectiveFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
 import { AiExtractedPanel } from "./OrthoAiExtractedPanel.jsx";
+import { humanizeKey } from "./medicalAbbreviations.js";
+import { ALL_REGIONS } from "./orthoRegionLibrary.js";
 
 // AI text/voice intake for Subjective -- lazy-loaded since most sessions
 // won't open it, and it pulls in its own fetch/speech-recognition logic.
@@ -273,13 +275,17 @@ export function SubjectiveSection({ data, setData, selectedRegions = [], setSele
 export function formatSubjectiveSection(section) {
   const rows = Object.entries(section)
     .filter(([k]) => k !== "regions" && !k.startsWith("__"))
-    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .map(([k, v]) => ({ label: humanizeKey(k), value: fmtVal(v) }))
     .filter((r) => r.value);
   const regions = section.regions || {};
   Object.entries(regions).forEach(([regionId, regionData]) => {
+    const regionLabel = ALL_REGIONS.find((r) => r.id === regionId)?.label || humanizeKey(regionId);
+    const fields = subjectiveFieldsForRegion({ id: regionId });
     Object.entries(regionData).forEach(([fieldId, v]) => {
       const val = fmtVal(v);
-      if (val) rows.push({ label: `${regionId} — ${fieldId}`, value: val });
+      if (!val) return;
+      const fieldLabel = fields.find((f) => f.id === fieldId)?.label || humanizeKey(fieldId);
+      rows.push({ label: `${regionLabel} — ${fieldLabel}`, value: val });
     });
   });
   return rows;
