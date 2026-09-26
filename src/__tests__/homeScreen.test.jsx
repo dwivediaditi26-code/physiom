@@ -36,11 +36,11 @@ describe("Home screen", () => {
     expect(onStartAI).toHaveBeenCalledTimes(1);
   });
 
-  test("AI Assessment falls back to the Subjective AI intake when no onStartAI is given", () => {
+  test("AI Assessment falls back to the Ortho assessment's AI entry when no onStartAI is given", () => {
     const onNav = vi.fn();
     render(<HomeModule onNav={onNav} />);
     fireEvent.click(screen.getByTestId("home-tile-ai"));
-    expect(onNav).toHaveBeenCalledWith("subjective", { autoOpenAI: true });
+    expect(onNav).toHaveBeenCalledWith("ortho_new_assessment", { entryMode: "ai" });
   });
 
   test("Quick Access opens Evidence and Learn", () => {

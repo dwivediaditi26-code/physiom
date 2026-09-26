@@ -71,16 +71,3 @@ export async function createOrthoPatient(name = "Test Patient") {
 export async function leaveAssessment() {
   fireEvent.click(await screen.findByText("Leave without saving", {}, SLOW));
 }
-
-// The older step-by-step "Screening Workflow" (Demographics / Body Regions /
-// Subjective / AI / Chart / Objective / Treatment / Home Protocol) has no
-// button of its own on Home or Clinical any more. It is still reached from
-// its Treatment end -- here via Learn -> Practical Skills -> Exercise
-// Prescription, which opens the real Exercise screen with the stepper on top.
-export async function openScreeningWorkflow() {
-  fireEvent.click(screen.getByTestId("bnav-tab-learn"));
-  await leaveAssessment();
-  fireEvent.click(await screen.findByText("Practical Skills", {}, SLOW));
-  fireEvent.click(screen.getByText("Treatment plan"));
-  await screen.findByText("Screening Workflow", {}, SLOW);
-}

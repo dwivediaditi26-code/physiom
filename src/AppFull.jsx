@@ -1,5 +1,5 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
-import React, { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
+import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
@@ -7,22 +7,9 @@ import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfU
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
-import {
-  NKT_REGIONS, KC_REGIONS, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
-} from "./sharedClinicalData.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
-import { NeuroTemplatesHub } from "./PhysioNeuro.jsx";
-import AssessmentEngine from "./streams/engine.jsx";
-// Dynamic import -- ObjectiveHub statically imports REGION_NAV/REGION_FAMILY_KEY
-// from SubjectiveObjective.jsx (the same big shared file lazy_special.jsx,
-// lazy_subjective.jsx etc re-export from). A static import here would pull
-// that whole file into the main bundle, same class of bug as the earlier
-// lazy_rom static-import regression -- keep it lazy like every other tab.
-const LazyObjectiveHub = lazy(() => import("./ObjectiveHub.jsx"));
-import neuroStream from "./streams/neuro.js";
-import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget, SensoryRegionWidget } from "./streams/neuroWidgets.jsx";
-import { ALL_TESTS, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
+import { ALL_TESTS } from "./sharedClinicalData.js";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
 import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
@@ -36,7 +23,7 @@ import {
   getTodaysPatients,
 } from "./PatientDatabase.jsx";
 import { setSessionKey, clearSessionKey } from "./localCrypto.js";
-import { PostureDefectModule, HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
+import { HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
 import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
@@ -44,122 +31,23 @@ import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.j
 import InstallPrompt from "./InstallPrompt.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever demographic field renders it. A standalone
-// component (not inline hooks) because its callers sit inside a
-// conditionally-rendered branch of the big App component, where calling
-// useState/useRef directly would violate the rules of hooks.
-function VoiceTextInput({ id, value, onChange, placeholder, type, style }) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = value || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    rec.onresult = (e) => {
-      let final = "";
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
-      }
-      if (final) onChange((base + " " + final).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-      <input id={id} style={{ ...style, flex: 1 }} type={type || "text"} placeholder={placeholder} value={value || ""} onChange={(e) => onChange(e.target.value)} />
-      <button type="button" onClick={recording ? stop : start} title={recording ? "Stop recording" : "Speak"}
-        style={{ flexShrink: 0, width: 40, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d1d5db"}`,
-          background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit" }}>
-        {recording ? "⏹" : "🎤"}
-      </button>
-    </div>
-  );
-}
-
-// Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
-// plain text/date input would hold, so it's a drop-in replacement for
-// Date of Birth (and anywhere else a date is typed by hand). Standalone
-// for the same reason as VoiceTextInput above: its caller sits inside a
-// conditionally-rendered branch of the big App component, where inline
-// hooks would violate the rules of hooks.
-const DATE_WHEEL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function DateWheelField({ value, onChange, inputStyle, placeholder }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const parts = (value || "").split("/");
-  const day = parts[0] || "", month = parts[1] || "", year = parts[2] || "";
-  useEffect(() => {
-    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  function setPart(which, v) {
-    const d = which === "day" ? v : day, m = which === "month" ? v : month, y = which === "year" ? v : year;
-    onChange([d, m, y].filter(Boolean).length ? `${d || "--"}/${m || "--"}/${y || "----"}` : "");
-  }
-  const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
-  const months = DATE_WHEEL_MONTHS.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
-  const thisYear = new Date().getFullYear();
-  const years = Array.from({ length: 101 }, (_, i) => thisYear - 100 + i).reverse().map(String);
-  const display = day && month && year ? `${day}/${month}/${year}` : "";
-  const colStyle = { flex: 1, maxHeight: 170, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2, border: "1px solid #E5E1F5", borderRadius: 8, padding: 4 };
-  const itemStyle = (active) => ({ padding: "7px 4px", textAlign: "center", borderRadius: 6, fontSize: "0.8rem", fontWeight: active ? 800 : 500, background: active ? "#7c3aed" : "transparent", color: active ? "#fff" : "#111827", cursor: "pointer", border: "none", fontFamily: "inherit" });
-  return (
-    <div style={{ position: "relative" }} ref={ref}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input readOnly value={display} placeholder={placeholder || "DD/MM/YYYY"} onFocus={() => setOpen(true)} onClick={() => setOpen(true)}
-          style={{ ...inputStyle, flex: 1 }} />
-        <button type="button" onClick={() => setOpen((o) => !o)} title="Pick date"
-          style={{ flexShrink: 0, width: 40, borderRadius: 8, border: "1.5px solid #d1d5db", background: "#fff", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
-          📅
-        </button>
-      </div>
-      {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50, background: "#fff", border: "1px solid #E5E1F5", borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.14)", padding: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: "0.78rem" }}>Select date</span>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close" style={{ border: "none", background: "none", cursor: "pointer", fontSize: "0.9rem" }}>✕</button>
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <div style={colStyle}>{days.map((d) => (<button key={d} type="button" style={itemStyle(d === day)} onClick={() => setPart("day", d)}>{parseInt(d, 10)}</button>))}</div>
-            <div style={colStyle}>{months.map((m) => (<button key={m.value} type="button" style={itemStyle(m.value === month)} onClick={() => setPart("month", m.value)}>{m.label}</button>))}</div>
-            <div style={colStyle}>{years.map((y) => (<button key={y} type="button" style={itemStyle(y === year)} onClick={() => setPart("year", y)}>{y}</button>))}</div>
-          </div>
-          <button type="button" onClick={() => setOpen(false)} style={{ marginTop: 8, width: "100%", padding: "8px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Leave-assessment save/demographics gate: which navTo targets count as
-// actually "leaving" (the 5 real destinations reachable from the bottom
-// nav), and which `active` screens count as "inside a patient's
-// assessment" (the Ortho Screening Workflow's own step keys -- precisely
-// redirectable back to its own Demographics step on an incomplete-data
-// leave -- plus the three self-contained specialty tools, which aren't).
+// Leave-assessment save gate: which navTo targets count as actually
+// "leaving" (the 5 real destinations reachable from the bottom nav), and
+// which `active` screens count as "inside a patient's assessment" (the
+// three self-contained specialty tools).
 const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "clinical"]);
 // The 4 bottom-nav tabs that sit OUTSIDE Clinical -- everything else (the
 // Clinical landing page itself, plus every assessment step/wizard reached
 // from it) counts as "inside Clinical" for the resume-on-return behavior
 // below (see lastClinicalNavRef).
 const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile"]);
-const ORTHO_WF_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "gait", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "nkt", "outcome", "fma", "palpation", "treatment", "exercise"]);
 const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
-const ASSESSMENT_ACTIVE_KEYS = new Set([...ORTHO_WF_KEYS, ...OPAQUE_ASSESSMENT_KEYS]);
+const ASSESSMENT_ACTIVE_KEYS = OPAQUE_ASSESSMENT_KEYS;
+// Screens of the old step-by-step "Screening Workflow" (and its standalone
+// ROM/MMT/Special Tests/... pages), removed 2026-09-25 at Aditi's request.
+// A reload or browser Back that still points at one lands on Home instead
+// of a blank page.
+const RETIRED_SCREEN_KEYS = new Set(["demographics", "subj_region", "subj_ai", "subjective", "chart_palpation", "objective", "rom", "mmt", "special", "neuro", "neurotemplates", "gait", "palpation", "observation", "cyriax", "cyriax_full", "sttt", "kinetic", "fascia", "fma", "nkt", "outcome", "dashboard", "ai_assistant"]);
 function isDemographicsComplete(d) {
   return !!(d?.dem_name?.trim() && d?.dem_age && d?.dem_sex && d?.dem_phone?.trim());
 }
@@ -168,41 +56,12 @@ function isDemographicsComplete(d) {
 const LazyPhysioFeedEntry = lazy(() => import("./physiofeed/PhysioFeedEntry.jsx"));
 const LazyProfileTabEntry = lazy(() => import("./physiofeed/ProfileTabEntry.jsx"));
 const LazyLearnTabEntry = lazy(() => import("./physiofeed/LearnTabEntry.jsx"));
-const LazySubjective    = lazy(() => import("./lazy_subjective.jsx"));
-const LazySubjectiveNew = lazy(() => import("./SubjectiveAssessmentNew.jsx"));
 const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"));
-// Replaces the old config-driven Neuro stream engine (STREAM_CONFIGS.neuro
-// below, now unreachable from the UI -- see the specialty-picker and
-// StreamSelector changes, both now navTo("neuro_assessment") instead of
-// setStream("neuro")) with a standalone tool, same pattern as Cardio.
 const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
-// New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
-// above. The old config-driven "ortho" stream stays reachable, relabeled
-// "Old Ortho" in STREAMS below.
-// New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro
-// above. The old config-driven "ortho" stream stays reachable, relabeled
-// "Old Ortho" in STREAMS below. (All ortho*.jsx/js support files are now
-// present in the repo -- must be committed together with this file so the
-// production build can resolve the import.)
+// New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro.
 const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
-const LazySTT           = lazy(() => import("./lazy_stt.jsx"));
-const LazyCPA           = lazy(() => import("./lazy_cpa.jsx"));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
-const LazyOutcomes      = lazy(() => import("./lazy_outcomes.jsx"));
-const LazyNeuro         = lazy(() => import("./lazy_neuro.jsx"));
-const LazyNeuroTemplates = lazy(() => import("./lazy_neurotemplates.jsx"));
-const LazyBodyChart     = lazy(() => import("./lazy_bodychart.jsx"));
-const LazyGait          = lazy(() => import("./lazy_gait.jsx"));
-const LazyPalpation     = lazy(() => import("./lazy_palpation.jsx"));
 const LazyTreatment     = lazy(() => import("./lazy_treatment.jsx"));
-const LazySpecial       = lazy(() => import("./lazy_special.jsx"));
-const LazyFMA           = lazy(() => import("./lazy_fma.jsx"));
-const LazyFascia        = lazy(() => import("./lazy_fascia.jsx"));
-const LazyKinetic       = lazy(() => import("./lazy_kinetic.jsx"));
-const LazyCyriaxRegion  = lazy(() => import("./lazy_cyriax_region.jsx"));
-const LazyObservation   = lazy(() => import("./lazy_observation.jsx"));
-const LazyMMT           = lazy(() => import("./lazy_mmt.jsx"));
-const LazyROM           = lazy(() => import("./lazy_rom.jsx"));
 
 // Minimal Suspense fallback
 const TabFallback = () => (
@@ -218,16 +77,7 @@ const TabFallback = () => (
 // ═══════════════════════════════════════════════════════════════════════════
 // MULTI-PATIENT DATABASE
 // ═══════════════════════════════════════════════════════════════════════════
-// ── CLINICAL STREAMS (Step 1) ────────────────────────────────────────────────
-// The 5 top-level assessment specialties. Each will own its own
-// config-driven flow (demographics → subjective → objective → plan).
-// Step 1 wires the selector + routing shell; only "ortho" is live today.
-// Config-driven stream registry. A stream with a config renders via the
-// AssessmentEngine; others fall back to the "coming soon" placeholder.
-const STREAM_CONFIGS = { neuro: neuroStream };
-const TemplatesWidget = ({ data, navTo, PC }) => <NeuroTemplatesHub data={data} navTo={navTo} navContext={{}}/>;
-const STREAM_WIDGETS = { Templates: TemplatesWidget, GCS: GCSWidget, Cranial: CranialWidget, Reflexes: ReflexWidget, Coordination: CoordinationWidget, Sensory: SensoryWidget, SensoryRegion: SensoryRegionWidget, Myotome: MyotomeWidget, NeuralTension: NeuralTensionWidget, Vestibular: VestibularWidget, Perceptual: PerceptualWidget, RedFlags: RedFlagsWidget };
-
+// Specialties offered by "+ New Assessment" and the Assess sub-tab.
 const STREAMS = [
   { id:"ortho_new", label:"Ortho Assessment", icon:"🦴", color:"#7c3aed", live:true  },
   { id:"neuro",     label:"Neuro",            icon:"🧠", color:"#0d9488", live:true  },
@@ -248,28 +98,6 @@ const STREAM_ICONS = {
   cardio:    { Icon: HeartPulse, bg: "#FDEAEC" },
   sports:    { Icon: Footprints, bg: "#FFF1E6" },
 };
-
-function StreamEnginePlaceholder({ stream, setStream, PC }) {
-  const st = STREAMS.find(s=>s.id===stream) || {};
-  return (
-    <div style={{textAlign:"center",padding:"56px 24px",maxWidth:560,margin:"0 auto"}}>
-      <div style={{fontSize:"3rem",marginBottom:12}}>{st.icon}</div>
-      <h2 style={{fontSize:"1.4rem",fontWeight:800,color:PC.text,marginBottom:8}}>
-        {st.label} assessment</h2>
-      <p style={{fontSize:"0.9rem",color:PC.muted,lineHeight:1.6,marginBottom:22}}>
-        This stream will run on the config-driven assessment engine —
-        demographics, subjective, objective and plan all tailored for
-        {" "}{st.label.toLowerCase()} patients. It's being built next (Step 2).
-      </p>
-      <button type="button" onClick={()=>setStream("ortho")}
-        style={{padding:"10px 20px",borderRadius:10,border:`2px solid ${STREAMS[0].color}`,
-          background:STREAMS[0].color+"12",color:STREAMS[0].color,fontWeight:700,
-          fontSize:"0.85rem",cursor:"pointer"}}>
-        ← Back to Ortho (live)
-      </button>
-    </div>
-  );
-}
 
 function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
@@ -302,14 +130,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [active, setActive] = useState(() => {
     try {
       const raw = JSON.parse(localStorage.getItem(NAV_KEY) || "null");
-      if (raw && typeof raw.active === "string") return raw.active;
+      if (raw && typeof raw.active === "string" && !RETIRED_SCREEN_KEYS.has(raw.active)) return raw.active;
     } catch {}
     return "home";
   });
   const [navContext, setNavContext] = useState(() => {
     try {
       const raw = JSON.parse(localStorage.getItem(NAV_KEY) || "null");
-      if (raw && raw.navContext && typeof raw.navContext === "object") return raw.navContext;
+      if (raw && !RETIRED_SCREEN_KEYS.has(raw.active) && raw.navContext && typeof raw.navContext === "object") return raw.navContext;
     } catch {}
     return {};
   });
@@ -419,12 +247,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (isGuest) { setAuthPromptFeature({ label: featureLabel, bodyText }); return false; }
     return true;
   }, [isGuest]);
-  // ── CLINICAL STREAM (Step 1 scaffold) ──────────────────────────────
-  // Top-level specialty that drives the whole assessment flow. "ortho"
-  // keeps the existing app; other streams render via the config-driven
-  // AssessmentEngine (built in Step 2).
-  const [stream, setStream] = useState(() => localStorage.getItem("pm_stream") || "ortho");
-  useEffect(() => { try { localStorage.setItem("pm_stream", stream); } catch(e){} }, [stream]);
   // Tied to the ACCOUNT (Supabase user_metadata), not just this browser's
   // localStorage -- a device-local flag alone re-prompted signed-in users
   // on every new browser/device/private-window/cleared-storage session,
@@ -453,118 +275,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // component renders immediately instead of the "not yet mounted"
   // TabLoader placeholder some tabs (e.g. the opaque assessment wizards)
   // show until a real navTo() call adds them.
-  const [mountedTabs, setMountedTabs] = useState(() => new Set(["home", "demographics", "subjective", active]));
-  const [subjBodyChartTab, setSubjBodyChartTab] = useState(false);
-  const [chartPalpTab, setChartPalpTab] = useState("chart");  // "chart" | "palpation" -- combined Body Chart/Palpation step
+  const [mountedTabs, setMountedTabs] = useState(() => new Set(["home", active]));
   const [txTab, setTxTab] = useState("exercise");  // "exercise" | "tx" | "hep"
-  // Heavy tabs — only mount on first visit
-  const HEAVY_TABS = new Set([
-    "posture", "ddx", "fms", "nkt", "cyriax",
-    "fascia", "kinetic", "treatment", "exercise",
-    "outcome", "special", "gait", "neuro", "palpation",
-    "mmt", "rom", "dashboard", "reports",
-  ]);
-
-  // Wrapper: renders placeholder until tab first visited
-  const DeferredMount = useCallback(({ tabKey, children }) => {
-    const isMounted = mountedTabs.has(tabKey);
-    const isActive = active === tabKey;
-    if (!isMounted) return null;
-    return (
-      <div style={{ display: isActive ? "block" : "none" }}>
-        {children}
-      </div>
-    );
-  }, [mountedTabs, active]);
-
-  // ── Hypothetical demo patient: Sarah Mitchell, 34F, chronic LBP ──────────
-  const DEMO_DATA = {
-    dem_name:"Sarah Mitchell", dem_age:"34", dem_gender:"Female", dem_occupation:"Graphic designer (desk-based, 8–10h/day)",
-    dem_hand:"Right", dem_contact:"0412 345 678", dem_referral:"GP",
-
-    // Subjective
-    sub_complaint:"Chronic lower back pain, right worse than left, radiating into right buttock and posterior thigh to knee",
-    sub_onset:"Gradual onset 18 months ago after new standing desk poorly adjusted. Worsened significantly 3 months ago after long-haul flight.",
-    sub_mechanism:"Prolonged sitting/standing at workstation; exacerbated by forward bending, prolonged static postures",
-    sub_behaviour:"Worse: sitting >30 min, morning stiffness for ~45 min, forward bending, end of workday. Better: walking, lying prone, heat pack. Constant dull ache 3–4/10 at rest; 7/10 with prolonged sitting.",
-    sub_24hr:"Morning stiffness 30–45 min. Improves mid-morning. Worsens through afternoon. Difficulty sleeping in positions other than side-lying with pillow between knees.",
-    sub_aggravating:"Prolonged sitting, driving >20 min, forward flexion, transitioning from sit to stand",
-    sub_easing:"Short walks, heat, lying supine with knees bent",
-    sub_vas:"5",
-    sub_previous:"Episode 4 years ago resolved with physio. GP prescribed anti-inflammatories — minimal relief.",
-    sub_medical:"No significant medical history. No bladder/bowel changes. No saddle anaesthesia. No unexplained weight loss.",
-    sub_medications:"Ibuprofen 400mg PRN, oral magnesium",
-    sub_goals:"Return to recreational running (5km x3/week), sit pain-free at work, reduce reliance on NSAIDs",
-
-    // Red flags — all clear
-    rf_malignancy:"No malignancy red flags",
-    rf_cauda:"No cauda equina flags",
-    rf_vascular:"No vascular red flags",
-    rf_inflammatory:"No inflammatory red flags",
-    rf_fracture:"No fracture red flags",
-    rf_neuro:"No red flags — proceed with assessment",
-
-    // Lumbar ROM
-    lx_flex:"50", lx_ext:"15", lx_lat_left:"25", lx_lat_right:"18", lx_rot_left:"30", lx_rot_right:"22",
-    lx_slr_left:"75", lx_slr_right:"52",
-
-    // Special tests — lumbar
-    lx_kemp_left:"Negative", lx_kemp_right:"Positive — reproduces right buttock pain",
-    lx_slump_left:"Negative", lx_slump_right:"Positive — neural tension R",
-    lx_prone_instability:"Negative",
-    lx_psoas_left:"Normal", lx_psoas_right:"Tight",
-
-    // Palpation
-    lx_palpation:"L4/L5 R paraspinal tenderness +++. L5/S1 central PA stiff Grade IV+. Right SIJ posterior ligament tenderness ++. Right piriformis hypertonic.",
-
-    // Neurological
-    neuro_l4_reflex_left:"2+", neuro_l4_reflex_right:"2+",
-    neuro_l5_motor_left:"5/5", neuro_l5_motor_right:"4+/5 — mild weakness great toe extension",
-    neuro_s1_reflex_left:"2+", neuro_s1_reflex_right:"2+",
-    neuro_dermatomal:"Mild paraesthesia right S1 distribution (lateral foot) on prolonged sitting — intermittent",
-
-    // Posture
-    posture_defect_anterior_pelvic_tilt: true,
-    posture_defect_lumbar_hyperlordosis: true,
-    posture_defect_forward_head: true,
-
-    // Outcome measures
-    om_psfs1:"Sitting at workstation for >30 min", om_psfs1_now:"3", om_psfs1_goal:"9",
-    om_psfs2:"Recreational running 5km", om_psfs2_now:"1", om_psfs2_goal:"10",
-    om_psfs3:"Long car journeys >20 min", om_psfs3_now:"2", om_psfs3_goal:"8",
-
-    // Tx Techniques — Session 1
-    tx_techniques: [
-      { id:"t1", type:"manual", region:"Lumbar", technique:"PA Central", grade:"III", laterality:"Central", dosage:"3×60s oscillations", duration:"5 min", response:"ROM improved flexion from 50° to 62°. Pain eased from 5/10 to 3/10 during technique.", notes:"Performed at L4/L5 prone. Patient comfortable throughout.", savedAt:"2025-05-07T09:15:00Z" },
-      { id:"t2", type:"manual", region:"Lumbar", technique:"PA Unilateral", grade:"III", laterality:"Right", dosage:"3×30s", duration:"3 min", response:"Reproduction of right buttock pain at Grade II — eased by Grade III. Good movement gain.", savedAt:"2025-05-07T09:22:00Z" },
-      { id:"t3", type:"dn", dn_muscle:"Piriformis", laterality:"Right", dn_needles:"2", dn_depth:"40mm", dn_twitch:"Yes — elicited", notes:"Pistoning technique, needles retained 8 min, significant LTR on insertion. Post-needling stretch applied.", response:"Deep ache during LTR. Post-needling right buttock significantly less tender on palpation.", savedAt:"2025-05-07T09:35:00Z" },
-      { id:"t4", type:"st", st_technique:"Deep tissue massage", st_region:"Right paraspinals L3–S1, right QL", laterality:"Right", duration:"6 min", dosage:"Moderate-deep pressure, longitudinal and cross-fibre strokes", response:"Palpation tenderness reduced from +++ to ++. Patient reported warmth and easing.", savedAt:"2025-05-07T09:45:00Z" },
-    ],
-
-    // HEP — Exercise Programme
-    hep_programme: [
-      { id:"knee_to_chest", name:"Knee-to-Chest Stretch", region:"lumbar", phase:"Phase 1", sets:"1", reps:"10", hold:"30", freq:"Daily", evidence:"A", customSets:"1", customReps:"10", customHold:"30", customFreq:"Daily", notes:"Gently pull both knees. Stop if sharp pain." },
-      { id:"dead_bug", name:"Dead Bug", region:"lumbar", phase:"Phase 1", sets:"3", reps:"8", hold:"3", freq:"Daily", evidence:"A", customSets:"3", customReps:"8", customHold:"3", customFreq:"Daily", notes:"Keep lower back flat on floor throughout." },
-      { id:"glute_bridge", name:"Glute Bridge", region:"lumbar", phase:"Phase 2", sets:"3", reps:"15", hold:"2", freq:"Daily", evidence:"A", customSets:"3", customReps:"15", customHold:"2", customFreq:"Daily", notes:"Squeeze glutes at top. Do not hyperextend lumbar." },
-      { id:"hip_flexor_stretch", name:"Hip Flexor Couch Stretch", region:"lumbar", phase:"Phase 1", sets:"2", reps:"1", hold:"45", freq:"Daily", evidence:"B", customSets:"2", customReps:"1", customHold:"45", customFreq:"Daily", notes:"Both sides. Posteriorly tilt pelvis before stretching." },
-    ],
-
-    // Session Log — Session 1
-    tx_sessions: [
-      {
-        id:"sess1", date:"07/05/2025", sessionNo:"1", type:"Initial Assessment",
-        vasStart:"5", vasEnd:"3",
-        treatmentGiven:"L4/L5 PA mobilisation Grade III (central + right unilateral). Dry needling right piriformis x2 needles — LTR elicited. Deep tissue massage right paraspinals and QL. HEP prescribed (Phase 1).",
-        techniques:"Joint Mobilisation Grade III (PA Central, Lumbar, Central); Joint Mobilisation Grade III (PA Unilateral, Lumbar, Right); Dry Needling — Piriformis (Right), 2 needles, 40mm, LTR yes; Soft Tissue — Deep tissue massage — Right paraspinals L3–S1, right QL",
-        hep:"Knee-to-Chest Stretch — 1×10, hold 30s, Daily; Dead Bug — 3×8, hold 3s, Daily; Glute Bridge — 3×15, hold 2s, Daily; Hip Flexor Couch Stretch — 2×1, hold 45s, Daily",
-        response:"ROM improved L flexion 50°→62°, lateral flexion R improved 18°→24°. Pain reduced 5/10→3/10 post-treatment. Neural tension remains positive right slump — continue to monitor. Piriformis tenderness reduced significantly post-DN. Patient tolerated all techniques well.",
-        nextPlan:"Reassess lumbar ROM and neural tension. Progress to Grade III/IV if pain settling. Add thoracic extension mobilisation. Progress to Phase 2 HEP (loading) if pain <3/10 sustained. Review sitting posture and workstation setup — consider ergonomic referral.",
-        goals:"ST goal: Sit pain-free >30 min within 4 weeks. MT goal: Return to running 3 months. Patient motivated and engaged.",
-        clinician:"Dr. J. Thompson (APAM)", notes:"Consent obtained. Informed of DN risks. Next appointment in 1 week.",
-        savedAt:"2025-05-07T10:10:00Z"
-      }
-    ],
-  };
 
   const [data, setData] = useState(() => {
     try {
@@ -601,7 +313,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       return (raw && raw.pid) ? raw.pid : null;
     } catch { return null; }
   });
-  const [infoModal, setInfoModal] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   // bnavHidden removed — bottom nav is now always visible
   const [bnavTab, setBnavTab] = useState(null); // null=no panel open, or "assessment"|"advanced"|"treatment"|"documentation"|"top"
@@ -784,9 +495,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     } else if (st.id === "ortho_new") {
       setData({}); setActivePatientId(null);
       navTo("ortho_new_assessment");
-    } else {
-      setStream(st.id);
-      createNewPatient();
     }
   }
   // "New Assessment" picker's two honest entry points -- both go into the
@@ -833,17 +541,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       // condition, then the wizard itself), just pre-filled with the
       // quick-intake answers instead of starting blank.
       navTo("ortho_new_assessment");
-    } else {
-      setStream(st.id);
-      createNewPatient();
     }
   }
-  // Demographics step redesign: the 6 core fields (name/dob/age/gender/
-  // phone/email/occupation) show up front; everything else the clinic
-  // still needs on file (sex detail, work info, address, emergency
-  // contact, referral, insurance, medical history, consent) lives behind
-  // this "More details" toggle instead of disappearing.
-  const [demMoreOpen, setDemMoreOpen] = useState(false);
 
   // Auto-save current data to active patient whenever data changes -- LOCAL
   // cache only. This effect has no debounce, so it fires on every keystroke
@@ -1034,7 +733,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       setData(prev => ({ ...prev, [idOrObj]: val }));
     }
   }, []);
-  const sections = Object.entries(ALL_TESTS);
   const currentSection = ALL_TESTS[active];
   const completedCount = Object.keys(data).filter(k=>data[k]&&data[k]!=="").length;
 
@@ -1128,15 +826,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (key === "physiofeed" && key === activeRef.current && !navOpts.__fromPopState && !ctx?.pfTab) {
       setPhysioFeedResetKey((k) => k + 1);
     }
-    // Every navTo() target (sidebar items, bottom nav, Home tiles, dashboard
-    // rows, Neuro Templates' own deep-link checklist, outcome-scale rows,
-    // patient-profile jumps, etc.) is an ortho-flow `active` tab -- none of
-    // them render while `stream !== "ortho"` (see STREAM ROUTING SHELL
-    // below). Previously navTo left `stream` untouched, so calling it from
-    // inside a live stream (e.g. Neuro) updated `active`/sidebar highlight
-    // but the main pane stayed locked on the stream engine -- looked like
-    // "every other button stopped working." Always snap back to ortho first.
-    setStream("ortho");
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
@@ -1208,13 +897,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
   // "Save this assessment?" -> Yes: only actually leaves once the
   // patient's core demographics (Name/Age/Sex/Phone -- the same
-  // requiredOk fields the Demographics screens themselves gate on) are
-  // filled in. Incomplete: cancel the leave, and for the Ortho Screening
-  // Workflow (whose steps are real navTo targets) jump straight to its
-  // own Demographics step; the three self-contained specialty tools
-  // (ortho_new_assessment/neuro_assessment/cardio_assessment) can't be
-  // driven to a specific internal step from outside, so those just stay
-  // put with the alert telling the clinician what's missing.
+  // requiredOk fields the Demographics steps themselves gate on) are
+  // filled in. Incomplete: cancel the leave and stay put, with the alert
+  // telling the clinician what's missing (the three specialty tools can't
+  // be driven to a specific internal step from outside).
   function leaveConfirmSave() {
     const target = pendingLeave;
     setPendingLeave(null);
@@ -1222,9 +908,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (isDemographicsComplete(dataRef.current)) {
       navTo(target.key, target.ctx, { ...target.navOpts, __skipLeaveGate: true });
       return;
-    }
-    if (ORTHO_WF_KEYS.has(activeRef.current)) {
-      navTo("demographics", {}, { __skipLeaveGate: true });
     }
     alert("Please fill in the patient's Name, Age, Sex and Phone before leaving this assessment.");
   }
@@ -1330,100 +1013,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     navTo("specialty_profile");
   }, [selectPatient, navTo]);
 
-  const Field = useCallback(({t})=>{
-    const base = { width:"100%", background:PC.s3, border:`1px solid ${PC.border}`, borderRadius:8, color:PC.text, fontFamily:"inherit", outline:"none", padding:"8px 10px", fontSize:"0.8rem" };
-    const val = data[t.id]||"";
-
-    if(t.type==="bilateral_num"){
-      return (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {[["_left","LEFT"],["_right","RIGHT"]].map(([sfx,side])=>{
-            const sv=data[t.id+sfx]||"",num=parseFloat(sv);
-            const col=isNaN(num)?PC.muted:num<(t.normal||0)*0.8?PC.red:num<(t.normal||0)*0.9?PC.yellow:PC.green;
-            return(
-              <div key={sfx}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,color:col,marginBottom:3}}>{side} {!isNaN(num)&&num<(t.normal||0)*0.8?"⚠ LIMITED":""}</div>
-                <input type="number" value={sv} onChange={e=>set(t.id+sfx,e.target.value)} placeholder={`N=${t.normal||""}°`} style={{...base,borderColor:!isNaN(num)&&num<(t.normal||0)*0.8?PC.red:PC.border}} />
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    if(t.type==="bilateral_select"){
-      const isProb=v=>v&&(v.includes("Positive")||v.includes("Inhibited")||v.includes("tightness")||v.includes("Significant")||v.includes("Abnormal"));
-      return(
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {[["_left","LEFT"],["_right","RIGHT"]].map(([sfx,side])=>{
-            const sv=data[t.id+sfx]||"",prob=isProb(sv);
-            return(
-              <div key={sfx}>
-                <div style={{fontSize:"0.82rem",fontWeight:700,color:prob?PC.red:PC.muted,marginBottom:3}}>{side} {prob?"⚠":""}</div>
-                <select value={sv} onChange={e=>set(t.id+sfx,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}>
-                  <option value="">— select —</option>
-                  {t.options.map(o=><option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    if(t.type==="select"||t.type==="select3"){
-      const prob=val&&(val.includes("Positive")||val.includes("REFER")||val.includes("Inhibited")||val.includes("Absent")||val.includes("Severe")||val.includes("Moderate")||val.includes("Significant"));
-      return(<select value={val} onChange={e=>set(t.id,e.target.value)} style={{...base,borderColor:prob?PC.red:PC.border}}><option value="">— select —</option>{t.options.map(o=><option key={o} value={o}>{o}</option>)}</select>);
-    }
-    if(t.type==="textarea") return(<textarea value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={{...base,resize:"vertical",minHeight:64,display:"block"}}/>);
-    if(t.type==="num") return(<input type="number" value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={base}/>);
-    return(<input type={t.type||"text"} value={val} onChange={e=>set(t.id,e.target.value)} placeholder={t.placeholder||""} style={base}/>);
-  },[data,set]);
-
-
   // shared sidebar list renderer used by both desktop sidebar and mobile drawer
-  // ── Collapsible sidebar state ──
-  const [sidebarOpen, setSidebarOpen] = React.useState({ assessment:true, advanced:false, treatment:false, documentation:false });
-  const toggleSidebar = (key) => setSidebarOpen(p=>({...p,[key]:!p[key]}));
-
-  // Helper: get completion % for a nav key
-  const getSectionPct = (key) => {
-    const sec = ALL_TESTS[key];
-    if(!sec) return 0;
-    const allT=Object.values(sec.groups||{}).flat().filter(t=>typeof t==="object"&&t.id);
-    const nktT=key==="nkt"?Object.values(NKT_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
-    const kcT=key==="kinetic"?Object.values(KC_REGIONS||{}).flatMap(r=>r.tests||[]).map(t=>t.id):[];
-    // Real fix (was always 0%, see prior comment history in git blame): the
-    // "Functional Assessment" sidebar item checked dead fma_<movement>
-    // fields nothing has written since the module moved to
-    // FunctionalScreenHub. FunctionalScreenHub itself doesn't store one
-    // flat field per test -- each of its 10 body-region sub-screens
-    // (LumbarFunctionalScreen, ShoulderFunctionalScreen, ... in
-    // SubjectiveObjective.jsx) persists ALL its findings as a single JSON
-    // blob under its own region key (lfs_data, sfs_data, hfs_data,
-    // kfs_data, afs_data, cfs_data, thfs_data, elfs_data, wffs_data,
-    // tmjfs_data), written only on real user interaction (setObs/setGrade/
-    // setNote), never auto-initialised on mount -- confirmed by reading
-    // each screen's own useEffect (read-only) vs save() (write, user-
-    // triggered only). So a simple flat truthy check per region -- the
-    // same pattern this file already uses for every other section -- is
-    // both correct and consistent: 1 region assessed with any real finding
-    // counts as 1 of 10, not a fine-grained per-test count that would
-    // require parsing 10 separate JSON blobs to keep in sync.
-    const FMA_REGION_DATA_KEYS = ["lfs_data","sfs_data","hfs_data","kfs_data","afs_data","cfs_data","thfs_data","elfs_data","wffs_data","tmjfs_data"];
-    const fmaKeys=key==="fma"?FMA_REGION_DATA_KEYS:[];
-    const subjKeys=key==="subjective"?[
-      ...Object.values(UNIV_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
-      ...Object.values(REG_MOD_S||{}).flatMap(mod=>Object.values(mod.sections||mod||{}).flatMap(s=>s.fields?s.fields.map(f=>f.id):[])),
-      ...Object.values(BPS_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
-      ...Object.values(SLEEP_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
-      ...Object.values(SPORT_S||{}).flatMap(s=>s.fields.map(f=>f.id)),
-    ]:[];
-    const neuroKeys=key==="neuro"?[...( DERMATOMES||[]).flatMap(d=>[d.id+"_left",d.id+"_right"]),...(REFLEXES||[]).flatMap(r=>[r.id+"_left",r.id+"_right"]),...(NEURAL_TENSION||[]).flatMap(nt=>[nt.id+"_left",nt.id+"_right"]),...(RED_FLAGS_NEURO||[]).map(rf=>rf.id)]:[];
-    const allKeys=[...allT.map(t=>t.id),...nktT,...kcT,...fmaKeys,...subjKeys,...neuroKeys];
-    const filled=allKeys.filter(id=>data[id]&&data[id]!=="").length;
-    const total=allT.length+nktT.length+kcT.length+fmaKeys.length+subjKeys.length+neuroKeys.length;
-    return total>0?Math.round(filled/total*100):0;
-  };
-
   // Top-level nav item (no indent)
   const SidebarTopItem = ({ navKey, navCtx, icon, label, onClick }) => {
     const isAct = active === navKey;
@@ -1614,18 +1204,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         />
       )}
 
-      {/* Info Modal */}
-      {infoModal&&(
-        <div onClick={()=>setInfoModal(null)} className="pm-modal-wrap" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} className="pm-modal-box" style={{background:PC.surface,border:`1px solid ${PC.accent}40`,borderRadius:14,padding:24,maxWidth:500,width:"100%",maxHeight:"82vh",overflowY:"auto"}}>
-            <div style={{fontWeight:800,color:PC.accent,marginBottom:14,fontSize:"1rem"}}>{infoModal.label}</div>
-            {infoModal.sig&&<div style={{marginBottom:12}}><div style={{fontSize:"0.82rem",fontWeight:700,color:PC.a3,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>📊 Significance</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.sig}</div></div>}
-            {infoModal.how&&<div style={{marginBottom:16}}><div style={{fontSize:"0.82rem",fontWeight:700,color:PC.yellow,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>👐 How to Perform</div><div style={{background:PC.s2,borderRadius:8,padding:12,fontSize:"0.8rem",color:PC.text,lineHeight:1.7}}>{infoModal.how}</div></div>}
-            <button onClick={()=>setInfoModal(null)} style={{padding:"10px 20px",background:PC.a2,border:"none",borderRadius:8,color:"#fff",fontWeight:700,cursor:"pointer",width:"100%",fontSize:"0.85rem"}}>Close</button>
-          </div>
-        </div>
-      )}
-
       {/* Mobile nav overlay */}
       {navOpen&&<div className="pm-nav-overlay" onClick={()=>setNavOpen(false)}/>}
 
@@ -1784,7 +1362,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             ))}
             {activeRedFlags.length>4&&<span style={{background:"rgba(0,0,0,0.18)",borderRadius:6,padding:"2px 8px",fontSize:"0.82rem",fontWeight:700,color:"#000"}}>+{activeRedFlags.length-4} more</span>}
           </div>
-          <button onClick={()=>navTo("subjective")} style={{background:"rgba(0,0,0,0.2)",border:"1px solid rgba(0,0,0,0.3)",borderRadius:7,color:"#000",fontWeight:800,fontSize:"0.75rem",cursor:"pointer",padding:"4px 10px",flexShrink:0,whiteSpace:"nowrap"}}>View →</button>
           <button onClick={()=>{
             const now = new Date();
             const entry = {
@@ -2095,123 +1672,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           ...(isFullScreenAssessment ? {"--pm-mobile-hdr-h":"0px"} : {})
         }}>
 
-          {/* Neuro went live (2026-07-30): STREAMS' neuro entry flipped to
-              live:true -- config (streams/neuro.js) is Step-2-complete (all
-              4 phases, condition-aware showIf, checklists) and its widgets
-              (streams/neuroWidgets.jsx) are the same ones already proven out
-              under the old Neurological/Neuro Templates sidebar screens, not
-              new/untested code. Sports/Pedia/Cardio stay live:false -- still
-              StreamEnginePlaceholder, no STREAM_CONFIGS entry for them yet.
-              Root cause of the earlier trap wasn't AssessmentEngine crashing
-              -- it's a self-contained view with no nav of its own, so once
-              rendered it ignores `active`/sidebar/bottom-nav clicks entirely.
-              StreamSelector (above) was the only escape, but it's scoped to
-              active==="home"/"demographics", so navigating away (e.g.
-              clicking a sidebar item) hid it too, with no way back except a
-              reload. Fixed by giving AssessmentEngine its own always-visible
-              "Back to Ortho" pill below, same as StreamEnginePlaceholder
-              already has -- so the escape hatch can't disappear regardless
-              of `active`. Applies to any future live stream, not just Neuro. */}
-          {stream !== "ortho" ? (
-            (STREAMS.find(s=>s.id===stream)?.live && STREAM_CONFIGS[stream]) ? (
-              <>
-                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:12}}>
-                  <button type="button" onClick={()=>setStream("ortho")}
-                    style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${PC.border}`,
-                      background:PC.s2||"#f8fafc",color:PC.muted,fontSize:"0.76rem",fontWeight:700,cursor:"pointer"}}>
-                    ← Back to Ortho
-                  </button>
-                </div>
-                <AssessmentEngine config={STREAM_CONFIGS[stream]} components={STREAM_WIDGETS} data={data} set={set} PC={PC} navTo={navTo}/>
-              </>
-            ) : (
-              <StreamEnginePlaceholder stream={stream} setStream={setStream} PC={PC}/>
-            )
-          ) : (
-          <>
-
-          {/* ── CLINICAL WORKFLOW HEADER ── */}
-          {/* Shown on every step of the workflow, patient or no patient --
-              New Assessment's specialty picker lands on Demographics with
-              no patient created yet (that only happens once "Create
-              Patient & Continue" is pressed), and someone should be able to
-              freely jump between steps (Subjective, Body Regions, etc.) to
-              edit/review while still mid-assessment, before a patient
-              record formally exists. Screen-scoping is handled below by
-              wfScreens.includes(active) -- no separate activePatient gate
-              needed on top of that. */}
-          {(() => {
-            const d2 = data;
-            const oKeys = ["rom","mmt","special","neuro","neurotemplates","gait","posture","palpation","fma","outcome","observation","cyriax","cyriax_full","sttt","kinetic","fascia","nkt"];
-            // Only render this stepper on the actual clinical-workflow
-            // screens it navigates between -- it was gated on activePatient
-            // alone, so once a patient existed it kept showing at the top
-            // of Home/PhysioFeed/Learn/Profile too (those aren't part of
-            // this workflow at all). Scope it to the exact screens wfSteps
-            // below can land on.
-            const wfScreens = ["demographics","subj_region","subjective","subj_ai","chart_palpation","objective","treatment","exercise",...oKeys];
-            // Posture Analysis has its own dedicated entry screen (hero card,
-            // AI/Manual toggle, view grid) that doesn't fit the S->O->A->P
-            // step flow -- hide the stepper there specifically, not the rest
-            // of oKeys (2026-08-21).
-            if (!wfScreens.includes(active) || active==="posture") return null;
-            // Expanded from 5 to 9 steps (2026-08-17) -- Subjective's region
-            // picker / AI panel / body-chart+palpation were previously all
-            // bundled into one long "Subjective" scroll. They're broken out
-            // into their own steps here so each opens as its own page, per
-            // the requested line-by-line workflow. No new logic anywhere --
-            // "region"/"ai" reuse SubjectiveModule itself (viewStep prop
-            // controls which part of it is visible), "chart" reuses the
-            // existing BodyChart + Palpation modules behind a small toggle,
-            // and "home" reuses the existing Treatment screen's HEP tab
-            // (txTab==="hep") instead of being a new screen.
-            const wfSteps = [
-              { key:"demographics", label:"Demographics",  short:"Demo",   nav:"demographics",    done:!!(d2.dem_name&&d2.dem_age), active:active==="demographics" },
-              { key:"region",       label:"Body Regions",  short:"Region", nav:"subj_region",     done:!!(d2.cx_selected_regions&&d2.cx_selected_regions!=="[]"), active:active==="subj_region" },
-              { key:"ai",           label:"AI",            short:"AI",     nav:"subj_ai",         done:!!(d2.ai_extraction_audit), active:active==="subj_ai" },
-              { key:"subjective",   label:"Subjective",    short:"Sub",    nav:"subjective",      done:!!(d2.cc_main||d2.lx_loc||d2.cx_loc), active:active==="subjective" },
-              { key:"chart",        label:"Chart/Palp",    short:"Chart",  nav:"chart_palpation", done:!!(d2.body_chart_pro||d2.palpation_site), active:active==="chart_palpation" },
-              { key:"objective",    label:"Objective",     short:"Obj",    nav:"objective",       done:!!(Object.keys(d2).some(k=>k.startsWith("rom_")||k.startsWith("mmt_")||k.startsWith("st_"))), active:active==="objective"||oKeys.includes(active) },
-              { key:"treatment",    label:"Treatment",     short:"Treat",  nav:"treatment",       done:!!(d2.soap_modalities||d2.soap_frequency||d2.tx_exercise_prescription||d2.tx_techniques), active:(active==="treatment"||active==="exercise")&&txTab!=="hep" },
-              { key:"home",         label:"Home Protocol", short:"Home",   nav:"treatment",       done:!!(d2.hep_programme), active:active==="treatment"&&txTab==="hep" },
-            ];
-            const doneCount = wfSteps.filter(s => s.done).length;
-            const pct = Math.round((doneCount / wfSteps.length) * 100);
-            return (
-              <div className="pm-stepper-wrap" style={{background:PC.surface,border:`1px solid ${PC.border}`,borderRadius:14,padding:"10px 16px 8px",marginBottom:18}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:10,fontWeight:700,color:PC.muted,textTransform:"uppercase",letterSpacing:"1px"}}>Screening Workflow</span>
-                  <span style={{fontSize:10,fontWeight:700,color:pct===100?"#10B981":PC.accent}}>{doneCount}/{wfSteps.length} complete</span>
-                </div>
-                <div className="pm-stepper-row" style={{display:"flex",alignItems:"center",gap:0}}>
-                  {wfSteps.map((step, i) => {
-                    const isLast = i === wfSteps.length - 1;
-                    return (
-                      <React.Fragment key={step.key}>
-                        <div onClick={()=>{
-                          if (step.key==="home") { navTo("treatment"); setTxTab("hep"); }
-                          else if (step.key==="treatment") { navTo("treatment"); if (txTab==="hep") setTxTab("exercise"); }
-                          else navTo(step.nav);
-                        }} data-testid={`wf-step-${step.key}`} style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",flex:"0 0 auto",minWidth:0}}>
-                          <div className="pm-stepper-dot" style={{width:30,height:30,borderRadius:"50%",background:step.done?"#6D28D9":step.active?"#EDE9FE":PC.s2,border:`2px solid ${step.done?"#6D28D9":step.active?"#6D28D9":"#E5E7EB"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,boxShadow:step.active?"0 0 0 3px rgba(109,40,217,0.15)":"none",transition:"all 0.2s",flexShrink:0}}>
-                            {step.done ? <span style={{fontSize:13,color:"#fff",fontWeight:900}}>✓</span> : <span style={{fontSize:11,color:step.active?"#6D28D9":PC.muted,fontWeight:700}}>{i+1}</span>}
-                          </div>
-                          <div className="pm-stepper-label" style={{fontSize:9,fontWeight:step.active?800:step.done?700:500,color:step.done?"#6D28D9":step.active?"#6D28D9":PC.muted,marginTop:4,textAlign:"center",whiteSpace:"nowrap",letterSpacing:"0.1px"}}>{step.short}</div>
-                        </div>
-                        {!isLast && <div style={{flex:1,height:2,background:step.done?"#6D28D9":"#E5E7EB",marginBottom:14,minWidth:6,transition:"background 0.3s"}}/>}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-                <div style={{height:3,background:"#E5E7EB",borderRadius:999,marginTop:6,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${pct}%`,background:pct===100?"#10B981":"linear-gradient(90deg,#6D28D9,#8B5CF6)",borderRadius:999,transition:"width 0.4s ease"}}/>
-                </div>
-              </div>
-            );
-          })()}
-
-
-          {currentSection && active !== "home" && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "subjective" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
+          {currentSection && active !== "home" && active !== "treatment" && active !== "exercise" && active !== "tx_techniques" && active !== "physiofeed" && active !== "profile" && active !== "learn" && active !== "clinical" && active !== "posture" && (
           <div style={{marginBottom:24}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
               <div style={{width:38,height:38,background:PC.isDark?`linear-gradient(135deg,${PC.accent}15,${PC.a2}10)`:`linear-gradient(135deg,${PC.accent}10,${PC.a2}08)`,border:`1px solid ${PC.border}`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",flexShrink:0}}>{currentSection.icon}</div>
@@ -2277,28 +1738,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <div className="pm-bleed" style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading PhysioFeed…</div>
           )}
 
-          {/* Objective hub — ROM/MMT/Special/Neuro expand in place, scoped to
-              the region(s) picked in Subjective. Not part of the ALL_TESTS/
-              currentSection group system (there's no "objective" entry there),
-              same standalone-block pattern as Posture above. */}
-          {active==="objective" && (
-            <div style={{marginBottom:22}}>
-              <Suspense fallback={<TabFallback/>}><LazyObjectiveHub data={data} set={set} navTo={navTo} PC={PC} requireAuth={requireAuth}/></Suspense>
-            </div>
-          )}
-
-          {/* Body region selection — its own step page now (2026-08-17),
-              was previously bundled into the top of the Subjective scroll.
-              Reuses SubjectiveModule itself (same region-picker state/logic)
-              via the viewStep prop, which just controls what part of that
-              component's render is visible -- nothing about the region
-              picker's own behaviour changed. */}
-          {active==="subj_region" && (
-            <div style={{marginBottom:22}}>
-              <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={{}} requireAuth={requireAuth} viewStep="region"/></Suspense>
-            </div>
-          )}
-
           {/* Cardiopulmonary Assessment -- was uploaded as a fully
               standalone tool taking no props at all, so nothing it did
               ever reached the real patient record (Aditi: "when I have
@@ -2333,18 +1772,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <div className="pm-bleed"><TabLoader/></div>
           )}
 
-          {/* Neurological Assessment -- replaces the old config-driven
-              Neuro stream engine (STREAM_CONFIGS.neuro / AssessmentEngine
-              below) with a standalone tool, same pattern and same reasons
-              as Cardiopulmonary Assessment just above (own header comment
-              in NeurologicalAssessment.jsx has the full explanation). Note:
-              this is NOT the same thing as the "Neurological" sidebar item
-              a few lines up (navKey="neuro") -- that's a shared quick
-              neuro screen usable within any specialty's assessment and is
-              untouched; this is the full Neuro specialty stream, same
-              relationship Cardiopulmonary Assessment already has to
-              Special Tests/ROM/etc.
-              Same deferred-mount fix as Cardiopulmonary just above. */}
+          {/* Neurological Assessment -- standalone tool, same pattern and
+              same reasons as Cardiopulmonary Assessment just above (own
+              header comment in NeurologicalAssessment.jsx has the full
+              explanation). Same deferred-mount fix as Cardiopulmonary. */}
           {mountedTabs.has("neuro_assessment") && (
             <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
               <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined}/></Suspense>
@@ -2354,12 +1785,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <div className="pm-bleed"><TabLoader/></div>
           )}
 
-          {/* New Ortho Assessment -- standalone tool, same pattern as
-              Cardiopulmonary/Neurological Assessment above. The old
-              config-driven "ortho" stream (demographics -> subjective ->
-              objective stepper) stays reachable, relabeled "Old Ortho" in
-              STREAMS, untouched below.
-              Same deferred-mount fix as Cardiopulmonary/Neurological above. */}
+          {/* Ortho Assessment -- standalone tool, same pattern as
+              Cardiopulmonary/Neurological Assessment above. (The old
+              step-by-step Ortho "Screening Workflow" it replaced was
+              removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
               <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
@@ -2424,33 +1853,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 }}
                 onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
-            </div>
-          )}
-
-          {/* AI — its own step page now, same reuse pattern as region above:
-              same SubjectiveModule mount, viewStep="ai" shows only the
-              hero AI/mic buttons + expandable AI panel. */}
-          {active==="subj_ai" && (
-            <div style={{marginBottom:22}}>
-              <Suspense fallback={<TabFallback/>}><LazySubjective data={data} set={set} onNav={navTo} onTabChange={(t)=>setSubjBodyChartTab(t==="bodychart")} navContext={{}} requireAuth={requireAuth} viewStep="ai"/></Suspense>
-            </div>
-          )}
-
-          {/* Body Chart / Palpation — combined into one step page per
-              request, via a small Chart|Palpation toggle. Reuses the exact
-              same LazyBodyChart/LazyPalpation modules already used
-              elsewhere (Body Chart tab inside Subjective, Palpation
-              sidebar item) -- no new assessment logic, just a shared page
-              for two things that used to live on separate screens. */}
-          {active==="chart_palpation" && (
-            <div style={{marginBottom:22}}>
-              <div style={{display:"flex",gap:8,marginBottom:14}}>
-                <button type="button" onClick={()=>setChartPalpTab("chart")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${chartPalpTab==="chart"?PC.accent:PC.border}`,background:chartPalpTab==="chart"?`${PC.accent}15`:PC.s2,color:chartPalpTab==="chart"?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>🧍 Body Chart</button>
-                <button type="button" onClick={()=>setChartPalpTab("palpation")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${chartPalpTab==="palpation"?PC.accent:PC.border}`,background:chartPalpTab==="palpation"?`${PC.accent}15`:PC.s2,color:chartPalpTab==="palpation"?PC.accent:PC.text,fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}>🤚 Palpation</button>
-              </div>
-              {chartPalpTab==="chart"
-                ? <Suspense fallback={<TabFallback/>}><LazyBodyChart data={data} set={set}/></Suspense>
-                : <Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="chart_palpation"?navContext:{}}/></Suspense>}
             </div>
           )}
 
@@ -2631,213 +2033,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     );
                   })()}
                 </div>
-              ):tests==="DASHBOARD_MODULE"?(
-                <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
-              ):tests==="DEMOGRAPHICS_MODULE"?(
-                <div className="pm-form-panel" style={{display:"flex",flexDirection:"column",gap:14,background:"#fff",borderRadius:16,border:`1px solid ${PC.border}`,padding:"20px 18px",margin:"-4px"}}>
-                  {(()=>{
-                    // "More details" styling -- plain white, matches the
-                    // core-fields look above instead of the old lavender
-                    // card treatment.
-                    const inp={width:"100%",background:"#fff",border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontFamily:"inherit",outline:"none",padding:"9px 11px",fontSize:"0.85rem",boxSizing:"border-box"};
-                    const lbl={fontSize:"0.78rem",fontWeight:700,color:PC.muted,marginBottom:5,display:"block"};
-                    const sel=(id,opts)=>(<select style={inp} value={data[id]||""} onChange={e=>set(id,e.target.value)}><option value="">— select —</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>);
-                    const field=(label,el)=>(<div style={{marginBottom:12}}><label style={lbl}>{label}</label>{el}</div>);
-                    const card=(title,children)=>(<div style={{background:"#fff",borderRadius:12,border:`1px solid ${PC.border}`,padding:"14px 16px"}}><div style={{fontSize:"0.78rem",fontWeight:800,color:PC.accent,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{title}</div>{children}</div>);
-
-                    // New front-and-center styling for the 6 core fields.
-                    const nInp={width:"100%",background:PC.surface,border:`1.5px solid ${PC.border}`,borderRadius:10,color:PC.text,fontFamily:"inherit",outline:"none",padding:"11px 13px",fontSize:"0.9rem",boxSizing:"border-box"};
-                    const nLbl={fontSize:"0.82rem",fontWeight:700,color:PC.text,marginBottom:6,display:"block"};
-                    const req=<span style={{color:"#dc2626"}}> *</span>;
-                    // id/htmlFor pairing: real accessibility win (screen
-                    // readers, click-to-focus on the label), and lets tests
-                    // target fields like Date of Birth that have no visible
-                    // placeholder text.
-                    const nField=(label,el,required,id)=>(<div style={{marginBottom:16}}><label htmlFor={id} style={nLbl}>{label}{required&&req}</label>{el}</div>);
-
-                    const requiredOk = !!(data.dem_name?.trim() && data.dem_age && data.dem_sex && data.dem_phone?.trim());
-                    const genderOpts = ["Male","Female","Other"];
-
-                    return(<>
-                      <div style={{fontSize:"1.15rem",fontWeight:800,color:PC.text}}>Demographics</div>
-
-                      {nField("Full Name",<VoiceTextInput id="dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={data.dem_name||""} onChange={v=>set("dem_name",v)}/>,true,"dem_name")}
-                      {/* className (not just the inline grid style) so this
-                          survives the global [style*="1fr 1fr"] mobile
-                          override in utils.jsx, which force-collapses ANY
-                          "1fr 1fr" inline grid to 1 column below 400px --
-                          catching this DOB/Age pair even though it's meant
-                          to always stay side-by-side (see .pm-nowrap-2col
-                          override rule added alongside that block). Date
-                          input also gets -webkit-appearance:none -- without
-                          it, iOS Safari renders type="date" with its own
-                          oversized native control instead of respecting
-                          nInp's padding/font-size, which is what was making
-                          the DOB box look huge. */}
-                      <div className="pm-nowrap-2col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                        <div>{nField("Date of Birth",<DateWheelField value={data.dem_dob||""} onChange={v=>set("dem_dob",v)} inputStyle={nInp}/>,false,"dem_dob")}</div>
-                        <div>{nField("Age",<VoiceTextInput id="dem_age" style={nInp} type="text" placeholder="e.g. 34" value={data.dem_age||""} onChange={v=>set("dem_age",v)}/>,true,"dem_age")}</div>
-                      </div>
-                      <div style={{marginBottom:16}}>
-                        <label style={nLbl}>Gender{req}</label>
-                        <div style={{display:"flex",gap:8}}>
-                          {genderOpts.map(g=>(
-                            <button key={g} type="button" onClick={()=>set("dem_sex",g)}
-                              style={{flex:1,padding:"11px 0",textAlign:"center",borderRadius:10,fontSize:"0.85rem",fontWeight:700,
-                                border:`1.5px solid ${data.dem_sex===g?PC.accent:PC.border}`,
-                                background:data.dem_sex===g?PC.accent:PC.surface,
-                                color:data.dem_sex===g?"#fff":PC.text,cursor:"pointer"}}>
-                              {g}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {nField("Phone",<input id="dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={data.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,true,"dem_phone")}
-                      {nField("Email",<input id="dem_email" style={nInp} type="email" placeholder="patient@email.com" value={data.dem_email||""} onChange={e=>set("dem_email",e.target.value)}/>,false,"dem_email")}
-                      {nField("Occupation",<VoiceTextInput id="dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={data.dem_occupation||""} onChange={v=>set("dem_occupation",v)}/>,false,"dem_occupation")}
-                      {nField("Address",<VoiceTextInput id="dem_address" style={nInp} placeholder="Street, City, Postcode" value={data.dem_address||""} onChange={v=>set("dem_address",v)}/>,false,"dem_address")}
-                      {nField("Referring Doctor / Hospital",<input id="dem_referral_dr" style={nInp} placeholder="Dr. Name, Hospital" value={data.dem_referral_dr||data.dem_gp||""} onChange={e=>set("dem_referral_dr",e.target.value)}/>,false,"dem_referral_dr")}
-
-                      {/* ── More details toggle: everything the clinic still needs on file, just tucked away by default ── */}
-                      <button type="button" onClick={()=>setDemMoreOpen(v=>!v)}
-                        style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",padding:"4px 0 8px",color:PC.accent,fontWeight:700,fontSize:"0.82rem",cursor:"pointer",width:"fit-content"}}>
-                        <span style={{transform:demMoreOpen?"rotate(90deg)":"none",transition:"transform .15s",display:"inline-block"}}>▶</span>
-                        More details {demMoreOpen?"(dominant hand, work, emergency contact, insurance, medical history…)":""}
-                      </button>
-
-                      {demMoreOpen && (
-                        <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:4}}>
-                          {card("Personal Details",<>
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                              <div>{field("Dominant Hand",sel("dem_dominant",["Right","Left","Ambidextrous"]))}</div>
-                              <div>{field("Work Status",sel("dem_work_status",["Full time","Part time","Self employed","Off work — injury","Off work — illness","Retired","Unemployed","Student","Home duties"]))}</div>
-                            </div>
-                            {field("Employer / Industry",<input style={inp} placeholder="e.g. ABC Corp, Healthcare" value={data.dem_employer||""} onChange={e=>set("dem_employer",e.target.value)}/>)}
-                          </>)}
-                          {card("Contact Details",<>
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                              <div>{field("Emergency Contact Name",<input style={inp} placeholder="Full name" value={data.dem_ec_name||""} onChange={e=>set("dem_ec_name",e.target.value)}/>)}</div>
-                              <div>{field("Emergency Contact Phone",<input style={inp} type="tel" placeholder="+91 98765 43210" value={data.dem_ec_phone||""} onChange={e=>set("dem_ec_phone",e.target.value)}/>)}</div>
-                            </div>
-                          </>)}
-                          {card("Clinical & Referral",<>
-                            {field("Referral Source",sel("dem_referral",["GP","Self-referral","Specialist","Workplace / Employer","Insurance","Other"]))}
-                            {field("Insurance / Fund",<input style={inp} placeholder="e.g. CGHS, ESI, Private, Self-pay" value={data.dem_insurance||""} onChange={e=>set("dem_insurance",e.target.value)}/>)}
-                            {field("Policy / Member Number",<input style={inp} placeholder="Optional" value={data.dem_policy_no||""} onChange={e=>set("dem_policy_no",e.target.value)}/>)}
-                            {field("Relevant Medical History",<textarea style={{...inp,minHeight:72,resize:"vertical"}} placeholder="Diabetes, hypertension, previous surgeries..." value={data.dem_medical_hx||""} onChange={e=>set("dem_medical_hx",e.target.value)}/>)}
-                            {field("Current Medications",<input style={inp} placeholder="e.g. Metformin 500mg, Amlodipine 5mg" value={data.dem_medications||""} onChange={e=>set("dem_medications",e.target.value)}/>)}
-                          </>)}
-                          {card("Consent",<>
-                            {field("Consent to Treatment",sel("dem_consent",["Yes — verbal","Yes — written","Not yet"]))}
-                            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginTop:4}}>
-                              <input type="checkbox" checked={!!data.consent_treat} onChange={e=>set("consent_treat",e.target.checked)} style={{width:16,height:16,flexShrink:0}}/>
-                              <span style={{fontSize:"0.82rem",color:PC.text,fontWeight:600}}>Written consent obtained</span>
-                            </label>
-                          </>)}
-                        </div>
-                      )}
-
-                      {/* ── Create/Continue CTA ── */}
-                      <button
-                        disabled={!requiredOk}
-                        onClick={()=>{
-                          if(!requiredOk) return;
-                          if(!activePatientId){
-                            const newP={id:genId(),name:data.dem_name,data,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),hasRedFlags:false,lastDx:data.cc_main||""};
-                            setPatients(prev=>{const updated=[newP,...prev];savePatientDB(updated, currentUser?.id);return updated;});
-                            setActivePatientId(newP.id);
-                            setJsonMsg({type:"success",text:`✅ Patient saved: ${data.dem_name}`});
-                            setTimeout(()=>setJsonMsg(null),2500);
-                          }
-                          navTo("subjective");
-                        }}
-                        style={{marginTop:6,padding:"15px",background:requiredOk?PC.accent:"#D1D5DB",border:"none",borderRadius:12,color:"#fff",fontWeight:800,fontSize:"0.95rem",cursor:requiredOk?"pointer":"not-allowed",width:"100%"}}>
-                        {activePatientId?"Save & Continue →":"Create Patient & Continue →"}
-                      </button>
-                      <div style={{textAlign:"center",fontSize:"0.72rem",color:PC.muted,lineHeight:1.5,padding:"2px 8px 4px"}}>
-                        Enter basic patient information.<br/>Patient ID is generated automatically.
-                      </div>
-                    </>);
-                  })()}
-                </div>
-              ):tests==="SUBJECTIVE_MODULE"?(
-                <div className="pm-form-panel">
-                  {/* 2026-08-19: swapped in the simplified redesign at Aditi's
-                      request (real patient data now, via data/set -- same
-                      props the old SubjectiveModule used, so autosave/
-                      Supabase sync keep working exactly as before since
-                      those watch the whole `data` object generically, not
-                      specific field names). Its own fields are stored under
-                      new simple_* keys (see SubjectiveAssessmentNew.jsx) to
-                      avoid colliding with the old engine's field semantics;
-                      chiefComplaint is mirrored into cc_main so the
-                      workflow-stepper "done" check and the patient-list
-                      chief-complaint preview still light up. The old
-                      SubjectiveModule still runs the region picker
-                      (subj_region) and, in results-only mode, the reasoning
-                      inside Objective (ObjectiveHub.jsx). Body Chart is no longer inlined here
-                      (the new design has no internal tab for it) -- still
-                      available via the separate "Chart/Palp" workflow step. */}
-                  <Suspense fallback={<TabFallback/>}><LazySubjectiveNew data={data} set={set}/></Suspense>
-                </div>
-              ):tests==="PALPATION_MODULE"?(
-                <div className="pm-form-panel"><Suspense fallback={<TabFallback/>}><LazyPalpation data={data} set={set} navContext={active==="palpation"?navContext:{}}/></Suspense></div>
-              ):tests==="POSTURE_DEFECT_MODULE"?(
-                <PostureDefectModule/>
-              ):tests==="OBSERVATION_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyObservation data={data} set={set} navContext={active==="observation"?navContext:{}}/></Suspense>
-                </div>
-              ):tests==="CYRIAX_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazySTT data={data} set={set} navContext={active==="cyriax"?navContext:{}}/></Suspense>
-                </div>
-              ):tests==="SPECIAL_TESTS_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazySpecial data={data} set={set} navContext={active==="special"?navContext:{}}/></Suspense>
-              </div>
-              ):tests==="NKT_REGION"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyCPA data={data} set={set} navContext={active==="nkt"?navContext:{}}/></Suspense>
-                </>
-              ):tests==="FMA_REGION"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyFMA data={data} set={set} navTo={navTo} navContext={active==="fma"?navContext:{}}/></Suspense>
-                </>
-              ):tests==="FASCIA_REGION"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyFascia data={data} set={set} navContext={active==="fascia"?navContext:{}}/></Suspense>
-                </>
-              ):tests==="KC_REGION"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyKinetic data={data} set={set} navContext={active==="kinetic"?navContext:{}}/></Suspense>
-                </>
-              ):tests==="CYRIAX_REGION"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyCyriaxRegion data={data} set={set}/></Suspense>
-                </>
-              ):tests==="NEURO_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyNeuro data={data} set={set} navTo={navTo} navContext={active==="neuro"?navContext:{}}/></Suspense>
-              </div>
-              ):tests==="NEURO_TEMPLATES_MODULE"?(
-                <Suspense fallback={<TabFallback/>}><LazyNeuroTemplates data={data} navTo={navTo} navContext={active==="neurotemplates"?navContext:{}}/></Suspense>
-              ):tests==="GAIT_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyGait data={data} set={set}/></Suspense>
-                </>
-              ):tests==="MMT_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyMMT data={data} set={set} navContext={active==="mmt"?navContext:{}}/></Suspense>
-              </div>
-              ):tests==="ROM_MODULE"?(
-                <div className="pm-form-panel">{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyROM data={data} set={set} navContext={active==="rom"?navContext:{}}/></Suspense>
-              </div>
-              ):tests==="OUTCOME_MODULE"?(
-                <>{/* ── S→O→A→P workflow breadcrumb ── */}
-                <Suspense fallback={<TabFallback/>}><LazyOutcomes data={data} set={set} navTo={navTo} navContext={active==="outcome"?navContext:{}}/></Suspense>
-                </>
               ):tests==="TREATMENT_MODULE"?(
                 <>
                 {(()=>{
@@ -2888,36 +2083,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
                 </div>
-              ):(
-                <div style={{display:"grid",gap:8}}>
-                  {tests.map(t=>{
-                    const hasVal=t.type==="bilateral_num"||t.type==="bilateral_select"?(data[t.id+"_left"]||data[t.id+"_right"]):data[t.id];
-                    const hasInfo=t.sig||t.how;
-                    return(
-                      <div key={t.id} style={{background:PC.surface,border:`1px solid ${hasVal?PC.accent+"28":PC.border}`,borderRadius:12,padding:"16px 18px",transition:"border-color 0.2s",boxShadow:hasVal?`0 0 0 1px ${PC.accent}08`:"none"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,gap:8}}>
-                          <label style={{fontSize:"0.82rem",fontWeight:600,color:hasVal?PC.text:PC.muted,lineHeight:1.4,flex:1,letterSpacing:"-0.1px"}}>
-                            {t.label}
-                            {hasVal&&<span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,background:PC.a3+"22",borderRadius:"50%",marginLeft:7,fontSize:"0.75rem",color:PC.a3,fontWeight:800,verticalAlign:"middle"}}>✓</span>}
-                          </label>
-                          {hasInfo&&<button type="button" onClick={()=>setInfoModal(t)} style={{padding:"3px 10px",background:PC.isDark?"rgba(129,140,248,0.1)":"rgba(79,70,229,0.06)",border:`1px solid ${PC.a2}30`,borderRadius:7,color:PC.a2,fontSize:"0.82rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.2px"}}>ℹ Info</button>}
-                        </div>
-                        <Field t={t}/>
-                        {hasVal&&t.sig&&(
-                          <div style={{marginTop:10,padding:"9px 12px",background:PC.accentSoft||"rgba(56,189,248,0.06)",border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:8,fontSize:"0.78rem",color:PC.text,lineHeight:1.6,opacity:0.9}}>
-                            <span style={{fontWeight:700,color:PC.accent,marginRight:5,fontSize:"0.75rem",letterSpacing:"0.3px"}}>⚕ CLINICAL</span>{t.sig}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              ):null}
             </div>
           ))}
           <div style={{height:60}}/>
-          </>
-          )}
         </div>
       </div>
 
