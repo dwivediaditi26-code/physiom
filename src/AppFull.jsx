@@ -2368,7 +2368,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <AppInner currentUser={session.user} onSignOut={() => supabase.auth.signOut()} />
+      <AppInner currentUser={session.user} onSignOut={() => { trackEvent("user_logged_out"); supabase.auth.signOut(); }} />
       <InstallPrompt currentUser={session.user} />
     </ErrorBoundary>
   );

@@ -4,6 +4,7 @@ import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
+import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // `applied` and `saved` are owned by ExplorePage now (P4/P5) -- they come
 // from the real applications / saved_items tables, so they survive a
@@ -12,6 +13,12 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
   const [applyOpen, setApplyOpen] = useState(false);
   const c = TYPE_COLORS[opp.type] || TYPE_COLORS.job;
   const blocked = isRegistrationBlocked(opp);
+
+  useEffect(() => {
+    trackEvent("opportunity_viewed", { entityType: "opportunity", entityId: opp.id, properties: { type: opp.type } });
+    if (opp.type === "job") trackEvent("job_viewed", { entityType: "opportunity", entityId: opp.id });
+    if (opp.type === "internship") trackEvent("internship_viewed", { entityType: "opportunity", entityId: opp.id });
+  }, [opp.id]);
 
   // Message/Apply bar made truly fixed below the desktop breakpoint
   // (2026-09-23, "make this button constant") -- it was `sticky bottom-0`,

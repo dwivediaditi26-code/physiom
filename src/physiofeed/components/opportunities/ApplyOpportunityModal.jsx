@@ -4,6 +4,7 @@ import { X, Phone, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import * as db from "../../data/db.js";
+import { trackEvent } from "../../../analytics/trackEvent.js";
 
 const textareaCls = "w-full text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400 placeholder:text-sm resize-none";
 
@@ -23,12 +24,18 @@ export default function ApplyOpportunityModal({ opp, onClose, onApplied }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    if (opp.type === "job") trackEvent("job_application_started", { entityType: "opportunity", entityId: opp.id });
+  }, [opp.id, opp.type]);
+
   const submit = async () => {
     if (busy || sent) return;
     setBusy(true);
     setError(null);
     try {
       await db.applyToOpportunity(opp.id, { coverNote: note.trim(), resumeUrl: profile?.resumeUrl || "" });
+      if (opp.type === "job") trackEvent("job_application_submitted", { entityType: "opportunity", entityId: opp.id });
+      if (opp.type === "internship") trackEvent("internship_application_submitted", { entityType: "opportunity", entityId: opp.id });
       setSent(true);
     } catch (e) {
       setError(e.message || "Couldn't send that application -- please try again.");

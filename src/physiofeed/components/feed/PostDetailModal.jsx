@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import FeedPostCard from "./FeedPostCard.jsx";
+import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // Opened from GridPostCard.jsx (Profile/Saved/Explore grids) -- those tiles
 // only ever showed a like/comment COUNT with no way to actually read or add
@@ -10,6 +12,9 @@ import FeedPostCard from "./FeedPostCard.jsx";
 // never drift out of sync on what "the right way" to show likes/comments
 // looks like, since it's literally the same component either place.
 export default function PostDetailModal({ post, onClose }) {
+  useEffect(() => {
+    if (post?.postType === "discussion") trackEvent("case_viewed", { entityType: "post", entityId: post.id });
+  }, [post?.id, post?.postType]);
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-0 sm:p-4 overflow-y-auto" onClick={onClose}>
       <div className="bg-transparent w-full max-w-lg my-auto" onClick={(e) => e.stopPropagation()}>

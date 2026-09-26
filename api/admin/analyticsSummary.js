@@ -8,6 +8,7 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
+import { resolveRange, distinctUsersSince, buildInsights } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -44,8 +45,10 @@ export default async function handler(req, res) {
   const { data: profile, error: profileErr } = await admin.from('profiles').select('is_admin').eq('id', userData.user.id).maybeSingle();
   if (profileErr || !profile?.is_admin) return res.status(403).json({ error: 'Admin access required.' });
 
-  const days = Math.min(Math.max(parseInt(req.query?.days, 10) || 30, 1), 90);
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  // `range` accepts: "today" | "yesterday" | "this_month" | "previous_month"
+  // | "custom" (with from/to) | a plain number of days (7/30/90/...).
+  const range = req.query?.range || req.query?.days || '30';
+  const { since, until, prevSince, prevUntil } = resolveRange(range, { from: req.query?.from, to: req.query?.to });
 
   const [
     { count: totalUsers },
@@ -53,29 +56,30 @@ export default async function handler(req, res) {
     { count: totalPosts },
     { count: totalOpportunities },
     { count: totalApplications },
-    { data: recentEvents, error: eventsErr },
+    { data: currentEvents, error: eventsErr },
+    { data: previousEvents, error: prevErr },
   ] = await Promise.all([
     admin.from('profiles').select('id', { count: 'exact', head: true }),
     admin.from('patients').select('id', { count: 'exact', head: true }),
     admin.from('posts').select('id', { count: 'exact', head: true }),
     admin.from('opportunities').select('id', { count: 'exact', head: true }).is('deleted_at', null),
     admin.from('applications').select('id', { count: 'exact', head: true }),
-    admin.from('analytics_events').select('event_name, user_id, entity_type, entity_id, properties, created_at').gte('created_at', since).order('created_at', { ascending: false }).limit(500),
+    admin.from('analytics_events').select('event_name, user_id, entity_type, entity_id, properties, created_at').gte('created_at', since).lt('created_at', until).order('created_at', { ascending: false }).limit(1000),
+    admin.from('analytics_events').select('event_name, user_id, created_at').gte('created_at', prevSince).lt('created_at', prevUntil).limit(1000),
   ]);
   if (eventsErr) return res.status(500).json({ error: eventsErr.message });
+  if (prevErr) return res.status(500).json({ error: prevErr.message });
 
-  const events = recentEvents || [];
-  const now = Date.now();
+  const events = currentEvents || [];
+  const prevEvents = previousEvents || [];
   const dayMs = 24 * 60 * 60 * 1000;
-  const distinctUsersSince = (windowMs) =>
-    new Set(events.filter((e) => now - new Date(e.created_at).getTime() <= windowMs).map((e) => e.user_id)).size;
 
   const featureCounts = {};
   for (const e of events) featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
 
   res.status(200).json({
     generatedAt: new Date().toISOString(),
-    rangeDays: days,
+    range: { key: range, since, until },
     state: {
       totalUsers: totalUsers ?? 0,
       totalPatients: totalPatients ?? 0,
@@ -87,12 +91,16 @@ export default async function handler(req, res) {
     // depth yet to compute honestly (event logging only just started). The
     // frontend shows "not enough data yet" rather than a fabricated number.
     trends: {
-      dau: distinctUsersSince(dayMs),
-      wau: distinctUsersSince(7 * dayMs),
-      mau: distinctUsersSince(30 * dayMs),
+      dau: distinctUsersSince(events, dayMs),
+      wau: distinctUsersSince(events, 7 * dayMs),
+      mau: distinctUsersSince(events, 30 * dayMs),
       totalEventsInRange: events.length,
       featureCounts,
     },
-    recentEvents: events.slice(0, 200),
+    // "What should I do next" -- real period-over-period comparisons only,
+    // grounded in the same event rows the rest of the page shows. Never a
+    // fabricated explanation (see buildInsights' MIN_SAMPLE floor).
+    insights: buildInsights(events, prevEvents),
+    recentEvents: events.slice(0, 500),
   });
 }

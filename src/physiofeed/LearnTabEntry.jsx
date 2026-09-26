@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { trackEvent } from "../analytics/trackEvent.js";
 import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
@@ -160,11 +161,12 @@ function greeting() {
 }
 
 export default function LearnTabEntry({ onNav }) {
+  useEffect(() => { trackEvent("learn_viewed"); }, []);
   const [view, setView] = useState("home");
   const [query, setQuery] = useState("");
   const [studyType, setStudyType] = useState(null);
   const [last, setLast] = useState(readLast);
-  const openStudy = (key) => { saveLast(key); setLast({ key }); setStudyType(key); };
+  const openStudy = (key) => { saveLast(key); setLast({ key }); setStudyType(key); trackEvent("module_viewed", { entityType: "module", entityId: key }); };
   const lastItem = last && ALL_ITEMS.find((i) => i.key === last.key);
 
   const filter = (items) => {

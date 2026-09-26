@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, Calendar, Clock, Video, Check } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
+import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // `registered` is owned by ExplorePage (2026-09-23), read from the real
 // `applications` table -- this used to be local useState, so "Registered"
@@ -20,10 +21,16 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
   const [error, setError] = useState(null);
   const blocked = isRegistrationBlocked(opp);
 
+  useEffect(() => {
+    trackEvent("opportunity_viewed", { entityType: "opportunity", entityId: opp.id, properties: { type: "workshop" } });
+    trackEvent("workshop_viewed", { entityType: "opportunity", entityId: opp.id });
+  }, [opp.id]);
+
   const register = async () => {
     if (busy || registered) return;
     setBusy(true);
     setError(null);
+    trackEvent("workshop_registration_started", { entityType: "opportunity", entityId: opp.id });
     try {
       await db.registerForWorkshop(opp.id, { creatorId: opp.creatorId, title: opp.title });
       await onRegistered?.();

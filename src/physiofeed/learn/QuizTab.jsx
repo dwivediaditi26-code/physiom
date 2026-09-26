@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronRight, RotateCcw, Trophy, BookOpen } from "lucide-react";
 import { QuickCheck } from "./QuickCheck.jsx";
+import { trackEvent } from "../../analytics/trackEvent.js";
 import { PINNED_BAR_CSS } from "./pinnedBar.js";
 import { alignTo, appBarBottom, keepInView } from "./scrollKit.js";
 
@@ -55,6 +56,8 @@ export function QuizSet({ questions, onReview }) {
   const missed = all.filter((i) => answers[i] && !answers[i].right);
   const retrying = round.length < total;
 
+  useEffect(() => { trackEvent("quiz_started", { properties: { total } }); }, []);
+
   // Opening the tab: the hero photo above pushes the quiz below the fold, so
   // scroll it up to sit just under the tab strip (~70px = tabs + their margin).
   useEffect(() => { alignTo(rootRef.current, appBarBottom(), 70); }, []);
@@ -73,14 +76,16 @@ export function QuizSet({ questions, onReview }) {
 
   const submit = () => {
     if (!picked) return;
-    setAnswers((a) => ({ ...a, [qi]: { pick: picked, right: picked === q.correctOptionId } }));
+    const right = picked === q.correctOptionId;
+    setAnswers((a) => ({ ...a, [qi]: { pick: picked, right } }));
     setChecked(true);
+    trackEvent("mcq_answered", { entityType: "question", entityId: qi, properties: { correct: right } });
   };
   const next = () => {
     setPicked(null);
     setChecked(false);
     if (pos + 1 < round.length) setPos(pos + 1);
-    else setFinished(true);
+    else { setFinished(true); trackEvent("quiz_completed", { properties: { score, total } }); }
   };
   const restart = () => { setRound(all); setPos(0); setPicked(null); setChecked(false); setAnswers({}); setFinished(false); };
   const retryMissed = () => {

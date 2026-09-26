@@ -221,6 +221,7 @@ export async function toggleSave(postId) {
     } else {
       const { error } = await supabase.from("saved_posts").insert({ post_id: postId, user_id: uid });
       if (error) throw error;
+      trackEvent("post_saved", { entityType: "post", entityId: postId });
     }
   } catch (e) {
     if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
@@ -269,8 +270,13 @@ export async function addComment(postId, text, opts = {}) {
     if (error) throw error;
     if (isCaseUpdate || isFinalUpdate) {
       trackEvent("case_commented", { entityType: "post", entityId: postId, properties: { isCaseUpdate: !!isCaseUpdate, isFinalUpdate: !!isFinalUpdate } });
+    } else if (parentCommentId) {
+      // Reply threading (parent_comment_id) is a case-discussion-only UI
+      // feature today -- DiscussionThread.jsx is its one caller -- so a
+      // reply here is a case reply, not a generic post comment.
+      trackEvent("case_replied", { entityType: "post", entityId: postId, properties: { parentCommentId } });
     } else {
-      trackEvent("post_commented", { entityType: "post", entityId: postId, properties: { parentCommentId: parentCommentId ?? null } });
+      trackEvent("post_commented", { entityType: "post", entityId: postId });
     }
   } catch (e) {
     if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
@@ -2097,6 +2103,9 @@ export async function createOpportunity(fields, { publish = true } = {}) {
   const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
   if (error) throw error;
   if (publish) invalidateSearchCorpus(); // P8: a listing you just posted must be findable now, not in 30s
+  if (fields.type === "job" || fields.type === "internship") {
+    trackEvent("job_created", { entityType: "opportunity", entityId: data.id, properties: { type: fields.type } });
+  }
   return rowToOpportunity(data, uid, 0);
 }
 
@@ -2389,6 +2398,7 @@ export async function getApplicantsForOpportunity(oppId) {
     if (error) throw error;
     const rows = data || [];
     if (!rows.length) return [];
+    trackEvent("candidate_viewed", { entityType: "opportunity", entityId: oppId, properties: { applicantCount: rows.length } });
     const { data: profiles } = await supabase.from("profiles").select("*").in("id", rows.map((r) => r.applicant_id));
     const byId = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
     return rows.map((a) => {
@@ -2430,6 +2440,7 @@ export async function setApplicationStatus(applicationId, status) {
     .update({ status: APP_STATUS_FROM_UI[status] || status, updated_at: new Date().toISOString() })
     .eq("id", applicationId);
   if (error) throw error;
+  trackEvent("application_reviewed", { entityType: "application", entityId: applicationId, properties: { status } });
 }
 
 // -----------------------------------------------------------------------
