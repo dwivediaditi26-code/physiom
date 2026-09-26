@@ -1695,7 +1695,7 @@ export async function removeReportedPost(reportId, postId) {
 // replaces asking Aditi for copy-paste SQL each time). searchPubMedForEvidence
 // and draftEvidenceFromPubMed call the two new serverless endpoints
 // (api/pubmedSearch.js, api/pubmedDraft.js) -- same authHeader() pattern
-// AIAssistant.jsx already uses for /api/chat. addEvidence() writes straight
+// every other /api/* caller uses. addEvidence() writes straight
 // to research_articles via the existing research_articles_admin_write RLS
 // policy (add_evidence_communities.sql) -- no new endpoint needed for the
 // write itself, same as toggleSaveEvidence() below writing to research_saves.

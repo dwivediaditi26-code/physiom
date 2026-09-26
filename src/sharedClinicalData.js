@@ -1184,7 +1184,6 @@ const ALL_TESTS = {
   exercise:{ label:"Treatment Prescription", icon:"💊", desc:"Exercise & Treatment Plan", groups:{ "Exercise Prescription":"EXERCISE_MODULE" }},
   tx_techniques:{ label:"Tx Techniques", icon:"🤲", groups:{ "Treatment Techniques":"TX_TECHNIQUES_MODULE" }},
   tx_sessions:{ label:"Session Log", icon:"📋", desc:"Follow-Up Visit Notes", groups:{ "Treatment Session Log":"TX_SESSION_MODULE" }},
-  ai_assistant:{ label:"AI Assistant", icon:"🤖", desc:"AI Clinical Assistant", groups:{ "AI Clinical Assistant":"AI_MODULE" }},
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════

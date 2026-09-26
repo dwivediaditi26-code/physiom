@@ -23,7 +23,6 @@ const LazyObjectiveHub = lazy(() => import("./ObjectiveHub.jsx"));
 import neuroStream from "./streams/neuro.js";
 import { GCSWidget, CranialWidget, ReflexWidget, CoordinationWidget, SensoryWidget, MyotomeWidget, NeuralTensionWidget, VestibularWidget, PerceptualWidget, RedFlagsWidget, SensoryRegionWidget } from "./streams/neuroWidgets.jsx";
 import { ALL_TESTS, DERMATOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO } from "./sharedClinicalData.js";
-import AIAssistant from "./AIAssistant.jsx";
 import HomeProtocolTab from "./HomeProtocolTab.jsx";
 
 import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
@@ -404,7 +403,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // writes to Supabase -- every save path already guards on currentUser?.id
   // being present, see savePatientDB / the cloud-sync effect below). The
   // ONLY things that genuinely cannot work without a real account are the
-  // AI-backed endpoints (/api/parse, /api/chat, and friends) -- the server
+  // AI-backed endpoints (/api/parse and friends) -- the server
   // hard-requires a real Supabase JWT (see api/_lib/rateLimit.js), so there
   // is no safe way to let a guest actually call them. requireAuth() is the
   // single gate every AI-triggering button checks first: real users pass
@@ -2889,8 +2888,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     <QuickVisitForm PC={PC} data={data} set={set} navTo={navTo}/>
                   </div>
                 </div>
-              ):tests==="AI_MODULE"?(
-              <AIAssistant data={data} set={set} PC={PC} onClose={()=>navTo("home")} requireAuth={requireAuth}/>
               ):(
                 <div style={{display:"grid",gap:8}}>
                   {tests.map(t=>{

@@ -1,8 +1,8 @@
 // Automated accessibility coverage (part of the item-5 testing pass:
 // E2E/adversarial/accessibility gaps -- this app had zero a11y-specific
 // tests before this file). Uses jest-axe (axe-core under the hood) against
-// jsdom-rendered output of the two screens a clinician spends the most time
-// in: the Subjective Assessment form and the AI Assistant chat.
+// jsdom-rendered output of the Subjective Assessment form. (The AI
+// Assistant chat was covered here too until it was removed on 2026-09-25.)
 //
 // jsdom can't compute real visual layout/paint, so axe automatically skips
 // rules that need it (color-contrast chief among them) -- this catches the
@@ -16,7 +16,6 @@ import { describe, test, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { SubjectiveModule } from "../SubjectiveObjective.jsx";
-import AIAssistant from "../AIAssistant.jsx";
 
 vi.mock("../supabase.js", () => ({ supabase: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) } }, authHeader: vi.fn().mockResolvedValue({}) }));
 Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
@@ -37,22 +36,6 @@ describe("Accessibility — Subjective Assessment form", () => {
     );
     // Cervical's fields now render inline immediately -- no group tab to
     // click (the tab switcher was removed in the 2026-08-18 redesign).
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
-});
-
-describe("Accessibility — AI Assistant chat", () => {
-  test("no axe violations on initial render (no patient loaded)", async () => {
-    const { container } = render(<AIAssistant data={{}} onClose={() => {}} />);
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
-
-  test("no axe violations with a patient loaded", async () => {
-    const { container } = render(
-      <AIAssistant data={{ dem_name: "Test Patient", cc_main: "Left shoulder pain" }} onClose={() => {}} />
-    );
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });

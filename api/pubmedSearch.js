@@ -3,7 +3,7 @@ import { authenticateAndRateLimit } from './_lib/rateLimit.js';
 // Add Evidence admin screen, step 1 (see AdminAddEvidencePage.jsx). Searches
 // PubMed's public E-utilities API server-side -- not called directly from
 // the browser, same reasoning as every other external-API call in this repo
-// (api/chat.js, api/parse.js): keeps the request shape consistent, and lets
+// (e.g. api/parse.js): keeps the request shape consistent, and lets
 // this ride the same auth + rate-limit gate so it can't be hammered by
 // anyone who finds the URL. No API key required for this call volume (an
 // admin searching occasionally, not a high-throughput integration).

@@ -7,6 +7,7 @@
 // call would 502 with "model ... has been decommissioned" (the real
 // error text captured in groqErrorDetail.test.jsx, from hitting this
 // live). Migrated to Groq's recommended replacement, openai/gpt-oss-120b.
+// (api/chat.js was removed with the AI chat on 2026-09-25.)
 //
 // This test isn't about the deprecation date -- it's a tripwire so an
 // unrelated future edit can't silently reintroduce the dead model id
@@ -18,7 +19,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const parseSrc = readFileSync(resolve(process.cwd(), "api/parse.js"), "utf-8");
-const chatSrc = readFileSync(resolve(process.cwd(), "api/chat.js"), "utf-8");
 
 describe("Groq model migration off the deprecated llama-3.3-70b-versatile", () => {
   // Checks the actual `model:` assignment specifically (a regex on
@@ -31,16 +31,9 @@ describe("Groq model migration off the deprecated llama-3.3-70b-versatile", () =
     expect(parseSrc).toMatch(/model:\s*['"]openai\/gpt-oss-120b['"]/);
   });
 
-  test("api/chat.js's actual model field is the replacement, not the deprecated id", () => {
-    expect(chatSrc).not.toMatch(/model:\s*['"]llama-3\.3-70b-versatile['"]/);
-    expect(chatSrc).toMatch(/model:\s*['"]openai\/gpt-oss-120b['"]/);
-  });
-
-  test("gpt-oss is a reasoning model -- reasoning kept low-effort and out of the response, since neither endpoint reads message.reasoning", () => {
+  test("gpt-oss is a reasoning model -- reasoning kept low-effort and out of the response, since api/parse.js doesn't read message.reasoning", () => {
     expect(parseSrc).toMatch(/reasoning_effort:\s*['"]low['"]/);
     expect(parseSrc).toMatch(/include_reasoning:\s*false/);
-    expect(chatSrc).toMatch(/reasoning_effort:\s*['"]low['"]/);
-    expect(chatSrc).toMatch(/include_reasoning:\s*false/);
   });
 
   test("api/parse.js still uses max_completion_tokens (current Groq param name), not the legacy max_tokens alias", () => {

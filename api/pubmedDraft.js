@@ -6,8 +6,8 @@ import { authenticateAndRateLimit } from './_lib/rateLimit.js';
 // throughout the Evidence tab's existing entries, plus suggested
 // category/level/type/tags -- all of it a DRAFT the admin reviews and can
 // edit before publishing, never auto-published. Same auth + rate-limit gate
-// as every other Groq-calling endpoint in this repo (api/chat.js,
-// api/parse.js) -- this one spends real Groq tokens too.
+// as every other Groq-calling endpoint in this repo (e.g. api/parse.js)
+// -- this one spends real Groq tokens too.
 const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
 const CATEGORIES = ['MSK', 'Neuro', 'Sports', 'Cardio'];
 const LEVELS = ['Level 1', 'Level 2', 'Level 3'];

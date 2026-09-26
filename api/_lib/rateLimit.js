@@ -33,7 +33,7 @@
 //      analysis) rather than one number across all endpoints, since the two
 //      features have very different real usage patterns (parser is the
 //      high-frequency one, note analysis is a manual "Run Analysis" click).
-//      Chat intentionally excluded -- not shipping (see api/chat.js status).
+//      Chat excluded -- the AI chat and api/chat.js were removed 2026-09-25.
 //
 // Both counters live in a Supabase table (api_calls -- see
 // supabase/api_rate_limit_setup.sql) read/written via the SERVICE ROLE key,
@@ -85,7 +85,7 @@ const USER_LIMIT_PER_HOUR = 40;
 // ~Rs.0.175, note-analysis ~Rs.0.09-0.12, chat ~Rs.0.35-0.47), a single
 // account sustaining 40/hour for 24h is a real cost exposure again
 // (~Rs.336-450/day on chat alone, worst case). Re-add entries to
-// DAILY_LIMITS below (parser/noteAnalysis/chat, as they were) before any
+// DAILY_LIMITS below (parser/noteAnalysis, as they were) before any
 // of this goes in front of real students -- not just before the next test
 // run.
 const DAILY_LIMITS = {};

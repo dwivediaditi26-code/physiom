@@ -1,9 +1,9 @@
 // aiIntakeParser.js
 // Shared mapping logic between an /api/parse result (AI-extracted
 // clinical narrative) and the real patient data fields. Extracted from
-// SubjectiveObjective.jsx's original applyAiResult() so this exact same,
-// already-tested field mapping can be reused by the AI Assistant chat
-// too, rather than growing a second, easily-drifting copy of it.
+// SubjectiveObjective.jsx's original applyAiResult() so this field
+// mapping can be tested on its own and reused (the manual test harness,
+// aiIntakeTestHarness.js, runs it too) rather than copied by hand.
 //
 // Deliberately pure: takes a parse result + existing data, returns what
 // SHOULD change -- it never calls set() and never touches component

@@ -3659,9 +3659,8 @@ function SubjectiveModule({ data, set, onNav, onTabChange, navContext={}, requir
   }, [stopRecording]);
 
   const applyAiResult = React.useCallback((result) => {
-    // Shared with the AI Assistant chat's own extraction flow -- see
-    // aiIntakeParser.js. Previously this field mapping lived only here,
-    // duplicated by hand anywhere else that wanted the same capability.
+    // Field mapping lives in aiIntakeParser.js so it can be tested on its
+    // own and reused by the manual test harness.
     const { updates, region: reg, filledLabels, redFlagsToReview, extractionMeta } = mapParseResultToUpdates(result, data, aiText);
 
     // Compute the merged region list synchronously, then set() it below
