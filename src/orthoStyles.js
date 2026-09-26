@@ -7,7 +7,7 @@ export function orthoStyles() {
   return `
         * { box-sizing: border-box; }
         .app-shell {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           background: linear-gradient(180deg, ${BRAND.purpleFaint} 0%, #FFFFFF 220px);
           min-height: 100vh; min-height: 100dvh;
           color: ${BRAND.ink};
@@ -1075,12 +1075,12 @@ export function orthoStyles() {
         .ai-hub-pill.visited { border-color: #D7CFF5; color: ${BRAND.ink}; }
         .ai-hub-pill.active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; }
 
-        .summary-card { border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
+        .summary-card { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
         .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
-        .summary-key { flex: 0 0 42%; color: ${BRAND.gray}; text-transform: capitalize; }
-        .summary-val { flex: 1; font-weight: 500; word-break: break-word; color: ${BRAND.ink}; }
+        .summary-key { flex: 0 0 42%; color: ${BRAND.ink}; font-weight: 600; text-transform: capitalize; }
+        .summary-val { flex: 1; font-weight: 700; word-break: break-word; color: ${BRAND.ink}; }
         .summary-empty { font-size: 14px; color: ${BRAND.grayLight}; font-style: italic; padding: 4px 0; }
         .summary-group { margin-top: 10px; }
         .summary-group:first-child { margin-top: 0; }
