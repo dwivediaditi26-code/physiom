@@ -2,8 +2,10 @@
 import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
+import { trackEvent } from "./analytics/trackEvent.js";
 import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
 import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfUnreadMessages } from "./physiofeed/data/db.js";
+import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
@@ -186,6 +188,18 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // instead of always falling straight through to window.history.back()
   // (see goBack's own comment for why that alone isn't enough).
   const physioFeedBackRef = useRef({ canGoBack: false, goBack: () => {} });
+  // Same bridge, one level up: Ortho/Neuro/Cardio's own Setting/Mode/Template/
+  // Region pickers ahead of their per-section wizard (OPAQUE_ASSESSMENT_KEYS)
+  // already have a local, phase-by-phase "←" back button (handleBack/goBack
+  // inside each component) -- but that local function was only ever wired to
+  // ITS OWN button, not to the header's "← Back" or the hardware/gesture Back
+  // button, both of which go through window.history.back() and pop the
+  // wizard's single opaque history entry in one jump no matter how many
+  // picker phases deep you are (2026-09-25, Aditi: "push the back button...
+  // it takes to direct home page...it should take us to previous page").
+  // Only one of these three wizards is ever mounted+active at a time, so one
+  // shared ref (like physioFeedBackRef above) is enough.
+  const wizardBackRef = useRef({ canGoBack: false, goBack: () => {} });
   // Bumped when the Learn tab is tapped while Learn is already open, so the
   // <LazyLearnTabEntry key=...> below remounts and lands back on Learn's home
   // instead of staying inside whichever study screen is open (2026-09-19,
@@ -198,6 +212,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // home page"). Bumped only on a real re-tap of the PhysioFeed tab while
   // it's already open -- see the matching check in navTo() below.
   const [physioFeedResetKey, setPhysioFeedResetKey] = useState(0);
+  // Same idea again, for Profile (2026-09-25, Aditi: "double click of...
+  // profile... it should take us to main page and leave the old working
+  // page"). ProfilePage.jsx (mounted by LazyProfileTabEntry below) has its
+  // own MemoryRouter/internal navigation same as PhysioFeed's, so a bare
+  // re-tap needs the same remount-to-reset treatment, not just PhysioFeed's.
+  const [profileResetKey, setProfileResetKey] = useState(0);
   const [pendingLeave, setPendingLeave] = useState(null);
   // Every tab stays mounted once visited (DeferredMount below just toggles
   // display:none/block, see mountedTabs) inside this one shared scrollable
@@ -626,6 +646,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (!name && !hasAiFilledData) return;
     const newP = { id: genId(), name: name || "New Patient", data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: "" };
     setPatients(prev => { const updated = [newP, ...prev]; savePatientDB(updated, currentUser?.id); return updated; });
+    trackEvent("patient_created", { entityType: "patient", entityId: newP.id });
     setActivePatientId(newP.id);
   }, [data.dem_name, data.ortho_outpatient_assessment, activePatientId, active]);
 
@@ -826,6 +847,21 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     if (key === "physiofeed" && key === activeRef.current && !navOpts.__fromPopState && !ctx?.pfTab) {
       setPhysioFeedResetKey((k) => k + 1);
     }
+    // Same for Profile -- see profileResetKey above.
+    if (key === "profile" && key === activeRef.current && !navOpts.__fromPopState) {
+      setProfileResetKey((k) => k + 1);
+    }
+    // Same for Clinical, back to its own "Today" sub-tab -- a bare re-tap
+    // (no explicit clinicalSubTab target, so the sidebar's "Patients"
+    // shortcut and Home's deep-links into a specific sub-tab still land
+    // there instead of getting reset). Unlike Learn/PhysioFeed/Profile,
+    // Clinical's sub-tabs (Today/Assess/Patients/Treatment/Posture) are
+    // plain state in AppFull itself, not a separately-mounted module with
+    // its own router, so resetting clinicalSubTab directly is enough --
+    // no remount-via-key needed.
+    if (key === "clinical" && key === activeRef.current && !navOpts.__fromPopState && !ctx?.clinicalSubTab) {
+      setClinicalSubTab("today");
+    }
     setActive(key);
     setNavContext(ctx || {});
     setNavOpen(false);
@@ -893,6 +929,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // switches are internal state, not separate URLs). Fire-and-forget,
     // silently no-ops if Web Analytics isn't enabled on the project yet.
     try { track('module_opened', { module: key }); } catch {}
+    trackEvent('module_opened', { entityType: 'module', entityId: key }); // same signal, also queryable from the admin dashboard
   }, []);
 
   // "Save this assessment?" -> Yes: only actually leaves once the
@@ -997,8 +1034,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       physioFeedBackRef.current.goBack();
       return;
     }
+    if (OPAQUE_ASSESSMENT_KEYS.has(activeRef.current) && wizardBackRef.current.canGoBack) {
+      wizardBackRef.current.goBack();
+      return;
+    }
     try { window.history.back(); } catch {}
   }, []);
+  // The native Android hardware back button (nativeApp.js) doesn't go
+  // through this component at all -- it's wired up once at module load in
+  // main.jsx, long before AppFull ever mounts -- so it called
+  // window.history.back() directly and got the same one-jump-past-everything
+  // behavior goBack() above now avoids. Registering THIS goBack (not a raw
+  // history.back()) as nativeApp.js's handler means the hardware button and
+  // the in-header "← Back" always do exactly the same thing.
+  useEffect(() => { setGoBackHandler(goBack); }, [goBack]);
 
   // Single choke point for every "open this patient's profile" action
   // (sidebar "👤 Profile" button, patient bar name tap, dashboard/
@@ -1766,7 +1815,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               PhysioFeed's own deferred-mount comment just above. */}
           {mountedTabs.has("cardio_assessment") && (
             <div className="pm-bleed" style={{display: active==="cardio_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
             </div>
           )}
           {active==="cardio_assessment" && !mountedTabs.has("cardio_assessment") && (
@@ -1779,7 +1828,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               explanation). Same deferred-mount fix as Cardiopulmonary. */}
           {mountedTabs.has("neuro_assessment") && (
             <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
             </div>
           )}
           {active==="neuro_assessment" && !mountedTabs.has("neuro_assessment") && (
@@ -1792,7 +1841,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
@@ -1882,7 +1931,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </Suspense>
               ):tests==="PROFILE_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
-                  <LazyProfileTabEntry onSignOut={onSignOut}/>
+                  <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut}/>
                 </Suspense>
               ):tests==="CLINICAL_MODULE"?(
                 // Same negative-margin full-bleed trick PhysioFeed uses just

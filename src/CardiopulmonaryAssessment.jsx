@@ -2173,7 +2173,7 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
 // current patient's saved cardio data (switching patients) -- see the
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
-export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef } = {}) {
   // AppFull.jsx now keeps this module mounted in the background instead of
   // unmounting it on every tab switch (2026-09-24, so the wizard step/data
   // below survives a glance at Learn/PhysioFeed) -- it signals "not the
@@ -2385,8 +2385,29 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     if (step < total - 1) setStep(step + 1);
   }
   function goBack() {
+    // step 0 has two picker sub-phases of its own (cardioMode "fresh" ==
+    // Setting/System, "templates" == CardioTemplatePicker) behind the
+    // initial "How do you want to start?" chooser (cardioMode===null) --
+    // CardioTemplatePicker already has its own onBack={()=>setCardioMode(null)}
+    // for its in-page Back link; this covers the same step for "fresh" too,
+    // and lets the bridge below route the header/hardware Back button
+    // through the same transition either sub-phase uses.
+    if (step === 0 && cardioMode !== null) { setCardioMode(null); return; }
     if (step > 0) setStep(step - 1);
   }
+  // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
+  // wizardBackRef comment: bridges this wizard's own local, one-step-at-a-
+  // time back button out to the header/hardware Back button, which otherwise
+  // jumps straight past Setting/System (and the "fresh"/"templates" chooser
+  // ahead of it) in one tap. step>=2 (the real assess steps) already gets a
+  // real history entry each via useWizardStepHistory above, already
+  // correctly back-navigable through plain window.history.back() (see the
+  // matching Neuro comment for why this bridge must not also intercept
+  // those).
+  useEffect(() => {
+    if (!backRef || !isActive) return;
+    backRef.current = { canGoBack: step === 1 || (step === 0 && cardioMode !== null), goBack };
+  });
   function restart() {
     setStep(0);
     setSetting(null);

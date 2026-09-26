@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SectionIntro, Hint } from "./orthoFieldKit.jsx";
 import { PickerList, PickerIcon, ConditionPicker, RegionPicker, regionLabelList, AiJourneyDots } from "./orthoSetupKit.jsx";
 import { getTemplates, saveTemplate, deleteTemplate } from "./orthoTemplates.js";
@@ -62,7 +62,12 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef } = {}) {
+  // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
+  // wizardBackRef comment: this component stays mounted (just hidden) while
+  // a different tab is showing, same as Neuro/Cardio -- navContext is the
+  // one prop AppFull.jsx already blanks to undefined whenever that happens.
+  const isActive = navContext !== undefined;
   // resume (2026-09-02, Aditi: "edit assessment... should take us to last
   // page of assessment summary and review, not to pathway selection or
   // region selection") -- SpecialtyPatientProfile.jsx's "Edit" button
@@ -233,6 +238,26 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   }
 
   const isOutpatient = pathway === "outpatient";
+
+  // Bridges this screen's own local, one-step-at-a-time back button out to
+  // the header/hardware Back button -- see NeurologicalAssessment.jsx's
+  // matching effect / AppFull.jsx's wizardBackRef comment. Capped to
+  // `step < 3`: once the pathway/region/condition picker is done and the
+  // real per-section wizard (OrthoOutpatientAssessment.jsx etc, step 3) is
+  // mounted, ITS OWN useWizardStepHistory already pushes a real history
+  // entry per section -- deferring to this component's own crude goBack()
+  // there would always pop back to step 2 no matter how many real sections
+  // deep the therapist actually is, breaking the fine-grained back that
+  // already works correctly past this point. Placed here, before the
+  // `step === 3` early return below, so this hook still runs on every
+  // render regardless of step -- a hook after a conditional return would
+  // violate the Rules of Hooks the moment step reaches 3. `goBack` is a
+  // plain hoisted function declaration (defined further down), safe to
+  // reference here.
+  useEffect(() => {
+    if (!backRef || !isActive) return;
+    backRef.current = { canGoBack: step > 0 && step < 3, goBack };
+  });
 
   if (step === 3 && pathway) {
     const { Component } = PATHWAY_META[pathway];

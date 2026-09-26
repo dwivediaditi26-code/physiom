@@ -12,6 +12,6 @@ import OrthoAssessment from "./OrthoAssessment.jsx";
    snapshot on the active patient record -- same set(key,value)
    pattern Cardio/Neuro already use.
    ============================================================ */
-export default function OrthoAssessmentNew({ onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway } = {}) {
-  return <OrthoAssessment onExit={() => onNav?.("clinical")} onNav={onNav} navContext={navContext} onSave={onSave} activePatientId={activePatientId} requireAuth={requireAuth} entryMode={entryMode} patientData={patientData} resume={resume} hideAiPathway={hideAiPathway} />;
+export default function OrthoAssessmentNew({ onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef } = {}) {
+  return <OrthoAssessment onExit={() => onNav?.("clinical")} onNav={onNav} navContext={navContext} onSave={onSave} activePatientId={activePatientId} requireAuth={requireAuth} entryMode={entryMode} patientData={patientData} resume={resume} hideAiPathway={hideAiPathway} backRef={backRef} />;
 }

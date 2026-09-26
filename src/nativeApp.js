@@ -21,12 +21,27 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { StatusBar, Style } from "@capacitor/status-bar";
 
+// AppFull.jsx registers its real goBack() here once it mounts (see
+// setGoBackHandler below) -- this module loads and wires up the hardware
+// back button in main.jsx, well before that happens, and a raw
+// window.history.back() pops the WHOLE current screen's history entry in
+// one jump, same as the in-header "← Back" button used to before it started
+// deferring to PhysioFeed's/each assessment wizard's own local, one-step-at-
+// a-time back bridge (2026-09-25, Aditi: "push the back button...it takes
+// to direct home page...it should take us to previous page"). Routing the
+// hardware button through the SAME goBack() the header uses means both
+// always agree, instead of the hardware button alone keeping the old,
+// coarser behavior. Falls back to plain history.back() for the brief window
+// before AppFull has mounted and registered its own.
+let goBackHandler = () => window.history.back();
+export function setGoBackHandler(fn) { goBackHandler = fn; }
+
 export function initNativeApp() {
   if (!Capacitor.isNativePlatform()) return;
 
   CapacitorApp.addListener("backButton", ({ canGoBack }) => {
     if (canGoBack) {
-      window.history.back();
+      goBackHandler();
     } else {
       CapacitorApp.exitApp();
     }

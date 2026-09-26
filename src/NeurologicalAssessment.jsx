@@ -2137,7 +2137,7 @@ function saveMyTemplatesToStorage(list) {
 // re-hydration effects below) rather than flattening every internal
 // field into the shared bag -- this file owns its own deeply nested
 // step/section data model, not worth rewriting.
-export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext } = {}) {
+export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef } = {}) {
   // AppFull.jsx now keeps this module mounted in the background instead of
   // unmounting it on every tab switch (2026-09-24, so the wizard step/data
   // below survives a glance at Learn/PhysioFeed) -- it signals "not the
@@ -2375,6 +2375,26 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     }
     goBack();
   }
+  // Bridges this wizard's own local, phase-by-phase back (handleBack, bound
+  // to the topbar's "←" above) out to AppFull.jsx's goBack() -- see its
+  // wizardBackRef comment for why the header/hardware Back button otherwise
+  // jumps straight past Setting/Mode/Template/Region in one tap. Guarded on
+  // isActive: this component stays mounted (just hidden) while a different
+  // tab is showing (see the deferred-mount comment elsewhere in this file),
+  // and only one of Ortho/Neuro/Cardio's wizards should ever own the shared
+  // ref at a time.
+  //
+  // Excludes phase==="assess": those steps already get a REAL history entry
+  // each (useWizardStepHistory's onNav above) and are already correctly
+  // back-navigable via window.history.back() -- if this bridge intercepted
+  // those too, handleBack's local setStep would move the visible screen back
+  // without ever popping the matching browser history entry, leaving the
+  // two silently out of sync (the next *real* back/forward press would then
+  // replay a stale, already-superseded wizardStep).
+  useEffect(() => {
+    if (!backRef || !isActive) return;
+    backRef.current = { canGoBack: phase !== "setting" && phase !== "assess", goBack: handleBack };
+  });
   function restart() {
     setStep(0);
     setSetting(null);
