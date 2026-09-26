@@ -768,6 +768,18 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
   // PatientProfileModal's initialTab) instead of always landing on
   // Overview.
   const [tab, setTab] = useState(initialTab || "overview");
+  // Switching tabs here is local state, not a navTo() call, so it never got
+  // navTo()'s scroll-reset (AppFull.jsx) -- scrolling down on Overview then
+  // opening Assessment/Care Plan left the new tab already scrolled to that
+  // same depth instead of its own top (Aditi: "opening any page it is
+  // taking us to the middle page or at the bottom"). Same fix, same reason:
+  // the real scrolling element is <body> (utils.jsx's .pm-shell CSS), not
+  // this component's own container.
+  useEffect(() => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [tab]);
   const [showFullProfile, setShowFullProfile] = useState(false);
   const [expandedSession, setExpandedSession] = useState(0);
   const [editingDiagnosis, setEditingDiagnosis] = useState(false);
