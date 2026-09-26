@@ -8,7 +8,7 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
-import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity } from './_lib/analyticsMath.js';
+import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity, buildCumulativeSeries } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,6 +60,16 @@ export default async function handler(req, res) {
     { data: previousEvents, error: prevErr },
     { data: patientRows, error: patientRowsErr },
     { data: profileRows, error: profileRowsErr },
+    // Growth chart: how many of each existed before this range started
+    // (the running total's starting point)...
+    { count: usersBeforeRange },
+    { count: patientsBeforeRange },
+    { count: postsBeforeRange },
+    // ...plus exactly when the ones inside this range were created, so the
+    // running total can climb on the right day.
+    { data: usersInRange, error: usersInRangeErr },
+    { data: patientsInRange, error: patientsInRangeErr },
+    { data: postsInRange, error: postsInRangeErr },
   ] = await Promise.all([
     admin.from('profiles').select('id', { count: 'exact', head: true }),
     admin.from('patients').select('id', { count: 'exact', head: true }),
@@ -73,11 +83,20 @@ export default async function handler(req, res) {
     // as totalPatients above, this has to go through the service role.
     admin.from('patients').select('user_id'),
     admin.from('profiles').select('id, name'),
+    admin.from('profiles').select('id', { count: 'exact', head: true }).lt('created_at', since),
+    admin.from('patients').select('id', { count: 'exact', head: true }).lt('created_at', since),
+    admin.from('posts').select('id', { count: 'exact', head: true }).lt('created_at', since),
+    admin.from('profiles').select('created_at').gte('created_at', since).lt('created_at', until),
+    admin.from('patients').select('created_at').gte('created_at', since).lt('created_at', until),
+    admin.from('posts').select('created_at').gte('created_at', since).lt('created_at', until),
   ]);
   if (eventsErr) return res.status(500).json({ error: eventsErr.message });
   if (prevErr) return res.status(500).json({ error: prevErr.message });
   if (patientRowsErr) return res.status(500).json({ error: patientRowsErr.message });
   if (profileRowsErr) return res.status(500).json({ error: profileRowsErr.message });
+  if (usersInRangeErr) return res.status(500).json({ error: usersInRangeErr.message });
+  if (patientsInRangeErr) return res.status(500).json({ error: patientsInRangeErr.message });
+  if (postsInRangeErr) return res.status(500).json({ error: postsInRangeErr.message });
 
   const events = currentEvents || [];
   const prevEvents = previousEvents || [];
@@ -124,9 +143,14 @@ export default async function handler(req, res) {
     }))
     .sort((a, b) => b.totalPatients - a.totalPatients);
 
-  // TEMP DEBUG (2026-09-26): tracking down a client-side crash in the new
-  // per-user section -- remove once confirmed fixed.
-  console.log('[analyticsSummary] userActivity=', JSON.stringify(userActivity));
+  // Growth chart -- running totals over the selected range, not just
+  // point-in-time snapshots, so an actual upward trend is visible instead of
+  // two numbers you have to compare in your head.
+  const growth = {
+    users: buildCumulativeSeries((usersInRange || []).map((r) => r.created_at), usersBeforeRange ?? 0, since, until),
+    patients: buildCumulativeSeries((patientsInRange || []).map((r) => r.created_at), patientsBeforeRange ?? 0, since, until),
+    posts: buildCumulativeSeries((postsInRange || []).map((r) => r.created_at), postsBeforeRange ?? 0, since, until),
+  };
 
   res.status(200).json({
     generatedAt: new Date().toISOString(),
@@ -154,5 +178,6 @@ export default async function handler(req, res) {
     insights: buildInsights(events, prevEvents),
     recentEvents: events.slice(0, 500),
     userActivity,
+    growth,
   });
 }

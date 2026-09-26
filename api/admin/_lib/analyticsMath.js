@@ -118,6 +118,36 @@ export function buildUserDailyActivity(events, { sessionGapMs = SESSION_GAP_MS, 
   return rows.sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
 }
 
+// Cumulative running-total series for a growth chart -- e.g. "total
+// registered users as of each day in the range." `baselineCount` is however
+// many rows already existed before `since` (so the line doesn't wrongly
+// start at 0 partway through the app's life); `timestamps` are the
+// `created_at` values of rows created inside [since, until).
+export function buildCumulativeSeries(timestamps, baselineCount, since, until) {
+  const countByDay = {};
+  for (const ts of timestamps || []) {
+    if (!ts) continue;
+    const day = new Date(ts).toISOString().slice(0, 10);
+    countByDay[day] = (countByDay[day] || 0) + 1;
+  }
+
+  // UTC throughout (not local date parts) -- this runs on Vercel (UTC) but
+  // is also unit-tested from whatever timezone a dev machine happens to be
+  // in, and the two must agree on where a day boundary falls.
+  const start = new Date(since);
+  const end = new Date(until);
+  let cursor = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const series = [];
+  let running = baselineCount || 0;
+  while (cursor < end.getTime()) {
+    const day = new Date(cursor).toISOString().slice(0, 10);
+    running += countByDay[day] || 0;
+    series.push({ date: day, total: running });
+    cursor += DAY_MS;
+  }
+  return series;
+}
+
 export function buildInsights(currentEvents, previousEvents) {
   const metrics = [
     { label: 'Workshop registrations', match: (n) => n === 'workshop_registered' },

@@ -180,6 +180,11 @@ export default function AdminAnalyticsPage() {
           </section>
 
           <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Growth over this range</h2>
+            <GrowthChart growth={summary?.growth} />
+          </section>
+
+          <section>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Are people coming back?</h2>
             {enoughForTrends ? (
               <div className="grid grid-cols-3 gap-3">
@@ -285,6 +290,58 @@ function EmptyNote({ text }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
       <p className="text-sm text-slate-500">{text}</p>
+    </div>
+  );
+}
+
+const GROWTH_SERIES = [
+  { key: "users", label: "Registered users", color: "#7c3aed" },
+  { key: "patients", label: "Patients", color: "#0891b2" },
+  { key: "posts", label: "Posts", color: "#16a34a" },
+];
+
+// Each line is normalised to its OWN max, not a shared axis -- users,
+// patients, and posts are different units at very different scales, so a
+// shared axis would flatten the smaller ones into an invisible flat line.
+// This shows the *shape* of each one's climb (how much of today's total had
+// already happened by each point in the range), with the real current
+// number given in the legend below it.
+function GrowthChart({ growth }) {
+  const series = GROWTH_SERIES.map((s) => ({ ...s, data: growth?.[s.key] || [] })).filter((s) => s.data.length > 0);
+  if (series.length === 0) {
+    return <EmptyNote text="Not enough history yet to draw a growth chart." />;
+  }
+
+  const width = 600;
+  const height = 160;
+  const padTop = 10;
+  const padBottom = 10;
+  const plotH = height - padTop - padBottom;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-4">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ maxHeight: 180 }} preserveAspectRatio="none">
+        {series.map((s) => {
+          const max = Math.max(...s.data.map((d) => d.total), 1);
+          const n = s.data.length;
+          const points = s.data
+            .map((d, i) => {
+              const x = n === 1 ? width / 2 : (i / (n - 1)) * width;
+              const y = padTop + plotH - (d.total / max) * plotH;
+              return `${x.toFixed(1)},${y.toFixed(1)}`;
+            })
+            .join(" ");
+          return <polyline key={s.key} points={points} fill="none" stroke={s.color} strokeWidth="2" />;
+        })}
+      </svg>
+      <div className="flex items-center gap-4 mt-2 flex-wrap">
+        {series.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5 text-xs text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: s.color }} />
+            {s.label}: <strong className="text-slate-900">{s.data[s.data.length - 1]?.total ?? 0}</strong>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

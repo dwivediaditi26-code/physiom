@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity } from "../../api/admin/_lib/analyticsMath.js";
+import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity, buildCumulativeSeries } from "../../api/admin/_lib/analyticsMath.js";
 
 const NOW = new Date("2026-09-26T12:00:00.000Z");
 
@@ -150,5 +150,34 @@ describe("buildUserDailyActivity", () => {
   it("ignores events with no user_id (never signed in)", () => {
     const events = [{ user_id: null, event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" }];
     expect(buildUserDailyActivity(events)).toHaveLength(0);
+  });
+});
+
+describe("buildCumulativeSeries", () => {
+  it("starts from the baseline and climbs by however many were created each day", () => {
+    const timestamps = [
+      "2026-09-20T09:00:00.000Z",
+      "2026-09-20T15:00:00.000Z", // same day as above -- 2 that day
+      "2026-09-22T09:00:00.000Z",
+    ];
+    const series = buildCumulativeSeries(timestamps, 10, "2026-09-20T00:00:00.000Z", "2026-09-23T00:00:00.000Z");
+    expect(series).toEqual([
+      { date: "2026-09-20", total: 12 },
+      { date: "2026-09-21", total: 12 },
+      { date: "2026-09-22", total: 13 },
+    ]);
+  });
+
+  it("never dips -- a day with nothing new repeats the running total", () => {
+    const series = buildCumulativeSeries([], 5, "2026-09-20T00:00:00.000Z", "2026-09-22T00:00:00.000Z");
+    expect(series.map((s) => s.total)).toEqual([5, 5]);
+  });
+
+  it("treats a zero baseline as a real start, not a gap", () => {
+    const series = buildCumulativeSeries(["2026-09-21T00:00:00.000Z"], 0, "2026-09-20T00:00:00.000Z", "2026-09-22T00:00:00.000Z");
+    expect(series).toEqual([
+      { date: "2026-09-20", total: 0 },
+      { date: "2026-09-21", total: 1 },
+    ]);
   });
 });
