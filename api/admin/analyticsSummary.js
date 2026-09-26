@@ -108,7 +108,10 @@ export default async function handler(req, res) {
   const dayMs = 24 * 60 * 60 * 1000;
 
   const featureCounts = {};
-  for (const e of events) featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
+  for (const e of events) {
+    if (e.event_name === 'client_error') continue; // shown separately below, not mixed into "most-used features"
+    featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
+  }
 
   const patientCountByUser = {};
   for (const p of patientRows || []) {
@@ -137,6 +140,20 @@ export default async function handler(req, res) {
     const { data: usersPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     for (const u of usersPage?.users || []) emailById[u.id] = u.email;
   } catch { /* non-fatal -- the table still renders without emails */ }
+
+  // Client-side errors (React crashes + uncaught JS errors/rejections, see
+  // src/analytics/errorReporter.js) -- who hit it and on which screen, so
+  // this is the one thing on the dashboard worth checking first.
+  const errors = events
+    .filter((e) => e.event_name === 'client_error')
+    .map((e) => ({
+      userId: e.user_id,
+      name: nameById[e.user_id] || 'Unknown',
+      screen: e.entity_type === 'screen' ? e.entity_id : null,
+      message: e.properties?.message || '',
+      createdAt: e.created_at,
+    }))
+    .slice(0, 100);
 
   // Grouped by user, not by event -- every user with a profile OR at least
   // one patient shows up (with 0 patients / no days if that's the truth),
@@ -205,5 +222,6 @@ export default async function handler(req, res) {
     recentEvents: events.slice(0, 500),
     userActivity,
     growth,
+    errors,
   });
 }

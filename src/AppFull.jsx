@@ -930,6 +930,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     // silently no-ops if Web Analytics isn't enabled on the project yet.
     try { track('module_opened', { module: key }); } catch {}
     trackEvent('module_opened', { entityType: 'module', entityId: key }); // same signal, also queryable from the admin dashboard
+    window.__pmScreen = key; // read by errorReporter.js so a crash says which screen it happened on
   }, []);
 
   // "Save this assessment?" -> Yes: only actually leaves once the

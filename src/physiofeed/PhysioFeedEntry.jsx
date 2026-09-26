@@ -117,6 +117,22 @@ function ShareBridge({ jumpTo }) {
   return null;
 }
 
+// PhysioFeed's own pages (Feed/Explore/Messages/Profile/...) live entirely
+// inside this MemoryRouter, invisible to the real browser URL (see the file
+// header comment) -- so `window.__pmScreen` (set once, to "physiofeed", by
+// navTo() in AppFull.jsx) can't see which PhysioFeed page is actually open.
+// This mirrors that detail into `window.__pmSubScreen` for errorReporter.js,
+// without changing what "screen" means for the rest of the admin dashboard
+// (still just "physiofeed").
+function ScreenTrackerBridge() {
+  const location = useLocation();
+  useEffect(() => {
+    window.__pmSubScreen = location.pathname;
+    return () => { window.__pmSubScreen = null; };
+  }, [location.pathname]);
+  return null;
+}
+
 export default function PhysioFeedEntry({ jumpTo, backRef }) {
   return (
     <div className="physiofeed-root">
@@ -126,6 +142,7 @@ export default function PhysioFeedEntry({ jumpTo, backRef }) {
             <JumpBridge jumpTo={jumpTo}/>
             <BackBridge backRef={backRef}/>
             <ShareBridge jumpTo={jumpTo}/>
+            <ScreenTrackerBridge/>
             <PhysioFeedRoutes/>
           </DemoConversationsProvider>
         </AppDataProvider>

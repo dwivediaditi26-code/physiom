@@ -1,6 +1,7 @@
 // PhysioMind Pro AppFull v3.3 — 23 May 2026 — clearRect overlay wipe fix + bilateral knee merge
 import { useState, useEffect, Component } from "react";
 import * as Sentry from "@sentry/react";
+import { reportClientError } from "./analytics/errorReporter.js";
 
 // ─── Math Utilities (hoisted to top — used throughout app) ───────────────────
 const mid = (a, b) => a && b ? { x:(a.x+b.x)/2, y:(a.y+b.y)/2, visibility: Math.min(a.visibility||0,b.visibility||0) } : null;
@@ -54,6 +55,10 @@ class ErrorBoundary extends Component {
     // silently does nothing otherwise, so this never throws on top of an
     // existing crash if reporting isn't set up yet.
     try { Sentry.captureException(error, { extra: { componentStack: info?.componentStack } }); } catch {}
+    // Always reports to the admin analytics dashboard too, regardless of
+    // whether Sentry is configured -- this is what actually shows up in the
+    // Errors section, with which screen and which user.
+    try { reportClientError(error, { componentStack: info?.componentStack }); } catch {}
   }
   render() {
     if (this.state.error) return (

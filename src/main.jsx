@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react'
 import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 import { installButtonRipple } from './rippleEffect.js'
 import { initNativeApp } from './nativeApp.js'
+import { installGlobalErrorReporting } from './analytics/errorReporter.js'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
 
@@ -26,6 +27,12 @@ installAiIntakeTestHarness()
 // feedback. See rippleEffect.js for why this is one global listener
 // instead of touching every .primary-btn call site.
 installButtonRipple()
+
+// Reports uncaught errors and rejected promises to the admin analytics
+// dashboard (Errors section) -- independent of the Sentry setup below, so
+// this works today with zero extra accounts/config. Doesn't see React
+// render crashes on its own (see the ErrorBoundary in utils.jsx for those).
+installGlobalErrorReporting()
 
 // Crash reporting — silently does nothing until VITE_SENTRY_DSN is set (see
 // README/session notes: create a free project at sentry.io, then add

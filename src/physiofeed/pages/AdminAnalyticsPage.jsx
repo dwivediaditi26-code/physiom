@@ -110,6 +110,7 @@ export default function AdminAnalyticsPage() {
   // registered user with a profile or a patient shows up here, even ones
   // with no tracked activity in the selected range.
   const userGroups = summary?.userActivity || [];
+  const errors = summary?.errors || [];
 
   // Live activity only carries raw ids (user_id, entity_id) -- reuse the
   // names we already have from the per-user section instead of a second
@@ -161,6 +162,35 @@ export default function AdminAnalyticsPage() {
         <p className="text-sm text-slate-400">Loading…</p>
       ) : (
         <div className="space-y-6">
+          <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Errors</h2>
+            {errors.length > 0 ? (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2 text-xs font-semibold text-rose-700 bg-rose-100">
+                  {errors.length} error{errors.length === 1 ? "" : "s"} in this range
+                </div>
+                <div className="divide-y divide-rose-100 max-h-72 overflow-y-auto">
+                  {errors.map((e, i) => (
+                    <div key={`${e.createdAt}-${i}`} className="px-4 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-slate-900">{e.name}</span>
+                        <span className="text-slate-400 shrink-0">{new Date(e.createdAt).toLocaleString()}</span>
+                      </div>
+                      <div className="text-slate-600 mt-0.5">
+                        on <span className="font-medium">{prettifyModuleKey(e.screen)}</span>
+                        {e.message && <span> — {e.message}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-700">
+                No errors in this range.
+              </div>
+            )}
+          </section>
+
           <section>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">What should I do next?</h2>
             {insights.length > 0 ? (
