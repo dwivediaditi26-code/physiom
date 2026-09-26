@@ -101,12 +101,28 @@ export default async function handler(req, res) {
     for (const u of usersPage?.users || []) emailById[u.id] = u.email;
   } catch { /* non-fatal -- the table still renders without emails */ }
 
-  const userActivity = buildUserDailyActivity(events).map((row) => ({
-    ...row,
-    name: nameById[row.userId] || 'Unknown',
-    email: emailById[row.userId] || '',
-    totalPatients: patientCountByUser[row.userId] || 0,
-  }));
+  // Grouped by user, not by event -- every user with a profile OR at least
+  // one patient shows up (with 0 patients / no days if that's the truth),
+  // even if they haven't fired a single tracked event in this date range.
+  // Basing this list on `events` instead (the earlier version of this code)
+  // silently dropped anyone who hadn't logged in since event-tracking went
+  // live, which looked like their patients had vanished.
+  const daysByUser = new Map();
+  for (const row of buildUserDailyActivity(events)) {
+    if (!daysByUser.has(row.userId)) daysByUser.set(row.userId, []);
+    daysByUser.get(row.userId).push({ date: row.date, loginTimes: row.loginTimes, activeMinutes: row.activeMinutes, eventCount: row.eventCount });
+  }
+
+  const allUserIds = new Set([...(profileRows || []).map((p) => p.id), ...Object.keys(patientCountByUser)]);
+  const userActivity = Array.from(allUserIds)
+    .map((userId) => ({
+      userId,
+      name: nameById[userId] || 'Unknown',
+      email: emailById[userId] || '',
+      totalPatients: patientCountByUser[userId] || 0,
+      days: (daysByUser.get(userId) || []).sort((a, b) => (a.date < b.date ? 1 : -1)),
+    }))
+    .sort((a, b) => b.totalPatients - a.totalPatients);
 
   res.status(200).json({
     generatedAt: new Date().toISOString(),
