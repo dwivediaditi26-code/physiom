@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRange, distinctUsersSince, countFeature, buildInsights } from "../../api/admin/_lib/analyticsMath.js";
+import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity } from "../../api/admin/_lib/analyticsMath.js";
 
 const NOW = new Date("2026-09-26T12:00:00.000Z");
 
@@ -103,5 +103,52 @@ describe("buildInsights", () => {
     const insight = buildInsights(current, previous).find((i) => i.label === "Job/internship applications");
     expect(insight.changePct).toBeNull();
     expect(insight.text).toMatch(/no activity in the previous period/);
+  });
+});
+
+describe("buildUserDailyActivity", () => {
+  it("groups events by user and calendar day, and collects login times", () => {
+    const events = [
+      { user_id: "u1", event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" },
+      { user_id: "u1", event_name: "patient_created", created_at: "2026-09-20T09:05:00.000Z" },
+      { user_id: "u1", event_name: "post_liked", created_at: "2026-09-21T10:00:00.000Z" },
+      { user_id: "u2", event_name: "user_logged_in", created_at: "2026-09-20T11:00:00.000Z" },
+    ];
+    const rows = buildUserDailyActivity(events);
+    expect(rows).toHaveLength(3);
+    const u1day1 = rows.find((r) => r.userId === "u1" && r.date === "2026-09-20");
+    expect(u1day1.loginTimes).toEqual(["2026-09-20T09:00:00.000Z"]);
+    expect(u1day1.eventCount).toBe(2);
+  });
+
+  it("sums gaps between events as active time, capped per gap", () => {
+    const events = [
+      { user_id: "u1", event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" },
+      { user_id: "u1", event_name: "patient_created", created_at: "2026-09-20T09:05:00.000Z" }, // 5-min gap, under the cap
+    ];
+    const [row] = buildUserDailyActivity(events, { sessionGapMs: 15 * 60 * 1000, tailMs: 60 * 1000 });
+    // 5-min gap + 1-min tail credit for the last event
+    expect(row.activeMinutes).toBe(6);
+  });
+
+  it("does not let a long gap (tab left open) inflate active time", () => {
+    const events = [
+      { user_id: "u1", event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" },
+      { user_id: "u1", event_name: "post_liked", created_at: "2026-09-20T20:00:00.000Z" }, // 11-hour gap
+    ];
+    const [row] = buildUserDailyActivity(events, { sessionGapMs: 15 * 60 * 1000, tailMs: 60 * 1000 });
+    // gap capped at 15 min + 1-min tail credit
+    expect(row.activeMinutes).toBe(16);
+  });
+
+  it("gives a single lone event a small flat credit instead of zero", () => {
+    const events = [{ user_id: "u1", event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" }];
+    const [row] = buildUserDailyActivity(events, { tailMs: 60 * 1000 });
+    expect(row.activeMinutes).toBe(1);
+  });
+
+  it("ignores events with no user_id (never signed in)", () => {
+    const events = [{ user_id: null, event_name: "user_logged_in", created_at: "2026-09-20T09:00:00.000Z" }];
+    expect(buildUserDailyActivity(events)).toHaveLength(0);
   });
 });

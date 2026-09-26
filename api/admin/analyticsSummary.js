@@ -8,7 +8,7 @@
 // "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
 // UX-only, same as AdminReportsPage.jsx's).
 import { createClient } from '@supabase/supabase-js';
-import { resolveRange, distinctUsersSince, buildInsights } from './_lib/analyticsMath.js';
+import { resolveRange, distinctUsersSince, buildInsights, buildUserDailyActivity } from './_lib/analyticsMath.js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,6 +58,8 @@ export default async function handler(req, res) {
     { count: totalApplications },
     { data: currentEvents, error: eventsErr },
     { data: previousEvents, error: prevErr },
+    { data: patientRows, error: patientRowsErr },
+    { data: profileRows, error: profileRowsErr },
   ] = await Promise.all([
     admin.from('profiles').select('id', { count: 'exact', head: true }),
     admin.from('patients').select('id', { count: 'exact', head: true }),
@@ -66,9 +68,16 @@ export default async function handler(req, res) {
     admin.from('applications').select('id', { count: 'exact', head: true }),
     admin.from('analytics_events').select('event_name, user_id, entity_type, entity_id, properties, created_at').gte('created_at', since).lt('created_at', until).order('created_at', { ascending: false }).limit(1000),
     admin.from('analytics_events').select('event_name, user_id, created_at').gte('created_at', prevSince).lt('created_at', prevUntil).limit(1000),
+    // For the per-user "how many patients / how much time in the app" section
+    // below -- patients is RLS-scoped to "your own rows" so, same reasoning
+    // as totalPatients above, this has to go through the service role.
+    admin.from('patients').select('user_id'),
+    admin.from('profiles').select('id, name'),
   ]);
   if (eventsErr) return res.status(500).json({ error: eventsErr.message });
   if (prevErr) return res.status(500).json({ error: prevErr.message });
+  if (patientRowsErr) return res.status(500).json({ error: patientRowsErr.message });
+  if (profileRowsErr) return res.status(500).json({ error: profileRowsErr.message });
 
   const events = currentEvents || [];
   const prevEvents = previousEvents || [];
@@ -76,6 +85,28 @@ export default async function handler(req, res) {
 
   const featureCounts = {};
   for (const e of events) featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
+
+  const patientCountByUser = {};
+  for (const p of patientRows || []) {
+    if (!p.user_id) continue;
+    patientCountByUser[p.user_id] = (patientCountByUser[p.user_id] || 0) + 1;
+  }
+  const nameById = {};
+  for (const p of profileRows || []) nameById[p.id] = p.name;
+  // Email lives on auth.users, not profiles -- only the service-role client
+  // can read it, and only via the auth admin API (no direct table access).
+  let emailById = {};
+  try {
+    const { data: usersPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    for (const u of usersPage?.users || []) emailById[u.id] = u.email;
+  } catch { /* non-fatal -- the table still renders without emails */ }
+
+  const userActivity = buildUserDailyActivity(events).map((row) => ({
+    ...row,
+    name: nameById[row.userId] || 'Unknown',
+    email: emailById[row.userId] || '',
+    totalPatients: patientCountByUser[row.userId] || 0,
+  }));
 
   res.status(200).json({
     generatedAt: new Date().toISOString(),
@@ -102,5 +133,6 @@ export default async function handler(req, res) {
     // fabricated explanation (see buildInsights' MIN_SAMPLE floor).
     insights: buildInsights(events, prevEvents),
     recentEvents: events.slice(0, 500),
+    userActivity,
   });
 }

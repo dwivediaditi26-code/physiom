@@ -106,6 +106,19 @@ export default function AdminAnalyticsPage() {
   const insights = summary?.insights || [];
   const enoughForTrends = (trends?.totalEventsInRange ?? 0) >= 20; // arbitrary but honest floor -- below this a DAU/MAU number is more noise than signal
 
+  // Flat per-user-per-day rows from the API -> grouped by user for display,
+  // most patients first.
+  const userGroups = (() => {
+    const map = new Map();
+    for (const row of summary?.userActivity || []) {
+      if (!map.has(row.userId)) {
+        map.set(row.userId, { userId: row.userId, name: row.name, email: row.email, totalPatients: row.totalPatients, days: [] });
+      }
+      map.get(row.userId).days.push(row);
+    }
+    return Array.from(map.values()).sort((a, b) => b.totalPatients - a.totalPatients);
+  })();
+
   return (
     <main className="flex-1 min-w-0">
       <div className="mb-5 flex items-center justify-between gap-2 flex-wrap">
@@ -202,6 +215,43 @@ export default function AdminAnalyticsPage() {
               </div>
             ) : (
               <EmptyNote text="Not enough data yet -- once users interact with the app, this fills in here." />
+            )}
+          </section>
+
+          <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">People -- patients &amp; time in app</h2>
+            <p className="text-xs text-slate-400 mb-2">
+              "Time in app" is an estimate from the gaps between actions each day (each gap capped at 15 min), not exact wall-clock time -- there's no session tracking to measure that directly yet.
+            </p>
+            {userGroups.length > 0 ? (
+              <div className="space-y-3">
+                {userGroups.map((u) => (
+                  <div key={u.userId} className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{u.name}</p>
+                        {u.email && <p className="text-xs text-slate-400">{u.email}</p>}
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600">{u.totalPatients} patient{u.totalPatients === 1 ? "" : "s"}</span>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {u.days.map((d) => (
+                        <div key={d.date} className="flex items-center justify-between px-4 py-2 text-xs gap-2">
+                          <span className="text-slate-500 shrink-0">{d.date}</span>
+                          <span className="text-slate-700 text-right">
+                            {d.loginTimes.length > 0
+                              ? d.loginTimes.map((t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })).join(", ")
+                              : "no login recorded"}
+                          </span>
+                          <span className="text-slate-900 font-semibold shrink-0">~{d.activeMinutes} min</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyNote text="No per-day activity recorded yet for this range." />
             )}
           </section>
 

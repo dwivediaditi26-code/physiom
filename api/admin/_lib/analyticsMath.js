@@ -70,6 +70,54 @@ export function countFeature(events, matcher) {
 // enough data," not a % that swings wildly on 1-vs-2 events.
 const MIN_SAMPLE = 5;
 
+// Per-user, per-day activity: how many patients they own (a running total,
+// not date-scoped) plus, for each day they did anything in the range, what
+// time(s) they logged in and roughly how long they were active.
+//
+// There's no real session-start/session-end tracking anywhere in the app, so
+// "time spent" is an estimate built from the gaps between whatever events
+// they fired that day (login, patient saves, feed actions, Learn, etc.): a
+// gap under SESSION_GAP_MS counts as still-active time, a longer gap doesn't
+// (they likely closed the tab), and TAIL_MS is a small flat credit for the
+// last action of the day (there's no "next" event to measure a gap against).
+// This will undercount quiet reading time with no clicks -- said honestly in
+// the UI, never presented as exact wall-clock time.
+const SESSION_GAP_MS = 15 * 60 * 1000;
+const TAIL_MS = 60 * 1000;
+
+export function buildUserDailyActivity(events, { sessionGapMs = SESSION_GAP_MS, tailMs = TAIL_MS } = {}) {
+  const byUserDay = new Map();
+  for (const e of events) {
+    if (!e.user_id || !e.created_at) continue;
+    const date = e.created_at.slice(0, 10); // UTC calendar day, same convention as resolveRange
+    const key = `${e.user_id}|${date}`;
+    if (!byUserDay.has(key)) byUserDay.set(key, { userId: e.user_id, date, timestamps: [], logins: [] });
+    const bucket = byUserDay.get(key);
+    bucket.timestamps.push(new Date(e.created_at).getTime());
+    if (e.event_name === 'user_logged_in') bucket.logins.push(e.created_at);
+  }
+
+  const rows = [];
+  for (const bucket of byUserDay.values()) {
+    const ts = bucket.timestamps.slice().sort((a, b) => a - b);
+    let activeMs = 0;
+    if (ts.length === 1) {
+      activeMs = tailMs;
+    } else if (ts.length > 1) {
+      for (let i = 1; i < ts.length; i++) activeMs += Math.min(ts[i] - ts[i - 1], sessionGapMs);
+      activeMs += tailMs;
+    }
+    rows.push({
+      userId: bucket.userId,
+      date: bucket.date,
+      loginTimes: bucket.logins.slice().sort(),
+      eventCount: ts.length,
+      activeMinutes: Math.round(activeMs / 60000),
+    });
+  }
+  return rows.sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
+}
+
 export function buildInsights(currentEvents, previousEvents) {
   const metrics = [
     { label: 'Workshop registrations', match: (n) => n === 'workshop_registered' },
