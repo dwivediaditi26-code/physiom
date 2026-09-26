@@ -111,6 +111,12 @@ export default function AdminAnalyticsPage() {
   // with no tracked activity in the selected range.
   const userGroups = summary?.userActivity || [];
 
+  // Live activity only carries raw ids (user_id, entity_id) -- reuse the
+  // names we already have from the per-user section instead of a second
+  // lookup, so "who did what" reads in plain language, not uuids.
+  const nameById = {};
+  for (const u of userGroups) nameById[u.userId] = u.name;
+
   return (
     <main className="flex-1 min-w-0">
       <div className="mb-5 flex items-center justify-between gap-2 flex-wrap">
@@ -271,9 +277,11 @@ export default function AdminAnalyticsPage() {
             {liveEvents.length > 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 max-h-80 overflow-y-auto">
                 {liveEvents.slice(0, 30).map((e, i) => (
-                  <div key={`${e.created_at}-${i}`} className="flex items-center justify-between px-4 py-2 text-xs">
-                    <span className="text-slate-700 font-medium">{e.event_name}</span>
-                    <span className="text-slate-400">{new Date(e.created_at).toLocaleString()}</span>
+                  <div key={`${e.created_at}-${i}`} className="flex items-center justify-between px-4 py-2 text-xs gap-2">
+                    <span className="text-slate-700">
+                      <span className="font-semibold text-slate-900">{nameById[e.user_id] || "Someone"}</span> {describeEvent(e)}
+                    </span>
+                    <span className="text-slate-400 shrink-0">{new Date(e.created_at).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -294,6 +302,78 @@ function StatCard({ label, value }) {
       <p className="text-xs text-slate-500 mt-1">{label}</p>
     </div>
   );
+}
+
+// Section/module keys used with navTo() across the app (see AppFull.jsx) --
+// not every possible key is listed here on purpose; prettifyModuleKey()
+// below falls back to a readable guess for anything new instead of needing
+// this list kept in lockstep with every future navTo() call site.
+const MODULE_LABELS = {
+  home: "Home",
+  clinical: "Clinical",
+  physiofeed: "PhysioFeed",
+  learn: "Learn",
+  profile: "Profile",
+  specialty_profile: "Specialty Profile",
+  ortho_new_assessment: "New Ortho Assessment",
+  cardio_assessment: "Cardio Assessment",
+  neuro_assessment: "Neuro Assessment",
+  posture: "Posture",
+  treatment: "Treatment",
+  outcome: "Outcome Measures",
+  overview: "Overview",
+  demographics: "Demographics",
+  neuro: "Neuro",
+  neurotemplates: "Neuro Templates",
+};
+
+function prettifyModuleKey(key) {
+  if (!key) return "a module";
+  if (MODULE_LABELS[key]) return MODULE_LABELS[key];
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Plain-language phrasing for what each tracked action means -- anything
+// not listed falls back to the raw event name with underscores turned into
+// spaces, so a newly-added event type still reads as something instead of
+// silently showing nothing.
+const EVENT_LABELS = {
+  user_signed_up: "signed up",
+  user_logged_in: "logged in",
+  user_logged_out: "logged out",
+  patient_created: "added a new patient",
+  patient_updated: "updated a patient",
+  post_created: "created a post",
+  post_liked: "liked a post",
+  post_saved: "saved a post",
+  post_commented: "commented on a post",
+  case_created: "created a clinical case",
+  case_commented: "commented on a clinical case",
+  case_replied: "replied on a clinical case",
+  case_viewed: "viewed a clinical case",
+  workshop_registered: "registered for a workshop",
+  workshop_registration_started: "started registering for a workshop",
+  workshop_viewed: "viewed a workshop",
+  job_created: "posted a job/internship",
+  job_viewed: "viewed a job",
+  internship_viewed: "viewed an internship",
+  job_application_started: "started a job application",
+  job_application_submitted: "applied for a job",
+  internship_application_submitted: "applied for an internship",
+  opportunity_application_submitted: "applied for an opportunity",
+  opportunity_viewed: "viewed an opportunity",
+  candidate_viewed: "viewed a candidate",
+  application_reviewed: "reviewed an application",
+  learn_viewed: "opened Learn",
+  module_viewed: "viewed a Learn module",
+  quiz_started: "started a quiz",
+  quiz_completed: "completed a quiz",
+  mcq_answered: "answered a quiz question",
+};
+
+function describeEvent(e) {
+  if (e.event_name === "module_opened") return `opened ${prettifyModuleKey(e.entity_id)}`;
+  return EVENT_LABELS[e.event_name] || e.event_name.replace(/_/g, " ");
 }
 
 function EmptyNote({ text }) {
