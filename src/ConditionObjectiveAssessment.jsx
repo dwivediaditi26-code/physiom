@@ -1434,8 +1434,16 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
 
   const rankedIds = useMemo(() => {
     if (!engineResult) return [];
-    if (!config.matchByName) return engineResult.conditions.filter((c) => c.matchTier !== "Unlikely").map((c) => c.id);
-    return Object.entries(matchById).filter(([, m]) => m.matchTier !== "Unlikely").map(([id]) => id);
+    const ids = !config.matchByName
+      ? engineResult.conditions.filter((c) => c.matchTier !== "Unlikely").map((c) => c.id)
+      : Object.entries(matchById).filter(([, m]) => m.matchTier !== "Unlikely").map(([id]) => id);
+    // Sort by the same match percentage HypothesisGrid's cards show, highest
+    // first -- this used to just be whatever order the region's differential
+    // engine happened to emit conditions in, which is why a 100% match could
+    // show up after a 71%/60% one (2026-09-26, Aditi: "most matched
+    // percentage to less match percentage"). Conditions with no percentage
+    // (matchTier-only, e.g. "Insufficient data") sort last, not first.
+    return ids.slice().sort((a, b) => (conditionMatchPct(matchById[b]) ?? -1) - (conditionMatchPct(matchById[a]) ?? -1));
   }, [engineResult, config, matchById]);
 
   const order = useMemo(

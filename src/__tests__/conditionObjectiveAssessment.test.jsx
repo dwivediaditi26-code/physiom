@@ -68,6 +68,54 @@ describe("ConditionObjectiveAssessment — Cervical", () => {
     expect(screen.getByText(/EMERGENCY — Myelopathy/i)).toBeInTheDocument();
   });
 
+  it("orders Target Hypotheses cards by match percentage, highest first", () => {
+    // A textbook radiculopathy case (same fixture as
+    // cervicalReasoningEngine.test.js's "ranks C02 at or near the top" case,
+    // translated to this adapter's comma-separated regionData field ids) so
+    // the engine returns several conditions with genuinely different real
+    // percentages, not just whatever tier they defaulted to.
+    const data = {
+      subjective: {
+        regions: {
+          cervical: {
+            location: "Neck, Right upper trapezius",
+            radiation: "Radiates into right arm/hand",
+            dermatomal: "C6 — thumb/index finger",
+            mechanismType: "No clear mechanism — insidious onset",
+            armPresent: "Yes — unilateral (R)",
+            armNeuro: "Objective numbness on testing",
+            aggMovements: "Extension — looking up, Combined extension + rotation (right) — quadrant position",
+            aggOther: "Coughing / sneezing (dural / cord tension)",
+            relMovements: "Arm overhead — relieves arm symptoms (shoulder abduction relief sign)",
+            redFlagsMyelopathy: "No myelopathy signs",
+            redFlagsVbi: "No VBI signs",
+            redFlagsInstability: "No instability signs",
+            redFlagsOther: "No other red flags",
+          },
+        },
+      },
+    };
+    render(<Harness initialData={data} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
+    const pcts = [...document.querySelectorAll(".obj-match-row .obj-match-card")]
+      .map((card) => card.querySelector(".obj-match-pct")?.textContent || "")
+      .filter((t) => t.endsWith("%"))
+      .map((t) => parseInt(t, 10));
+    // Sparse fixtures elsewhere in this file only ever produce one real
+    // percentage (or none) -- this one's rich enough that several
+    // conditions get a genuine, differing score, so there's an actual order
+    // to get wrong. Only rankedIds (the real differential candidates, tier
+    // !== "Unlikely") get sorted -- the trailing catalog conditions
+    // (Unlikely tier, appended from config.order so every condition stays
+    // browsable) keep their fixed library order on purpose, so this checks
+    // the leading/highest run rather than the whole card list: the bug
+    // report's own screenshot was exactly this -- a 100% match rendered
+    // after the 71%/60% ones instead of first.
+    expect(pcts.length).toBeGreaterThan(2);
+    expect(pcts.indexOf(Math.max(...pcts))).toBe(0);
+    expect(pcts[0]).toBeGreaterThanOrEqual(pcts[1]);
+    expect(pcts[1]).toBeGreaterThanOrEqual(pcts[2]);
+  });
+
   it("shows the authored CPA muscles for C01 without any tapping of findings", () => {
     render(<Harness initialData={{}} selectedRegions={[{ id: "cervical", label: "Cervical" }]} />);
     openTopic("CPA / NKT");
