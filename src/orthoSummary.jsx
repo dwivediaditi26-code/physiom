@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { SectionIntro, fmtVal } from "./orthoFieldKit.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
+import { AssessmentTitle, SummaryRow } from "./assessmentTypography.jsx";
 
 /* Cardio-style summary/review — one card per completed section, each row a
    plain label/value pair, exactly matching CardiopulmonaryAssessment's
@@ -93,7 +94,7 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
           title on the patient profile screen (2026-09-10, Aditi screenshot:
           "why it showing like that"). The wizard's own Review step is the
           only place on its page with a heading, so it still needs this. */}
-      {!hideTitle && <SectionIntro icon={icon} title={title} sub={sub} />}
+      {!hideTitle && <SectionIntro icon={icon} title={title} sub={sub} titleAs={AssessmentTitle} />}
       {extra}
       {contentSteps.map((step) => {
         const result = rowsForStep(step, data[step.id] || {}, formatters);
@@ -109,19 +110,13 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
                     <div key={heading} className="summary-group">
                       <div className="summary-group-heading">{heading}</div>
                       {rows.map(({ label, value }, i) => (
-                        <div className="summary-row" key={label + i}>
-                          <span className="summary-key">{label}</span>
-                          {value && <span className="summary-val">{value}</span>}
-                        </div>
+                        <SummaryRow key={label + i} label={label} value={value} />
                       ))}
                     </div>
                   ) : null
                 )
               : result.map(({ label, value }, i) => (
-                  <div className="summary-row" key={label + i}>
-                    <span className="summary-key">{label}</span>
-                    <span className="summary-val">{value}</span>
-                  </div>
+                  <SummaryRow key={label + i} label={label} value={value} />
                 ))}
           </button>
         );

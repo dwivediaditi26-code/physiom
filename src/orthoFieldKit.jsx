@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -339,7 +340,7 @@ export function FieldShell({ label, hint, howTo, children }) {
     <div className="field-block">
       {label && (
         <div className="field-label-row">
-          <span className="field-label">{label}</span>
+          <FieldLabel>{label}</FieldLabel>
           {howTo && <InfoButton text={howTo} />}
         </div>
       )}
@@ -883,13 +884,13 @@ export function Alert({ tone = "amber", children }) {
 // right") -- an optional right-aligned slot in the title row, e.g. Care
 // Plan Treatment's search toggle, instead of it rendering on its own row
 // with dead space above the section content.
-export function SectionIntro({ icon, title, sub, info, action }) {
+export function SectionIntro({ icon, title, sub, info, action, titleAs: TitleAs = SectionTitle }) {
   return (
     <div className="section-intro">
       {icon && <div className="section-intro-icon">{icon}</div>}
       <div style={{ flex: 1 }}>
         <div className="section-intro-title-row">
-          <div className="section-intro-title">{title}</div>
+          <TitleAs>{title}</TitleAs>
           {info && <InfoButton text={info} />}
           {action && <div style={{ marginLeft: "auto" }}>{action}</div>}
         </div>

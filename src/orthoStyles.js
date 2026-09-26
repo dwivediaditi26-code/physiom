@@ -1,4 +1,5 @@
 import { BRAND } from "./orthoFieldKit.jsx";
+import { TYPO, SPACING } from "./assessmentTypography.jsx";
 
 /* Shared stylesheet for every Ortho assessment module (IPD, Post-op
    Rehab, ...) — one visual system, imported as a template string so
@@ -113,15 +114,20 @@ export function orthoStyles() {
         .section-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
         .section-intro-icon { font-size: 26px; line-height: 1; }
         .section-intro-title-row { display: flex; align-items: center; gap: 8px; }
-        .section-intro-title { font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
-        .section-intro-sub { font-size: 13px; color: ${BRAND.gray}; margin-top: 2px; }
+        .section-intro-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; letter-spacing: -0.01em; }
+        .section-intro-sub { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 2px; }
 
-        .subheading { font-weight: 700; font-size: 13px; color: ${BRAND.purpleDark}; text-transform: uppercase; letter-spacing: .04em; margin: 22px 0 10px; }
+        .assessment-title { font-weight: ${TYPO.assessmentTitle.weight}; font-size: ${TYPO.assessmentTitle.size}px; line-height: ${TYPO.assessmentTitle.lineHeight}; color: ${BRAND.ink}; }
 
-        .field-block { margin-bottom: 16px; }
-        .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-        .field-label { font-weight: 600; font-size: 14px; color: ${BRAND.ink}; }
-        .hint { font-size: 12px; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; line-height: 1.4; }
+        /* Normal case, not uppercase (2026-09-26, Aditi's typography pass --
+           enlarging what used to be an all-caps eyebrow label read worse,
+           not better, at the new bigger size). */
+        .subheading { font-weight: ${TYPO.subsectionHeading.weight}; font-size: ${TYPO.subsectionHeading.size}px; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purpleDark}; margin: ${SPACING.betweenSubsections}px 0 10px; }
+
+        .field-block { margin-bottom: ${SPACING.betweenRelatedFields}px; }
+        .field-label-row { display: flex; align-items: center; gap: 8px; margin-bottom: ${SPACING.labelToValue}px; flex-wrap: wrap; }
+        .field-label { font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; color: ${BRAND.ink}; }
+        .hint { font-size: ${TYPO.supportingText.size}px; font-weight: ${TYPO.supportingText.weight}; line-height: ${TYPO.supportingText.lineHeight}; color: ${BRAND.gray}; margin-top: 6px; font-style: italic; }
 
         .lr-grid { border: 1.5px solid ${BRAND.border}; border-radius: 14px; overflow: hidden; }
         .lr-row { display: flex; border-bottom: 1px solid ${BRAND.border}; }
@@ -1075,16 +1081,19 @@ export function orthoStyles() {
         .ai-hub-pill.visited { border-color: #D7CFF5; color: ${BRAND.ink}; }
         .ai-hub-pill.active { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; }
 
-        .summary-card { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
-        .summary-title { font-weight: 700; font-size: 15px; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        .summary-row { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
+        .summary-card { font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border: 1.5px solid ${BRAND.border}; border-radius: 14px; padding: ${SPACING.cardPaddingV}px ${SPACING.cardPaddingH}px; margin-bottom: ${SPACING.betweenMajorSections}px; cursor: pointer; text-align: left; width: 100%; background: #fff; }
+        .summary-title { font-weight: ${TYPO.sectionHeading.weight}; font-size: ${TYPO.sectionHeading.size}px; line-height: ${TYPO.sectionHeading.lineHeight}; color: ${BRAND.ink}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .summary-row { display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid #F5F3FB; }
         .summary-row:first-child { border-top: none; }
-        .summary-key { flex: 0 0 42%; color: ${BRAND.ink}; font-weight: 600; text-transform: capitalize; }
-        .summary-val { flex: 1; font-weight: 700; word-break: break-word; color: ${BRAND.ink}; }
-        .summary-empty { font-size: 14px; color: ${BRAND.grayLight}; font-style: italic; padding: 4px 0; }
+        .summary-key { flex: 0 0 42%; color: ${BRAND.ink}; font-weight: ${TYPO.fieldLabel.weight}; font-size: ${TYPO.fieldLabel.size}px; line-height: ${TYPO.fieldLabel.lineHeight}; }
+        .summary-val { flex: 1; font-weight: ${TYPO.clinicalValue.weight}; font-size: ${TYPO.clinicalValue.size}px; line-height: ${TYPO.clinicalValue.lineHeight}; word-break: break-word; color: ${BRAND.ink}; }
+        .summary-empty { font-size: ${TYPO.supportingText.size}px; color: ${BRAND.grayLight}; font-style: italic; padding: 4px 0; }
         .summary-group { margin-top: 10px; }
         .summary-group:first-child { margin-top: 0; }
-        .summary-group-heading { font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: ${BRAND.purple}; margin-bottom: 2px; }
+        /* Normal case, not uppercase -- same reasoning as .subheading above;
+           this IS .subheading's tier, just nested one level inside a
+           summary card (Problem List/Goals/Treatment). */
+        .summary-group-heading { font-size: ${TYPO.subsectionHeading.size}px; font-weight: ${TYPO.subsectionHeading.weight}; line-height: ${TYPO.subsectionHeading.lineHeight}; color: ${BRAND.purple}; margin-bottom: 4px; }
 
         /* fixed (not sticky) for the same reason as Cardio's identical rule:
            .content/.app-inner don't scroll themselves anymore (see .app-inner
