@@ -623,14 +623,136 @@ function conditionMatchPct(m) {
   return Math.round((m.supportingMatched.length / m.supportingTotal) * 100);
 }
 
-function ConditionTabs({ conditions, order, matchById, activeId, onSelect }) {
+// Live "matches more and more as you confirm" scoring (2026-09-26, Aditi:
+// "so when we click the observation posture etc of that condition and
+// confirm... it should show that it matches with more and more confirming").
+// Target Hypotheses' % used to be Subjective-only (conditionMatchPct above,
+// straight from the region's differential engine) -- Objective tab taps
+// never moved it. This adds a second, independent tally read live off the
+// Objective tabs' own stored answers (state, keyed by fieldKey the same way
+// v()/sv() already read/write them) and folds it into the displayed %,
+// without touching the engine's own Subjective-only supportingMatched/
+// supportingTotal (still shown verbatim elsewhere as "X/Y supporting signs
+// from Subjective").
+// Deliberately scoped to Cervical only for now (Aditi: "start with cervical
+// only") -- every other region's condition library has no `expect` tags on
+// its Kinetic Chain/Functional Screen/STTT fields yet, so this returns
+// {matched:0,total:0} there and those regions' % is unaffected.
+const CPA_STATE_STEM = { Facilitated: "facilitat", Inhibited: "inhibit", Overactive: "overactiv" };
+function cpaStateMatches(stateText, selectedChip) {
+  const stem = CPA_STATE_STEM[selectedChip];
+  if (!stem || !stateText) return false;
+  return String(stateText).toLowerCase().includes(stem);
+}
+// `expect` on a field is either an exact option string, or a numeric
+// comparison string ("<38", ">=50") for number-type fields -- fields with
+// no `expect` tag (safety screens like a myelopathy gait check, or ones
+// with no single confidently-correct answer) are left out of scoring
+// entirely rather than guessed at.
+function fieldSupports(selectedValue, expect) {
+  if (!expect || !selectedValue) return false;
+  const m = /^([<>]=?)(-?\d+(?:\.\d+)?)$/.exec(expect);
+  if (m) {
+    const num = parseFloat(selectedValue);
+    if (Number.isNaN(num)) return false;
+    const thresh = parseFloat(m[2]);
+    if (m[1] === "<") return num < thresh;
+    if (m[1] === "<=") return num <= thresh;
+    if (m[1] === ">") return num > thresh;
+    return num >= thresh;
+  }
+  return selectedValue === expect;
+}
+function computeObjectiveSupport(id, condition, config, state, data) {
+  if (config.key !== "cervical" || !condition) return { matched: 0, total: 0 };
+  let matched = 0, total = 0;
+  const g = (module, sub) => state[fieldKey(id, module, sub)] || "";
+
+  for (const [module, list] of [["observation", condition.observation], ["posture", condition.posture], ["palpation", condition.palpation]]) {
+    if (!list?.length) continue;
+    const marked = g(module, "chips").split(", ").filter(Boolean);
+    total += list.length;
+    matched += list.filter((o) => marked.includes(o)).length;
+  }
+
+  if (condition.cpa?.applicable !== false && condition.cpa?.muscles?.length) {
+    condition.cpa.muscles.forEach((m2, i) => {
+      total += 1;
+      if (cpaStateMatches(m2.state, g("cpa", "m" + i))) matched += 1;
+    });
+  }
+
+  const specialList = (condition.specialTests || []).map((t) => (typeof t === "string" ? t : t.name));
+  if (specialList.length) {
+    total += specialList.length;
+    matched += specialList.filter((t) => g("special", t) === "Positive").length;
+  }
+
+  (condition.kineticChain?.fields || []).forEach((f, i) => {
+    if (!f.expect) return;
+    total += 1;
+    if (fieldSupports(g("kineticChain", "f" + i), f.expect)) matched += 1;
+  });
+  (condition.functionalScreen?.fields || []).forEach((f, i) => {
+    if (!f.expect) return;
+    total += 1;
+    if (fieldSupports(g("functionalScreen", "f" + i), f.expect)) matched += 1;
+  });
+  (condition.sttt?.resisted || []).forEach((f, i) => {
+    if (!f.expect) return;
+    total += 1;
+    if (fieldSupports(g("sttt", "r" + i), f.expect)) matched += 1;
+  });
+  (condition.sttt?.passive || []).forEach((f, i) => {
+    if (!f.expect) return;
+    total += 1;
+    if (fieldSupports(g("sttt", "p" + i), f.expect)) matched += 1;
+  });
+
+  // Outcome Measures -- credit for having actually captured the relevant
+  // standardized measure (documentation-complete), not a diagnostic
+  // direction (a raw NDI/NPRS score has no fixed "supports this condition"
+  // reading on its own).
+  const measures = condition.outcomeMeasures || [];
+  if (measures.length) {
+    total += measures.length;
+    matched += measures.filter((instrument) => {
+      const measureId = matchMeasureIdForInstrument(instrument);
+      const history = data.outcomeMeasure?.instances?.[measureId]?.history;
+      return !!history?.length;
+    }).length;
+  }
+
+  return { matched, total };
+}
+// Objective confirmation is a bonus on top of the Subjective %, not a
+// merge into one shared ratio (2026-09-26, Aditi: "if subjective matches
+// 100%... how will AI Objective get increased percentage" -- a plain merged
+// ratio adds unanswered Objective questions to the denominator the instant
+// you open the tab, which drops an already-100%-from-Subjective condition
+// below 100% before you've even confirmed anything, looking like a
+// regression). Objective evidence can only fill in the remaining headroom
+// toward 100%, never dilute what Subjective already established -- so a
+// condition already at 100% from Subjective alone stays at 100% (correct:
+// there's no "more confirmed" than certain), and one with no Objective data
+// examined yet (obj.total === 0) shows exactly its Subjective % with no
+// artificial dip.
+function combinedMatchPct(m, obj) {
+  const subPct = conditionMatchPct(m);
+  if (!obj || !obj.total) return subPct;
+  const base = subPct ?? 0;
+  const headroom = 100 - base;
+  return Math.round(base + headroom * (obj.matched / obj.total));
+}
+
+function ConditionTabs({ conditions, order, matchById, objSupportById, activeId, onSelect }) {
   return (
     <div className="obj-match-row">
       {order.map((id, i) => {
         const c = conditions[id];
         if (!c) return null;
         const m = matchById[id];
-        const pct = conditionMatchPct(m);
+        const pct = combinedMatchPct(m, objSupportById?.[id]);
         const isActive = id === activeId;
         return (
           <button
@@ -672,13 +794,13 @@ const TIER_TEXT = { high: "High", med: "Med", low: "Low" };
 // "remove this upper [grid] only three comming... make the 2nd below it
 // permanant"). Now just the one always-visible list, no top grid, no
 // Customize toggle.
-function HypothesisGrid({ conditions, order, matchById, activeId, onSelect }) {
+function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId, onSelect }) {
   return (
     <div>
       <div className="obj-hypo-head">
         <span className="obj-hypo-label">Target Hypotheses</span>
       </div>
-      <ConditionTabs conditions={conditions} order={order} matchById={matchById} activeId={activeId} onSelect={onSelect} />
+      <ConditionTabs conditions={conditions} order={order} matchById={matchById} objSupportById={objSupportById} activeId={activeId} onSelect={onSelect} />
     </div>
   );
 }
@@ -1600,6 +1722,14 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     () => [...rankedIds, ...config.order.filter((id) => !rankedIds.includes(id))],
     [rankedIds, config]
   );
+  // Recomputed on every Objective tab tap (state changes) so Target
+  // Hypotheses' % visibly climbs as findings are confirmed, live -- not
+  // just once from Subjective. See computeObjectiveSupport above.
+  const objSupportById = useMemo(() => {
+    const out = {};
+    for (const id of order) out[id] = computeObjectiveSupport(id, config.conditions[id], config, state, data);
+    return out;
+  }, [order, config, state, data]);
   const selectedId = activeId || rankedIds[0] || config.order[0];
   const condition = config.conditions[selectedId];
 
@@ -1710,6 +1840,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               conditions={config.conditions}
               order={order}
               matchById={matchById}
+              objSupportById={objSupportById}
               activeId={selectedId}
               onSelect={setActiveId}
             />

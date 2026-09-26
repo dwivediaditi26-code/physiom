@@ -63,7 +63,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Extension",
@@ -72,7 +73,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Side Flexion (L/R)",
@@ -81,7 +83,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Rotation (L/R)",
@@ -90,7 +93,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -99,14 +103,16 @@
           "options": [
             "Near full",
             "Restricted"
-          ]
+          ],
+          "expect": "Near full"
         },
         {
           "label": "Pattern",
           "options": [
             "Non-capsular",
             "Capsular"
-          ]
+          ],
+          "expect": "Non-capsular"
         },
         {
           "label": "Pain",
@@ -114,7 +120,8 @@
             "Only at end-range",
             "Throughout range",
             "None"
-          ]
+          ],
+          "expect": "Only at end-range"
         }
       ],
       "findings": [
@@ -146,7 +153,8 @@
           "options": [
             "Near-normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Near-normal"
         }
       ],
       "chainEffect": "Expect near-normal; if extension-restricted, screen for a thoracic-stiffness driver before treating the neck in isolation."
@@ -158,7 +166,8 @@
           "type": "number",
           "label": "Hold time",
           "unit": "s",
-          "normal": "normal 38–40s"
+          "normal": "normal 38–40s",
+          "expect": "<38"
         }
       ],
       "note": "Direct functional correlate of the DNF-inhibition CPA finding above."
@@ -227,35 +236,40 @@
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "C6 myotome (wrist ext/biceps)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "C7 myotome (triceps)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "C8 myotome (finger flexors)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "T1 myotome (interossei)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         }
       ],
       "passive": [
@@ -264,7 +278,8 @@
           "options": [
             "No arm symptoms",
             "Reproduces arm symptoms"
-          ]
+          ],
+          "expect": "Reproduces arm symptoms"
         }
       ],
       "findings": [
@@ -295,7 +310,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         },
         {
           "type": "choice",
@@ -375,7 +391,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Extension",
@@ -384,7 +401,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Rotation",
@@ -393,7 +411,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -402,14 +421,16 @@
           "options": [
             "No pain",
             "Pain reproduced"
-          ]
+          ],
+          "expect": "Pain reproduced"
         },
         {
           "label": "Passive Side Flexion",
           "options": [
             "No pain",
             "Pain reproduced"
-          ]
+          ],
+          "expect": "Pain reproduced"
         },
         {
           "label": "End-feel",
@@ -418,7 +439,8 @@
             "Capsular",
             "Hard",
             "Empty"
-          ]
+          ],
+          "expect": "Capsular"
         }
       ],
       "findings": [
@@ -447,14 +469,16 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Normal"
         },
         {
           "label": "Pattern",
           "options": [
             "C1/C2 dominant",
             "Lower cervical dominant"
-          ]
+          ],
+          "expect": "Lower cervical dominant"
         }
       ],
       "chainEffect": "Expect the “lower cervical dominant, FRT normal” pattern (facet/disc-related, not C1/C2); treat co-existing thoracic stiffness first if present."
@@ -468,7 +492,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Capsular pattern = side-flexion + rotation limited more than extension."
@@ -550,7 +575,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -559,7 +585,8 @@
           "options": [
             "Negative — no headache reproduced",
             "Positive — reproduces headache"
-          ]
+          ],
+          "expect": "Positive — reproduces headache"
         }
       ],
       "findings": [
@@ -586,14 +613,16 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Pattern",
           "options": [
             "C1/C2 dominant",
             "Lower cervical dominant"
-          ]
+          ],
+          "expect": "C1/C2 dominant"
         }
       ],
       "chainEffect": "“Restricted, C1/C2 dominant” is explicitly documented as the most common cause of cervicogenic headache in this app's own library."
@@ -605,7 +634,8 @@
           "type": "number",
           "label": "Craniovertebral angle",
           "unit": "°",
-          "normal": "<50° = FHP driving fault"
+          "normal": "<50° = FHP driving fault",
+          "expect": "<50"
         },
         {
           "type": "choice",
@@ -613,7 +643,8 @@
           "options": [
             "Absent",
             "Present"
-          ]
+          ],
+          "expect": "Present"
         }
       ],
       "note": "Cross-check the Cervicogenic Dizziness Screen if lightheadedness co-exists."
@@ -687,7 +718,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painful"
         },
         {
           "label": "Resisted Extension",
@@ -696,7 +728,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painful"
         },
         {
           "label": "Resisted Side Flexion",
@@ -705,7 +738,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painful"
         },
         {
           "label": "Resisted Rotation",
@@ -714,7 +748,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painful"
         }
       ],
       "passive": [
@@ -723,7 +758,8 @@
           "options": [
             "Normal end-feel",
             "Muscle-spasm end-feel"
-          ]
+          ],
+          "expect": "Muscle-spasm end-feel"
         }
       ],
       "findings": [
@@ -751,7 +787,8 @@
             "Globally guarded",
             "Single-segment restriction",
             "Single-plane restriction"
-          ]
+          ],
+          "expect": "Globally guarded"
         }
       ],
       "chainEffect": "Expect a globally guarded pattern rather than a single-segment or single-plane restriction."
@@ -838,7 +875,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -865,7 +903,8 @@
           "options": [
             "Direction-specific, guarding-limited",
             "Fixed joint block"
-          ]
+          ],
+          "expect": "Direction-specific, guarding-limited"
         }
       ],
       "chainEffect": "Direction-specific, guarding-limited restriction that improves as the strain settles, not a fixed joint block."
@@ -879,7 +918,8 @@
           "options": [
             "Symmetric",
             "Guarded, asymmetric"
-          ]
+          ],
+          "expect": "Guarded, asymmetric"
         }
       ],
       "note": "Document the guarded, asymmetric pattern at baseline to track recovery of symmetric range."
@@ -948,7 +988,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Extension",
@@ -957,7 +998,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         },
         {
           "label": "Resisted Rotation",
@@ -966,7 +1008,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -975,14 +1018,16 @@
           "options": [
             "Normal/springy",
             "Hard/bony (osteophyte)"
-          ]
+          ],
+          "expect": "Hard/bony (osteophyte)"
         },
         {
           "label": "Active ROM (global)",
           "options": [
             "Normal",
             "Globally reduced across levels"
-          ]
+          ],
+          "expect": "Globally reduced across levels"
         }
       ],
       "findings": [
@@ -1010,7 +1055,8 @@
           "options": [
             "Normal",
             "Restricted — hard/bony end-feel"
-          ]
+          ],
+          "expect": "Restricted — hard/bony end-feel"
         },
         {
           "label": "Gait screen (myelopathic pattern)",
@@ -1031,7 +1077,8 @@
           "options": [
             "Symmetric",
             "Globally reduced"
-          ]
+          ],
+          "expect": "Globally reduced"
         },
         {
           "type": "choice",
@@ -1101,35 +1148,40 @@
           "options": [
             "Normal",
             "Transiently weak"
-          ]
+          ],
+          "expect": "Transiently weak"
         },
         {
           "label": "C6 myotome",
           "options": [
             "Normal",
             "Transiently weak"
-          ]
+          ],
+          "expect": "Transiently weak"
         },
         {
           "label": "C7 myotome",
           "options": [
             "Normal",
             "Transiently weak"
-          ]
+          ],
+          "expect": "Transiently weak"
         },
         {
           "label": "C8 myotome",
           "options": [
             "Normal",
             "Transiently weak"
-          ]
+          ],
+          "expect": "Transiently weak"
         },
         {
           "label": "T1 myotome",
           "options": [
             "Normal",
             "Transiently weak"
-          ]
+          ],
+          "expect": "Transiently weak"
         }
       ],
       "passive": [],
@@ -1155,7 +1207,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "A general plexus-tension screen — won't isolate radial/ulnar components of a broader plexus stretch."
@@ -1217,7 +1270,8 @@
           "options": [
             "Weak + Painless",
             "Normal"
-          ]
+          ],
+          "expect": "Weak + Painless"
         }
       ],
       "passive": [
@@ -1226,7 +1280,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1257,7 +1312,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Cross-reference Elbow's ULNT2 for radial."
@@ -1352,7 +1408,8 @@
           "options": [
             "Reproduces referred pain, no true weakness",
             "Normal"
-          ]
+          ],
+          "expect": "Reproduces referred pain, no true weakness"
         }
       ],
       "passive": [
@@ -1361,7 +1418,8 @@
           "options": [
             "Reproduces referral",
             "No referral"
-          ]
+          ],
+          "expect": "Reproduces referral"
         }
       ],
       "findings": [
@@ -1396,7 +1454,8 @@
           "options": [
             "Secondary — taut posterior muscle bands",
             "True joint block"
-          ]
+          ],
+          "expect": "Secondary — taut posterior muscle bands"
         }
       ],
       "chainEffect": "May show a SECONDARY restriction from taut posterior muscle bands, not a true joint block — distinguish before mobilising the joint itself."
