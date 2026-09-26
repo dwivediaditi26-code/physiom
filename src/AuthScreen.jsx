@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { supabase } from "./supabase.js";
+import { trackEvent } from "./analytics/trackEvent.js";
 import { siteOrigin } from "./apiUrl.js";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import DemoWalkthrough from "./DemoWalkthrough.jsx";
@@ -42,6 +43,7 @@ function Login({onSwitch,onAuth}){
     setLoading(false);
     if(er){setError(er.message);return;}
     const{data}=await supabase.auth.getSession();
+    trackEvent("user_logged_in");
     onAuth(data.session?.user);
   };
   return(<form onSubmit={submit}>
@@ -84,7 +86,7 @@ function Register({onSwitch,onAuth,onShowLegal}){
     setLoading(false);
     if(er){setError(er.message);return;}
     try{localStorage.setItem("pm_onboarded","1");}catch{}
-    if(data.session){onAuth(data.user);}
+    if(data.session){trackEvent("user_signed_up");onAuth(data.user);}
     else{setMsg("Account created! Check your email to confirm, then sign in.");}
   };
   return(<form onSubmit={submit}>

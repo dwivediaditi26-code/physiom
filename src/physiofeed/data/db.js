@@ -27,6 +27,7 @@ import {
 import { supabase, authHeader } from "../../supabase.js";
 import { apiUrl } from "../../apiUrl.js";
 import { initialsOf } from "../components/shared/constants.js";
+import { trackEvent } from "../../analytics/trackEvent.js";
 
 let _posts = INITIAL_POSTS.map((p) => ({ ...p }));
 let _people = PEOPLE.map((p) => ({ ...p }));
@@ -187,6 +188,7 @@ export async function toggleLike(postId) {
     } else {
       const { error } = await supabase.from("post_likes").insert({ post_id: postId, user_id: uid });
       if (error) throw error;
+      trackEvent("post_liked", { entityType: "post", entityId: postId });
     }
   } catch (e) {
     // P7 (2026-09-22): the local-array fallback below is guest-mode
@@ -265,6 +267,11 @@ export async function addComment(postId, text, opts = {}) {
     if (isFinalUpdate) row.is_final_update = true;
     const { error } = await supabase.from("comments").insert(row);
     if (error) throw error;
+    if (isCaseUpdate || isFinalUpdate) {
+      trackEvent("case_commented", { entityType: "post", entityId: postId, properties: { isCaseUpdate: !!isCaseUpdate, isFinalUpdate: !!isFinalUpdate } });
+    } else {
+      trackEvent("post_commented", { entityType: "post", entityId: postId, properties: { parentCommentId: parentCommentId ?? null } });
+    }
   } catch (e) {
     if (await currentUserId()) throw e; // see toggleLike() -- guest-mode fallback only
     const comment = { id: `c${Date.now()}`, author: CURRENT_USER.name, text, isSelf: true };
@@ -356,6 +363,7 @@ export async function createPost({ text, category, media, postType = "post", tit
       .select().single();
     if (error) throw error;
     invalidateSearchCorpus(); // P8: searchable immediately, not after the cache expires
+    trackEvent(postType === "discussion" ? "case_created" : "post_created", { entityType: "post", entityId: data.id, properties: { postType } });
     return clone(data);
   } catch (e) {
     // Publishing is the one write where silently keeping a local copy is
@@ -2331,6 +2339,7 @@ export async function applyToOpportunity(oppId, { coverNote = "", resumeUrl = ""
     if (error.code === "23505") throw new Error("You've already applied to this.");
     throw error;
   }
+  trackEvent("opportunity_application_submitted", { entityType: "opportunity", entityId: oppId });
 }
 
 // The recruiter side of the pipeline: everyone who applied to one of YOUR
@@ -2357,6 +2366,7 @@ export async function registerForWorkshop(oppId, { creatorId, title } = {}) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to register.");
   await applyToOpportunity(oppId, { coverNote: "Registration request" });
+  trackEvent("workshop_registered", { entityType: "opportunity", entityId: oppId });
   // The DM is what makes "they get it in the chat" true. It's secondary to
   // the registration itself: if the thread can't be opened the person IS
   // still registered, so this must not undo that or surface as a failure.
