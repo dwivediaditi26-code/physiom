@@ -947,7 +947,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   useEffect(() => {
     const onPopState = (e) => {
       const s = e.state;
-      const targetKey = s?.pmNavKey || "home";
+      const rawKey = s?.pmNavKey || "home";
+      const targetKey = RETIRED_SCREEN_KEYS.has(rawKey) ? "home" : rawKey;
       if (
         LEAVE_GATE_TARGETS.has(targetKey) &&
         targetKey !== activeRef.current &&
@@ -957,7 +958,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         setPendingLeave({ key: targetKey, ctx: s?.pmNavCtx || {}, navOpts: { __fromPopState: true } });
         return;
       }
-      navTo(targetKey, s?.pmNavCtx || {}, { __fromPopState: true });
+      navTo(targetKey, targetKey === rawKey ? (s?.pmNavCtx || {}) : {}, { __fromPopState: true });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
