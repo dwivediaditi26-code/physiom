@@ -217,17 +217,12 @@ async function runOne(narrative, opts = {}) {
       // startup, so this test harness never adds weight to the normal
       // app bundle every user downloads -- only loaded if you actually
       // run a test.
-      // Imported through the SAME lazy wrapper file AppFull.jsx already
-      // uses (lazy_subjective.jsx), not the raw SubjectiveObjective.jsx
-      // file directly -- a second, different dynamic-import path to the
-      // same large module confuses Rollup's chunking and can pull it into
-      // the eagerly-loaded main bundle instead of keeping it lazy for
-      // everyone who never runs this test tool. buildRealtimeSOAP now
-      // lives only in ClinicalModules.jsx (its lazy_soapnote.jsx wrapper
-      // was removed along with the SOAP Notes UI it existed for), so it's
-      // imported directly here instead.
+      // runEngineV6 is the older Subjective screen's interpretation engine
+      // (the screen itself was removed 2026-09-25; the engine stays for
+      // this harness and the nightly AI-accuracy check). buildRealtimeSOAP
+      // lives in ClinicalModules.jsx.
       const [{ runEngineV6 }, { buildRealtimeSOAP }] = await Promise.all([
-        import("./lazy_subjective.jsx"),
+        import("./SubjectiveObjective.jsx"),
         import("./ClinicalModules.jsx"),
       ]);
 

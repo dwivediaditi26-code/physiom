@@ -1,4 +1,4 @@
-import { injectConsolidatedNotes, SUBJ_TIER, SUBJ_NOTES, classifyField, coreProgress, NEW_NOTE_IDS } from "./subjectiveTiering.js";
+import { injectConsolidatedNotes } from "./subjectiveTiering.js";
 // sharedClinicalData.js — pure data/constants shared across SubjectiveObjective.jsx,
 // ClinicalModules.jsx, OutcomeMeasuresPro.jsx, PhysioNeuro.jsx, and their external
 // consumers (AppFull.jsx, PatientDatabase.jsx, AppModules.jsx, DashboardModules.jsx,
@@ -2040,12 +2040,6 @@ const MMT_DATA={
 
 const MMT_GRADE_OPTIONS=["5","4+","4","4-","3+","3","3-","2+","2","2-","1","0","NT"];
 const MMT_REGIONS=Object.keys(MMT_DATA);
-const MMT_ICONS={
-  "Cervical":["🔵","#0891b2"],"Shoulder & Scapula":["💪","#9333ea"],
-  "Elbow & Forearm":["🫀","#db2777"],"Wrist & Hand":["🤚","#16a34a"],
-  "Spine & Core":["🪴","#78716c"],"Hip & Pelvis":["🦵","#16a34a"],
-  "Knee":["🦿","#ca8a04"],"Ankle & Foot":["🦶","#0284c7"],"TMJ & Facial":["🦷","#9f1239"]
-};
 function parseMuscleName(name){
   const match = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
   if(!match) return { title:name, sub:null };
@@ -3961,52 +3955,11 @@ const SPORT_S={
   ]},
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// CONDITIONAL LOAD TRIGGERS
-// ══════════════════════════════════════════════════════════════════════
-const needsBPS_S=(d)=>
-  /3–6 months|6–12 months|1–2 years|> 2 years|Recurring/.test(d.cc_duration||"")||
-  parseFloat(d.cc_vas_worst)>=7||
-  /Off work/.test(d.dem_work_status||"");
-
-const REG_KEY_MAP={
-  "Cervical (L)":"Cervical spine","Cervical (R)":"Cervical spine",
-  "Thoracic (L)":"Thoracic spine","Thoracic (R)":"Thoracic spine",
-  "Lumbar/SI (L)":"Lumbar / SI","Lumbar/SI (R)":"Lumbar / SI",
-  "Elbow (L)":"Elbow/Wrist/Hand","Elbow (R)":"Elbow/Wrist/Hand",
-  "Wrist/Hand (L)":"Elbow/Wrist/Hand","Wrist/Hand (R)":"Elbow/Wrist/Hand",
-  "Hip/Groin (L)":"Hip / Groin","Hip/Groin (R)":"Hip / Groin",
-  "Ankle/Foot (L)":"Ankle / Foot","Ankle/Foot (R)":"Ankle / Foot",
-};
-const resolveRegMod=(r)=>REG_MOD_S[REG_KEY_MAP[r]||r];
-
-const needsSleep_S=(d,regions)=>{
-  const poorSleep=/poor|very poor/.test((Array.isArray(d.ls_sleep_quality)?d.ls_sleep_quality.join(', '):(d.ls_sleep_quality||"")).toLowerCase());
-  const nightPain=regions.some(r=>{
-    const px=resolveRegMod(r)?.prefix;
-    if(!px) return false;
-    const n=(Array.isArray(d[`${px}_night`])?d[`${px}_night`].join(", "):(d[`${px}_night`]||"")).toLowerCase();
-    const p=(Array.isArray(d[`${px}_pattern`])?d[`${px}_pattern`].join(", "):(d[`${px}_pattern`]||"")).toLowerCase();
-    return /wakes|cannot sleep|night pain|constant night/.test(n)||/night dominant/.test(p);
-  });
-  return poorSleep||nightPain;
-};
-
-const needsSport_S=(d,regions)=>{
-  const onset=(Array.isArray(d.cc_onset)?d.cc_onset.join(" "):(d.cc_onset||"")).toLowerCase();
-  const isSport=onset.includes("sport");
-  const sportRegs=["Knee (L)","Knee (R)","Ankle/Foot (L)","Ankle/Foot (R)","Ankle / Foot","Hip/Groin (L)","Hip/Groin (R)","Hip / Groin","Shoulder (L)","Shoulder (R)","Lumbar/SI (L)","Lumbar/SI (R)","Lumbar / SI"];
-  return isSport||sportRegs.some(r=>regions.includes(r));
-};
 
 // ══════════════════════════════════════════════════════════════════════
 // CLINICAL ENGINE v5 — Multi-region, cross-region reasoning
 // ══════════════════════════════════════════════════════════════════════
 
-const needsHypermobility_S=(d)=>{
-  const hm=String(Array.isArray(d.hm_screen)?d.hm_screen.join(", "):(d.hm_screen||"")).toLowerCase();
-  return /multiple joint|beighton|loose.*since childhood|recurrent disloc/.test(hm);
-};
 // ══════════════════════════════════════════════════════════════════════
 // MISSING CONDITIONS ADDITIONS
 // Appended to existing modules via REGION_MODULES extension
@@ -4169,7 +4122,6 @@ UNIV_S.hypermobility = {
 // Evidence: Magee(7th) · Petty(5th) · Maitland(8th) · Butler
 //           Brukner & Khan(5th) · NICE NG59 · ASAS · STarT Back
 // ══════════════════════════════════════════════════════════════════════
-
 
 
 // ── NavActionBtn — stable component so hooks are never called inside .map() ──
@@ -6551,20 +6503,4 @@ function listRegionCatalogFields(prefix) {
   );
 }
 
-export {
-  listGlobalCatalogFields, listRegionCatalogFields,
-  SCALES,
-  ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS,
-  MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, MMT_ICONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS,
-  DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP,
-  CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS,
-  SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA,
-  UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S,
-  SUBJ_TIER, SUBJ_NOTES, classifyField, coreProgress, NEW_NOTE_IDS,
-  needsBPS_S, resolveRegMod, needsSleep_S, needsSport_S, needsHypermobility_S,
-  NKT_REGIONS, KC_REGIONS,
-  downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage,
-  SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel,
-  CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey,
-  EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS,
-};
+export { listGlobalCatalogFields, listRegionCatalogFields, SCALES, ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage, SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS };

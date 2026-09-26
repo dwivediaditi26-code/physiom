@@ -190,10 +190,6 @@ export const SUBJ_NOTES = Object.keys(SUBJ_TIER).reduce((acc, p) => {
   return acc;
 }, {});
 
-// Set of all NEW consolidated note ids (used to tell them apart from legacy).
-export const NEW_NOTE_IDS = new Set(
-  Object.values(SUBJ_NOTES).flatMap((arr) => arr.map((f) => f.id))
-);
 
 // prefix → REG_MOD_S region key (for injecting the consolidated notes)
 export const PREFIX_TO_REGION = {
@@ -220,57 +216,4 @@ export function injectConsolidatedNotes(REG_MOD_S) {
   return REG_MOD_S;
 }
 
-// prefix from a field id: "cx_loc" -> "cx", "shl_moi" -> "shl"
-const prefixOf = (id) => String(id || "").split("_")[0];
 
-// A field counts as a "note" ONLY if its id ends with _notes (the legacy
-// per-subsection notes) or it is one of the new consolidated notes. We must NOT
-// treat every textarea as a note — real free-text fields like the chief
-// complaint (cc_main, patient's own words) are textareas and must always show.
-const isNoteField = (f) => /_notes$/.test(f.id) || f.tierNote === true || NEW_NOTE_IDS.has(f.id);
-
-// ── the core classifier used by the renderer + progress counter ──────
-// Returns { visible, tier } where tier ∈ 'core' | 'conditional' | 'deep' | 'note'.
-// Fields in regions without a tier config (universal sections) are all shown as
-// 'core' so existing behaviour is preserved.
-export function classifyField(field, data = {}) {
-  const id = field.id;
-  const p = prefixOf(id);
-  const cfg = SUBJ_TIER[p];
-
-  if (isNoteField(field)) {
-    if (NEW_NOTE_IDS.has(id)) return { visible: true, tier: "note" };
-    // legacy note: only surface if it already holds data (safe migration)
-    const val = data[id];
-    return { visible: !!(val && String(val).trim()), tier: "note" };
-  }
-
-  if (!cfg) return { visible: true, tier: "core" };
-
-  if (cfg.core.includes(id)) return { visible: true, tier: "core" };
-  if ((cfg.triggers || []).includes(id)) return { visible: true, tier: "conditional" };
-  for (const g of cfg.gates || []) {
-    if (g.fields.includes(id)) {
-      let on = false;
-      try { on = !!g.when(data); } catch { on = false; }
-      return { visible: on, tier: "conditional" };
-    }
-  }
-  return { visible: true, tier: "deep" };
-}
-
-// Core completion for a set of section objects (region modules only).
-export function coreProgress(sectionList, data = {}) {
-  let total = 0, filled = 0;
-  sectionList.forEach((s) => {
-    (s.fields || []).forEach((f) => {
-      const p = prefixOf(f.id);
-      if (!SUBJ_TIER[p]) return;              // skip universal sections
-      if (!SUBJ_TIER[p].core.includes(f.id)) return;
-      total += 1;
-      const v = data[f.id];
-      if (Array.isArray(v) ? v.length : (v != null && v !== "")) filled += 1;
-    });
-  });
-  return { total, filled };
-}

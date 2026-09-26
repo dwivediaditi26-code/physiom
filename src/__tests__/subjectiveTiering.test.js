@@ -1,66 +1,15 @@
-// subjectiveTiering.test.js — adaptive/tiered Subjective form logic.
+// subjectiveTiering.test.js -- what's left of the old Subjective form's
+// field logic after that form was removed (2026-09-25): the grouped notes
+// injected into REG_MOD_S (still read by the PDF reports and runEngineV6),
+// and filled region fields still reaching the differential engine. The
+// form's show/hide tiering (classifyField/coreProgress) went with the form.
 import { describe, it, expect } from "vitest";
-import { classifyField, coreProgress, SUBJ_TIER, SUBJ_NOTES, NEW_NOTE_IDS } from "../subjectiveTiering.js";
 import { REG_MOD_S } from "../sharedClinicalData.js";
 import { runReasoningFromData } from "../reasoningEngine/index";
 
 const SEP = "|||";
 const cxSections = () => Object.values(REG_MOD_S["Cervical spine"].sections);
 const allCxFields = () => cxSections().flatMap((s) => s.fields);
-
-describe("field tiering", () => {
-  it("marks agreed cervical core fields as core + always visible", () => {
-    for (const id of SUBJ_TIER.cx.core) {
-      const { visible, tier } = classifyField({ id }, {});
-      expect(tier, id).toBe("core");
-      expect(visible, id).toBe(true);
-    }
-  });
-  it("routes non-core, non-gated cervical fields to the deep tier", () => {
-    expect(classifyField({ id: "cx_agg_act" }, {}).tier).toBe("deep");
-    expect(classifyField({ id: "cx_trajectory" }, {}).tier).toBe("deep");
-  });
-});
-
-describe("conditional gating (the reported bug)", () => {
-  it("HIDES the Arm & Hand block when cx_arm_present is No / unanswered", () => {
-    expect(classifyField({ id: "cx_arm_quality" }, {}).visible).toBe(false);
-    expect(classifyField({ id: "cx_arm_quality" }, { cx_arm_present: "No arm or hand symptoms" }).visible).toBe(false);
-  });
-  it("SHOWS the Arm & Hand block when cx_arm_present is Yes", () => {
-    const y = classifyField({ id: "cx_arm_fingers" }, { cx_arm_present: "Yes — unilateral (R)" });
-    expect(y.visible).toBe(true);
-    expect(y.tier).toBe("conditional");
-  });
-  it("gates the Headache block on cx_ha_present", () => {
-    // 2026-08-18: the headache gate was trimmed from 5 fields to 2
-    // (location, frequency) per user feedback that a "yes" shouldn't reveal
-    // every related field, only the ones that change what's asked next.
-    // cx_ha_triggers is no longer in that gate at all -- it's permanently
-    // deep-tier now (still reachable, just under "+ Add more detail",
-    // never auto-revealed by cx_ha_present).
-    expect(classifyField({ id: "cx_ha_triggers" }, {}).tier).toBe("deep");
-    expect(classifyField({ id: "cx_ha_triggers" }, { cx_ha_present: "Yes — secondary to neck pain" }).tier).toBe("deep");
-    expect(classifyField({ id: "cx_ha_location" }, {}).visible).toBe(false);
-    expect(classifyField({ id: "cx_ha_location" }, { cx_ha_present: "Yes — secondary to neck pain" }).visible).toBe(true);
-  });
-  it("reveals WAD only on trauma; dermatomal no longer auto-reveals at all", () => {
-    expect(classifyField({ id: "cx_moi_wad" }, { cx_moi: "No clear mechanism — insidious onset" }).visible).toBe(false);
-    expect(classifyField({ id: "cx_moi_wad" }, { cx_moi: "Whiplash — rear-end MVA" }).visible).toBe(true);
-    // 2026-08-18: dermatomal distribution's radiation-triggered gate was
-    // removed entirely per user feedback -- "you don't need to expose
-    // dermatomal distribution during the first interview, that's an
-    // objective/neuro-exam determination". It's permanently deep-tier now,
-    // regardless of the radiation answer -- still fully documentable one
-    // tap under "+ Add more detail", just never auto-surfaced.
-    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "No radiation — local only" }).tier).toBe("deep");
-    expect(classifyField({ id: "cx_dermatomal" }, { cx_radiation: "Down arm to elbow (R)" }).tier).toBe("deep");
-  });
-  it("keeps the gate QUESTION itself always visible", () => {
-    expect(classifyField({ id: "cx_arm_present" }, {}).visible).toBe(true);
-    expect(classifyField({ id: "cx_ha_present" }, {}).visible).toBe(true);
-  });
-});
 
 describe("data preservation (#5)", () => {
   it("a filled conditional field still reaches the differential engine", () => {
@@ -85,37 +34,10 @@ describe("data preservation (#5)", () => {
 });
 
 describe("consolidated notes migration", () => {
-  it("injects new grouped notes into every region module", () => {
-    for (const p of Object.keys(SUBJ_NOTES))
-      for (const nf of SUBJ_NOTES[p]) expect(NEW_NOTE_IDS.has(nf.id)).toBe(true);
+  it("injects the grouped notes into the region modules", () => {
     const ids = allCxFields().map((f) => f.id);
     expect(ids).toContain("cx_notes_history");
     expect(ids).toContain("cx_notes_aggrel");
     expect(ids).toContain("cx_notes_safety");
-  });
-  it("new grouped notes always visible; legacy notes only when non-empty", () => {
-    expect(classifyField({ id: "cx_notes_history", type: "textarea" }, {}).visible).toBe(true);
-    expect(classifyField({ id: "cx_loc_notes", type: "textarea" }, {}).visible).toBe(false);
-    expect(classifyField({ id: "cx_loc_notes", type: "textarea" }, { cx_loc_notes: "old note" }).visible).toBe(true);
-  });
-});
-
-describe("core progress", () => {
-  it("counts only the mandatory core minimum", () => {
-    const data = { cx_loc: ["Anterior neck"], cx_moi: ["Sleeping position"] };
-    const { total, filled } = coreProgress(cxSections(), data);
-    expect(total).toBe(SUBJ_TIER.cx.core.length);
-    expect(filled).toBe(2);
-  });
-});
-
-describe("free-text (non-note) fields stay visible", () => {
-  it("chief complaint (cc_main, a textarea) is always shown — not hidden as a note", () => {
-    const c = classifyField({ id: "cc_main", type: "textarea" }, {});
-    expect(c.visible).toBe(true);
-    expect(c.tier).not.toBe("note");
-  });
-  it("a legacy *_notes textarea is still hidden when empty", () => {
-    expect(classifyField({ id: "cx_loc_notes", type: "textarea" }, {}).visible).toBe(false);
   });
 });
