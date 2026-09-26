@@ -94,7 +94,7 @@ export function PrivacyPolicy({onClose}){
         <li style={li}><strong>Supabase</strong> — database and authentication provider</li>
         <li style={li}><strong>Cloudinary</strong> — clinical image hosting (images you explicitly upload)</li>
         <li style={li}><strong>Vercel</strong> — app hosting (no patient data stored here)</li>
-        <li style={li}><strong>Groq</strong> — AI inference provider used to parse free-text patient intake narratives (AI Assistant / AI-drafted SOAP text) into structured fields. Per Groq's published policy, inputs and outputs are not used to train models, and are not retained beyond transient troubleshooting logs (kept a maximum of 30 days) unless we enable longer retention, which we do not.</li>
+        <li style={li}><strong>Groq</strong> — AI inference provider. When you use the AI intake in an assessment (describing the patient's history in your own words), that text is sent to Groq to sort it into structured fields, which you review and edit before anything is saved. Groq is also used to draft summaries of published research articles for the Evidence library; no patient data is sent for that. Per Groq's published policy, inputs and outputs are not used to train models, and are not retained beyond transient troubleshooting logs (kept a maximum of 30 days) unless we enable longer retention, which we do not.</li>
         <li style={li}><strong>Law enforcement</strong> — only if required by Indian law or court order</li>
       </ul>
       <p>We do <strong>not</strong> share data with insurers, pharmaceutical companies, advertisers, or data brokers.</p>
