@@ -47,6 +47,7 @@ export default function Sidebar() {
         <NavSection title="Admin" items={[
           { path: "/admin/reports", label: "Reported posts", icon: "ShieldCheck" },
           { path: "/admin/evidence", label: "Add Evidence", icon: "Plus" },
+          { path: "/admin/analytics", label: "Analytics", icon: "BarChart3" },
         ]} />
       )}
     </aside>

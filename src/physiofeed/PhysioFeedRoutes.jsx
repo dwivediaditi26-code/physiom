@@ -15,6 +15,7 @@ import SavedPage from "./pages/SavedPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AdminReportsPage from "./pages/AdminReportsPage.jsx";
 import AdminAddEvidencePage from "./pages/AdminAddEvidencePage.jsx";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
 
 // The original version of this file also had stub routes (/dashboard,
 // /patients, /assessments, /ai, /soap, /exercises, /programs, /analytics)
@@ -47,6 +48,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/evidence" element={<AdminAddEvidencePage />} />
+        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>
     </AppShell>

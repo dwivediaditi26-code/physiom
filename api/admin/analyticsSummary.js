@@ -1,0 +1,98 @@
+// Admin-only aggregate stats for the whole PhysioMind app (clinical +
+// PhysioFeed). Uses the SERVICE ROLE key deliberately -- `patients` and
+// `applications` are RLS-scoped to "your own rows" (see
+// supabase/supabase_rls_setup.sql and add_mvp_network_opportunities.sql),
+// so a plain client-side query as the admin would silently undercount
+// everyone else's data. This bypasses that safely, server-side only, after
+// verifying the caller is a real admin -- never trusts a client-supplied
+// "I'm an admin" flag (see AdminAnalyticsPage.jsx's client gate, which is
+// UX-only, same as AdminReportsPage.jsx's).
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let adminClient = null;
+function getAdminClient() {
+  if (!SERVICE_ROLE_KEY) return null;
+  if (!adminClient) {
+    adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+  }
+  return adminClient;
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  const admin = getAdminClient();
+  if (!admin) {
+    console.error('analyticsSummary: SUPABASE_SERVICE_ROLE_KEY not set on this deployment');
+    return res.status(500).json({ error: 'Server misconfigured.' });
+  }
+
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  if (!token) return res.status(401).json({ error: 'Sign in required.' });
+
+  const { data: userData, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userData?.user) return res.status(401).json({ error: 'Your session has expired -- please sign in again.' });
+
+  const { data: profile, error: profileErr } = await admin.from('profiles').select('is_admin').eq('id', userData.user.id).maybeSingle();
+  if (profileErr || !profile?.is_admin) return res.status(403).json({ error: 'Admin access required.' });
+
+  const days = Math.min(Math.max(parseInt(req.query?.days, 10) || 30, 1), 90);
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    { count: totalUsers },
+    { count: totalPatients },
+    { count: totalPosts },
+    { count: totalOpportunities },
+    { count: totalApplications },
+    { data: recentEvents, error: eventsErr },
+  ] = await Promise.all([
+    admin.from('profiles').select('id', { count: 'exact', head: true }),
+    admin.from('patients').select('id', { count: 'exact', head: true }),
+    admin.from('posts').select('id', { count: 'exact', head: true }),
+    admin.from('opportunities').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    admin.from('applications').select('id', { count: 'exact', head: true }),
+    admin.from('analytics_events').select('event_name, user_id, entity_type, entity_id, properties, created_at').gte('created_at', since).order('created_at', { ascending: false }).limit(500),
+  ]);
+  if (eventsErr) return res.status(500).json({ error: eventsErr.message });
+
+  const events = recentEvents || [];
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const distinctUsersSince = (windowMs) =>
+    new Set(events.filter((e) => now - new Date(e.created_at).getTime() <= windowMs).map((e) => e.user_id)).size;
+
+  const featureCounts = {};
+  for (const e of events) featureCounts[e.event_name] = (featureCounts[e.event_name] || 0) + 1;
+
+  res.status(200).json({
+    generatedAt: new Date().toISOString(),
+    rangeDays: days,
+    state: {
+      totalUsers: totalUsers ?? 0,
+      totalPatients: totalPatients ?? 0,
+      totalPosts: totalPosts ?? 0,
+      totalOpportunities: totalOpportunities ?? 0,
+      totalApplications: totalApplications ?? 0,
+    },
+    // Retention/cohort numbers deliberately omitted -- not enough historical
+    // depth yet to compute honestly (event logging only just started). The
+    // frontend shows "not enough data yet" rather than a fabricated number.
+    trends: {
+      dau: distinctUsersSince(dayMs),
+      wau: distinctUsersSince(7 * dayMs),
+      mau: distinctUsersSince(30 * dayMs),
+      totalEventsInRange: events.length,
+      featureCounts,
+    },
+    recentEvents: events.slice(0, 200),
+  });
+}
