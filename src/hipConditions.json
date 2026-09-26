@@ -43,7 +43,8 @@
           "options": [
             "Normal",
             "Painful (screen for secondary lesion)"
-          ]
+          ],
+          "expect": "Normal"
         }
       ],
       "passive": [
@@ -52,7 +53,8 @@
           "options": [
             "No groin pain/click",
             "Reproduces groin pain/click"
-          ]
+          ],
+          "expect": "Reproduces groin pain/click"
         }
       ],
       "findings": [
@@ -83,7 +85,8 @@
           "options": [
             "Normal",
             "Moderately restricted (20–29°)"
-          ]
+          ],
+          "expect": "Moderately restricted (20–29°)"
         }
       ],
       "chainEffect": "Moderately restricted (20–29°) internal rotation is explicitly documented as consistent with FAI, where the FADIR test is likely positive."
@@ -97,7 +100,8 @@
           "options": [
             "Normal, pain-free rotation",
             "Restricted / painful rotation"
-          ]
+          ],
+          "expect": "Restricted / painful rotation"
         }
       ],
       "note": "The named functional test for exactly this pattern. FMA source note: FADIR & deep squat reproduce groin pain/click."
@@ -155,7 +159,8 @@
           "options": [
             "Painless",
             "Painful (screen for secondary lesion)"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -164,28 +169,32 @@
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Passive Flexion",
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Passive Abduction",
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "End-feel",
           "options": [
             "Normal/springy",
             "Hard/bony"
-          ]
+          ],
+          "expect": "Hard/bony"
         }
       ],
       "findings": [
@@ -217,7 +226,8 @@
           "options": [
             "Normal",
             "Severely restricted (often <20°), significant asymmetry"
-          ]
+          ],
+          "expect": "Severely restricted (often <20°), significant asymmetry"
         }
       ],
       "chainEffect": "Severely restricted, often <20° with significant asymmetry — matching the capsular-pattern IR loss on passive testing above."
@@ -231,7 +241,8 @@
           "options": [
             "Unilateral, moderate restriction (FAI-type)",
             "Bilateral, more severe restriction, hard/bony end-feel (OA)"
-          ]
+          ],
+          "expect": "Bilateral, more severe restriction, hard/bony end-feel (OA)"
         }
       ],
       "note": "Same test as FAI, but expect bilateral, more severe restriction with a hard/bony end-feel. FMA source note: Capsular-pattern loss (IR/flexion); squat & stairs limited."
@@ -289,7 +300,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -298,7 +310,8 @@
           "options": [
             "No lateral pain",
             "Reproduces lateral pain"
-          ]
+          ],
+          "expect": "Reproduces lateral pain"
         }
       ],
       "findings": [
@@ -325,14 +338,16 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Ober's",
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "chainEffect": "Documents both the mobility restriction and the stability deficit — the direct match for lateral hip pathology."
@@ -346,7 +361,8 @@
           "options": [
             "No valgus collapse",
             "Dynamic valgus collapse"
-          ]
+          ],
+          "expect": "Dynamic valgus collapse"
         },
         {
           "type": "choice",
@@ -354,7 +370,8 @@
           "options": [
             "Controlled",
             "Uncontrolled / pelvic drop"
-          ]
+          ],
+          "expect": "Uncontrolled / pelvic drop"
         }
       ],
       "note": "Both are the app's named functional tests for this exact pattern. FMA source note: Single-leg stance 30s & resisted abduction reproduce lateral pain."
@@ -410,7 +427,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -419,7 +437,8 @@
           "options": [
             "No pain",
             "Reproduces pain"
-          ]
+          ],
+          "expect": "Reproduces pain"
         }
       ],
       "findings": [
@@ -460,7 +479,8 @@
           "options": [
             "Glute max fires first",
             "Hamstring fires first / dominates"
-          ]
+          ],
+          "expect": "Hamstring fires first / dominates"
         }
       ],
       "note": "Palpate glute max vs hamstring during the test — hamstring firing first/dominating is the direct functional correlate of this condition. FMA source note: Bent-knee stretch / long-lever resisted knee-flexion reproduce pain."
@@ -527,7 +547,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -536,7 +557,8 @@
           "options": [
             "No groin pain",
             "Reproduces groin pain"
-          ]
+          ],
+          "expect": "Reproduces groin pain"
         }
       ],
       "findings": [
@@ -567,7 +589,8 @@
           "options": [
             "Controlled",
             "Compensatory pattern"
-          ]
+          ],
+          "expect": "Compensatory pattern"
         },
         {
           "type": "choice",
@@ -575,7 +598,8 @@
           "options": [
             "No compensation",
             "Compensatory pattern surfaces"
-          ]
+          ],
+          "expect": "Compensatory pattern surfaces"
         }
       ],
       "note": "Either test screens for compensatory patterns during loaded groin activity; choose per presentation. FMA source note: Resisted adduction (squeeze test) & change-of-direction reproduce pain."
@@ -627,7 +651,8 @@
           "options": [
             "Strong + Painless",
             "Strong + Painful (reproduces deep buttock pain)"
-          ]
+          ],
+          "expect": "Strong + Painful (reproduces deep buttock pain)"
         }
       ],
       "passive": [
@@ -636,7 +661,8 @@
           "options": [
             "Negative",
             "Positive — reproduces deep buttock pain"
-          ]
+          ],
+          "expect": "Positive — reproduces deep buttock pain"
         }
       ],
       "findings": [
@@ -663,7 +689,8 @@
           "options": [
             "Normal",
             "Restricted, with deep buttock pain"
-          ]
+          ],
+          "expect": "Restricted, with deep buttock pain"
         }
       ],
       "chainEffect": "Restricted external rotation with deep buttock pain is explicitly documented as consistent with piriformis syndrome, where the FAIR test is likely positive."
@@ -677,7 +704,8 @@
           "options": [
             "Symmetric",
             "Restricted ER, deep buttock pain"
-          ]
+          ],
+          "expect": "Restricted ER, deep buttock pain"
         }
       ],
       "note": "Cross-reference against the FAIR-test finding above."
@@ -725,14 +753,16 @@
           "options": [
             "No snap reproduced",
             "Reproduces the snap"
-          ]
+          ],
+          "expect": "Reproduces the snap"
         },
         {
           "label": "Resisted Abduction (external/ITB type)",
           "options": [
             "No snap reproduced",
             "Reproduces the snap"
-          ]
+          ],
+          "expect": "Reproduces the snap"
         }
       ],
       "passive": [],
@@ -764,14 +794,16 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Hip Extension Mobility / Thomas Test (internal/iliopsoas type)",
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "chainEffect": "Select per the suspected snapping structure — external (ITB) vs internal (iliopsoas)."
@@ -785,7 +817,8 @@
           "options": [
             "Not observed",
             "Observed"
-          ]
+          ],
+          "expect": "Observed"
         }
       ],
       "note": "Observing the dynamic snap during a loaded functional movement is more revealing than any static positional test for this condition."

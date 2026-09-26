@@ -634,10 +634,15 @@ function conditionMatchPct(m) {
 // without touching the engine's own Subjective-only supportingMatched/
 // supportingTotal (still shown verbatim elsewhere as "X/Y supporting signs
 // from Subjective").
-// Deliberately scoped to Cervical only for now (Aditi: "start with cervical
-// only") -- every other region's condition library has no `expect` tags on
-// its Kinetic Chain/Functional Screen/STTT fields yet, so this returns
-// {matched:0,total:0} there and those regions' % is unaffected.
+// Rolled out to Cervical first (Aditi: "start with cervical only"), then to
+// every other region (Aditi: "yes push and all region") once the pattern
+// was verified live. Observation/Posture/Palpation/CPA/Special
+// Tests/Outcome Measures need no per-condition tagging (their own data is
+// already condition-specific or has a universal rule); Kinetic
+// Chain/Functional Screen/STTT rely on each condition's own `expect` tag,
+// added per region's condition library -- a region with none yet just
+// contributes {matched:0,total:0} from those three modules, same safe
+// fallback as before.
 const CPA_STATE_STEM = { Facilitated: "facilitat", Inhibited: "inhibit", Overactive: "overactiv" };
 function cpaStateMatches(stateText, selectedChip) {
   const stem = CPA_STATE_STEM[selectedChip];
@@ -651,6 +656,7 @@ function cpaStateMatches(stateText, selectedChip) {
 // entirely rather than guessed at.
 function fieldSupports(selectedValue, expect) {
   if (!expect || !selectedValue) return false;
+  if (Array.isArray(expect)) return expect.some((e) => fieldSupports(selectedValue, e));
   const m = /^([<>]=?)(-?\d+(?:\.\d+)?)$/.exec(expect);
   if (m) {
     const num = parseFloat(selectedValue);
@@ -664,7 +670,7 @@ function fieldSupports(selectedValue, expect) {
   return selectedValue === expect;
 }
 function computeObjectiveSupport(id, condition, config, state, data) {
-  if (config.key !== "cervical" || !condition) return { matched: 0, total: 0 };
+  if (!condition) return { matched: 0, total: 0 };
   let matched = 0, total = 0;
   const g = (module, sub) => state[fieldKey(id, module, sub)] || "";
 

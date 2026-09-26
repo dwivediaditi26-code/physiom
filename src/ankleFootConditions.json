@@ -58,6 +58,10 @@
             "No pain, no laxity",
             "Pain reproduced, no laxity",
             "Pain reproduced with laxity (ATFL/CFL torn — talar tilt)"
+          ],
+          "expect": [
+            "Pain reproduced, no laxity",
+            "Pain reproduced with laxity (ATFL/CFL torn — talar tilt)"
           ]
         }
       ],
@@ -90,7 +94,8 @@
             "Acute guarding",
             "Hypomobile",
             "Hypermobile"
-          ]
+          ],
+          "expect": "Acute guarding"
         }
       ],
       "chainEffect": "The direct match to ATFL/CFL sprain mechanics; expect acute guarding rather than a fixed hypo/hypermobility pattern yet."
@@ -171,7 +176,8 @@
           "options": [
             "Normal range",
             "Excessive/hypermobile range"
-          ]
+          ],
+          "expect": "Excessive/hypermobile range"
         }
       ],
       "findings": [
@@ -197,6 +203,10 @@
           "label": "Subtalar mobility pattern",
           "options": [
             "Normal",
+            "Hypermobile, excessive pronation",
+            "Marked L-vs-R asymmetry"
+          ],
+          "expect": [
             "Hypermobile, excessive pronation",
             "Marked L-vs-R asymmetry"
           ]
@@ -270,7 +280,8 @@
             "Not tested",
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -367,7 +378,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -377,6 +389,10 @@
             "Improves with knee flexed (gastroc tightness)",
             "No change with knee position (soleus)",
             "Full, no tightness"
+          ],
+          "expect": [
+            "Improves with knee flexed (gastroc tightness)",
+            "No change with knee position (soleus)"
           ]
         }
       ],
@@ -430,7 +446,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "The direct named functional test for this exact condition. FMA source note: Single-leg heel-raise load & hop reproduce tendon pain."
@@ -502,7 +519,8 @@
           "options": [
             "Absent/severely weak (with palpable gap)",
             "Present, normal strength"
-          ]
+          ],
+          "expect": "Absent/severely weak (with palpable gap)"
         }
       ],
       "passive": [
@@ -511,7 +529,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -584,7 +603,8 @@
           "options": [
             "Painless",
             "Painful (screen for other pathology)"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -593,14 +613,16 @@
           "options": [
             "Full range",
             "Restricted — capsular pattern PF > DF"
-          ]
+          ],
+          "expect": "Restricted — capsular pattern PF > DF"
         },
         {
           "label": "End-feel",
           "options": [
             "Normal/springy",
             "Hard/bony"
-          ]
+          ],
+          "expect": "Hard/bony"
         }
       ],
       "findings": [
@@ -629,12 +651,14 @@
         {
           "type": "number",
           "label": "Weight-bearing lunge — knee-to-wall distance",
-          "unit": "cm"
+          "unit": "cm",
+          "expect": "<4"
         },
         {
           "type": "number",
           "label": "Weight-bearing lunge — ankle dorsiflexion angle",
-          "unit": "°"
+          "unit": "°",
+          "expect": "<10"
         }
       ],
       "chainEffect": "Expect severe restriction (<4cm / <10°), consistent with OA-related capsular loss."
@@ -645,12 +669,14 @@
         {
           "type": "number",
           "label": "Weight-bearing lunge — knee-to-wall distance",
-          "unit": "cm"
+          "unit": "cm",
+          "expect": "<4"
         },
         {
           "type": "number",
           "label": "Weight-bearing lunge — ankle dorsiflexion angle",
-          "unit": "°"
+          "unit": "°",
+          "expect": "<10"
         }
       ],
       "note": "The same test named as the functional screen for ankle DF restriction, impingement, and OA. FMA source note: Weight-bearing lunge restricted; stairs limited."
@@ -713,7 +739,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painful"
         }
       ],
       "passive": [
@@ -722,7 +749,8 @@
           "options": [
             "Heel inverts normally",
             "Fails to invert heel"
-          ]
+          ],
+          "expect": "Fails to invert heel"
         }
       ],
       "findings": [
@@ -754,7 +782,8 @@
           "options": [
             "Normal",
             "Hypermobile, excessive pronation — tibialis posterior failing to control pronation"
-          ]
+          ],
+          "expect": "Hypermobile, excessive pronation — tibialis posterior failing to control pronation"
         }
       ],
       "chainEffect": "\"Hypermobile, excessive pronation... tibialis posterior failing to control pronation\" is the exact documented pattern for this condition."
@@ -825,7 +854,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -835,7 +865,8 @@
             "Not tested",
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -882,7 +913,8 @@
           "options": [
             "Normal",
             "Abnormal eversion pattern"
-          ]
+          ],
+          "expect": "Abnormal eversion pattern"
         }
       ],
       "note": "The app has no peroneal-specific named functional screen, so this tib-post-oriented test is used as the closest adjunct. FMA source note: Resisted eversion & single-leg balance reproduce lateral pain."
@@ -938,7 +970,8 @@
           "options": [
             "Preserved/normal",
             "Weak"
-          ]
+          ],
+          "expect": "Preserved/normal"
         }
       ],
       "passive": [
@@ -947,7 +980,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1022,7 +1056,8 @@
           "options": [
             "Painless",
             "Painful — reproduces anterior pinch (soft-tissue impingement)"
-          ]
+          ],
+          "expect": "Painful — reproduces anterior pinch (soft-tissue impingement)"
         }
       ],
       "passive": [
@@ -1031,7 +1066,8 @@
           "options": [
             "Soft/normal (gastroc-tightness restriction)",
             "Hard/bony (bony impingement)"
-          ]
+          ],
+          "expect": "Hard/bony (bony impingement)"
         }
       ],
       "findings": [
@@ -1145,7 +1181,8 @@
           "options": [
             "Usually painless",
             "Painful"
-          ]
+          ],
+          "expect": "Usually painless"
         }
       ],
       "passive": [
@@ -1154,7 +1191,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1258,14 +1296,16 @@
           "options": [
             "Central pad tender (fat-pad pattern)",
             "Medial origin tender (plantar-fascia pattern)"
-          ]
+          ],
+          "expect": "Central pad tender (fat-pad pattern)"
         },
         {
           "label": "Windlass Test",
           "options": [
             "No reproduction (differentiates from plantar fasciitis)",
             "Reproduces pain"
-          ]
+          ],
+          "expect": "No reproduction (differentiates from plantar fasciitis)"
         }
       ],
       "findings": [
@@ -1336,14 +1376,16 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Web-space sensory testing",
           "options": [
             "Normal sensation",
             "Altered/diminished sensation"
-          ]
+          ],
+          "expect": "Altered/diminished sensation"
         }
       ],
       "findings": [
@@ -1423,7 +1465,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1467,7 +1510,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "This app has no dedicated forefoot-loading functional test — the ankle-region Single Leg Heel Raise is used as the closest adjunct to observe foot-loading tolerance. FMA source note: Single-leg heel-raise & forefoot load reproduce pain."
@@ -1521,7 +1565,8 @@
           "options": [
             "Painless",
             "Painful at end-range"
-          ]
+          ],
+          "expect": "Painful at end-range"
         }
       ],
       "passive": [
@@ -1530,14 +1575,16 @@
           "options": [
             "Full range",
             "Most restricted — capsular pattern extension > flexion"
-          ]
+          ],
+          "expect": "Most restricted — capsular pattern extension > flexion"
         },
         {
           "label": "End-feel",
           "options": [
             "Normal/springy",
             "Hard/bony"
-          ]
+          ],
+          "expect": "Hard/bony"
         }
       ],
       "findings": [
@@ -1558,7 +1605,8 @@
         {
           "type": "number",
           "label": "1st MTP dorsiflexion",
-          "unit": "°"
+          "unit": "°",
+          "expect": "<20"
         },
         {
           "type": "choice",
@@ -1566,7 +1614,8 @@
           "options": [
             "Normal push-off",
             "Walks on lateral foot border"
-          ]
+          ],
+          "expect": "Walks on lateral foot border"
         }
       ],
       "chainEffect": "The direct match: \"severely restricted, <20° / hallux rigidus ... patient walks on lateral foot border\" is this app's own description of this exact condition."
@@ -1632,7 +1681,8 @@
           "options": [
             "Normal",
             "Weak/painful (plantar plate/FHL involvement)"
-          ]
+          ],
+          "expect": "Weak/painful (plantar plate/FHL involvement)"
         }
       ],
       "passive": [
@@ -1641,7 +1691,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1738,7 +1789,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1774,7 +1826,8 @@
           "options": [
             "Normal",
             "Deficit — possible secondary instability"
-          ]
+          ],
+          "expect": "Deficit — possible secondary instability"
         }
       ],
       "note": "No dedicated midfoot FMA test exists in this app's library — Single Leg Balance can surface secondary instability once acute pain allows. FMA source note: Midfoot stress / piano-key & single-leg load reproduce pain."

@@ -70,7 +70,8 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         }
       ],
       "chainEffect": "Rotation is the most thoracic-sensitive plane per Magee; restriction here forces lumbar over-rotation (disc injury risk) and cervical/shoulder overload above."
@@ -84,7 +85,8 @@
           "options": [
             "Local, reproducible restriction",
             "Global restriction (see T10)"
-          ]
+          ],
+          "expect": "Local, reproducible restriction"
         }
       ],
       "note": "Expect a local, reproducible restriction rather than the global pattern seen in T10."
@@ -176,7 +178,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Layered on a standard neurological screen when referred arm heaviness/tingling co-exists."
@@ -266,7 +269,8 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         }
       ],
       "chainEffect": "The direct match: asymmetric expansion or a specific tender/hypomobile rib angle on PA spring test."
@@ -280,7 +284,8 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         }
       ],
       "note": "The same test as Rib Springing above, named as the app's functional screen entry."
@@ -375,7 +380,8 @@
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         }
       ],
       "chainEffect": "First-rib elevation and asymmetric expansion overlap directly with TOS mechanics; cross-check the Cervical Rotation Mobility chain too."
@@ -389,7 +395,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Cross-reference cervical ULNT1/Adson's."
@@ -462,7 +469,8 @@
           "options": [
             "Normal",
             "Restricted — fixed, non-correctable"
-          ]
+          ],
+          "expect": "Restricted — fixed, non-correctable"
         }
       ],
       "chainEffect": "The fixed, non-correctable restriction over the foam roller is the key kinetic-chain finding distinguishing this from postural (T06) kyphosis."
@@ -476,7 +484,8 @@
           "options": [
             "Corrects under load",
             "Fixed — does not correct"
-          ]
+          ],
+          "expect": "Fixed — does not correct"
         }
       ],
       "note": "Document the fixed kyphosis at rest and under extension load."
@@ -552,7 +561,8 @@
           "options": [
             "Normal",
             "Restricted — correctable"
-          ]
+          ],
+          "expect": "Restricted — correctable"
         }
       ],
       "chainEffect": "Expect a mildly restricted but correctable pattern (postural, not fixed); this drives forward-head posture."
@@ -659,7 +669,8 @@
           "options": [
             "Symmetric",
             "Asymmetric"
-          ]
+          ],
+          "expect": "Asymmetric"
         }
       ],
       "note": "Alongside the Adam's forward-bend/skyline observation above."
@@ -743,7 +754,8 @@
           "options": [
             "Normal",
             "Restricted / provocative"
-          ]
+          ],
+          "expect": "Restricted / provocative"
         }
       ],
       "note": "Adapted to the anterior chest wall rather than the standard posterior rib-angle spring test."
@@ -860,7 +872,8 @@
           "options": [
             "Absent",
             "Present"
-          ]
+          ],
+          "expect": "Present"
         }
       ],
       "note": "Scapulothoracic control quality is the relevant functional test since these are scapular muscles."
@@ -940,7 +953,8 @@
           "options": [
             "Normal",
             "Severely restricted — bilateral, symmetric"
-          ]
+          ],
+          "expect": "Severely restricted — bilateral, symmetric"
         }
       ],
       "chainEffect": "The library explicitly flags \"severely restricted, bilateral, symmetric\" rotation as a prompt to consider ankylosing spondylitis."
@@ -954,7 +968,8 @@
           "options": [
             "Normal",
             "Reduced"
-          ]
+          ],
+          "expect": "Reduced"
         },
         {
           "type": "choice",
@@ -962,7 +977,8 @@
           "options": [
             "Normal",
             "Globally restricted"
-          ]
+          ],
+          "expect": "Globally restricted"
         }
       ],
       "note": "Reduced chest expansion on the rib screen is a hallmark AS finding alongside global AROM restriction."

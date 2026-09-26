@@ -50,7 +50,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Weak + Painless"
         }
       ],
       "passive": [
@@ -59,7 +60,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -86,7 +88,8 @@
           "options": [
             "Absent",
             "Present — dynamic valgus pattern"
-          ]
+          ],
+          "expect": "Present — dynamic valgus pattern"
         }
       ],
       "chainEffect": "Dynamic valgus on squat/single-leg squat/landing is explicitly documented as \"the most common pattern in female ACL injuries\"; driven by ankle DF + glute med, not the knee itself."
@@ -100,7 +103,8 @@
           "options": [
             "Good mechanics, no valgus collapse",
             "Dynamic valgus / poor landing mechanics"
-          ]
+          ],
+          "expect": "Dynamic valgus / poor landing mechanics"
         }
       ],
       "note": "The named return-to-sport functional screen for this exact injury (dynamic valgus + landing mechanics + ACL risk). FMA source note: Lachman/pivot reproduced in function; single-leg hop confidence."
@@ -164,7 +168,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -191,7 +196,8 @@
           "options": [
             "Present (normal)",
             "Absent — disturbed screw-home pattern"
-          ]
+          ],
+          "expect": "Absent — disturbed screw-home pattern"
         }
       ],
       "chainEffect": "PCL laxity can disturb terminal-extension screw-home; check for an \"absent screw-home\" pattern."
@@ -205,7 +211,8 @@
           "options": [
             "Symmetric, comfortable",
             "Discomfort / asymmetry noted"
-          ]
+          ],
+          "expect": "Discomfort / asymmetry noted"
         }
       ],
       "note": "No PCL-specific named functional test exists in this app's library; rely on the joint-play STTT test above as primary. FMA source note: Posterior-drawer load reproduced in function; downhill/decline discomfort."
@@ -272,7 +279,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -281,7 +289,8 @@
           "options": [
             "No joint-line pain/click",
             "Reproduces joint-line pain/click"
-          ]
+          ],
+          "expect": "Reproduces joint-line pain/click"
         }
       ],
       "findings": [
@@ -308,7 +317,8 @@
           "options": [
             "No joint-line pain",
             "Reproduces joint-line pain"
-          ]
+          ],
+          "expect": "Reproduces joint-line pain"
         }
       ],
       "chainEffect": "Passive IR/ER at 90° reproducing joint-line pain is the direct kinetic-chain correlate of a meniscal lesion."
@@ -322,7 +332,8 @@
           "options": [
             "No joint-line pain",
             "Reproduces joint-line pain"
-          ]
+          ],
+          "expect": "Reproduces joint-line pain"
         }
       ],
       "note": "Deep flexion loading reproducing joint-line pain is the functional equivalent of McMurray-type provocation. FMA source note: McMurray/Thessaly & deep squat reproduce joint-line pain."
@@ -375,7 +386,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -384,7 +396,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -415,7 +428,8 @@
           "options": [
             "No gapping",
             "Gapping present — graded laxity"
-          ]
+          ],
+          "expect": "Gapping present — graded laxity"
         }
       ],
       "chainEffect": "The direct match, including its manual valgus-stress component at 0°/30° used to grade MCL laxity."
@@ -429,7 +443,8 @@
           "options": [
             "No medial pain",
             "Reproduces medial pain"
-          ]
+          ],
+          "expect": "Reproduces medial pain"
         }
       ],
       "note": "Sagittal loading with a valgus-stress component if cutting/lateral movement provokes the medial pain. FMA source note: Valgus stress (0°/30°) & cutting reproduce medial pain."
@@ -482,7 +497,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -491,7 +507,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -526,7 +543,8 @@
           "options": [
             "No lateral pain",
             "Reproduces lateral pain"
-          ]
+          ],
+          "expect": "Reproduces lateral pain"
         }
       ],
       "note": "A general sagittal-plane screen; no LCL-specific named functional test exists in this app's library. FMA source note: Varus stress & lateral loading reproduce pain."
@@ -596,7 +614,8 @@
           "options": [
             "VMO/VL balanced firing",
             "VL fires before/dominates VMO"
-          ]
+          ],
+          "expect": "VL fires before/dominates VMO"
         }
       ],
       "passive": [
@@ -605,7 +624,8 @@
           "options": [
             "Central tracking",
             "Lateral bias / tight lateral retinaculum"
-          ]
+          ],
+          "expect": "Lateral bias / tight lateral retinaculum"
         }
       ],
       "findings": [
@@ -636,7 +656,8 @@
           "options": [
             "Central/normal",
             "Laterally biased, tight lateral retinaculum"
-          ]
+          ],
+          "expect": "Laterally biased, tight lateral retinaculum"
         }
       ],
       "chainEffect": "The direct match: \"laterally biased, tight lateral retinaculum\" is explicitly linked in the app's own data to \"CPA: VMO inhibited → VL overactive.\""
@@ -649,6 +670,11 @@
           "label": "Pain onset angle (30/60/90° knee flexion)",
           "options": [
             "No pain through range",
+            "Pain onset at 30°",
+            "Pain onset at 60°",
+            "Pain onset at 90°"
+          ],
+          "expect": [
             "Pain onset at 30°",
             "Pain onset at 60°",
             "Pain onset at 90°"
@@ -713,7 +739,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -740,7 +767,8 @@
           "options": [
             "Not restricted",
             "Restricted — affects load line"
-          ]
+          ],
+          "expect": "Restricted — affects load line"
         }
       ],
       "chainEffect": "Can be checked as an adjunct (retinacular tension affects tendon load line), but isn't primary here — the eccentric loading functional screen below is more direct."
@@ -754,7 +782,8 @@
           "options": [
             "No tendon pain reproduced",
             "Reproduces tendon load pain"
-          ]
+          ],
+          "expect": "Reproduces tendon load pain"
         }
       ],
       "note": "The named functional test for reproducing tendon load pain. FMA source note: Decline single-leg squat loads and reproduces tendon pain."
@@ -817,7 +846,8 @@
           "options": [
             "Painless",
             "Painful — screen for secondary tendinopathy"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -826,21 +856,24 @@
           "options": [
             "Full",
             "Restricted — capsular pattern (flexion >> extension)"
-          ]
+          ],
+          "expect": "Restricted — capsular pattern (flexion >> extension)"
         },
         {
           "label": "End-feel",
           "options": [
             "Normal/springy",
             "Capsular/leathery"
-          ]
+          ],
+          "expect": "Capsular/leathery"
         },
         {
           "label": "Patellar mobility",
           "options": [
             "Normal",
             "Reduced (crepitus)"
-          ]
+          ],
+          "expect": "Reduced (crepitus)"
         }
       ],
       "findings": [
@@ -873,14 +906,16 @@
           "options": [
             "Normal",
             "Reduced, crepitus present"
-          ]
+          ],
+          "expect": "Reduced, crepitus present"
         },
         {
           "label": "Tibial rotation",
           "options": [
             "Normal",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         }
       ],
       "chainEffect": "Crepitus with passive glide and restricted rotation both corroborate the capsular/degenerative picture."
@@ -893,6 +928,10 @@
           "label": "Pain onset angle and compensation strategy",
           "options": [
             "No compensation, comfortable through range",
+            "Heel-rise compensation",
+            "Trunk-lean compensation"
+          ],
+          "expect": [
             "Heel-rise compensation",
             "Trunk-lean compensation"
           ]
@@ -948,7 +987,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -957,7 +997,8 @@
           "options": [
             "Negative",
             "Positive — reproduces lateral knee pain with Noble compression"
-          ]
+          ],
+          "expect": "Positive — reproduces lateral knee pain with Noble compression"
         }
       ],
       "findings": [
@@ -988,7 +1029,8 @@
           "options": [
             "Normal IR",
             "Restricted tibial IR — lateral chain tightness"
-          ]
+          ],
+          "expect": "Restricted tibial IR — lateral chain tightness"
         }
       ],
       "chainEffect": "Explicitly documented: \"restricted tibial IR, lateral chain tightness... biceps femoris and IT band restricting IR.\""
@@ -1002,7 +1044,8 @@
           "options": [
             "No lateral pain reproduced",
             "Reproduces lateral knee pain"
-          ]
+          ],
+          "expect": "Reproduces lateral knee pain"
         }
       ],
       "note": "ITBFS is classically provoked by repetitive knee flexion-extension under eccentric load, which this test reproduces directly. FMA source note: Noble/Ober positive; single-leg squat shows valgus."

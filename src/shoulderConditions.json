@@ -65,7 +65,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -111,6 +112,10 @@
             "Normal 2:1 GH:scapular ratio",
             "Upper trap dominant",
             "Serratus deficit, medial winging"
+          ],
+          "expect": [
+            "Upper trap dominant",
+            "Serratus deficit, medial winging"
           ]
         }
       ],
@@ -125,7 +130,8 @@
           "options": [
             "Normal scapulohumeral rhythm",
             "Abnormal rhythm / early shrug"
-          ]
+          ],
+          "expect": "Abnormal rhythm / early shrug"
         },
         {
           "type": "choice",
@@ -134,7 +140,8 @@
             "No painful arc",
             "Painful mid-arc (60–120°)",
             "Painful at top of range (full 180°)"
-          ]
+          ],
+          "expect": "Painful mid-arc (60–120°)"
         }
       ],
       "note": "Combined scapulohumeral-rhythm and subacromial screen, with the arc test isolating the painful-arc zone. FMA source note: Scapular-assist / retraction test eases the arc; overhead reach."
@@ -204,7 +211,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         },
         {
           "label": "Resisted External Rotation",
@@ -213,7 +221,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -222,7 +231,8 @@
           "options": [
             "Full and painless",
             "Restricted and/or painful"
-          ]
+          ],
+          "expect": "Full and painless"
         }
       ],
       "findings": [
@@ -255,6 +265,10 @@
             "Normal 2:1 GH:scapular ratio",
             "Upper trap dominant",
             "Serratus deficit, medial winging"
+          ],
+          "expect": [
+            "Upper trap dominant",
+            "Serratus deficit, medial winging"
           ]
         }
       ],
@@ -270,7 +284,8 @@
             "No painful arc",
             "Painful mid-arc (60–120°)",
             "Painful at top of range (full 180°)"
-          ]
+          ],
+          "expect": "Painful mid-arc (60–120°)"
         }
       ],
       "note": "The painful-arc test is the direct functional correlate of tendon irritability under load. FMA source note: Load-and-shift / resisted-hold reproduces pain, not weakness."
@@ -328,12 +343,20 @@
             "Strong + Painless",
             "Weak + Painful (partial tear)",
             "Weak + Painless (complete rupture)"
+          ],
+          "expect": [
+            "Weak + Painful (partial tear)",
+            "Weak + Painless (complete rupture)"
           ]
         },
         {
           "label": "Resisted External Rotation",
           "options": [
             "Strong + Painless",
+            "Weak + Painful (partial tear)",
+            "Weak + Painless (complete rupture)"
+          ],
+          "expect": [
             "Weak + Painful (partial tear)",
             "Weak + Painless (complete rupture)"
           ]
@@ -345,7 +368,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -380,7 +404,8 @@
           "options": [
             "Normal 2:1 GH:scapular ratio",
             "Combined pattern — upper-trap dominance + serratus winging"
-          ]
+          ],
+          "expect": "Combined pattern — upper-trap dominance + serratus winging"
         }
       ],
       "chainEffect": "Expect the \"combined pattern\" (upper-trap dominance + serratus winging together), reflecting established, more severe dyskinesis."
@@ -394,7 +419,8 @@
           "options": [
             "Sustains elevation",
             "Functional drop / cannot sustain elevation"
-          ]
+          ],
+          "expect": "Functional drop / cannot sustain elevation"
         },
         {
           "type": "choice",
@@ -402,7 +428,8 @@
           "options": [
             "Normal reach",
             "Reduced reach"
-          ]
+          ],
+          "expect": "Reduced reach"
         }
       ],
       "note": "Cross-check with Apley Scratch for overall reach loss."
@@ -456,7 +483,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -465,21 +493,24 @@
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Passive Abduction",
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "Passive Internal Rotation",
           "options": [
             "Full",
             "Restricted"
-          ]
+          ],
+          "expect": "Restricted"
         },
         {
           "label": "End-feel",
@@ -488,7 +519,8 @@
             "Capsular",
             "Hard/bony",
             "Empty"
-          ]
+          ],
+          "expect": "Capsular"
         }
       ],
       "findings": [
@@ -516,7 +548,8 @@
           "options": [
             "Normal range",
             "Severely restricted (<30°), all planes restricted (capsular pattern ER>Abd>IR)"
-          ]
+          ],
+          "expect": "Severely restricted (<30°), all planes restricted (capsular pattern ER>Abd>IR)"
         }
       ],
       "chainEffect": "Severely restricted (<30°), all planes restricted (capsular pattern ER>Abd>IR)... Adhesive capsulitis likely."
@@ -530,7 +563,8 @@
           "options": [
             "Normal (T7 or above)",
             "Restricted to L1–L5 or below buttock"
-          ]
+          ],
+          "expect": "Restricted to L1–L5 or below buttock"
         }
       ],
       "note": "The functional correlate of severe GIRD. FMA source note: Every functional reach (hair, back-pocket) globally limited."
@@ -594,7 +628,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -603,7 +638,8 @@
           "options": [
             "No localized AC pain",
             "Reproduces localized AC pain"
-          ]
+          ],
+          "expect": "Reproduces localized AC pain"
         }
       ],
       "findings": [
@@ -635,7 +671,8 @@
             "No painful arc",
             "Painful mid-arc (60–120°)",
             "Painful at top of range (full 180°)"
-          ]
+          ],
+          "expect": "Painful at top of range (full 180°)"
         }
       ],
       "note": "Pain specifically AT THE TOP of the arc (full 180°) — rather than the mid-arc 60–120° zone — is the AC-joint-specific finding on this same functional test."
@@ -701,7 +738,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         },
         {
           "label": "Resisted Shoulder Flexion",
@@ -710,7 +748,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -746,7 +785,8 @@
           "options": [
             "Painless",
             "Reproduces groove pain"
-          ]
+          ],
+          "expect": "Reproduces groove pain"
         },
         {
           "type": "choice",
@@ -754,7 +794,8 @@
           "options": [
             "Absent",
             "Present — suggests labral component"
-          ]
+          ],
+          "expect": "Present — suggests labral component"
         }
       ],
       "note": "A catching sensation on Apley Scratch during rotation suggests a labral component. FMA source note: Resisted elevation / O'Brien functional load, catching with rotation."
@@ -816,7 +857,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -825,7 +867,8 @@
           "options": [
             "Normal range",
             "Excessive range, soft/hypermobile end-feel"
-          ]
+          ],
+          "expect": "Excessive range, soft/hypermobile end-feel"
         }
       ],
       "findings": [
@@ -856,7 +899,8 @@
           "options": [
             "Normal range",
             "Excessive range / soft end-feel (mirror image of frozen-shoulder finding)"
-          ]
+          ],
+          "expect": "Excessive range / soft end-feel (mirror image of frozen-shoulder finding)"
         }
       ],
       "chainEffect": "Here checking for EXCESSIVE range/soft end-feel rather than restriction — the mirror image of the frozen-shoulder finding."
@@ -870,7 +914,8 @@
           "options": [
             "Normal reach",
             "Excessive ER reach with apprehension near end-range"
-          ]
+          ],
+          "expect": "Excessive ER reach with apprehension near end-range"
         }
       ],
       "note": "Anterior instability often shows excessive ER reach with apprehension near end-range. FMA source note: Apprehension/relocation in function, feeling of \"coming out\"."
@@ -926,7 +971,8 @@
             "Strong + Painless",
             "Strong + Severely Painful",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Severely Painful"
         }
       ],
       "passive": [
@@ -935,7 +981,8 @@
           "options": [
             "Full and comfortable",
             "Markedly guarded/painful"
-          ]
+          ],
+          "expect": "Markedly guarded/painful"
         }
       ],
       "findings": [
@@ -957,7 +1004,8 @@
           "options": [
             "Normal",
             "Acute guarding — pseudo-frozen-shoulder rhythm"
-          ]
+          ],
+          "expect": "Acute guarding — pseudo-frozen-shoulder rhythm"
         }
       ],
       "chainEffect": "Expect acute guarding producing a pseudo-frozen-shoulder rhythm rather than a fixed motor-control fault."
@@ -971,7 +1019,8 @@
           "options": [
             "Full, comfortable elevation",
             "Marked painful restriction of active elevation"
-          ]
+          ],
+          "expect": "Marked painful restriction of active elevation"
         }
       ],
       "note": "Consistent with the acute irritable phase. FMA source note: Marked painful restriction of active elevation."
@@ -1028,7 +1077,8 @@
           "options": [
             "Painless",
             "Painful (screen for secondary cuff lesion)"
-          ]
+          ],
+          "expect": "Painless"
         }
       ],
       "passive": [
@@ -1037,14 +1087,16 @@
           "options": [
             "Full",
             "Restricted proportionally (capsular)"
-          ]
+          ],
+          "expect": "Restricted proportionally (capsular)"
         },
         {
           "label": "End-feel",
           "options": [
             "Soft capsular (adhesive capsulitis)",
             "Hard/bony (osteoarthritis)"
-          ]
+          ],
+          "expect": "Hard/bony (osteoarthritis)"
         }
       ],
       "findings": [
@@ -1073,7 +1125,8 @@
             "Normal range",
             "Restricted — HARD/bony end-feel (OA)",
             "Restricted — soft capsular end-feel (adhesive capsulitis, for comparison)"
-          ]
+          ],
+          "expect": "Restricted — HARD/bony end-feel (OA)"
         }
       ],
       "chainEffect": "Same capsular-pattern restriction as adhesive capsulitis, but with a HARD/bony rather than soft capsular end-feel."
@@ -1087,7 +1140,8 @@
           "options": [
             "Normal reach",
             "Restricted — crepitus / bony quality at end-range"
-          ]
+          ],
+          "expect": "Restricted — crepitus / bony quality at end-range"
         }
       ],
       "note": "Same test as adhesive capsulitis, but expect crepitus/a bony quality at end-range rather than a soft capsular stop."
@@ -1141,14 +1195,16 @@
           "options": [
             "Painless / normal strength",
             "Painful / weak"
-          ]
+          ],
+          "expect": "Painless / normal strength"
         },
         {
           "label": "Cervical resisted tests / Spurling's",
           "options": [
             "Negative",
             "Positive — reproduces the pain"
-          ]
+          ],
+          "expect": "Positive — reproduces the pain"
         }
       ],
       "passive": [],
@@ -1176,7 +1232,8 @@
           "options": [
             "Normal",
             "Hypomobile"
-          ]
+          ],
+          "expect": "Hypomobile"
         }
       ],
       "chainEffect": "CT junction hypomobility with arm symptoms is a real alternate driver of \"shoulder\" pain, via brachial-plexus tension or first-rib elevation."

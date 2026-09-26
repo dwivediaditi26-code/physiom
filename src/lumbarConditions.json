@@ -77,7 +77,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -87,7 +88,8 @@
             "Normal/mild stiffness",
             "Hypermobile",
             "Hypomobile/rigid"
-          ]
+          ],
+          "expect": "Normal/mild stiffness"
         }
       ],
       "findings": [
@@ -115,6 +117,10 @@
             "Normal",
             "Mild TA drawing-in deficit",
             "Positive prone instability test"
+          ],
+          "expect": [
+            "Normal",
+            "Mild TA drawing-in deficit"
           ]
         }
       ],
@@ -129,7 +135,8 @@
           "options": [
             "Hip-hinge dominant",
             "Lumbar-dominant"
-          ]
+          ],
+          "expect": "Lumbar-dominant"
         }
       ],
       "note": "The general hip-hinge-vs-lumbar-dominant strategy screen; a lumbar-dominant rise pattern here corroborates the TA/erector CPA finding."
@@ -209,21 +216,24 @@
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "L5 myotome (EHL)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         },
         {
           "label": "S1 myotome (calf)",
           "options": [
             "Normal",
             "Weak"
-          ]
+          ],
+          "expect": "Weak"
         }
       ],
       "passive": [
@@ -232,7 +242,8 @@
           "options": [
             "No leg symptoms reproduced",
             "Reproduces leg symptoms"
-          ]
+          ],
+          "expect": "Reproduces leg symptoms"
         }
       ],
       "findings": [
@@ -260,7 +271,8 @@
             "Normal",
             "Aberrant movement / painful arc",
             "Lateral trunk shift reducing on return"
-          ]
+          ],
+          "expect": "Lateral trunk shift reducing on return"
         }
       ],
       "chainEffect": "Watch for the \"aberrant movement, painful arc\" pattern — a lateral trunk shift on forward bending that reduces on return is explicitly documented as indicating disc herniation."
@@ -275,7 +287,8 @@
             "Absent",
             "Present, reduces on return",
             "Present, does not reduce"
-          ]
+          ],
+          "expect": "Present, reduces on return"
         }
       ],
       "note": "The direct McKenzie-style functional correlate of this condition."
@@ -352,7 +365,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -361,14 +375,16 @@
           "options": [
             "No pain",
             "Reproduces local pain, capsular end-feel"
-          ]
+          ],
+          "expect": "Reproduces local pain, capsular end-feel"
         },
         {
           "label": "PA spring test at the level",
           "options": [
             "Normal",
             "Hypomobile/painful"
-          ]
+          ],
+          "expect": "Hypomobile/painful"
         }
       ],
       "findings": [
@@ -396,7 +412,8 @@
           "options": [
             "Normal",
             "Stiff — forcing lumbar load-bearing rotation"
-          ]
+          ],
+          "expect": "Stiff — forcing lumbar load-bearing rotation"
         }
       ],
       "chainEffect": "A stiff thoracic spine forcing lumbar load-bearing rotation can drive facet loading — check thoracic rotation before treating the facet in isolation."
@@ -410,7 +427,8 @@
           "options": [
             "Non-provocative",
             "Provokes facet-level pain"
-          ]
+          ],
+          "expect": "Provokes facet-level pain"
         }
       ],
       "note": "Watch the return-to-stand (extension) phase specifically, since facet loading is most provoked there."
@@ -484,7 +502,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painless"
         }
       ],
       "passive": [
@@ -493,14 +512,16 @@
           "options": [
             "Relieves symptoms",
             "Reproduces leg symptoms (canal narrows)"
-          ]
+          ],
+          "expect": "Reproduces leg symptoms (canal narrows)"
         },
         {
           "label": "Passive flexion",
           "options": [
             "Reproduces leg symptoms",
             "Relieves symptoms"
-          ]
+          ],
+          "expect": "Relieves symptoms"
         }
       ],
       "findings": [
@@ -532,7 +553,8 @@
           "options": [
             "Flexion-biased postures relieve",
             "Extension provokes"
-          ]
+          ],
+          "expect": "Flexion-biased postures relieve"
         }
       ],
       "chainEffect": "Expect the inverse of the disc pattern: flexion-biased postures relieve, extension provokes; a McKenzie flexion preference here fits stenosis rather than herniation."
@@ -546,7 +568,8 @@
           "options": [
             "Well tolerated",
             "Poorly tolerated"
-          ]
+          ],
+          "expect": "Well tolerated"
         }
       ],
       "note": "Assess tolerance for a flexion-biased loading strategy, since gait-based bicycle/stoop provocation (STTT above) isn't part of this app's seated/standing functional screen set."
@@ -629,7 +652,8 @@
           "options": [
             "Painless",
             "Painful (secondary — glute med/involved musculature)"
-          ]
+          ],
+          "expect": "Painful (secondary — glute med/involved musculature)"
         }
       ],
       "passive": [],
@@ -661,7 +685,8 @@
           "options": [
             "No change",
             "Improves with compression (positive force-closure sign)"
-          ]
+          ],
+          "expect": "Improves with compression (positive force-closure sign)"
         }
       ],
       "chainEffect": "Manual ASIS compression improving the ASLR is the direct documented sign of an SIJ force-closure deficit."
@@ -742,7 +767,8 @@
           "options": [
             "Strong, well-controlled",
             "Strong but poorly controlled (instability catch)"
-          ]
+          ],
+          "expect": "Strong but poorly controlled (instability catch)"
         }
       ],
       "passive": [
@@ -751,7 +777,8 @@
           "options": [
             "Normal",
             "Hypermobile segment"
-          ]
+          ],
+          "expect": "Hypermobile segment"
         }
       ],
       "findings": [
@@ -778,7 +805,8 @@
           "options": [
             "Normal",
             "Positive — instability confirmed"
-          ]
+          ],
+          "expect": "Positive — instability confirmed"
         }
       ],
       "chainEffect": "The direct match: prone instability test, ASLR, and abdominal drawing-in are this app's own instability battery."
@@ -792,7 +820,8 @@
           "options": [
             "Pass",
             "Fail"
-          ]
+          ],
+          "expect": "Fail"
         },
         {
           "type": "choice",
@@ -800,7 +829,8 @@
           "options": [
             "Pass",
             "Fail"
-          ]
+          ],
+          "expect": "Fail"
         }
       ],
       "note": "The two generic core-stability screens most directly relevant to a diagnosed instability."
@@ -870,7 +900,8 @@
           "options": [
             "Painless",
             "Reproduces pain at the pars/slip level"
-          ]
+          ],
+          "expect": "Reproduces pain at the pars/slip level"
         }
       ],
       "passive": [
@@ -879,7 +910,8 @@
           "options": [
             "Non-provocative",
             "Most provocative movement"
-          ]
+          ],
+          "expect": "Most provocative movement"
         }
       ],
       "findings": [
@@ -906,14 +938,16 @@
           "options": [
             "Normal",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Extension-provoked pain",
           "options": [
             "Absent",
             "Present"
-          ]
+          ],
+          "expect": "Present"
         }
       ],
       "chainEffect": "The prone instability test at the slip level, plus watching for extension-provoked pain (the stork-test principle applied functionally)."
@@ -927,7 +961,8 @@
           "options": [
             "Absent",
             "Present"
-          ]
+          ],
+          "expect": "Present"
         }
       ],
       "note": "Note any pain specifically on the extension/return phase, mirroring the Stork test's single-leg hyperextension provocation."
@@ -997,7 +1032,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -1006,7 +1042,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painful"
         }
       ],
       "findings": [
@@ -1033,7 +1070,8 @@
           "options": [
             "Guarded, direction-specific (pain-limited)",
             "True motor-control fault"
-          ]
+          ],
+          "expect": "Guarded, direction-specific (pain-limited)"
         }
       ],
       "chainEffect": "Expect a guarded, direction-specific restriction (pain-limited, not a true motor-control fault); reassess as the strain settles."
@@ -1047,7 +1085,8 @@
           "options": [
             "Guarded",
             "Normal hip-hinge"
-          ]
+          ],
+          "expect": "Guarded"
         }
       ],
       "note": "Document the guarded rise strategy at baseline to track recovery of a normal hip-hinge pattern."
@@ -1116,7 +1155,8 @@
           "options": [
             "Reproduces referred (not true) pain, no true weakness",
             "Normal"
-          ]
+          ],
+          "expect": "Reproduces referred (not true) pain, no true weakness"
         }
       ],
       "passive": [],
@@ -1147,7 +1187,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Check whether a lumbar-flexion-dominant strategy is loading these exact muscles, consistent with the CPA finding above."
@@ -1212,7 +1253,8 @@
           "options": [
             "Painless (early)",
             "Painful"
-          ]
+          ],
+          "expect": "Painless (early)"
         }
       ],
       "passive": [
@@ -1221,7 +1263,8 @@
           "options": [
             "Uniformly restricted, non-capsular",
             "Normal"
-          ]
+          ],
+          "expect": "Uniformly restricted, non-capsular"
         }
       ],
       "findings": [
@@ -1243,7 +1286,8 @@
           "options": [
             "Directional preference (as in L01–L09)",
             "Global, non-directional restriction"
-          ]
+          ],
+          "expect": "Global, non-directional restriction"
         }
       ],
       "chainEffect": "Expect GLOBAL, non-directional restriction rather than the directional preference seen in L01–L09."
@@ -1257,7 +1301,8 @@
           "options": [
             "Symmetric, globally reduced",
             "Specific direction of preference"
-          ]
+          ],
+          "expect": "Symmetric, globally reduced"
         }
       ],
       "note": "Both should show symmetric, globally reduced range rather than a specific direction of preference."

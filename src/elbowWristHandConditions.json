@@ -51,7 +51,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -84,6 +85,10 @@
             "Stable, no compensation",
             "Mild winging / early elevation",
             "Marked winging / substitution pattern"
+          ],
+          "expect": [
+            "Mild winging / early elevation",
+            "Marked winging / substitution pattern"
           ]
         }
       ],
@@ -98,7 +103,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "The named functional screen for exactly this condition. FMA source note: Resisted wrist extension (Cozen's/Mill's) & gripping reproduce pain."
@@ -147,7 +153,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -179,7 +186,8 @@
           "options": [
             "Balanced",
             "Extensors relatively weak / inhibited"
-          ]
+          ],
+          "expect": "Extensors relatively weak / inhibited"
         }
       ],
       "chainEffect": "Overactive wrist flexors are frequently paired with inhibited wrist extensors — confirming extensor weakness points to a forearm muscle-balance driver worth correcting alongside the medial-sided treatment."
@@ -193,7 +201,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "This screen directly names \"Golfer's Elbow\" as one of its target conditions. FMA source note: Resisted wrist flexion/pronation reproduce medial pain."
@@ -242,6 +251,10 @@
             "Strong + Painful (tendinopathy)",
             "Weak + Painless with palpable gap/Popeye deformity (rupture)",
             "Strong + Painless"
+          ],
+          "expect": [
+            "Strong + Painful (tendinopathy)",
+            "Weak + Painless with palpable gap/Popeye deformity (rupture)"
           ]
         }
       ],
@@ -251,7 +264,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -278,7 +292,8 @@
           "options": [
             "Normal cuff recruitment",
             "Compensatory cuff overactivity / substitution"
-          ]
+          ],
+          "expect": "Compensatory cuff overactivity / substitution"
         }
       ],
       "chainEffect": "Proximal rotator-cuff overactivity compensating for shoulder weakness can shift load distally onto the biceps tendon — screen the shoulder before assuming the distal tendon is the sole driver (not applicable once rupture is confirmed structurally)."
@@ -345,7 +360,8 @@
           "options": [
             "Generally painless (non-contractile)",
             "Painful"
-          ]
+          ],
+          "expect": "Generally painless (non-contractile)"
         }
       ],
       "passive": [
@@ -354,11 +370,16 @@
           "options": [
             "Full range",
             "Restricted — capsular pattern (flexion > extension)"
-          ]
+          ],
+          "expect": "Restricted — capsular pattern (flexion > extension)"
         },
         {
           "label": "End-feel",
           "options": [
+            "Hard/bony",
+            "Springy (loose bodies present)"
+          ],
+          "expect": [
             "Hard/bony",
             "Springy (loose bodies present)"
           ]
@@ -384,7 +405,8 @@
           "options": [
             "Full reach, no compensation",
             "Shoulder/wrist compensates for lost elbow extension"
-          ]
+          ],
+          "expect": "Shoulder/wrist compensates for lost elbow extension"
         }
       ],
       "chainEffect": "A fixed-flexion elbow posture forces the shoulder and wrist to compensate for lost terminal extension during reaching — an abnormal finding here flags a compensatory overload pattern developing above or below the arthritic joint."
@@ -470,7 +492,8 @@
           "options": [
             "Usually painless",
             "Painful (direct posterior pressure loading the bursa)"
-          ]
+          ],
+          "expect": "Painful (direct posterior pressure loading the bursa)"
         }
       ],
       "passive": [],
@@ -494,7 +517,8 @@
           "options": [
             "Minimal / none",
             "Frequent, prolonged direct pressure"
-          ]
+          ],
+          "expect": "Frequent, prolonged direct pressure"
         }
       ],
       "chainEffect": "Bursitis is a direct-pressure/friction problem rather than a joint-mobility one — this screen simply flags the repetitive elbow-loading habit (desk, armrest) perpetuating the bursal irritation, to be addressed alongside local treatment."
@@ -554,7 +578,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -563,7 +588,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -590,7 +616,8 @@
           "options": [
             "Normal recruitment",
             "Protective overactivity (guarding a lax UCL)"
-          ]
+          ],
+          "expect": "Protective overactivity (guarding a lax UCL)"
         }
       ],
       "chainEffect": "The flexor-pronator mass often becomes protectively overactive to dynamically support a lax UCL — confirming overactivity here, once the acute phase allows loading, indicates a secondary stabilizer taking over for the ligament."
@@ -604,7 +631,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "type": "choice",
@@ -612,7 +640,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "note": "Includes both the standard valgus stress test and the Moving Valgus Stress Test (MVST) — the direct named match for this condition."
@@ -679,7 +708,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -706,7 +736,8 @@
           "options": [
             "No reproduction",
             "Paraesthesia / ulnar-nerve symptoms reproduced"
-          ]
+          ],
+          "expect": "Paraesthesia / ulnar-nerve symptoms reproduced"
         }
       ],
       "chainEffect": "Sustained elbow flexion narrows the cubital tunnel and reproduces ulnar-nerve symptoms when the nerve is compressed there — a positive finding differentiates this neurological grip/intrinsic inhibition from a simple overuse pattern."
@@ -720,7 +751,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "This setup explicitly includes \"cubital tunnel Tinel's (medial) and resisted elbow flexion\" — the direct named match."
@@ -769,7 +801,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         },
         {
           "label": "Resisted Wrist Extension",
@@ -778,7 +811,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         },
         {
           "label": "Resisted Middle-Finger Extension",
@@ -787,7 +821,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [],
@@ -815,7 +850,8 @@
           "options": [
             "Painless",
             "Reproduces lateral forearm pain (radial nerve distribution)"
-          ]
+          ],
+          "expect": "Reproduces lateral forearm pain (radial nerve distribution)"
         }
       ],
       "chainEffect": "This isolates the same wrist-extensor group tested in lateral epicondylalgia, but a positive finding here — pain following the radial nerve's distribution rather than staying local to the epicondyle — flags a neural rather than pure tendinopathic driver."
@@ -829,7 +865,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "This app's ULNT2 test explicitly distinguishes a median bias (2a) from a radial bias (2b), matching this specific nerve."
@@ -881,6 +918,10 @@
             "Strong + Painless",
             "Reproduces forearm pain",
             "Reproduces median-nerve tingling"
+          ],
+          "expect": [
+            "Reproduces forearm pain",
+            "Reproduces median-nerve tingling"
           ]
         },
         {
@@ -899,7 +940,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -927,7 +969,8 @@
           "options": [
             "Balanced",
             "Pronator-dominant / supinator inhibited"
-          ]
+          ],
+          "expect": "Pronator-dominant / supinator inhibited"
         }
       ],
       "chainEffect": "Pronator teres overactivity compressing the median nerve is often paired with a relatively inhibited biceps/supinator group — confirming this imbalance supports treating the antagonist pairing, not just releasing the pronator."
@@ -951,7 +994,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Cross-references the proximal median entrapment against distal carpal tunnel syndrome by symptom location."
@@ -1007,7 +1051,8 @@
           "options": [
             "Usually preserved early",
             "Weak later (thenar/median intrinsics affected)"
-          ]
+          ],
+          "expect": "Usually preserved early"
         }
       ],
       "passive": [
@@ -1016,14 +1061,16 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Tinel's Sign at Wrist",
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1050,7 +1097,8 @@
           "options": [
             "Neutral",
             "Sustained flexion or extreme extension"
-          ]
+          ],
+          "expect": "Sustained flexion or extreme extension"
         }
       ],
       "chainEffect": "Sustained wrist flexion at a workstation is a well-documented aggravator of carpal tunnel pressure — an abnormal sustained posture here reinforces the median-nerve-at-the-wrist localization rather than a more proximal (pronator teres) entrapment."
@@ -1064,7 +1112,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         },
         {
           "type": "number",
@@ -1129,7 +1178,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         },
         {
           "label": "Resisted Thumb Abduction (APL)",
@@ -1138,7 +1188,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -1147,7 +1198,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1170,7 +1222,8 @@
           "options": [
             "Not present",
             "Present — repetitive thumb-loading lift pattern"
-          ]
+          ],
+          "expect": "Present — repetitive thumb-loading lift pattern"
         }
       ],
       "chainEffect": "A repetitive thumb-abduction lifting pattern is the classic mechanical driver of De Quervain's — confirming it here identifies the specific movement habit to modify alongside first-dorsal-compartment treatment."
@@ -1246,14 +1299,16 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Passive Ulnar-Deviation Load",
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1276,7 +1331,8 @@
           "options": [
             "Tolerated",
             "Reproduces ulnar-sided wrist pain"
-          ]
+          ],
+          "expect": "Reproduces ulnar-sided wrist pain"
         }
       ],
       "chainEffect": "Loading the wrist in ulnar deviation compresses the TFCC between the ulnar head and carpus — reproducing pain with this loading pattern reinforces the ulnar-sided mechanical diagnosis alongside the TFCC stress test above."
@@ -1290,7 +1346,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "type": "choice",
@@ -1298,7 +1355,8 @@
           "options": [
             "Stable",
             "Unstable"
-          ]
+          ],
+          "expect": "Unstable"
         },
         {
           "type": "choice",
@@ -1306,7 +1364,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "note": "The exact, direct named match for this condition."
@@ -1360,7 +1419,8 @@
           "options": [
             "Usually painless",
             "Painful"
-          ]
+          ],
+          "expect": "Usually painless"
         }
       ],
       "passive": [
@@ -1369,7 +1429,8 @@
           "options": [
             "Negative",
             "Positive — clunk/pain reproduced"
-          ]
+          ],
+          "expect": "Positive — clunk/pain reproduced"
         }
       ],
       "findings": [
@@ -1391,7 +1452,8 @@
           "options": [
             "Tolerated, stable",
             "Pain or a clunk with loaded extension"
-          ]
+          ],
+          "expect": "Pain or a clunk with loaded extension"
         }
       ],
       "chainEffect": "Scapholunate instability often becomes symptomatic specifically under axial load in wrist extension (push-up/weight-bearing positions) — a painful clunk here supports the dynamic instability found on the Watson shift test rather than a purely structural finding at rest."
@@ -1405,7 +1467,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "note": "The exact, direct named match for this condition."
@@ -1462,7 +1525,8 @@
           "options": [
             "Generally painless (non-contractile)",
             "Painful"
-          ]
+          ],
+          "expect": "Generally painless (non-contractile)"
         }
       ],
       "passive": [
@@ -1471,21 +1535,24 @@
           "options": [
             "Full range",
             "Restricted — capsular pattern"
-          ]
+          ],
+          "expect": "Restricted — capsular pattern"
         },
         {
           "label": "End-feel",
           "options": [
             "Hard/bony",
             "Springy"
-          ]
+          ],
+          "expect": "Hard/bony"
         },
         {
           "label": "Radiocarpal Joint-Play Glide",
           "options": [
             "Normal",
             "Reduced"
-          ]
+          ],
+          "expect": "Reduced"
         }
       ],
       "findings": [
@@ -1513,7 +1580,8 @@
           "options": [
             "Minimal compensation",
             "Finger flexors or forearm rotation substituting for wrist motion"
-          ]
+          ],
+          "expect": "Finger flexors or forearm rotation substituting for wrist motion"
         }
       ],
       "chainEffect": "As true wrist ROM narrows with OA, the finger flexors and forearm rotation commonly substitute to complete grip tasks — confirming this compensation flags a pattern worth addressing so distal structures aren't overloaded taking over for the joint."
@@ -1662,7 +1730,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         },
         {
           "type": "choice",
@@ -1670,7 +1739,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "note": "Appropriate even acutely as a screening tool, but confirmed imaging still takes priority given the scaphoid's false-negative rate."
@@ -1737,7 +1807,8 @@
           "options": [
             "Painless",
             "Painful"
-          ]
+          ],
+          "expect": "Painful"
         }
       ],
       "passive": [
@@ -1746,7 +1817,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1768,7 +1840,8 @@
           "options": [
             "Normal CMC-centered pinch",
             "IP-joint hyperextension / wrist substitution"
-          ]
+          ],
+          "expect": "IP-joint hyperextension / wrist substitution"
         }
       ],
       "chainEffect": "As the arthritic CMC joint loses stable pinch mechanics, the thumb IP joint or wrist commonly substitutes to maintain pinch force — an abnormal substitution pattern here signals a secondary overload site to address alongside the CMC joint itself."
@@ -1832,7 +1905,8 @@
             "Strong + Painful",
             "Weak + Painless",
             "Weak + Painful"
-          ]
+          ],
+          "expect": "Strong + Painful"
         }
       ],
       "passive": [
@@ -1841,7 +1915,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "findings": [
@@ -1868,7 +1943,8 @@
           "options": [
             "Neutral grip pattern",
             "Sustained ulnar-deviated grip pattern"
-          ]
+          ],
+          "expect": "Sustained ulnar-deviated grip pattern"
         }
       ],
       "chainEffect": "A sustained ulnar-deviated grip position increases ECU tendon excursion and sheath friction with every repetition — confirming this habitual pattern identifies the mechanical driver to correct alongside direct tendon treatment."
@@ -1882,7 +1958,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         }
       ],
       "note": "Its own setup explicitly lists \"ECU tendon (ulnar dorsal): palpate + resisted ulnar deviation/extension\" — the direct named match."
@@ -1942,7 +2019,8 @@
           "options": [
             "Reproduces catching, not weakness",
             "Normal"
-          ]
+          ],
+          "expect": "Reproduces catching, not weakness"
         }
       ],
       "passive": [
@@ -1951,7 +2029,8 @@
           "options": [
             "No nodule/catching",
             "Nodule/catching present"
-          ]
+          ],
+          "expect": "Nodule/catching present"
         }
       ],
       "findings": [
@@ -1973,7 +2052,8 @@
           "options": [
             "Minimal",
             "Frequent, sustained gripping load"
-          ]
+          ],
+          "expect": "Frequent, sustained gripping load"
         }
       ],
       "chainEffect": "Repetitive gripping increases flexor tendon excursion through the A1 pulley, the mechanical driver behind nodule formation and triggering — confirming a high-repetition grip load identifies the habit to modify alongside local treatment."
@@ -1987,7 +2067,8 @@
           "options": [
             "No",
             "Yes"
-          ]
+          ],
+          "expect": "Yes"
         }
       ],
       "note": "Direct match — the composite fist and active flexion-extension components will show the catching/triggering."
@@ -2058,7 +2139,8 @@
           "options": [
             "Generally painless (non-contractile)",
             "Painful"
-          ]
+          ],
+          "expect": "Generally painless (non-contractile)"
         }
       ],
       "passive": [
@@ -2067,7 +2149,8 @@
           "options": [
             "Full range",
             "Restricted, bony end-feel, nodules palpable"
-          ]
+          ],
+          "expect": "Restricted, bony end-feel, nodules palpable"
         }
       ],
       "findings": [
@@ -2094,7 +2177,8 @@
           "options": [
             "Minimal compensation",
             "Compensatory intrinsic overactivity maintaining grip"
-          ]
+          ],
+          "expect": "Compensatory intrinsic overactivity maintaining grip"
         }
       ],
       "chainEffect": "Hand-intrinsic facilitation typically increases to preserve grip function around the restricted DIP/PIP joints — a supportive compensation rather than the primary driver, but confirming it helps explain any intrinsic-muscle fatigue or overload the patient reports."
@@ -2165,14 +2249,16 @@
           "options": [
             "Stable",
             "Laxity/pain reproduced"
-          ]
+          ],
+          "expect": "Laxity/pain reproduced"
         },
         {
           "label": "Valgus Stress — Thumb MCP in Extension",
           "options": [
             "Stable",
             "Laxity/pain reproduced"
-          ]
+          ],
+          "expect": "Laxity/pain reproduced"
         }
       ],
       "findings": [
@@ -2193,7 +2279,8 @@
           "options": [
             "Normal pinch mechanics",
             "Guarded / avoidant pinch pattern, thenar under-recruitment"
-          ]
+          ],
+          "expect": "Guarded / avoidant pinch pattern, thenar under-recruitment"
         }
       ],
       "chainEffect": "Guarding against MCP valgus stress commonly leads to thenar under-recruitment during pinch — confirming an avoidant pinch pattern flags a compensation to address once ligament healing allows progressive loading."
@@ -2267,7 +2354,8 @@
           "options": [
             "No nodule/catching",
             "Nodule/catching present"
-          ]
+          ],
+          "expect": "Nodule/catching present"
         }
       ],
       "findings": [
@@ -2293,7 +2381,8 @@
           "options": [
             "Minimal",
             "Frequent, sustained gripping load"
-          ]
+          ],
+          "expect": "Frequent, sustained gripping load"
         }
       ],
       "chainEffect": "As with the wrist-model trigger finger, repetitive gripping increases flexor tendon excursion through the A1 pulley — confirming a high-repetition grip load identifies the mechanical habit driving the triggering."
@@ -2372,14 +2461,16 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "MCP/PIP Passive Extension",
           "options": [
             "Full extension",
             "Extension deficit present"
-          ]
+          ],
+          "expect": "Extension deficit present"
         }
       ],
       "findings": [
@@ -2402,7 +2493,8 @@
           "options": [
             "Minimal compensation",
             "Wrist/forearm substituting for lost finger extension"
-          ]
+          ],
+          "expect": "Wrist/forearm substituting for lost finger extension"
         }
       ],
       "chainEffect": "As the palmar cord fixes the digit in flexion, the wrist or forearm often substitutes to achieve an open-hand position for tasks like releasing objects — confirming this substitution flags a compensation pattern developing alongside the contracture."
@@ -2470,7 +2562,8 @@
           "options": [
             "Negative",
             "Positive"
-          ]
+          ],
+          "expect": "Positive"
         },
         {
           "label": "Active DIP/PIP Extension (screen for mallet/boutonniere)",
@@ -2499,7 +2592,8 @@
           "options": [
             "Normal grip distribution",
             "Load shifted away from injured digit onto adjacent fingers"
-          ]
+          ],
+          "expect": "Load shifted away from injured digit onto adjacent fingers"
         }
       ],
       "chainEffect": "Protective guarding after a collateral ligament sprain commonly shifts grip load onto the adjacent fingers — confirming this shifted pattern flags an overload risk to the neighbouring digits during the guarding phase."
