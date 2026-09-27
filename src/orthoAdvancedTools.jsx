@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FmaIcon, poseForJoint } from "./fmaIcons.jsx";
 import { SectionIntro, TextArea, InfoButton, InfoCard, Hint, useSectionData } from "./orthoFieldKit.jsx";
+import { humanizeKey } from "./medicalAbbreviations.js";
 import { RESTRICTION_GRADE } from "./orthoClinicalData.js";
 import {
   KC_REGIONS,
@@ -959,7 +960,7 @@ export function formatSttSection(sectionData) {
         Object.keys(entry).forEach((key) => {
           if (!key.startsWith(t.id + "_") || !entry[key]) return;
           const field = key.slice(t.id.length + 1);
-          rows.push({ label: `${region.label} — ${t.label} (${field})`, value: entry[key] });
+          rows.push({ label: `${region.label} — ${t.label} (${humanizeKey(field)})`, value: entry[key] });
         });
       });
     });

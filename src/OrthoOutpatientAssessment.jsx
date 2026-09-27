@@ -8,6 +8,7 @@ import { RomSection, MmtSection, SpecialTestsSection, JointMobilitySection, form
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection, LimbLengthSection, formatLimbLengthSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
 import { ExercisePrescriptionSection, formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
+import { humanizeKey } from "./medicalAbbreviations.js";
 import { HomeProtocolSection } from "./orthoHomeProtocol.jsx";
 import { GeneralObservationSection, formatGeneralObservationSection } from "./orthoGeneralObservation.jsx";
 import { formatRedFlagsSection } from "./orthoRedFlagScreen.jsx";
@@ -35,7 +36,7 @@ function regionLabelOf(r) {
 function restRows(rest) {
   return Object.entries(rest)
     .filter(([k]) => !k.startsWith("__"))
-    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
+    .map(([k, v]) => ({ label: humanizeKey(k), value: fmtVal(v) }))
     .filter((r) => r.value);
 }
 function formatPainSection(section) {

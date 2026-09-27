@@ -409,6 +409,20 @@ const CYRIAX_REGION_KEYS_FOR = {
 function cyriaxTestsFor(configKey, field) {
   return (CYRIAX_REGION_KEYS_FOR[configKey] || []).flatMap((k) => CYRIAX_REGIONS_DATA[k]?.[field] || []);
 }
+// Resolves a raw Cyriax test id (e.g. "cx_r_flex") back to its real label
+// ("Resisted Flexion") for the Summary/Share text -- same catalogue
+// cyriaxTestsFor already reads, just searched by id instead of by region+field.
+function cyriaxTestLabelFor(configKey, testId) {
+  for (const k of CYRIAX_REGION_KEYS_FOR[configKey] || []) {
+    const region = CYRIAX_REGIONS_DATA[k];
+    if (!region) continue;
+    for (const field of ["resistedTests", "passiveROM", "activeROM", "jointPlay"]) {
+      const hit = (region[field] || []).find((t) => t.id === testId);
+      if (hit) return hit.label;
+    }
+  }
+  return null;
+}
 const STTT_DEFAULT_ENDFEEL = ["Normal/Capsular", "Muscle Spasm", "Empty (No End-Feel)", "Hard (Osteophyte)"];
 
 function idByName(conditions) {
@@ -563,7 +577,7 @@ const OBJECTIVE_MODULE_LABELS = {
   sttt: "STTT", kineticChain: "Kinetic Chain", functionalScreen: "Functional Screen",
   special: "Special Test", outcome: "Outcome Measure",
 };
-function objectiveFieldLabel(module, sub, condition) {
+function objectiveFieldLabel(module, sub, condition, cfg) {
   const base = OBJECTIVE_MODULE_LABELS[module] || module;
   if (module === "special") return sub && sub.endsWith("_side") ? `${sub.slice(0, -5)} — side` : sub || base;
   if (module === "outcome") return sub || base;
@@ -580,6 +594,41 @@ function objectiveFieldLabel(module, sub, condition) {
   if (fIdx && (module === "kineticChain" || module === "functionalScreen")) {
     const label = condition?.[module]?.fields?.[Number(fIdx[1])]?.label;
     if (label) return `${base} — ${label}`;
+  }
+  // STTT keys its state by whichever real Cyriax test id got tapped
+  // (e.g. "cx_r_flex") when the region has a real catalogue, or a synthetic
+  // "r0"/"p0" index against the condition's own resisted/passive list
+  // otherwise -- resolve either back to the real test name instead of
+  // showing rows like "STTT — cx_r_flex" (2026-09-27, Aditi: "why sttt cx
+  // rflex means... make it right").
+  if (module === "sttt" && sub) {
+    const rIdx = /^r(\d+)$/.exec(sub);
+    if (rIdx) {
+      const label = condition?.sttt?.resisted?.[Number(rIdx[1])]?.label;
+      if (label) return `${base} — ${label}`;
+    }
+    const pIdx = /^p(\d+)$/.exec(sub);
+    if (pIdx) {
+      const label = condition?.sttt?.passive?.[Number(pIdx[1])]?.label;
+      if (label) return `${base} — ${label}`;
+    }
+    const cyriaxLabel = cfg && cyriaxTestLabelFor(cfg.key, sub);
+    if (cyriaxLabel) return `${base} — ${cyriaxLabel}`;
+  }
+  // Functional Screen's own sub-fields: "measure"/"secondary" carry their
+  // real question text on the resolved FMA test itself, "obs_<id>" keys a
+  // single What-to-observe dropdown by its FMA_DATA observation id
+  // (FmaObservePanel above) -- same raw-id leak as STTT.
+  if (module === "functionalScreen") {
+    if (sub === "measure" && condition?.functionalScreen?.measure?.label) return `${base} — ${condition.functionalScreen.measure.label}`;
+    if (sub === "secondary" && condition?.functionalScreen?.secondaryChip?.label) return `${base} — ${condition.functionalScreen.secondaryChip.label}`;
+    if (sub === "grade") return `${base} — Grade`;
+    const obsIdx = /^obs_(.+)$/.exec(sub || "");
+    if (obsIdx) {
+      const fma = fmaTestFor(condition?.functionalScreen?.testName);
+      const q = fma?.observations?.find((o) => o.id === obsIdx[1])?.q;
+      if (q) return `${base} — ${q}`;
+    }
   }
   if (!sub || ["chips", "state", "mode", "test", "r", "p", "m"].includes(sub)) return base;
   return `${base} — ${sub}`;
@@ -600,7 +649,7 @@ export function formatConditionObjectiveSection(data) {
       const conditionName = cfg.conditions[conditionId]?.name || conditionId;
       groups.push({
         heading: `${cfg.label} — ${conditionName}`,
-        rows: fields.map(({ module, sub, val }) => ({ label: objectiveFieldLabel(module, sub, cfg.conditions[conditionId]), value: val })),
+        rows: fields.map(({ module, sub, val }) => ({ label: objectiveFieldLabel(module, sub, cfg.conditions[conditionId], cfg), value: val })),
       });
     });
   });
