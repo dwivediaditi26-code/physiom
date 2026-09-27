@@ -37,6 +37,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BRAND, useSectionData, Stepper, Segmented, InfoButton, InfoCard, CLOUDINARY_BASE, SelectField, NumberField, ScaleField, Hint } from "./orthoFieldKit.jsx";
+import { RegionPicker } from "./orthoSetupKit.jsx";
 import { RESTRICTION_GRADE, spineRegionData, ROM_DATA, MMT_DATA, SPECIAL_TESTS_DATA } from "./orthoClinicalData.js";
 import { romRichItem, specialRichItem, mmtRichItem, GradeSelect } from "./orthoRegionAssessments.jsx";
 import { kcRichItem, cpaRichItem, fmaRichItem, GradeSelect as ObserveSelect, FMA_HELPS, FMA_GRADE_COLOR } from "./orthoAdvancedTools.jsx";
@@ -821,17 +822,17 @@ function HypothesisGrid({ conditions, order, matchById, objSupportById, activeId
 function ModuleCard({ label, subtitle, count, color, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ borderTop: `1px solid ${HAIRLINE}`, padding: "14px 2px" }}>
+    <div className="obj-module-card" style={{ padding: "10px 10px 14px" }}>
       <div
         onClick={() => setOpen((o) => !o)}
         role="button"
         style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", gap: 10 }}
       >
         <span>
-          <span style={{ fontSize: "1rem", fontWeight: 800, color: BRAND.ink, display: "block" }}>
+          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: BRAND.ink, display: "block" }}>
             {label}
           </span>
-          {subtitle && <span style={{ fontSize: "0.78rem", color: BRAND.gray, display: "block", marginTop: 2 }}>{subtitle}</span>}
+          {subtitle && <span style={{ fontSize: "0.68rem", color: BRAND.gray, display: "block", marginTop: 2 }}>{subtitle}</span>}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginTop: subtitle ? 2 : 0 }}>
           {count != null && (
@@ -1644,7 +1645,100 @@ function FindingCardList({ category, options, selected, onToggle, interpretation
   );
 }
 
-export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, onStartOutcomeMeasure }) {
+// Free-text add-on for a fixed findings list (Observation/Posture/Palpation
+// checklists, and Special Tests below) -- the checklist itself stays a
+// curated, condition-specific whitelist, but a clinician often sees
+// something real that isn't on it (2026-09-27, Aditi: "we can add a thing
+// we want to add"). Each note is just recorded text, not a toggled
+// positive/unmarked chip, since writing it down already means it was
+// observed.
+function CustomNotesEditor({ notes, onAdd, onRemove, placeholder }) {
+  const [draft, setDraft] = useState("");
+  const [open, setOpen] = useState(false);
+  function submit() {
+    const text = draft.trim();
+    if (!text) return;
+    onAdd(text);
+    setDraft("");
+    setOpen(false);
+  }
+  return (
+    <div style={{ marginTop: 10 }}>
+      {notes.map((n, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "#F8F7FC", borderRadius: 10, marginBottom: 6 }}>
+          <i className="ti ti-note" style={{ fontSize: 14, color: BRAND.purple, marginTop: 2, flexShrink: 0 }} aria-hidden="true"></i>
+          <div style={{ flex: 1, fontSize: "0.82rem", color: BRAND.ink, lineHeight: 1.4 }}>{n}</div>
+          <button type="button" onClick={() => onRemove(i)} aria-label="Remove note" style={{ border: "none", background: "transparent", color: BRAND.grayLight, fontSize: 13, cursor: "pointer", padding: 2, flexShrink: 0 }}>✕</button>
+        </div>
+      ))}
+      {open ? (
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <textarea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            rows={2}
+            style={{ flex: 1, border: `1px solid ${HAIRLINE}`, borderRadius: 10, padding: "8px 10px", fontSize: "0.82rem", fontFamily: "inherit", color: BRAND.ink, resize: "vertical" }}
+          />
+          <button type="button" onClick={submit} style={{ border: "none", background: BRAND.purple, color: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+            Add
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, border: `1.5px dashed ${BRAND.purple}`, background: "transparent", color: BRAND.purple, borderRadius: 10, padding: "9px 12px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", width: "100%" }}
+        >
+          <i className="ti ti-plus" aria-hidden="true"></i> Add note
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Lets a clinician pull in a Special Test beyond the condition's own
+// curated shortlist -- the region's full photographed catalog
+// (SPECIAL_TESTS_DATA via SPECIAL_TEST_DATA_BUCKET) minus whatever's
+// already shown (2026-09-27, Aditi: "choosing more special test... select
+// more"). Stays open after each pick so several can be added in one go.
+function AddSpecialTestPicker({ options, onAdd }) {
+  const [open, setOpen] = useState(false);
+  if (!options.length) return null;
+  return (
+    <div style={{ marginTop: 10 }}>
+      {open ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto", border: `1px solid ${HAIRLINE}`, borderRadius: 10, padding: 8 }}>
+          {options.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onAdd(name)}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, border: "none", background: "#F8F7FC", borderRadius: 8, padding: "8px 10px", fontSize: "0.8rem", color: BRAND.ink, fontWeight: 600, cursor: "pointer", textAlign: "left" }}
+            >
+              {name}
+              <i className="ti ti-plus" style={{ color: BRAND.purple, flexShrink: 0 }} aria-hidden="true"></i>
+            </button>
+          ))}
+          <button type="button" onClick={() => setOpen(false)} style={{ border: "none", background: "transparent", color: BRAND.grayLight, fontSize: "0.75rem", padding: "6px 0", cursor: "pointer" }}>
+            Done
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, border: `1.5px dashed ${BRAND.purple}`, background: "transparent", color: BRAND.purple, borderRadius: 10, padding: "9px 12px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", width: "100%" }}
+        >
+          <i className="ti ti-plus" aria-hidden="true"></i> Add another special test
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function ConditionObjectiveAssessment({ data, setData, selectedRegions, setSelectedRegions, onStartOutcomeMeasure }) {
   const regions = selectedRegions || [];
   // Picking 2+ regions in Subjective used to only ever show the FIRST
   // matching region's condition-wise assessment here -- the rest were
@@ -1752,6 +1846,22 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
   };
   const toggleSingle = (module, sub, option) => sv(module, sub, v(module, sub) === option ? "" : option);
 
+  // Custom free-text notes, one array per module (observation/posture/
+  // palpation/special) -- kept separate from the "chips" whitelist field
+  // above so a hand-written note is never confused with a catalog match.
+  const notesOf = (module) => state[fieldKey(selectedId, module, "customNotes")] || [];
+  const addNote = (module, text) => sv(module, "customNotes", [...notesOf(module), text]);
+  const removeNote = (module, idx) => sv(module, "customNotes", notesOf(module).filter((_, i) => i !== idx));
+
+  // Special Tests picked from the region's full catalog beyond the
+  // condition's own curated shortlist -- rendered with the exact same
+  // Side/Result row as the built-in list.
+  const extraSpecialTests = state[fieldKey(selectedId, "special", "extraTests")] || [];
+  const addSpecialTest = (name) => {
+    if (!extraSpecialTests.includes(name)) sv("special", "extraTests", [...extraSpecialTests, name]);
+  };
+  const removeSpecialTest = (name) => sv("special", "extraTests", extraSpecialTests.filter((n) => n !== name));
+
   const regionTabs = matchedConfigs.length > 1 && (
     <div className="region-tab-row-wrap">
       <div className="region-tab-row">
@@ -1773,7 +1883,23 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
     return (
       <div>
         {regionTabs}
-        <EmptyNote>{config.emptyNote}</EmptyNote>
+        {regions.length === 0 && setSelectedRegions ? (
+          <div>
+            <div style={{ fontSize: "0.9rem", fontWeight: 700, color: BRAND.ink, marginBottom: 2 }}>
+              Which region(s) are involved?
+            </div>
+            <div style={{ fontSize: "0.78rem", color: BRAND.gray, marginBottom: 12 }}>
+              Pick one or more below — this page will switch to the condition-wise objective assessment for it.
+            </div>
+            <RegionPicker
+              selectedRegions={regions}
+              setSelectedRegions={setSelectedRegions}
+              excludeIds={["upperArm", "forearm", "thigh", "leg", "wholeBody", "multiple"]}
+            />
+          </div>
+        ) : (
+          <EmptyNote>{config.emptyNote}</EmptyNote>
+        )}
       </div>
     );
   }
@@ -1895,6 +2021,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {(() => { const obsOptions = isV1 ? condition.observationChecklist : condition.observation; return (
           <ModuleCard label="Observation" subtitle="General findings on visual inspection" count={obsOptions?.length || 0}>
             <FindingCardList category="observation" options={obsOptions} selected={v("observation", "chips")} onToggle={(o) => toggleMulti("observation", "chips", o)} interpretations={condition.findingInterpretations?.observation} regionKey={config.key} />
+            <CustomNotesEditor
+              notes={notesOf("observation")}
+              onAdd={(t) => addNote("observation", t)}
+              onRemove={(i) => removeNote("observation", i)}
+              placeholder="Write what you observed…"
+            />
           </ModuleCard>
           ); })()}
 
@@ -1909,6 +2041,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           {(() => { const pOptions = isV1 ? condition.postureChecklist : condition.posture; return (
           <ModuleCard label="Posture & Structural Alignment" subtitle="Record observed positional adaptations" count={pOptions?.length || 0}>
             <FindingCardList category="posture" options={pOptions} selected={v("posture", "chips")} onToggle={(o) => toggleMulti("posture", "chips", o)} interpretations={condition.findingInterpretations?.posture} regionKey={config.key} />
+            <CustomNotesEditor
+              notes={notesOf("posture")}
+              onAdd={(t) => addNote("posture", t)}
+              onRemove={(i) => removeNote("posture", i)}
+              placeholder="Write what you observed…"
+            />
           </ModuleCard>
           ); })()}
           </>}
@@ -1921,6 +2059,12 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
             ) : (
               <EmptyNote>Not specified in condition library.</EmptyNote>
             )}
+            <CustomNotesEditor
+              notes={notesOf("palpation")}
+              onAdd={(t) => addNote("palpation", t)}
+              onRemove={(i) => removeNote("palpation", i)}
+              placeholder="Write what you found…"
+            />
           </ModuleCard>
           ); })()}
           </>}
@@ -2109,53 +2253,73 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           ); })()}
 
           {activeSubtopic === "special" && <>
-          <ModuleCard label="Special Tests" color="#8B5CF6">
-            {specialTestItems && specialTestItems.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                {specialTestItems.map((raw, i) => {
-                  // Thoracic's specialTests are {name} objects; other v2
-                  // regions use plain strings — normalize both.
-                  const t = typeof raw === "string" ? raw : raw.name;
-                  const testEntry = specialTestEntryFor(config.key, t);
-                  return (
-                    <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        {/* No separate patient-photo upload tile here, on
-                            purpose (2026-09-25, Aditi: "this image camera
-                            button is showing remove it" -- confirmed again
-                            after a concurrent session restored it thinking
-                            the removal was accidental). The reference image
-                            above is tap-to-view only; Special Tests in this
-                            condition-wise AI screen doesn't carry its own
-                            patient-photo slot the way Observation/Palpation
-                            findings do. */}
-                        <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={testEntry ? specialRichItem(testEntry) : null} />
-                        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-                          <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
-                          {(testEntry?.structure || testEntry?.sensitivity) && (
-                            <div style={{ fontSize: "0.68rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 2 }}>
-                              {testEntry.structure && <>Structure: {testEntry.structure}</>}
-                              {testEntry.sensitivity && <> · Sens: {testEntry.sensitivity} · Spec: {testEntry.specificity}</>}
+          {(() => {
+            const fixedNames = (specialTestItems || []).map((raw) => (typeof raw === "string" ? raw : raw.name));
+            const allTestNames = [...fixedNames, ...extraSpecialTests];
+            const shownKey = new Set(allTestNames.map((n) => normalizeName(n)));
+            const catalogNames = (SPECIAL_TEST_DATA_BUCKET[config.key] || [])
+              .flatMap((bucket) => (SPECIAL_TESTS_DATA[bucket]?.tests || []).map((t) => t.label));
+            const addableNames = [...new Set(catalogNames)].filter((n) => !shownKey.has(normalizeName(n)));
+            return (
+              <ModuleCard label="Special Tests" color="#8B5CF6">
+                {allTestNames.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {allTestNames.map((t, i) => {
+                      const testEntry = specialTestEntryFor(config.key, t);
+                      const isExtra = extraSpecialTests.includes(t);
+                      return (
+                        <div key={t} style={{ borderTop: i === 0 ? "none" : "1px solid #F5F3FB", padding: "10px 0" }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                            {/* No separate patient-photo upload tile here, on
+                                purpose (2026-09-25, Aditi: "this image camera
+                                button is showing remove it" -- confirmed again
+                                after a concurrent session restored it thinking
+                                the removal was accidental). The reference image
+                                above is tap-to-view only; Special Tests in this
+                                condition-wise AI screen doesn't carry its own
+                                patient-photo slot the way Observation/Palpation
+                                findings do. */}
+                            <InfoButton imageTrigger fallbackIcon="ti-clipboard-check" title={t} richItem={testEntry ? specialRichItem(testEntry) : null} />
+                            <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                                <div style={{ fontSize: "0.85rem", color: BRAND.ink, fontWeight: 700, minWidth: 0 }}>{t}</div>
+                                {isExtra && (
+                                  <button type="button" onClick={() => removeSpecialTest(t)} aria-label="Remove test" style={{ border: "none", background: "transparent", color: BRAND.grayLight, fontSize: 13, cursor: "pointer", padding: 2, flexShrink: 0 }}>✕</button>
+                                )}
+                              </div>
+                              {(testEntry?.structure || testEntry?.sensitivity) && (
+                                <div style={{ fontSize: "0.68rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 2 }}>
+                                  {testEntry.structure && <>Structure: {testEntry.structure}</>}
+                                  {testEntry.sensitivity && <> · Sens: {testEntry.sensitivity} · Spec: {testEntry.specificity}</>}
+                                </div>
+                              )}
+                              <div style={{ marginTop: 8 }}>
+                                <CategoryLabel>Side</CategoryLabel>
+                                <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
+                              </div>
+                              <div style={{ marginTop: 10 }}>
+                                <CategoryLabel>Result</CategoryLabel>
+                                <ChipGroup options={["Negative", "Positive", "Equivocal"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
+                              </div>
                             </div>
-                          )}
-                          <div style={{ marginTop: 8 }}>
-                            <CategoryLabel>Side</CategoryLabel>
-                            <ChipGroup options={["Right", "Left", "Bilateral"]} selected={v("special", t + "_side")} onToggle={(o) => toggleSingle("special", t + "_side", o)} multi={false} />
-                          </div>
-                          <div style={{ marginTop: 10 }}>
-                            <CategoryLabel>Result</CategoryLabel>
-                            <ChipGroup options={["Negative", "Positive", "Equivocal"]} selected={v("special", t)} onToggle={(o) => toggleSingle("special", t, o)} multi={false} />
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyNote>Not specified in condition library.</EmptyNote>
-            )}
-          </ModuleCard>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyNote>Not specified in condition library.</EmptyNote>
+                )}
+                <AddSpecialTestPicker options={addableNames} onAdd={addSpecialTest} />
+                <CustomNotesEditor
+                  notes={notesOf("special")}
+                  onAdd={(t) => addNote("special", t)}
+                  onRemove={(i) => removeNote("special", i)}
+                  placeholder="Write a test name and what you found…"
+                />
+              </ModuleCard>
+            );
+          })()}
           </>}
 
           {activeSubtopic === "sttt" && <>

@@ -5179,8 +5179,8 @@ const PDF_BASE_STYLES = `
      banner. */
   .doc-header { display: flex; justify-content: space-between; align-items: center; }
   .doc-header-left { display: flex; align-items: center; gap: 8px; }
-  .doc-logo-mark { width: 24px; height: 24px; object-fit: contain; display: block; }
-  .doc-wordmark { font-size: 15px; font-weight: 700; color: var(--navy); letter-spacing: -0.2px; }
+  .doc-logo-mark { width: 32px; height: 32px; object-fit: contain; display: block; }
+  .doc-wordmark { font-size: 18px; font-weight: 700; color: var(--navy); letter-spacing: -0.2px; }
   .doc-header-right { text-align: right; }
   .doc-header-tag { font-size: 8.5px; font-weight: 600; letter-spacing: 0.6px; color: var(--slate); text-transform: uppercase; }
   .doc-header-tag.confidential { color: var(--lavender-text); margin-top: 2px; }
@@ -5190,7 +5190,7 @@ const PDF_BASE_STYLES = `
   .doc-title { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.2; margin: 0 0 3px; letter-spacing: -0.3px; }
   .doc-subtitle { font-size: 14px; font-weight: 400; color: var(--slate); margin: 0 0 14px; }
   .summary-row { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 14px; }
-  .summary-row > div { padding: 0 14px; border-right: 1px solid var(--divider); font-size: 12.5px; font-weight: 500; color: var(--navy); }
+  .summary-row > div { padding: 0 14px; border-right: 1px solid var(--divider); font-size: 12.5px; font-weight: 600; color: var(--navy); }
   .summary-row > div:first-child { padding-left: 0; }
   .summary-row > div:last-child { border-right: none; }
   .summary-row strong {
@@ -5201,7 +5201,7 @@ const PDF_BASE_STYLES = `
   /* 5. Patient details panel -- light grey-blue, never lavender/purple */
   .patient-panel { background: var(--panel-bg); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; }
   .patient-panel-title { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate); margin-bottom: 8px; }
-  .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+  .patient-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 20px; }
   .patient-grid .clinical-field { margin-bottom: 0; }
 
   /* 6. Numbered section headings -- slim vertical lavender accent + thin
@@ -5215,7 +5215,7 @@ const PDF_BASE_STYLES = `
   /* Label + value clinical field row */
   .clinical-field { margin-bottom: 8px; }
   .clinical-field .field-label { font-size: 9.5px; font-weight: 500; color: var(--slate); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
-  .clinical-field .field-value { font-size: 12.5px; font-weight: 400; color: var(--navy); line-height: 1.5; }
+  .clinical-field .field-value { font-size: 12.5px; font-weight: 600; color: var(--navy); line-height: 1.5; }
 
   /* Compact clinical table (ROM, MMT, etc.) */
   .clinical-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
@@ -5223,7 +5223,7 @@ const PDF_BASE_STYLES = `
     font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
     color: var(--slate); text-align: left; padding: 4px 8px; border-bottom: 1.5px solid var(--divider);
   }
-  .clinical-table td { font-size: 12.5px; color: var(--navy); padding: 6px 8px; border-bottom: 1px solid var(--divider); }
+  .clinical-table td { font-size: 12.5px; font-weight: 600; color: var(--navy); padding: 6px 8px; border-bottom: 1px solid var(--divider); }
   .clinical-table tr:last-child td { border-bottom: none; }
 
   /* Special-test-style result row, restrained status pill */
@@ -5236,7 +5236,7 @@ const PDF_BASE_STYLES = `
   .test-status.positive { background: var(--lavender-pale); color: var(--lavender-text); }
   .test-status.negative { background: var(--panel-bg); color: var(--slate); }
   .test-status.untested { background: var(--panel-bg); color: var(--slate-light); }
-  .test-name { font-size: 12.5px; font-weight: 500; color: var(--navy); flex: 1; }
+  .test-name { font-size: 12.5px; font-weight: 600; color: var(--navy); flex: 1; }
   .test-detail { font-size: 10.5px; color: var(--slate); }
 
   .disclaimer {

@@ -855,6 +855,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 data={data}
                 setData={setData}
                 selectedRegions={selectedRegions}
+                setSelectedRegions={setSelectedRegions}
                 onStartOutcomeMeasure={openOutcomeMeasure}
               />
             </>

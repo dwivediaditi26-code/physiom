@@ -786,10 +786,10 @@ export function orthoStyles() {
            different color") -- tinted background + matching border/%
            color, so conditions are visually distinguishable at a glance
            instead of every card reading identically until tapped. */
-        .obj-match-card { flex: 0 0 auto; min-width: 90px; max-width: 106px; text-align: left; border: 1.5px solid transparent; border-radius: 9px; padding: 5px 6px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
+        .obj-match-card { flex: 0 0 auto; min-width: 102px; max-width: 120px; text-align: left; border: 1.5px solid transparent; border-radius: 9px; padding: 7px 8px; cursor: pointer; font-family: inherit; transition: transform .1s, box-shadow .1s; }
         .obj-match-card:active { transform: scale(0.97); }
-        .obj-match-pct { display: block; font-size: 12px; font-weight: 800; letter-spacing: -.01em; }
-        .obj-match-name { display: block; font-size: 9.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 1px; line-height: 1.15; }
+        .obj-match-pct { display: block; font-size: 13.5px; font-weight: 800; letter-spacing: -.01em; }
+        .obj-match-name { display: block; font-size: 10.5px; font-weight: 700; color: ${BRAND.ink}; margin-top: 2px; line-height: 1.2; }
         .obj-match-card-active { box-shadow: 0 3px 10px rgba(20,10,45,.14); }
         .obj-match-c0 { background: #EFF6FF; } .obj-match-c0 .obj-match-pct { color: #2563EB; } .obj-match-c0.obj-match-card-active { border-color: #2563EB; }
         .obj-match-c1 { background: #ECFDF5; } .obj-match-c1 .obj-match-pct { color: #059669; } .obj-match-c1.obj-match-card-active { border-color: #059669; }
@@ -804,7 +804,7 @@ export function orthoStyles() {
            raised "3D piano key" treatment: solid purple pill for the active
            tab, plain white/bordered pills at rest, matching the reference's
            Observation/Palpation/ROM/Special Tests tab row exactly. */
-        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 3px; margin: 14px 0 12px; }
+        .obj-subtopic-bar { position: relative; display: flex; align-items: center; gap: 3px; margin: 14px 0 0; }
         .obj-subtopic-scroll-btn { flex: 0 0 auto; background: transparent; border: none; color: ${BRAND.gray}; font-size: 15px; display: flex; align-items: center; justify-content: center; padding: 3px; cursor: pointer; opacity: 0.6; }
         .obj-subtopic-scroll-btn:active { opacity: 1; }
         .obj-subtopic-tabs { flex: 1; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px; }
@@ -828,7 +828,9 @@ export function orthoStyles() {
            below section also align") -- was a bare 1px border easy to miss
            against the white page background, reading as loose stacked rows
            rather than one section. */
-        .obj-subtopic-page { background: #fff; border: 1px solid ${BRAND.border}; border-radius: 14px; padding: 6px 10px 8px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(20,10,45,.05); }
+        .obj-subtopic-page { background: ${BRAND.purpleFaint}; border: 1px solid ${BRAND.purple}33; border-top: none; border-radius: 0 0 14px 14px; padding: 8px 10px 8px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(20,10,45,.05); }
+        .obj-module-card { background: #fff; border-radius: 10px; margin-top: 8px; }
+        .obj-subtopic-page > .obj-module-card:first-child { margin-top: 0; }
 
         /* "Suggest probable objective assessment" button (2026-09-10, Aditi:
            "make 3d button and motion graphic when we click on it") — solid
