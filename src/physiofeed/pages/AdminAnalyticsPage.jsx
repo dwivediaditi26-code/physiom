@@ -305,13 +305,20 @@ export default function AdminAnalyticsPage() {
           <section>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Live activity</h2>
             {liveEvents.length > 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                {liveEvents.slice(0, 30).map((e, i) => (
-                  <div key={`${e.created_at}-${i}`} className="flex items-center justify-between px-4 py-2 text-xs gap-2">
-                    <span className="text-slate-700">
-                      <span className="font-semibold text-slate-900">{nameById[e.user_id] || "Someone"}</span> {describeEvent(e)}
-                    </span>
-                    <span className="text-slate-400 shrink-0">{new Date(e.created_at).toLocaleString()}</span>
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {groupEventsByUser(liveEvents, nameById).map((g) => (
+                  <div key={g.userId} className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                    <div className="px-4 py-2 bg-slate-50 border-b border-slate-100">
+                      <span className="text-sm font-semibold text-slate-900">{g.name}</span>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {g.events.slice(0, 10).map((e, i) => (
+                        <div key={`${e.created_at}-${i}`} className="flex items-center justify-between px-4 py-2 text-xs gap-2">
+                          <span className="text-slate-700">{describeEvent(e)}</span>
+                          <span className="text-slate-400 shrink-0">{new Date(e.created_at).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -404,6 +411,19 @@ const EVENT_LABELS = {
 function describeEvent(e) {
   if (e.event_name === "module_opened") return `opened ${prettifyModuleKey(e.entity_id)}`;
   return EVENT_LABELS[e.event_name] || e.event_name.replace(/_/g, " ");
+}
+
+// Groups already-newest-first events by user, most recently active user
+// first, name under each -- so Live activity reads per-person instead of
+// one interleaved stream that forces you to re-read the name every row.
+function groupEventsByUser(events, nameById) {
+  const byUser = new Map();
+  for (const e of events) {
+    const userId = e.user_id || "unknown";
+    if (!byUser.has(userId)) byUser.set(userId, { userId, name: nameById[userId] || "Someone", events: [] });
+    byUser.get(userId).events.push(e);
+  }
+  return Array.from(byUser.values()).sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at));
 }
 
 function EmptyNote({ text }) {
