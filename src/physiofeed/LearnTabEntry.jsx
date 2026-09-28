@@ -4,10 +4,11 @@ import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
   GraduationCap, Activity, ChevronLeft, ChevronRight,
-  BookOpen, ClipboardCheck, Stethoscope, Target,
+  BookOpen, ClipboardCheck, Stethoscope, Target, Bone,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
+import XrayHome from "./learn/xray/XrayHome.jsx";
 import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
 
@@ -63,13 +64,16 @@ const EXERCISE = [
 const TINT_GRAD = {
   violet: "from-violet-600 to-fuchsia-500", blue: "from-sky-600 to-indigo-500", green: "from-cyan-500 to-blue-500",
   amber: "from-amber-500 to-orange-400", rose: "from-rose-600 to-pink-500", teal: "from-cyan-500 to-sky-500", indigo: "from-indigo-600 to-violet-500",
+  emerald: "from-emerald-600 to-green-500",
 };
 const TINT_PILL = {
   violet: "bg-violet-100 text-violet-700", blue: "bg-sky-100 text-sky-700", green: "bg-cyan-100 text-cyan-700",
   amber: "bg-amber-100 text-amber-700", rose: "bg-rose-100 text-rose-700", teal: "bg-cyan-100 text-cyan-700", indigo: "bg-indigo-100 text-indigo-700",
+  emerald: "bg-emerald-100 text-emerald-700",
 };
 const TINT_BORDER = {
   violet: "border-violet-200", blue: "border-sky-200", green: "border-cyan-200", amber: "border-amber-200", rose: "border-rose-200", teal: "border-cyan-200", indigo: "border-indigo-200",
+  emerald: "border-emerald-200",
 };
 
 // Grouped list rows (2026-09-18, Aditi: "build as shown") -- a coloured icon,
@@ -119,6 +123,7 @@ const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
   { id: "clinical", label: "Clinical Learning", desc: "Conditions • Clinical cases", icon: Stethoscope, tint: "rose" },
+  { id: "xray", label: "X-ray Educational Material", desc: "Knee X-ray • more coming", icon: Bone, tint: "emerald" },
   { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
   { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
@@ -189,6 +194,15 @@ export default function LearnTabEntry({ onNav }) {
         <style>{".pm-shell{background:#fff !important}"}</style>
       <DisplayFont/>
         <ClinicalLearning onBack={() => setView("home")}/>
+      </div>
+    );
+  }
+
+  if (view === "xray") {
+    return (
+      <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
+        <style>{".pm-shell{background:#fff !important}"}</style>
+        <XrayHome onBack={() => setView("home")}/>
       </div>
     );
   }
