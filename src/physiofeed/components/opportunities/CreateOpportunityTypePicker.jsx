@@ -2,18 +2,18 @@ import { createPortal } from "react-dom";
 import { X, GraduationCap, Briefcase, Users2, Handshake } from "lucide-react";
 
 // "What do you want to post?" (2026-09-24) -- the entry point the Explore
-// FAB opens before any create form. Workshop first: it's PhysioFeed's
-// primary opportunity type per the brief. Workshop hands off to its own
-// wizard (WorkshopWizard.jsx); the other three share
+// FAB opens before any create form. Workshop hands off to its own wizard
+// (WorkshopWizard.jsx); the other three share
 // wizard/ApplicationOpportunityForm.jsx, parameterized by type.
 // Color-coded per type (2026-09-28, Aditi: "make it white not gray, and
 // colour codded") instead of one shared indigo tone -- same palette as the
 // main nav icons (Header.jsx) and CreatePanel.jsx, so a type reads at a
 // glance instead of every row looking the same.
+// Order: Job, Internship, Workshop, Collaboration (2026-09-28, Aditi).
 const TYPES = [
-  { key: "workshop", label: "Workshop", sub: "Course / webinar", icon: GraduationCap, bg: "#F0E8FF", color: "#6D28D9" },
   { key: "job", label: "Job", sub: "Full-time / part-time", icon: Briefcase, bg: "#DDF8EA", color: "#16866B" },
   { key: "internship", label: "Internship", sub: "Student opportunity", icon: Users2, bg: "#DCEAFF", color: "#2563EB" },
+  { key: "workshop", label: "Workshop", sub: "Course / webinar", icon: GraduationCap, bg: "#F0E8FF", color: "#6D28D9" },
   { key: "collaboration", label: "Collaboration", sub: "Research / project", icon: Handshake, bg: "#FFE9D6", color: "#C2410C" },
 ];
 
