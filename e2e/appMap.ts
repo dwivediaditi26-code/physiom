@@ -85,6 +85,14 @@ export async function expectHome(page: Page) {
   await noCrash(page);
 }
 
+// After a reload the app comes back on the screen you were on (not Home), so
+// "we're still signed in" means: the app frame is there and the sign-in form is not.
+export async function expectStillSignedIn(page: Page) {
+  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar"))).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByPlaceholder("you@clinic.com")).toHaveCount(0);
+  await noCrash(page);
+}
+
 export async function enterGuestMode(page: Page) {
   await freshStart(page);
   await page.goto("/");

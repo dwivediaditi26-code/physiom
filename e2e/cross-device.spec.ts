@@ -33,7 +33,10 @@ test.describe('Cross-device sync', () => {
     await expectPatientListed(pageA, patientName);
     // The header shows "Saved to cloud <time>" once the round-trip finished
     // (it says "Offline" / "Saving" while it has not).
-    await expect(pageA.getByText(/Saved to cloud/).first()).toBeVisible({ timeout: 45_000 });
+    await expect(
+      pageA.getByText(/Saved to cloud/).first(),
+      "the cloud save did not finish -- if the header says 'Offline -- will retry', the save request was rejected by the database",
+    ).toBeVisible({ timeout: 45_000 });
 
     // ── Device B: a brand-new browser context, same account ──
     const ctxB = await browser.newContext();
