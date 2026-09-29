@@ -522,10 +522,22 @@ async function hydrateLocalCache(userId) {
 // get re-tagged to whichever account happens to be logged in by the time the
 // network request actually completes — it's always tagged with the user who
 // was active when the save was *initiated*.
+//
+// The two demo patients every new account starts with (SEED_PATIENT and
+// SEED_PATIENT_2) have the SAME fixed id in every account. The patients table
+// only lets one account own a given id, so once one account had uploaded them,
+// every other account's save -- which sends the whole list in ONE request --
+// was rejected as a whole ("new row violates row-level security policy") and
+// the real patients in it never reached the cloud (header: "Offline -- will
+// retry"). Demo patients are sample data, so they stay on the device.
+const DEMO_PATIENT_IDS = new Set([SEED_PATIENT.id, SEED_PATIENT_2.id]);
+
 async function syncPatientsToSupabase(patients, userId) {
   try {
     if (!userId) return; // not logged in — don't sync
-    const rows = patients.map(p => ({
+    const toSync = patients.filter(p => !DEMO_PATIENT_IDS.has(p.id));
+    if (toSync.length === 0) return; // only demo patients -- nothing to upload
+    const rows = toSync.map(p => ({
       id: p.id,
       user_id: userId,
       name: p.name || "Unknown",
