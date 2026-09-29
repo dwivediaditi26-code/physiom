@@ -40,35 +40,27 @@ Playwright writes the test code for you as you click. Copy that into a new
 
     npm run test:e2e:report   # opens the HTML report with videos/screenshots
 
+## The app-walkthrough tests (no login needed)
+
+These use the app's "Try the full app" Guest Mode, so they need no account,
+no database and no secrets. They click through the real screens on both a
+desktop-sized and a phone-sized browser:
+
+    npm run test:e2e -- app-tour          # every main area opens
+    npm run test:e2e -- guest-journey     # Home, Clinical tabs, one Ortho assessment saved
+    npm run test:e2e -- ortho-steps       # all 20 Ortho steps, Next and step bar
+    npm run test:e2e -- regions           # all 13 body regions
+    npm run test:e2e -- neuro-cardio      # Neuro and Cardio assessments
+    npm run test:e2e -- ortho-cases       # 10 synthetic patients
+
+Add `--project=chromium` (desktop only) or `--project=mobile-chrome` (phone
+only) to run just one size, and `npm run test:e2e:ui` to watch them click.
+
 ## The bigger tests (login + patient data)
 
-`patient-journey.spec.ts` and `multi-visit-and-cross-device.spec.ts` need a
-free Supabase TEST project and two secrets — see `e2e/README.md`. Skip these
-until you're comfortable; the starter above needs none of that.
-
----
-
-## Run the therapist test (phone view, uses your real login)
-
-This one logs in as you and clicks through the app like a therapist.
-
-1. Make a file with your login. In Terminal, in the project folder, run
-   (replace with your real email/password):
-
-       cat > e2e/login.local.json <<'JSON'
-       { "email": "you@example.com", "password": "your-password" }
-       JSON
-
-   This file stays only on your Mac — it is git-ignored and never uploaded.
-2. Run it and watch:
-
-       npm run test:e2e:ui
-
-   In the window, click `therapist-mobile.spec.ts` and press ▶. It logs in
-   and opens the Subjective screen on a phone-sized browser.
-
-Safe by design: the test never saves a patient, so it doesn't change any real
-data — it only fills the on-screen form and checks buttons work.
+`patient-journey.spec.ts` and `cross-device.spec.ts` sign up real accounts, so
+they need a free Supabase TEST project and two secrets — see `e2e/README.md`.
+Skip these until you're comfortable; everything above needs none of that.
 
 ## Record your own tests by clicking (no coding)
 

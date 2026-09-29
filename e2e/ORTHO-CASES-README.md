@@ -1,19 +1,20 @@
 # Ortho case library — 10 synthetic cases (E2E)
 
 Files:
-- `e2e/ortho-cases.fixtures.ts` — the 10 cases as structured data (demographics,
-  subjective, ROM, MMT, special tests, expected impression). All synthetic — no
-  real patients.
-- `e2e/ortho-cases.spec.ts` — data-driven spec. Runs each case through the full
-  therapist workflow: Subjective → Suggest probable objective assessment → Objective (ROM / MMT /
-  Special tests) → Clinical Impression / Probable Diagnosis → Save → reload from
-  the backend. Runs in BOTH the `chromium` (desktop) and `mobile-chrome` projects
-  = 20 tests.
+- `e2e/ortho-cases.fixtures.ts` — the 10 cases as structured data (age, sex, body
+  region and side, chief complaint, the wording a sensible impression would use).
+  All synthetic — no real patients.
+- `e2e/ortho-cases.spec.ts` — data-driven spec. Runs each case through today's
+  Ortho assessment: start (region + side) → Demographics → Subjective (chief
+  complaint) → Clinical Assessment → Final Review → Save → the patient shows in
+  Clinical → Patients. Runs in BOTH the `chromium` (desktop) and `mobile-chrome`
+  projects = 20 tests.
 
-## ⚠️ Before you run — this SAVES real patients
-Each case creates a patient named `E2E ORTHO DELETE ME <case>`. Run it ONLY while
-logged into a **disposable TEST Supabase project**, never production. See
-`e2e/README.md` for how to stand one up (confirm-email OFF, schema loaded).
+## Safe to run anywhere
+It uses **Guest Mode** ("Try the full app"), so no account, no secrets and no
+database are involved, and it can never leave test patients behind. (Earlier
+versions logged in and saved real patients to a test Supabase project; the
+"E2E ORTHO DELETE ME" name is kept only so a stray one is easy to spot.)
 
 ## Run it
 ```bash
@@ -21,33 +22,25 @@ npm install
 npx playwright install            # one time — downloads browsers
 npm run build                     # preview serves this build
 
-# put your TEST-project login here (gitignored, never uploaded):
-cat > e2e/login.local.json <<'JSON'
-{ "email": "you@test-project.dev", "password": "your-password" }
-JSON
-
 npm run test:e2e -- ortho-cases            # both desktop + mobile (20 tests)
 npm run test:e2e -- ortho-cases --project=chromium   # desktop only
 npm run test:e2e:ui -- ortho-cases         # watch it click through live
 npm run test:e2e:report                    # HTML report w/ video+screenshots
 ```
 
-## What's a hard assertion vs best-effort
-- **Hard (fails the test):** subjective marker carries through; analysis runs
-  without crash; a clinical impression/probable diagnosis surfaces; the saved
-  patient reloads from the backend with its subjective intact.
-- **Best-effort (logged as annotations, won't false-fail):** exact per-movement
-  ROM values, MMT grades, and special-test results. The app renders region-
-  specific labels that vary; these helpers match defensively. If a region's
-  labels differ from the fixture, run `npx playwright codegen http://localhost:4173`,
-  click through that module once, and tighten the selector in the helper.
+## What's a hard check vs information
+- **Hard (fails the test):** every screen opens without a crash; the chief
+  complaint carries through to Final Review; saving works; the patient is listed.
+- **Information (test report annotation, never fails):** whether the Clinical
+  Assessment step mentions the expected condition. With only a chief complaint
+  typed in, the differential has little to go on.
 
-## Notes on the data
-- MMT: the app only offers coarse grades (5/5…0/5), so textbook `4-/5` / `3+/5`
-  map to the nearest whole grade in the fixture (`grade` is already the exact
-  option string the dropdown contains).
-- Cleanup: delete the `E2E ORTHO DELETE ME` patients from the patient list after a
-  run (or just reset the disposable test project).
+## About the data
+The first version of these cases also had ROM angles, MMT grades, special-test
+results and observation notes for the old Screening Workflow. Those screens are
+gone. The values are still in git history (`git log -- e2e/ortho-cases.fixtures.ts`)
+if you want to enter them into today's ROM / MMT / Special Tests steps, which
+would also make the impression check meaningful.
 
 ## Scaling to 100 cases
 Add more objects to `ORTHO_CASES` in the fixtures file — the spec auto-generates a
