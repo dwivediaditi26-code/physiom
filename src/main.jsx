@@ -51,6 +51,21 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   })
 }
 
+// A deploy replaces hashed chunk files; a tab opened before it then fails to
+// import a lazy chunk ("Failed to fetch dynamically imported module").
+// Reload once to pick up the new build; the sessionStorage flag stops loops.
+window.addEventListener('vite:preloadError', (e) => {
+  try {
+    if (sessionStorage.getItem('pm_chunk_reload')) return;
+    sessionStorage.setItem('pm_chunk_reload', '1');
+    e.preventDefault();
+    window.location.reload();
+  } catch { /* storage blocked: fall through to normal error */ }
+});
+window.addEventListener('load', () => {
+  setTimeout(() => { try { sessionStorage.removeItem('pm_chunk_reload'); } catch { /* ignore */ } }, 10000);
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

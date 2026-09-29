@@ -57,6 +57,11 @@ export function reportClientError(errorOrMessage, extra = {}) {
 // Catches what a React error boundary can't: errors thrown from event
 // handlers, timers, and async code, plus rejected promises nobody caught.
 export function installGlobalErrorReporting() {
-  window.addEventListener('error', (e) => reportClientError(e.error || e.message));
+  // Benign browser noise: layout settled after a ResizeObserver callback.
+  const isBenign = (m) => /ResizeObserver loop/i.test(String(m || ''));
+  window.addEventListener('error', (e) => {
+    if (isBenign(e.message)) return;
+    reportClientError(e.error || e.message);
+  });
   window.addEventListener('unhandledrejection', (e) => reportClientError(e.reason));
 }
