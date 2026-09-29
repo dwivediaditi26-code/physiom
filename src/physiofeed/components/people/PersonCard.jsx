@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, UserPlus, Check, Clock, MessageSquare } from "lucide-react";
+import { MapPin, UserPlus, Check, Clock, MessageSquare, Star } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf } from "../shared/constants.js";
@@ -9,9 +9,15 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // `follows` row it used to stand in for. Demo people (mockData.js) have no
 // real row and can't be connected to -- sendConnectionRequest throws a
 // readable message for those, shown inline here.
+//
+// Follow is a separate action from Connect (2026-09-29 -- this card only
+// ever had Connect + Message; Follow lived on ProfileHeader but not here,
+// so the only way to follow someone from the People list was to open
+// their profile first). person.following comes from getPeople() already.
 export default function PersonCard({ person }) {
-  const { connectionStates, connectWith, acceptConnection, cancelConnection } = useAppData();
+  const { connectionStates, connectWith, acceptConnection, cancelConnection, followPerson } = useAppData();
   const [busy, setBusy] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const state = connectionStates[person.id] || "none";
@@ -46,6 +52,18 @@ export default function PersonCard({ person }) {
         <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5"><MapPin size={11} /> {person.location} · {person.mutual} mutual</p>
       </Link>
       <div className="flex items-center gap-2 ml-auto shrink-0">
+        <button
+          onClick={async () => {
+            if (followBusy) return;
+            setFollowBusy(true);
+            try { await followPerson(person.id); } finally { setFollowBusy(false); }
+          }}
+          disabled={followBusy}
+          aria-label={person.following ? `Unfollow ${person.name}` : `Follow ${person.name}`}
+          className={`shrink-0 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border disabled:opacity-60 ${person.following ? "bg-[#7C3AED] text-white border-[#7C3AED]" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+        >
+          <Star size={13} fill={person.following ? "currentColor" : "none"} /> {person.following ? "Following" : "Follow"}
+        </button>
         <button
           onClick={() => navigate(`/messages?with=${encodeURIComponent(person.id)}`)}
           aria-label={`Message ${person.name}`}
