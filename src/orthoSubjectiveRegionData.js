@@ -292,6 +292,114 @@ export function subjectiveFieldsForRegion(region) {
   return (key && SUBJECTIVE_REGION_FIELDS[key]) || GENERIC_REGION_FIELDS;
 }
 
+// Groups each region's (long) field list into named, collapsible sections
+// for RegionSubjectiveTabs (orthoOutpatientSections.jsx) to render (2026-09-29,
+// Aditi: the region-specific subjective form is "too long" as one flat list,
+// especially in the AI flow -- collapse it into sections instead of removing
+// any fields). Field IDs only, so this never duplicates label/type/options --
+// SUBJECTIVE_REGION_FIELDS above stays the single source of truth for those.
+// Any field id present in a region's list but NOT named in its grouping here
+// (e.g. a future addition someone forgot to file into a section) still shows,
+// under a trailing "Other" section, rather than silently disappearing.
+const SECTION_GROUPS = {
+  cervical: [
+    { title: "Location & Radiation", ids: ["location", "radiation", "dermatomal"] },
+    { title: "Mechanism of Injury", ids: ["mechanismType", "mechanismWad", "mechanismLoc", "mechanismFirstSymptom"] },
+    { title: "Arm / Hand Symptoms", ids: ["armPresent", "armQuality", "armFingers", "armNeuro", "armPosition", "lhermitte"] },
+    { title: "Aggravating Factors", ids: ["aggMovements", "aggPostures", "aggActivities", "aggOther", "aggWorst"] },
+    { title: "Relieving Factors", ids: ["relMovements", "relPostures", "relManual", "relMedications", "relBest"] },
+    { title: "Pattern & Behaviour", ids: ["overallPattern", "morning", "night", "pattern24hr", "trajectory", "irritability"] },
+    { title: "Headache Screen", ids: ["haPresent", "haLocation", "haQuality", "haTriggers", "haType", "haFrequency"] },
+    { title: "Red Flag Screens", ids: ["redFlagsMyelopathy", "redFlagsVbi", "redFlagsInstability", "redFlagsOther", "fractureScreen", "rfAction"] },
+    { title: "Function", ids: ["fnAdl", "fnWork"] },
+  ],
+  thoracic: [
+    { title: "Location & Radiation", ids: ["location", "radiation"] },
+    { title: "Mechanism & Rib Screen", ids: ["mechanismType", "ribScreen"] },
+    { title: "Aggravating & Relieving", ids: ["aggMovements", "aggPostures", "relTreatments"] },
+    { title: "Pattern", ids: ["pattern", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["fnAdl", "fnPsfs"] },
+  ],
+  lumbarSI: [
+    { title: "Location & Radiation", ids: ["location", "radiation", "dermatomal", "belowKnee"] },
+    { title: "Mechanism of Injury", ids: ["mechanismType", "mechanismLoad", "mechanismPosition", "mechanismFirstSymptom", "spondyloScreen"] },
+    { title: "Aggravating Factors", ids: ["aggPostures", "aggMovements", "aggActivities", "aggOther"] },
+    { title: "Relieving Factors", ids: ["relPostures", "relMovements", "relManual", "relMedications", "directionalPreference"] },
+    { title: "Pattern & Behaviour", ids: ["overallPattern", "morning", "night", "pattern24hr", "trajectory", "irritability"] },
+    { title: "Leg Neuro Symptoms", ids: ["neuroPresent", "neuroQuality", "neuroSigns", "claudication", "bladderBaseline"] },
+    { title: "Red Flag Screens", ids: ["redFlagsCauda", "redFlagsFracture", "redFlagsInflammatory", "redFlagsSerious"] },
+    { title: "Psychosocial (Yellow Flags)", ids: ["yellowBeliefs", "yellowFear", "yellowEmotion", "yellowWork", "yellowSocial", "yellowStartBack"] },
+    { title: "Function & Tolerance", ids: ["sittingTolerance", "standingTolerance", "walkingTolerance", "adlRestrictions", "workImpact"] },
+    { title: "History", ids: ["priorEpisodes", "priorEpisodeOutcome"] },
+  ],
+  shoulder: [
+    { title: "Location & Radiation", ids: ["location", "radiation"] },
+    { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+    { title: "Pattern & Stiffness", ids: ["pattern", "stiffness", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["function"] },
+  ],
+  elbowWristHand: [
+    { title: "Location & Radiation", ids: ["location", "radiation"] },
+    { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+    { title: "Pattern & Neuro", ids: ["pattern", "neuro", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["function"] },
+  ],
+  hip: [
+    { title: "Location & Pattern of Pain", ids: ["location", "locationPattern"] },
+    { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+    { title: "Pattern & Mechanical Symptoms", ids: ["pattern", "mechanical", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Sub-condition Screens", ids: ["cSign", "piriformisSigns", "meralgiaSigns", "hamstringOnsetPattern"] },
+    { title: "Function", ids: ["function"] },
+  ],
+  knee: [
+    { title: "Location & Radiation", ids: ["location", "radiation"] },
+    { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+    { title: "Pattern & Mechanical Symptoms", ids: ["pattern", "givingWay", "locking", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["function"] },
+  ],
+  ankleFoot: [
+    { title: "Location & Radiation", ids: ["location", "radiation"] },
+    { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+    { title: "Pattern & Swelling", ids: ["pattern", "swelling", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["function"] },
+    { title: "Additional Screens", ids: ["previousSprains", "poppingSound", "weightBearingAfterInjury", "morningSymptoms", "instability", "calfAchillesOnset", "shinPain", "lisfrancScreen", "peronealSymptoms"] },
+  ],
+};
+
+// Own small grouping for the generic write-in fallback too, same "collapse,
+// don't cut" treatment as every named region above.
+const GENERIC_SECTION_GROUPS = [
+  { title: "Location & Radiation", ids: ["location", "radiation"] },
+  { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+  { title: "Pattern", ids: ["pattern", "irritability"] },
+  { title: "Red Flags", ids: ["redFlags"] },
+  { title: "Function", ids: ["function"] },
+];
+
+export function sectionedFieldsForRegion(region) {
+  const fields = subjectiveFieldsForRegion(region);
+  const key = contentKeyForRegion(region);
+  const groups = (key && SECTION_GROUPS[key]) || GENERIC_SECTION_GROUPS;
+  const byId = new Map(fields.map((f) => [f.id, f]));
+  const used = new Set();
+  const sections = groups
+    .map((g) => {
+      const groupFields = g.ids.map((id) => byId.get(id)).filter(Boolean);
+      groupFields.forEach((f) => used.add(f.id));
+      return { title: g.title, fields: groupFields };
+    })
+    .filter((s) => s.fields.length);
+  const leftover = fields.filter((f) => !used.has(f.id));
+  if (leftover.length) sections.push({ title: "Other", fields: leftover });
+  return sections;
+}
+
 // Which fields actually change what "AI Objective Assessment" suggests --
 // verified directly against each region's differential-matching adapter
 // (2026-09-15, following the Shoulder/Hip/Ankle keyword-matching audit &
