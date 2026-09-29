@@ -33,3 +33,38 @@ self.addEventListener('fetch', e => {
   }
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
+
+// Push notifications (reminders, deadlines, etc.) sent via the send-push
+// edge function. Payload shape is { title, body, url } — see
+// supabase/functions/send-push/index.ts.
+self.addEventListener('push', e => {
+  let data = { title: 'PhysioMind', body: '', url: '/' };
+  try { data = { ...data, ...e.data.json() }; } catch { /* non-JSON push, keep defaults */ }
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: data.url || '/' },
+    })
+  );
+});
+
+// Focuses an already-open tab instead of always opening a new one -- a
+// student tapping a reminder should land back in the app they already
+// have open, not a second duplicate tab.
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
