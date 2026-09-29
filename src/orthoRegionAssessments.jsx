@@ -47,7 +47,7 @@ function useSimpleRegionTab(data, setData, sectionKey_, tabs, selectedRegions) {
 
 /* ============================================================
    ROM — regions/movements/norms straight from ROM_DATA
-   (src/PhysioNeuro.jsx). Plain numeric input (not a stepper) +
+   (src/sharedClinicalData.js). Plain numeric input (not a stepper) +
    a colour-graded restriction bar, matching the real ROM module;
    pain/end-feel stay as quick toggle chips.
    ============================================================ */
@@ -310,7 +310,7 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
 
 /* ============================================================
    MMT — regions/muscles/grades straight from MMT_DATA (src/
-   PhysioNeuro.jsx). Grade is entered via a dropdown carrying the
+   sharedClinicalData.js). Grade is entered via a dropdown carrying the
    full clinical scale (5, 4+, 4, 4-, ... 0, NT), exactly as the
    real MMT module does — not a stepper.
    ============================================================ */

@@ -1,7 +1,7 @@
 // neuroCoverage.test.js
 // Regression test for the most severe finding in this whole audit: the
 // Neurological SOAP section was reading from field keys that don't match
-// what NeurologicalModule (PhysioNeuro.jsx) actually writes, verified
+// what the old NeurologicalModule wrote (the keys saved records still hold), verified
 // directly against its set() calls:
 //   - Myotomes: real key is "myo_<slug>_left/right" (e.g. "myo_c5_left").
 //     The SOAP code read bare "n_c5" — could NEVER match, so myotome
@@ -16,7 +16,7 @@
 //     has 16 levels) and included a phantom "t2" that doesn't exist.
 import { describe, it, expect } from "vitest";
 import { buildRealtimeSOAP } from "../ClinicalModules.jsx";
-import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "../PhysioNeuro.jsx";
+import { DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION } from "../sharedClinicalData.js";
 
 describe("Neurological findings actually reach the SOAP Objective section", () => {
   it("myotomes: a real myo_<slug>_left key now appears (was a complete miss before)", () => {

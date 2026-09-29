@@ -510,8 +510,8 @@ export function runCervicalReasoningFromData(data: Data): ReasoningResult {
 }
 
 // ── Lumbar ──────────────────────────────────────────────────────────────────
-// Myotome/dermatome/reflex ids verified against the live neuro module
-// (PhysioNeuro.jsx computes myotome ids as "myo_"+level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase();
+// Myotome/dermatome/reflex ids verified against the old neuro module
+// (PhysioNeuro.jsx, since removed, computed myotome ids as "myo_"+level.replace(/[^a-zA-Z0-9]/g,"_").toLowerCase();
 // L3/L4/L5/S1 are single tokens so the slug is unambiguous — myo_l3/_l4/_l5/_s1).
 const LUMBAR_MYOTOMES = ["l3", "l4", "l5", "s1"];
 const LUMBAR_DERMATOMES = ["n_l2", "n_l3", "n_l4", "n_l5", "n_s1"];
