@@ -185,18 +185,21 @@ export default function Header() {
   return (
     <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
       {/* Mobile/tablet section nav (MainNav above). The back chevron (any
-          page but /feed) sits above it in its own row, so it never eats
-          into the illustrated icons' equal spacing. */}
+          page but /feed) used to sit above it in its own bordered row --
+          that was its own bit of dead white space (2026-09-28, Aditi:
+          "why it is not... integrated in this system"). It's inline with
+          the icon row now, same as the search/bell/message icons are
+          inline with the logo up in AppFull.jsx's top bar. */}
       <div className="lg:hidden bg-white border-t border-slate-200">
-        {location.pathname !== "/feed" && (
-          <div className="flex items-center px-3 pt-1.5 max-w-[460px] mx-auto">
-            <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
+        <div className="flex items-center max-w-[460px] mx-auto pl-1">
+          {location.pathname !== "/feed" && (
+            <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 text-slate-500 shrink-0">
               <ChevronLeft size={18} />
             </button>
+          )}
+          <div className="flex-1 min-w-0">
+            <MainNav />
           </div>
-        )}
-        <div className="max-w-[460px] mx-auto px-1">
-          <MainNav />
         </div>
       </div>
 
