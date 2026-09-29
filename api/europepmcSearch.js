@@ -1,4 +1,5 @@
 import { authenticateAndRateLimit } from './_lib/rateLimit.js';
+import { splitAbstract } from './_lib/abstractSplit.js';
 
 // Evidence tab live search, second source (see PubMedSearchPanel.jsx --
 // now LiveSearchPanel.jsx). Europe PMC (EMBL-EBI, europepmc.org) is a
@@ -46,18 +47,23 @@ export default async function handler(req, res) {
     const json = await r.json();
     const raw = json?.resultList?.result || [];
 
-    const results = raw.map((r) => ({
-      id: r.id,
-      source: r.source,
-      pmid: r.pmid || null,
-      pmcid: r.pmcid || null,
-      doi: r.doi || null,
-      title: (r.title || '(untitled)').replace(/\.$/, ''),
-      journal: r.journalTitle || 'Europe PMC',
-      year: r.pubYear ? parseInt(r.pubYear, 10) : null,
-      abstractText: r.abstractText || '',
-      url: resultUrl(r),
-    }));
+    const results = raw.map((r) => {
+      const { summary, conclusion } = splitAbstract(r.abstractText);
+      return {
+        id: r.id,
+        source: r.source,
+        pmid: r.pmid || null,
+        pmcid: r.pmcid || null,
+        doi: r.doi || null,
+        title: (r.title || '(untitled)').replace(/\.$/, ''),
+        journal: r.journalTitle || 'Europe PMC',
+        year: r.pubYear ? parseInt(r.pubYear, 10) : null,
+        abstractText: r.abstractText || '',
+        summary,
+        conclusion,
+        url: resultUrl(r),
+      };
+    });
 
     return res.status(200).json({ results });
   } catch (e) {
