@@ -1160,10 +1160,21 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       }}/>
       <SidebarTopItem navKey="learn" icon="📚" label="Learn"/>
       <SidebarTopItem navKey="physiofeed" icon="📰" label="PhysioFeed"/>
+      {/* Profile (2026-09-29, Aditi: "there should be a profile option
+          also") -- previously the ONLY way here to your own profile was
+          "Settings" below, which actually navigated to it (navKey="profile")
+          under the wrong label. Now a real, separate item. */}
+      <SidebarTopItem navKey="profile" icon="👤" label="Profile"/>
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      <SidebarTopItem navKey="profile" icon="⚙️" label="Settings"/>
+      {/* Settings no longer navigates anywhere (2026-09-29, Aditi: "the
+          setting is taking us to the profile of our self. It should not be
+          like that") -- it used to share Profile's navKey, so tapping it
+          silently opened your own profile instead of a settings screen.
+          Sign out / Delete account below ARE its content -- see next
+          comment -- so this is now just that section's header. */}
+      <SidebarTopItem icon="⚙️" label="Settings" onClick={()=>{}}/>
 
       {/* Sign out / Delete account -- moved here from the Clinical "Today"
           tab's own header (2026-09-10, Aditi screenshot: "put this red
