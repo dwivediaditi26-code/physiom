@@ -48,7 +48,7 @@ function MainNav() {
   const activeIdx = NAV_ITEMS.findIndex((s) => matchPath({ path: s.path, end: false }, pathname));
 
   return (
-    <nav aria-label="PhysioFeed sections" className="flex items-start gap-2.5 overflow-x-auto no-scrollbar px-1 py-1.5">
+    <nav aria-label="PhysioFeed sections" className="flex items-start gap-2 overflow-x-auto no-scrollbar px-1 py-1">
       {NAV_ITEMS.map((item, i) => {
         const isActive = i === activeIdx;
         const { Icon } = item;
@@ -57,13 +57,13 @@ function MainNav() {
             key={item.path}
             to={item.path}
             aria-current={isActive ? "page" : undefined}
-            className="flex flex-col items-center gap-1 shrink-0 w-16 focus:outline-none"
+            className="flex flex-col items-center gap-0.5 shrink-0 w-14 focus:outline-none"
           >
-            <span className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: item.bg }}>
-              <Icon size={18} strokeWidth={item.filled ? 1.5 : 1.75} color={item.color} fill={item.filled ? item.color : "none"} />
+            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: item.bg }}>
+              <Icon size={15} strokeWidth={item.filled ? 1.5 : 1.75} color={item.color} fill={item.filled ? item.color : "none"} />
             </span>
             <span
-              className="text-[10px] font-bold leading-tight text-center min-h-[22px] flex items-start justify-center"
+              className="text-[10px] font-bold leading-tight text-center min-h-[13px] flex items-start justify-center"
               style={{ color: isActive ? "#172033" : "#8995AA" }}
             >
               {item.label}
