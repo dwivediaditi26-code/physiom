@@ -208,6 +208,21 @@ export function AppDataProvider({ children }) {
   const cancelConnection = useCallback(async (id) => { setConnectionStates(await db.cancelConnectionRequest(id)); await refreshConnections(); }, [refreshConnections]);
   const disconnectFrom = useCallback(async (id) => { setConnectionStates(await db.disconnectFrom(id)); await refreshConnections(); }, [refreshConnections]);
 
+  // Blocking (see supabase/add_conversations_and_blocks.sql's block_user
+  // RPC) -- removes any pending connection + both follow directions
+  // server-side, so both lists need a resync same as the connection
+  // actions above.
+  const blockUser = useCallback((id) => runAction(
+    () => db.blockUser(id),
+    async () => { await refreshConnections(); setPeople(await db.getPeople()); },
+    "Couldn't block that person -- please try again.",
+  ), [runAction, refreshConnections]);
+  const unblockUser = useCallback((id) => runAction(
+    () => db.unblockUser(id),
+    async () => { await refreshConnections(); },
+    "Couldn't unblock that person -- please try again.",
+  ), [runAction, refreshConnections]);
+
   // Publications (2026-09-22, Evidence & Contributions tab) -- same wrapper
   // shape as education/achievements/rotations above.
   const addPublication = useCallback(async (fields) => { setPublications(await db.addPublication(fields)); }, []);
@@ -225,6 +240,7 @@ export function AppDataProvider({ children }) {
     expertise, education, achievements, rotations, publications, contributions, exercises, profile,
     connectionStates, connectionRequests, unreadMessages, refreshUnreadMessages,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom, refreshConnections,
+    blockUser, unblockUser,
     likePost, savePost, followAuthor, commentOnPost, publishPost, setCarousel,
     feedError, clearFeedError: () => setFeedError(null),
     actionError, clearActionError: () => setActionError(null),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProfileHeader from "../components/profile/ProfileHeader.jsx";
+import ReportUserModal from "../components/shared/ReportUserModal.jsx";
 import ProfileViewSwitch from "../components/profile/ProfileViewSwitch.jsx";
 import ProfileAboutSection from "../components/profile/ProfileAboutSection.jsx";
 import CurrentRoleSection from "../components/profile/CurrentRoleSection.jsx";
@@ -29,6 +30,7 @@ export default function OtherProfilePage() {
   const {
     posts, profile: myProfile, connectionStates, people, followPerson,
     connectWith, acceptConnection, ignoreConnection, cancelConnection, disconnectFrom,
+    blockUser, unblockUser,
   } = useAppData();
   const [otherProfile, setOtherProfile] = useState(null);
   const [education, setEducation] = useState([]);
@@ -39,6 +41,10 @@ export default function OtherProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [view, setView] = useState("Professional Profile");
+  // Block state isn't in AppDataContext (it's a per-pair thing, not a list
+  // every screen needs) -- fetched alongside the profile itself.
+  const [blockState, setBlockState] = useState({ blockedByMe: false, blockedByThem: false });
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     // Viewing your own id via this route (e.g. an old link) -- just show
@@ -52,13 +58,14 @@ export default function OtherProfilePage() {
     setNotFound(false);
     setView("Professional Profile"); // a new profile always opens back on Professional Profile, not wherever the last one was switched to
     (async () => {
-      const [p, ed, ac, rt, pu, ct] = await Promise.all([
+      const [p, ed, ac, rt, pu, ct, bs] = await Promise.all([
         db.getProfileById(userId),
         db.getEducationByUser(userId),
         db.getAchievementsByUser(userId),
         db.getRotationsByUser(userId),
         db.getPublicationsByUser(userId),
         db.getContributionsByUser(userId),
+        db.getConversationWith(userId),
       ]);
       if (cancelled) return;
       if (!p) setNotFound(true); else setOtherProfile(p);
@@ -67,6 +74,7 @@ export default function OtherProfilePage() {
       setRotations(rt);
       setOtherPublications(pu);
       setOtherContributions(ct);
+      setBlockState({ blockedByMe: bs.blockedByMe, blockedByThem: bs.blockedByThem });
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -112,7 +120,20 @@ export default function OtherProfilePage() {
         onCancel={() => cancelConnection(userId)}
         onDisconnect={() => disconnectFrom(userId)}
         onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
+        blockedByMe={blockState.blockedByMe}
+        blockedByThem={blockState.blockedByThem}
+        onBlock={async () => { await blockUser(userId); setBlockState((s) => ({ ...s, blockedByMe: true })); }}
+        onUnblock={async () => { await unblockUser(userId); setBlockState((s) => ({ ...s, blockedByMe: false })); }}
+        onReport={() => setReporting(true)}
       />
+
+      {reporting && (
+        <ReportUserModal
+          name={otherProfile.name}
+          onClose={() => setReporting(false)}
+          onSubmit={(reason) => db.reportUser(userId, reason)}
+        />
+      )}
 
       <ProfileViewSwitch active={view} onChange={setView} gradient={otherProfile.gradient} />
 

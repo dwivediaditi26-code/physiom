@@ -33,10 +33,13 @@ function makeChain(table) {
 
 let currentUser = null;
 let storageUploadError = null;
+const rpcData = {};
+function setRpc(name, result) { rpcData[name] = result; }
 
 vi.mock("../supabase.js", () => ({
   supabase: {
     from: vi.fn((table) => makeChain(table)),
+    rpc: vi.fn((name) => Promise.resolve(rpcData[name] ?? { data: null, error: null })),
     auth: { getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })) },
     storage: {
       from: vi.fn((bucket) => ({
@@ -51,6 +54,7 @@ import * as db from "../physiofeed/data/db.js";
 
 beforeEach(() => {
   for (const k of Object.keys(tableData)) delete tableData[k];
+  for (const k of Object.keys(rpcData)) delete rpcData[k];
   currentUser = null;
   storageUploadError = null;
 });
@@ -560,27 +564,27 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(result.id).toBe("p_poll_new");
   });
 
-  it("getConversations() returns [] when signed out, without throwing", async () => {
+  it("getInbox() returns [] when signed out, without throwing", async () => {
     currentUser = null;
-    expect(await db.getConversations()).toEqual([]);
+    expect(await db.getInbox("primary")).toEqual([]);
   });
 
-  it("getConversations() groups messages by the other person, with an unread count and the latest preview", async () => {
+  it("getInbox() maps get_inbox()'s row shape into the inbox list shape MessagesPage renders", async () => {
     currentUser = { id: "u-me" };
-    // Data is given newest-first, matching what the real
-    // .order("created_at", { ascending: false }) query in getConversations()
-    // would return -- the mock doesn't sort for us.
-    setTable("direct_messages", {
-      data: [
-        { id: 2, sender_id: "u-me", recipient_id: "u-other", text: "Reply", created_at: new Date().toISOString(), read: true },
-        { id: 1, sender_id: "u-other", recipient_id: "u-me", text: "First message", created_at: new Date(Date.now() - 60_000).toISOString(), read: false },
-      ],
+    setRpc("get_inbox", {
+      data: [{
+        conversation_id: 7, other_user_id: "u-other", other_name: "Dr Other", other_role: "PT",
+        other_avatar_url: null, other_initials: "O", other_gradient: "blue",
+        status: "accepted", request_initiator_id: null, request_round: 1, request_direction: null,
+        messages_sent_this_round: null, last_message_text: "Reply", last_message_at: new Date().toISOString(),
+        last_message_sender_id: "u-me", unread_count: 0, connection_status: null, connection_requester_id: null,
+        is_following: false, cooldown_until: null, updated_at: new Date().toISOString(),
+      }],
       error: null,
     });
-    setTable("profiles", { data: [{ id: "u-other", name: "Dr Other", role: "PT", gradient: "blue", initials: "O", avatar_url: null }], error: null });
-    const conversations = await db.getConversations();
+    const conversations = await db.getInbox("primary");
     expect(conversations).toHaveLength(1);
-    expect(conversations[0]).toMatchObject({ userId: "u-other", name: "Dr Other", lastText: "Reply" });
+    expect(conversations[0]).toMatchObject({ conversationId: 7, userId: "u-other", name: "Dr Other", lastText: "Reply", status: "accepted" });
   });
 
   it("getMessages() maps isSelf per message for the chat bubble alignment", async () => {
