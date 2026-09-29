@@ -6,12 +6,15 @@
 // mockData.js's posts/people so a real data layer could be swapped in the
 // same way db.js already fronts that seed data.
 
+// Order: Job, Internship, Workshop, Collaboration (2026-09-28, Aditi --
+// same order as CreateOpportunityTypePicker.jsx's "What do you want to
+// post?" list).
 export const OPPORTUNITY_CATEGORIES = [
   { key: "all", label: "All" },
   { key: "job", label: "Jobs" },
   { key: "internship", label: "Internships" },
-  { key: "collaboration", label: "Collaborations" },
   { key: "workshop", label: "Workshops" },
+  { key: "collaboration", label: "Collaborations" },
 ];
 
 export const SPECIALTIES = ["MSK", "Neuro", "Sports", "Pediatrics", "Cardiopulmonary", "Geriatrics"];

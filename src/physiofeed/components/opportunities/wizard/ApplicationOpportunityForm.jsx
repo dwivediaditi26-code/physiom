@@ -105,7 +105,6 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const regValid = registrationMethod !== "external" || registrationUrl.trim();
   const canPublish = detailsValid && priceValid && stipendValid && regValid;
   const canSaveDraft = title.trim().length > 0;
-  const step0Valid = canPublish; // single-step Details -> gate Next the same as Publish, since Preview is the very next (and last) screen
 
   const orgDisplay = org.trim() || profile?.name || "";
 
@@ -401,8 +400,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                disabled={!step0Valid}
-                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40 active:scale-[0.98] transition"
+                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition"
               >
                 Preview →
               </button>

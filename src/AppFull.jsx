@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react"
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
-import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon } from "lucide-react";
+import { Sparkles, Bone, HeartPulse, Brain, Footprints, Stethoscope, Users as UsersIcon, Pill as PillIcon, ClipboardList as ClipboardListIcon, PersonStanding, Search as SearchIcon, Bell as BellIcon, MessageSquare as MessageSquareIcon, Plus as PlusIcon } from "lucide-react";
 import { getNotifications as getPfNotifications, getUnreadMessageCount as getPfUnreadMessages } from "./physiofeed/data/db.js";
 import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
@@ -1572,19 +1572,32 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         {active==="physiofeed"||active==="profile" ? (
           <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
             <button onClick={()=>navTo("physiofeed",{pfTab:"search"})} aria-label="Search"
-              style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <SearchIcon size={18}/>
+              style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:"#172033",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <SearchIcon size={18} strokeWidth={1.75}/>
             </button>
             <button onClick={()=>navTo("physiofeed",{pfTab:"notifications"})} aria-label="Notifications"
-              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <BellIcon size={18}/>
+              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:"#172033",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <BellIcon size={18} strokeWidth={1.75}/>
               {pfUnread && <span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#f43f5e"}}/>}
             </button>
             <button onClick={()=>navTo("physiofeed",{pfTab:"messages"})} aria-label={pfUnreadMsgs>0?`Messages (${pfUnreadMsgs} unread)`:"Messages"}
-              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:PC.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <MessageSquareIcon size={18}/>
+              style={{position:"relative",minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:"#172033",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <MessageSquareIcon size={18} strokeWidth={1.75}/>
               {pfUnreadMsgs>0 && <span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#f43f5e"}}/>}
             </button>
+            {/* "+" Create (2026-09-28, Aditi's redesigned-top-nav reference:
+                "put the add sign above where message notification present"):
+                relocated here from the Feed composer bar's own plus button.
+                Opens CreatePanel.jsx via jumpTo (pfOpenCreate) since this
+                button lives outside PhysioFeed's own provider tree -- see
+                CreatePanelBridge in PhysioFeedEntry.jsx. Feed-only, not
+                Profile: there's nothing to create from the profile screen. */}
+            {active==="physiofeed" && (
+              <button onClick={()=>navTo("physiofeed",{pfOpenCreate:true})} aria-label="Create"
+                style={{minHeight:30,minWidth:30,marginLeft:2,background:"#6D28D9",border:"none",borderRadius:"50%",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <PlusIcon size={17} strokeWidth={2.5}/>
+              </button>
+            )}
           </div>
         ) : active==="clinical" ? (
           <button onClick={createNewPatient}

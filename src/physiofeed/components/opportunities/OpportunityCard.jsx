@@ -95,7 +95,6 @@ export default function OpportunityCard({ opp, onOpen }) {
             type="button"
             onClick={ctaDisabled ? undefined : () => onOpen(opp)}
             disabled={ctaDisabled}
-            data-opp-cta={ctaDisabled ? undefined : true}
             className={`pf-font-head text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm transition ${ctaDisabled ? "opacity-40 cursor-not-allowed" : "active:scale-[0.97]"}`}
             style={{ background: c.solid }}
           >

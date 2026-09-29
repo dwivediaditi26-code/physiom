@@ -6,7 +6,10 @@ import FeedRightRail from "../components/feed/FeedRightRail.jsx";
 import PostDetailModal from "../components/feed/PostDetailModal.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
-const TABS = ["For You", "Following", "Research", "Case Studies", "Techniques", "Education"];
+// Trimmed to the reference mockup's four tabs (2026-09-28, Aditi's "Option
+// 6" screenshot) -- Techniques/Education posts still show up under "For
+// You", just no longer have their own filter tab here.
+const TABS = ["For You", "Following", "Research", "Case Studies"];
 
 // Deep-link to a single post (2026-08-27, "like how it happens in Insta"):
 // a like/comment notification now links to /feed?post=<id> instead of just
@@ -31,7 +34,7 @@ export default function FeedPage() {
         <div className="flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-full text-sm font-bold transition-colors focus:outline-none ${activeTab === tab ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#8A7FA3] hover:bg-[#F7F5FF]"}`}>
+              className={`pf-font-head shrink-0 px-2.5 py-1.5 rounded-full text-[13px] font-bold whitespace-nowrap transition-colors focus:outline-none ${activeTab === tab ? "bg-[#F0E8FF] text-[#6D28D9]" : "text-[#8995AA] hover:bg-[#F7F5FF]"}`}>
               {tab}
             </button>
           ))}

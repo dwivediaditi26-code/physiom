@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as db from "../data/db.js";
 
 const AppDataContext = createContext(null);
@@ -42,6 +43,40 @@ export function AppDataProvider({ children }) {
   // PhysioFeedEntry.jsx): text assembled from selected assessment sections,
   // consumed once by DiscussionComposer's lazy useState init, then cleared.
   const [composerPrefill, setComposerPrefill] = useState(null);
+  // Global "Create" sheet (2026-09-28, Aditi's redesigned-top-nav reference):
+  // opened by the "+" in physiom's own top app header (AppFull.jsx
+  // pm-mobile-hdr, via CreatePanelBridge in PhysioFeedEntry.jsx) as well as
+  // the Feed composer bar, so it lives in shared context rather than
+  // per-page state.
+  const [createPanelOpen, setCreatePanelOpen] = useState(false);
+
+  // Shared "go to the just-previous PhysioFeed screen" (2026-09-28, Aditi:
+  // "it should take us to there not the scrolling" -- Header.jsx's own back
+  // chevron used to call react-router's plain navigate(-1) directly, a
+  // second, independent notion of "back" from this one. Ported from what
+  // used to be BackBridge's own local depthRef/goingBackRef/lastKeyRef
+  // (PhysioFeedEntry.jsx) so there's exactly one counter, shared by
+  // AppFull.jsx's outer "← Back" button (via BackBridge, now just a thin
+  // relay) and Header.jsx's own chevron -- two independent depth counters
+  // for the same MemoryRouter history could otherwise drift apart.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [canGoBack, setCanGoBack] = useState(false);
+  const depthRef = useRef(0);
+  const goingBackRef = useRef(false);
+  const lastKeyRef = useRef(location.key);
+  useEffect(() => {
+    if (location.key === lastKeyRef.current) return;
+    lastKeyRef.current = location.key;
+    if (goingBackRef.current) { goingBackRef.current = false; depthRef.current = Math.max(0, depthRef.current - 1); }
+    else depthRef.current += 1;
+    setCanGoBack(depthRef.current > 0);
+  }, [location.key]);
+  const goBack = useCallback(() => {
+    if (depthRef.current <= 0) return;
+    goingBackRef.current = true;
+    navigate(-1);
+  }, [navigate]);
 
   useEffect(() => {
     (async () => {
@@ -253,6 +288,8 @@ export function AppDataProvider({ children }) {
     addContribution, updateContribution, deleteContribution,
     composerOpen, setComposerOpen, composerType, setComposerType,
     composerPrefill, setComposerPrefill,
+    createPanelOpen, setCreatePanelOpen,
+    canGoBack, goBack,
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
