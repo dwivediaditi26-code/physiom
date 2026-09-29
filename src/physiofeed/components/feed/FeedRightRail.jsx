@@ -2,8 +2,6 @@ import Avatar from "../shared/Avatar.jsx";
 import { initialsOf } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
-const TRENDING = ["ACL Rehabilitation", "Dry Needling", "Low Back Pain", "Shoulder Instability"];
-
 export default function FeedRightRail() {
   const { people, connectionStates, connectWith } = useAppData();
   // Suggest people you have no connection with at all -- not just people
@@ -31,14 +29,6 @@ export default function FeedRightRail() {
                 {connectionStates[p.id] === "pending_sent" ? "Pending" : "Connect"}
               </button>
             </div>
-          ))}
-        </div>
-      </div>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <p className="text-sm font-semibold text-slate-900 mb-3">Trending in Physio</p>
-        <div className="space-y-2.5">
-          {TRENDING.map((t) => (
-            <div key={t} className="text-sm"><p className="font-medium text-slate-700">#{t.replace(/\s/g, "")}</p><p className="text-xs text-slate-400">{t}</p></div>
           ))}
         </div>
       </div>

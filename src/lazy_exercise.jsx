@@ -1,1 +1,1 @@
-export { ExercisePrescriptionModule as default } from "./ClinicalModules.jsx";
+export { default } from "./ExercisePrescriptionPage.jsx";

@@ -42,8 +42,9 @@ export function openSubTab(label) {
   fireEvent.click(btn);
 }
 
-// Assess -> "+ New Assessment" -> the 5 quick questions -> "Which
-// specialty?". Returns the modal so the caller can pick a specialty.
+// Assess -> "+ New Assessment" -> the quick patient details (name, age, sex,
+// phone, specialty). Returns the modal with the name filled in; the caller
+// picks a specialty and taps Next.
 export async function openSpecialtyStep(name = "Test Patient") {
   openSubTab("Assess");
   fireEvent.click(screen.getByText("＋ New Assessment"));
@@ -51,9 +52,6 @@ export async function openSpecialtyStep(name = "Test Patient") {
   expect(modal.getByText("New assessment")).toBeInTheDocument();
   expect(modal.getByText("Next →").closest("button")).toBeDisabled();
   fireEvent.change(modal.getByPlaceholderText("e.g. Riya Sharma"), { target: { value: name } });
-  fireEvent.change(modal.getByPlaceholderText("e.g. Right knee pain for 2 weeks"), { target: { value: "Knee pain" } });
-  fireEvent.click(modal.getByText("Next →"));
-  expect(modal.getByText("Which specialty?")).toBeInTheDocument();
   return modal;
 }
 
@@ -63,6 +61,7 @@ export async function createOrthoPatient(name = "Test Patient") {
   await openClinical();
   const modal = await openSpecialtyStep(name);
   fireEvent.click(modal.getByText("Ortho"));
+  fireEvent.click(modal.getByText("Next →"));
   await screen.findByText("Which pathway is this assessment for?", {}, SLOW);
 }
 
