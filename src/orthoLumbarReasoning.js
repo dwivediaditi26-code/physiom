@@ -6,7 +6,7 @@
 // The old flow stored each multicheck as a "|||"-joined string; this tool's
 // SelectField stores multi-select as a ", "-joined string instead (see
 // SelectPopover in orthoFieldKit.jsx). Same shape, different separator --
-// so this is a straight port of lumbarVariableExtractor.js's Pass 1 reading
+// so this is a straight port of the old flow's lumbarVariableExtractor.js's (since removed) Pass 1 reading
 // logic against the new tool's field ids/data shape, not a redesign of the
 // engine or its variable contract.
 import { runLumbarReasoningEngine, evaluateRedFlagOverride } from "./lumbarReasoningEngine.js";
@@ -42,7 +42,7 @@ function boolFromMulticheck(regionData, key, negativeOptions, positiveMatch) {
 /**
  * Reads the Lumbar/SI region checklist (plus the shared Subjective chief
  * complaint/onset/medical-history text) and produces the same canonical
- * variable set extractLumbarVariablesStructured() builds for the old flow,
+ * variable set the old flow's extractLumbarVariablesStructured() built,
  * so runLumbarReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.lumbarSI
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)

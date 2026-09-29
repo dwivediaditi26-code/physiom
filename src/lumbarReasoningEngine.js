@@ -8,7 +8,7 @@
 //   Layer 3 (Reasoning Engine) -> this file
 //
 // Input: the canonical variable object produced by
-// extractLumbarVariablesStructured() (lumbarVariableExtractor.js) --
+// extractLumbarVariables() (orthoLumbarReasoning.js) --
 // NOT raw form data. Output: every L01-L11 condition ranked by an
 // UNWEIGHTED, count-based match tier.
 //
@@ -388,8 +388,8 @@ function evaluateCondition(condition, lv) {
 const TIER_ORDER = { "Strong match": 4, "Possible match": 3, "Weak match": 2, "Insufficient data": 1, "Unlikely": 0 };
 
 /**
- * Main entry point. Takes the output of extractLumbarVariablesStructured()
- * (lumbarVariableExtractor.js) and returns:
+ * Main entry point. Takes the output of extractLumbarVariables()
+ * (orthoLumbarReasoning.js) and returns:
  *   { redFlagOverride, conditions: [...ranked...] }
  * If redFlagOverride.triggered is true, callers should surface that
  * prominently and treat `conditions` as secondary information, not the
