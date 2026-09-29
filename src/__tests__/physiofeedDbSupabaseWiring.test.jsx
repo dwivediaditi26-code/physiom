@@ -625,6 +625,89 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     await expect(db.sendMessage("u-me", "talking to myself")).rejects.toBeTruthy();
   });
 
+  it("sendMessage() turns the trigger's MSG_LIMIT_REACHED code into readable copy, with .code set for the UI to branch on", async () => {
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", { data: null, error: { message: "MSG_LIMIT_REACHED" } });
+    await expect(db.sendMessage("u-other", "one more?")).rejects.toMatchObject({ code: "MSG_LIMIT_REACHED", message: expect.stringMatching(/3 messages/i) });
+  });
+
+  it("sendMessage() turns MSG_BLOCKED / MSG_COOLDOWN into their own readable copy", async () => {
+    currentUser = { id: "u-me" };
+    setTable("direct_messages", { data: null, error: { message: "MSG_BLOCKED" } });
+    await expect(db.sendMessage("u-other", "hi")).rejects.toMatchObject({ code: "MSG_BLOCKED" });
+    setTable("direct_messages", { data: null, error: { message: "MSG_COOLDOWN" } });
+    await expect(db.sendMessage("u-other", "hi")).rejects.toMatchObject({ code: "MSG_COOLDOWN" });
+  });
+
+  it("getConversationWith() returns the 'none' shape when signed out or for a demo id", async () => {
+    currentUser = null;
+    await expect(db.getConversationWith("u-other")).resolves.toMatchObject({ status: "none", blockedByMe: false, blockedByThem: false });
+    currentUser = { id: "u-me" };
+    await expect(db.getConversationWith("u-priya")).resolves.toMatchObject({ status: "none" }); // not a real uuid
+  });
+
+  it("getConversationWith() reads the conversations + user_blocks rows for the pair", async () => {
+    currentUser = { id: "u-me" };
+    const otherId = "11111111-1111-1111-1111-111111111111";
+    setTable("conversations", { data: { id: 9, status: "request_pending", request_initiator_id: "u-me", request_round: 1, cooldown_until: null }, error: null });
+    setTable("user_blocks", { data: [{ blocker_id: otherId, blocked_id: "u-me" }], error: null });
+    setTable("direct_messages", { data: [], error: null, count: 2 });
+    const cw = await db.getConversationWith(otherId);
+    expect(cw).toMatchObject({ conversationId: 9, status: "request_pending", messagesSentThisRound: 2, blockedByThem: true, blockedByMe: false });
+  });
+
+  // accept/decline/block/unblock/report just relay the RPC's own error
+  // message as-is (no friendly-copy lookup like sendMessage's -- these are
+  // edge cases the UI doesn't normally hit), falling back to generic copy
+  // only when the RPC gives no message at all.
+  it("acceptMessageRequest() / declineMessageRequest() call their RPCs and surface a real failure", async () => {
+    setRpc("accept_message_request", { data: null, error: null });
+    await expect(db.acceptMessageRequest(9)).resolves.toBeUndefined();
+    setRpc("accept_message_request", { data: null, error: { message: "CONV_NOT_PENDING_FOR_YOU" } });
+    await expect(db.acceptMessageRequest(9)).rejects.toThrow(/CONV_NOT_PENDING_FOR_YOU/);
+
+    setRpc("decline_message_request", { data: null, error: null });
+    await expect(db.declineMessageRequest(9)).resolves.toBeUndefined();
+    setRpc("decline_message_request", { data: null, error: { message: "CONV_NOT_PARTY" } });
+    await expect(db.declineMessageRequest(9)).rejects.toThrow(/CONV_NOT_PARTY/);
+  });
+
+  it("blockUser() / unblockUser() call their RPCs and surface a real failure", async () => {
+    setRpc("block_user", { data: null, error: null });
+    await expect(db.blockUser("u-other")).resolves.toBeUndefined();
+    setRpc("unblock_user", { data: null, error: null });
+    await expect(db.unblockUser("u-other")).resolves.toBeUndefined();
+    setRpc("block_user", { data: null, error: { message: "CANNOT_BLOCK_SELF" } });
+    await expect(db.blockUser("u-me")).rejects.toThrow(/CANNOT_BLOCK_SELF/);
+  });
+
+  it("reportUser() calls report_user with the reason and optional conversation/message ids", async () => {
+    setRpc("report_user", { data: null, error: null });
+    await expect(db.reportUser("u-other", "Spam", { conversationId: 9 })).resolves.toBeUndefined();
+    setRpc("report_user", { data: null, error: { message: "boom" } });
+    await expect(db.reportUser("u-other", "Spam")).rejects.toThrow(/boom/);
+  });
+
+  it("getFollowList() maps follows + profiles into the list shape FollowListModal renders", async () => {
+    currentUser = { id: "u-me" };
+    setTable("follows", { data: [{ follower_id: "u-x" }], error: null });
+    setTable("profiles", { data: [{ id: "u-x", name: "Dr X", role: "PT", gradient: "blue", initials: "X", avatar_url: null }], error: null });
+    const followers = await db.getFollowList("11111111-1111-1111-1111-111111111111", "followers");
+    expect(followers).toEqual([{ id: "u-x", name: "Dr X", role: "PT", grad: "blue", initials: "X", avatarUrl: null }]);
+  });
+
+  it("getFollowList() returns [] for a demo id without querying Supabase", async () => {
+    expect(await db.getFollowList("u-priya", "followers")).toEqual([]);
+  });
+
+  it("getFollowingIds() returns the signed-in user's followed ids, [] when signed out", async () => {
+    currentUser = null;
+    expect(await db.getFollowingIds()).toEqual([]);
+    currentUser = { id: "u-me" };
+    setTable("follows", { data: [{ following_id: "u-y" }], error: null });
+    expect(await db.getFollowingIds()).toEqual(["u-y"]);
+  });
+
   it("markConversationRead() no-ops (never throws) when signed out or the update fails", async () => {
     currentUser = null;
     await expect(db.markConversationRead("u-other")).resolves.toBeUndefined();
