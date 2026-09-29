@@ -1,6 +1,7 @@
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppDataProvider } from "./context/AppDataContext.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import PostDetailPage from "./pages/PostDetailPage.jsx";
 import "./physiofeed.css";
 
 // Reuses PhysioFeed's own profile page design (cover, avatar, stats, tabs,
@@ -11,13 +12,19 @@ import "./physiofeed.css";
 // (once-true) assumption that "ProfilePage and its subcomponents don't use
 // any react-router hooks". That stopped being true the moment
 // FeedPostCard.jsx gained author <Link>s (for jumping to someone's
-// profile) and GridPostCard.jsx started opening PostDetailModal.jsx (which
-// renders that same FeedPostCard for the full comment view) -- clicking a
-// post's comment icon here crashed the whole tab with "useHref() may be
-// used only in the context of a <Router>". Wrapped the same way
-// PhysioFeedEntry.jsx already wraps the real PhysioFeed tab, for the same
-// reason: an isolated MemoryRouter, not BrowserRouter, so it doesn't fight
-// with physiom's own real browser URL/back-button handling.
+// profile) and GridPostCard.jsx started opening a post's full detail view
+// -- clicking a post's comment icon here crashed the whole tab with
+// "useHref() may be used only in the context of a <Router>". Wrapped the
+// same way PhysioFeedEntry.jsx already wraps the real PhysioFeed tab, for
+// the same reason: an isolated MemoryRouter, not BrowserRouter, so it
+// doesn't fight with physiom's own real browser URL/back-button handling.
+//
+// Real <Routes> (2026-09-29): GridPostCard.jsx used to open a post via a
+// local modal (PostDetailModal.jsx), so MemoryRouter only had to exist,
+// never actually match a route. Once that became a real page navigation
+// (/post/:postId, PostDetailPage.jsx -- Aditi: a post "should open on that
+// page itself", not a popup), this needed a <Routes> to actually render
+// it, or clicking a post here would silently do nothing.
 //
 // The bio/stats/posts shown are still PhysioFeed's demo data until a real
 // profile exists (same caveat as the PhysioFeed tab itself) -- the banner
@@ -42,12 +49,20 @@ export default function ProfileTabEntry({ onSignOut }) {
     <div className="physiofeed-root pf-bare-entry bg-white">
       <MemoryRouter initialEntries={["/profile"]}>
         <AppDataProvider>
-          <div className="flex gap-6">
-            <ProfilePage/>
-          </div>
-          <button onClick={onSignOut} className="w-full mt-4 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-sm text-rose-600">
-            Sign out
-          </button>
+          <Routes>
+            <Route path="/profile" element={
+              <>
+                <div className="flex gap-6">
+                  <ProfilePage/>
+                </div>
+                <button onClick={onSignOut} className="w-full mt-4 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-sm text-rose-600">
+                  Sign out
+                </button>
+              </>
+            }/>
+            <Route path="/post/:postId" element={<div className="flex gap-6"><PostDetailPage/></div>}/>
+            <Route path="*" element={<Navigate to="/profile" replace/>}/>
+          </Routes>
         </AppDataProvider>
       </MemoryRouter>
     </div>

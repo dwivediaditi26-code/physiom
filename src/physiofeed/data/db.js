@@ -1631,13 +1631,13 @@ export async function toggleJoinCommunity(id) {
 //
 // `link` is derived here, not stored as a URL in the database. Like/comment
 // (2026-08-27, "like how it happens in Insta") now jump straight to the
-// post itself via /feed?post=<id> -- FeedPage.jsx reads that query param
-// and opens PostDetailModal.jsx for it, same modal GridPostCard.jsx already
-// uses on the Profile/Saved/Explore grids. Falls back to the actor's
-// profile when post_id is null (older rows written before this migration,
-// or the post's since been deleted). Follow still goes to the actor's
-// profile and message still goes to the thread -- neither of those is
-// about a specific post.
+// post itself via /post/<id> -- PostDetailPage.jsx renders it as a real
+// page (2026-09-29: previously /feed?post=<id>, which opened
+// PostDetailModal.jsx as a popup -- see that page's history). Falls back to
+// the actor's profile when post_id is null (older rows written before this
+// migration, or the post's since been deleted). Follow still goes to the
+// actor's profile and message still goes to the thread -- neither of those
+// is about a specific post.
 export async function getNotifications() {
   const uid = await currentUserId();
   if (!uid) return clone(NOTIFICATIONS); // signed out / guest mode -- keep the demo list
@@ -1652,7 +1652,7 @@ export async function getNotifications() {
       id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
       link: n.kind === "message" || n.kind === "message_request" || n.kind === "message_request_accepted"
             ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
-          : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/feed?post=${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
+          : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/post/${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
           : n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
           // P6 (2026-09-22): the P2/P4/P5 triggers in
           // add_mvp_network_opportunities.sql write connection and
@@ -2761,7 +2761,7 @@ export async function searchEverything(query, { limit = 6 } = {}) {
       gradient: p.gradient || undefined,
       initials: initialsOf(p.author),
       avatarUrl: p.authorAvatarUrl || null,
-      to: `/feed?post=${encodeURIComponent(p.id)}`,
+      to: `/post/${encodeURIComponent(p.id)}`,
       _score: scoreOf(terms, hay(p.heading, p.caption, p.author, p.category, (p.tags || []).join(" ")), p.heading || p.caption),
     }))
     .filter((r) => r._score > 0);

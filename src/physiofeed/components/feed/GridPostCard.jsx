@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Bookmark } from "lucide-react";
 import PostMedia from "./PostMedia.jsx";
-import PostDetailModal from "./PostDetailModal.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
 // Condensed post card used on Profile/Saved/Explore grids.
@@ -11,18 +10,22 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // a comment from these grids, only see a count. That's a smaller, less
 // capable experience than the main feed's FeedPostCard.jsx (full comment
 // thread + add-comment box) even though it's the SAME underlying post.
-// Now opens PostDetailModal.jsx, which renders that exact FeedPostCard,
-// so likes/comments behave identically here as on /feed.
+// Now opens PostDetailPage.jsx, which renders that exact FeedPostCard, so
+// likes/comments behave identically here as on /feed.
 //
 // Whole-card click (2026-09-22, Aditi: "post should open when we click")
 // -- opening a post used to only work by tapping the media itself or the
 // comment icon; the caption/tags/timestamp area did nothing. The card is
-// now one big button that opens the same modal, with Like/Save as their
-// own nested buttons that stopPropagation so tapping them doesn't also
-// pop the detail modal open underneath.
+// now one big button, with Like/Save as their own nested buttons that
+// stopPropagation so tapping them doesn't also navigate.
+//
+// Navigates to a real page instead of a popup (2026-09-29, Aditi: a post
+// "should not open in a new tab... it should open on that page itself") --
+// this used to open PostDetailModal.jsx as a dialog over a dimmed backdrop;
+// now it's PostDetailPage.jsx, a normal page reached via /post/:postId.
 export default function GridPostCard({ post }) {
   const { likePost, savePost } = useAppData();
-  const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
   // Once replies/case-updates share commentList (Clinical Discussion,
   // 2026-09-23) a raw .length here would count them too -- only top-level,
   // non-update entries are real "answers"/comments, same filter
@@ -31,12 +34,11 @@ export default function GridPostCard({ post }) {
     ? post.commentList.filter((c) => !c.parentId && !c.isCaseUpdate && !c.isFinalUpdate).length
     : post.commentList.length;
   return (
-    <>
       <article
         role="button"
         tabIndex={0}
-        onClick={() => setDetailOpen(true)}
-        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setDetailOpen(true)}
+        onClick={() => navigate(`/post/${post.id}`)}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && navigate(`/post/${post.id}`)}
         className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 text-left cursor-pointer"
       >
         <p className="text-xs text-slate-400 mb-2">{post.time} ago</p>
@@ -65,7 +67,5 @@ export default function GridPostCard({ post }) {
           <button onClick={(e) => { e.stopPropagation(); savePost(post.id); }} className="ml-auto"><Bookmark size={16} className={post.saved ? "fill-[#FFB020] text-[#FFB020]" : "text-slate-400"} /></button>
         </div>
       </article>
-      {detailOpen && <PostDetailModal post={post} onClose={() => setDetailOpen(false)} />}
-    </>
   );
 }
