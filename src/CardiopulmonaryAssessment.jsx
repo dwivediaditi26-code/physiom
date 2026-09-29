@@ -1961,9 +1961,20 @@ function fmtVal(v) {
 // that dumped raw internal fields like `meta` as if they were clinical
 // content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
 // the profile view sees the same section list/labels/icons the wizard did.
+// customStepsMeta rides inside the patient record (see the meta-persist
+// effect below), which a hard reload restores via a real JSON round-trip
+// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
+// element's $$typeof symbol and function `type` down to a plain
+// {key, ref, props, _owner, _store} object. Still truthy, so a bare
+// `|| fallback` never catches it and StepNav crashes trying to render it
+// (2026-09-26, same bug as NeurologicalAssessment.jsx). isValidElement is
+// the actual check needed here.
+function customStepIcon(meta, fallback) {
+  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
+}
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
 // normally come from the big <style> block inside the default-exported
@@ -2365,7 +2376,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
