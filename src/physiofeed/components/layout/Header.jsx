@@ -140,9 +140,8 @@ function SearchResults({ trimmedQuery, selfMatches, matches, profile, goToOwnPro
 // row takes you to the People list rather than a profile you can't reach.
 export default function Header() {
   const [query, setQuery] = useState("");
-  const { notifications, profile, people, unreadMessages } = useAppData();
+  const { notifications, profile, people, unreadMessages, canGoBack, goBack } = useAppData();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const trimmedQuery = query.trim();
   const qLower = trimmedQuery.toLowerCase();
@@ -184,19 +183,32 @@ export default function Header() {
 
   return (
     <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
-      {/* Mobile/tablet section nav (MainNav above). The back chevron (any
-          page but /feed) used to sit above it in its own bordered row --
-          that was its own bit of dead white space (2026-09-28, Aditi:
-          "why it is not... integrated in this system"). It's inline with
-          the icon row now, same as the search/bell/message icons are
-          inline with the logo up in AppFull.jsx's top bar. */}
+      {/* Mobile/tablet section nav (MainNav above). The back chevron used
+          to sit above it in its own bordered row -- that was its own bit
+          of dead white space (2026-09-28, Aditi: "why it is not...
+          integrated in this system"). It's inline with the icon row now,
+          same as the search/bell/message icons are inline with the logo up
+          in AppFull.jsx's top bar.
+          Always rendered now, not just when pathname !== "/feed"
+          (2026-09-28, Aditi: "this back button should be constantly
+          present") -- disabled (not hidden) when canGoBack is false so the
+          row's layout doesn't shift depending on where you are. It also
+          now shares the exact same canGoBack/goBack as AppFull.jsx's own
+          "← Back" button (AppDataContext, ported from BackBridge) instead
+          of calling react-router's plain navigate(-1) directly -- Aditi:
+          "it should take us to there not the scrolling", i.e. to the
+          actual just-previous PhysioFeed screen, not whatever navigate(-1)
+          happens to do. */}
       <div className="lg:hidden bg-white border-t border-slate-200">
         <div className="flex items-center max-w-[460px] mx-auto pl-1">
-          {location.pathname !== "/feed" && (
-            <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 text-slate-500 shrink-0">
-              <ChevronLeft size={18} />
-            </button>
-          )}
+          <button
+            onClick={goBack}
+            disabled={!canGoBack}
+            aria-label="Back"
+            className={`p-1 shrink-0 ${canGoBack ? "text-slate-500" : "text-slate-200 cursor-default"}`}
+          >
+            <ChevronLeft size={18} />
+          </button>
           <div className="flex-1 min-w-0">
             <MainNav />
           </div>
