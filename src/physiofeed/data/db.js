@@ -527,6 +527,19 @@ async function getFollowCounts(userId) {
   return { followers: followersRes.count || 0, following: followingRes.count || 0 };
 }
 
+// Live count of ACCEPTED connections (see supabase/add_mvp_network_opportunities.sql)
+// -- shown as its own stat on the profile, separate from followers/
+// following (Connect ≠ Follow ≠ Message, same "three independent
+// systems" rule as everywhere else this app enforces it).
+async function getConnectionCount(userId) {
+  const { count } = await supabase
+    .from("connections")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "accepted")
+    .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+  return count || 0;
+}
+
 export async function getProfile() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -593,6 +606,7 @@ export async function getProfile() {
     }
 
     const { followers, following } = await getFollowCounts(row.id);
+    const connections = await getConnectionCount(row.id);
 
     // Map DB column names to the shape every PhysioFeed screen already
     // expects (ProfileHeader.jsx etc.) -- zero UI changes needed for this step.
@@ -603,7 +617,7 @@ export async function getProfile() {
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
       bio: row.bio, quote: row.quote,
-      followers, following, // live counts from the follows table, NOT row.followers_count/following_count -- see getFollowCounts()
+      followers, following, connections, // live counts, NOT row.followers_count/following_count -- see getFollowCounts()/getConnectionCount()
       isAdmin: !!row.is_admin,
       // undefined (not null) on rows from before add_profile_avatar.sql runs
       // -- Avatar.jsx treats any falsy photoUrl as "show the gradient instead".
@@ -690,10 +704,11 @@ export async function getProfileById(userId) {
     if (error) throw error;
     if (!row) return null; // real uuid, but no profiles row -- genuinely doesn't exist
     const { followers, following } = await getFollowCounts(userId);
+    const connections = await getConnectionCount(userId);
     return clone({
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
-      bio: row.bio, quote: row.quote, followers, following, // live counts, not row.followers_count/following_count -- see getFollowCounts()
+      bio: row.bio, quote: row.quote, followers, following, connections, // live counts, not row.followers_count/following_count -- see getFollowCounts()/getConnectionCount()
       avatarUrl: row.avatar_url || null,
       experience: row.experience || "", languages: row.languages || "", memberships: row.memberships || "",
       availableForConsults: !!row.available_for_consults,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BadgeCheck, MapPin, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, X as XIcon, Clock, Send, Pencil, Users, UserCheck, LayoutGrid, Star, ShieldOff, Flag, ShieldCheck } from "lucide-react";
+import { BadgeCheck, MapPin, MoreHorizontal, Link2, Share2, Download, UserPlus, UserMinus, Check, X as XIcon, Clock, Send, Pencil, Users, UserCheck, LayoutGrid, Star, ShieldOff, Flag, ShieldCheck, Handshake } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { formatCount, PROFILE_ACCENTS } from "../shared/constants.js";
 import { getCurrentWorkplace } from "./experienceUtils.js";
@@ -154,13 +154,18 @@ export default function ProfileHeader({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 bg-white">
+      <div className="grid grid-cols-4 divide-x divide-slate-100 border-t border-slate-100 bg-white">
         <button onClick={() => setFollowList("followers")} className="flex flex-col items-center gap-0.5 py-2.5 hover:bg-slate-50">
           <Users size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.followers)}</span><span className="text-[11px] text-[#2B2140]/60">Followers</span>
         </button>
         <button onClick={() => setFollowList("following")} className="flex flex-col items-center gap-0.5 py-2.5 hover:bg-slate-50">
           <UserCheck size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.following)}</span><span className="text-[11px] text-[#2B2140]/60">Following</span>
         </button>
+        {/* Connections -- a distinct number from followers/following (see
+            the design doc: Connect ≠ Follow ≠ Message). No list view yet
+            (unlike Followers/Following above) -- People's own connection
+            state/actions already cover that; this is just the count. */}
+        <div className="flex flex-col items-center gap-0.5 py-2.5"><Handshake size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.connections)}</span><span className="text-[11px] text-[#2B2140]/60">Connections</span></div>
         <div className="flex flex-col items-center gap-0.5 py-2.5"><LayoutGrid size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(postCount)}</span><span className="text-[11px] text-[#2B2140]/60">Posts</span></div>
       </div>
 
