@@ -485,6 +485,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   useEffect(() => {
     if (active === "clinical" && navContext?.clinicalSubTab) setClinicalSubTab(navContext.clinicalSubTab);
   }, [active, navContext]);
+  // Deep-link into the Treatment screen's Home Protocol tab (profile's
+  // "Edit Program"); without this it always opens on Tx Techniques.
+  useEffect(() => {
+    if (active === "treatment" && (navContext?.txTab === "hep" || navContext?.txTab === "tx")) setTxTab(navContext.txTab);
+  }, [active, navContext]);
   // Clinical tab landing: "+ New Assessment" opens a minimal 5-question
   // intake (name, age, sex, phone, region) instead of asking AI-vs-Template
   // first (2026-09-10, Aditi: "i want patient small 5 ques minimal data

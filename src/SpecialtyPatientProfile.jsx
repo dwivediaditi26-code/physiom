@@ -1316,7 +1316,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
 
           {hep.length > 0 && (
             <div style={{ display: "flex", gap: 8 }}>
-              <GhostBtn onClick={() => onNav?.("treatment")} style={{ flex: 1 }}>Edit Program</GhostBtn>
+              <GhostBtn onClick={() => onNav?.("treatment", { txTab: "hep" })} style={{ flex: 1 }}>Edit Program</GhostBtn>
               <PrimaryBtn onClick={() => sendHepWhatsApp(d)} style={{ flex: 1 }}>Send to Patient</PrimaryBtn>
             </div>
           )}
