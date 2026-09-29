@@ -39,7 +39,7 @@ export default function ProfileHeader({
   // inline Confirm/Cancel row instead of a native confirm() popup, same
   // "ask again inline" shape the app already uses elsewhere.
   const [confirming, setConfirming] = useState(null); // null | 'disconnect' | 'block'
-  const [followList, setFollowList] = useState(null); // null | 'followers' | 'following'
+  const [followList, setFollowList] = useState(null); // null | 'followers' | 'following' | 'connections'
 
   // Every connection action goes through here so the button can't be
   // double-fired and a real error (RLS, offline, already-connected race)
@@ -162,10 +162,13 @@ export default function ProfileHeader({
           <UserCheck size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.following)}</span><span className="text-[11px] text-[#2B2140]/60">Following</span>
         </button>
         {/* Connections -- a distinct number from followers/following (see
-            the design doc: Connect ≠ Follow ≠ Message). No list view yet
-            (unlike Followers/Following above) -- People's own connection
-            state/actions already cover that; this is just the count. */}
-        <div className="flex flex-col items-center gap-0.5 py-2.5"><Handshake size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.connections)}</span><span className="text-[11px] text-[#2B2140]/60">Connections</span></div>
+            the design doc: Connect ≠ Follow ≠ Message). Was a plain
+            unclickable div (2026-09-29, Aditi: "connection button doesnot
+            work") -- now opens the same FollowListModal as Followers/
+            Following, backed by db.getConnectionsList(). */}
+        <button onClick={() => setFollowList("connections")} className="flex flex-col items-center gap-0.5 py-2.5 hover:bg-slate-50">
+          <Handshake size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(profile.connections)}</span><span className="text-[11px] text-[#2B2140]/60">Connections</span>
+        </button>
         <div className="flex flex-col items-center gap-0.5 py-2.5"><LayoutGrid size={14} className={`${accent.icon} mb-0.5`} /><span className="text-sm font-extrabold text-[#2B2140]">{formatCount(postCount)}</span><span className="text-[11px] text-[#2B2140]/60">Posts</span></div>
       </div>
 

@@ -1301,6 +1301,37 @@ export async function getFollowingIds() {
   return (data || []).map((r) => r.following_id);
 }
 
+// The Connections stat on ProfileHeader was a plain, unclickable <div>
+// with a count and nothing behind it (2026-09-29, Aditi: "connection
+// button doesnot work" -- there was no button at all). Same read-side
+// shape as getFollowList() above, but against the connections table
+// (requester_id/recipient_id/status, add_mvp_network_opportunities.sql)
+// instead of follows -- accepted rows only, other side of the pair
+// regardless of who sent the original request.
+export async function getConnectionsList(userId) {
+  if (!isRealUserId(userId)) return [];
+  try {
+    const { data, error } = await supabase
+      .from("connections")
+      .select("requester_id, recipient_id")
+      .eq("status", "accepted")
+      .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+    if (error) throw error;
+    const ids = (data || []).map((r) => (r.requester_id === userId ? r.recipient_id : r.requester_id));
+    if (ids.length === 0) return [];
+    const { data: profiles, error: pErr } = await supabase
+      .from("profiles").select("id, name, role, gradient, initials, avatar_url").in("id", ids);
+    if (pErr) throw pErr;
+    return (profiles || []).map((p) => ({
+      id: p.id, name: p.name, role: p.role || "",
+      grad: p.gradient || "violet", initials: p.initials || "?", avatarUrl: p.avatar_url || null,
+    }));
+  } catch (e) {
+    console.error("getConnectionsList(): --", e?.message || e);
+    return [];
+  }
+}
+
 /* ---------------- connections (P2) ---------------- */
 //
 // See supabase/add_mvp_network_opportunities.sql. Deliberately separate

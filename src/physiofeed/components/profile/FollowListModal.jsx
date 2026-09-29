@@ -6,11 +6,13 @@ import { PROFILE_ACCENTS } from "../shared/constants.js";
 import * as db from "../../data/db.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
-// Opened from ProfileHeader's Followers/Following stat, which used to be
-// a plain number with nothing behind it. `kind` is 'followers' or
-// 'following'; the list itself always shows a Follow/Following toggle
-// (following is independent of connections -- see the design doc) except
-// on your own row, which can't be followed.
+// Opened from ProfileHeader's Followers/Following/Connections stat, which
+// used to be a plain number with nothing behind it (Connections had no
+// button at all -- 2026-09-29, Aditi: "connection button doesnot work").
+// `kind` is 'followers' | 'following' | 'connections'; the list itself
+// always shows a Follow/Following toggle (following is independent of
+// connections -- see the design doc) except on your own row, which can't
+// be followed.
 export default function FollowListModal({ profileId, kind, onClose }) {
   const { profile: myProfile, followPerson } = useAppData();
   const [people, setPeople] = useState(null); // null = loading
@@ -20,7 +22,8 @@ export default function FollowListModal({ profileId, kind, onClose }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [list, mine] = await Promise.all([db.getFollowList(profileId, kind), db.getFollowingIds()]);
+      const fetchList = kind === "connections" ? db.getConnectionsList(profileId) : db.getFollowList(profileId, kind);
+      const [list, mine] = await Promise.all([fetchList, db.getFollowingIds()]);
       if (cancelled) return;
       setPeople(list);
       setFollowingIds(new Set(mine));
@@ -55,7 +58,7 @@ export default function FollowListModal({ profileId, kind, onClose }) {
             <p className="text-sm text-slate-400 text-center py-8">Loading…</p>
           ) : people.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-8 px-5">
-              {kind === "followers" ? "No followers yet." : "Not following anyone yet."}
+              {kind === "followers" ? "No followers yet." : kind === "connections" ? "No connections yet." : "Not following anyone yet."}
             </p>
           ) : (
             people.map((p) => {
