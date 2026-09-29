@@ -6,7 +6,7 @@
 // Same design as orthoLumbarReasoning.js: the old flow stored each multicheck
 // as a "|||"-joined string; this tool's SelectField stores multi-select as a
 // ", "-joined string instead. Same shape, different separator -- so this is a
-// straight port of cervicalVariableExtractor.js's Pass 1 reading logic against
+// straight port of the old flow's cervicalVariableExtractor.js's (since removed) Pass 1 reading logic against
 // the new tool's field ids/data shape, not a redesign of the engine or its
 // variable contract. Pass 2 (AI note-reading over free-text fields) is
 // intentionally not ported, same as orthoLumbarReasoning.js -- this tool's
@@ -38,7 +38,7 @@ function selectState(regionData, key) {
 /**
  * Reads the Cervical region checklist (plus the shared Subjective chief
  * complaint/onset/medical-history text) and produces the same canonical
- * variable set extractCervicalVariablesStructured() builds for the old flow,
+ * variable set the old flow's extractCervicalVariablesStructured() built,
  * so runCervicalReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.cervical
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)

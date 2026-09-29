@@ -42,7 +42,7 @@ export const SUBJECTIVE_REGION_FIELDS = {
   // Real, structured Cervical checklist — ported field-for-field (same
   // option wording) from the older Ortho flow's Phase 0.5 Cervical
   // Reasoning Engine screen (sharedClinicalData.js cx_* fields, see
-  // cervicalVariableExtractor.js), so orthoCervicalReasoning.js's
+  // the old cervicalVariableExtractor.js), so orthoCervicalReasoning.js's
   // differential matcher gets the same real evidence that engine was
   // built and tuned against, not a shallower reinterpretation -- same
   // approach lumbarSI below already used.
@@ -94,7 +94,7 @@ export const SUBJECTIVE_REGION_FIELDS = {
   // Real, structured Thoracic checklist — ported field-for-field (same
   // option wording) from the older Ortho flow's Phase 0.5 Thoracic
   // Reasoning Engine screen (sharedClinicalData.js tx_* fields, see
-  // thoracicVariableExtractor.js), so orthoThoracicReasoning.js's
+  // the old thoracicVariableExtractor.js), so orthoThoracicReasoning.js's
   // differential matcher gets the same real evidence that engine was
   // built and tuned against -- same approach cervical/lumbarSI already use.
   thoracic: [

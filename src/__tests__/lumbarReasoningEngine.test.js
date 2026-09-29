@@ -1,30 +1,38 @@
 // lumbarReasoningEngine.test.js
 // Unit tests for the Layer 3 reasoning engine, run against realistic
-// cases through the real Pass 1 extractor (not hand-built lv objects) so
-// this also catches any mismatch between the two modules' shapes.
+// cases written as answers to the Ortho Lumbar/SI checklist and read
+// through the same adapter the app uses (orthoLumbarReasoning.js), not
+// hand-built lv objects, so this also catches any mismatch between the
+// checklist, the adapter and the engine.
 import { describe, it, expect } from "vitest";
-import { extractLumbarVariablesStructured } from "../lumbarVariableExtractor.js";
+import { extractLumbarVariables } from "../orthoLumbarReasoning.js";
 import { runLumbarReasoningEngine } from "../lumbarReasoningEngine.js";
 
-const SEP = "|||";
+// The Ortho checklist stores multi-select answers joined with ", ".
+const SEP = ", ";
+
+// The Ortho tool doesn't pass the patient's age/sex into this adapter yet
+// (the adapter sets them to null), so checks of the engine's age/sex rules
+// add them to the adapter's output directly.
+const withDemographics = (v, demographics) => ({ ...v, demographics: { ...v.demographics, ...demographics } });
 
 describe("runLumbarReasoningEngine", () => {
   it("ranks L02 (radiculopathy) at or near the top for a textbook radiculopathy case", () => {
     const data = {
-      lx_moi: ["Lifting — spine flexed AND rotated (most common disc mechanism)"].join(SEP),
-      lx_agg_mov: ["Forward bending (flexion)"].join(SEP),
-      lx_agg_post: ["Sitting >30 minutes"].join(SEP),
-      lx_agg_act: ["Coughing (discogenic indicator — intradiscal pressure)"].join(SEP),
-      lx_rel_mov: ["Extension — McKenzie press-up / cobra"].join(SEP),
-      lx_below_knee: "Leg pain — below knee (radiculopathy threshold)",
-      lx_dermatomal: ["L5 — lateral lower leg / dorsum foot / great toe"].join(SEP),
-      lx_neuro_present: "Yes — unilateral (L)",
-      lx_rf_cauda: "No cauda equina signs",
-      lx_rf_fracture: "No fracture indicators",
-      lx_rf_inflammatory: "No inflammatory features",
-      lx_rf_serious: "No other red flags",
+      mechanismType: ["Lifting — spine flexed AND rotated (most common disc mechanism)"].join(SEP),
+      aggMovements: ["Forward bending (flexion)"].join(SEP),
+      aggPostures: ["Sitting >30 minutes"].join(SEP),
+      aggActivities: ["Coughing (discogenic indicator)"].join(SEP),
+      relMovements: ["Extension — McKenzie press-up / cobra"].join(SEP),
+      belowKnee: "Leg pain — below knee (radiculopathy threshold)",
+      dermatomal: ["L5 — lateral lower leg / dorsum foot / great toe"].join(SEP),
+      neuroPresent: "Yes — unilateral (L)",
+      redFlagsCauda: "No cauda equina signs",
+      redFlagsFracture: "No fracture indicators",
+      redFlagsInflammatory: "No inflammatory features",
+      redFlagsSerious: "No other red flags",
     };
-    const lv = extractLumbarVariablesStructured(data);
+    const lv = extractLumbarVariables(data);
     const result = runLumbarReasoningEngine(lv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -35,17 +43,17 @@ describe("runLumbarReasoningEngine", () => {
 
   it("ranks L01 (non-specific) as a plausible leading match for a plain mechanical case with a negative red flag screen", () => {
     const data = {
-      lx_agg_post: ["Sitting >30 minutes"].join(SEP),
-      lx_rel_mov: ["Walking"].join(SEP),
-      lx_below_knee: "No leg pain — back pain only",
-      lx_dermatomal: ["Not dermatomal"].join(SEP),
-      lx_neuro_present: "No leg neurological symptoms",
-      lx_rf_cauda: "No cauda equina signs",
-      lx_rf_fracture: "No fracture indicators",
-      lx_rf_inflammatory: "No inflammatory features",
-      lx_rf_serious: "No other red flags",
+      aggPostures: ["Sitting >30 minutes"].join(SEP),
+      relMovements: ["Walking"].join(SEP),
+      belowKnee: "No leg pain — back pain only",
+      dermatomal: ["Not dermatomal"].join(SEP),
+      neuroPresent: "No leg neurological symptoms",
+      redFlagsCauda: "No cauda equina signs",
+      redFlagsFracture: "No fracture indicators",
+      redFlagsInflammatory: "No inflammatory features",
+      redFlagsSerious: "No other red flags",
     };
-    const lv = extractLumbarVariablesStructured(data);
+    const lv = extractLumbarVariables(data);
     const result = runLumbarReasoningEngine(lv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -58,9 +66,9 @@ describe("runLumbarReasoningEngine", () => {
 
   it("triggers a hard emergency override for cauda equina indicators, regardless of other findings", () => {
     const data = {
-      lx_rf_cauda: "Saddle area anaesthesia — perineum / inner thighs",
+      redFlagsCauda: "Saddle area anaesthesia — perineum / inner thighs",
     };
-    const lv = extractLumbarVariablesStructured(data);
+    const lv = extractLumbarVariables(data);
     const result = runLumbarReasoningEngine(lv);
 
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -68,7 +76,7 @@ describe("runLumbarReasoningEngine", () => {
   });
 
   it("reports an incomplete screen rather than treating it as negative when red flags were never asked", () => {
-    const lv = extractLumbarVariablesStructured({});
+    const lv = extractLumbarVariables({});
     const result = runLumbarReasoningEngine(lv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -76,7 +84,7 @@ describe("runLumbarReasoningEngine", () => {
   });
 
   it("every condition reports unknownCount so callers can distinguish low-confidence matches from genuinely negative ones", () => {
-    const lv = extractLumbarVariablesStructured({});
+    const lv = extractLumbarVariables({});
     const result = runLumbarReasoningEngine(lv);
     result.conditions.forEach((c) => {
       expect(typeof c.unknownCount).toBe("number");
@@ -85,7 +93,7 @@ describe("runLumbarReasoningEngine", () => {
   });
 
   it("flags L09 as low confidence in its own output, not silently mixed in with the grounded conditions", () => {
-    const lv = extractLumbarVariablesStructured({});
+    const lv = extractLumbarVariables({});
     const result = runLumbarReasoningEngine(lv);
     const l09 = result.conditions.find((c) => c.id === "L09");
     expect(l09.lowConfidence).toBe(true);
@@ -102,12 +110,11 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
   // evidence for spondylolisthesis specifically.
   it("does not let L07 out-rank L03 on shared low-specificity checks alone (no athlete history, no young age)", () => {
     const data = {
-      dem_age: "52",
-      lx_agg_mov: ["Backward bending (extension)"].join("|||"),
-      lx_rel_mov: [].join("|||"),
-      lx_below_knee: "Back pain only — no leg symptoms (facet/muscular pattern)",
+      aggMovements: ["Backward bending (extension)"].join(SEP),
+      relMovements: [].join(SEP),
+      belowKnee: "No leg pain — back pain only",
     };
-    const lv = extractLumbarVariablesStructured(data);
+    const lv = withDemographics(extractLumbarVariables(data), { age: "52" });
     const result = runLumbarReasoningEngine(lv);
     const l03 = result.conditions.find((c) => c.id === "L03");
     const l07 = result.conditions.find((c) => c.id === "L07");
@@ -119,14 +126,11 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
 
   it("a young athlete with a repetitive-extension history now supports L07 beyond the old generic mechanical checks", () => {
     const data = {
-      dem_age: "17",
-      lx_agg_mov: ["Backward bending (extension)"].join("|||"),
-      lx_below_knee: "Back pain only — no leg symptoms (facet/muscular pattern)",
+      aggMovements: ["Backward bending (extension)"].join(SEP),
+      belowKnee: "No leg pain — back pain only",
+      spondyloScreen: ["Sport with repeated extension loading (gymnastics / cricket fast bowling / swimming butterfly / weightlifting)"].join(SEP),
     };
-    const lv = extractLumbarVariablesStructured(data);
-    // Simulate the AI note pass finding the athlete history the
-    // structured checkboxes have no field for at all.
-    lv.mechanism.repetitiveExtensionAthleteHistory = true;
+    const lv = withDemographics(extractLumbarVariables(data), { age: "17" });
     const result = runLumbarReasoningEngine(lv);
     const l07 = result.conditions.find((c) => c.id === "L07");
     expect(l07.supportingMatched).toContain("Repetitive-extension athlete history");
@@ -134,16 +138,16 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
   });
 
   it("'First episode' does not count as supporting evidence for L01's recurrence check (previously a bug)", () => {
-    const data = { hx_episodes: "First episode" };
-    const lv = extractLumbarVariablesStructured(data);
+    const data = { priorEpisodes: "First episode" };
+    const lv = extractLumbarVariables(data);
     const result = runLumbarReasoningEngine(lv);
     const l01 = result.conditions.find((c) => c.id === "L01");
     expect(l01.supportingMatched).not.toContain("Previous similar episodes");
   });
 
   it("a real recurrence value (2-3 episodes) does count as supporting evidence for L01", () => {
-    const data = { hx_episodes: "2–3 episodes" };
-    const lv = extractLumbarVariablesStructured(data);
+    const data = { priorEpisodes: "2–3 episodes" };
+    const lv = extractLumbarVariables(data);
     const result = runLumbarReasoningEngine(lv);
     const l01 = result.conditions.find((c) => c.id === "L01");
     expect(l01.supportingMatched).toContain("Previous similar episodes");
@@ -156,7 +160,7 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
     // sweep run against it, but the underlying sort logic was identical
     // to cervical's pre-fix version, so this locks in the same
     // structural guarantee here too rather than leaving it unverified.
-    const lv = extractLumbarVariablesStructured({});
+    const lv = extractLumbarVariables({});
     const result = runLumbarReasoningEngine(lv);
     result.conditions.forEach((c) => {
       expect(typeof c.supportingTotal).toBe("number");

@@ -1,32 +1,34 @@
 // cervicalReasoningEngine.test.js
 // Unit tests for the Layer 3 cervical reasoning engine, run against
-// realistic cases through the real Pass 1 extractor (not hand-built cv
-// objects) so this also catches any mismatch between the two modules'
-// shapes. Mirrors lumbarReasoningEngine.test.js's structure exactly.
+// realistic cases written as answers to the Ortho Cervical checklist and
+// read through the same adapter the app uses (orthoCervicalReasoning.js),
+// not hand-built cv objects, so this also catches any mismatch between
+// the checklist, the adapter and the engine. Mirrors lumbarReasoningEngine.test.js's structure exactly.
 import { describe, it, expect } from "vitest";
-import { extractCervicalVariablesStructured } from "../cervicalVariableExtractor.js";
+import { extractCervicalVariables } from "../orthoCervicalReasoning.js";
 import { runCervicalReasoningEngine } from "../cervicalReasoningEngine.js";
 
-const SEP = "|||";
+// The Ortho checklist stores multi-select answers joined with ", ".
+const SEP = ", ";
 
 describe("runCervicalReasoningEngine", () => {
   it("ranks C02 (radiculopathy) at or near the top for a textbook radiculopathy case", () => {
     const data = {
-      cx_loc: ["Neck", "Right upper trapezius"].join(SEP),
-      cx_radiation: ["Radiates into right arm/hand"].join(SEP),
-      cx_dermatomal: ["C6 — thumb/index finger"].join(SEP),
-      cx_moi: ["No clear mechanism — insidious onset"].join(SEP),
-      cx_arm_present: "Yes — unilateral (R)",
-      cx_arm_neuro: ["Objective numbness on testing"].join(SEP),
-      cx_agg_mov: ["Extension — looking up", "Combined extension + rotation (right) — quadrant position"].join(SEP),
-      cx_agg_other: ["Coughing / sneezing (dural / cord tension)"].join(SEP),
-      cx_rel_mov: ["Arm overhead — relieves arm symptoms (shoulder abduction relief sign)"].join(SEP),
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["No instability signs"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      location: ["Posterior neck (central)", "Trapezius (R)"].join(SEP),
+      radiation: ["To hand / fingers (R)"].join(SEP),
+      dermatomal: ["C6 — thumb / index finger / radial forearm"].join(SEP),
+      mechanismType: ["No clear mechanism — insidious onset"].join(SEP),
+      armPresent: "Yes — unilateral (R)",
+      armNeuro: ["Objective numbness in specific area"].join(SEP),
+      aggMovements: ["Extension — looking up", "Combined extension + rotation right (quadrant)"].join(SEP),
+      aggOther: ["Coughing / sneezing (dural / cord tension)"].join(SEP),
+      relMovements: ["Arm overhead — relieves arm symptoms (shoulder abduction relief sign)"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["No instability signs"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -37,16 +39,16 @@ describe("runCervicalReasoningEngine", () => {
 
   it("ranks C01 (non-specific) as a plausible leading match for a plain mechanical case with a negative red flag screen", () => {
     const data = {
-      cx_agg_post: ["Prolonged sitting / desk posture"].join(SEP),
-      cx_rel_post: ["Lying down"].join(SEP),
-      cx_arm_present: "No arm/hand symptoms",
-      cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["No instability signs"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      aggPostures: ["Prolonged sitting >30 min"].join(SEP),
+      relPostures: ["Lying flat without pillow"].join(SEP),
+      armPresent: "No arm or hand symptoms",
+      dermatomal: ["Not dermatomal / not applicable"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["No instability signs"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -59,9 +61,9 @@ describe("runCervicalReasoningEngine", () => {
 
   it("triggers a hard EMERGENCY override for cervical myelopathy indicators, regardless of other findings", () => {
     const data = {
-      cx_rf_myelopathy: ["Bilateral hand symptoms", "Gait disturbance / unsteadiness"].join(SEP),
+      redFlagsMyelopathy: ["Bilateral hand symptoms (grip clumsiness / numbness)", "Gait disturbance / wide-based gait / ataxia"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -70,9 +72,9 @@ describe("runCervicalReasoningEngine", () => {
 
   it("triggers a hard EMERGENCY override for vertebrobasilar insufficiency indicators", () => {
     const data = {
-      cx_rf_vbi: ["Dizziness with neck movement", "Diplopia (double vision)"].join(SEP),
+      redFlagsVbi: ["Dizziness with neck movement — specific", "Diplopia (double vision)"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -81,12 +83,12 @@ describe("runCervicalReasoningEngine", () => {
 
   it("treats a positive instability/other red flag as URGENT_REFERRAL, not the same tier as myelopathy/VBI", () => {
     const data = {
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["Known rheumatoid arthritis / Down syndrome"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["Rheumatoid arthritis — known"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -94,7 +96,7 @@ describe("runCervicalReasoningEngine", () => {
   });
 
   it("reports an incomplete screen rather than treating it as negative when red flags were never asked", () => {
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -103,16 +105,16 @@ describe("runCervicalReasoningEngine", () => {
 
   it("ranks C05 (WAD) highly for a collision mechanism with a recorded Quebec grade", () => {
     const data = {
-      cx_moi: ["Whiplash — motor vehicle collision (rear/front/side impact)"].join(SEP),
-      cx_moi_wad: "Grade II — decreased ROM + point tenderness",
-      cx_ha_present: "Yes",
-      cx_agg_post: ["Prolonged sitting / desk posture"].join(SEP),
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["No instability signs"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      mechanismType: ["Whiplash — rear-end MVA"].join(SEP),
+      mechanismWad: "Grade II — pain + musculoskeletal signs",
+      haPresent: "Yes — primary complaint",
+      aggPostures: ["Prolonged sitting >30 min"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["No instability signs"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
     const c05 = result.conditions.find(c => c.id === "C05");
     expect(["Strong match", "Possible match"]).toContain(c05.matchTier);
@@ -120,24 +122,24 @@ describe("runCervicalReasoningEngine", () => {
 
   it("ranks C04 (cervicogenic headache) highly for an occipital headache triggered by neck movement", () => {
     const data = {
-      cx_ha_present: "Yes",
-      cx_ha_location: ["Occipital / base of skull (cervicogenic)"].join(SEP),
-      cx_ha_triggers: ["Triggered by neck movement (cervicogenic)"].join(SEP),
-      cx_agg_post: ["Prolonged sitting / desk posture"].join(SEP),
-      cx_rel_mov: ["Chin tuck / cervical retraction relieves"].join(SEP),
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["No instability signs"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      haPresent: "Yes — primary complaint",
+      haLocation: ["Occipital / base of skull (cervicogenic)"].join(SEP),
+      haTriggers: ["Triggered by neck movement (cervicogenic)"].join(SEP),
+      aggPostures: ["Prolonged sitting >30 min"].join(SEP),
+      relMovements: ["Chin tuck (cranio-cervical flexion)"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["No instability signs"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
     const c04 = result.conditions.find(c => c.id === "C04");
     expect(["Strong match", "Possible match"]).toContain(c04.matchTier);
   });
 
   it("every condition reports unknownCount so callers can distinguish low-confidence matches from genuinely negative ones", () => {
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
     result.conditions.forEach(c => {
       expect(typeof c.unknownCount).toBe("number");
@@ -146,7 +148,7 @@ describe("runCervicalReasoningEngine", () => {
   });
 
   it("includes the deep cervical flexor MMT test (Jull 2008 / Elliott 2006) as a recommended objective test for C01 and C04", () => {
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
     const c01 = result.conditions.find(c => c.id === "C01");
     const c04 = result.conditions.find(c => c.id === "C04");
@@ -155,14 +157,14 @@ describe("runCervicalReasoningEngine", () => {
   });
 
   it("returns exactly 10 scored conditions (C01-C10), with C11 handled only via redFlagOverride", () => {
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
     expect(result.conditions.length).toBe(10);
     expect(result.conditions.some(c => c.id === "C11")).toBe(false);
   });
 
   it("flags C09 and C10 as lowConfidence, grounded in real sources (Travell & Simons / C Rex) rather than left as unverified placeholders", () => {
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
     const c09 = result.conditions.find(c => c.id === "C09");
     const c10 = result.conditions.find(c => c.id === "C10");
@@ -175,18 +177,18 @@ describe("runCervicalReasoningEngine", () => {
 
   it("ranks C10 (myofascial) with real support for an occipital headache triggered by neck movement, grounded in Travell & Simons referred-pain patterns", () => {
     const data = {
-      cx_ha_present: "Yes",
-      cx_ha_location: ["Occipital / base of skull (cervicogenic)"].join(SEP),
-      cx_ha_triggers: ["Triggered by neck movement (cervicogenic)"].join(SEP),
-      cx_agg_post: ["Prolonged sitting / desk posture"].join(SEP),
-      cx_arm_present: "No arm/hand symptoms",
-      cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
-      cx_rf_myelopathy: ["No myelopathy signs"].join(SEP),
-      cx_rf_vbi: ["No VBI signs"].join(SEP),
-      cx_rf_instability: ["No instability signs"].join(SEP),
-      cx_rf_other: ["No other red flags"].join(SEP),
+      haPresent: "Yes — primary complaint",
+      haLocation: ["Occipital / base of skull (cervicogenic)"].join(SEP),
+      haTriggers: ["Triggered by neck movement (cervicogenic)"].join(SEP),
+      aggPostures: ["Prolonged sitting >30 min"].join(SEP),
+      armPresent: "No arm or hand symptoms",
+      dermatomal: ["Not dermatomal / not applicable"].join(SEP),
+      redFlagsMyelopathy: ["No myelopathy signs"].join(SEP),
+      redFlagsVbi: ["No VBI signs"].join(SEP),
+      redFlagsInstability: ["No instability signs"].join(SEP),
+      redFlagsOther: ["No other red flags"].join(SEP),
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data);
     const result = runCervicalReasoningEngine(cv);
     const c10 = result.conditions.find(c => c.id === "C10");
     expect(c10.supportingMatched.length).toBeGreaterThanOrEqual(4);
@@ -201,20 +203,20 @@ describe("runCervicalReasoningEngine", () => {
     // muscle strain/torticollis, 4 of 4 supporting = 100%) purely
     // because both matched the same raw count of 4. Same bug class
     // already fixed once in thoracicReasoningEngine.js, ported here.
+    const onset = "Sudden onset, woke up with severe neck pain and unable to turn head";
     const data = {
-      cc_onset: "Sudden onset, woke up with severe neck pain and unable to turn head",
-      cx_arm_present: "No arm or hand symptoms",
-      cx_dermatomal: ["Not dermatomal / not applicable"].join(SEP),
-      cx_agg_mov: ["Rotation left"].join(SEP),
+      armPresent: "No arm or hand symptoms",
+      dermatomal: ["Not dermatomal / not applicable"].join(SEP),
+      aggMovements: ["Rotation left"].join(SEP),
       // Explicit negative (not just omitted) -- a later fix made
       // objectiveNeuroSigns correctly read as "unknown" rather than a
-      // silent false-positive "confirmed absent" when cx_arm_neuro is
+      // silent false-positive "confirmed absent" when armNeuro is
       // never touched at all, so the tie premise needs a real answer here.
-      cx_arm_neuro: ["No neurological symptoms"].join(SEP),
-      cx_rf_myelopathy: "No myelopathy signs", cx_rf_vbi: "No VBI signs",
-      cx_rf_instability: "No instability signs", cx_rf_other: "No other red flags",
+      armNeuro: ["No neurological symptoms"].join(SEP),
+      redFlagsMyelopathy: "No myelopathy signs", redFlagsVbi: "No VBI signs",
+      redFlagsInstability: "No instability signs", redFlagsOther: "No other red flags",
     };
-    const cv = extractCervicalVariablesStructured(data);
+    const cv = extractCervicalVariables(data, { onset });
     const result = runCervicalReasoningEngine(cv);
     const c03 = result.conditions.find(c => c.id === "C03");
     const c06 = result.conditions.find(c => c.id === "C06");
@@ -241,7 +243,7 @@ describe("runCervicalReasoningEngine", () => {
     // "Possible match" purely from unanswered aggravating-movement
     // fields). Every condition on a genuinely empty form must reflect
     // that nothing was actually asked.
-    const cv = extractCervicalVariablesStructured({});
+    const cv = extractCervicalVariables({});
     const result = runCervicalReasoningEngine(cv);
     result.conditions.forEach((c) => {
       expect(["Insufficient data"]).toContain(

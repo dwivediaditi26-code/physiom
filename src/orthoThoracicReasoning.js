@@ -4,7 +4,7 @@
 // engine (thoracicReasoningEngine.js), reused here unchanged.
 //
 // Same design as orthoLumbarReasoning.js / orthoCervicalReasoning.js: a
-// straight port of thoracicVariableExtractor.js's Pass 1 reading logic
+// straight port of the old flow's thoracicVariableExtractor.js's (since removed) Pass 1 reading logic
 // against this tool's field ids/data shape (", "-joined multi-select
 // instead of "|||"-joined). Pass 2 (AI note-reading) isn't ported, same
 // reason as the other two adapters -- this tool's checklist fields ARE the
@@ -35,8 +35,8 @@ function selectState(regionData, key) {
 /**
  * Reads the Thoracic region checklist (plus the shared Subjective chief
  * complaint/onset/medical-history text) and produces the same canonical
- * variable set extractThoracicVariablesStructured() builds for the old
- * flow, so runThoracicReasoningEngine() can run completely unmodified.
+ * variable set the old flow's extractThoracicVariablesStructured()
+ * built, so runThoracicReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.thoracic
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)
  */
