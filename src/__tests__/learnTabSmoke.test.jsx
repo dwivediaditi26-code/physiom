@@ -65,11 +65,11 @@ describe("Learn tab", () => {
     expect(screen.getByText("Joint-by-joint")).toBeTruthy();
 
     // Clear the search, then tap Exercise Prescription -- it has no study
-    // mode, so it opens the real Exercise Prescription screen.
+    // mode, so it opens the real (redesigned) Exercise Prescription screen.
     fireEvent.change(search, { target: { value: "" } });
     fireEvent.click(await screen.findByText("Treatment plan"));
     await waitFor(() => {
-      expect(screen.getByText("Protocols & Templates")).toBeTruthy();
+      expect(screen.getByText("Browse exercises")).toBeTruthy();
     }, { timeout: 10_000 });
   }, 20_000);
 });
