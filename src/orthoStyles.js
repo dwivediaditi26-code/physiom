@@ -892,13 +892,6 @@ export function orthoStyles() {
         .obj-hypo-tier-med { background: ${BRAND.amberBg}; color: ${BRAND.amber}; }
         .obj-hypo-more { margin-top: 6px; }
 
-        /* Finding-card status pill (Positive/Unmarked) — same reference
-           mockup's per-finding badge, next to the title instead of only the
-           bottom-right checkmark the card already had. */
-        .obj-finding-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .obj-finding-status { flex-shrink: 0; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
-        .obj-finding-status-positive { background: #FFF1F2; color: #E11D48; }
-        .obj-finding-status-unmarked { background: #F1F0F5; color: ${BRAND.grayLight}; text-transform: none; font-weight: 700; }
 
         /* Condition-specific assessment module cards — interactive checkboxes */
         .cmod-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }

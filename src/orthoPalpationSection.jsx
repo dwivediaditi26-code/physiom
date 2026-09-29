@@ -34,7 +34,7 @@ const LazyPalpationModule = lazy(() => import("./lazy_palpation.jsx"));
    pin marking, and so do the four whole-patient findings fields the
    summary and the older records already use.
    ============================================================ */
-export function PalpationSection({ data, setData, selectedRegions = [], focusZoneIds = null, conditionLabel = "" }) {
+export function PalpationSection({ data, setData, selectedRegions = [], focusZoneIds = null, conditionLabel = "", showBodyMap = true }) {
   const [d, set] = useSectionData(data, setData, "palpation");
   const [mapOpen, setMapOpen] = useState(false);
   const [generalOpen, setGeneralOpen] = useState(false);
@@ -119,14 +119,18 @@ export function PalpationSection({ data, setData, selectedRegions = [], focusZon
         </>
       )}
 
-      <button type="button" className="collapsible-head" onClick={() => setMapOpen((o) => !o)}>
-        <span>Body Map — mark points directly</span>
-        <span className={"collapsible-chevron" + (mapOpen ? " open" : "")}>⌄</span>
-      </button>
-      {mapOpen && (
-        <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
-          <LazyPalpationModule data={d} set={set} />
-        </Suspense>
+      {showBodyMap && (
+        <>
+          <button type="button" className="collapsible-head" onClick={() => setMapOpen((o) => !o)}>
+            <span>Body Map — mark points directly</span>
+            <span className={"collapsible-chevron" + (mapOpen ? " open" : "")}>⌄</span>
+          </button>
+          {mapOpen && (
+            <Suspense fallback={<Hint>Loading palpation body map…</Hint>}>
+              <LazyPalpationModule data={d} set={set} />
+            </Suspense>
+          )}
+        </>
       )}
 
       <button type="button" className="collapsible-head" onClick={() => setGeneralOpen((o) => !o)}>

@@ -114,7 +114,7 @@ export default function OtherProfilePage() {
         onMessage={() => navigate(`/messages?with=${encodeURIComponent(userId)}`)}
       />
 
-      <ProfileViewSwitch active={view} onChange={setView} />
+      <ProfileViewSwitch active={view} onChange={setView} gradient={otherProfile.gradient} />
 
       {view === "Professional Profile" ? (
         <div className="space-y-6">

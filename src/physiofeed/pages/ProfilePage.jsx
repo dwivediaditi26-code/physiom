@@ -36,7 +36,7 @@ export default function ProfilePage() {
     <main className="flex-1 min-w-0 pb-24">
       <ProfileHeader profile={profile} postCount={ownPosts.length} experience={rotations} isOwn />
 
-      <ProfileViewSwitch active={view} onChange={setView} />
+      <ProfileViewSwitch active={view} onChange={setView} gradient={profile.gradient} />
 
       {view === "Professional Profile" ? (
         <div className="space-y-6">
