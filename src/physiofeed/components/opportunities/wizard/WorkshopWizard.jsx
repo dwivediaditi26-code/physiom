@@ -119,6 +119,23 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const canPublish = step0Valid && step1Valid && step4Valid && step4PriceValid;
   const canSaveDraft = title.trim().length > 0;
 
+  // Everything Publish needs, with the step it lives on, so a tap on Publish
+  // can say exactly what is missing instead of sitting there greyed out.
+  const missing = [];
+  if (!title.trim()) missing.push({ step: 0, label: "Workshop title" });
+  if (!shortDescription.trim()) missing.push({ step: 0, label: "Short description" });
+  if (!category) missing.push({ step: 0, label: "Category" });
+  if (!format) missing.push({ step: 0, label: "Format (Online / In-person / Hybrid)" });
+  if (!date) missing.push({ step: 1, label: "Date" });
+  if (!startTime) missing.push({ step: 1, label: "Start time" });
+  if (!endTime) missing.push({ step: 1, label: "End time" });
+  if (needsOnline && !platform) missing.push({ step: 1, label: "Online platform" });
+  if (needsInPerson && !venue.trim()) missing.push({ step: 1, label: "Venue" });
+  if (needsInPerson && !city.trim()) missing.push({ step: 1, label: "City" });
+  if (needsInPerson && !address.trim()) missing.push({ step: 1, label: "Full address" });
+  if (!isFree && !fee.trim()) missing.push({ step: 4, label: "Fee amount (or switch to Free)" });
+  if (registrationMethod === "external" && !registrationUrl.trim()) missing.push({ step: 4, label: "Registration link" });
+
   const orgDisplayName = orgName.trim() || profile?.name || "";
   const instructor = useMyProfile
     ? { name: profile?.name || "You", role: profile?.clinicalTitle || profile?.role || "Physiotherapist", initials: profile?.initials || "PT", gradient: profile?.gradient || "blue" }
@@ -185,7 +202,17 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   }
 
   const submit = async (publish) => {
-    if (publish ? !canPublish : !canSaveDraft) return;
+    if (publish && missing.length) {
+      setError(`Please fill in: ${missing.map((m) => m.label).join(", ")}.`);
+      setStep(missing[0].step);
+      return;
+    }
+    if (!publish && !canSaveDraft) {
+      setError("Add a workshop title to save a draft.");
+      setStep(0);
+      return;
+    }
+    setError(null);
     const registeredCount = editingOpp?.stats?.applications ?? 0;
     const changes = criticalChanges();
     if (registeredCount > 0 && changes.length > 0) {
@@ -440,7 +467,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               </div>
               {!canPublish && (
                 <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
-                  Some required fields are missing -- you can still save this as a draft and finish it later.
+                  Still needed to publish: {missing.map((m) => m.label).join(", ")}. You can still save this as a draft and finish it later.
                 </p>
               )}
             </div>
@@ -466,7 +493,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => submit(true)}
-                disabled={!canPublish || !!saving}
+                disabled={!!saving}
                 className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
               >
                 {saving ? "Saving…" : "Save Changes"}
@@ -476,7 +503,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(false)}
-                  disabled={!canSaveDraft || !!saving}
+                  disabled={!!saving}
                   className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40"
                 >
                   {saving === "draft" ? "Saving…" : "Save Draft"}
@@ -484,7 +511,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(true)}
-                  disabled={!canPublish || !!saving}
+                  disabled={!!saving}
                   className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
                 >
                   {saving === "publish" ? "Publishing…" : "Publish Workshop"}
