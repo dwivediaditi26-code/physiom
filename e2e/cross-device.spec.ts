@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   signUp, login, startOrtho, fillDemographics, fillChiefComplaint, saveAssessment,
-  expectPatientListed, noCrash, uniqueSuffix,
+  expectPatientListed, trackCloudSaves, expectCloudSaved, noCrash, uniqueSuffix,
 } from './appMap';
 
 // Cross-device sync: a patient saved on "device A" must appear on "device B"
@@ -25,18 +25,16 @@ test.describe('Cross-device sync', () => {
     // ── Device A: sign up, create and save an assessment ──
     const ctxA = await browser.newContext();
     const pageA = await ctxA.newPage();
+    const cloudSaves = trackCloudSaves(pageA);
     await signUp(pageA, account);
     await startOrtho(pageA, { name: patientName, region: 'Knee', side: 'Right' });
     await fillDemographics(pageA, { name: patientName, age: 33, sex: 'Male' });
     await fillChiefComplaint(pageA, `E2E-${unique} cross-device check`);
     await saveAssessment(pageA);
     await expectPatientListed(pageA, patientName);
-    // The header shows "Saved to cloud <time>" once the round-trip finished
-    // (it says "Offline" / "Saving" while it has not).
-    await expect(
-      pageA.getByText(/Saved to cloud/).first(),
-      "the cloud save did not finish -- if the header says 'Offline -- will retry', the save request was rejected by the database",
-    ).toBeVisible({ timeout: 45_000 });
+    // The database itself must have accepted the save (a rejected save shows
+    // "Offline -- will retry" in the header and never reaches device B).
+    await expectCloudSaved(cloudSaves);
 
     // ── Device B: a brand-new browser context, same account ──
     const ctxB = await browser.newContext();
