@@ -63,6 +63,7 @@ import { HIP_ROM_MOVEMENTS } from "./hipConditionAssessmentData.js";
 import { KNEE_ROM_MOVEMENTS } from "./kneeConditionAssessmentData.js";
 import { ANKLE_FOOT_ROM_MOVEMENTS } from "./ankleFootConditionAssessmentData.js";
 import { MEASURES, matchMeasureIdForInstrument } from "./orthoOutcomeMeasureData.js";
+import { PalpationSection } from "./orthoPalpationSection.jsx";
 
 const HAIRLINE = "#E5E7EB";
 
@@ -367,7 +368,12 @@ function FmaObservePanel({ test, getVal, setVal }) {
         {test.grades.map((g, i) => {
           const selected = grade === g;
           const color = FMA_GRADE_COLOR[i];
-          const style = selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color };
+          // Inline font/padding override only, not a shared CSS class change --
+          // .chip-mini is reused across the app's real (non-AI) modules, and
+          // this bump is specific to matching this screen's own Result-picker
+          // size (2026-09-28, Aditi: "in the... functional movement screen in
+          // the AI check it... uneven font size").
+          const style = { fontSize: "0.82rem", padding: "9px 14px", ...(selected ? { background: color, borderColor: color, color: "#fff", fontWeight: 700 } : { borderColor: color + "55", color }) };
           return (
             <button type="button" key={g} className="chip-mini funky-chip" style={style} onClick={() => setVal("grade", selected ? "" : g)}>
               {["Normal", "Compensated", "Abnormal"][i] || g}
@@ -1000,13 +1006,22 @@ function SubtopicTabs({ active, onSelect, counts }) {
   );
 }
 
-function Chip({ active, onClick, children }) {
+// size="md" matches KcResultPicker's real-Result option text (0.82rem) --
+// used only by STTT/Kinetic Chain/Functional Screen (2026-09-28, Aditi:
+// "in the STTT kinetic chain and functional movement screen... is there any
+// uneven font size... make it correct" -- their own condition-check chips
+// read noticeably smaller than the verified-test Result picker just below
+// them). CPA/NKT and Special Tests keep the original compact size -- not
+// part of what she flagged, and several of those rows fit many short
+// options side by side.
+function Chip({ active, onClick, children, size = "sm" }) {
+  const md = size === "md";
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
-        padding: "5px 8px", borderRadius: 8, fontSize: "0.62rem", fontWeight: 600, cursor: "pointer", outline: "none", whiteSpace: "nowrap",
+        padding: md ? "9px 14px" : "5px 8px", borderRadius: md ? 10 : 8, fontSize: md ? "0.82rem" : "0.62rem", fontWeight: active ? 700 : (md ? 500 : 600), cursor: "pointer", outline: "none", whiteSpace: "nowrap",
         border: active ? `1px solid ${BRAND.purple}` : `1px dashed ${HAIRLINE}`,
         background: active ? BRAND.purple : "#fff",
         color: active ? "#fff" : BRAND.ink,
@@ -1018,12 +1033,12 @@ function Chip({ active, onClick, children }) {
   );
 }
 
-function ChipGroup({ options, selected, onToggle, multi = true }) {
+function ChipGroup({ options, selected, onToggle, multi = true, size }) {
   const values = multi ? (selected ? selected.split(", ").filter(Boolean) : []) : selected ? [selected] : [];
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {options.map((o) => (
-        <Chip key={o} active={values.includes(o)} onClick={() => onToggle(o)}>{o}</Chip>
+        <Chip key={o} active={values.includes(o)} onClick={() => onToggle(o)} size={size}>{o}</Chip>
       ))}
     </div>
   );
@@ -1170,6 +1185,7 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
   const [imgVersion, setImgVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [showObserve, setShowObserve] = useState(false);
   const fileInputRef = useRef(null);
   const imgSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_300,h_300,c_fill/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
   const zoomSrc = photoId ? `${CLOUDINARY_BASE}/f_auto,q_auto,w_1200,c_limit/${photoId}${imgVersion ? `?v=${imgVersion}` : ""}` : null;
@@ -1240,11 +1256,7 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
         </div>,
         document.body
       )}
-      <button
-        type="button"
-        onClick={onToggle}
-        style={{ display: "flex", alignItems: "flex-start", gap: 14, textAlign: "left", padding: 14, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-      >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: 14 }}>
         <div
           onClick={photoId ? (e) => { e.stopPropagation(); hasPhoto ? setZoomOpen(true) : fileInputRef.current?.click(); } : undefined}
           style={{ position: "relative", flex: "0 0 auto", width: 84, height: 84, borderRadius: 14, background: active ? BRAND.purpleFaint : "#F6F5FA", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: photoId ? (hasPhoto ? "zoom-in" : "pointer") : "default" }}
@@ -1264,22 +1276,43 @@ function FindingCard({ index, icon, label, active, instruction, interpretation, 
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-          <div className="obj-finding-title-row">
-            <div style={{ fontSize: "0.9rem", fontWeight: 700, color: BRAND.ink }}>{label}</div>
-            <span className={"obj-finding-status " + (active ? "obj-finding-status-positive" : "obj-finding-status-unmarked")}>
-              {active ? "Positive" : "Unmarked"}
-            </span>
+          <div style={{ fontSize: "0.9rem", fontWeight: 700, color: BRAND.ink, marginBottom: 8 }}>{label}</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={onToggle}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "0.78rem", fontWeight: 700, background: active ? BRAND.purple : "#F6F5FA", color: active ? "#fff" : BRAND.gray }}
+            >
+              {active && "✓ "}Positive
+            </button>
+            {/* "What to observe" reveals the clinical-significance note
+                on demand instead of it appearing automatically the moment
+                a finding is marked Positive; the technique note (how to
+                actually check the finding) is unconditional, plain text
+                right below -- not behind a click (2026-09-28, Aditi: "how
+                to check paragraph should be constant written below the
+                positive button... i want this in what to observe button
+                instead of how check"). */}
+            {interpretation && (
+              <button
+                type="button"
+                onClick={() => setShowObserve((s) => !s)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, border: `1px solid ${BRAND.purple}55`, cursor: "pointer", fontFamily: "inherit", fontSize: "0.78rem", fontWeight: 700, background: showObserve ? BRAND.purpleFaint : "#fff", color: BRAND.purple }}
+              >
+                <i className="ti ti-eye" aria-hidden="true"></i> What to observe
+              </button>
+            )}
           </div>
           {instruction && (
-            <div style={{ fontSize: "0.76rem", color: BRAND.grayLight, lineHeight: 1.4, marginTop: 3 }}>{instruction}</div>
+            <div style={{ fontSize: "0.78rem", color: BRAND.grayLight, lineHeight: 1.45, marginTop: 8 }}>{instruction}</div>
           )}
-          {active && interpretation && (
-            <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: "0.76rem", color: BRAND.gray, lineHeight: 1.5 }}>
+          {showObserve && interpretation && (
+            <ul style={{ margin: "8px 0 0", paddingLeft: 16, fontSize: "0.76rem", color: BRAND.gray, lineHeight: 1.5 }}>
               {splitSentences(interpretation).map((s, i) => <li key={i}>{s}</li>)}
             </ul>
           )}
         </div>
-      </button>
+      </div>
     </div>
   );
 }
@@ -1671,10 +1704,10 @@ const PALPATION_HOW_TO = {
   "Upper trapezius": "Palpate the upper trapezius from the occiput to the shoulder for tone/trigger points.",
 };
 
-function FindingCardList({ category, options, selected, onToggle, interpretations, regionKey }) {
+function FindingCardList({ category, options, selected, onToggle, interpretations, regionKey, howToMap }) {
   const values = selected ? selected.split(", ").filter(Boolean) : [];
   const icon = FINDING_CATEGORY_ICON[category] || "ti-eye";
-  const howTo = category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null;
+  const howTo = howToMap || (category === "observation" ? OBSERVATION_HOW_TO : category === "palpation" ? PALPATION_HOW_TO : null);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       {options.map((o, i) => (
@@ -2042,7 +2075,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               palpation: (isV1 ? condition.palpationZones : condition.palpation)?.length || 0,
             }}
           />
-          <div className="obj-subtopic-page">
+          <div className="obj-subtopic-page" style={activeSubtopic === "palpation" ? { background: "#fff", border: `1px solid ${HAIRLINE}` } : undefined}>
 
           {/* "Suggested tests" (Required/Recommended, or Key Exams for v1
               regions) intentionally not rendered here (2026-09-12, Aditi:
@@ -2100,23 +2133,44 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
           ); })()}
           </>}
 
-          {activeSubtopic === "palpation" && <>
-          {(() => { const palpOptions = isV1 ? condition.palpationZones : condition.palpation; return (
-          <ModuleCard label="Palpation" subtitle="Findings on manual palpation" count={palpOptions?.length || 0}>
-            {palpOptions?.length > 0 ? (
-              <FindingCardList category="palpation" options={palpOptions} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} regionKey={config.key} />
-            ) : (
-              <EmptyNote>Not specified in condition library.</EmptyNote>
-            )}
-            <CustomNotesEditor
-              notes={notesOf("palpation")}
-              onAdd={(t) => addNote("palpation", t)}
-              onRemove={(i) => removeNote("palpation", i)}
-              placeholder="Write what you found…"
-            />
-          </ModuleCard>
-          ); })()}
-          </>}
+          {activeSubtopic === "palpation" && (() => {
+            const palpOptions = isV1 ? condition.palpationZones : condition.palpation;
+            return (
+              <>
+                <ModuleCard label="Palpation" subtitle="Findings on manual palpation" count={palpOptions?.length || 0}>
+                  {palpOptions?.length > 0 ? (
+                    <FindingCardList category="palpation" options={palpOptions} selected={v("palpation", "chips")} onToggle={(o) => toggleMulti("palpation", "chips", o)} interpretations={condition.findingInterpretations?.palpation} regionKey={config.key} />
+                  ) : (
+                    <EmptyNote>Not specified in condition library.</EmptyNote>
+                  )}
+                  <CustomNotesEditor
+                    notes={notesOf("palpation")}
+                    onAdd={(t) => addNote("palpation", t)}
+                    onRemove={(i) => removeNote("palpation", i)}
+                    placeholder="Write what you found…"
+                  />
+                </ModuleCard>
+                {/* Same Palpation experience as the Advanced Assessment
+                    wizard's own step -- real per-zone anatomical structures,
+                    tenderness/texture/temperature grading, body map,
+                    whole-region findings -- embedded verbatim below the
+                    condition-specific list, not instead of it (2026-09-28,
+                    Aditi: "where is condition wise palpation went" -- the
+                    condition-specific list stays; this is the region-wide
+                    addition underneath it she originally asked for, now
+                    using the real module instead of a lookalike). */}
+                <div style={{ marginTop: 16 }}>
+                  <PalpationSection
+                    data={data}
+                    setData={setData}
+                    selectedRegions={regions.filter(config.matchesRegion)}
+                    conditionLabel={condition.name}
+                    showBodyMap={false}
+                  />
+                </div>
+              </>
+            );
+          })()}
 
           {activeSubtopic === "cpa" && <>
           <ModuleCard label="CPA — NKT" color="#D97706">
@@ -2377,7 +2431,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               <SubLabel>{condition.resistedNarrative}</SubLabel>
               <div style={{ marginTop: 6 }}>
                 <SubLabel>{condition.resistedTestName}</SubLabel>
-                <ChipGroup options={RESISTED_TEST_OPTIONS_V1} selected={v("resisted", "test")} onToggle={(o) => toggleSingle("resisted", "test", o)} multi={false} />
+                <ChipGroup options={RESISTED_TEST_OPTIONS_V1} selected={v("resisted", "test")} onToggle={(o) => toggleSingle("resisted", "test", o)} multi={false} size="md" />
               </div>
               {v("resisted", "test") && (
                 <GreenBox title="Findings">
@@ -2427,7 +2481,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                           return (
                             <div key={f.id}>
                               <SubLabel>{f.label}</SubLabel>
-                              <ChipGroup options={RESISTED_TEST_OPTIONS_V1} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} />
+                              <ChipGroup options={RESISTED_TEST_OPTIONS_V1} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} size="md" />
                               {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
                             </div>
                           );
@@ -2450,7 +2504,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                           return (
                             <div key={f.id}>
                               <SubLabel>{f.label}</SubLabel>
-                              <ChipGroup options={f.endfeel_options || f.options || STTT_DEFAULT_ENDFEEL} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} />
+                              <ChipGroup options={f.endfeel_options || f.options || STTT_DEFAULT_ENDFEEL} selected={sel} onToggle={(o) => toggleSingle("sttt", f.id, o)} multi={false} size="md" />
                               {line && <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {line}</div>}
                             </div>
                           );
@@ -2516,7 +2570,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     <KcResultPicker options={kcMatch.options} value={v("kineticChain", "state")} onChange={(val) => sv("kineticChain", "state", val)} />
                   ) : (
                     <>
-                      <ChipGroup options={condition.kineticChain.chipOptions} selected={v("kineticChain", "state")} onToggle={(o) => toggleSingle("kineticChain", "state", o)} multi={false} />
+                      <ChipGroup options={condition.kineticChain.chipOptions} selected={v("kineticChain", "state")} onToggle={(o) => toggleSingle("kineticChain", "state", o)} multi={false} size="md" />
                       {interpretSttOption(v("kineticChain", "state")) && (
                         <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "state"))}</div>
                       )}
@@ -2569,7 +2623,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       {condition.kineticChain.fields.map((f, i) => (
                         <div key={i} style={{ marginTop: i === 0 ? 0 : 12 }}>
                           <SubLabel>{f.label}</SubLabel>
-                          <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
+                          <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} size="md" />
                           {interpretSttOption(v("kineticChain", "f" + i)) && (
                             <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
                           )}
@@ -2589,7 +2643,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     condition.kineticChain.fields.map((f, i) => (
                       <div key={i} style={{ marginTop: 12 }}>
                         <SubLabel>{f.label}</SubLabel>
-                        <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} />
+                        <ChipGroup options={f.options} selected={v("kineticChain", "f" + i)} onToggle={(o) => toggleSingle("kineticChain", "f" + i, o)} multi={false} size="md" />
                         {interpretSttOption(v("kineticChain", "f" + i)) && (
                           <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("kineticChain", "f" + i))}</div>
                         )}
@@ -2636,7 +2690,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               {condition.functionalScreen.measure.type === "choice" && (
                 <div style={{ marginBottom: condition.functionalScreen.secondaryChip ? 14 : 0 }}>
                   <SubLabel>{condition.functionalScreen.measure.label}</SubLabel>
-                  <ChipGroup options={condition.functionalScreen.measure.options} selected={v("functionalScreen", "measure")} onToggle={(o) => toggleSingle("functionalScreen", "measure", o)} multi={false} />
+                  <ChipGroup options={condition.functionalScreen.measure.options} selected={v("functionalScreen", "measure")} onToggle={(o) => toggleSingle("functionalScreen", "measure", o)} multi={false} size="md" />
                   {interpretSttOption(v("functionalScreen", "measure")) && (
                     <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "measure"))}</div>
                   )}
@@ -2652,7 +2706,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
               {condition.functionalScreen.secondaryChip && (
                 <div>
                   <SubLabel>{condition.functionalScreen.secondaryChip.label}</SubLabel>
-                  <ChipGroup options={condition.functionalScreen.secondaryChip.options} selected={v("functionalScreen", "secondary")} onToggle={(o) => toggleSingle("functionalScreen", "secondary", o)} multi={false} />
+                  <ChipGroup options={condition.functionalScreen.secondaryChip.options} selected={v("functionalScreen", "secondary")} onToggle={(o) => toggleSingle("functionalScreen", "secondary", o)} multi={false} size="md" />
                   {interpretSttOption(v("functionalScreen", "secondary")) && (
                     <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "secondary"))}</div>
                   )}
@@ -2712,7 +2766,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                       ) : (
                         <div key={i} style={{ marginBottom: 14 }}>
                           <SubLabel>{f.label}</SubLabel>
-                          <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
+                          <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} size="md" />
                           {interpretSttOption(v("functionalScreen", "f" + i)) && (
                             <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
                           )}
@@ -2735,7 +2789,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                     ) : (
                       <div key={i} style={{ marginBottom: 14 }}>
                         <SubLabel>{f.label}</SubLabel>
-                        <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} />
+                        <ChipGroup options={f.options} selected={v("functionalScreen", "f" + i)} onToggle={(o) => toggleSingle("functionalScreen", "f" + i, o)} multi={false} size="md" />
                         {interpretSttOption(v("functionalScreen", "f" + i)) && (
                           <div style={{ fontSize: "0.74rem", color: BRAND.gray, marginTop: 6, lineHeight: 1.4 }}>→ {interpretSttOption(v("functionalScreen", "f" + i))}</div>
                         )}
