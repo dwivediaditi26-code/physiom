@@ -62,7 +62,7 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
   // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
   // wizardBackRef comment: this component stays mounted (just hidden) while
   // a different tab is showing, same as Neuro/Cardio -- navContext is the
@@ -309,6 +309,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
         entryMode={effectiveEntryMode}
         initialData={effectiveResume?.data}
         initialStep={pendingInitialStep || (resume ? resume.initialStep || "review" : undefined)}
+        onGeneratePdf={onGeneratePdf}
       />
     );
   }

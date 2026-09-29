@@ -467,6 +467,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const dataRef = useRef({});
   useEffect(() => { dataRef.current = data; });
   const [showPatientDb, setShowPatientDb] = useState(false);
+  // Trigger moved out of the Home sidebar into each assessment's own Review
+  // screen (2026-09-29, Aditi: a generic Home button generating a report for
+  // "whichever patient happens to be active" was buggy/confusing -- "remove
+  // home ... pdf ... make it one in assessment only"). The modal itself
+  // still lives here and still reads this component's own `data`, unchanged;
+  // only who can flip `showPdfReports` to true has moved, via the
+  // onGeneratePdf prop threaded into Ortho/Neuro/Cardio below.
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profileTab, setProfileTab] = useState(null);
   // Clinical tab's own sub-navigation. "Today" is the default landing view
@@ -1105,12 +1112,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
         </button>
-        {data.dem_name && (
-          <button onClick={()=>{ setNavOpen(false); setShowPdfReports(true); }} style={{width:"100%",marginTop:5,padding:"8px 10px",background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:8,color:"#2563eb",fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-            📄 PDF Reports
-          </button>
-        )}
-
         {/* ── Active patient + PDF buttons ── */}
         {data.dem_name && (
           <div style={{marginTop:8,background:"rgba(37,99,235,0.05)",border:"1px solid rgba(37,99,235,0.18)",borderRadius:9,padding:"8px 10px"}}>
@@ -1814,7 +1815,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               PhysioFeed's own deferred-mount comment just above. */}
           {mountedTabs.has("cardio_assessment") && (
             <div className="pm-bleed" style={{display: active==="cardio_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="cardio_assessment" && !mountedTabs.has("cardio_assessment") && (
@@ -1827,7 +1828,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               explanation). Same deferred-mount fix as Cardiopulmonary. */}
           {mountedTabs.has("neuro_assessment") && (
             <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="neuro_assessment" && !mountedTabs.has("neuro_assessment") && (
@@ -1840,7 +1841,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (

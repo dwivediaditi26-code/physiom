@@ -28,7 +28,7 @@ function rowsForStep(step, section, formatters) {
 const isGrouped = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
 const rowCount = (result) => (isGrouped(result) ? result.groups.reduce((n, g) => n + g.rows.length, 0) : result.length);
 
-export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters, hideTitle, onShare }) {
+export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, exportHeaderLines, extra, formatters, hideTitle, onShare, onGeneratePdf }) {
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const contentSteps = steps.filter((s) => s.id !== "review" && s.id !== "setup");
@@ -137,6 +137,11 @@ export function AssessmentSummary({ icon, title, sub, steps, data, onEdit, expor
       {onShare && (
         <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setShareOpen(true)}>
           💬 Share as Clinical Discussion
+        </button>
+      )}
+      {onGeneratePdf && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onGeneratePdf}>
+          📄 Generate PDF Report
         </button>
       )}
       {shareOpen && (

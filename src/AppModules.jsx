@@ -173,7 +173,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     </div>`;
   };
 
-  const pdfFooter = (docName) => {
+  const pdfFooter = (docName, pageLabel) => {
     const therapistName = d.therapist_name || "Your Physiotherapist";
     // App Store Guideline 1.4.1 requires this exact disclaimer on
     // assessment report export views, not just onboarding.
@@ -183,7 +183,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
       + '<div style="background:#1e293b;padding:10px 40px;display:flex;justify-content:space-between;align-items:center;">'
       + '<div style="color:#94a3b8;font-size:8px;">PhysioMind &middot; ' + docName + '</div>'
       + '<div style="color:#64748b;font-size:8px;text-align:center;"><span style="color:#c9a84c;font-weight:700;">CONFIDENTIAL</span> &mdash; For Authorised Healthcare Professionals Only &middot; Not for Distribution</div>'
-      + '<div style="color:#94a3b8;font-size:8px;">Page 1 &middot; ' + today + '</div>'
+      + '<div style="color:#94a3b8;font-size:8px;">' + (pageLabel || ('Page 1 &middot; ' + today)) + '</div>'
       + '</div>';
   };
 
@@ -599,6 +599,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
       .body{padding:22px 32px 28px;}
       table{width:100%;border-collapse:collapse;}
       th{background:#f1f5f9;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.7px;padding:6px 6px;text-align:left;border-bottom:1px solid #e2e8f0;}
+      td{padding:7px 10px;font-size:10.5px;border-bottom:1px solid #e2e8f0;}
       @media print{body{background:white;}.page{box-shadow:none;max-width:100%;}}
     `;
 
@@ -611,7 +612,12 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     // 4th when d.neuro has data (NeurologicalAssessment.jsx, same pass),
     // rather than reworking page1/page2's dense, precisely laid-out ortho
     // content to make room -- page count in every footer adjusts.
-    const totalPages = 2 + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0);
+    // +1 for the Treatment Plan page merged onto the end of this same
+    // document (2026-09-29, Aditi: the standalone "Treatment Plan" report
+    // and the Home-screen entry point that only offered these two reports
+    // as separate choices are both gone -- one "Generate PDF" button, from
+    // inside the assessment itself, now produces the whole thing).
+    const totalPages = 2 + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0) + 1;
     const pgFooter = (n, total) => `
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:8px;color:#94a3b8;">PhysioMind · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
@@ -782,15 +788,22 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     </div>` : "";
     const page3 = specialtyPage(3, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
     const page4 = specialtyPage(d.cardio ? 4 : 3, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
+    const page5 = buildTreatmentPageHtml(`Page ${totalPages} of ${totalPages} &middot; ${today}`);
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-      <title>Assessment Report — ${escHtml(patName)}</title>
+      <title>Assessment &amp; Treatment Report — ${escHtml(patName)}</title>
       <style>${css}</style>
-    </head><body>${page1}${page2}${page3}${page4}</body></html>`;
+    </head><body>${page1}${page2}${page3}${page4}${page5}</body></html>`;
   };
 
-
-  const buildTreatmentPdf = () => {
+  // Treatment Plan content, as one page appended onto the end of the
+  // combined Assessment & Treatment PDF above -- this used to be its own
+  // separate "Treatment Plan" report with its own Generate PDF button
+  // (2026-09-29, Aditi: "remove ... treatment ... make it one"). `pageLabel`
+  // lets the caller give this page its real position when it's merged in
+  // (buildAssessmentPdf's pgFooter-style "Page N of Total") instead of the
+  // hardcoded "Page 1" pdfFooter() falls back to for a standalone doc.
+  const buildTreatmentPageHtml = (pageLabel) => {
     const exercises = gatherExercises();
     const techniques = gatherTechniques();
     const sessions = Array.isArray(d.tx_sessions) ? [...d.tx_sessions] : [];
@@ -798,9 +811,7 @@ function PdfReportsModal({ data, dx, onClose, patients=[] }) {
     const phaseColors = {"Phase 1":"#0891b2","Phase 2":"#7c3aed","Phase 3":"#059669","Phase 4":"#d97706","Phase 1 -- Motor Control":"#0891b2","Phase 1 -- Mobility":"#0891b2","Phase 1 -- Activation":"#0891b2","Phase 1 -- Flexibility":"#0891b2","Phase 2 -- Stability":"#7c3aed","Phase 2 -- Strengthening":"#7c3aed","Phase 2 -- Functional":"#7c3aed","Phase 3 -- Functional":"#059669"};
     const groupedExercises = exercises.reduce((acc, ex) => { const p = ex.phase || "Phase 1"; if(!acc[p]) acc[p]=[]; acc[p].push(ex); return acc; }, {});
     const svgKeys = Object.keys(exerciseSvgs);
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Treatment Plan - ${escHtml(patName)}</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page{background:#fff;max-width:860px;margin:0 auto;box-shadow:0 4px 40px rgba(0,0,0,0.12);}.body{padding:28px 40px;}table{width:100%;border-collapse:collapse;}th{background:#f1f5f9;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;padding:8px 10px;text-align:left;}td{padding:7px 10px;font-size:10.5px;border-bottom:1px solid #e2e8f0;}@media print{body{background:white;}.page{box-shadow:none;}}</style>
-</head><body><div class="page">
+    return `<div class="page">
 ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management Program","#059669")}
 <div class="body">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
@@ -863,8 +874,8 @@ ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management P
   })()}
   <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Therapist Signature:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Name / AHPRA: ___________________</div></div><div><div style="font-size:9px;color:#6b7280;margin-bottom:24px;">Date:</div><div style="border-bottom:1px solid #1a3a5c;width:80%;margin-bottom:4px;height:24px;"></div><div style="font-size:9px;color:#6b7280;">Review Date: ___________________</div></div></div>
 </div>
-${pdfFooter("Treatment Plan")}
-</div></body></html>`;
+${pdfFooter("Assessment & Treatment Report", pageLabel)}
+</div>`;
   };
 
   const buildHomeExercisePdf = () => {
@@ -1185,7 +1196,6 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
     try {
       let html = "";
       if (type === "assessment") html = buildAssessmentPdf();
-      else if (type === "treatment") html = buildTreatmentPdf();
       else if (type === "hep") html = buildHomeExercisePdf();
       else if (type === "posture") html = buildPostureReportPdf();
       openPdf(html);
@@ -1194,9 +1204,12 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
     setGenerating(null);
   };
 
+  // One combined report instead of two separate choices (2026-09-29, Aditi:
+  // "remove ... treatment ... make it one") -- buildAssessmentPdf() now ends
+  // with the Treatment Plan content as its own final page instead of that
+  // being a second, separately-generated document.
   const reports = [
-    { id:"assessment", icon:"&#129321;", title:"Assessment Report", subtitle:"Initial Clinical Evaluation", desc:"Comprehensive physiotherapy assessment: demographics, pain scores, ROM table, postural analysis with anatomical diagram, special tests, clinical diagnosis, neurological & palpation findings, and signed clinical summary.", color:"#1a3a5c", gradient:"linear-gradient(135deg,#1a3a5c,#2563eb)", tags:["Demographics","VAS Scores","Posture Diagram","ROM Table","Diagnosis","Special Tests","Signature"], pages:"2-3 pages" },
-    { id:"treatment", icon:"&#127959;", title:"Treatment Plan", subtitle:"Clinical Management Program", desc:"Evidence-based treatment plan with phased exercise prescription, manual therapy techniques and dosage, SMART goals timeline, outcome measures with baselines, reassessment schedule, and clinical precautions.", color:"#059669", gradient:"linear-gradient(135deg,#065f46,#059669)", tags:["Phased Exercises","Manual Therapy","SMART Goals","Outcome Measures","Precautions","Reassessment"], pages:"2-3 pages" },
+    { id:"assessment", icon:"&#129321;", title:"Assessment & Treatment Report", subtitle:"Full Clinical Report", desc:"Comprehensive physiotherapy report: demographics, pain scores, ROM table, postural analysis with anatomical diagram, special tests, clinical diagnosis, neurological & palpation findings, phased exercise prescription, manual therapy, SMART goals, outcome measures, and signed clinical summary.", color:"#1a3a5c", gradient:"linear-gradient(135deg,#1a3a5c,#2563eb)", tags:["Demographics","VAS Scores","ROM Table","Diagnosis","Exercise Plan","Outcome Measures","Signature"], pages:"3-5 pages" },
   ];
 
   return (
@@ -1245,14 +1258,6 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
               </div>
             ))}
           </div>
-          <div style={{marginTop:18,padding:"16px 20px",background:"linear-gradient(135deg,rgba(124,58,237,0.06),rgba(37,99,235,0.04))",border:"1px solid rgba(124,58,237,0.2)",borderRadius:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-            <div><div style={{fontWeight:700,fontSize:"0.88rem",color:"#1e293b"}}>Generate Both Reports</div><div style={{fontSize:"0.82rem",color:"#64748b",marginTop:2}}>Download Assessment &amp; Treatment PDFs for <strong>{patName}</strong></div></div>
-            <button onClick={async()=>{for(const r of reports){await generatePdf(r.id);await new Promise(res=>setTimeout(res,1500));}}} disabled={generating!==null} style={{padding:"12px 22px",background:"linear-gradient(135deg,#1a3a5c,#7c3aed)",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.8rem",cursor:generating?"not-allowed":"pointer",whiteSpace:"nowrap",flexShrink:0,boxShadow:"0 2px 12px rgba(124,58,237,0.3)"}}>
-              📄 Generate All
-            </button>
-          </div>
-
-
           <div style={{marginTop:14,padding:"12px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10}}>
             <div style={{fontSize:"0.8rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>

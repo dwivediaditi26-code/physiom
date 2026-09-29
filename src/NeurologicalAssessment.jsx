@@ -1962,7 +1962,7 @@ function rowsForStep(step, section, formatters) {
     .map(([label, value]) => ({ label: humanizeKey(label), value }));
 }
 
-export function SummarySection({ setting, data, assessSteps, formatters, onShare }) {
+export function SummarySection({ setting, data, assessSteps, formatters, onShare, onGeneratePdf }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -2037,6 +2037,11 @@ export function SummarySection({ setting, data, assessSteps, formatters, onShare
       {onShare && (
         <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={() => setShareOpen(true)}>
           💬 Share as Clinical Discussion
+        </button>
+      )}
+      {onGeneratePdf && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onGeneratePdf}>
+          📄 Generate PDF Report
         </button>
       )}
       {shareOpen && (
@@ -2169,7 +2174,7 @@ function saveMyTemplatesToStorage(list) {
 // re-hydration effects below) rather than flattening every internal
 // field into the shared bag -- this file owns its own deeply nested
 // step/section data model, not worth rewriting.
-export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef } = {}) {
+export default function NeurologicalAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef, onGeneratePdf } = {}) {
   // AppFull.jsx now keeps this module mounted in the background instead of
   // unmounting it on every tab switch (2026-09-24, so the wizard step/data
   // below survives a glance at Learn/PhysioFeed) -- it signals "not the
@@ -3019,7 +3024,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               )}
               {current.id === "summary" && (
                 <>
-                  <SummarySection setting={setting} data={reviewData} assessSteps={assessSteps} formatters={neuroSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} />
+                  <SummarySection setting={setting} data={reviewData} assessSteps={assessSteps} formatters={neuroSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} onGeneratePdf={onGeneratePdf} />
                   <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 4 }} onClick={() => setSaveModalOpen(true)}>
                     ⭐ Save this assessment as a template
                   </button>

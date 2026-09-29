@@ -2048,7 +2048,7 @@ export function withCarePlanSummaryAlias(data) {
   return { ...data, carePlanPlan: data?.cardioCarePlan };
 }
 
-export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare }) {
+export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare, onGeneratePdf }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
@@ -2166,6 +2166,11 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
           💬 Share as Clinical Discussion
         </button>
       )}
+      {onGeneratePdf && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onGeneratePdf}>
+          📄 Generate PDF Report
+        </button>
+      )}
       {shareOpen && (
         <ShareAssessmentModal
           sections={shareSections}
@@ -2202,7 +2207,7 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
 // current patient's saved cardio data (switching patients) -- see the
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
-export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef } = {}) {
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef, onGeneratePdf } = {}) {
   // AppFull.jsx now keeps this module mounted in the background instead of
   // unmounting it on every tab switch (2026-09-24, so the wizard step/data
   // below survives a glance at Learn/PhysioFeed) -- it signals "not the
@@ -2895,7 +2900,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && (
             <>
-              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} />
+              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} onGeneratePdf={onGeneratePdf} />
               <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>
