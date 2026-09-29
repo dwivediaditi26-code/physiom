@@ -5,6 +5,7 @@ import { matchRegionKey } from "./orthoClinicalData.js";
 import { ExerciseLibraryCard } from "./exerciseCardKit.jsx";
 import { ExerciseLibrarySheet } from "./orthoExerciseLibrary.jsx";
 import { saveClinicProtocol } from "./clinicProtocols.js";
+import { orthoStyles } from "./orthoStyles.js";
 
 /* ============================================================
    EXERCISE PRESCRIPTION — the same exercise library + programme
@@ -159,6 +160,13 @@ export function ExercisePrescriptionSection({ data, setData, selectedRegions = [
 
   return (
     <>
+      {/* Reached standalone from AppFull.jsx's EXERCISE_MODULE branch (no
+          wizard shell above it to have already injected this) as well as
+          nested inside a full Ortho/Neuro wizard that already renders its
+          own orthoStyles() -- self-contained here so .tech-card/.vital-field/
+          .subheading etc. render styled either way; a duplicate <style> tag
+          with identical rules when nested is harmless. */}
+      <style>{orthoStyles()}</style>
       <SectionIntro icon="🏋" title="Exercise Prescription" info="Browse the exercise library by region, add to this patient's programme, then adjust sets/reps/hold/frequency for them specifically." />
 
       <button type="button" className="ghost-btn" style={{ width: "100%", marginBottom: 12 }} onClick={() => setLibraryOpen(true)}>
