@@ -119,10 +119,12 @@ jobs:
         env:
           CI: true
           GREP: ${{ github.event.inputs.grep }}
-          # commands.spec.ts / ortho-cases.spec.ts / therapist-mobile.spec.ts log
-          # into an EXISTING account (appMap.ts's login()) rather than signing up --
-          # only patient-journey.spec.ts self-signs-up a disposable account. Locally
-          # that existing account comes from the gitignored e2e/login.local.json;
+          # Most specs (guest-journey, ortho-steps, regions, neuro-cardio,
+          # ortho-cases, smoke-starter) use Guest Mode and need no account.
+          # patient-journey.spec.ts and cross-device.spec.ts sign up their own
+          # disposable accounts. Only load-concurrency.spec.ts (@load, run by
+          # load-test.yml) logs into an EXISTING account (appMap.ts's login()).
+          # Locally that account comes from the gitignored e2e/login.local.json;
           # in CI there's no such file, so creds() falls back to these env vars.
           # The account itself still has to be created once, by hand, in the
           # TEST Supabase project (Authentication -> Users -> Add user, Auto
