@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   signUp, startOrtho, fillDemographics, fillChiefComplaint, goToStep, saveAssessment,
-  expectPatientListed, expectStillSignedIn, noCrash, uniqueSuffix,
+  expectPatientListed, expectStillSignedIn, trackCloudSaves, expectCloudSaved, noCrash, uniqueSuffix,
 } from './appMap';
 
 // Full patient journey with a REAL account: the one path where cloud sync
@@ -27,6 +27,7 @@ test.describe('Full patient journey (real account)', () => {
     const patientName = `E2E Test Patient ${unique}`;
     const marker = `E2E-${unique} knee pain for 3 weeks`;
 
+    const cloudSaves = trackCloudSaves(page);
     await signUp(page, { name: 'E2E Runner', email, password });
 
     await startOrtho(page, { name: patientName, region: 'Knee', side: 'Right' });
@@ -43,6 +44,7 @@ test.describe('Full patient journey (real account)', () => {
 
     await saveAssessment(page);
     await expectPatientListed(page, patientName);
+    await expectCloudSaved(cloudSaves);
 
     // The patient must have reached the cloud: after a reload the account is
     // still signed in and the patient is still listed.

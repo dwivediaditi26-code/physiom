@@ -88,9 +88,32 @@ export async function expectHome(page: Page) {
 // After a reload the app comes back on the screen you were on (not Home), so
 // "we're still signed in" means: the app frame is there and the sign-in form is not.
 export async function expectStillSignedIn(page: Page) {
-  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar"))).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar")).first()).toBeVisible({ timeout: 25_000 });
   await expect(page.getByPlaceholder("you@clinic.com")).toHaveCount(0);
   await noCrash(page);
+}
+
+// Did the patient really reach the database? The header's "Saved to cloud"
+// label is set by the on-device draft save, so it proves nothing about the
+// cloud; the reliable signal is the database's answer to the save request.
+// Call trackCloudSaves() on a page BEFORE saving, then expectCloudSaved().
+export function trackCloudSaves(page: Page) {
+  const t = { ok: 0, failed: [] as string[] };
+  page.on("response", async (res) => {
+    if (res.request().method() === "POST" && res.url().includes("/rest/v1/patients")) {
+      if (res.status() < 300) t.ok++;
+      else t.failed.push(`${res.status()} ${(await res.text().catch(() => "")).slice(0, 160)}`);
+    }
+  });
+  return t;
+}
+
+export async function expectCloudSaved(t: { ok: number; failed: string[] }, timeout = 45_000) {
+  try {
+    await expect.poll(() => t.ok, { timeout }).toBeGreaterThan(0);
+  } catch {
+    throw new Error(`No patient save was accepted by the database. Rejected saves: ${t.failed.join(" | ") || "none seen"}`);
+  }
 }
 
 export async function enterGuestMode(page: Page) {
