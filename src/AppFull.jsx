@@ -1664,8 +1664,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>
               )}
             </span>
+            {/* Just "+ New" here (2026-09-29, Aditi: "remove that, new
+                patient should only have one button... no switch patient" --
+                laptop only). "Switch Patient" used to sit right next to it
+                doing the exact same setShowPatientDb(true) the "N Patients"
+                button in the header above already does -- two buttons open
+                the identical patient-list modal. */}
             <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
-            <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
           </div>
         </div>
       )}
