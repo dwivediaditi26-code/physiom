@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   signUp, startOrtho, fillDemographics, fillChiefComplaint, goToStep, saveAssessment,
-  expectPatientListed, expectHome, noCrash, uniqueSuffix,
+  expectPatientListed, expectStillSignedIn, noCrash, uniqueSuffix,
 } from './appMap';
 
 // Full patient journey with a REAL account: the one path where cloud sync
@@ -47,7 +47,7 @@ test.describe('Full patient journey (real account)', () => {
     // The patient must have reached the cloud: after a reload the account is
     // still signed in and the patient is still listed.
     await page.reload();
-    await expectHome(page);
+    await expectStillSignedIn(page);
     await expectPatientListed(page, patientName, 30_000);
     await noCrash(page);
   });
