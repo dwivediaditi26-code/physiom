@@ -118,7 +118,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_acl", conditions: ["ligamentReconstruction"], name: "Protect reconstructed ligament / restore controlled motion",
     category: "stability", refs: ["brotzman"], evidence: "A", treatmentCategories: [],
-    finding: "Ligament reconstruction — protect the graft and progress motion/loading by phase (Brotzman ch.4, ACL p.211)",
+    finding: "Ligament reconstruction — protect the graft and progress motion/loading by phase",
     goals: [
       g("acl_ext", "Restore full knee extension early", "short", 3, "Knee extension", "Limited / guarded", "Full symmetrical passive extension"),
       g("acl_flex", "Restore knee flexion", "long", 8, "Knee flexion", "Limited", "Flexion to ≥120° (functional for floor-sitting)"),
@@ -129,7 +129,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_tendon", conditions: ["tendonRepair", "tendonTransfer"], name: "Protect the repair through healing phases",
     category: "other", refs: ["brotzman"], evidence: "A", treatmentCategories: [],
-    finding: "Tendon repair — respect protected phase; passive→active→resisted by protocol (Brotzman: RC repair p.99, Achilles p.350, flexor tendon p.1)",
+    finding: "Tendon repair — respect protected phase; passive→active→resisted by protocol",
     goals: [
       g("tr_prom", "Maintain protected passive range", "short", 4, "Protected passive ROM", "Restricted per protocol", "Full available passive range without stressing repair"),
       g("tr_arom", "Restore active range as cleared", "long", 8, "Active ROM", "Not permitted early", "Full active range once repair healed"),
@@ -139,7 +139,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_jr", conditions: ["jointReplacement"], name: "Restore mobility & function after joint replacement",
     category: "function", refs: ["brotzman"], evidence: "A", treatmentCategories: [],
-    finding: "Joint replacement — regain motion/function within precautions (Brotzman: THR p.374, TKR p.386)",
+    finding: "Joint replacement — regain motion/function within precautions",
     goals: [
       g("jr_rom", "Regain joint range early", "long", 8, "Joint ROM", "Limited", "Knee flexion ≥90–120° / hip functional range"),
       g("jr_transfer", "Independent transfers & gait with aid", "short", 3, "Transfers / gait", "Assisted", "Independent transfers and gait with prescribed aid"),
@@ -149,7 +149,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_fracture", conditions: ["fracture", "fractureORIF"], name: "Protected mobilization respecting fracture fixation",
     category: "function", refs: ["brotzman"], evidence: "B", treatmentCategories: [],
-    finding: "Fracture / ORIF — mobilize within the prescribed weight-bearing & immobilization limits (Brotzman: distal radius p.24; AO loading principles)",
+    finding: "Fracture / ORIF — mobilize within the prescribed weight-bearing & immobilization limits",
     goals: [
       g("fx_adj", "Maintain range of adjacent joints", "short", 3, "Adjacent-joint ROM", "At risk of stiffness", "Full range of joints above/below maintained"),
       g("fx_rom", "Restore range at the involved joint once cleared", "long", 8, "Involved-joint ROM", "Restricted", "Functional range restored"),
@@ -159,7 +159,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_spine_surg", conditions: ["spineSurgery"], name: "Protected spinal recovery after surgery",
     category: "function", refs: ["brotzman"], evidence: "B", treatmentCategories: [],
-    finding: "Spinal surgery — protect early; progress core control and walking (Brotzman: rehab after lumbar disc surgery p.491)",
+    finding: "Spinal surgery — protect early; progress core control and walking",
     goals: [
       g("ss_mob", "Pain-free functional mobility (walking, transfers)", "short", 4, "Functional mobility", "Guarded", "Independent walking/transfers without symptom flare"),
       g("ss_core", "Restore trunk/core endurance", "long", 8, "Core stabilization endurance", "Reduced", "Adequate core endurance for daily tasks"),
@@ -169,7 +169,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_arthroscopy", conditions: ["arthroscopy"], name: "Restore motion & strength after arthroscopy",
     category: "function", refs: ["brotzman"], evidence: "B", treatmentCategories: [],
-    finding: "Arthroscopy — control effusion, restore motion, progress loading (Brotzman: meniscus p.261, rotator cuff p.99)",
+    finding: "Arthroscopy — control effusion, restore motion, progress loading",
     goals: [
       g("ar_effusion", "Control effusion & restore full extension/motion", "short", 3, "Effusion / ROM", "Effused / limited", "Effusion resolved, full motion"),
       g("ar_strength", "Restore strength & function", "long", 8, "Strength / function", "Reduced", "Functional strength and return to activity"),
@@ -178,7 +178,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_instability", conditions: ["dislocation", "jointStabilization"], name: "Restore stability while protecting healing structures",
     category: "stability", refs: ["brotzman"], evidence: "B", treatmentCategories: [],
-    finding: "Dislocation / stabilization — protect the at-risk position, then progress (Brotzman: shoulder instability p.106)",
+    finding: "Dislocation / stabilization — protect the at-risk position, then progress",
     goals: [
       g("inst_rom", "Protected range then full range", "long", 8, "Range within safe arc", "Protected", "Full range regained within timeline"),
       g("inst_strength", "Dynamic stabilizer strength", "long", 10, "Cuff/scapular or dynamic stabilizer strength", "Weak", "Good dynamic stability strength"),
@@ -188,7 +188,7 @@ export const CONDITION_PROBLEMS = [
   {
     id: "cond_spine_cons", conditions: ["spine"], name: "Mechanical spinal pain — classification-based management",
     category: "function", refs: ["brotzman"], evidence: "A", treatmentCategories: [],
-    finding: "Spinal condition — treatment-based classification / directional preference (Brotzman: LBP classification p.465, McKenzie p.482, core stabilization p.467)",
+    finding: "Spinal condition — treatment-based classification / directional preference",
     goals: [
       g("sc_centralize", "Centralize / reduce symptoms", "short", 3, "Symptom centralization", "Peripheralized / painful", "Symptoms centralized / reduced"),
       g("sc_core", "Build core/trunk endurance", "long", 8, "Core endurance", "Reduced", "Adequate core endurance"),
@@ -213,7 +213,7 @@ export const NEURO_SCREEN_PROBLEMS = [
   {
     id: "neuro_screen_deficit", name: "Suspected nerve involvement (positive neuro screen)",
     category: "neuro", refs: ["magee"], evidence: "B", treatmentCategories: [],
-    finding: "Positive neurological screen — reduced myotome strength, dermatomal sensory change, or abnormal reflex, suggesting nerve root / peripheral nerve involvement (Magee: neurological examination, nerve root screening)",
+    finding: "Positive neurological screen — reduced myotome strength, dermatomal sensory change, or abnormal reflex, suggesting nerve root / peripheral nerve involvement",
     goals: [
       g("ns_resolve", "Resolve / improve neurological signs", "long", 6, "Neuro screen (myotome / dermatome / reflex)", "Positive findings", "Findings resolved or improving; escalate if progressive or new red flags"),
     ],
