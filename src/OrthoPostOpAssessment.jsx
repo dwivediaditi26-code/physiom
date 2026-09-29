@@ -538,6 +538,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
                 steps={steps}
                 data={reviewData}
                 onEdit={jumpTo}
+                onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined}
                 exportHeaderLines={[`POST-OPERATIVE ORTHOPEDIC REHAB ASSESSMENT`, `Region(s): ${regionsLabel}`, `Surgery: ${conditionLabel}`]}
                 extra={<Alert tone="amber">{PROTOCOL_SAFETY_NOTE}</Alert>}
                 formatters={{ carePlanPlan: formatCarePlanSection, rom: formatRomSection, mmt: formatMmtSection, jointMobility: formatJointMobilitySection, specialTests: formatSpecialTestsSection, pain: formatPainSection, outcomeMeasure: formatOutcomeMeasureSection }}
