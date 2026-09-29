@@ -35,7 +35,11 @@ import "./physiofeed.css";
 // (ProfileTabs.jsx) is gone in the 2026-09-24 single-scroll redesign.
 export default function ProfileTabEntry({ onSignOut }) {
   return (
-    <div className="physiofeed-root pf-bare-entry">
+    // bg-white (2026-09-28, Aditi: "background whitw ...there is purplish")
+    // -- painted here rather than on the shared .pm-shell (every module's
+    // own ambient tint, PostureEngine.jsx's PC.bg) so only this tab's own
+    // background changes, not Home/Clinical/Learn's.
+    <div className="physiofeed-root pf-bare-entry bg-white">
       <MemoryRouter initialEntries={["/profile"]}>
         <AppDataProvider>
           <div className="flex gap-6">
