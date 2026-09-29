@@ -469,44 +469,44 @@ export default function ExplorePage() {
           and my opportunity section side by side") -- these were two
           full-width stacked rows before; same cards, just a 2-column grid
           now so they sit next to each other like the reference. */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-2.5 mb-4">
         <button
           type="button"
           onClick={() => setMyPostingsOpen(true)}
-          className="flex flex-col items-start gap-2 text-left bg-white border-2 border-[#F1EEFB] rounded-2xl p-4 hover:bg-[#FBFAFF] transition"
+          className="flex flex-col items-start gap-1.5 text-left bg-white border-2 border-[#F1EEFB] rounded-2xl p-3 hover:bg-[#FBFAFF] transition"
         >
           <div className="w-full flex items-center justify-between">
-            <span className="w-9 h-9 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><Briefcase size={16} className="text-[#6E5CC7]" /></span>
-            <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
+            <span className="w-7 h-7 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><Briefcase size={13} className="text-[#6E5CC7]" /></span>
+            <ChevronRight size={14} className="text-[#D9D2F0] shrink-0" />
           </div>
           <span className="min-w-0">
-            <span className="pf-font-head flex items-center gap-1.5 text-sm font-bold text-[#2B2140]">
+            <span className="pf-font-head flex items-center gap-1.5 text-[13px] font-bold text-[#2B2140]">
               My Postings
-              {myPostings.length > 0 && <span className="text-[11px] font-bold text-white bg-[#6E5CC7] rounded-full px-1.5 py-0.5 leading-none">{myPostings.length}</span>}
+              {myPostings.length > 0 && <span className="text-[10px] font-bold text-white bg-[#6E5CC7] rounded-full px-1.5 py-0.5 leading-none">{myPostings.length}</span>}
             </span>
-            <span className="pf-font-body block text-xs text-[#8A7FA3] mt-0.5">Manage your listings and review applicants</span>
+            <span className="pf-font-body text-[11px] text-[#8A7FA3] mt-0.5 line-clamp-1">Manage your listings and review applicants</span>
           </span>
         </button>
 
         <button
           type="button"
           onClick={() => setMyAppsOpen(true)}
-          className="flex flex-col items-start gap-2 text-left bg-white border-2 border-[#F1EEFB] rounded-2xl p-4 hover:bg-[#FBFAFF] transition"
+          className="flex flex-col items-start gap-1.5 text-left bg-white border-2 border-[#F1EEFB] rounded-2xl p-3 hover:bg-[#FBFAFF] transition"
         >
           <div className="w-full flex items-center justify-between">
-            <span className="w-9 h-9 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><FileText size={16} className="text-[#6E5CC7]" /></span>
-            <ChevronRight size={16} className="text-[#D9D2F0] shrink-0" />
+            <span className="w-7 h-7 rounded-full bg-[#F7F5FF] flex items-center justify-center shrink-0"><FileText size={13} className="text-[#6E5CC7]" /></span>
+            <ChevronRight size={14} className="text-[#D9D2F0] shrink-0" />
           </div>
           <span className="min-w-0">
-            <span className="pf-font-head flex items-center gap-1.5 text-sm font-bold text-[#2B2140]">
+            <span className="pf-font-head flex items-center gap-1.5 text-[13px] font-bold text-[#2B2140]">
               My Opportunities
               {(registeredItems.length + applicationItems.length + savedActiveItems.length) > 0 && (
-                <span className="text-[11px] font-bold text-white bg-[#6E5CC7] rounded-full px-1.5 py-0.5 leading-none">
+                <span className="text-[10px] font-bold text-white bg-[#6E5CC7] rounded-full px-1.5 py-0.5 leading-none">
                   {registeredItems.length + applicationItems.length + savedActiveItems.length}
                 </span>
               )}
             </span>
-            <span className="pf-font-body block text-xs text-[#8A7FA3] mt-0.5">Registered, applied, saved and past</span>
+            <span className="pf-font-body text-[11px] text-[#8A7FA3] mt-0.5 line-clamp-1">Registered, applied, saved and past</span>
           </span>
         </button>
       </div>
