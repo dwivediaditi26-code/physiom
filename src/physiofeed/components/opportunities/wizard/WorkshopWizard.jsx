@@ -119,8 +119,6 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const canPublish = step0Valid && step1Valid && step4Valid && step4PriceValid;
   const canSaveDraft = title.trim().length > 0;
 
-  const stepValid = [step0Valid, step1Valid, true, true, step4Valid && step4PriceValid, true, true][step];
-
   const orgDisplayName = orgName.trim() || profile?.name || "";
   const instructor = useMyProfile
     ? { name: profile?.name || "You", role: profile?.clinicalTitle || profile?.role || "Physiotherapist", initials: profile?.initials || "PT", gradient: profile?.gradient || "blue" }
@@ -460,8 +458,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => setStep((s) => s + 1)}
-                disabled={!stepValid}
-                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40 active:scale-[0.98] transition"
+                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition"
               >
                 Next →
               </button>
