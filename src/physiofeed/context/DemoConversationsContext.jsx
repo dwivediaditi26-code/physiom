@@ -5,7 +5,7 @@ const DemoConversationsContext = createContext(null);
 // A small, local-only conversation store for the Opportunities board's
 // poster-side "Chat / Invite" (2026-09-22, Aditi's follow-up: "the message
 // conversation chat should always show here" -- pointing at the real
-// Messages tab). The real inbox (db.js's getConversations/sendMessage) is
+// Messages tab). The real inbox (db.js's getInbox/sendMessage) is
 // hard-wired to Supabase's `direct_messages` + `profiles` tables and
 // throws if you're signed out or the recipient isn't a real account --
 // applicants on the demo board have no account to message, so writing into
