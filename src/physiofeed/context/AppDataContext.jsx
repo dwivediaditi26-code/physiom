@@ -42,6 +42,12 @@ export function AppDataProvider({ children }) {
   // PhysioFeedEntry.jsx): text assembled from selected assessment sections,
   // consumed once by DiscussionComposer's lazy useState init, then cleared.
   const [composerPrefill, setComposerPrefill] = useState(null);
+  // Global "Create" sheet (2026-09-28, Aditi's redesigned-top-nav reference):
+  // opened by the "+" in physiom's own top app header (AppFull.jsx
+  // pm-mobile-hdr, via CreatePanelBridge in PhysioFeedEntry.jsx) as well as
+  // the Feed composer bar, so it lives in shared context rather than
+  // per-page state.
+  const [createPanelOpen, setCreatePanelOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -237,6 +243,7 @@ export function AppDataProvider({ children }) {
     addContribution, updateContribution, deleteContribution,
     composerOpen, setComposerOpen, composerType, setComposerType,
     composerPrefill, setComposerPrefill,
+    createPanelOpen, setCreatePanelOpen,
   };
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;

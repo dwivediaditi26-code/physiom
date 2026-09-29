@@ -59,7 +59,6 @@ export default function ExplorePage() {
   // pre-filled and pointed at updateOpportunity instead -- editingOpp's own
   // `type` picks the wizard directly, skipping the type picker entirely.
   const [editingOpp, setEditingOpp] = useState(null);
-  const postOpen = pickerOpen || !!modalType || workshopOpen || !!editingOpp; // any create/edit flow open, for FAB-hiding below
 
   const openCreateFlow = () => setPickerOpen(true);
   const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); setEditingOpp(null); };
@@ -76,12 +75,27 @@ export default function ExplorePage() {
   // P6 deep links. A notification can't route to an application directly --
   // these sub-views are local state, not routes -- so getNotifications()
   // points at /explore?view=postings|applications and this opens it.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkView = searchParams.get("view");
   useEffect(() => {
     if (deepLinkView === "applications") { setMyAppsOpen(true); setMyPostingsOpen(false); }
     else if (deepLinkView === "postings") { setMyPostingsOpen(true); setMyAppsOpen(false); }
   }, [deepLinkView]);
+
+  // PhysioFeed's composer "+" menu ("Post an Opportunity") has no local
+  // opportunity-type picker of its own -- it deep-links here instead
+  // (/explore?create=1) and this opens the real one, same as tapping the
+  // page's own "+ Post" FAB would.
+  const wantsCreate = searchParams.get("create") === "1";
+  useEffect(() => {
+    if (!wantsCreate) return;
+    setPickerOpen(true);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("create");
+      return next;
+    }, { replace: true });
+  }, [wantsCreate]);
 
   // P8 deep link. Search results route to /explore?opp=<id>; the detail
   // screen is local state here too, and the board is loaded async, so this
@@ -100,17 +114,6 @@ export default function ExplorePage() {
   const [pipelineFor, setPipelineFor] = useState(null); // opportunity whose applicants are being reviewed
   const [profileSheetId, setProfileSheetId] = useState(null); // applicant id, dossier open
   const [chatModalId, setChatModalId] = useState(null); // applicant id, poster-side chat open
-
-  // The FAB floats fixed above the card list (bottom-right) so it's always
-  // reachable while scrolling, but that means whichever card's Apply/Register
-  // button (bottom-right of the card-foot row, same corner) scrolls under it
-  // becomes covered and unclickable. Rather than guess a scroll offset that's
-  // "safe", measure the real geometry: hide the FAB whenever its rect would
-  // actually overlap a rendered CTA button, re-checked on every scroll/resize
-  // and whenever the list itself changes (category/search).
-  const fabRef = useRef(null);
-  const gridRef = useRef(null);
-  const [fabHidden, setFabHidden] = useState(false);
 
   // These sub-views are swapped by local state, not by the router (the URL
   // stays "/explore" throughout), so ScrollToTop.jsx's route-change effect
@@ -211,39 +214,6 @@ export default function ExplorePage() {
   const pastApplicationItems = useMemo(() => myApplications.filter((a) => isPastOpp(a.opportunity)), [myApplications]);
   const savedActiveItems = useMemo(() => savedOpportunities.filter((o) => !isPastOpp(o)), [savedOpportunities]);
   const pastSavedItems = useMemo(() => savedOpportunities.filter((o) => isPastOpp(o)), [savedOpportunities]);
-
-  useEffect(() => {
-    if (view !== "hub" || postOpen) return;
-    const GAP = 8; // px breathing room so the FAB never sits flush against a CTA either
-
-    const overlapsAnyCta = () => {
-      const fab = fabRef.current;
-      const grid = gridRef.current;
-      if (!fab || !grid) return false;
-      const f = fab.getBoundingClientRect();
-      return [...grid.querySelectorAll("[data-opp-cta]")].some((cta) => {
-        const r = cta.getBoundingClientRect();
-        return f.left - GAP < r.right && f.right + GAP > r.left && f.top - GAP < r.bottom && f.bottom + GAP > r.top;
-      });
-    };
-
-    let settleTimer;
-    const recheck = () => setFabHidden(overlapsAnyCta());
-    const onScroll = () => {
-      setFabHidden(true); // hide immediately while in motion, then re-measure once it settles
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(recheck, 120);
-    };
-
-    recheck();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", recheck);
-    return () => {
-      clearTimeout(settleTimer);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", recheck);
-    };
-  }, [view, postOpen, filtered]);
 
   const openOpportunity = (opp) => { setChatFor(null); setActive(opp); };
   const closeDetail = () => setActive(null);
@@ -474,9 +444,25 @@ export default function ExplorePage() {
 
   return (
     <main className="flex-1 min-w-0 relative">
-      <div className="mb-5">
-        <h1 className="pf-font-head text-2xl font-extrabold text-[#2B2140] mb-1">Explore</h1>
-        <p className="pf-font-body text-sm text-[#8A7FA3]">Jobs, internships, workshops and collaborations for physiotherapists.</p>
+      {/* "+ Post" (2026-09-28, Aditi: pointed at this header, circled where
+          the floating FAB used to sit) -- moved from a fixed/absolute FAB
+          that floated over the card list into a plain inline button here.
+          That FAB needed a whole scroll-position/overlap-measuring effect
+          (fabRef/gridRef/fabHidden, removed below) just to stop covering a
+          card's Apply/Register button as you scrolled; a static button in
+          the header never overlaps anything, so none of that is needed. */}
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div>
+          <h1 className="pf-font-head text-2xl font-extrabold text-[#2B2140] mb-1">Explore</h1>
+          <p className="pf-font-body text-sm text-[#8A7FA3]">Jobs, internships, workshops and collaborations for physiotherapists.</p>
+        </div>
+        <button
+          type="button"
+          onClick={openCreateFlow}
+          className="pf-font-head shrink-0 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-gradient-to-br from-[#FFCB5C] to-[#FF9F1C] pl-3.5 pr-4 py-2.5 rounded-full shadow-sm active:scale-[0.97] transition"
+        >
+          <Plus size={17} /> Post
+        </button>
       </div>
 
       <button
@@ -563,31 +549,14 @@ export default function ExplorePage() {
         })}
       </div>
 
-      {/* P9 (2026-09-22, mobile QA): the card grid already cleared the FAB
-          with pb-28, but these two didn't -- on a phone with nothing to
-          list, the "+ Post" button floated straight over the only line of
-          text on the screen. */}
       {loading ? (
-        <div className="pf-font-body text-center pt-10 pb-28 lg:pb-20 text-[#A79CC4] text-sm">Loading opportunities…</div>
+        <div className="pf-font-body text-center pt-10 pb-6 text-[#A79CC4] text-sm">Loading opportunities…</div>
       ) : filtered.length === 0 ? (
-        <div className="pf-font-body text-center pt-10 pb-28 lg:pb-20 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
+        <div className="pf-font-body text-center pt-10 pb-6 text-[#A79CC4] text-sm">{query ? `No opportunities match "${query}".` : "No opportunities posted yet."}</div>
       ) : (
-        <div ref={gridRef} className="grid sm:grid-cols-2 gap-4 pb-28 lg:pb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}
         </div>
-      )}
-
-      {!postOpen && (
-      <button
-        ref={fabRef}
-        type="button"
-        onClick={openCreateFlow}
-        tabIndex={fabHidden ? -1 : undefined}
-        aria-hidden={fabHidden}
-        className={`pf-font-head fixed sm:absolute bottom-24 lg:bottom-6 right-5 sm:right-0 z-30 flex items-center gap-1.5 text-sm font-bold text-[#3A2A00] bg-gradient-to-br from-[#FFCB5C] to-[#FF9F1C] pl-4 pr-5 py-3.5 rounded-full shadow-[0_10px_24px_-6px_rgba(255,159,28,0.6)] active:scale-[0.97] transition ${fabHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-      >
-        <Plus size={17} /> Post
-      </button>
       )}
 
       {pickerOpen && <CreateOpportunityTypePicker onClose={closeCreateFlow} onPick={pickCreateType} />}

@@ -1,3 +1,4 @@
+import { Image as ImageIcon } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import CreateTypePicker from "./create/CreateTypePicker.jsx";
@@ -19,14 +20,30 @@ export default function Composer() {
   if (!profile) return null;
 
   if (!composerOpen) {
+    // Collapsed bar (2026-09-28, Aditi's redesigned-top-nav reference):
+    // just the image shortcut now -- the document icon and "+" menu this
+    // bar carried under the earlier "Option 6" mockup moved up into
+    // CreatePanel.jsx, opened from physiom's own top header instead (see
+    // AppFull.jsx's pm-mobile-hdr). Tapping the avatar/placeholder still
+    // opens the full picker -- it's the only way to reach Video/Poll/
+    // Research/Clinical Case, none of which get a dedicated control.
     return (
-      <button
-        onClick={() => setComposerOpen(true)}
-        className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-3 text-left hover:border-amber-200 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-300"
-      >
-        <Avatar size={36} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
-        <span className="text-sm text-slate-400">Share a clinical tip, case, or research with the community…</span>
-      </button>
+      <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-3 flex items-center gap-3">
+        <button
+          onClick={() => setComposerOpen(true)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left focus:outline-none"
+        >
+          <Avatar size={36} grad={profile.gradient} initials={profile.initials} photoUrl={profile.avatarUrl} />
+          <span className="text-sm text-[#8995AA] truncate">Share a clinical tip, case, or research…</span>
+        </button>
+        <button
+          onClick={() => { setComposerOpen(true); setComposerType("photo"); }}
+          aria-label="Add a photo"
+          className="p-2 rounded-lg hover:bg-slate-50 text-[#8995AA] shrink-0 focus:outline-none"
+        >
+          <ImageIcon size={19} strokeWidth={1.75} />
+        </button>
+      </div>
     );
   }
 

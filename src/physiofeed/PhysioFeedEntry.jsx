@@ -117,6 +117,30 @@ function ShareBridge({ jumpTo }) {
   return null;
 }
 
+// Same channel again, for the "+" AppFull.jsx now renders in its own top
+// header next to search/bell/messages (2026-09-28, Aditi's redesigned-top-nav
+// reference) -- that button lives outside this whole provider tree, so it
+// can only ask for the Create sheet via navTo()'s jumpTo, same as the other
+// relocated icons.
+function CreatePanelBridge({ jumpTo }) {
+  const { setCreatePanelOpen, setComposerOpen } = useAppData();
+  const handled = useRef(null);
+  useEffect(() => {
+    if (!jumpTo?.pfOpenCreate || handled.current === jumpTo) return;
+    handled.current = jumpTo;
+    // Bug fix (2026-09-28, Aditi: "half is cutting" -- a screenshot showing
+    // two overlapping cards): the Feed composer bar has its own independent
+    // open/expanded state (composerOpen/composerType). If it was already
+    // expanded (e.g. left open on CreateTypePicker) when "+" opens this
+    // sheet on top, both were visible at once, ghosting through the
+    // backdrop on wider widths. Collapsing it first keeps only one create
+    // surface open at a time.
+    setComposerOpen(false);
+    setCreatePanelOpen(true);
+  }, [jumpTo, setCreatePanelOpen, setComposerOpen]);
+  return null;
+}
+
 // PhysioFeed's own pages (Feed/Explore/Messages/Profile/...) live entirely
 // inside this MemoryRouter, invisible to the real browser URL (see the file
 // header comment) -- so `window.__pmScreen` (set once, to "physiofeed", by
@@ -142,6 +166,7 @@ export default function PhysioFeedEntry({ jumpTo, backRef }) {
             <JumpBridge jumpTo={jumpTo}/>
             <BackBridge backRef={backRef}/>
             <ShareBridge jumpTo={jumpTo}/>
+            <CreatePanelBridge jumpTo={jumpTo}/>
             <ScreenTrackerBridge/>
             <PhysioFeedRoutes/>
           </DemoConversationsProvider>

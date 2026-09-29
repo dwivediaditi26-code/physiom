@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import Header from "./Header.jsx";
 import Sidebar from "./Sidebar.jsx";
+import CreatePanel from "../feed/create/CreatePanel.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 
 // P9 (2026-09-22): this used to render for everyone, including a signed-in
@@ -48,6 +49,7 @@ export default function AppShell({ children }) {
         </div>
       )}
       <Header />
+      <CreatePanel />
       {/* pb-24 (not py-6's plain bottom-6) below 1024px: physiom's own
           outer bottom nav bar (.pm-bnav in src/utils.jsx) is
           position:fixed;bottom:0 and sits OUTSIDE this component tree, so

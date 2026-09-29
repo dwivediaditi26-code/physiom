@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, matchPath, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft } from "lucide-react";
+import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, Home, Briefcase, MessageCircle, Users, BookOpen, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
@@ -22,29 +22,56 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // Messages stays out: the top bar's message icon covers it on every
 // PhysioFeed screen (AppFull.jsx pm-mobile-hdr), and the laptop sidebar
 // still lists all seven.
-const SECTIONS = PRO_NAV.filter((item) => item.path !== "/messages");
-const SHORT_LABEL = { "Physio Feed": "Feed" };
+// Illustrated-icon main nav (2026-09-28, Aditi's reference mockup "Option 6",
+// then "make it scrollable not hard coded"): one horizontally-scrolling row
+// of icon circles, same trade the rest of PhysioFeed's pill-tab rows already
+// make (see the old comment above, still true) -- a fixed grid-cols-4 was
+// hard-coded to exactly four items and forced Evidence/Saved into an
+// awkward second stacked row that just added dead white space. A single
+// scrollable row fits Feed/Opportunity/Case Discussion/People on screen and
+// lets Evidence/Saved scroll into view, same as the pill strip did, without
+// hard-coding a column count. Bg color is per-item and NEVER changes with
+// selection (per spec) -- only the label color and the underline move.
+const NAV_ITEMS = [
+  { ...PRO_NAV[0], label: "Feed", Icon: Home, bg: "#F0E8FF", color: "#6D28D9", filled: true },
+  { ...PRO_NAV[1], Icon: Briefcase, bg: "#DDF8EA", color: "#16866B", filled: true },
+  { ...PRO_NAV[2], Icon: MessageCircle, bg: "#FFF4D6", color: "#16866B", filled: false },
+  { ...PRO_NAV[3], Icon: Users, bg: "#FCE4ED", color: "#DB2777", filled: true },
+  { ...PRO_NAV.find((p) => p.path === "/evidence"), Icon: BookOpen, bg: "#E4ECFF", color: "#3B5BDB", filled: true },
+  { ...PRO_NAV.find((p) => p.path === "/saved"), Icon: Bookmark, bg: "#FFE9D6", color: "#C2410C", filled: true },
+];
 
-function SectionNav() {
+function MainNav() {
   const { pathname } = useLocation();
   // Same prefix rule NavLink uses, so a post opened via /discussions?post=…
   // still counts as Case Discussion.
-  const activeIdx = SECTIONS.findIndex((s) => matchPath({ path: s.path, end: false }, pathname));
+  const activeIdx = NAV_ITEMS.findIndex((s) => matchPath({ path: s.path, end: false }, pathname));
 
   return (
-    <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar" aria-label="PhysioFeed sections">
-      {SECTIONS.map((item, i) => (
-        <Link
-          key={item.path}
-          to={item.path}
-          aria-current={i === activeIdx ? "page" : undefined}
-          className={`pf-font-head shrink-0 px-3.5 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition-colors focus:outline-none ${
-            i === activeIdx ? "bg-[#FFB020] text-[#3A2A00]" : "text-[#0D0D0D] hover:bg-[#F7F5FF]"
-          }`}
-        >
-          {SHORT_LABEL[item.label] || item.label}
-        </Link>
-      ))}
+    <nav aria-label="PhysioFeed sections" className="flex items-start gap-2.5 overflow-x-auto no-scrollbar px-1 py-1.5">
+      {NAV_ITEMS.map((item, i) => {
+        const isActive = i === activeIdx;
+        const { Icon } = item;
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            aria-current={isActive ? "page" : undefined}
+            className="flex flex-col items-center gap-1 shrink-0 w-16 focus:outline-none"
+          >
+            <span className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: item.bg }}>
+              <Icon size={18} strokeWidth={item.filled ? 1.5 : 1.75} color={item.color} fill={item.filled ? item.color : "none"} />
+            </span>
+            <span
+              className="text-[10px] font-bold leading-tight text-center min-h-[22px] flex items-start justify-center"
+              style={{ color: isActive ? "#172033" : "#8995AA" }}
+            >
+              {item.label}
+            </span>
+            <span className="h-[2px] w-5 rounded-full" style={{ background: isActive ? "#6D28D9" : "transparent" }} />
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -157,16 +184,19 @@ export default function Header() {
 
   return (
     <header className="pf-header sticky z-20 bg-white border-b border-slate-200">
-      {/* Mobile/tablet section nav (SectionNav above). The back chevron (any
-          page but /feed) sits to its left. */}
+      {/* Mobile/tablet section nav (MainNav above). The back chevron (any
+          page but /feed) sits above it in its own row, so it never eats
+          into the illustrated icons' equal spacing. */}
       <div className="lg:hidden bg-white border-t border-slate-200">
-        <div className="flex items-center gap-1 px-3 py-2 max-w-[460px] mx-auto">
-          {location.pathname !== "/feed" && (
+        {location.pathname !== "/feed" && (
+          <div className="flex items-center px-3 pt-1.5 max-w-[460px] mx-auto">
             <button onClick={() => navigate(-1)} aria-label="Back" className="p-1 -ml-1 text-slate-500 shrink-0">
               <ChevronLeft size={18} />
             </button>
-          )}
-          <SectionNav />
+          </div>
+        )}
+        <div className="max-w-[460px] mx-auto px-1">
+          <MainNav />
         </div>
       </div>
 
