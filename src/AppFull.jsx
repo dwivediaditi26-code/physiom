@@ -31,6 +31,7 @@ import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
+import PushOptInBanner from "./PushOptInBanner.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
 // Leave-assessment save gate: which navTo targets count as actually
@@ -2335,6 +2336,7 @@ export default function App() {
     <ErrorBoundary>
       <AppInner currentUser={session.user} onSignOut={() => { trackEvent("user_logged_out"); supabase.auth.signOut(); }} />
       <InstallPrompt currentUser={session.user} />
+      <PushOptInBanner currentUser={session.user} />
     </ErrorBoundary>
   );
 }
