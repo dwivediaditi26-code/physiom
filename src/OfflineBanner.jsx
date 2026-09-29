@@ -11,18 +11,38 @@
 // plain web build (Vercel) where that plugin resolves to a web stub.
 import React, { useEffect, useState } from "react";
 import { Network } from "@capacitor/network";
+import { supabase } from "./supabase.js";
+import { isSyncDirty, flushPendingSync } from "./PatientDatabase.jsx";
 
+// "syncing" is shown briefly right after reconnect, while a save made
+// offline is being retried -- without it, connectivity flips back to
+// "online" instantly but the actual upsert (and therefore confirmation
+// that the offline work actually reached Supabase) can lag a second or
+// two behind, which otherwise looks indistinguishable from "nothing is
+// happening."
 export default function OfflineBanner() {
   const [online, setOnline] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     let sub;
-    Network.getStatus().then((s) => setOnline(s.connected)).catch(() => {});
-    Network.addListener("networkStatusChange", (s) => setOnline(s.connected))
-      .then((handle) => { sub = handle; })
-      .catch(() => {});
+    const checkDirty = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        const uid = data?.user?.id;
+        if (uid && isSyncDirty(uid)) {
+          setSyncing(true);
+          flushPendingSync(uid).finally(() => setSyncing(false));
+        }
+      }).catch(() => {});
+    };
 
-    const onOnline = () => setOnline(true);
+    Network.getStatus().then((s) => setOnline(s.connected)).catch(() => {});
+    Network.addListener("networkStatusChange", (s) => {
+      setOnline(s.connected);
+      if (s.connected) checkDirty();
+    }).then((handle) => { sub = handle; }).catch(() => {});
+
+    const onOnline = () => { setOnline(true); checkDirty(); };
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
@@ -34,16 +54,18 @@ export default function OfflineBanner() {
     };
   }, []);
 
-  if (online) return null;
+  if (online && !syncing) return null;
 
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 9998,
-      background: "#1e293b", color: "#fff", fontSize: "0.76rem", fontWeight: 600,
+      background: online ? "#334155" : "#1e293b", color: "#fff", fontSize: "0.76rem", fontWeight: 600,
       textAlign: "center", padding: "7px 12px",
       paddingTop: "max(7px, env(safe-area-inset-top))",
     }}>
-      Offline mode — cloud sync paused. Your work keeps saving locally.
+      {online
+        ? "Syncing your offline work to the cloud…"
+        : "Offline mode — cloud sync paused. Your work keeps saving locally."}
     </div>
   );
 }
