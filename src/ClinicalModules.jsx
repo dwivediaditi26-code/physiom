@@ -1140,7 +1140,7 @@ function buildRealtimeSOAP(data, extraS="", extraO="", extraA="", extraP="") {
   // FINDING (severe — fixed): dermatomes, myotomes, reflexes, and neural
   // tension were all reading from field keys that don't match what
   // NeurologicalModule actually writes. Verified directly against the real
-  // data + set() calls in PhysioNeuro.jsx:
+  // data + set() calls in the old PhysioNeuro.jsx (since removed):
   //   - Dermatomes: hardcoded 15-level list was missing S3/S4-5 (real data
   //     has 16 levels) and included a phantom "t2" that doesn't exist.
   //   - Myotomes: real keys are "myo_<slug>_left/right" (e.g. "myo_c5_left")
@@ -2686,7 +2686,7 @@ const HIP_PROTOCOLS = [
 // ─── Reusable rich exercise card (same layout as the main Exercise Library) ──
 // Same Cloudinary-by-id convention every other module already uses
 // (ClinicalImageCard/TestInfoThumb in SubjectiveObjective.jsx, MuscleBadge in
-// PhysioNeuro.jsx): public_id = the clinical id, here ex.id. No mapping to
+// the old PhysioNeuro.jsx): public_id = the clinical id, here ex.id. No mapping to
 // maintain — upload a photo named after an exercise id and it just appears.
 const CLOUDINARY_BASE_EX = "https://res.cloudinary.com/dr15y1pwj/image/upload";
 

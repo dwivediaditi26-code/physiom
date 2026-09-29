@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ImageOff } from "lucide-react";
 
 // Same real Cloudinary asset pattern + URL scheme already used throughout
-// PhysioNeuro.jsx's ClinicalImage/ClinicalImageCard (f_auto,q_auto +
+// the old PhysioNeuro.jsx's ClinicalImage/ClinicalImageCard (f_auto,q_auto +
 // w/h/c_fill for cropped thumbnails, f_auto,q_auto with no crop for the
 // full uncropped photo) -- duplicated here (not imported) since those
 // components aren't exported for reuse outside their own files.

@@ -140,7 +140,7 @@ const DERMATOME_TEST_METHOD =
   "Hyperaesthesia = early irritation; Reduced/Absent = axonal compromise.";
 
 // Splits a comma-separated "test" string into bullets the same way the
-// real Cranial Nerve clinical screen already does (bulletizeTest in
+// old Cranial Nerve clinical screen did (bulletizeTest in the old
 // PhysioNeuro.jsx), so multi-part instructions read as a real list, not
 // one run-on sentence.
 function bulletize(text) {

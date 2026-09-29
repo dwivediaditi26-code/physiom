@@ -1,5 +1,5 @@
 // Same visual role as the colored info cards in the real clinical entry
-// screens (PhysioNeuro.jsx / SubjectiveObjective.jsx) -- icon + uppercase
+// screens (the old PhysioNeuro.jsx / SubjectiveObjective.jsx) -- icon + uppercase
 // label + real field content -- just restyled with study mode's own
 // Tailwind palette instead of copying pixel-for-pixel inline styles.
 const TINTS = {

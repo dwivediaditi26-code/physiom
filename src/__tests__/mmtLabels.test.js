@@ -1,6 +1,6 @@
 // mmtLabels.test.js
 // Regression test for a real gap found by cross-checking every muscle
-// actually defined in MMT_DATA (PhysioNeuro.jsx) against the SOAP builders'
+// actually defined in MMT_DATA (sharedClinicalData.js) against the SOAP builders'
 // hand-maintained label maps: 38 of 72 real muscles (over half) had no entry
 // at all — e.g. "mmt_scm" (Sternocleidomastoid), "mmt_trap_u" (Upper
 // Trapezius), "mmt_iliop" (Iliopsoas), "mmt_pirif" (Piriformis) all fell
@@ -11,7 +11,7 @@
 // instead of a second, hand-copied list that can silently go stale.
 import { describe, it, expect } from "vitest";
 import { buildRealtimeSOAP } from "../ClinicalModules.jsx";
-import { MMT_DATA } from "../PhysioNeuro.jsx";
+import { MMT_DATA } from "../sharedClinicalData.js";
 
 describe("MMT labels in the SOAP Objective section", () => {
   it("shows the real muscle name for a muscle that was missing from the old hand-written label list", () => {
