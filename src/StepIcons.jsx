@@ -174,3 +174,30 @@ export function IconPair({ names, size = 18, style }) {
     </span>
   );
 }
+
+// ── Custom assessment steps store an icon NAME, never a React element ──
+// A custom step's meta rides inside the patient record / localStorage
+// templates, which are JSON round-tripped on reload. A React element does not
+// survive that (it comes back as a plain {key, ref, props, ...} object that
+// StepNav then crashes on), so meta keeps `iconName` (a string) and the element
+// is built at render time. stepIconName also reads the `props.name` that a
+// previously-corrupted stored element still carries, so old records heal
+// themselves the next time they are loaded.
+export function stepIconName(meta, fallback) {
+  const n = meta?.iconName || meta?.icon?.props?.name;
+  return typeof n === "string" && PATHS[ALIAS[n] || n] ? n : fallback;
+}
+
+export function customStepIcon(meta, fallbackName) {
+  return <Icon name={stepIconName(meta, fallbackName)} />;
+}
+
+// Normalise a stored customStepsMeta / template customMeta map to
+// { [id]: { iconName, label } } (drops any legacy `icon` element).
+export function sanitizeStepsMeta(map) {
+  const out = {};
+  Object.entries(map || {}).forEach(([id, m]) => {
+    out[id] = { iconName: stepIconName(m, undefined), label: m?.label || "Assessment" };
+  });
+  return out;
+}

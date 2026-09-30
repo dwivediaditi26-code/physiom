@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
-import { Icon, IconPair } from "./StepIcons.jsx";
+import { Icon, IconPair, customStepIcon, sanitizeStepsMeta } from "./StepIcons.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { getTemplates as getCardioTemplates, saveTemplate as saveCardioTemplate, deleteTemplate as deleteCardioTemplate } from "./cardioTemplates.js";
@@ -1969,20 +1969,9 @@ function fmtVal(v) {
 // that dumped raw internal fields like `meta` as if they were clinical
 // content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
 // the profile view sees the same section list/labels/icons the wizard did.
-// customStepsMeta rides inside the patient record (see the meta-persist
-// effect below), which a hard reload restores via a real JSON round-trip
-// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
-// element's $$typeof symbol and function `type` down to a plain
-// {key, ref, props, _owner, _store} object. Still truthy, so a bare
-// `|| fallback` never catches it and StepNav crashes trying to render it
-// (2026-09-26, same bug as NeurologicalAssessment.jsx). isValidElement is
-// the actual check needed here.
-function customStepIcon(meta, fallback) {
-  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
-}
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
 // normally come from the big <style> block inside the default-exported
@@ -2270,7 +2259,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   const [data, setData] = useState(() => seed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
-  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? seed.meta?.customStepsMeta || {} : {}));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExisting ? sanitizeStepsMeta(seed.meta?.customStepsMeta) : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
@@ -2311,7 +2300,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
     setSystem(existing ? s.meta?.system || "combined" : null);
     setVisited(new Set());
     setStepOrder(existing ? ensureCarePlanSteps(s.meta?.stepOrder) || DEFAULT_ASSESS_STEP_IDS : DEFAULT_ASSESS_STEP_IDS);
-    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
+    setCustomStepsMeta(existing ? sanitizeStepsMeta(s.meta?.customStepsMeta) : {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePatientId]);
 
@@ -2389,7 +2378,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "stethoscope"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 

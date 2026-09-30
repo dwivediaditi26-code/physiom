@@ -10,7 +10,7 @@ import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePla
 import { orthoStyles } from "./orthoStyles.js";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
-import { Icon } from "./StepIcons.jsx";
+import { Icon, customStepIcon, stepIconName, sanitizeStepsMeta } from "./StepIcons.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 
@@ -1903,23 +1903,13 @@ function fmtVal(v) {
   return String(v);
 }
 
-// customStepsMeta rides inside the patient record (see the meta-persist
-// effect below), which a hard reload restores via a real JSON round-trip
-// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
-// element's $$typeof symbol and function `type` down to a plain
-// {key, ref, props, _owner, _store} object. Still truthy, so a bare
-// `|| fallback` never catches it and StepNav crashes trying to render it
-// (2026-09-26). isValidElement is the actual check needed here.
-function customStepIcon(meta, fallback) {
-  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
-}
 // Exported (2026-08-20, Aditi: "assessment should show like this image...
 // i command you put summary and review same to same not change at all in
 // assessment section") -- same reasoning as
 // CardiopulmonaryAssessment.jsx's matching export.
 export function buildNeuroAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="brain" />), label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // Same reasoning as CardiopulmonaryAssessment.jsx's matching export -- see
 // its comment.
@@ -2234,7 +2224,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [data, setData] = useState(() => neuroSeed);
   const [visited, setVisited] = useState(new Set());
   const [stepOrder, setStepOrder] = useState(() => initialStepOrder);
-  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? neuroSeed.meta?.customStepsMeta || {} : {}));
+  const [customStepsMeta, setCustomStepsMeta] = useState(() => (hasExistingNeuro ? sanitizeStepsMeta(neuroSeed.meta?.customStepsMeta) : {}));
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
@@ -2280,7 +2270,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     setCondition(existing ? s.meta?.condition || null : null);
     setVisited(new Set());
     setStepOrder(existing ? ensureAlwaysSteps(s.meta?.stepOrder || DEFAULT_ASSESS_STEP_IDS) : DEFAULT_ASSESS_STEP_IDS);
-    setCustomStepsMeta(existing ? s.meta?.customStepsMeta || {} : {});
+    setCustomStepsMeta(existing ? sanitizeStepsMeta(s.meta?.customStepsMeta) : {});
     setPhase(existing ? "assess" : "setting");
     setSelectedRegions([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2355,7 +2345,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   const [saveName, setSaveName] = useState("");
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="brain" />), label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], "brain"), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2449,7 +2439,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
   }
   function startAssessment(domainStepIds, customIds, customMeta = {}) {
     setStepOrder(buildStepOrder(domainStepIds, customIds));
-    setCustomStepsMeta(customMeta);
+    setCustomStepsMeta(sanitizeStepsMeta(customMeta));
     setVisited(new Set());
     setStep(1);
     setPhase("assess");
@@ -2459,7 +2449,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customMeta = {};
     t.libraryItems.forEach(([cat, label]) => {
       const g = NEURO_LIBRARY.find((x) => x.cat === cat);
-      customMeta[neuroId(cat, label)] = { icon: g?.icon || <Icon name="brain" />, label };
+      customMeta[neuroId(cat, label)] = { iconName: stepIconName({ icon: g?.icon }, "brain"), label };
     });
     setCondition(t.id);
     startAssessment(t.domainSteps, customIds, customMeta);
@@ -2479,7 +2469,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
       g.items.forEach((label) => {
         const id = neuroId(cat, label);
         customIds.push(id);
-        customMeta[id] = { icon: g.icon, label };
+        customMeta[id] = { iconName: stepIconName({ icon: g.icon }, "brain"), label };
       });
     });
     startAssessment(domainSteps, customIds, customMeta);
@@ -2501,7 +2491,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
     const customMeta = {};
     customIds.forEach((id) => {
       const existing = customStepsMeta[id];
-      customMeta[id] = { icon: customStepIcon(existing, <Icon name="brain" />), label: existing?.label || "Assessment" };
+      customMeta[id] = { iconName: stepIconName(existing, "brain"), label: existing?.label || "Assessment" };
     });
     const newTemplate = { id: `t-${Date.now()}`, name: saveName.trim(), domainSteps, customIds, customMeta };
     setMyTemplates((prev) => {
