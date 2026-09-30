@@ -1,3 +1,4 @@
+import { fileToDoc, isProtocolDoc, PROTOCOL_CATEGORY, PROTOCOL_ACCEPT } from "./SurgeonProtocol.jsx";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
@@ -126,6 +127,7 @@ function PainTrend({ sessions }) {
 function DocumentsPanel({ patient, onSaveField }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const protocolInputRef = useRef(null);
   const uploadedDocs = patient?.data?.uploaded_docs || [];
   const setUploadedDocs = (docs) => {
     if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
@@ -156,6 +158,28 @@ function DocumentsPanel({ patient, onSaveField }) {
     e.target.value = "";
   };
 
+  // Same store, tagged so it also appears in the assessment's Surgeon's Protocol step.
+  const handleProtocolUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const added = [];
+      for (const f of files) added.push(await fileToDoc(f, { category: PROTOCOL_CATEGORY, source: "medical_records" }));
+      setUploadedDocs([...added, ...uploadedDocs]);
+    } catch (err) {
+      alert(err.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+  const handleToggleProtocol = (id) => setUploadedDocs(uploadedDocs.map((d) => {
+    if (d.id !== id) return d;
+    if (isProtocolDoc(d)) { const { category, ...rest } = d; return rest; }
+    return { ...d, category: PROTOCOL_CATEGORY };
+  }));
+
   const handleDeleteDoc = (id) => setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
   const handleDownloadDoc = (doc) => { const a = document.createElement("a"); a.href = doc.dataUrl; a.download = doc.name; a.click(); };
   const handlePreviewDoc = (doc) => {
@@ -169,6 +193,7 @@ function DocumentsPanel({ patient, onSaveField }) {
   return (
     <>
       <input ref={fileInputRef} type="file" style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4" onChange={handleFileUpload} />
+      <input ref={protocolInputRef} type="file" multiple style={{ display: "none" }} accept={PROTOCOL_ACCEPT} onChange={handleProtocolUpload} />
       <div onClick={() => fileInputRef.current?.click()} style={{ background: "#F5F3FF", border: `2px dashed ${C.primary}`, borderRadius: 16, padding: "28px 20px", textAlign: "center", marginBottom: 16, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
         {uploading ? (
           <><div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Uploading…</div></>
@@ -176,6 +201,10 @@ function DocumentsPanel({ patient, onSaveField }) {
           <><div style={{ fontSize: 36, marginBottom: 8 }}>📤</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Upload Document</div><div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>PDF, Image, MRI, X-Ray — max 5MB</div></>
         )}
       </div>
+      <button type="button" onClick={() => protocolInputRef.current?.click()} disabled={uploading}
+        style={{ width: "100%", marginBottom: 16, padding: "12px", borderRadius: 12, border: `1.5px solid ${C.primary}`, background: "#fff", color: C.primary, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+        🏥 Upload surgeon's protocol
+      </button>
       <Card>
         <CardTitle action={<div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>{uploadedDocs.length} file{uploadedDocs.length !== 1 ? "s" : ""}</div>}>Documents</CardTitle>
         {uploadedDocs.length === 0 ? (
@@ -187,10 +216,11 @@ function DocumentsPanel({ patient, onSaveField }) {
                 {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{doc.icon}</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => handlePreviewDoc(doc)}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}{isProtocolDoc(doc) && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#ede9fe", borderRadius: 6, padding: "2px 6px" }}>SURGEON'S PROTOCOL</span>}</div>
                 <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>{doc.date} · {doc.size}</div>
               </div>
               <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                <button onClick={() => handleToggleProtocol(doc.id)} title={isProtocolDoc(doc) ? "Unmark as surgeon's protocol" : "Mark as surgeon's protocol"} style={{ width: 30, height: 30, borderRadius: 8, background: isProtocolDoc(doc) ? "#ede9fe" : C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>🏥</button>
                 <button onClick={() => handleDownloadDoc(doc)} title="Download" style={{ width: 30, height: 30, borderRadius: 8, background: C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>⬇</button>
                 <button onClick={() => handleDeleteDoc(doc.id)} title="Delete" style={{ width: 30, height: 30, borderRadius: 8, background: "#FEF2F2", border: "none", cursor: "pointer", fontSize: 13 }}>🗑</button>
               </div>

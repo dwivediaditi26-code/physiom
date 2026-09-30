@@ -20,6 +20,7 @@ import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOut
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { resolveSiteOptions, resolveIncisionOptions, withFallbacks } from "./orthoSurgicalLibrary.js";
+import { SurgeonProtocolSection } from "./SurgeonProtocol.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
@@ -94,13 +95,14 @@ const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "A
 const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 /* Always present for every post-op patient, regardless of surgery type. */
-const BASE_IDS = ["caseInfo", "surgicalReview", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const BASE_IDS = ["caseInfo", "surgicalReview", "surgeonProtocol", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
 const OPTIONAL_IDS = ["jointMobility", "specialTests", "neuroScreen", "residualLimb", "prosthesis"];
 
 const ORDERED_ALL = [
   "caseInfo",
   "surgicalReview",
+  "surgeonProtocol",
   "vitals",
   "pain",
   "observation",
@@ -125,6 +127,7 @@ const ORDERED_ALL = [
 const STEP_META = {
   caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
   surgicalReview: { icon: <Icon name="stethoscope" />, label: "Surgical Review" },
+  surgeonProtocol: { icon: <Icon name="folder" />, label: "Surgeon's Protocol" },
   vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
   pain: { icon: <Icon name="pain" />, label: "Pain" },
   observation: { icon: <Icon name="eye" />, label: "Observation" },
@@ -191,10 +194,20 @@ function SurgicalSiteSection({ data, setData, condition, selectedRegions }) {
       <SectionIntro icon={<Icon name="bandage" />} title="Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
       <SelectField label="Surgical site" type="multi" options={siteOptions} value={d.site} onChange={(v) => set("site", v)} />
       <SelectField label="Incision type" type="single" options={incisionOptions} value={d.incisionType} onChange={(v) => set("incisionType", v)} />
+      <TextField label="Incision location" value={d.incisionLocation} onChange={(v) => set("incisionLocation", v)} placeholder="e.g. lateral thigh, over the greater trochanter" />
+      <NumberField label="Incision length" value={d.incisionLengthCm} onChange={(v) => set("incisionLengthCm", v)} unit="cm" placeholder="If measured" />
       <div className="subheading">Incision / wound</div>
-      <SelectField label="Appearance" type="multi" options={["Clean", "Redness", "Swelling", "Drainage", "Gaping", "Other"]} value={d.appearance} onChange={(v) => set("appearance", v)} />
-      <Segmented label="Dressing" options={["Intact", "Changed", "Other"]} value={d.dressing} onChange={(v) => set("dressing", v)} />
+      <Segmented label="Wound edges" options={["Approximated", "Separated"]} value={d.woundEdges} onChange={(v) => set("woundEdges", v)} />
+      <SelectField label="Appearance" type="multi" options={["Clean", "Redness", "Swelling", "Bruising", "Drainage", "Gaping", "Other"]} value={d.appearance} onChange={(v) => set("appearance", v)} />
+      <SelectField label="Closure" type="multi" options={withFallbacks(["Sutures", "Staples", "Skin adhesive", "Steri-strips"])} value={d.closure} onChange={(v) => set("closure", v)} />
+      <Segmented label="Dressing" options={["Intact", "Changed", "Saturated", "Removed", "Other"]} value={d.dressing} onChange={(v) => set("dressing", v)} wrap />
+      <Segmented label="Drain" options={["None", "Present", "Removed"]} value={d.drainStatus} onChange={(v) => set("drainStatus", v)} />
       <Segmented label="Drainage present" options={["None", "Present"]} value={d.drainage} onChange={(v) => set("drainage", v)} />
+      {d.drainage === "Present" && (
+        <SelectField label="Drainage type" type="single" options={["Serous", "Sanguineous", "Serosanguineous", "Purulent", "Other"]} value={d.drainageType} onChange={(v) => set("drainageType", v)} />
+      )}
+      <Segmented label="Odour" options={["Absent", "Present"]} value={d.odour} onChange={(v) => set("odour", v)} />
+      <SelectField label="Surrounding skin" type="multi" options={["Normal", "Erythematous", "Warm", "Bruised", "Macerated", "Blistered", "Other"]} value={d.surroundingSkin} onChange={(v) => set("surroundingSkin", v)} />
 
       <div className="subheading">Edema</div>
       <Segmented label="Side" options={["Right", "Left", "Bilateral"]} value={d.edemaSide} onChange={(v) => set("edemaSide", v)} />
@@ -499,6 +512,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
         <div className="content">
           {current.id === "caseInfo" && <CaseInfoSection data={data} setData={setData} />}
           {current.id === "surgicalReview" && <SurgicalReviewSection data={data} setData={setData} condition={condition} selectedRegions={selectedRegions} />}
+          {current.id === "surgeonProtocol" && <SurgeonProtocolSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "observation" && <ObservationSection data={data} setData={setData} showResponseToActivity />}

@@ -116,6 +116,7 @@ const ALIAS = {
   woundSite: "bandage",
   surgicalSite: "bandage",
   surgicalReview: "stethoscope",
+  surgeonProtocol: "folder",
   otherCardiothoracic: "stethoscope",
   residualLimb: "leg",
   prosthesis: "prosthetic",
