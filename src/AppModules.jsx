@@ -57,44 +57,10 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
   );
 }
 
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever field calls it. Reused across the intake form's
-// Full name / Age / Occupation / Address / Chief complaint fields.
-function useVoiceInput(baseValue, onChange) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = baseValue || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    // See orthoFieldKit.jsx's matching useVoiceInput fix: e.resultIndex is
-    // where THIS event's new/changed results begin, so accumulating from
-    // there into a plain per-session closure variable avoids re-summing an
-    // already-committed index the engine re-emits on a long dictation
-    // (2026-09-25, Aditi: voice dictation repeating itself).
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
-      }
-      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return { recording, toggle: () => (recording ? stop() : start()) };
-}
+// Plain browser speech-to-text (src/hooks/useVoiceInput.js) -- reused across
+// the intake form's Full name / Age / Occupation / Address / Chief complaint
+// fields. This form keeps its own, larger mic button (with a test id).
+import { useVoiceInput } from "./hooks/useVoiceInput.js";
 
 function VoiceMicButton({ recording, onClick, testId }) {
   return (

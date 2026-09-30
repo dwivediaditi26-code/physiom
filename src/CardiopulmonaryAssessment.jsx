@@ -2,6 +2,8 @@ import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
+import { useVoiceInput } from "./hooks/useVoiceInput.js";
+import { VoiceMicButton } from "./components/VoiceMicButton.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 import { Icon, IconPair, customStepIcon, sanitizeStepsMeta } from "./StepIcons.jsx";
@@ -254,56 +256,6 @@ function FieldShell({ label, hint, howTo, info, children }) {
       {children}
       <Hint>{hint}</Hint>
     </div>
-  );
-}
-
-// Plain browser speech-to-text (Web Speech API), no AI parsing -- dictates
-// straight into whichever field passes `voice`. Same SpeechRecognition
-// lookup as the Chief complaint mic on the New Patient intake form
-// (AppModules.jsx); this one is a reusable per-field mic for TextField.
-function useVoiceInput(baseValue, onChange) {
-  const [recording, setRecording] = useState(false);
-  const recognitionRef = useRef(null);
-  const start = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice input requires the Chrome browser."); return; }
-    const base = baseValue || "";
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-IN";
-    // See orthoFieldKit.jsx's matching useVoiceInput fix: e.resultIndex is
-    // where THIS event's new/changed results begin, so accumulating from
-    // there into a plain per-session closure variable avoids re-summing an
-    // already-committed index the engine re-emits on a long dictation
-    // (2026-09-25, Aditi: voice dictation repeating itself).
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + " ";
-      }
-      if (finalTranscript) onChange((base + " " + finalTranscript).trim());
-    };
-    rec.onend = () => setRecording(false);
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
-    rec.start();
-    setRecording(true);
-  };
-  const stop = () => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setRecording(false);
-  };
-  return { recording, toggle: () => (recording ? stop() : start()) };
-}
-
-function VoiceMicButton({ recording, onClick }) {
-  return (
-    <button type="button" onClick={onClick} title={recording ? "Stop recording" : "Speak"}
-      style={{ flexShrink: 0, width: 34, height: 34, marginLeft: 6, borderRadius: 8, border: `1.5px solid ${recording ? "#dc2626" : "#d8ccE8"}`,
-        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
-      {recording ? "⏹" : "🎤"}
-    </button>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
 
 /**
  * InfoCard — one reusable ⓘ learning-card shell.
@@ -94,29 +95,9 @@ function normalizeImages(perform) {
 // the same way Observation/Palpation/Posture findings already do (2026-09-12,
 // Aditi: "want to have the freedom... upload directly in the webapp itself,
 // just like we have done in AI observation palpation posture").
-const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dr15y1pwj/image/upload";
 const CLOUDINARY_PREFIX = "https://res.cloudinary.com/dr15y1pwj/image/upload/f_auto,q_auto/";
 function publicIdFromSrc(src) {
   return src && src.startsWith(CLOUDINARY_PREFIX) ? src.slice(CLOUDINARY_PREFIX.length) : null;
-}
-
-// Rejects a picked file before it reaches Cloudinary if it isn't a real
-// photo -- guards against a rare mobile-browser failure mode where the file
-// picker hands back a valid-but-empty stub image (e.g. an iCloud photo
-// whose full-res version hadn't finished downloading yet) instead of the
-// actual photo. These slots are shared across every user of the app, so a
-// stub upload silently overwrites the real photo for everyone, not just
-// the uploader (2026-09-25, Aditi: a Neuro info-card photo showed solid
-// black after upload -- the stored file turned out to be a genuine, fully
-// opaque 1x1px image, not a broken render).
-function isRealPhoto(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => { URL.revokeObjectURL(url); resolve(img.naturalWidth >= 40 && img.naturalHeight >= 40); };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-    img.src = url;
-  });
 }
 
 function PerformPane({ perform }) {
@@ -187,28 +168,7 @@ function PerformPane({ perform }) {
     if (!file || publicId == null) return;
     setUploadingIdx(i);
     try {
-      if (!(await isRealPhoto(file))) throw new Error("empty-image");
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", "ml_default");
-      fd.append("public_id", publicId);
-      const res = await fetch(CLOUDINARY_UPLOAD_URL, { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      // The unsigned "ml_default" preset has Overwrite off in Cloudinary's
-      // own dashboard settings -- uploading to a public_id that already
-      // holds something (even a bad/stub photo from before) is silently
-      // ignored: Cloudinary still answers 200 OK, but `existing: true`
-      // means it just handed back the OLD asset's info and stored nothing
-      // new (2026-09-25, Aditi: replaced a wrong CN II photo and "its not
-      // replacing at all" -- confirmed by re-POSTing the same slot
-      // directly and getting the untouched original's metadata back).
-      // Fixing this for real needs the Overwrite toggle turned on for
-      // ml_default in the Cloudinary console -- Cloudinary rejects the
-      // `overwrite` upload param outright on unsigned requests, so it
-      // can't be forced from here. This at least stops the app from
-      // claiming success when nothing actually changed.
-      const json = await res.json();
-      if (json.existing) throw new Error("blocked-overwrite");
+      await uploadImage(file, publicId);
       retryCountRef.current[i] = 0;
       // A previous failed load (e.g. the placeholder 404 before any photo
       // existed) must not keep blocking this slot now that a real photo
@@ -218,11 +178,7 @@ function PerformPane({ perform }) {
       setErroredSrcs(new Set());
       setVersions((prev) => ({ ...prev, [i]: Date.now() }));
     } catch (err) {
-      alert(err?.message === "empty-image"
-        ? "That photo didn't come through properly (it looked empty) — please try again."
-        : err?.message === "blocked-overwrite"
-        ? "This photo slot already has an image and couldn't be replaced right now — please let the app admin know."
-        : "Photo upload failed — check your connection and try again.");
+      alert(uploadErrorMessage(err));
     } finally {
       setUploadingIdx(null);
     }
