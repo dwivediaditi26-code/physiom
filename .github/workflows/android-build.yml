@@ -123,6 +123,7 @@ jobs:
           # Signed Bundle/APK" signs -- no signing config (or password) ever
           # needs to live in android/app/build.gradle.
           ./gradlew bundleRelease assembleRelease --no-daemon \
+            -PappVersionCode="${{ github.run_number }}" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
