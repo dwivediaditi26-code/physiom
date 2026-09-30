@@ -10,7 +10,7 @@
 // reason as the other two adapters -- this tool's checklist fields ARE the
 // structured answer.
 import { runThoracicReasoningEngine, evaluateRedFlagOverride } from "./thoracicReasoningEngine.js";
-import { arr, str, multicheckState, selectState } from "./reasoningHelpers.js";
+import { arr, str, multicheckState, selectState, demographicsForEngine } from "./reasoningHelpers.js";
 
 /**
  * Reads the Thoracic region checklist (plus the shared Subjective chief
@@ -19,14 +19,14 @@ import { arr, str, multicheckState, selectState } from "./reasoningHelpers.js";
  * built, so runThoracicReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.thoracic
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)
+ * @param {object} demographicsData - data.demographics (age, sex, occupation from the Demographics step)
  */
-export function extractThoracicVariables(regionData, subjective = {}) {
+export function extractThoracicVariables(regionData, subjective = {}, demographicsData = {}) {
   const rd = regionData || {};
 
-  // Hardcoded null, same as the other two adapters -- this tool's
-  // Subjective step doesn't route age/sex into the region checklist data
-  // this adapter reads, so age/sex-based conditions can't match either way.
-  const demographics = { age: null, sex: null, occupation: null };
+  // From the Demographics step, passed in by the caller -- the age/sex-based
+  // conditions need it. Left null when the step isn't filled in.
+  const demographics = demographicsForEngine(demographicsData);
   const chiefComplaint = {
     summary: (subjective.chiefComplaint || "").trim() || null,
     onset: (subjective.onset || "").trim() || null,
@@ -159,8 +159,8 @@ export function hasThoracicChecklistData(regionData) {
   return !!regionData && Object.values(regionData).some((v) => String(v || "").trim());
 }
 
-export function runThoracicDifferential(regionData, subjective) {
-  const tv = extractThoracicVariables(regionData, subjective);
+export function runThoracicDifferential(regionData, subjective, demographics) {
+  const tv = extractThoracicVariables(regionData, subjective, demographics);
   return runThoracicReasoningEngine(tv);
 }
 

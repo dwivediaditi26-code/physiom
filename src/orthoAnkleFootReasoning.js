@@ -30,7 +30,7 @@ function buildFlatAnkleFootData(data) {
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";
-  flat.dem_age = subjective.age || "";
+  flat.dem_age = (data.demographics || {}).age || "";
 
   flat.af_loc = joinMulti(regionData.location);
   flat.af_moi = joinMulti(regionData.mechanism);

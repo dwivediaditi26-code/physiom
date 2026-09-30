@@ -10,7 +10,7 @@
 // logic against the new tool's field ids/data shape, not a redesign of the
 // engine or its variable contract.
 import { runLumbarReasoningEngine, evaluateRedFlagOverride } from "./lumbarReasoningEngine.js";
-import { arr, str, multicheckState, selectState } from "./reasoningHelpers.js";
+import { arr, str, multicheckState, selectState, demographicsForEngine } from "./reasoningHelpers.js";
 
 function boolFromMulticheck(regionData, key, negativeOptions, positiveMatch) {
   const s = multicheckState(regionData, key, negativeOptions);
@@ -26,8 +26,9 @@ function boolFromMulticheck(regionData, key, negativeOptions, positiveMatch) {
  * so runLumbarReasoningEngine() can run completely unmodified.
  * @param {object} regionData - data.subjective.regions.lumbarSI
  * @param {object} subjective - data.subjective (for chiefComplaint/onset/medicalHistory)
+ * @param {object} demographics - data.demographics (age, sex, occupation from the Demographics step)
  */
-export function extractLumbarVariables(regionData, subjective = {}) {
+export function extractLumbarVariables(regionData, subjective = {}, demographics = {}) {
   const rd = regionData || {};
 
   const chiefComplaint = {
@@ -179,7 +180,7 @@ export function extractLumbarVariables(regionData, subjective = {}) {
   };
 
   return {
-    demographics: { age: null, sex: null, occupation: null },
+    demographics: demographicsForEngine(demographics),
     chiefComplaint,
     location: { ...location, belowKneePain },
     mechanism: { ...mechanism, acuteLiftingMechanism, flexionRotationMechanism, spondyloScreen },
@@ -212,8 +213,8 @@ export function hasLumbarChecklistData(regionData) {
   return !!regionData && Object.values(regionData).some((v) => String(v || "").trim());
 }
 
-export function runLumbarDifferential(regionData, subjective) {
-  const lv = extractLumbarVariables(regionData, subjective);
+export function runLumbarDifferential(regionData, subjective, demographics) {
+  const lv = extractLumbarVariables(regionData, subjective, demographics);
   return runLumbarReasoningEngine(lv);
 }
 

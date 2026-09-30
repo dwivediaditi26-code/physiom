@@ -27,7 +27,7 @@ function buildFlatKneeData(data) {
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";
-  flat.dem_age = subjective.age || "";
+  flat.dem_age = (data.demographics || {}).age || "";
 
   flat.knl_loc = joinMulti(regionData.location);
   flat.knr_loc = "";

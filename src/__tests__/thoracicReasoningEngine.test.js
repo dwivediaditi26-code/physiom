@@ -15,11 +15,6 @@ import { runThoracicReasoningEngine } from "../thoracicReasoningEngine.js";
 // The Ortho checklist stores multi-select answers joined with ", ".
 const SEP = ", ";
 
-// The Ortho tool doesn't pass the patient's age/sex into this adapter yet
-// (the adapter sets them to null), so checks of the engine's age/sex rules
-// add them to the adapter's output directly.
-const withDemographics = (v, demographics) => ({ ...v, demographics: { ...v.demographics, ...demographics } });
-
 describe("runThoracicReasoningEngine", () => {
   it("ranks T01 (facet/mechanical) at or near the top for a textbook mechanical case", () => {
     const data = {
@@ -179,7 +174,7 @@ describe("runThoracicReasoningEngine", () => {
       mechanismType: ["Insidious — postural / sustained"].join(SEP),
       redFlags: ["No red flags"].join(SEP),
     };
-    const tv = withDemographics(extractThoracicVariables(data), { age: "45" });
+    const tv = extractThoracicVariables(data, {}, { age: "45" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     const t07 = result.conditions.find(c => c.id === "T07");
@@ -193,7 +188,7 @@ describe("runThoracicReasoningEngine", () => {
       mechanismType: ["Insidious — postural / sustained"].join(SEP),
       redFlags: ["No red flags"].join(SEP),
     };
-    const tv = withDemographics(extractThoracicVariables(data), { age: "14" });
+    const tv = extractThoracicVariables(data, {}, { age: "14" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     expect(t05.matchTier).not.toBe("Unlikely");
@@ -228,7 +223,7 @@ describe("runThoracicReasoningEngine", () => {
       mechanismType: ["No clear mechanism"].join(SEP),
       redFlags: ["No red flags"].join(SEP),
     };
-    const tv = withDemographics(extractThoracicVariables(data), { age: "13", sex: "Female" });
+    const tv = extractThoracicVariables(data, {}, { age: "13", sex: "Female" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     const t07 = result.conditions.find(c => c.id === "T07");

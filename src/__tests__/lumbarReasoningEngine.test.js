@@ -11,11 +11,6 @@ import { runLumbarReasoningEngine } from "../lumbarReasoningEngine.js";
 // The Ortho checklist stores multi-select answers joined with ", ".
 const SEP = ", ";
 
-// The Ortho tool doesn't pass the patient's age/sex into this adapter yet
-// (the adapter sets them to null), so checks of the engine's age/sex rules
-// add them to the adapter's output directly.
-const withDemographics = (v, demographics) => ({ ...v, demographics: { ...v.demographics, ...demographics } });
-
 describe("runLumbarReasoningEngine", () => {
   it("ranks L02 (radiculopathy) at or near the top for a textbook radiculopathy case", () => {
     const data = {
@@ -114,7 +109,7 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
       relMovements: [].join(SEP),
       belowKnee: "No leg pain — back pain only",
     };
-    const lv = withDemographics(extractLumbarVariables(data), { age: "52" });
+    const lv = extractLumbarVariables(data, {}, { age: "52" });
     const result = runLumbarReasoningEngine(lv);
     const l03 = result.conditions.find((c) => c.id === "L03");
     const l07 = result.conditions.find((c) => c.id === "L07");
@@ -130,7 +125,7 @@ describe("runLumbarReasoningEngine -- L01/L07 differentiation fixes (real-case r
       belowKnee: "No leg pain — back pain only",
       spondyloScreen: ["Sport with repeated extension loading (gymnastics / cricket fast bowling / swimming butterfly / weightlifting)"].join(SEP),
     };
-    const lv = withDemographics(extractLumbarVariables(data), { age: "17" });
+    const lv = extractLumbarVariables(data, {}, { age: "17" });
     const result = runLumbarReasoningEngine(lv);
     const l07 = result.conditions.find((c) => c.id === "L07");
     expect(l07.supportingMatched).toContain("Repetitive-extension athlete history");

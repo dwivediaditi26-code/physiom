@@ -27,7 +27,7 @@ function buildFlatHipData(data) {
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";
-  flat.dem_age = subjective.age || "";
+  flat.dem_age = (data.demographics || {}).age || "";
 
   flat.hp_loc = joinMulti(regionData.location);
   flat.hp_loc_pattern = regionData.locationPattern || "";

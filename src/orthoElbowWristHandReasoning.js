@@ -39,7 +39,7 @@ function buildFlatElbowWristHandData(data) {
 
   flat.cc_main = subjective.chiefComplaint || "";
   flat.cc_onset = subjective.onset || "";
-  flat.dem_age = subjective.age || "";
+  flat.dem_age = (data.demographics || {}).age || "";
 
   flat.ew_loc = joinMulti(regionData.location);
   flat.ew_moi = joinMulti(regionData.mechanism);

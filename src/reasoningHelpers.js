@@ -33,6 +33,19 @@ export function selectState(regionData, key) {
   return { state: "answered", value: v };
 }
 
+// The patient's age / sex / occupation from the Ortho Demographics step
+// (data.demographics) in the shape the Lumbar/Cervical/Thoracic engines read
+// (`variables.demographics`). Anything not filled in stays null, which the
+// engines already treat as "unknown".
+export function demographicsForEngine(d) {
+  const clean = (v) => {
+    const s = String(v ?? "").trim();
+    return s ? s : null;
+  };
+  const src = d || {};
+  return { age: clean(src.age), sex: clean(src.sex), occupation: clean(src.occupation) };
+}
+
 // ── Limb regions (Hip / Knee / Ankle-Foot / Elbow-Wrist-Hand / Shoulder) ─────
 // A special test's stored answer is a string, or { right, left, bilateral }.
 export function specialTestValue(raw) {
