@@ -17,9 +17,9 @@
 **Next, in this order:**
 
 1. ~~**Update the 58 old automatic checks** and make GitHub run them on every change.~~ Done.
-2. **Merge copy-pasted code** (form boxes, voice input, photo upload) into one shared version each.
-3. **Small phone-app settings**: app version number for the Play Store, backup setting for patient data, offline support inside the app.
-4. **Set up the iPhone build** on GitHub.
+2. **Merge copy-pasted code** (form boxes, voice input, photo upload) into one shared version each. Voice input, photo upload and the region helpers are done; the form boxes and the profile rows are left (see "Still to do" below).
+3. ~~**Small phone-app settings**: app version number for the Play Store, backup setting for patient data, offline support inside the app.~~ Done.
+4. ~~**Set up the iPhone build** on GitHub.~~ Done for the unsigned build; signing waits for an Apple developer account (step 6).
 5. **Reorganise the folders by feature** (Ortho, Neuro, Feed, Learn…). This is the biggest move, so it's last.
 6. **Store release**: developer accounts, signing keys, store listings.
 
@@ -46,7 +46,8 @@
 | New disposable test Supabase project `physiomind-test` (the old one was not reachable from this account): patients table, per-user privacy rules and `deleted_at` set up; the GitHub secrets `E2E_SUPABASE_URL` / `E2E_SUPABASE_ANON_KEY` point at it. `patient-journey` and `cross-device` now pass there on desktop and phone. The sign-in/sign-up helpers refuse to run if the build points at the live project (`assertNotLiveDatabase` in `e2e/appMap.ts`) | `b055686`, `a6fc7aa` |
 | Step 3, phone-app settings: the Android `versionCode` now comes from the GitHub run number (Google Play rejects an upload whose number is not higher than the last one); `allowBackup` set to `false` so patient data is not copied into Android's cloud backup; the offline helper (`sw.js`) is no longer registered inside the native app | `a9077a5` |
 | Step 2, first merges of copy-pasted code: photo upload (`isRealPhoto`, the upload call, the overwrite check and the three error messages) now lives once in `src/services/cloudinary.js` and is used by `orthoFieldKit.jsx` and `InfoCard.jsx`; voice typing (`useVoiceInput`, 4 identical copies) lives once in `src/hooks/useVoiceInput.js`, and the Ortho/Neuro/Cardio mic button (3 identical copies) once in `src/components/VoiceMicButton.jsx`. The New Patient form keeps its own larger mic button. 12 new checks | `a5069b8` |
-| Step 2, the region reasoning helpers: `arr`, `str`, `multicheckState`, `selectState` (Lumbar/Cervical/Thoracic adapters) and `specialTestValue`, `joinMulti`, `tierOf` (Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand/Shoulder adapters) were identical in every file that had them and now live once in `src/reasoningHelpers.js` (about 160 lines fewer). 7 new checks | this commit |
+| Step 2, the region reasoning helpers: `arr`, `str`, `multicheckState`, `selectState` (Lumbar/Cervical/Thoracic adapters) and `specialTestValue`, `joinMulti`, `tierOf` (Hip/Knee/Ankle-Foot/Elbow-Wrist-Hand/Shoulder adapters) were identical in every file that had them and now live once in `src/reasoningHelpers.js` (about 160 lines fewer). 7 new checks | `e640fff` |
+| Step 4, the iPhone build on GitHub (`.github/workflows/ios-build.yml`): on every push and pull request a GitHub Mac (free, the repo is public) builds the web app, runs `cap sync ios` and compiles the iPhone project unsigned for the simulator (Xcode 26.6, "BUILD SUCCEEDED" on the first run). The signed archive, IPA and TestFlight upload steps are written but switched off until the Apple secrets exist (list in the file header); they have never run and will probably need small fixes on the first real run | this commit |
 
 Still to do from this cleanup:
 - **Step 2, rest of the merges:** `ConditionObjectiveAssessment.jsx` still has its own two photo-upload copies and its own `isRealPhoto` (left alone because another session works in that file; switch them to `src/services/cloudinary.js` once it is free). Not merged yet: the form-field kit (Ortho/Neuro/Cardio; the biggest one, differs on purpose in places), `slugifyFinding`/`findingPhotoId` (one copy is in `ConditionObjectiveAssessment.jsx`), and the four profile modals' `EntryRow`/`NewEntryRow` (same save/delete flow but different fields and save functions, about 880 lines, no checks cover them, so it needs checks first). `OrthoAIIntakePanel.jsx`'s own voice code stays (it differs: whole-narrative dictation).
