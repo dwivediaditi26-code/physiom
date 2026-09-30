@@ -9,6 +9,7 @@ import { setGoBackHandler } from "./nativeApp.js";
 import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./utils.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
+import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import { ALL_TESTS } from "./sharedClinicalData.js";
@@ -1551,6 +1552,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {showPdfReports && (
         <PdfReportsModal
           data={data}
+          currentUser={currentUser}
           onClose={()=>setShowPdfReports(false)}
         />
       )}
@@ -2115,7 +2117,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </Suspense>
               ):tests==="PROFILE_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
-                  <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut}/>
+                  <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut} extra={<ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>}/>
                 </Suspense>
               ):tests==="CLINICAL_MODULE"?(
                 // Same negative-margin full-bleed trick PhysioFeed uses just

@@ -40,7 +40,7 @@ import "./physiofeed.css";
 // need to clear physiom's own top bar directly rather than a .pf-header
 // that isn't here. The sticky sub-header this originally paired with
 // (ProfileTabs.jsx) is gone in the 2026-09-24 single-scroll redesign.
-export default function ProfileTabEntry({ onSignOut }) {
+export default function ProfileTabEntry({ onSignOut, extra }) {
   return (
     // bg-white (2026-09-28, Aditi: "background whitw ...there is purplish")
     // -- painted here rather than on the shared .pm-shell (every module's
@@ -55,6 +55,7 @@ export default function ProfileTabEntry({ onSignOut }) {
                 <div className="flex gap-6">
                   <ProfilePage/>
                 </div>
+                {extra}
                 <button onClick={onSignOut} className="w-full mt-4 py-2.5 bg-white border border-slate-200 rounded-xl font-semibold text-sm text-rose-600">
                   Sign out
                 </button>

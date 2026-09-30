@@ -99,7 +99,7 @@ import { rowsForStep } from "./orthoSummary.jsx";
 // was pure friction: this now builds and opens that one PDF the instant
 // it mounts, then calls onClose() -- clicking "Generate PDF Report" in an
 // assessment's Review screen goes straight to the browser's print dialog.
-function PdfReportsModal({ data, dx, onClose }) {
+function PdfReportsModal({ data, dx, onClose, currentUser }) {
   const d = data || {};
   const patName = d.dem_name || "Patient";
   const today = new Date().toLocaleDateString("en-GB", { day:"2-digit", month:"long", year:"numeric" });
@@ -208,8 +208,37 @@ function PdfReportsModal({ data, dx, onClose }) {
       ${bcCondition ? `<span class="sep">&middot;</span><b>${escHtml(bcCondition)}</b>` : ""}
     </div>` : "";
 
-  const pdfHeader = (title, subtitle, color) => {
-    const reportNo = d.report_no || ("RPT-" + today.replace(/\s/g,""));
+  // Header right-hand block: clinician + clinic (name, address), then the date
+  // once. Anything not on file renders as an empty, click-to-type field (shows
+  // a dotted line when printed) so it can be written in the preview or by hand.
+  const meta = currentUser?.user_metadata || {};
+  const rawClinician = d.therapist_name || meta.full_name || "";
+  const clinicianName = rawClinician ? `Dr. ${String(rawClinician).replace(/^dr\.?\s+/i, "")}` : "";
+  const clinicNameTxt = d.clinic_name || d.soap_clinic || meta.clinic_name || "";
+  const clinicAddrTxt = d.clinic_address || meta.clinic_address || "";
+  const clinicPhoneTxt = d.clinic_phone || meta.clinic_phone || "";
+  const fillField = (val, ph, style) => `<div class="pdf-fill" contenteditable="true" data-ph="${escHtml(ph)}" style="${style}">${escHtml(val)}</div>`;
+  const clinicBlockHtml = `<style>.pdf-fill{min-width:180px;border-bottom:1px dotted #cbd5e1;outline:none;}.pdf-fill:empty:before{content:attr(data-ph);color:#94a3b8;font-weight:400;}@media print{.pdf-fill{border-bottom-color:#94a3b8;}.pdf-fill:empty:before{content:"";}}</style>
+    ${fillField(clinicianName, "Clinician / doctor name", "font-size:14px;font-weight:700;color:#1e293b;")}
+    ${fillField(clinicNameTxt, "Clinic name", "font-size:11px;font-weight:600;color:#334155;margin-top:4px;")}
+    ${fillField(clinicAddrTxt, "Clinic address", "font-size:10px;color:#64748b;margin-top:3px;")}
+    ${fillField(clinicPhoneTxt, "Clinic phone", "font-size:10px;color:#64748b;margin-top:3px;")}`;
+  const clinicBlockCompact = `<style>.pdf-fill{min-width:120px;border-bottom:1px dotted #cbd5e1;outline:none;}.pdf-fill:empty:before{content:attr(data-ph);color:#94a3b8;font-weight:400;}@media print{.pdf-fill{border-bottom-color:#94a3b8;}.pdf-fill:empty:before{content:"";}}</style>
+    ${fillField(clinicianName, "Clinician / doctor name", "font-size:10px;font-weight:700;color:#1e293b;")}
+    ${fillField([clinicNameTxt, clinicAddrTxt].filter(Boolean).join(", "), "Clinic name & address", "font-size:8.5px;color:#64748b;margin-top:2px;")}
+    ${fillField(clinicPhoneTxt, "Clinic phone", "font-size:8.5px;color:#64748b;margin-top:2px;")}`;
+
+  const pdfHeader = (title, subtitle, color, compact = false) => {
+    // Pages after the first: small logo + clinician/clinic strip only.
+    if (compact) {
+      return `<div style="background:#fff;border-bottom:2px solid #7c3aed;padding:8px 32px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="/logo.svg" alt="PhysioMind" style="height:30px;width:auto;display:block;" />
+          <div style="border-left:1px solid #e2e8f0;padding-left:10px;font-size:8.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">${title}</div>
+        </div>
+        <div style="text-align:right;max-width:55%;">${clinicBlockCompact}</div>
+      </div>`;
+    }
     const inlineLogo = `<img src="/logo.svg" alt="PhysioMind" style="height:68px;width:auto;display:block;" />`;
     return `<div style="background:#fff;border-bottom:1px solid #e2e8f0;">
       <div style="padding:14px 32px 12px;display:flex;align-items:center;justify-content:space-between;">
@@ -220,17 +249,9 @@ function PdfReportsModal({ data, dx, onClose }) {
             <div style="font-size:10px;color:#64748b;margin-top:1px;">${subtitle}</div>
           </div>
         </div>
-        <div style="display:flex;gap:28px;text-align:right;">
-          <div>
-            <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px;">Patient</div>
-            <div style="font-size:14px;font-weight:700;color:#1e293b;">${escHtml(patName)}</div>
-            <div style="font-size:10px;color:#64748b;">${escHtml(sex)} &middot; ${escHtml(String(age))} yrs &middot; ${escHtml(dob)}</div>
-          </div>
-          <div>
-            <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:3px;">Report</div>
-            <div style="font-size:14px;font-weight:700;color:#1e293b;">${escHtml(reportNo)}</div>
-            <div style="font-size:10px;color:#64748b;">${today}</div>
-          </div>
+        <div style="text-align:right;max-width:46%;">
+          ${clinicBlockHtml}
+          <div style="font-size:10px;color:#64748b;margin-top:5px;">${today}</div>
         </div>
       </div>
       <div style="background:linear-gradient(to right,#3730a3,#7c3aed,#a855f7);padding:6px 32px;display:flex;justify-content:space-between;align-items:center;">
@@ -671,10 +692,15 @@ function PdfReportsModal({ data, dx, onClose }) {
       <div class="body">
 
         ${sec("👤","Demographics","#334155", `
+          ${row("Patient name", patName !== "Patient" ? escHtml(patName) : "")}
+          ${row("Age / Sex", [age, sex].filter((x) => x && x !== "--").map((x, i) => (i === 0 ? escHtml(String(x)) + " yrs" : x)).join(" · "))}
+          ${row("Date of birth", dob)}
+          ${row("Phone", v("dem_phone"))}
+          ${row("Email", v("dem_email"))}
+          ${row("Address", v("dem_address"))}
           ${row("Occupation", orthoWizardData?.demographics?.occupation ? escHtml(orthoWizardData.demographics.occupation) : occ)}
           ${row("Referring GP", orthoWizardData?.demographics?.gp ? escHtml(orthoWizardData.demographics.gp) : gp)}
           ${row("Session type", "Initial assessment")}
-          ${row("Clinician", therapist)}
         `)}
 
         ${orthoWizardData ? `
@@ -737,7 +763,7 @@ function PdfReportsModal({ data, dx, onClose }) {
 
     // ── PAGE 2: OBJECTIVE FINDINGS ────────────────────────────────────────
     const page2 = `<div class="page">
-      ${pdfHeader("Objective Findings", "Assessment & Advanced Assessment", "#0f6e56")}
+      ${pdfHeader("Objective Findings", "Assessment & Advanced Assessment", "#0f6e56", true)}
       ${breadcrumbHtml}
       <div class="body">
 
@@ -748,26 +774,6 @@ function PdfReportsModal({ data, dx, onClose }) {
         })() : (objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
           objIcon(s.title), escHtml(s.title), null, renderObjBody(s.body)
         )).join(""))}
-
-        ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
-          ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => row(`Diagnosis ${i+1}`, `${escHtml(dx2.diagnosis||"")}${dx2.icd10?" · "+escHtml(dx2.icd10):""}${dx2.confidence?" · "+Math.round(dx2.confidence)+"%":""}`)).join("") : ""}
-          ${dxMain && dxMain !== "--" ? textRow(dxMain) : ""}
-          ${dxIcd  && dxIcd  !== "--" ? row("ICD-10", dxIcd) : ""}
-          ${dxAssess && dxAssess !== "--" ? textRow(dxAssess) : ""}
-        `) : ""}
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 4px;margin-top:4px;">
-          <div>
-            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Physiotherapist signature:</div>
-            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
-            <div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div>
-          </div>
-          <div>
-            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Next review / follow-up:</div>
-            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
-            <div style="font-size:8px;color:#94a3b8;">Date · Treating clinician · Location</div>
-          </div>
-        </div>
 
       </div>
       ${pgFooter(2, totalPages)}
@@ -790,7 +796,7 @@ function PdfReportsModal({ data, dx, onClose }) {
       return String(val);
     };
     const specialtyPage = (pageNum, dataObj, title, subtitle, icon, color) => dataObj ? `<div class="page">
-      ${pdfHeader(title, subtitle, color)}
+      ${pdfHeader(title, subtitle, color, true)}
       ${breadcrumbHtml}
       <div class="body">
         ${Object.entries(dataObj).map(([sectionId, fields]) => {
@@ -804,7 +810,28 @@ function PdfReportsModal({ data, dx, onClose }) {
     </div>` : "";
     const page3 = specialtyPage(3, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
     const page4 = specialtyPage(d.cardio ? 4 : 3, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
-    const page5 = buildTreatmentPageHtml(`Page ${totalPages} of ${totalPages} &middot; ${today}`);
+    const closingHtml = `
+        ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
+          ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => row(`Diagnosis ${i+1}`, `${escHtml(dx2.diagnosis||"")}${dx2.icd10?" · "+escHtml(dx2.icd10):""}${dx2.confidence?" · "+Math.round(dx2.confidence)+"%":""}`)).join("") : ""}
+          ${dxMain && dxMain !== "--" ? textRow(dxMain) : ""}
+          ${dxIcd  && dxIcd  !== "--" ? row("ICD-10", dxIcd) : ""}
+          ${dxAssess && dxAssess !== "--" ? textRow(dxAssess) : ""}
+        `) : ""}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 4px;margin-top:4px;">
+          <div>
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Physiotherapist signature:</div>
+            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
+            <div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Next review / follow-up:</div>
+            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
+            <div style="font-size:8px;color:#94a3b8;">Date · Treating clinician · Location</div>
+          </div>
+        </div>
+    `;
+    const page5 = buildTreatmentPageHtml(`Page ${totalPages} of ${totalPages} &middot; ${today}`, closingHtml, true);
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Assessment &amp; Treatment Report — ${escHtml(patName)}</title>
@@ -819,7 +846,7 @@ function PdfReportsModal({ data, dx, onClose }) {
   // lets the caller give this page its real position when it's merged in
   // (buildAssessmentPdf's pgFooter-style "Page N of Total") instead of the
   // hardcoded "Page 1" pdfFooter() falls back to for a standalone doc.
-  const buildTreatmentPageHtml = (pageLabel) => {
+  const buildTreatmentPageHtml = (pageLabel, closingHtml = "", compactHeader = false) => {
     const exercises = gatherExercises();
     const techniques = gatherTechniques();
     const sessions = Array.isArray(d.tx_sessions) ? [...d.tx_sessions] : [];
@@ -851,7 +878,7 @@ function PdfReportsModal({ data, dx, onClose }) {
       : `<tr><td colspan="5" style="text-align:center;color:#94a3b8;">No sessions logged yet — use Sessions to record each treatment session.</td></tr>`;
 
     return `<div class="page">
-${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management Program","#059669")}
+${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management Program","#059669", compactHeader)}
 ${breadcrumbHtml}
 <div class="body">
   ${card("👤","Patient details & plan", `
@@ -901,7 +928,7 @@ ${breadcrumbHtml}
     <table><thead><tr><th>Sess.</th><th>Date</th><th>Pain (start&rarr;end)</th><th>Treatment given</th><th>Response</th></tr></thead>
     <tbody>${sessionRows}</tbody></table>
   `)}
-  <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:8px 4px;"><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Therapist signature:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div></div><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Review date:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Date</div></div></div>
+  ${closingHtml || `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:8px 4px;"><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Therapist signature:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div></div><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Review date:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Date</div></div></div>`}
 </div>
 ${pdfFooter("Assessment & Treatment Report", pageLabel)}
 </div>`;
@@ -1215,7 +1242,11 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
   const openPdf = (htmlContent) => {
     const win = window.open("", "_blank");
     if (!win) { alert("Please allow popups for PDF generation"); return; }
-    win.document.open(); win.document.write(injectViewerControls(htmlContent)); win.document.close();
+    // Screen-only nudge (hidden when printing) telling the therapist where to
+    // save their clinic details once, so they stop being blank on every report.
+    const missing = !clinicianName || !clinicNameTxt || !clinicAddrTxt || !clinicPhoneTxt;
+    const nudge = missing ? '<div class="no-print" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;padding:10px 16px;font:13px/1.5 -apple-system,Helvetica,Arial,sans-serif;text-align:center;">Clinic details are blank. Click a dotted line in the report header to type them now, or save them once in <b>Profile → Clinic details for reports</b> so every PDF fills them in automatically.</div><style>@media print{.no-print{display:none!important}}</style>' : "";
+    win.document.open(); win.document.write(injectViewerControls(htmlContent.replace(/<body[^>]*>/i, (m) => m + nudge))); win.document.close();
     setTimeout(() => { try { win.print(); } catch(e) {} }, 800);
   };
 
