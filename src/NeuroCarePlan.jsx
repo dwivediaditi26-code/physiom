@@ -587,7 +587,14 @@ function AddTreatmentPanel({ allGoals, existing, onAdd, requireAuth, search, set
               <div className="ct-group">
                 {savedProtocolsLoading && <div className="summary-empty">Loading…</div>}
                 {!savedProtocolsLoading && savedProtocols.length === 0 && (
-                  <div className="summary-empty">No saved protocols yet — build one from the Treatment list below (or the Exercise Prescription step) and save it there.</div>
+                  <div className="summary-empty" style={{ textAlign: "left" }}>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>No clinic protocols yet. To create one:</div>
+                    <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+                      <li>Add exercises from the exercise list (browse by category or search).</li>
+                      <li>Scroll to the patient's list of added exercises.</li>
+                      <li>Tap <b>💾 Save as Clinic Protocol</b> and name it — it will appear here.</li>
+                    </ol>
+                  </div>
                 )}
                 {savedProtocols.map((p) => (
                   <div key={p.id} style={{ marginBottom: 14 }}>

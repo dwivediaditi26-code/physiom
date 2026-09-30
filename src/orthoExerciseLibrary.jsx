@@ -111,7 +111,15 @@ export function ExerciseLibrarySheet({ onClose, onAddExercise, isAdded, onSelect
           <>
             {loadingSaved && <div className="summary-empty">Loading…</div>}
             {!loadingSaved && savedProtocols.length === 0 && (
-              <div className="summary-empty">No saved protocols yet — build a programme below and save it as a Clinic Protocol.</div>
+              <div className="summary-empty" style={{ textAlign: "left" }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>No clinic protocols yet. To create one:</div>
+                <ol style={{ margin: "0 0 10px", paddingLeft: 18, lineHeight: 1.6 }}>
+                  <li>Open <b>Browse by Region</b> and add exercises from the list to the patient's programme.</li>
+                  <li>Close this library and scroll to <b>This patient's programme</b>.</li>
+                  <li>Tap <b>💾 Save as Clinic Protocol</b>, name it — it will appear here.</li>
+                </ol>
+                <button type="button" className="ghost-btn" onClick={() => setTab("Browse by Region")}>Browse exercise list →</button>
+              </div>
             )}
             {savedProtocols.map((p) => (
               <div key={p.id} style={{ marginBottom: 16 }}>
