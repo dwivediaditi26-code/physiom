@@ -66,6 +66,11 @@ function extractTag(block, tag) {
     .trim();
 }
 
+function extractAttr(block, tag, attr) {
+  const m = block.match(new RegExp(`<${tag}[^>]*\\b${attr}=["']([^"']+)["']`, 'i'));
+  return m ? m[1] : null;
+}
+
 function parseRssItems(xml) {
   const blocks = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
   return blocks.map((block) => ({
@@ -73,6 +78,10 @@ function parseRssItems(xml) {
     link: extractTag(block, 'link'),
     description: extractTag(block, 'description'),
     pubDate: extractTag(block, 'pubDate'),
+    // Only News-Medical's feed carries this (media:content); WHO's doesn't
+    // -- real image or nothing, never a placeholder graphic standing in
+    // for a real photo.
+    thumbnailUrl: extractAttr(block, 'media:content', 'url'),
   })).filter((it) => it.title && it.link);
 }
 
@@ -88,6 +97,7 @@ function toRow(item, source) {
     summary: item.description ? item.description.slice(0, 500) : null,
     source_name: source.name,
     source_url: item.link,
+    thumbnail_url: item.thumbnailUrl || null,
     location: null,
     published_at: item.pubDate ? new Date(item.pubDate).toISOString() : null,
     deadline_at: null,

@@ -20,6 +20,7 @@ create table if not exists career_news (
   summary text,
   source_name text not null,
   source_url text not null,
+  thumbnail_url text,
   location text,
   published_at timestamptz,
   deadline_at timestamptz,

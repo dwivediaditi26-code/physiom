@@ -2802,31 +2802,111 @@ export async function searchEverything(query, { limit = 6 } = {}) {
 //
 // Separate from `opportunities` above -- those are jobs/workshops a
 // community member posted themselves. This is outside news (WHO,
-// Physiopedia, and later real job-board sources) a daily server-side job
+// News-Medical, and later real job-board sources) a daily server-side job
 // writes into `career_news`; the app only ever reads it. Public table, no
 // auth required -- readable in guest mode same as `profiles`/`connections`.
-export async function getCareerNews({ category = "all", search = "", limit = 30 } = {}) {
-  let q = supabase
+//
+// Fetches the whole active list once -- CareerNewsBoard filters by
+// category/search client-side rather than re-querying per tab (dataset is
+// small, and Aditi's brief was explicit: "filter existing news data; do
+// not create separate hardcoded content for each tab"). Throws on a real
+// failure (table missing, network) rather than swallowing it, so the UI
+// can show a real error state instead of silently looking empty -- see
+// CareerNewsBoard's error banner, which keeps the last good list visible.
+export async function getCareerNews({ limit = 50 } = {}) {
+  const { data, error } = await supabase
     .from("career_news")
-    .select("id, category, title, summary, source_name, source_url, location, published_at, deadline_at, last_checked_at, status")
+    .select("id, category, title, summary, source_name, source_url, thumbnail_url, location, published_at, deadline_at, last_checked_at, status")
     .eq("status", "active")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit);
-  if (category !== "all") q = q.eq("category", category);
-  const { data, error } = await q;
-  if (error) { console.error("getCareerNews:", error.message); return []; }
-  const term = search.trim().toLowerCase();
-  const rows = term
-    ? (data || []).filter((n) => `${n.title} ${n.summary || ""} ${n.location || ""}`.toLowerCase().includes(term))
-    : data || [];
-  return rows.map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at) }));
+  if (error) throw new Error(error.message);
+  return (data || []).map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at), verification: verificationOf(n.source_name) }));
+}
+
+// The most recent successful daily fetch, across every source -- shown in
+// NewsPage's header ("Updated ..."). Separate from the list query so a
+// stale/never-run collection job still reports its real last-run time
+// even if that run found nothing new to write.
+export async function getCareerNewsLastUpdated() {
+  const { data, error } = await supabase
+    .from("career_news")
+    .select("last_checked_at")
+    .order("last_checked_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.last_checked_at || null;
 }
 
 function deadlineLabelOf(deadlineAt) {
   if (!deadlineAt) return null;
   const days = Math.ceil((new Date(deadlineAt).getTime() - Date.now()) / 86400000);
   if (days < 0) return null;
-  if (days === 0) return "Closing today";
+  if (days === 0) return "Closes today";
   if (days <= 7) return "Closes this week";
   return "Upcoming";
+}
+
+// Only two real sources exist right now (see api/cron/fetchCareerNews.js)
+// -- both verified official/reputable by hand before being wired in. Not
+// meant to scale past a handful of names; a real source-trust table would
+// replace this if/when more sources are added.
+const TRUSTED_SOURCES = {
+  "World Health Organization": "Official source",
+  "News-Medical (Physiotherapy)": "Reputable publisher",
+};
+function verificationOf(sourceName) {
+  return TRUSTED_SOURCES[sourceName] || "Needs review";
+}
+
+// ---- saved news (saved_items, item_type "news") ----
+// Same generic saved_items table opportunities already use (see
+// toggleSaveOpportunity above) -- reused rather than building a second
+// bookmarking system for one more content type.
+export async function getSavedNewsIds() {
+  try {
+    const uid = await currentUserId();
+    if (!uid) return [];
+    const { data, error } = await supabase
+      .from("saved_items").select("item_id").eq("user_id", uid).eq("item_type", "news");
+    if (error) throw error;
+    return (data || []).map((r) => r.item_id);
+  } catch (e) {
+    console.error("getSavedNewsIds():", e?.message || e);
+    return [];
+  }
+}
+
+export async function getSavedNews() {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data: saves, error } = await supabase
+    .from("saved_items").select("item_id, created_at").eq("user_id", uid).eq("item_type", "news")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const ids = (saves || []).map((s) => s.item_id);
+  if (!ids.length) return [];
+  const { data: rows, error: newsErr } = await supabase.from("career_news").select("*").in("id", ids);
+  if (newsErr) throw new Error(newsErr.message);
+  const byId = Object.fromEntries((rows || []).map((r) => [String(r.id), r]));
+  return ids.map((id) => byId[id]).filter(Boolean)
+    .map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at), verification: verificationOf(n.source_name) }));
+}
+
+export async function toggleSaveNews(newsId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to save news.");
+  const key = { user_id: uid, item_type: "news", item_id: String(newsId) };
+  const { data: existing, error: selErr } = await supabase
+    .from("saved_items").select("item_id").match(key).maybeSingle();
+  if (selErr) throw selErr;
+  if (existing) {
+    const { error } = await supabase.from("saved_items").delete().match(key);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase.from("saved_items").insert(key);
+  if (error) throw error;
+  return true;
 }
