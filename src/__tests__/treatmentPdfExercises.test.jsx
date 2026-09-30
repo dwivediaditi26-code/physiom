@@ -15,18 +15,20 @@
 // (Aditi: "remove ... treatment ... make it one") -- its content is now the
 // final page of the single "assessment" report, so these assertions run
 // against that combined PDF instead of a `data-pdf-type="treatment"` button
-// that no longer exists.
+// that no longer exists. Further updated the same day: PdfReportsModal no
+// longer renders a report-picker UI at all -- it builds and opens the PDF
+// the instant it mounts (Aditi: "just generate pdf remove this page"), so
+// mounting it is enough; there's no button left to click.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { PdfReportsModal } from "../AppModules.jsx";
 
 const capturePdf = async (data) => {
   let captured = "";
   window.open = vi.fn(() => ({ document: { open(){}, write(h){ captured = h; }, close(){} }, print(){} }));
   window.alert = vi.fn();
-  const { container } = render(<PdfReportsModal data={data} dx={{dx:[]}} onClose={()=>{}} />);
-  fireEvent.click(container.querySelector('[data-pdf-type="assessment"]'));
+  render(<PdfReportsModal data={data} dx={{dx:[]}} onClose={()=>{}} />);
   await waitFor(() => { if (!captured) throw new Error("not yet"); }, { timeout: 5000 });
   return captured;
 };

@@ -119,10 +119,15 @@ import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./
 import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
 import { REG_MOD_S } from "./SubjectiveObjective.jsx";
 
-function PdfReportsModal({ data, dx, onClose, patients=[] }) {
-  const [generating, setGenerating] = useState(null);
-  const [done, setDone] = useState({});
-
+// No UI of its own (2026-09-29, Aditi: "why so much written when clicking
+// pdf ... just generate pdf remove this page") -- this used to be a modal
+// listing report choices (Assessment Report / Treatment Plan, each with its
+// own description card and Generate button) before those two reports were
+// merged into one. With only one report left, showing a card to choose it
+// was pure friction: this now builds and opens that one PDF the instant
+// it mounts, then calls onClose() -- clicking "Generate PDF Report" in an
+// assessment's Review screen goes straight to the browser's print dialog.
+function PdfReportsModal({ data, dx, onClose }) {
   const d = data || {};
   const patName = d.dem_name || "Patient";
   const today = new Date().toLocaleDateString("en-GB", { day:"2-digit", month:"long", year:"numeric" });
@@ -1190,86 +1195,18 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
     setTimeout(() => { try { win.print(); } catch(e) {} }, 800);
   };
 
-  const generatePdf = async (type) => {
-    setGenerating(type);
-    await new Promise(r => setTimeout(r, 400));
+  useEffect(() => {
     try {
-      let html = "";
-      if (type === "assessment") html = buildAssessmentPdf();
-      else if (type === "hep") html = buildHomeExercisePdf();
-      else if (type === "posture") html = buildPostureReportPdf();
-      openPdf(html);
-      setDone(p => ({...p, [type]: true}));
-    } catch(e) { console.error(e); alert("Error generating PDF: " + e.message); }
-    setGenerating(null);
-  };
+      openPdf(buildAssessmentPdf());
+    } catch (e) {
+      console.error(e);
+      alert("Error generating PDF: " + e.message);
+    }
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // One combined report instead of two separate choices (2026-09-29, Aditi:
-  // "remove ... treatment ... make it one") -- buildAssessmentPdf() now ends
-  // with the Treatment Plan content as its own final page instead of that
-  // being a second, separately-generated document.
-  const reports = [
-    { id:"assessment", icon:"&#129321;", title:"Assessment & Treatment Report", subtitle:"Full Clinical Report", desc:"Comprehensive physiotherapy report: demographics, pain scores, ROM table, postural analysis with anatomical diagram, special tests, clinical diagnosis, neurological & palpation findings, phased exercise prescription, manual therapy, SMART goals, outcome measures, and signed clinical summary.", color:"#1a3a5c", gradient:"linear-gradient(135deg,#1a3a5c,#2563eb)", tags:["Demographics","VAS Scores","ROM Table","Diagnosis","Exercise Plan","Outcome Measures","Signature"], pages:"3-5 pages" },
-  ];
-
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div style={{background:"#ffffff",borderRadius:20,maxWidth:760,width:"100%",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 25px 60px rgba(0,0,0,0.4)"}}>
-        <div style={{background:"linear-gradient(135deg,#1a3a5c 0%,#2563eb 50%,#7c3aed 100%)",borderRadius:"20px 20px 0 0",padding:"24px 28px",color:"#fff"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                <span style={{fontSize:"24px"}}>📄</span>
-                <div><h2 style={{margin:0,fontSize:"1.3rem",fontWeight:800,letterSpacing:"-0.3px"}}>Clinical PDF Reports</h2><p style={{margin:"2px 0 0",fontSize:"0.75rem",opacity:0.8}}>Assessment &amp; Treatment PDF — patient-specific</p></div>
-              </div>
-              {patName !== "Patient" && <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.12)",borderRadius:8,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:"50%",background:"#34d399"}}/><span style={{fontSize:"0.8rem",fontWeight:600}}>{patName}</span>{age && age !== "--" && <span style={{fontSize:"0.82rem",opacity:0.7}}>&#183; Age {age}</span>}</div>}
-            </div>
-            <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,color:"#fff",cursor:"pointer",padding:"8px 14px",fontSize:"0.8rem",fontWeight:600}}>✕ Close</button>
-          </div>
-        </div>
-        <div style={{padding:"24px 28px"}}>
-          <div style={{background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:20,display:"flex",gap:10,alignItems:"flex-start"}}>
-            <span style={{fontSize:"16px",flexShrink:0}}>💡</span>
-            <div style={{fontSize:"0.78rem",color:"#1e40af",lineHeight:1.6}}>Each PDF opens in a new browser tab. Use <strong>Print -&gt; Save as PDF</strong> (enable Background Graphics for full colour). Data is pulled from your current patient assessment automatically.</div>
-          </div>
-          <div style={{display:"grid",gap:14}}>
-            {reports.map(report => (
-              <div key={report.id} style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:0}}>
-                  <div style={{padding:"18px 20px"}}>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
-                      <div style={{width:44,height:44,background:report.gradient,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}} dangerouslySetInnerHTML={{__html:report.icon}}/>
-                      <div>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}><h3 style={{margin:0,fontSize:"1rem",fontWeight:800,color:"#1e293b"}}>{report.title}</h3><span style={{fontSize:"0.82rem",padding:"2px 7px",borderRadius:5,background:"rgba(100,116,139,0.12)",color:"#64748b",fontWeight:600}}>{report.pages}</span></div>
-                        <p style={{margin:0,fontSize:"0.75rem",color:"#64748b",fontWeight:500}}>{report.subtitle}</p>
-                      </div>
-                    </div>
-                    <p style={{margin:"0 0 10px",fontSize:"0.78rem",color:"#475569",lineHeight:1.6}}>{report.desc}</p>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{report.tags.map(tag=><span key={tag} style={{fontSize:"0.75rem",padding:"2px 8px",borderRadius:5,background:report.color+"12",border:`1px solid ${report.color}25`,color:report.color,fontWeight:600}}>{tag}</span>)}</div>
-                  </div>
-                  <div style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"18px 20px",borderLeft:"1px solid #e2e8f0",minWidth:130,gap:10}}>
-                    {done[report.id] && <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"rgba(5,150,105,0.1)",border:"1px solid rgba(5,150,105,0.3)",borderRadius:8}}><span style={{color:"#059669",fontSize:"0.75rem",fontWeight:700}}>✓ Generated</span></div>}
-                    <button data-pdf-type={report.id} onClick={()=>generatePdf(report.id)} disabled={generating!==null} style={{width:"100%",padding:"12px 16px",background:generating===report.id?"#94a3b8":report.gradient,border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.78rem",cursor:generating?"not-allowed":"pointer",opacity:generating&&generating!==report.id?0.5:1,display:"flex",alignItems:"center",justifyContent:"center",gap:7,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
-                      {generating===report.id?"⏳ Generating...":"📥 Generate PDF"}
-                    </button>
-                    <div style={{fontSize:"0.75rem",color:"#94a3b8",textAlign:"center",lineHeight:1.4}}>Opens in new tab<br/>Print → Save as PDF</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{marginTop:14,padding:"12px 16px",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:10}}>
-            <div style={{fontSize:"0.8rem",fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:6}}>💡 Tips for best results</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 16px"}}>
-              {["Complete patient demographics before generating","Add exercises in the Exercise Prescription module","Record ROM measurements for detailed tables","Run Suggest Probable Diagnosis first for diagnostic content","Use Chrome or Edge for best PDF quality","Enable Print: Background Graphics for full colour"].map(tip=>(
-                <div key={tip} style={{fontSize:"0.82rem",color:"#94a3b8",display:"flex",gap:6,alignItems:"flex-start",padding:"2px 0"}}><span style={{color:"#7c3aed",fontWeight:700,flexShrink:0}}>→</span>{tip}</div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 

@@ -1373,7 +1373,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {showPdfReports && (
         <PdfReportsModal
           data={data}
-          patients={patients}
           onClose={()=>setShowPdfReports(false)}
         />
       )}

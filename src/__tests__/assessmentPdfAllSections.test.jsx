@@ -7,10 +7,13 @@
 // Gait, Functional Screens, and Outcome Measures -- each verified with a
 // real, verified field name (not guessed) and asserted to appear with its
 // actual clinical content, not just its section label, in the real
-// generated PDF HTML.
+// generated PDF HTML. Updated 2026-09-29: PdfReportsModal no longer renders
+// a report-picker UI -- it builds and opens the PDF the instant it mounts
+// (Aditi: "just generate pdf remove this page"), so mounting it is enough;
+// there's no button left to click.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { PdfReportsModal } from "../AppModules.jsx";
 
 async function generateAssessmentPdf(data) {
@@ -18,7 +21,6 @@ async function generateAssessmentPdf(data) {
   window.open = vi.fn(() => ({ document: { open(){}, write(h){ captured = h; }, close(){} }, print(){} }));
   window.alert = vi.fn();
   render(<PdfReportsModal data={data} dx={{ dx: [] }} onClose={()=>{}} />);
-  fireEvent.click(document.querySelector('[data-pdf-type="assessment"]'));
   await waitFor(() => { if (!captured) throw new Error("not yet"); }, { timeout: 5000 });
   return captured;
 }
