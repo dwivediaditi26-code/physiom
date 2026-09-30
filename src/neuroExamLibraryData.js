@@ -410,7 +410,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Forearm in neutral (semi-pronated), resting on the thigh." },
         { tone: "blue", label: "🖐️ Technique", text: "Tap the brachioradialis tendon 2–3cm proximal to the radial styloid. Normal response is forearm flexion plus slight supination." },
-        { tone: "purple", label: "🩺 Special consideration", text: "An INVERTED reflex — brachioradialis absent but finger flexors contract instead — is pathognomonic of cervical myelopathy at C5/6 and needs urgent attention." },
+        { tone: "purple", label: "🩺 Special consideration", text: "An INVERTED reflex — brachioradialis absent but finger flexors contract instead — is a well-known localising sign of cervical cord compression at about C5/6 (with hyperreflexia below that level). It is highly suggestive, not by itself diagnostic, and warrants prompt medical review." },
       ],
     },
     scaleLabel: "0–4+ grading",
@@ -424,13 +424,13 @@ export const neuroExamLibraryData = {
     interpret: {
       normal: ["2+ bilaterally, no inverted response"],
       abnormal: ["Absent → C5/6 radiculopathy"],
-      redFlags: ["Inverted brachioradialis reflex (absent BR + finger flexor contraction) — pathognomonic of C5/6 cervical myelopathy, urgent MRI referral"],
-      note: "The inverted reflex pattern here is one of the highest-yield individual findings in the whole cervical exam — don't miss it.",
+      redFlags: ["Inverted brachioradialis reflex (absent BR + finger flexor contraction) — strongly suggests cervical cord compression at about C5/6; refer promptly for medical review and cervical imaging"],
+      note: "The inverted reflex pattern is a high-yield localising finding in the cervical exam — don't miss it, and interpret it with the other UMN signs (Hoffmann's, hyperreflexia, gait change). Its accuracy as a stand-alone test is modest (reported sensitivity roughly 60–75%, specificity about 78%).",
     },
   },
 
   reflexTriceps: {
-    title: "Triceps Reflex (C7–C8)",
+    title: "Triceps Reflex (mainly C7)",
     icon: "💪",
     category: "Learn · Neuro · Reflexes",
     perform: {
@@ -439,7 +439,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Support the arm at 90° abduction, or drape it over the forearm." },
         { tone: "blue", label: "🖐️ Technique", text: "Tap the triceps tendon directly above the olecranon and observe elbow extension." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Diminished/absent bilaterally suggests peripheral polyneuropathy or motor neuron disease rather than a single-level radiculopathy." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Diminished/absent on one side most often reflects a C7 radiculopathy (or, less commonly, a radial nerve or brachial plexus problem). Loss of the triceps reflex on both sides is uncommon and should prompt a look for a wider cause, such as multilevel or central cervical disease or a generalised neuropathy (where the ankle reflexes usually go first)." },
       ],
     },
     scaleLabel: "0–4+ grading",
@@ -467,7 +467,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient seated with legs hanging freely, or supine with the knee supported at 20–30° flexion." },
         { tone: "blue", label: "🖐️ Technique", text: "Tap the patellar tendon briskly and observe quadriceps contraction / knee extension." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Diminished is most commonly from L3/4 disc herniation. Brisk plus a positive Babinski points toward cord/UMN pathology rather than a root-level problem." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Diminished can come from an L3/L4 root lesion (e.g. L3/4 disc herniation), a femoral neuropathy, or a generalised neuropathy such as diabetic. Brisk plus a positive Babinski points toward cord/UMN pathology rather than a root-level problem." },
       ],
     },
     scaleLabel: "0–4+ grading",
@@ -480,7 +480,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["2+ bilaterally"],
-      abnormal: ["Diminished → L3/4 disc herniation (most common cause)", "Absent → severe radiculopathy or femoral neuropathy", "Brisk + Babinski → cord/UMN pathology"],
+      abnormal: ["Diminished → L3/L4 root lesion (e.g. L3/4 disc herniation), femoral neuropathy or generalised neuropathy", "Absent → severe radiculopathy or femoral neuropathy", "Brisk + Babinski → cord/UMN pathology"],
       note: "Pair with the Babinski finding — the combination distinguishes a root-level from a cord-level explanation.",
     },
   },
@@ -509,7 +509,7 @@ export const neuroExamLibraryData = {
     interpret: {
       normal: ["2+ bilaterally"],
       abnormal: ["Diminished/absent unilaterally → S1 radiculopathy (L5/S1 disc)", "Absent bilaterally → consider peripheral polyneuropathy"],
-      note: "Screen for a peripheral cause (diabetes, alcohol use, vitamin deficiency) whenever this is absent bilaterally rather than assuming a spinal cause.",
+      note: "Screen for a peripheral cause (diabetes, alcohol use, vitamin deficiency) whenever this is absent bilaterally rather than assuming a spinal cause. The ankle jerk can also be absent in otherwise healthy people over about 60–70, so weigh it against age. If a reflex seems absent, reinforce it first (Jendrassik manoeuvre: patient hooks fingers and pulls apart) before calling it absent.",
     },
   },
 
@@ -523,8 +523,8 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine and relaxed." },
         { tone: "blue", label: "🖐️ Technique", text: "Using a blunt object (reflex hammer handle or key), stroke firmly from the lateral heel along the plantar surface, curving medially to the ball of the foot. Observe the great toe and other toes." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Positive (abnormal in adults) = the great toe extends upward, often with fanning of the other toes — indicates a corticospinal tract (UMN) lesion anywhere from the motor cortex down to the S1 cord level. Normal adult response is toe plantarflexion (downgoing)." },
-        { tone: "amber", label: "⚠️ Tip", text: "Normal in infants under ~12 months (the corticospinal tract is still unmyelinated) — don't apply the adult interpretation to a young infant." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Positive (abnormal in adults) = the great toe extends upward, often with fanning of the other toes — indicates a corticospinal tract (UMN) lesion anywhere above the L5–S2 cord segments that mediate the reflex (motor cortex, brainstem or spinal cord). Normal adult response is toe plantarflexion (downgoing)." },
+        { tone: "amber", label: "⚠️ Tip", text: "An extensor response is normal in infants, usually until about 12–24 months (the corticospinal tract is still myelinating) — don't apply the adult interpretation to a young infant." },
       ],
     },
     scaleLabel: "Findings",
@@ -577,19 +577,19 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Ankle: knee in slight flexion, foot supported. Patellar: supine, leg extended. Wrist: forearm supported." },
         { tone: "blue", label: "🖐️ Technique", text: "Ankle: cup the foot and apply sudden, sustained DORSIFLEXION pressure, maintaining the force. Patellar: grasp the patella and apply a sudden sustained DOWNWARD thrust. Wrist: apply a sudden sustained EXTENSION force. In each case, count the rhythmic beats of oscillation and note how long they persist." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Positive = 3 or more sustained beats. Reflects loss of descending inhibition on the gamma motor neurons — an upper motor neuron sign. 1–2 beats can be a normal variant in an anxious or fatigued patient; sustained (>10 beats) clonus signals severe UMN involvement." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Sustained clonus (it keeps going for as long as the stretch is held) is an upper motor neuron sign, reflecting loss of descending inhibition of the stretch reflex. A few unsustained beats can be a normal variant in a fast-reflexed, anxious or fatigued patient. Published beat-count cut-offs differ (from about 3 up to more than 5 beats), so record the number of beats and whether it was sustained, rather than only positive/negative." },
       ],
     },
     scaleLabel: "Findings",
     scale: { type: "table", rows: [
       { k: "Absent", v: "No rhythmic contraction" },
-      { k: "Unsustained (1–2 beats)", v: "May be a normal variant" },
-      { k: "Sustained (≥3 beats)", v: "Abnormal — UMN sign" },
+      { k: "Unsustained (a few beats)", v: "May be a normal variant" },
+      { k: "Sustained (persists while stretch held; cut-offs range ~3 to >5 beats)", v: "Abnormal — UMN sign" },
     ]},
     interpret: {
       normal: ["Absent, or a few unsustained beats"],
-      abnormal: ["Sustained clonus (≥3 beats) → UMN lesion — cord compression, myelopathy, stroke, MS, cerebral palsy"],
-      redFlags: ["Sustained clonus (>10 beats) → severe UMN involvement, urgent MRI + neurosurgical referral"],
+      abnormal: ["Sustained clonus → UMN lesion — cord compression, myelopathy, stroke, MS, cerebral palsy"],
+      redFlags: ["NEW or worsening sustained clonus (especially with new weakness, sensory level, or bladder/bowel change) → possible acute cord compression or progression, urgent medical review. Long-standing clonus in known stroke, SCI, MS or CP is expected and is not by itself an emergency"],
       note: "Interpret alongside DTRs and tone — clonus rarely appears as an isolated finding in significant UMN pathology.",
     },
   },
@@ -764,7 +764,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
         { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the medial knee/lower anterior thigh. Compare side to side." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L3/4. Shares the patellar reflex (L3–L4) with L4. Associated myotome: Knee extension (quadriceps)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L2/3 (a typical paracentral herniation affects the root numbered one below the disc; a far-lateral herniation affects the exiting root instead). Shares the patellar reflex (L3–L4) with L4. Associated myotome: Knee extension (quadriceps)." },
       ],
     },
     scaleLabel: "0–2 grading",
@@ -786,7 +786,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
         { tone: "blue", label: "🖐️ Technique", text: "Test with light touch + pinprick over the medial leg/medial foot. Compare side to side." },
-        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L4/5. Shares the patellar reflex (L3–L4) with L3. Associated myotome: Ankle dorsiflexion (tibialis anterior)." },
+        { tone: "purple", label: "🩺 Special consideration", text: "Disc level L3/4. Shares the patellar reflex (L3–L4) with L3. Associated myotome: Ankle dorsiflexion (tibialis anterior)." },
       ],
     },
     scaleLabel: "0–2 grading",
@@ -851,15 +851,15 @@ export const neuroExamLibraryData = {
       caption: "Perianal / saddle region — the single most important sensory point in SCI",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient positioned for a dignified, private perianal exam." },
-        { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick at the perianal/saddle region. Also assess the anal wink reflex and voluntary anal contraction as part of the same sacral-sparing check." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick at the perianal/saddle region (S4-5). Then, per ISNCSCI, test deep anal pressure (gentle pressure on the anal wall with the examining finger) and voluntary anal contraction. If light touch and pinprick are absent, deep anal pressure is what decides whether sensation is truly absent. The anal wink reflex is not part of the ISNCSCI sacral-sparing determination." },
         { tone: "purple", label: "🩺 Special consideration", text: "Sacral sparing (any sensory or motor function preserved at S4-5) is THE deciding factor between AIS A (complete) and AIS B (sensory incomplete) — never skip this test." },
       ],
     },
     scaleLabel: "0–2 grading",
     scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
     interpret: {
-      normal: ["Intact sensation, grade 2, present anal wink and voluntary contraction"],
-      abnormal: ["Any preserved sensation here → sacral sparing present → the injury is sensory incomplete at minimum (AIS B or better), a major prognostic distinction"],
+      normal: ["Intact sensation, grade 2, deep anal pressure felt, voluntary anal contraction present"],
+      abnormal: ["Any preserved sensation here (light touch, pinprick or deep anal pressure) or voluntary anal contraction → sacral sparing present → the injury is sensory incomplete at minimum (AIS B or better), a major prognostic distinction"],
       redFlags: ["New loss of perianal sensation with saddle anaesthesia and bowel/bladder change → possible cauda equina syndrome, emergency referral"],
       note: "This single sensory point changes the entire AIS classification — always document it explicitly, never infer it from limb findings.",
     },
@@ -1200,7 +1200,7 @@ export const neuroExamLibraryData = {
     interpret: {
       normal: ["Within expected range for the tested site"],
       abnormal: ["Impaired → cortical (parietal lobe) or dorsal column pathway involvement"],
-      note: "This is a cortical integration test, not a peripheral nerve test — it can be abnormal even when light touch and pain sensation are both normal.",
+      note: "Two-point discrimination reflects both peripheral nerve innervation density and cortical integration. It is widely used to track peripheral nerve injury and recovery (especially in the hand), and can also be abnormal with a parietal lesion even when light touch and pain sensation are normal.",
     },
   },
 
@@ -1380,7 +1380,7 @@ export const neuroExamLibraryData = {
       caption: "Best motor response to command, then to a painful stimulus",
       boxes: [
         { tone: "", label: "👤 Position", text: "Start with a simple verbal command (e.g. 'squeeze my hand'); only apply a painful stimulus if there is no response to voice." },
-        { tone: "blue", label: "🖐️ Technique", text: "Score the single best response from either limb: 6 = obeys commands, 5 = localises to pain (a limb crosses the midline toward the stimulus), 4 = withdraws from pain, 3 = abnormal flexion (decorticate), 2 = abnormal extension (decerebrate), 1 = none." },
+        { tone: "blue", label: "🖐️ Technique", text: "Score the single best response from either limb: 6 = obeys commands, 5 = localises to pain (purposeful movement toward the stimulus: with supraorbital pressure the hand rises above the chin; with a trapezius pinch it rises above the clavicle; with a peripheral nail-bed stimulus the opposite hand crosses the midline), 4 = withdraws from pain, 3 = abnormal flexion (decorticate), 2 = abnormal extension (decerebrate), 1 = none." },
         { tone: "purple", label: "🩺 Special consideration", text: "Use a central painful stimulus (trapezius pinch or supraorbital pressure), not just a peripheral nail-bed pinch, since a peripheral stimulus can trigger a spinal reflex withdrawal that looks like a better response than the patient's true best." },
         { tone: "amber", label: "⚠️ Tip", text: "Abnormal flexion (decorticate, 3) and abnormal extension (decerebrate, 2) are both ominous signs of significant brain injury — either should trigger urgent escalation, not just a documented score." },
       ],
@@ -1440,7 +1440,7 @@ export const neuroExamLibraryData = {
       caption: "Screen for calf pain/swelling/warmth before mobilising a high-risk patient",
       boxes: [
         { tone: "", label: "👤 Position", text: "Inspect and gently palpate both calves with the patient supine, comparing side to side." },
-        { tone: "blue", label: "🖐️ Technique", text: "Check for unilateral calf swelling, warmth, redness, and tenderness. Ask about calf pain, especially on dorsiflexion. Review the chart for any known DVT/PE history, anticoagulation status, or recent immobility (post-op, prolonged bed rest, stroke, SCI)." },
+        { tone: "blue", label: "🖐️ Technique", text: "Check for unilateral calf swelling, warmth, redness, and tenderness. Ask about calf pain at rest and on walking (do not force the ankle into dorsiflexion to provoke it). Estimate pre-test probability with the Wells DVT score where your setting uses it. Review the chart for any known DVT/PE history, anticoagulation status, or recent immobility (post-op, prolonged bed rest, stroke, SCI)." },
         { tone: "purple", label: "🩺 Special consideration", text: "Homans' sign (calf pain on forced ankle dorsiflexion) is neither sensitive nor specific for DVT and should never be relied on alone to rule a DVT in or out." },
         { tone: "amber", label: "⚠️ Tip", text: "Stroke, SCI, and prolonged post-op immobility are all independent high-risk states for DVT — have a low threshold to flag for medical review even with a normal-looking calf." },
       ],
@@ -1661,7 +1661,7 @@ export const neuroExamLibraryData = {
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient looking away from the side being tested, to avoid a visual blink reflex confounding the result." },
         { tone: "blue", label: "🖐️ Technique", text: "Approach from the side (out of the patient's direct line of sight) and lightly touch the edge of the cornea (not just the sclera) with a fine wisp of cotton wool. Observe for a blink in both the touched eye (direct) and the other eye (consensual)." },
-        { tone: "purple", label: "🩺 Special consideration", text: "The afferent limb is CN V (trigeminal, ophthalmic division) and the efferent limb is CN VII (facial) — an absent direct response with an intact consensual response on retesting the other side localises to CN V; an absent response on both sides when testing one eye but normal when testing the other localises to CN VII on the side that failed to blink." },
+        { tone: "purple", label: "🩺 Special consideration", text: "The afferent limb is CN V (trigeminal, ophthalmic division) and the efferent limb is CN VII (facial). Touching one eye and getting NO blink in either eye means the afferent CN V on the touched side is affected. If the touched eye does not blink but the OTHER eye does, the efferent CN VII on the touched (non-blinking) side is affected." },
         { tone: "amber", label: "⚠️ Tip", text: "Contact lens wearers can have a physiologically reduced corneal reflex from chronic corneal desensitisation — ask about lens wear before interpreting a reduced response." },
       ],
     },
@@ -1673,7 +1673,7 @@ export const neuroExamLibraryData = {
     ]},
     interpret: {
       normal: ["Present bilaterally, both direct and consensual"],
-      abnormal: ["Absent direct response, intact consensual on the other side → CN V (afferent) lesion on the tested side", "Absent blink in the eye being watched regardless of which side is touched → CN VII (efferent) lesion on that side"],
+      abnormal: ["No blink in EITHER eye when the affected side is touched (normal when the other side is touched) → CN V (afferent) lesion on the touched side", "One eye never blinks whichever side is touched (the other eye blinks normally) → CN VII (efferent) lesion on the side that fails to blink"],
       note: "A reduced or absent corneal reflex, especially with facial numbness or weakness, warrants correlating with the rest of the CN V/VII exam findings rather than being read in isolation.",
     },
   },
@@ -1719,7 +1719,7 @@ export const neuroExamLibraryData = {
       caption: "Passive neck flexion and hip/knee manoeuvres, watch for involuntary guarding",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient supine, relaxed, on a firm surface." },
-        { tone: "blue", label: "🖐️ Technique", text: "Nuchal rigidity: passively flex the neck, chin toward chest — resistance/pain is positive. Brudzinski's sign: passively flex the neck and watch for involuntary flexion of the hips and knees. Kernig's sign: flex the hip and knee to 90°, then slowly extend the knee — pain/resistance in the hamstrings or spine, or involuntary flexion of the opposite leg, is positive." },
+        { tone: "blue", label: "🖐️ Technique", text: "Nuchal rigidity: passively flex the neck, chin toward chest — resistance/pain is positive. Brudzinski's sign: passively flex the neck and watch for involuntary flexion of the hips and knees (in the contralateral version, flexing one hip and knee makes the opposite leg flex too). Kernig's sign: flex the hip and knee to 90°, then slowly extend the knee — pain or resistance to full knee extension (with hamstring or back pain) is positive." },
         { tone: "purple", label: "🩺 Special consideration", text: "These are screening signs for meningeal irritation (meningitis, subarachnoid haemorrhage) — a positive finding, especially combined with fever, severe headache, or photophobia, is a medical emergency, not a routine physiotherapy finding to simply document and continue." },
         { tone: "amber", label: "⚠️ Tip", text: "Sensitivity is limited (roughly 5-30% in confirmed meningitis in adult studies) — a negative test does NOT rule out meningeal irritation. Never let a negative Kernig's/Brudzinski's override a strong clinical suspicion from history (fever, severe headache, neck stiffness, photophobia)." },
       ],
@@ -1781,14 +1781,14 @@ export const neuroExamLibraryData = {
     },
     scaleLabel: "Score bands",
     scale: { type: "table", rows: [
-      { k: "MMSE ≥25/30", v: "Normal" },
-      { k: "MMSE 21–24/30", v: "Mild impairment" },
-      { k: "MMSE 10–20/30", v: "Moderate impairment" },
-      { k: "MMSE <10/30", v: "Severe impairment" },
+      { k: "MMSE 24–30/30", v: "Normal (original cut-off: ≤23 suggests impairment)" },
+      { k: "MMSE 18–23/30", v: "Mild impairment" },
+      { k: "MMSE 10–17/30", v: "Moderate impairment" },
+      { k: "MMSE ≤9/30", v: "Severe impairment" },
       { k: "MoCA ≥26/30", v: "Normal (add 1 point if ≤12 years education)" },
     ]},
     interpret: {
-      normal: ["MMSE ≥25/30 or MoCA ≥26/30, adjusted for education"],
+      normal: ["MMSE ≥24/30 or MoCA ≥26/30, adjusted for education. Band cut-offs differ between published sources, so state which one you use"],
       abnormal: ["Below the normal cutoff → correlate with functional observations and consider referral for formal neuropsychological assessment if not already screened medically"],
       note: "A single low score is a prompt to look closer, not a diagnosis — document the actual score and instrument used every time, not just a global 'cognitively impaired' label.",
     },
