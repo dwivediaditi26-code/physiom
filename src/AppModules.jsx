@@ -118,6 +118,12 @@ import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./
 // the PDF can never drift out of sync with SOAP Notes again.
 import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
 import { REG_MOD_S } from "./SubjectiveObjective.jsx";
+// Ortho Outpatient "New Assessment" wizard data, for the PDF's Ortho cards
+// (see the orthoWizardData/orthoStepCard comment below in PdfReportsModal
+// for why this is a deliberate second source alongside buildRealtimeSOAP
+// above, not a re-introduction of the drift that comment warns against).
+import { orthoSummaryFormatters } from "./OrthoOutpatientAssessment.jsx";
+import { rowsForStep } from "./orthoSummary.jsx";
 
 // No UI of its own (2026-09-29, Aditi: "why so much written when clicking
 // pdf ... just generate pdf remove this page") -- this used to be a modal
@@ -157,6 +163,54 @@ function PdfReportsModal({ data, dx, onClose }) {
   const card = (icon, title, bodyHtml) => `<div class="pdf-card"><div class="pdf-card-title">${icon ? icon + " " : ""}${title}</div>${bodyHtml}</div>`;
   const row = (label, value) => (!value || value === "--") ? "" : `<div class="pdf-row"><span class="pdf-row-label">${escHtml(label)}</span><span class="pdf-row-val">${value}</span></div>`;
   const textRow = (value) => (!value || value === "--") ? "" : `<div class="pdf-row" style="display:block;">${value}</div>`;
+
+  // Ortho Outpatient "New Assessment" wizard's own saved snapshot -- when
+  // present, this (not the buildRealtimeSOAP-derived fields below) is the
+  // source for every Ortho-specific card (2026-09-29, Aditi: "i want pdf to
+  // have new assessment final review data only", "no soap or soap live
+  // idnt want in pdf"). PainSection/RedFlagScreenSection/RomSection/
+  // SpecialTestsSection/etc. (orthoCommonSections.jsx/orthoOutpatientSections.jsx/
+  // orthoRegionAssessments.jsx) never write back into the flat cc_main/
+  // cc_vas_now/red_flags/etc. fields buildRealtimeSOAP reads -- only
+  // Demographics does -- so those stay empty for any patient assessed this
+  // way even though Final Review shows real data for the same session.
+  // OrthoOutpatientAssessment.jsx's own saveAssessment() already persists
+  // the wizard's whole local `data` object here (onSave("ortho_outpatient_
+  // assessment", JSON.stringify({..., data}))) on every autosave, so it's
+  // reliably present by the time a report is generated.
+  // orthoSummaryFormatters/rowsForStep are the exact functions Final
+  // Review's own AssessmentSummary renders with (orthoSummary.jsx) --
+  // reusing them means this card shows literally the same labels/values as
+  // Final Review, instead of a third hand-maintained field mapping.
+  let orthoWizardData = null;
+  try {
+    const raw = d.ortho_outpatient_assessment;
+    const parsed = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    orthoWizardData = parsed?.data || null;
+  } catch {}
+  const ORTHO_STEP_LABELS = {
+    subjective: ["📝", "Subjective"], redFlags: ["🚩", "Red Flag Screen"], pain: ["📊", "Pain"],
+    observation: ["👁️", "General Observation"], palpation: ["✋", "Palpation"],
+    rom: ["📏", "Range of Motion"], mmt: ["💪", "Muscle Strength (MMT)"], jointMobility: ["🦴", "Joint Mobility"],
+    specialTests: ["🔬", "Special Tests"], neuroScreen: ["⚡", "Neuro Screen"], limbLength: ["📐", "Limb Length"],
+    kineticChain: ["⛓️", "Kinetic Chain"], cpa: ["🧠", "CPA (NKT)"], sttt: ["🦴", "STTT (Cyriax)"],
+    fma: ["🏃", "Functional Movement"], fascia: ["🕸️", "Fascia"], clinicalAssessment: ["🩺", "Clinical Assessment"],
+    carePlanProblems: ["🧩", "Problem List"], carePlanGoals: ["🎯", "Care Plan Goals"],
+  };
+  const orthoStepCard = (stepId) => {
+    if (!orthoWizardData) return "";
+    const [icon, label] = ORTHO_STEP_LABELS[stepId] || ["📄", stepId];
+    const result = rowsForStep({ id: stepId }, orthoWizardData[stepId] || {}, orthoSummaryFormatters);
+    let body = "";
+    if (Array.isArray(result)) {
+      body = result.map(({ label: l, value: val2 }) => row(l, escHtml(val2))).join("");
+    } else if (result?.groups) {
+      body = result.groups.map(({ heading, rows: grows }) => grows.length
+        ? `<div class="pdf-group-heading">${escHtml(heading)}</div>${grows.map(({ label: l, value: val2 }) => row(l, escHtml(val2))).join("")}`
+        : "").join("");
+    }
+    return body ? card(icon, label, body) : "";
+  };
 
   // Breadcrumb strip (Aditi: "specify which region ortho neuro cardio ip op
   // condition etc everything") -- specialty is derived from what's actually
@@ -594,7 +648,7 @@ function PdfReportsModal({ data, dx, onClose }) {
     };
 
     // Diagnosis
-    const dxMain  = v("soap_a_diagnosis") || v("soap_a");
+    const dxMain  = (orthoWizardData?.demographics?.provisionalDiagnosis ? escHtml(orthoWizardData.demographics.provisionalDiagnosis) : "") || v("soap_a_diagnosis") || v("soap_a");
     const dxIcd   = v("soap_icd10");
     const dxAssess = v("soap_assessment");
     const dxList  = dx?.dx || [];
@@ -651,59 +705,65 @@ function PdfReportsModal({ data, dx, onClose }) {
       <div class="body">
 
         ${sec("👤","Demographics","#334155", `
-          ${row("Occupation", occ)}
-          ${row("Referring GP", gp)}
+          ${row("Occupation", orthoWizardData?.demographics?.occupation ? escHtml(orthoWizardData.demographics.occupation) : occ)}
+          ${row("Referring GP", orthoWizardData?.demographics?.gp ? escHtml(orthoWizardData.demographics.gp) : gp)}
           ${row("Session type", "Initial assessment")}
           ${row("Clinician", therapist)}
         `)}
 
-        ${sec("📋","Chief complaint","#1e3a5f", `
-          ${cc && cc !== "--" ? `<div style="border-left:3px solid #1e3a5f;padding:7px 10px;background:#f8fafc;border-radius:0 6px 6px 0;font-size:9.5px;font-style:italic;color:#334155;margin-bottom:6px;">"${escHtml(cc)}"</div>` : ""}
-          ${row("Body region", bodyRegion)}
-          ${row("Mechanism / onset", onset)}
-          ${row("Duration", duration)}
-          ${row("Pain behaviour", behaviour)}
-        `)}
+        ${orthoWizardData ? `
+          ${orthoStepCard("subjective")}
+          ${orthoStepCard("redFlags")}
+          ${orthoStepCard("pain")}
+        ` : `
+          ${sec("📋","Chief complaint","#1e3a5f", `
+            ${cc && cc !== "--" ? `<div style="border-left:3px solid #1e3a5f;padding:7px 10px;background:#f8fafc;border-radius:0 6px 6px 0;font-size:9.5px;font-style:italic;color:#334155;margin-bottom:6px;">"${escHtml(cc)}"</div>` : ""}
+            ${row("Body region", bodyRegion)}
+            ${row("Mechanism / onset", onset)}
+            ${row("Duration", duration)}
+            ${row("Pain behaviour", behaviour)}
+          `)}
 
-        ${sec("📊","Pain scores (NRS /10)","#991b1b", `
-          ${row("Current", vasNow ? vasNow + "/10" : "")}
-          ${row("Worst", vasWorst ? vasWorst + "/10" : "")}
-          ${row("Best", vasBest ? vasBest + "/10" : "")}
-        `)}
+          ${sec("📊","Pain scores (NRS /10)","#991b1b", `
+            ${row("Current", vasNow ? vasNow + "/10" : "")}
+            ${row("Worst", vasWorst ? vasWorst + "/10" : "")}
+            ${row("Best", vasBest ? vasBest + "/10" : "")}
+          `)}
 
-        ${(aggAll.length > 0 || relAll.length > 0) ? sec("⬆️","Aggravating & easing factors","#78350f", `
-          ${row("Aggravating", escHtml(aggAll.join(", ")))}
-          ${row("Easing", escHtml(relAll.join(", ")))}
-        `) : ""}
+          ${(aggAll.length > 0 || relAll.length > 0) ? sec("⬆️","Aggravating & easing factors","#78350f", `
+            ${row("Aggravating", escHtml(aggAll.join(", ")))}
+            ${row("Easing", escHtml(relAll.join(", ")))}
+          `) : ""}
 
-        ${sec("🚩","Red & yellow flags","#991b1b", `
-          ${rfItems.length > 0 ? row("Red flags", escHtml(rfItems.join(", "))) : textRow(`<span style="color:#059669;font-weight:600;">✓ No red flags identified — safe to proceed</span>`)}
-          ${yfItems.length ? row("Yellow flags", escHtml(yfItems.join(", "))) : ""}
-          ${rfAction && rfAction !== "--" ? row("Action", rfAction) : ""}
-        `)}
+          ${sec("🚩","Red & yellow flags","#991b1b", `
+            ${rfItems.length > 0 ? row("Red flags", escHtml(rfItems.join(", "))) : textRow(`<span style="color:#059669;font-weight:600;">✓ No red flags identified — safe to proceed</span>`)}
+            ${yfItems.length ? row("Yellow flags", escHtml(yfItems.join(", "))) : ""}
+            ${rfAction && rfAction !== "--" ? row("Action", rfAction) : ""}
+          `)}
 
-        ${sec("🏥","Past medical history & medications","#4c1d95", `
-          ${row("Medical history", pmhConds)}
-          ${row("Current medications", pmhMeds)}
-          ${row("Allergies", pmhAllerg)}
-          ${row("Previous surgery", pmhSurg)}
-          ${row("Family history", pmhFam)}
-          ${row("Previous physiotherapy", v("hx_previous_injury") || v("hx_providers"))}
-          ${hxNotes && hxNotes !== "--" ? row("Notes", hxNotes) : ""}
-        `)}
+          ${sec("🏥","Past medical history & medications","#4c1d95", `
+            ${row("Medical history", pmhConds)}
+            ${row("Current medications", pmhMeds)}
+            ${row("Allergies", pmhAllerg)}
+            ${row("Previous surgery", pmhSurg)}
+            ${row("Family history", pmhFam)}
+            ${row("Previous physiotherapy", v("hx_previous_injury") || v("hx_providers"))}
+            ${hxNotes && hxNotes !== "--" ? row("Notes", hxNotes) : ""}
+          `)}
 
-        ${sec("🎯","Goals & lifestyle","#0f6e56", `
-          ${row("Patient goal", goal)}
-          ${row("Patient belief / concern", goalBelief)}
-          ${row("Exercise", lsExercise)}
-          ${row("Sleep quality", lsSleep)}
-          ${row("Stress level", lsStress)}
-          ${row("Work demands", lsWork)}
-          ${lsNotes && lsNotes !== "--" ? row("Lifestyle notes", lsNotes) : ""}
-          ${goalNotes && goalNotes !== "--" ? row("Goal notes", goalNotes) : ""}
-        `)}
+          ${sec("🎯","Goals & lifestyle","#0f6e56", `
+            ${row("Patient goal", goal)}
+            ${row("Patient belief / concern", goalBelief)}
+            ${row("Exercise", lsExercise)}
+            ${row("Sleep quality", lsSleep)}
+            ${row("Stress level", lsStress)}
+            ${row("Work demands", lsWork)}
+            ${lsNotes && lsNotes !== "--" ? row("Lifestyle notes", lsNotes) : ""}
+            ${goalNotes && goalNotes !== "--" ? row("Goal notes", goalNotes) : ""}
+          `)}
 
-        ${ccNotes && ccNotes !== "--" ? sec("📝","Clinician notes — subjective","#334155", textRow(ccNotes)) : ""}
+          ${ccNotes && ccNotes !== "--" ? sec("📝","Clinician notes — subjective","#334155", textRow(ccNotes)) : ""}
+        `}
 
       </div>
       ${pgFooter(1, totalPages)}
@@ -715,9 +775,13 @@ function PdfReportsModal({ data, dx, onClose }) {
       ${breadcrumbHtml}
       <div class="body">
 
-        ${objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
+        ${orthoWizardData ? (() => {
+          const stepIds = ["observation","palpation","rom","mmt","jointMobility","specialTests","neuroScreen","limbLength","kineticChain","cpa","sttt","fma","fascia","clinicalAssessment"];
+          const html = stepIds.map(orthoStepCard).join("");
+          return html || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>`;
+        })() : (objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
           objIcon(s.title), escHtml(s.title), null, renderObjBody(s.body)
-        )).join("")}
+        )).join(""))}
 
         ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
           ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => row(`Diagnosis ${i+1}`, `${escHtml(dx2.diagnosis||"")}${dx2.icd10?" · "+escHtml(dx2.icd10):""}${dx2.confidence?" · "+Math.round(dx2.confidence)+"%":""}`)).join("") : ""}
@@ -825,7 +889,7 @@ ${pdfHeader("Physiotherapy Treatment Plan","Evidence-Based Clinical Management P
 ${breadcrumbHtml}
 <div class="body">
   ${card("👤","Patient details & plan", `
-    ${row("Occupation", occ)}
+    ${row("Occupation", orthoWizardData?.demographics?.occupation ? escHtml(orthoWizardData.demographics.occupation) : occ)}
     ${row("Working diagnosis", dxLabel)}
     ${row("Pain (VAS now)", (d.pa_vas_now||d.cc_vas_now) ? escHtml(d.pa_vas_now||d.cc_vas_now) + "/10" : "")}
     ${row("Treatment frequency", escHtml(d.tx_frequency||d.soap_frequency||"2–3x per week"))}
@@ -833,7 +897,7 @@ ${breadcrumbHtml}
     ${row("Sessions planned", escHtml(String(d.tx_plan_sessions||d.plan_sessions||"")))}
     ${row("Sessions done", String(sessions.length))}
   `)}
-  ${card("🎯","Care plan goals", `
+  ${orthoStepCard("carePlanGoals") || card("🎯","Care plan goals", `
     <div class="pdf-group-heading">Short-term (2–4 wks)</div>
     ${[d.ar_goal_pain||"Pain reduction ≥30% on VAS", d.ar_goal_function||"Improve functional ROM", "Reduce swelling/inflammation"].map(g=>textRow(escHtml(String(g)))).join("")}
     <div class="pdf-group-heading">Medium-term (4–8 wks)</div>

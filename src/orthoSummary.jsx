@@ -17,7 +17,7 @@ import { AssessmentTitle, SummaryRow } from "./assessmentTypography.jsx";
    rows}] } so Problem List/Goals/Treatment render as their own labeled
    blocks rather than one flat list; isGrouped()/groupsForStep() below
    normalize both shapes to a flat row count where a plain count is needed. */
-function rowsForStep(step, section, formatters) {
+export function rowsForStep(step, section, formatters) {
   const formatter = formatters?.[step.id];
   if (formatter) return formatter(section);
   return Object.entries(section)
