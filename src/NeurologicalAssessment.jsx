@@ -1,3 +1,4 @@
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
@@ -121,6 +122,7 @@ const STEP_META = [
   { id: "safety", icon: <Icon name="siren" />, label: "Safety / Medical Stability" },
   { id: "subjective", icon: <Icon name="speech" />, label: "Subjective Assessment" },
   { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "medicalRecords", icon: <Icon name="folder" />, label: "Medical Records" },
   { id: "observation", icon: <Icon name="eye" />, label: "General Observation" },
   { id: "cognition", icon: <Icon name="brain" />, label: "Mental Status / Cognition" },
   { id: "cranial", icon: <Icon name="eye" />, label: "Cranial Nerve Screen" },
@@ -2073,7 +2075,7 @@ const ENTRY_MODES = [
 const DOMAIN_STEP_IDS = ["cognition", "cranial", "sensory", "motor", "tone", "coordination", "balance", "gait", "functional", "outcomes"];
 const CAREPLAN_STEP_IDS = ["carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanPlan", "carePlanSessions"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
+const ALWAYS_STEP_IDS = ["demographics", "safety", "subjective", "chart", "medicalRecords", "observation", "interpretation", ...CAREPLAN_STEP_IDS, "precautions", "exercisePrescription", "summary"];
 const FULL_STEP_ORDER = ASSESS_STEPS.map((s) => s.id);
 
 function buildStepOrder(domainStepIds, customIds) {
@@ -2987,6 +2989,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
               {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
               {current.id === "chart" && <ChartSection data={data} setData={setData} />}
+              {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
               {current.id === "observation" && <ObservationSection data={data} setData={setData} setting={setting} />}
               {current.id === "cognition" && <CognitionSection data={data} setData={setData} />}
               {current.id === "cranial" && <CranialNervesSection data={data} setData={setData} />}

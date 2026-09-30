@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { TextField, DateField, SelectField, Segmented, TextArea, YesNo, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { Icon } from "./StepIcons.jsx";
-import { SurgeonProtocolSection } from "./SurgeonProtocol.jsx";
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import { formatBodyChartSummary } from "./BodyChartPro.jsx";
 import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
@@ -47,15 +47,15 @@ function formatPainSection(section) {
    resulting assessment.
    ============================================================ */
 export const IPD_CONDITIONS = [
-  { id: "fracture", icon: "🦴", label: "Fracture / Trauma", desc: "Trauma, immobilization, weight-bearing restrictions", optional: ["surgeonProtocol", "edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
-  { id: "postop", icon: "🏥", label: "Post-operative", desc: "General surgical recovery on the ward", optional: ["surgeonProtocol", "edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
-  { id: "jointReplacement", icon: "🦿", label: "Joint Replacement", desc: "TKR / THR / shoulder / other arthroplasty", optional: ["surgeonProtocol", "edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "fracture", icon: "🦴", label: "Fracture / Trauma", desc: "Trauma, immobilization, weight-bearing restrictions", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "postop", icon: "🏥", label: "Post-operative", desc: "General surgical recovery on the ward", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "jointReplacement", icon: "🦿", label: "Joint Replacement", desc: "TKR / THR / shoulder / other arthroplasty", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "dislocation", icon: "🚨", label: "Dislocation", desc: "Reduction history, precautions, neurovascular status", optional: ["edema", "neurovascular", "rom", "mmt", "balance", "activityTolerance"] },
   { id: "arthritis", icon: "🦴", label: "Arthritis / Degenerative", desc: "Chronic joint pain and functional decline", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
-  { id: "infection", icon: "🦠", label: "Infection", desc: "Medically-documented infection under treatment", optional: ["surgeonProtocol", "edema", "wound", "neurovascular", "rom", "mmt", "activityTolerance"] },
+  { id: "infection", icon: "🦠", label: "Infection", desc: "Medically-documented infection under treatment", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "activityTolerance"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, contusion", optional: ["edema", "rom", "mmt", "jointMobility", "activityTolerance", "outcomeMeasure"] },
-  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["surgeonProtocol", "neurovascular", "neuroScreen", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
-  { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["surgeonProtocol", "edema", "wound", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "neuroScreen", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["edema", "wound", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "deconditioning", icon: "🧍", label: "Deconditioning / Mobility Limitation", desc: "Generalised weakness / reduced mobility", optional: ["rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "other", icon: "❓", label: "Other", desc: "Doesn't fit the templates above", optional: ["rom", "mmt", "activityTolerance"] },
@@ -65,13 +65,13 @@ const FALLBACK_OPTIONAL = ["edema", "neurovascular", "rom", "mmt", "activityTole
 
 const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
-const BASE_IDS = ["caseInfo", "medicalReview", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
-const OPTIONAL_IDS = ["surgeonProtocol", "edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
+const BASE_IDS = ["caseInfo", "medicalReview", "medicalRecords", "precautions", "vitals", "subjective", "pain", "observation", "functionalMobility", "gait", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const OPTIONAL_IDS = ["edema", "wound", "neurovascular", "neuroScreen", "rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure", "specialTests"];
 
 const ORDERED_ALL = [
   "caseInfo",
   "medicalReview",
-  "surgeonProtocol",
+  "medicalRecords",
   "precautions",
   "vitals",
   "subjective",
@@ -98,7 +98,7 @@ const ORDERED_ALL = [
 const STEP_META = {
   caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
   medicalReview: { icon: <Icon name="folder" />, label: "Medical / Chart Review" },
-  surgeonProtocol: { icon: <Icon name="folder" />, label: "Surgeon's Protocol" },
+  medicalRecords: { icon: <Icon name="folder" />, label: "Medical Records" },
   precautions: { icon: <Icon name="flag" />, label: "Precautions & Safety" },
   vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
   subjective: { icon: <Icon name="notes" />, label: "Subjective" },
@@ -455,7 +455,7 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
 
         <div className="content">
           {current.id === "caseInfo" && <CaseInfoSection data={data} setData={setData} />}
-          {current.id === "surgeonProtocol" && <SurgeonProtocolSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
+          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "medicalReview" && <MedicalReviewSection data={data} setData={setData} condition={condition} selectedRegions={selectedRegions} />}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}

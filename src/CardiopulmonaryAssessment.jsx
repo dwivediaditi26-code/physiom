@@ -1,3 +1,4 @@
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
@@ -121,6 +122,7 @@ const STEP_META = [
   { id: "safety", icon: <Icon name="flag" />, label: "Safety Screening" },
   { id: "subjective", icon: <Icon name="notes" />, label: "Subjective Assessment" },
   { id: "chart", icon: <Icon name="folder" />, label: "Medical / Chart Review" },
+  { id: "medicalRecords", icon: <Icon name="folder" />, label: "Medical Records" },
   { id: "vitals", icon: <Icon name="heart" />, label: "Baseline Vitals" },
   { id: "cardio", icon: <Icon name="heart" />, label: "Cardiovascular Examination" },
   { id: "resp", icon: <Icon name="lungs" />, label: "Respiratory Examination" },
@@ -168,6 +170,12 @@ const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.inc
 // NeurologicalAssessment.jsx's own ensureAlwaysSteps for the same reason.
 function ensureCarePlanSteps(order) {
   if (!Array.isArray(order) || !order.length) return order;
+  // Medical Records (2026-09) -- saved assessments predate it, so slot it in right after Chart Review.
+  if (!order.includes("medicalRecords")) {
+    const chartIdx = order.indexOf("chart");
+    order = [...order];
+    order.splice(chartIdx === -1 ? Math.min(order.length, 5) : chartIdx + 1, 0, "medicalRecords");
+  }
   const present = new Set(order);
   const missing = CAREPLAN_STEP_IDS.filter((id) => !present.has(id));
   if (!missing.length) return order;
@@ -2882,6 +2890,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
           {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
           {current.id === "chart" && <ChartSection data={data} setData={setData} setting={setting} system={system} />}
+          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} system={system} />}
           {current.id === "cardio" && <CardioSection data={data} setData={setData} system={system} />}
           {current.id === "resp" && <RespSection data={data} setData={setData} system={system} />}

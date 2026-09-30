@@ -1,4 +1,4 @@
-import { fileToDoc, isProtocolDoc, PROTOCOL_CATEGORY, PROTOCOL_ACCEPT } from "./SurgeonProtocol.jsx";
+import { fileToDoc, docTypeOf, withDocType, DOC_TYPES, DOC_ACCEPT } from "./MedicalRecords.jsx";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NeuroCarePlanSection, CarePlanSection, doseLine } from "./NeuroCarePlan.jsx";
 import { CardioCarePlanSection } from "./CardioCarePlan.jsx";
@@ -127,46 +127,22 @@ function PainTrend({ sessions }) {
 function DocumentsPanel({ patient, onSaveField }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const protocolInputRef = useRef(null);
+  const [uploadType, setUploadType] = useState("");
   const uploadedDocs = patient?.data?.uploaded_docs || [];
   const setUploadedDocs = (docs) => {
     if (typeof onSaveField === "function" && patient?.id) onSaveField(patient.id, { uploaded_docs: docs });
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert("File too large. Maximum size is 5MB."); return; }
-    setUploading(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const newDoc = {
-        id: Date.now().toString(),
-        name: file.name,
-        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        size: file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(1) + " MB" : Math.round(file.size / 1024) + " KB",
-        type: file.type,
-        icon: file.type.includes("pdf") ? "📋" : file.type.includes("image") ? "🖼" : file.type.includes("video") ? "🎥" : "📄",
-        dataUrl: ev.target.result,
-        uploadedAt: new Date().toISOString(),
-      };
-      setUploadedDocs([newDoc, ...uploadedDocs]);
-      setUploading(false);
-    };
-    reader.onerror = () => { setUploading(false); alert("Failed to read file."); };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
-  // Same store, tagged so it also appears in the assessment's Surgeon's Protocol step.
-  const handleProtocolUpload = async (e) => {
+  // Same store as the assessments' Medical Records step (data.uploaded_docs), so a
+  // file added here shows there too. Photos are downscaled to fit the 5 MB cap.
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (!files.length) return;
     setUploading(true);
     try {
       const added = [];
-      for (const f of files) added.push(await fileToDoc(f, { category: PROTOCOL_CATEGORY, source: "medical_records" }));
+      for (const f of files) added.push(await fileToDoc(f, { docType: uploadType || null, source: "medical_records" }));
       setUploadedDocs([...added, ...uploadedDocs]);
     } catch (err) {
       alert(err.message || "Upload failed.");
@@ -174,11 +150,7 @@ function DocumentsPanel({ patient, onSaveField }) {
       setUploading(false);
     }
   };
-  const handleToggleProtocol = (id) => setUploadedDocs(uploadedDocs.map((d) => {
-    if (d.id !== id) return d;
-    if (isProtocolDoc(d)) { const { category, ...rest } = d; return rest; }
-    return { ...d, category: PROTOCOL_CATEGORY };
-  }));
+  const handleSetType = (id, type) => setUploadedDocs(uploadedDocs.map((d) => (d.id === id ? withDocType(d, type) : d)));
 
   const handleDeleteDoc = (id) => setUploadedDocs(uploadedDocs.filter((d) => d.id !== id));
   const handleDownloadDoc = (doc) => { const a = document.createElement("a"); a.href = doc.dataUrl; a.download = doc.name; a.click(); };
@@ -192,8 +164,15 @@ function DocumentsPanel({ patient, onSaveField }) {
 
   return (
     <>
-      <input ref={fileInputRef} type="file" style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.mp4" onChange={handleFileUpload} />
-      <input ref={protocolInputRef} type="file" multiple style={{ display: "none" }} accept={PROTOCOL_ACCEPT} onChange={handleProtocolUpload} />
+      <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} accept={DOC_ACCEPT} onChange={handleFileUpload} />
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 6 }}>What are you uploading? (applies to the next upload)</div>
+        <select aria-label="Type for the next upload" value={uploadType} onChange={(e) => setUploadType(e.target.value)}
+          style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#fff", fontSize: 13, fontFamily: "inherit", width: "100%" }}>
+          <option value="">Type: not set</option>
+          {DOC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
       <div onClick={() => fileInputRef.current?.click()} style={{ background: "#F5F3FF", border: `2px dashed ${C.primary}`, borderRadius: 16, padding: "28px 20px", textAlign: "center", marginBottom: 16, cursor: "pointer", opacity: uploading ? 0.6 : 1 }}>
         {uploading ? (
           <><div style={{ fontSize: 36, marginBottom: 8 }}>⏳</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Uploading…</div></>
@@ -201,10 +180,6 @@ function DocumentsPanel({ patient, onSaveField }) {
           <><div style={{ fontSize: 36, marginBottom: 8 }}>📤</div><div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>Upload Document</div><div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>PDF, Image, MRI, X-Ray — max 5MB</div></>
         )}
       </div>
-      <button type="button" onClick={() => protocolInputRef.current?.click()} disabled={uploading}
-        style={{ width: "100%", marginBottom: 16, padding: "12px", borderRadius: 12, border: `1.5px solid ${C.primary}`, background: "#fff", color: C.primary, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
-        🏥 Upload surgeon's protocol
-      </button>
       <Card>
         <CardTitle action={<div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>{uploadedDocs.length} file{uploadedDocs.length !== 1 ? "s" : ""}</div>}>Documents</CardTitle>
         {uploadedDocs.length === 0 ? (
@@ -216,11 +191,15 @@ function DocumentsPanel({ patient, onSaveField }) {
                 {doc.type?.includes("image") ? <img src={doc.dataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{doc.icon}</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => handlePreviewDoc(doc)}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}{isProtocolDoc(doc) && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#ede9fe", borderRadius: 6, padding: "2px 6px" }}>SURGEON'S PROTOCOL</span>}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}{docTypeOf(doc) && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#ede9fe", borderRadius: 6, padding: "2px 6px" }}>{docTypeOf(doc).toUpperCase()}</span>}</div>
                 <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>{doc.date} · {doc.size}</div>
               </div>
               <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                <button onClick={() => handleToggleProtocol(doc.id)} title={isProtocolDoc(doc) ? "Unmark as surgeon's protocol" : "Mark as surgeon's protocol"} style={{ width: 30, height: 30, borderRadius: 8, background: isProtocolDoc(doc) ? "#ede9fe" : C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>🏥</button>
+                <select aria-label={`Type of ${doc.name}`} value={docTypeOf(doc)} onChange={(e) => handleSetType(doc.id, e.target.value)}
+                  style={{ height: 30, maxWidth: 110, borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", fontSize: 11 }}>
+                  <option value="">Type…</option>
+                  {DOC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
                 <button onClick={() => handleDownloadDoc(doc)} title="Download" style={{ width: 30, height: 30, borderRadius: 8, background: C.primaryBg, border: "none", cursor: "pointer", fontSize: 13 }}>⬇</button>
                 <button onClick={() => handleDeleteDoc(doc.id)} title="Delete" style={{ width: 30, height: 30, borderRadius: 8, background: "#FEF2F2", border: "none", cursor: "pointer", fontSize: 13 }}>🗑</button>
               </div>

@@ -20,7 +20,7 @@ import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOut
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
 import { resolveSiteOptions, resolveIncisionOptions, withFallbacks } from "./orthoSurgicalLibrary.js";
-import { SurgeonProtocolSection } from "./SurgeonProtocol.jsx";
+import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
@@ -95,14 +95,14 @@ const GENERIC_INCISION_TYPES = ["Anterior", "Posterior", "Medial", "Lateral", "A
 const CAREPLAN_STEP_IDS = ["carePlanPlan", "carePlanProblems", "carePlanGoals", "carePlanTreatment", "carePlanSessions", "carePlanProgress"];
 const CAREPLAN_PHASE_BY_STEP = { carePlanProblems: "problems", carePlanGoals: "goals", carePlanTreatment: "treatment", carePlanPlan: "plan", carePlanSessions: "sessions", carePlanProgress: "progress" };
 /* Always present for every post-op patient, regardless of surgery type. */
-const BASE_IDS = ["caseInfo", "surgicalReview", "surgeonProtocol", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
+const BASE_IDS = ["caseInfo", "surgicalReview", "medicalRecords", "vitals", "pain", "observation", "surgicalSite", "rom", "mmt", "functionalMobility", "gait", "balance", "activityTolerance", "outcomeMeasure", "impression", ...CAREPLAN_STEP_IDS, "review"];
 /* Only added via "+ Add Assessment" unless a condition promotes them. */
 const OPTIONAL_IDS = ["jointMobility", "specialTests", "neuroScreen", "residualLimb", "prosthesis"];
 
 const ORDERED_ALL = [
   "caseInfo",
   "surgicalReview",
-  "surgeonProtocol",
+  "medicalRecords",
   "vitals",
   "pain",
   "observation",
@@ -127,7 +127,7 @@ const ORDERED_ALL = [
 const STEP_META = {
   caseInfo: { icon: <Icon name="clipboard" />, label: "Patient / Case Info" },
   surgicalReview: { icon: <Icon name="stethoscope" />, label: "Surgical Review" },
-  surgeonProtocol: { icon: <Icon name="folder" />, label: "Surgeon's Protocol" },
+  medicalRecords: { icon: <Icon name="folder" />, label: "Medical Records" },
   vitals: { icon: <Icon name="heart" />, label: "Vital Signs" },
   pain: { icon: <Icon name="pain" />, label: "Pain" },
   observation: { icon: <Icon name="eye" />, label: "Observation" },
@@ -512,7 +512,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
         <div className="content">
           {current.id === "caseInfo" && <CaseInfoSection data={data} setData={setData} />}
           {current.id === "surgicalReview" && <SurgicalReviewSection data={data} setData={setData} condition={condition} selectedRegions={selectedRegions} />}
-          {current.id === "surgeonProtocol" && <SurgeonProtocolSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
+          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} />}
           {current.id === "pain" && <PainSection data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
           {current.id === "observation" && <ObservationSection data={data} setData={setData} showResponseToActivity />}
