@@ -19,6 +19,7 @@ import {
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { AssessmentSummary } from "./orthoSummary.jsx";
 import { SurgicalDetailsSection } from "./orthoSurgicalDetails.jsx";
+import { resolveSiteOptions, resolveIncisionOptions, withFallbacks } from "./orthoSurgicalLibrary.js";
 import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
@@ -182,8 +183,9 @@ function SurgicalReviewSection({ data, setData, condition, selectedRegions }) {
 
 function SurgicalSiteSection({ data, setData, condition, selectedRegions }) {
   const [d, set] = useSectionData(data, setData, "surgicalSite");
-  const siteOptions = selectedRegions?.length ? selectedRegions.map((r) => regionLabelOf(r)) : ["Not specified"];
-  const incisionOptions = INCISION_TYPES_BY_CONDITION[condition] || GENERIC_INCISION_TYPES;
+  const siteOptions = withFallbacks(resolveSiteOptions(selectedRegions, regionLabelOf));
+  const regionIncisions = resolveIncisionOptions(selectedRegions, condition);
+  const incisionOptions = withFallbacks(regionIncisions.length ? regionIncisions : (INCISION_TYPES_BY_CONDITION[condition] || GENERIC_INCISION_TYPES));
   return (
     <>
       <SectionIntro icon={<Icon name="bandage" />} title="Surgical Site" info="Describe what you observe — do not infer infection from appearance alone. Escalate concerning findings (spreading redness, purulent drainage, fever) to the medical team." />
