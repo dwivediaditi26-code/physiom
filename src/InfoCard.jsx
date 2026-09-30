@@ -491,7 +491,8 @@ const s = {
   illusPlaceholderIcon: { fontSize: 20, opacity: 0.6 },
   illusCap: { fontSize: 10, color: PURPLE_DEEP, fontWeight: 700, textAlign: "center", padding: "0 12px" },
   illusImg: { borderRadius: 12, marginBottom: 9, border: `1px solid ${LINE}`, overflow: "hidden", background: "#FAF9FD" },
-  illusImgTag: { width: "100%", maxHeight: 160, objectFit: "cover", display: "block" },
+  // height:auto lets the box grow to each photo's own shape; contain (not cover) so nothing is cropped. maxHeight only stops a very tall portrait photo from pushing the text out of view.
+  illusImgTag: { width: "100%", height: "auto", maxHeight: "50vh", objectFit: "contain", display: "block", margin: "0 auto" },
   illusImgCap: { fontSize: 9.5, color: MUTED, textAlign: "center", padding: "5px 8px" },
   imgDots: { display: "flex", justifyContent: "center", gap: 6, marginTop: -3, marginBottom: 10 },
   imgDot: { width: 6, height: 6, borderRadius: "50%", background: "#E3DEF0", cursor: "pointer" },
