@@ -13,27 +13,7 @@
 // checklist fields ARE the structured answer, with no separate free-text
 // notes layer to re-read.
 import { runCervicalReasoningEngine, evaluateRedFlagOverride } from "./cervicalReasoningEngine.js";
-
-function arr(regionData, key) {
-  const x = regionData[key];
-  if (!x) return [];
-  return String(x).split(", ").filter(Boolean);
-}
-function str(regionData, key) {
-  return String(regionData[key] || "").trim();
-}
-function multicheckState(regionData, key, negativeOptions) {
-  const values = arr(regionData, key);
-  if (values.length === 0) return { state: "unknown", values: [] };
-  const positives = values.filter((v) => !negativeOptions.includes(v));
-  if (positives.length === 0) return { state: "absent", values: [] };
-  return { state: "present", values: positives };
-}
-function selectState(regionData, key) {
-  const v = str(regionData, key);
-  if (!v) return { state: "unknown", value: null };
-  return { state: "answered", value: v };
-}
+import { arr, str, multicheckState, selectState } from "./reasoningHelpers.js";
 
 /**
  * Reads the Cervical region checklist (plus the shared Subjective chief

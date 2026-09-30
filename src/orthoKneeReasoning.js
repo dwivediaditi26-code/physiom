@@ -2,6 +2,7 @@
 // and the Knee reasoning engine in reasoningEngine/normalize.ts.
 import { runReasoningFromData } from "./reasoningEngine/index";
 import kneeEvidence from "./reasoningEngine/regions/knee.evidence.json";
+import { specialTestValue, joinMulti, tierOf } from "./reasoningHelpers.js";
 
 const ROM_IDS = ["rom_kflex", "rom_kext"];
 const MMT_IDS = ["mmt_quad"];
@@ -18,19 +19,6 @@ kneeEvidence.diagnoses.forEach((m, i) => { FIXED_ID_BY_NAME[m.name] = `KN${Strin
 
 const SUPPORTING_TOTAL_BY_NAME = {};
 kneeEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
-
-function specialTestValue(raw) {
-  if (raw == null) return "";
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object") return raw.right || raw.left || raw.bilateral || "";
-  return "";
-}
-
-function joinMulti(v) {
-  if (!v) return "";
-  if (Array.isArray(v)) return v.join(", ");
-  return String(v);
-}
 
 function buildFlatKneeData(data) {
   const flat = {};
@@ -96,14 +84,6 @@ function buildFlatKneeData(data) {
 export function hasKneeChecklistData(data) {
   const flat = buildFlatKneeData(data);
   return Object.values(flat).some((v) => String(v || "").trim());
-}
-
-function tierOf(d) {
-  if (d.excluded) return "Unlikely";
-  if (!d.supportingFindings || d.supportingFindings.length === 0) return "Insufficient data";
-  if (d.band === "Low") return "Weak match";
-  if (d.band === "Moderate") return "Possible match";
-  return "Strong match";
 }
 
 export function runKneeDifferential(data) {

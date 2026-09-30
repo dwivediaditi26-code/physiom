@@ -5,6 +5,7 @@
 import { runReasoningFromData } from "./reasoningEngine/index";
 import ankleEvidence from "./reasoningEngine/regions/ankle.evidence.json";
 import footEvidence from "./reasoningEngine/regions/foot.evidence.json";
+import { specialTestValue, joinMulti, tierOf } from "./reasoningHelpers.js";
 
 const ROM_IDS = ["rom_adf", "rom_apf", "rom_ainv", "rom_aev"];
 const MMT_IDS = ["mmt_ta", "mmt_soleus", "mmt_tp", "mmt_peronls"];
@@ -21,19 +22,6 @@ footEvidence.diagnoses.forEach((m, i) => { FIXED_ID_BY_NAME[m.name] = `FT${Strin
 const SUPPORTING_TOTAL_BY_NAME = {};
 ankleEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 footEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
-
-function specialTestValue(raw) {
-  if (raw == null) return "";
-  if (typeof raw === "string") return raw;
-  if (typeof raw === "object") return raw.right || raw.left || raw.bilateral || "";
-  return "";
-}
-
-function joinMulti(v) {
-  if (!v) return "";
-  if (Array.isArray(v)) return v.join(", ");
-  return String(v);
-}
 
 function buildFlatAnkleFootData(data) {
   const flat = {};
@@ -88,14 +76,6 @@ function buildFlatAnkleFootData(data) {
 export function hasAnkleFootChecklistData(data) {
   const flat = buildFlatAnkleFootData(data);
   return Object.values(flat).some((v) => String(v || "").trim());
-}
-
-function tierOf(d) {
-  if (d.excluded) return "Unlikely";
-  if (!d.supportingFindings || d.supportingFindings.length === 0) return "Insufficient data";
-  if (d.band === "Low") return "Weak match";
-  if (d.band === "Moderate") return "Possible match";
-  return "Strong match";
 }
 
 export function runAnkleFootDifferential(data) {
