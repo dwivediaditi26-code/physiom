@@ -9,10 +9,20 @@
 //     research/practice news, category 'research'.
 //   - WHO's global news feed -- general health, kept only when a headline
 //     actually mentions physio/rehab/disability terms, category 'alert'.
-// No job-listing source is wired in yet -- a free, reliable RSS feed of real
-// physiotherapy vacancies (India or international) doesn't exist; job_india
-// and job_international stay empty until a real source is found. Don't
-// invent one here.
+//   - freejobalert.com / sarkariresult.com -- general Indian government-job
+//     aggregators (not official .gov.in feeds, everything from railways to
+//     banking), category 'job_india'. Filtered to a narrow "physiotherap" /
+//     "physical therapist" match (not the broader RELEVANCE_KEYWORDS below
+//     -- a job listing needs a precise role match, not a loose topic match,
+//     or "Physical Training Instructor" posts would show up as physio
+//     jobs). Checked 2026-09-30: both feeds work, but neither had a real
+//     physio vacancy posted that day -- left empty rather than padded with
+//     a near-miss. verificationOf() in db.js already marks any source not
+//     on its trusted allowlist "Needs review", which is correct here --
+//     these are aggregators republishing notices, not the hiring body.
+// No international job-listing source is wired in -- a free, reliable RSS
+// feed of real overseas physiotherapy vacancies doesn't exist; job_international
+// stays empty until a real source is found. Don't invent one here.
 //
 // Trigger: Vercel Cron (see vercel.json "crons"), once daily. Protected by
 // CRON_SECRET -- Vercel sends `Authorization: Bearer $CRON_SECRET`
@@ -21,6 +31,20 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gkhcysvayjrkrufcnqvz.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const RELEVANCE_KEYWORDS = [
+  'physio', 'physical therapy', 'rehabilit', 'musculoskeletal', 'mobility',
+  'disability', 'stroke recovery', 'orthopaedic', 'orthopedic', 'exercise therapy',
+  'exercise', 'osteoarthritis', 'arthritis', 'back pain', 'joint pain', 'knee',
+  'hip replacement', 'spine', 'sports injury', 'sports medicine', 'balance training',
+  'fall prevention', 'gait', 'chronic pain', 'physical activity',
+];
+
+// Narrower than RELEVANCE_KEYWORDS on purpose -- a JOB listing needs a
+// precise role match. "Physical Training Instructor" (a real, common govt
+// post, e.g. UPSSSC PTI) is a sports-coaching role, not a physiotherapist
+// one, and must not match here even though it would under the broader list.
+const JOB_KEYWORDS = ['physiotherap', 'physical therapist'];
 
 const SOURCES = [
   {
@@ -31,6 +55,7 @@ const SOURCES = [
     // (verified 2026-09-30: only 2 of 5 sampled items were actually
     // physio-relevant) -- still filtered, same as WHO below.
     requireKeywordMatch: true,
+    keywords: RELEVANCE_KEYWORDS,
     max: 5,
   },
   {
@@ -38,16 +63,25 @@ const SOURCES = [
     url: 'https://www.who.int/rss-feeds/news-english.xml',
     category: 'alert',
     requireKeywordMatch: true,
+    keywords: RELEVANCE_KEYWORDS,
     max: 3,
   },
-];
-
-const RELEVANCE_KEYWORDS = [
-  'physio', 'physical therapy', 'rehabilit', 'musculoskeletal', 'mobility',
-  'disability', 'stroke recovery', 'orthopaedic', 'orthopedic', 'exercise therapy',
-  'exercise', 'osteoarthritis', 'arthritis', 'back pain', 'joint pain', 'knee',
-  'hip replacement', 'spine', 'sports injury', 'sports medicine', 'balance training',
-  'fall prevention', 'gait', 'chronic pain', 'physical activity',
+  {
+    name: 'FreeJobAlert (Govt jobs)',
+    url: 'https://freejobalert.com/feed/',
+    category: 'job_india',
+    requireKeywordMatch: true,
+    keywords: JOB_KEYWORDS,
+    max: 5,
+  },
+  {
+    name: 'SarkariResult (Govt jobs)',
+    url: 'https://www.sarkariresult.com/feed/',
+    category: 'job_india',
+    requireKeywordMatch: true,
+    keywords: JOB_KEYWORDS,
+    max: 5,
+  },
 ];
 
 function decodeEntities(s) {
@@ -95,9 +129,9 @@ function parseRssItems(xml) {
   })).filter((it) => it.title && it.link);
 }
 
-function isRelevant(item) {
+function isRelevant(item, keywords) {
   const hay = `${item.title} ${item.description}`.toLowerCase();
-  return RELEVANCE_KEYWORDS.some((kw) => hay.includes(kw));
+  return keywords.some((kw) => hay.includes(kw));
 }
 
 function toRow(item, source) {
@@ -140,7 +174,7 @@ export default async function handler(req, res) {
       if (!r.ok) { results.push({ source: source.name, ok: false, error: `HTTP ${r.status}` }); continue; }
       const xml = await r.text();
       let items = parseRssItems(xml);
-      if (source.requireKeywordMatch) items = items.filter(isRelevant);
+      if (source.requireKeywordMatch) items = items.filter((it) => isRelevant(it, source.keywords));
       items = items.slice(0, source.max);
       items.forEach((item) => rows.push(toRow(item, source)));
       results.push({ source: source.name, ok: true, found: items.length });
