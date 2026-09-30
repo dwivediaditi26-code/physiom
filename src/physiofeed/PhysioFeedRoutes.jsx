@@ -6,6 +6,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import OtherProfilePage from "./pages/OtherProfilePage.jsx";
 import EvidencePage from "./pages/EvidencePage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
+import NewsPage from "./pages/NewsPage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import CaseDiscussionsPage from "./pages/CaseDiscussionsPage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
@@ -36,6 +37,7 @@ export default function PhysioFeedRoutes() {
         <Route path="/profile/:userId" element={<OtherProfilePage />} />
         <Route path="/evidence" element={<EvidencePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/news" element={<NewsPage />} />
         {/* Communities/Groups (2026-09-25): dropped from the nav (PRO_NAV) --
             see constants.js -- but the route stays reachable rather than
             deleting the feature outright; nothing else in the app links

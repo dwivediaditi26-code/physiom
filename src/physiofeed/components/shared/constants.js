@@ -102,6 +102,7 @@ export const CLINICAL_NAV = [
 export const PRO_NAV = [
   { path: "/feed", label: "Physio Feed", icon: "Rss" },
   { path: "/explore", label: "Opportunity", icon: "Compass" },
+  { path: "/news", label: "News", icon: "Newspaper" },
   { path: "/discussions", label: "Case Discussion", icon: "MessageCircle" },
   { path: "/people", label: "People", icon: "User" },
   { path: "/evidence", label: "Evidence", icon: "BookOpen", badge: "New" },

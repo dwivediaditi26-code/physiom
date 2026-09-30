@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, matchPath, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, Home, Briefcase, MessageCircle, Users, BookOpen, Bookmark } from "lucide-react";
+import { Search, Bell, MessageSquare, ChevronDown, ChevronLeft, Home, Briefcase, MessageCircle, Users, BookOpen, Bookmark, Newspaper } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import { initialsOf, PRO_NAV } from "../shared/constants.js";
 import { useAppData } from "../../context/AppDataContext.jsx";
@@ -32,11 +32,18 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 // lets Evidence/Saved scroll into view, same as the pill strip did, without
 // hard-coding a column count. Bg color is per-item and NEVER changes with
 // selection (per spec) -- only the label color and the underline move.
+// Indexed by path with .find(), not array position -- PRO_NAV grew a
+// "/news" entry between Opportunity and Case Discussion (2026-09-30,
+// Aditi's arrow-annotated screenshot: News belongs beside Opportunity in
+// the top nav itself, not nested as a sub-tab inside Explore) and a
+// positional PRO_NAV[i] lookup here would have silently pointed every
+// item after it one slot to the left.
 const NAV_ITEMS = [
-  { ...PRO_NAV[0], label: "Feed", Icon: Home, bg: "#F0E8FF", color: "#6D28D9", filled: true },
-  { ...PRO_NAV[1], Icon: Briefcase, bg: "#DDF8EA", color: "#16866B", filled: true },
-  { ...PRO_NAV[2], Icon: MessageCircle, bg: "#FFF4D6", color: "#16866B", filled: false },
-  { ...PRO_NAV[3], Icon: Users, bg: "#FCE4ED", color: "#DB2777", filled: true },
+  { ...PRO_NAV.find((p) => p.path === "/feed"), label: "Feed", Icon: Home, bg: "#F0E8FF", color: "#6D28D9", filled: true },
+  { ...PRO_NAV.find((p) => p.path === "/explore"), Icon: Briefcase, bg: "#DDF8EA", color: "#16866B", filled: true },
+  { ...PRO_NAV.find((p) => p.path === "/news"), Icon: Newspaper, bg: "#E0F2FE", color: "#0369A1", filled: false },
+  { ...PRO_NAV.find((p) => p.path === "/discussions"), Icon: MessageCircle, bg: "#FFF4D6", color: "#16866B", filled: false },
+  { ...PRO_NAV.find((p) => p.path === "/people"), Icon: Users, bg: "#FCE4ED", color: "#DB2777", filled: true },
   { ...PRO_NAV.find((p) => p.path === "/evidence"), Icon: BookOpen, bg: "#E4ECFF", color: "#3B5BDB", filled: true },
   { ...PRO_NAV.find((p) => p.path === "/saved"), Icon: Bookmark, bg: "#FFE9D6", color: "#C2410C", filled: true },
 ];
