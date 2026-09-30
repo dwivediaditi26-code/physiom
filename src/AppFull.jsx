@@ -31,6 +31,7 @@ import AssessmentReportView from "./AssessmentReportView.jsx";
 import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
+import PushOptInBanner from "./PushOptInBanner.jsx";
 import AuthRequiredPrompt from "./AuthRequiredPrompt.jsx";
 
 // Leave-assessment save gate: which navTo targets count as actually
@@ -466,6 +467,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const dataRef = useRef({});
   useEffect(() => { dataRef.current = data; });
   const [showPatientDb, setShowPatientDb] = useState(false);
+  // Trigger moved out of the Home sidebar into each assessment's own Review
+  // screen (2026-09-29, Aditi: a generic Home button generating a report for
+  // "whichever patient happens to be active" was buggy/confusing -- "remove
+  // home ... pdf ... make it one in assessment only"). The modal itself
+  // still lives here and still reads this component's own `data`, unchanged;
+  // only who can flip `showPdfReports` to true has moved, via the
+  // onGeneratePdf prop threaded into Ortho/Neuro/Cardio below.
   const [showPdfReports, setShowPdfReports] = useState(false);
   const [profileTab, setProfileTab] = useState(null);
   // Clinical tab's own sub-navigation. "Today" is the default landing view
@@ -496,7 +504,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // demographic data to be fill not this page") -- Ortho Outpatient is the
   // only pathway that's actually live, so there's nothing else to choose.
   const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
-  const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", chiefComplaint: "" });
+  const [quickStart, setQuickStart] = useState({ name: "", age: "", sex: "", phone: "", specialty: "" });
   // Two-step picker (2026-09-10, Aditi: "change region to chief complaint
   // and then ask which specialty and then normal workflow") -- step 1
   // captures the 5 quick-intake fields (chief complaint replacing the
@@ -504,7 +512,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // specialty is even chosen), step 2 asks which specialty so the
   // assessment can actually route to the right tool instead of assuming
   // Ortho for everyone.
-  const [quickStartStep, setQuickStartStep] = useState("form"); // "form" | "specialty"
   // Shared "start a new assessment for this specialty" logic -- used by
   // both the "+ New Assessment" specialty-picker modal below and the
   // Clinical tab's own "Assessment" sub-tab pills (2026-08-23), so picking
@@ -541,21 +548,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // (no safety steps silently skipped; region/pathway/condition for Ortho
   // are asked normally too, since the intake no longer captures region).
   function startQuickAssessment(st) {
-    const { name, age, sex, phone, chiefComplaint } = quickStart;
+    const { name, age, sex, phone } = quickStart;
     const seedData = {
       dem_name: name.trim(),
       dem_age: age,
       dem_sex: sex,
       dem_phone: phone.trim(),
       demographics: { name: name.trim(), age, sex },
-      chiefComplaint: chiefComplaint.trim(),
-      cc_main: chiefComplaint.trim(),
+      chiefComplaint: "",
+      cc_main: "",
     };
     setActivePatientId(null);
     setData(seedData);
     setShowSpecialtyPicker(false);
-    setQuickStartStep("form");
-    setQuickStart({ name: "", age: "", sex: "", phone: "", chiefComplaint: "" });
+    setQuickStart({ name: "", age: "", sex: "", phone: "", specialty: "" });
     if (st.id === "cardio") {
       navTo("cardio_assessment");
     } else if (st.id === "neuro") {
@@ -1111,12 +1117,6 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
         </button>
-        {data.dem_name && (
-          <button onClick={()=>{ setNavOpen(false); setShowPdfReports(true); }} style={{width:"100%",marginTop:5,padding:"8px 10px",background:"rgba(37,99,235,0.06)",border:"1px solid rgba(37,99,235,0.25)",borderRadius:8,color:"#2563eb",fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-            📄 PDF Reports
-          </button>
-        )}
-
         {/* ── Active patient + PDF buttons ── */}
         {data.dem_name && (
           <div style={{marginTop:8,background:"rgba(37,99,235,0.05)",border:"1px solid rgba(37,99,235,0.18)",borderRadius:9,padding:"8px 10px"}}>
@@ -1166,10 +1166,21 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       }}/>
       <SidebarTopItem navKey="learn" icon="📚" label="Learn"/>
       <SidebarTopItem navKey="physiofeed" icon="📰" label="PhysioFeed"/>
+      {/* Profile (2026-09-29, Aditi: "there should be a profile option
+          also") -- previously the ONLY way here to your own profile was
+          "Settings" below, which actually navigated to it (navKey="profile")
+          under the wrong label. Now a real, separate item. */}
+      <SidebarTopItem navKey="profile" icon="👤" label="Profile"/>
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      <SidebarTopItem navKey="profile" icon="⚙️" label="Settings"/>
+      {/* Settings no longer navigates anywhere (2026-09-29, Aditi: "the
+          setting is taking us to the profile of our self. It should not be
+          like that") -- it used to share Profile's navKey, so tapping it
+          silently opened your own profile instead of a settings screen.
+          Sign out / Delete account below ARE its content -- see next
+          comment -- so this is now just that section's header. */}
+      <SidebarTopItem icon="⚙️" label="Settings" onClick={()=>{}}/>
 
       {/* Sign out / Delete account -- moved here from the Clinical "Today"
           tab's own header (2026-09-10, Aditi screenshot: "put this red
@@ -1293,7 +1304,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {showSpecialtyPicker && (
         <div data-testid="specialty-picker-modal" style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
           <div style={{width:"100%",maxWidth:440,maxHeight:"88vh",overflowY:"auto",background:PC.surface,borderRadius:16,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            {quickStartStep==="form" ? (<>
+            <>
               <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>New assessment</div>
               <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>Quick patient details — you can fill in the rest once you're in.</div>
 
@@ -1302,20 +1313,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Full name</label>
                   <input value={quickStart.name} onChange={e=>setQuickStart(q=>({...q,name:e.target.value}))}
                     placeholder="e.g. Riya Sharma"
-                    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:"#fff",color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
                 </div>
                 <div style={{display:"flex",gap:10}}>
                   <div style={{flex:1}}>
                     <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Age</label>
                     <input value={quickStart.age} onChange={e=>setQuickStart(q=>({...q,age:e.target.value}))}
                       type="number" placeholder="yrs"
-                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:"#fff",color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
                   </div>
                   <div style={{flex:1}}>
                     <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Phone</label>
                     <input value={quickStart.phone} onChange={e=>setQuickStart(q=>({...q,phone:e.target.value}))}
                       type="tel" placeholder="+91 98765 43210"
-                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
+                      style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:"#fff",color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box"}}/>
                   </div>
                 </div>
                 <div>
@@ -1323,72 +1334,42 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <div style={{display:"flex",gap:6}}>
                     {["Male","Female","Other"].map(opt=>(
                       <button key={opt} type="button" onClick={()=>setQuickStart(q=>({...q,sex:opt}))}
-                        style={{flex:1,padding:"9px 6px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:"0.82rem",fontWeight:700,
-                          background:quickStart.sex===opt?PC.accent:PC.s2,color:quickStart.sex===opt?"#fff":PC.muted}}>
+                        style={{flex:1,padding:"9px 6px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:"0.82rem",fontWeight:700,
+                          border:`1.5px solid ${quickStart.sex===opt?PC.accent:PC.border}`,background:quickStart.sex===opt?PC.accent:"#fff",color:quickStart.sex===opt?"#fff":PC.muted}}>
                         {opt}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:4}}>Chief complaint</label>
-                  <textarea value={quickStart.chiefComplaint} onChange={e=>setQuickStart(q=>({...q,chiefComplaint:e.target.value}))}
-                    placeholder="e.g. Right knee pain for 2 weeks" rows={2}
-                    style={{width:"100%",padding:"10px 12px",borderRadius:10,border:`1.5px solid ${PC.border}`,background:PC.s2,color:PC.text,fontFamily:"inherit",fontSize:"0.88rem",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+                  <label style={{fontSize:"0.72rem",fontWeight:700,color:PC.muted,display:"block",marginBottom:6}}>Specialty</label>
+                  <div style={{display:"flex",gap:6}}>
+                    {[["ortho_new","Ortho"],["neuro","Neuro"],["cardio","Cardio"]].map(([id,label])=>(
+                      <button key={id} type="button" onClick={()=>setQuickStart(q=>({...q,specialty:id}))}
+                        style={{flex:1,padding:"9px 6px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",fontSize:"0.82rem",fontWeight:700,
+                          border:`1.5px solid ${quickStart.specialty===id?PC.accent:PC.border}`,
+                          background:quickStart.specialty===id?PC.accent:"#fff",color:quickStart.specialty===id?"#fff":PC.muted}}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <button type="button" onClick={()=>setQuickStartStep("specialty")}
-                disabled={!quickStart.name.trim() || !quickStart.chiefComplaint.trim()}
-                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
+              <button type="button" onClick={()=>{ const st=STREAMS.find(x=>x.id===quickStart.specialty); if(st) startQuickAssessment(st); }}
+                disabled={!quickStart.name.trim() || !quickStart.specialty}
+                style={{width:"100%",padding:"14px",background:!quickStart.name.trim()||!quickStart.specialty?PC.border:"linear-gradient(135deg,#7c3aed,#9333ea)",
                   border:"none",borderRadius:14,color:"white",fontWeight:800,fontSize:"0.9rem",
-                  cursor:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?"not-allowed":"pointer",marginBottom:10,
-                  boxShadow:!quickStart.name.trim()||!quickStart.chiefComplaint.trim()?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
+                  cursor:!quickStart.name.trim()||!quickStart.specialty?"not-allowed":"pointer",marginBottom:10,
+                  boxShadow:!quickStart.name.trim()||!quickStart.specialty?"none":"0 4px 14px rgba(124,58,237,0.3)"}}>
                 Next →
               </button>
 
-              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStartStep("form"); setQuickStart({ name:"", age:"", sex:"", phone:"", chiefComplaint:"" }); }}
+              <button type="button" onClick={()=>{ setShowSpecialtyPicker(false); setQuickStart({ name:"", age:"", sex:"", phone:"", specialty:"" }); }}
                 style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
                 Cancel
               </button>
-            </>) : (<>
-              <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:4}}>Which specialty?</div>
-              <div style={{fontSize:"0.82rem",color:PC.muted,marginBottom:18}}>This decides which assessment tool opens next.</div>
-
-              {/* gridTemplateColumns uses minmax/auto-fit rather than a
-                  literal "1fr 1fr" -- utils.jsx has a global mobile
-                  override that force-collapses any inline grid style
-                  containing that exact substring to 1 column below 400px
-                  width (see the Assessment sub-tab's own specialty grid,
-                  which hit this same trap first). */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:16}}>
-                {STREAMS.filter(s=>["ortho_new","neuro","cardio","sports"].includes(s.id)).map(st=>{
-                  const clickable = st.live || st.id === "cardio";
-                  const { Icon, bg } = STREAM_ICONS[st.id];
-                  return (
-                    <button key={st.id} type="button"
-                      onClick={()=>{ if(!clickable) return; startQuickAssessment(st); }}
-                      style={{position:"relative",textAlign:"left",display:"flex",flexDirection:"column",
-                        borderRadius:16,cursor:clickable?"pointer":"not-allowed",fontFamily:"inherit",
-                        border:`1.5px solid ${clickable?PC.border:"#E5E7EB"}`,
-                        background:PC.surface,padding:"14px 12px",opacity:clickable?1:0.6}}>
-                      {st.id==="ortho_new" && <span style={{position:"absolute",top:10,right:10,display:"inline-flex",alignItems:"center",gap:3,fontSize:"0.6rem",fontWeight:800,padding:"3px 7px",borderRadius:10,background:"linear-gradient(135deg,#7c3aed,#a855f7)",color:"#fff",letterSpacing:"0.03em"}}><Sparkles size={10} strokeWidth={2.2}/>AI</span>}
-                      {!clickable && <span style={{position:"absolute",top:10,right:10,fontSize:"0.58rem",fontWeight:800,padding:"2px 6px",borderRadius:8,background:"#E5E7EB",color:"#9CA3AF"}}>SOON</span>}
-                      <div style={{width:38,height:38,borderRadius:12,background:bg,
-                        display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <Icon size={19} color={st.color} strokeWidth={1.75}/>
-                      </div>
-                      <span style={{fontWeight:800,fontSize:"0.86rem",color:clickable?PC.text:"#9CA3AF",marginTop:10}}>{st.id==="ortho_new"?"Ortho":st.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button type="button" onClick={()=>setQuickStartStep("form")}
-                style={{width:"100%",padding:"10px",background:"transparent",border:`1px solid ${PC.border}`,borderRadius:10,color:PC.muted,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                ← Back
-              </button>
-            </>)}
+            </>
           </div>
         </div>
       )}
@@ -1700,8 +1681,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>
               )}
             </span>
+            {/* Just "+ New" here (2026-09-29, Aditi: "remove that, new
+                patient should only have one button... no switch patient" --
+                laptop only). "Switch Patient" used to sit right next to it
+                doing the exact same setShowPatientDb(true) the "N Patients"
+                button in the header above already does -- two buttons open
+                the identical patient-list modal. */}
             <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
-            <button onClick={()=>setShowPatientDb(true)} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.a2,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Switch Patient</button>
           </div>
         </div>
       )}
@@ -1834,7 +1820,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               PhysioFeed's own deferred-mount comment just above. */}
           {mountedTabs.has("cardio_assessment") && (
             <div className="pm-bleed" style={{display: active==="cardio_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyCardioAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="cardio_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="cardio_assessment" && !mountedTabs.has("cardio_assessment") && (
@@ -1847,7 +1833,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               explanation). Same deferred-mount fix as Cardiopulmonary. */}
           {mountedTabs.has("neuro_assessment") && (
             <div className="pm-bleed" style={{display: active==="neuro_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyNeuroAssessment patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="neuro_assessment"?navContext:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="neuro_assessment" && !mountedTabs.has("neuro_assessment") && (
@@ -1860,7 +1846,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
@@ -2385,6 +2371,7 @@ export default function App() {
     <ErrorBoundary>
       <AppInner currentUser={session.user} onSignOut={() => { trackEvent("user_logged_out"); supabase.auth.signOut(); }} />
       <InstallPrompt currentUser={session.user} />
+      <PushOptInBanner currentUser={session.user} />
     </ErrorBoundary>
   );
 }

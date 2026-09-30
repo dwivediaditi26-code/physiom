@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import Composer from "../components/feed/Composer.jsx";
 import FeedPostCard from "../components/feed/FeedPostCard.jsx";
 import FeedRightRail from "../components/feed/FeedRightRail.jsx";
-import PostDetailModal from "../components/feed/PostDetailModal.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 // Trimmed to the reference mockup's four tabs (2026-09-28, Aditi's "Option
@@ -12,16 +10,12 @@ import { useAppData } from "../context/AppDataContext.jsx";
 const TABS = ["For You", "Following", "Research", "Case Studies"];
 
 // Deep-link to a single post (2026-08-27, "like how it happens in Insta"):
-// a like/comment notification now links to /feed?post=<id> instead of just
-// the actor's profile. Reuses PostDetailModal.jsx -- the same modal
-// GridPostCard.jsx already opens on the Profile/Saved/Explore grids --
-// rather than building a second post-detail UI for this one entry point.
+// a like/comment notification links straight to /post/<id> (PostDetailPage.jsx)
+// rather than the actor's profile -- and, since 2026-09-29, to a real page
+// instead of a popup opened over /feed (see PostDetailPage.jsx).
 export default function FeedPage() {
   const { posts, feedError, clearFeedError } = useAppData();
   const [activeTab, setActiveTab] = useState("For You");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const openPostId = searchParams.get("post");
-  const openPost = openPostId ? posts.find((p) => p.id === openPostId) : null;
 
   const visiblePosts =
     activeTab === "For You" ? posts
@@ -57,7 +51,6 @@ export default function FeedPage() {
         </div>
       </main>
       <FeedRightRail />
-      {openPost && <PostDetailModal post={openPost} onClose={() => setSearchParams({}, { replace: true })} />}
     </>
   );
 }

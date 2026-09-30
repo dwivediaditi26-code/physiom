@@ -4,11 +4,10 @@ import {
   Search, Bell, Hand, Move,
   Dumbbell, FlaskConical, Brain, BarChart3, Footprints, Link2,
   GraduationCap, Activity, ChevronLeft, ChevronRight,
-  BookOpen, ClipboardCheck, Stethoscope, Target, Bone,
+  BookOpen, ClipboardCheck, Stethoscope, Target,
 } from "lucide-react";
 import StudyMode from "./learn/StudyMode.jsx";
 import ClinicalLearning from "./learn/ClinicalLearning.jsx";
-import XrayHome from "./learn/xray/XrayHome.jsx";
 import { DisplayFont } from "./learn/learnTheme.jsx";
 import "./physiofeed.css";
 
@@ -122,8 +121,7 @@ function Section({ title, items, onNav, onStudy }) {
 const ALL_ITEMS = [...ASSESSMENT_LIBRARY, ...ADVANCED_ASSESSMENT, ...EXERCISE];
 const HOME_CARDS = [
   { id: "practical", label: "Practical Skills", desc: "ROM • MMT • Assessment", icon: Hand, tint: "amber", count: ALL_ITEMS.length },
-  { id: "clinical", label: "Clinical Learning", desc: "Conditions • Clinical cases", icon: Stethoscope, tint: "rose" },
-  { id: "xray", label: "X-ray Educational Material", desc: "Knee X-ray • more coming", icon: Bone, tint: "emerald" },
+  { id: "clinical", label: "Clinical Cases", desc: "Learn through real-life patient cases", icon: Stethoscope, tint: "rose" },
   { id: "test", label: "Test", desc: "MCQs • Image questions", icon: ClipboardCheck, tint: "blue", soon: true },
   { id: "bpt", label: "BPT", desc: "1st–4th year subjects", icon: BookOpen, tint: "violet", soon: true },
   { id: "exam", label: "Exam Ready", desc: "Revision • Mock tests", icon: Target, tint: "indigo", soon: true },
@@ -194,15 +192,6 @@ export default function LearnTabEntry({ onNav }) {
         <style>{".pm-shell{background:#fff !important}"}</style>
       <DisplayFont/>
         <ClinicalLearning onBack={() => setView("home")}/>
-      </div>
-    );
-  }
-
-  if (view === "xray") {
-    return (
-      <div className="physiofeed-root max-w-2xl lg:max-w-4xl mx-auto">
-        <style>{".pm-shell{background:#fff !important}"}</style>
-        <XrayHome onBack={() => setView("home")}/>
       </div>
     );
   }

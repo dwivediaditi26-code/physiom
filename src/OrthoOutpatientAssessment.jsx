@@ -340,7 +340,7 @@ function SaveTemplateModal({ defaultName, onSave, onClose }) {
    MAIN APP — mounted by OrthoAssessment.jsx once region +
    condition have been picked on the preceding two screens.
    ============================================================ */
-export default function OrthoOutpatientAssessment({ selectedRegions: initialSelectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onNav, navContext, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep }) {
+export default function OrthoOutpatientAssessment({ selectedRegions: initialSelectedRegions, condition: initialCondition, customConditionLabel, initialStepOrder, templateName, onExit, onNav, navContext, onSave, activePatientId, patientData, requireAuth, autoOpenAI, initialAiUpdates, entryMode, initialData, initialStep, onGeneratePdf }) {
   // Editable, not a fixed prop (2026-09-16, Aditi: "why can't we select
   // again the demographic and region... I can't go back") -- AI-assisted
   // entry picks regions on a pre-wizard screen (OrthoAssessment.jsx) that
@@ -923,6 +923,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 exportHeaderLines={[`OUTPATIENT / MUSCULOSKELETAL ASSESSMENT`, `Region(s): ${regionsLabel}`, `Clinical context: ${conditionLabel}`]}
                 formatters={orthoSummaryFormatters}
                 onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined}
+                onGeneratePdf={onGeneratePdf}
               />
               {onSave && (
                 <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>

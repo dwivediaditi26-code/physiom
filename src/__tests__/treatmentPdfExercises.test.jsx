@@ -10,23 +10,29 @@
 // placeholder exercises instead of what was really prescribed, or nothing
 // meaningful at all. Fixed by merging tx_exercise_prescription and
 // hep_programme (de-duplicated) before falling back to manual/generic data.
+//
+// Updated 2026-09-29: the standalone "Treatment Plan" report/button is gone
+// (Aditi: "remove ... treatment ... make it one") -- its content is now the
+// final page of the single "assessment" report, so these assertions run
+// against that combined PDF instead of a `data-pdf-type="treatment"` button
+// that no longer exists.
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { PdfReportsModal } from "../AppModules.jsx";
 
-const capturePdf = async (data, type) => {
+const capturePdf = async (data) => {
   let captured = "";
   window.open = vi.fn(() => ({ document: { open(){}, write(h){ captured = h; }, close(){} }, print(){} }));
   window.alert = vi.fn();
   const { container } = render(<PdfReportsModal data={data} dx={{dx:[]}} onClose={()=>{}} />);
-  fireEvent.click(container.querySelector(`[data-pdf-type="${type}"]`));
+  fireEvent.click(container.querySelector('[data-pdf-type="assessment"]'));
   await waitFor(() => { if (!captured) throw new Error("not yet"); }, { timeout: 5000 });
   return captured;
 };
 
-describe("Treatment PDF shows exercises from Exercise Prescription", () => {
-  it("real tx_exercise_prescription entries appear in the Treatment Plan PDF (previously missing entirely)", async () => {
+describe("Treatment Plan page (merged into the Assessment & Treatment PDF) shows exercises from Exercise Prescription", () => {
+  it("real tx_exercise_prescription entries appear in the combined PDF (previously missing entirely)", async () => {
     const data = {
       dem_name: "Rahul Mehta", dem_age: "42", dem_sex: "Male",
       cc_main: "Chronic lower back pain",
@@ -37,7 +43,7 @@ describe("Treatment PDF shows exercises from Exercise Prescription", () => {
           customSets: "3", customReps: "10", customHold: "5", customFreq: "Daily", notes: "" },
       ],
     };
-    const html = await capturePdf(data, "treatment");
+    const html = await capturePdf(data);
     expect(html).toContain("Glute Bridge");
     expect(html).toContain("Bird Dog");
     expect(html).toContain("Gluteus maximus");
@@ -53,7 +59,7 @@ describe("Treatment PDF shows exercises from Exercise Prescription", () => {
           customSets: "3", customReps: "15", customHold: "5", customFreq: "2x Daily", notes: "" },
       ],
     };
-    const html = await capturePdf(data, "treatment");
+    const html = await capturePdf(data);
     expect(html).toContain("Quad Set");
   });
 
@@ -65,7 +71,7 @@ describe("Treatment PDF shows exercises from Exercise Prescription", () => {
       tx_exercise_prescription: [shared, { id: "rx_only", name: "Rx Only Exercise", phase: "Phase 1", target: "", customSets:"3",customReps:"10",customHold:"",customFreq:"Daily",notes:"" }],
       hep_programme: [shared],
     };
-    const html = await capturePdf(data, "treatment");
+    const html = await capturePdf(data);
     const occurrences = html.split("Shared Exercise").length - 1;
     expect(occurrences).toBe(1);
     expect(html).toContain("Rx Only Exercise");

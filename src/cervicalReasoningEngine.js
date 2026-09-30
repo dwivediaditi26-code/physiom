@@ -9,7 +9,7 @@
 //   Layer 3 (Reasoning Engine) -> this file
 //
 // Input: the canonical variable object produced by
-// extractCervicalVariablesStructured() (cervicalVariableExtractor.js) --
+// extractCervicalVariables() (orthoCervicalReasoning.js) --
 // NOT raw form data. Output: every C01-C11 condition ranked by an
 // UNWEIGHTED, count-based match tier.
 //
@@ -478,7 +478,7 @@ const TIER_ORDER = { "Strong match": 4, "Possible match": 3, "Weak match": 2, "I
 
 /**
  * Main entry point. Takes the output of
- * extractCervicalVariablesStructured() (cervicalVariableExtractor.js)
+ * extractCervicalVariables() (orthoCervicalReasoning.js)
  * and returns:
  *   { redFlagOverride, conditions: [...ranked...] }
  * If redFlagOverride.triggered is true, callers should surface that

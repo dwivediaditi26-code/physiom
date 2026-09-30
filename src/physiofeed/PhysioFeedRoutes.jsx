@@ -8,6 +8,7 @@ import EvidencePage from "./pages/EvidencePage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
 import CommunitiesPage from "./pages/CommunitiesPage.jsx";
 import CaseDiscussionsPage from "./pages/CaseDiscussionsPage.jsx";
+import PostDetailPage from "./pages/PostDetailPage.jsx";
 import PeoplePage from "./pages/PeoplePage.jsx";
 import SearchPage from "./pages/SearchPage.jsx";
 import MessagesPage from "./pages/MessagesPage.jsx";
@@ -41,6 +42,7 @@ export default function PhysioFeedRoutes() {
             here now that its only nav entry is gone. */}
         <Route path="/communities" element={<CommunitiesPage />} />
         <Route path="/discussions" element={<CaseDiscussionsPage />} />
+        <Route path="/post/:postId" element={<PostDetailPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/messages" element={<MessagesPage />} />

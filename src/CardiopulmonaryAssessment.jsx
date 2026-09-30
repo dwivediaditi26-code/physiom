@@ -1961,9 +1961,20 @@ function fmtVal(v) {
 // that dumped raw internal fields like `meta` as if they were clinical
 // content. buildCardioAssessSteps mirrors the assessSteps useMemo below so
 // the profile view sees the same section list/labels/icons the wizard did.
+// customStepsMeta rides inside the patient record (see the meta-persist
+// effect below), which a hard reload restores via a real JSON round-trip
+// (AppFull.jsx's DRAFT_KEY / Supabase) -- that silently strips a React
+// element's $$typeof symbol and function `type` down to a plain
+// {key, ref, props, _owner, _store} object. Still truthy, so a bare
+// `|| fallback` never catches it and StepNav crashes trying to render it
+// (2026-09-26, same bug as NeurologicalAssessment.jsx). isValidElement is
+// the actual check needed here.
+function customStepIcon(meta, fallback) {
+  return meta && React.isValidElement(meta.icon) ? meta.icon : fallback;
+}
 export function buildCardioAssessSteps(stepOrder, customStepsMeta = {}) {
   const order = stepOrder || DEFAULT_ASSESS_STEP_IDS;
-  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" });
+  return order.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" });
 }
 // The CSS classes SummarySection/SectionIntro/primary-btn depend on
 // normally come from the big <style> block inside the default-exported
@@ -2037,7 +2048,7 @@ export function withCarePlanSummaryAlias(data) {
   return { ...data, carePlanPlan: data?.cardioCarePlan };
 }
 
-export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare }) {
+export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare, onGeneratePdf }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
@@ -2155,6 +2166,11 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
           💬 Share as Clinical Discussion
         </button>
       )}
+      {onGeneratePdf && (
+        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onGeneratePdf}>
+          📄 Generate PDF Report
+        </button>
+      )}
       {shareOpen && (
         <ShareAssessmentModal
           sections={shareSections}
@@ -2191,7 +2207,7 @@ export function SummarySection({ setting, system, data, setData, assessSteps, fo
 // current patient's saved cardio data (switching patients) -- see the
 // effect below, which mirrors AppFull.jsx's own selectPatient()
 // re-hydration for every other module.
-export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef } = {}) {
+export default function CardiopulmonaryAssessment({ patientData, activePatientId, onSave, onNav, navContext, backRef, onGeneratePdf } = {}) {
   // AppFull.jsx now keeps this module mounted in the background instead of
   // unmounting it on every tab switch (2026-09-24, so the wizard step/data
   // below survives a glance at Learn/PhysioFeed) -- it signals "not the
@@ -2365,7 +2381,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
   }, [data.demographics]);
 
   const assessSteps = useMemo(
-    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepsMeta[id]?.icon || <Icon name="stethoscope" />, label: customStepsMeta[id]?.label || "Assessment" }),
+    () => stepOrder.map((id) => STEP_META.find((s) => s.id === id) || { id, icon: customStepIcon(customStepsMeta[id], <Icon name="stethoscope" />), label: customStepsMeta[id]?.label || "Assessment" }),
     [stepOrder, customStepsMeta]
   );
 
@@ -2884,7 +2900,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && (
             <>
-              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} />
+              <SummarySection setting={setting} system={system} data={withCarePlanSummaryAlias(data)} setData={setData} assessSteps={assessSteps} formatters={cardioSummaryFormatters} onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined} onGeneratePdf={onGeneratePdf} />
               <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>

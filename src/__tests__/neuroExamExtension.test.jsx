@@ -1,79 +1,13 @@
 // neuroExamExtension.test.jsx
-// Covers the 5 new tabs added to the existing NeurologicalModule (cranial
-// nerves, cognition, coordination, vestibular, perceptual) built for the
-// TBI assessment work. These were deliberately added AS NEW TABS on the
-// existing module rather than a separate parallel module, since GCS,
-// reflexes, dermatomes, and red flags were already fully built there --
-// duplicating them would have created two sources of truth. Covers: the
-// new tabs actually render with real content, buildRealtimeSOAP picks up
-// every new field (matching the existing coverage-test pattern used for
-// dermatomes/myotomes/reflexes), and the 2 new TBI-specific red flags
+// Covers the neuro exam fields added for the TBI assessment work (cranial
+// nerves, cognition, coordination, vestibular, perceptual): buildRealtimeSOAP
+// picks up every new field (matching the existing coverage-test pattern used
+// for dermatomes/myotomes/reflexes), and the 2 new TBI-specific red flags
 // (raised ICP, evolving consciousness change) are wired into the red-flag
 // line the same way the pre-existing ones are.
-import React from "react";
 import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
 import { buildRealtimeSOAP } from "../ClinicalModules.jsx";
-import { NeurologicalModule } from "../PhysioNeuro.jsx";
 import { CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS } from "../sharedClinicalData.js";
-
-const renderTab = (tabLabel, data = {}, set = () => {}) => {
-  render(<NeurologicalModule data={data} set={set} />);
-  fireEvent.click(screen.getByText(new RegExp(tabLabel)));
-};
-
-describe("Neurological module — new TBI-relevant tabs render", () => {
-  it("Cranial Nerves tab lists all 9 real cranial nerve entries", () => {
-    renderTab("Cranial Nerves");
-    expect(screen.getByText("Facial")).toBeInTheDocument();
-    expect(screen.getByText("Hypoglossal")).toBeInTheDocument();
-    expect(screen.getByText(/forehead-sparing weakness/)).toBeInTheDocument();
-  });
-
-  it("Cognition tab shows orientation with per-item guidance, and a live MoCA score card computed from real domain fields", () => {
-    const navToMock = vi.fn();
-    const data = { moca_visuospatial:"3", moca_naming:"3", moca_attention:"4", moca_language:"2", moca_abstraction:"1", moca_delayed_recall:"3", moca_orientation:"3" };
-    render(<NeurologicalModule data={data} set={vi.fn()} navTo={navToMock} />);
-    fireEvent.click(screen.getByText(/Cognition/));
-    expect(screen.getByText("Person")).toBeInTheDocument();
-    expect(screen.getByText(/Ask the patient to state their own full name/)).toBeInTheDocument();
-    expect(screen.getByText(/19\/30/)).toBeInTheDocument();
-    expect(screen.getByText(/Mild cognitive impairment/)).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Review →"));
-    expect(navToMock).toHaveBeenCalledWith("outcome", { scaleId: "moca" });
-  });
-
-  it("Cognition tab shows a take-full-test link for a scale that has not been recorded yet", () => {
-    const navToMock = vi.fn();
-    render(<NeurologicalModule data={{}} set={vi.fn()} navTo={navToMock} />);
-    fireEvent.click(screen.getByText(/Cognition/));
-    expect(screen.getAllByText("Not yet recorded").length).toBeGreaterThan(0);
-    fireEvent.click(screen.getAllByText("Take full test →")[0]);
-    expect(navToMock).toHaveBeenCalledWith("outcome", { scaleId: "moca" });
-  });
-
-  it("Coordination tab lists finger-to-nose and rebound test with left/right selects", () => {
-    renderTab("Coordination");
-    expect(screen.getByText("Finger-to-nose")).toBeInTheDocument();
-    expect(screen.getByText("Rebound test")).toBeInTheDocument();
-  });
-
-  it("Vestibular tab lists Dix-Hallpike with its clinical teaching note", () => {
-    renderTab("Vestibular");
-    expect(screen.getByText("Dix-Hallpike")).toBeInTheDocument();
-    expect(screen.getByText(/BPPV screen/)).toBeInTheDocument();
-  });
-
-  it("Perceptual tab lists the neglect screen", () => {
-    renderTab("Perceptual");
-    expect(screen.getByText("Neglect — line bisection / cancellation")).toBeInTheDocument();
-  });
-
-  it("existing GCS tab is untouched by the new tabs", () => {
-    renderTab("GCS");
-    expect(screen.getByText("Glasgow Coma Scale (GCS)")).toBeInTheDocument();
-  });
-});
 
 describe("New neuro exam fields reach the SOAP Objective section", () => {
   it("a cranial nerve finding appears with its label", () => {

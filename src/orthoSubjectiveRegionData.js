@@ -42,46 +42,35 @@ export const SUBJECTIVE_REGION_FIELDS = {
   // Real, structured Cervical checklist — ported field-for-field (same
   // option wording) from the older Ortho flow's Phase 0.5 Cervical
   // Reasoning Engine screen (sharedClinicalData.js cx_* fields, see
-  // cervicalVariableExtractor.js), so orthoCervicalReasoning.js's
+  // the old cervicalVariableExtractor.js), so orthoCervicalReasoning.js's
   // differential matcher gets the same real evidence that engine was
   // built and tuned against, not a shallower reinterpretation -- same
   // approach lumbarSI below already used.
   cervical: [
-    { id: "location", label: "Primary pain location", type: "multi", options: ["Suboccipital / base of skull", "Upper cervical (C0-C3)", "Mid cervical (C4-C5)", "Lower cervical (C6-T1)", "Anterior neck", "Posterior neck (central)", "Lateral neck (L)", "Lateral neck (R)", "Cervico-thoracic junction", "Trapezius (L)", "Trapezius (R)", "Levator scapulae", "Sternocleidomastoid"] },
+    // Trimmed 43 -> 17 fields (2026-09-29, Aditi: "region specific subjective
+    // assessment... too much"). Dropped: dermatomal, the WAD-grade/LOC/
+    // first-symptom mechanism sub-fields, the arm-symptom quality/fingers/
+    // position breakdown (kept just armPresent as a flag), the aggravating/
+    // relieving postures/activities/other/best-single-factor sub-fields
+    // (kept one representative field each), morning/night/24hr-type/
+    // trajectory (folded under overallPattern), and the headache location/
+    // quality/triggers/classification/frequency breakdown (kept just
+        // haPresent). orthoCervicalReasoning.js reads nearly every field this
+    // checklist ever had, so this IS a real trade against "AI Objective
+    // Assessment" match quality for dropped fields -- explicitly accepted.
+    // Every red-flag/fracture screen field, plus Lhermitte's sign, is kept
+    // in full: those are safety screens, not stylistic detail, and stay
+    // untouched regardless of length pressure.
+    { id: "location", label: "Primary pain location", type: "multi", options: ["Suboccipital / base of skull", "Upper cervical (C0-C3)", "Mid cervical (C4-C5)", "Lower cervical (C6-T1)", "Anterior neck", "Posterior neck (central)", "Lateral neck (L)", "Lateral neck (R)", "Cervico-thoracic junction", "Trapezius (L)", "Trapezius (R)", "Levator scapulae", "Sternocleidomastoid", "Scalene"] },
     { id: "radiation", label: "Radiation pattern", type: "multi", options: ["No radiation — local only", "Into occiput / back of head", "Behind the eye / retro-orbital", "Temporal region", "Jaw / TMJ region", "Ear / periauricular", "Top of shoulder (C4 pattern)", "Shoulder / upper arm (L)", "Shoulder / upper arm (R)", "Down arm to elbow (L)", "Down arm to elbow (R)", "To hand / fingers (L)", "To hand / fingers (R)", "Bilateral upper limb", "Around chest / anterior chest wall", "Between shoulder blades"] },
-    { id: "dermatomal", label: "Dermatomal distribution", type: "multi", options: ["Not dermatomal / not applicable", "C4 — lateral shoulder / clavicle", "C5 — lateral upper arm / elbow", "C6 — thumb / index finger / radial forearm", "C7 — middle finger / posterior forearm", "C8 — ring / little finger / medial forearm", "T1 — medial upper arm", "Bilateral — concerning for cord", "Non-dermatomal diffuse"] },
     { id: "mechanismType", label: "Mechanism type", type: "multi", options: ["No clear mechanism — insidious onset", "Whiplash — rear-end MVA", "Whiplash — front-end MVA", "Whiplash — side impact MVA", "Hyperflexion (head forced forward)", "Hyperextension (head forced back)", "Combined flexion + rotation", "Direct trauma to head / neck", "Diving / swimming impact", "Sustained poor posture over time", "Sleeping position", "Lifting heavy load", "Post-surgical", "Post-illness / meningism"] },
-    { id: "mechanismWad", label: "WAD Grade (if whiplash)", type: "single", options: ["N/A — not a whiplash", "Grade 0 — no pain, no signs", "Grade I — pain only", "Grade II — pain + musculoskeletal signs", "Grade III — neurological signs", "Grade IV — fracture or dislocation"] },
-    { id: "mechanismLoc", label: "Loss of consciousness at injury", type: "single", options: ["N/A — no trauma", "No LOC", "Brief LOC <5 min", "Prolonged LOC", "Amnesia around event", "Unsure"] },
-    { id: "mechanismFirstSymptom", label: "First symptom after injury", type: "single", options: ["N/A", "Immediate pain", "Immediate stiffness", "Delayed — hours later", "Delayed — next morning", "24–48 hours", "Progressive over days"] },
     { id: "armPresent", label: "Arm / hand symptoms present?", type: "single", options: ["No arm or hand symptoms", "Yes — unilateral (L)", "Yes — unilateral (R)", "Yes — bilateral (concerning for cord)"] },
-    { id: "armQuality", label: "Arm / hand symptom quality", type: "multi", options: ["Not applicable", "Aching", "Sharp", "Burning", "Shooting", "Electric shock down arm", "Tingling", "Pins and needles", "Numbness", "Weakness", "Heaviness", "Cold sensation", "Hot sensation", "Hypersensitivity to touch"] },
-    { id: "armFingers", label: "Which fingers affected?", type: "multi", options: ["Not applicable", "Thumb (C6)", "Index finger (C6)", "Middle finger (C7)", "Ring finger (C8)", "Little finger (C8)", "Radial half of hand (C6)", "Ulnar half of hand (C8)", "Whole hand / glove pattern (non-dermatomal — screen)", "Palm only (median nerve — carpal tunnel differential)", "Dorsum of hand"] },
-    { id: "armNeuro", label: "Neurological signs reported", type: "multi", options: ["No neurological symptoms", "Objective numbness in specific area", "Subjective weakness — grip", "Subjective weakness — pinch", "Dropping objects involuntarily", "Clumsiness with fine motor", "Wasting / atrophy visible", "Bilateral arms or legs — myelopathy screen"] },
-    { id: "armPosition", label: "Arm position affects symptoms", type: "multi", options: ["Not applicable", "Worse with arm overhead", "Better with arm overhead (shoulder abduction relief sign — C5/C6)", "Worse with arm by side", "Better with arm supported", "Worse with elbow flexion sustained", "Better with elbow flexion", "Worse with ULNT positioning", "Worse with cervical movement"] },
     { id: "lhermitte", label: "Lhermitte's sign (electric shock down spine with neck flexion)?", type: "single", options: ["No", "Yes — electric shock down spine with neck flexion (myelopathy / MS flag)", "Unsure", "Not assessed"] },
     { id: "aggMovements", label: "Movements aggravate", type: "multi", options: ["Flexion — looking down", "Extension — looking up", "Rotation left", "Rotation right", "Side bend left", "Side bend right", "Combined extension + rotation left (quadrant)", "Combined extension + rotation right (quadrant)", "Combined flexion + rotation", "Sustained end-range any direction", "Quick / sudden movements", "All movements equally"] },
-    { id: "aggPostures", label: "Postures aggravate", type: "multi", options: ["Prolonged sitting >30 min", "Prolonged sitting >1 hour", "Computer / VDU screen use", "Looking down — phone / reading", "Looking up — overhead", "Head turned (driving / offset monitor)", "Slumped posture", "Forward head posture", "Sleeping — on back", "Sleeping — side lying", "Sleeping — prone (face down)", "Poor pillow support", "Sitting in car (vibration + sustained)"] },
-    { id: "aggActivities", label: "Activities aggravate", type: "multi", options: ["Driving", "Looking over shoulder (reversing)", "Reading in bed", "Hair washing", "Hair drying — arm overhead", "Backpack / heavy bag use", "Sustained phone call (shoulder-neck grip)", "Overhead reaching", "Carrying weight same side", "Swimming", "Desk work — sustained", "Fine motor / precision work", "Startle / sudden unexpected movement", "Cold draught / air conditioning on neck"] },
-    { id: "aggOther", label: "Other aggravating factors", type: "multi", options: ["Coughing / sneezing (dural / cord tension)", "Deep breathing", "Swallowing (atypical — screen)", "Stress / tension", "Fatigue / tiredness", "Damp / cold weather", "Headache trigger", "Bright light or noise with headache"] },
-    { id: "aggWorst", label: "Single worst aggravator", type: "text" },
     { id: "relMovements", label: "Movements relieve", type: "multi", options: ["Chin tuck (cranio-cervical flexion)", "Cervical retraction", "Cervical extension", "Cervical flexion", "Rotation left", "Rotation right", "Specific direction (McKenzie preference)", "Shoulder blade retraction / squeeze", "Shoulder elevation (unloads C4/C5)", "Arm overhead — relieves arm symptoms (shoulder abduction relief sign)", "Gentle stretching", "Hot shower with water on neck"] },
-    { id: "relPostures", label: "Postures relieve", type: "multi", options: ["Lying flat without pillow", "Lying with specific cervical pillow", "Lying with small towel roll under neck", "Side lying", "Sitting with lumbar and head support", "Standing tall — corrected posture", "Walking", "Specific sleeping position found"] },
-    { id: "relManual", label: "Manual / physical treatments", type: "multi", options: ["Heat application", "Ice / cold pack", "Hot shower / bath", "Massage — self", "Massage — by another", "Manipulation — immediate relief", "Mobilisation", "Traction — self applied", "TENS machine", "Acupuncture / dry needling", "Cervical collar — temporary use", "Taping", "Specific physio exercises"] },
-    { id: "relMedications", label: "Medications relieve", type: "multi", options: ["NSAIDs — effective", "Paracetamol — effective", "Muscle relaxants — effective", "Neuropathic medication — effective", "Triptans — effective (migraine pattern)", "No medication helps", "Not tried medication", "Medication helps but side effects"] },
-    { id: "relBest", label: "Single best reliever", type: "text" },
     { id: "overallPattern", label: "Overall symptom pattern", type: "multi", options: ["Constant — never goes away", "Constant — varies in intensity", "Intermittent — clear triggers", "Intermittent — unpredictable", "Activity-related only", "Position-related only", "Morning dominant", "Evening dominant", "Night dominant", "Episodic flare-ups on background constant pain", "Warms up — eases with movement", "Completely gone between episodes"] },
-    { id: "morning", label: "Morning symptoms", type: "multi", options: ["No morning symptoms", "Stiff but eases quickly <30 min", "Stiff — takes 30–60 min to ease", "Stiff — stays bad all morning (inflammatory flag)", "Pain on waking — worst first thing", "Morning headache on waking", "Sleep position specific", "Arm symptoms on waking"] },
-    { id: "night", label: "Night symptoms", type: "multi", options: ["No night symptoms", "Difficulty finding comfortable position", "Pain on turning over in bed", "Wakes once from sleep", "Wakes multiple times from sleep", "Constant night pain — cannot sleep", "Arm / hand symptoms at night", "Night headache waking patient"] },
-    { id: "pattern24hr", label: "24-hour pattern type", type: "single", options: ["Mechanical — worse with load/posture, better with rest", "Inflammatory — morning stiffness >30 min, eases with movement", "Neuropathic — constant, burning, worse at night", "Postural — sustained position dependent", "No clear 24hr pattern", "Unpredictable"] },
-    { id: "trajectory", label: "Symptom trajectory", type: "single", options: ["Improving steadily", "Improving slowly", "Static — no change", "Fluctuating — up and down", "Slowly worsening", "Rapidly worsening (red flag)", "Getting worse despite treatment", "Changed character recently (red flag)"] },
     { id: "irritability", label: "Irritability (Maitland SIN)", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "haPresent", label: "Headache as part of presentation?", type: "single", options: ["No headache", "Yes — primary complaint", "Yes — secondary to neck pain", "Yes — concurrent but possibly unrelated", "Previous headache history — not current"] },
-    { id: "haLocation", label: "Headache location", type: "multi", options: ["Not applicable", "Occipital / base of skull (cervicogenic)", "Temporal (L)", "Temporal (R)", "Bilateral temporal", "Frontal", "Vertex / top of head", "Retro-orbital (behind eye)", "Hemicranial (L)", "Hemicranial (R)", "Band-like around head", "Generalised diffuse", "Face / sinus area"] },
-    { id: "haQuality", label: "Headache quality", type: "multi", options: ["Not applicable", "Dull constant ache", "Throbbing / pulsating", "Sharp or stabbing", "Pressure or tightness", "Burning", "Tight band sensation", "Drilling or boring"] },
-    { id: "haTriggers", label: "Headache triggers", type: "multi", options: ["Not applicable", "Triggered by neck movement (cervicogenic)", "Triggered by sustained neck posture", "Spontaneous — no neck relation", "Worse with stress (tension type)", "Worse with light (photophobia)", "Worse with noise (phonophobia)", "Aura before headache (migraine)", "Nausea / vomiting with headache", "Wakes from sleep (cluster / intracranial)", "Worse with exertion / Valsalva", "Preceded by neck stiffness + fever (meningism — urgent)"] },
-    { id: "haType", label: "Headache classification hypothesis", type: "single", options: ["Not yet classified", "Cervicogenic — neck movement triggers (C1-C3 origin)", "Tension-type — stress / posture related", "Migraine — with or without aura", "Cluster headache pattern", "Post-traumatic headache (post-WAD)", "Medication overuse headache", "Mixed cervicogenic + migraine", "Secondary — red flag features — urgent screen"] },
-    { id: "haFrequency", label: "Headache frequency", type: "single", options: ["Not applicable", "Less than once a month", "1–3 per month", "Weekly", "Several times per week", "Daily", "Constant"] },
     { id: "redFlagsMyelopathy", label: "⚠ Myelopathy / UMN screen", type: "multi", options: ["No myelopathy signs", "Bilateral hand symptoms (grip clumsiness / numbness)", "Loss of fine motor control (buttons / writing)", "Gait disturbance / wide-based gait / ataxia", "Unexplained falls", "Bilateral lower limb weakness or stiffness", "Hyperreflexia (known)", "Babinski positive (known)", "Hoffman's sign (known)", "Bladder dysfunction — new onset", "Bowel dysfunction — new onset", "Lhermitte's sign", "Rapidly progressive neurological symptoms"] },
     { id: "redFlagsVbi", label: "⚠ VBI / vertebrobasilar screen (5 Ds + 3 Ns)", type: "multi", options: ["No VBI signs", "Dizziness with neck movement — specific", "Diplopia (double vision)", "Drop attacks", "Dysarthria (slurred speech)", "Dysphagia (difficulty swallowing)", "Ataxia (coordination loss)", "Nausea with neck movement", "Nystagmus (eye oscillation)", "Numbness — face or bilateral limbs", "Thunderclap headache — sudden worst ever", "Horner's syndrome (drooping eyelid + small pupil)"] },
     { id: "redFlagsInstability", label: "⚠ Craniovertebral instability screen", type: "multi", options: ["No instability signs", "Rheumatoid arthritis — known", "Down syndrome / trisomy 21", "Recent significant trauma", "Post-surgical cervical fusion", "Sense of head not stable on neck", "Constant occipital / suboccipital pain unrelieved", "Muscle spasm severe — guarding", "Sharp pain on neck flexion"] },
@@ -89,94 +78,76 @@ export const SUBJECTIVE_REGION_FIELDS = {
     { id: "fractureScreen", label: "Cervical fracture indicators", type: "multi", options: ["Not applicable", "High-energy trauma (MVA / fall >1m / diving)", "Axial loading mechanism (head impact)", "Immediate severe pain + muscle spasm", "Cannot move neck at all — voluntary splinting", "Neurological symptoms from time of injury", "Odontoid peg fracture risk — elderly + fall", "NEXUS criteria not cleared", "Canadian C-Spine Rule — high risk features", "Bilateral facet dislocation — high energy", "Clay shoveler fracture — sudden load / whip"] },
     { id: "rfAction", label: "Action taken", type: "single", options: ["No red flags — proceed with assessment", "Red flags noted — monitor and reassess", "GP referral — routine", "GP referral — urgent", "Emergency department referral", "Urgent neurology / neurosurgery referral", "Manipulation contraindicated — mobilisation only", "Manipulation contraindicated — exercise only"] },
     { id: "fnAdl", label: "Activities limited", type: "multi", options: ["No functional limitation", "Driving — head rotation restricted", "Looking over shoulder — road safety concern", "Computer / screen use", "Reading / desk work", "Watching TV", "Sleeping — position difficulty", "Hair washing / drying", "Overhead activities", "Carrying / lifting", "Sport / exercise", "Work duties", "Childcare", "Sexual activity", "Concentration / cognitive (headache)", "Social activities"] },
-    { id: "fnWork", label: "Work impact", type: "single", options: ["No work impact", "Mild discomfort — full duties", "Modified duties", "Reduced hours", "Off work — short term (<4 weeks)", "Off work — medium term (4–12 weeks)", "Off work — long term (>12 weeks)", "Changed role / job", "Job loss occurred"] },
   ],
   // Real, structured Thoracic checklist — ported field-for-field (same
   // option wording) from the older Ortho flow's Phase 0.5 Thoracic
   // Reasoning Engine screen (sharedClinicalData.js tx_* fields, see
-  // thoracicVariableExtractor.js), so orthoThoracicReasoning.js's
+  // the old thoracicVariableExtractor.js), so orthoThoracicReasoning.js's
   // differential matcher gets the same real evidence that engine was
   // built and tuned against -- same approach cervical/lumbarSI already use.
   thoracic: [
+    // Trimmed 12 -> 9 fields (2026-09-29, same pass as cervical/lumbarSI --
+    // dropped ribScreen and aggPostures (folded under aggMovements) and
+    // fnPsfs (folded under fnAdl). redFlags kept in full, untouched.
     { id: "location", label: "Primary pain location", type: "multi", options: ["Upper thoracic T1–T4", "Mid thoracic T5–T8", "Lower thoracic T9–T12", "Cervico-thoracic junction C7–T2", "Thoracolumbar junction T12–L1", "Interscapular — central", "Interscapular — left", "Interscapular — right", "Costovertebral — lateral", "Lateral chest wall", "Anterior chest wall", "Sternal / midline anterior", "Around chest — dermatomal band", "Bilateral paraspinal"] },
     { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation — local", "Around chest wall — dermatomal", "To shoulder blade — interscapular referred", "To anterior chest — cardiac / visceral differential", "To abdomen — visceral differential", "To groin / hip — lower thoracic referred", "Bilateral chest / girdle", "Cardiac-like radiation — left chest / arm (urgent flag)"] },
     { id: "mechanismType", label: "Mechanism type", type: "multi", options: ["Insidious — postural / sustained", "Lifting injury", "Rotation injury", "Fall / direct trauma", "MVA — thoracic component", "Prolonged computer / desk posture", "Post-surgical", "Post-partum — breastfeeding posture", "Osteoporotic fracture — minimal trauma", "Viral illness — post-viral costochondritis", "No clear mechanism"] },
-    { id: "ribScreen", label: "Rib / Costochondral screen", type: "multi", options: ["Not applicable", "Direct trauma to chest / rib", "High-impact sport (rugby / contact)", "Stress fracture — rowing / coughing athlete", "Osteoporosis + minimal trauma", "Point tenderness over specific rib", "Worse deep breathing / coughing / laughing", "Costochondritis — anterior chest + cartilage tenderness", "Tietze syndrome — swelling at costochondral junction", "Rib spring test positive (known)", "Pneumothorax risk — penetrating trauma"] },
     { id: "aggMovements", label: "Movements aggravate", type: "multi", options: ["Rotation (most thoracic sensitive to)", "Side bending", "Extension", "Flexion", "Combined movements", "Deep breathing in", "Deep breathing out", "Coughing", "Sneezing", "Laughing", "Sustained end-range posture", "Quick / sudden movements", "Lifting", "Reaching overhead"] },
-    { id: "aggPostures", label: "Postures aggravate", type: "multi", options: ["Prolonged sitting", "Computer work sustained", "Driving", "Lying supine (flat)", "Lying prone", "Sleeping on affected side", "Backpack use", "After eating (lower thoracic — visceral?)", "Cold exposure"] },
     { id: "relTreatments", label: "What helps?", type: "multi", options: ["Heat", "Ice", "Manipulation — significant relief", "Mobilisation", "Stretching", "Breathing exercises", "Postural correction", "Taping", "NSAIDs effective", "Paracetamol effective", "Muscle relaxants", "No treatment helps"] },
     { id: "pattern", label: "Pattern", type: "multi", options: ["Mechanical — movement and posture related", "Constant — unrelated to movement (red flag)", "Breathing-related — with respiration", "Activity-dependent", "Night dominant", "Morning stiffness", "Inflammatory — morning stiffness / eases with movement"] },
     { id: "irritability", label: "Irritability", type: "single", options: ["Low", "Moderate", "High", "Very high"] },
     { id: "redFlags", label: "Red flag screen", type: "multi", options: ["No red flags", "Constant pain completely unaffected by position or movement", "Night pain — awakens patient — progressive", "Progressive worsening despite conservative treatment", "Cardiac symptoms with pain — chest tightness / radiation to left arm / jaw", "Cardiac history — pain reproduces cardiac pattern", "Respiratory symptoms — shortness of breath / haemoptysis", "Abdominal symptoms — pain with eating / weight loss", "Cancer history — any — thoracic metastases risk", "Unexplained weight loss + thoracic pain", "Fever + thoracic pain (discitis / osteomyelitis)", "Recent trauma — fracture risk", "Known osteoporosis — pathological fracture risk", "Neurological symptoms in legs — cord compression", "Bilateral leg weakness or sensory change (cord level)", "Age >50 — first episode without cause", "Systemically unwell — malaise + thoracic pain"] },
     { id: "fnAdl", label: "Limited activities", type: "multi", options: ["No limitations", "Deep breathing", "Coughing / sneezing", "Sitting tolerance", "Driving", "Computer work", "Sport", "Lifting", "Sleeping", "Work tasks"] },
-    { id: "fnPsfs", label: "PSFS — Top 3 (0–10)", type: "textarea" },
   ],
   lumbarSI: [
-    // Real, structured Lumbar/SI checklist — ported field-for-field (same
-    // option wording) from the older Ortho flow's Phase 0.5 Lumbar Reasoning
-    // Engine screen (sharedClinicalData.js lx_* fields), so the differential
-    // matcher in orthoLumbarReasoning.js gets the same real evidence that
-    // engine was built and tuned against, not a shallower reinterpretation.
+    // Trimmed 46 -> 15 fields (2026-09-29, same pass as cervical/thoracic).
+    // Dropped: dermatomal, belowKnee, the load/position/first-symptom
+    // mechanism sub-fields, spondyloScreen, the aggravating/relieving
+    // movements/activities/manual/medications/directional-preference
+    // sub-fields (kept one representative field each), morning/night/
+    // 24hr-type/trajectory (folded under overallPattern), the leg-symptom
+    // quality/signs/claudication breakdown (kept just neuroPresent +
+    // bladderBaseline), the entire psychosocial yellow-flags battery,
+    // sitting/standing/walking-tolerance (folded under adlRestrictions),
+    // and prior-episode history. orthoLumbarReasoning.js reads nearly
+    // every field this checklist ever had -- explicitly accepted trade
+    // against "AI Objective Assessment" match quality for what's dropped.
+    // Every red-flag screen is kept in full, plus bladderBaseline (needed
+    // to correctly interpret a cauda equina bladder-symptom answer as new
+    // vs pre-existing) -- safety screens stay untouched regardless of
+    // length pressure.
     { id: "location", label: "Primary pain location", type: "multi", options: ["Upper lumbar (L1-L2)", "Mid lumbar (L3)", "Lower lumbar (L4-L5)", "Lumbosacral junction (L5-S1)", "Central / midline", "Paraspinal right of midline", "Paraspinal left of midline", "Bilateral / band", "Sacrum (central)", "SI joint (L)", "SI joint (R)", "Bilateral SI joints", "Coccyx", "Buttock (L) — upper", "Buttock (L) — lower", "Buttock (R) — upper", "Buttock (R) — lower", "Ischial tuberosity (L)", "Ischial tuberosity (R)"] },
     { id: "radiation", label: "Radiation pattern", type: "multi", options: ["No radiation — local only", "Across lower back (belt distribution)", "Into groin (L)", "Into groin (R)", "To buttock (L)", "To buttock (R)", "To posterior thigh (L)", "To posterior thigh (R)", "To anterior thigh (L)", "To anterior thigh (R)", "To lateral thigh", "To knee (L)", "To knee (R)", "To calf (L)", "To calf (R)", "To lateral lower leg (L5)", "To medial lower leg (L4)", "To dorsum of foot (L5)", "To sole of foot (S1)", "To toes (L)", "To toes (R)", "Bilateral lower limb — concerning"] },
-    { id: "dermatomal", label: "Dermatomal distribution", type: "multi", options: ["Not dermatomal", "L1 — groin / upper inner thigh", "L2 — anterior thigh", "L3 — medial thigh / medial knee", "L4 — medial lower leg / big toe", "L5 — lateral lower leg / dorsum foot / great toe", "S1 — posterior calf / lateral foot / sole", "S2 — posterior thigh", "S3-4 — saddle (perineum) — cauda equina flag", "Bilateral — cauda equina flag"] },
-    { id: "belowKnee", label: "Does pain extend below the knee?", type: "single", options: ["No leg pain — back pain only", "Leg pain — thigh only / above knee", "Leg pain — below knee (radiculopathy threshold)", "Leg pain — extends to foot", "Leg pain — bilateral (cauda equina / stenosis flag)"] },
     { id: "mechanismType", label: "Mechanism type", type: "multi", options: ["No clear mechanism — insidious onset", "Lifting — spine flexed", "Lifting — spine rotated", "Lifting — spine flexed AND rotated (most common disc mechanism)", "Lifting — from floor (deadlift position)", "Twisting without lifting", "Bending forward without lifting", "Coughing / sneezing — onset", "Straining on toilet (Valsalva)", "Stumble / trip without full fall", "Fall onto back / buttocks", "Fall from height", "Motor vehicle accident", "Sport — specific (notes)", "Sustained poor posture over time", "Post-surgical", "Post-partum", "Post-illness", "No identified mechanism"] },
-    { id: "mechanismLoad", label: "Load estimate at injury", type: "single", options: ["N/A — no trauma", "Body weight only", "Light (<10kg)", "Moderate (10–25kg)", "Heavy (25–50kg)", "Very heavy / awkward (>50kg)", "Repetitive load — accumulated", "Unknown"] },
-    { id: "mechanismPosition", label: "Spine position at injury", type: "multi", options: ["Not applicable", "Flexed forward", "Extended backward", "Rotated left", "Rotated right", "Side bent", "Flexed + rotated (highest disc risk)", "Flexed + side bent", "Neutral — unexpected load", "Asymmetric / awkward"] },
-    { id: "mechanismFirstSymptom", label: "First symptom timing", type: "single", options: ["Not applicable", "Immediate pain at moment of injury", "Immediate stiffness", "Within first hour", "Next morning — woke with it", "24–48 hours later", "Gradual development over days", "Progressive over weeks"] },
-    { id: "spondyloScreen", label: "Spondylolysis / Spondylolisthesis indicators", type: "multi", options: ["Not applicable", "Young athlete (10–25 years) with low back pain", "Extension pain — worse arching backward", "Unilateral lower lumbar pain — pars stress", "Sport with repeated extension loading (gymnastics / cricket fast bowling / swimming butterfly / weightlifting)", "Single leg extension test reproduces pain (Stork test)", "No radiculopathy", "Bilateral L5 pars fracture — spondylolysis", "Forward slip of vertebra on x-ray — spondylolisthesis", "Hamstring tightness prominent feature", "Pain after growth spurt"] },
     { id: "aggPostures", label: "Postures aggravate", type: "multi", options: ["Sitting — any duration", "Sitting >15 minutes", "Sitting >30 minutes", "Sitting >1 hour", "Soft / unsupported seating", "Standing — any duration", "Standing >15 minutes", "Standing >30 minutes", "Lying supine (flat)", "Lying prone (face down)", "Lying on left side", "Lying on right side", "Driving (duration — specify in notes)", "Reading in bed", "Slumped / flexed posture", "Forward bent posture (e.g. over sink)", "Twisted / asymmetric posture"] },
-    { id: "aggMovements", label: "Movements aggravate", type: "multi", options: ["Forward bending (flexion)", "Backward bending (extension)", "Side bend left", "Side bend right", "Rotation left", "Rotation right", "Combined flexion + rotation left", "Combined flexion + rotation right", "Combined extension + rotation (quadrant)", "Quick / sudden movements", "Repetitive bending", "End-range any direction", "Transitional movements (sit to stand etc)"] },
-    { id: "aggActivities", label: "Activities aggravate", type: "multi", options: ["Coughing (discogenic indicator)", "Sneezing (discogenic indicator)", "Straining — toilet (Valsalva)", "Getting up from sitting", "Getting in / out of car", "Getting out of bed", "Turning over in bed", "Putting on shoes and socks", "Bending to floor", "Lifting any weight", "Lifting children", "Carrying shopping", "Pushing / pulling", "Vacuuming / mopping", "Gardening / weeding", "Walking — short distance", "Walking — extended duration", "Walking downhill (facet loading)", "Stairs — going up", "Stairs — going down", "Running", "Sport activities", "Sexual intercourse", "Standing from toilet", "Sitting on hard surface"] },
-    { id: "aggOther", label: "Other aggravating factors", type: "multi", options: ["Cold / damp weather", "Barometric pressure change", "Stress / emotional state", "Fatigue / tiredness", "Poor sleep", "Menstrual cycle", "Pregnancy / post-partum", "Recent weight gain", "Specific footwear / hard floors", "Old / sagging mattress", "Morning stiffness first 30 steps", "Prolonged walking bilateral leg symptoms (stenosis)"] },
     { id: "relPostures", label: "Postures relieve", type: "multi", options: ["Lying flat (supine)", "Lying with knees bent (crook lying)", "Lying with pillow under knees", "Lying on side — knees together", "Lying on side — pillow between knees", "Lying prone (face down)", "Prone on elbows (extension load)", "Sitting with good lumbar support", "Sitting on firm chair", "Standing — weight shifted", "Walking slowly", "Hands and knees (flexion unloading)", "Leaning forward on trolley / counter (stenosis pattern)", "Sitting with legs elevated"] },
-    { id: "relMovements", label: "Movements relieve", type: "multi", options: ["Extension — McKenzie press-up / cobra", "Flexion — knee to chest", "Rotation stretching", "Walking", "Specific directional preference (centralisation)", "Pelvic tilts", "Cat-cow / spinal mobility", "Self-traction (hanging from bar)", "Gentle exercise — general", "Swimming", "Cycling (if tolerated)", "Yoga / pilates", "Core stability exercises"] },
-    { id: "relManual", label: "Manual / physical treatments", type: "multi", options: ["Heat — hot water bottle", "Heat — heat pad", "Hot bath / shower", "Ice / cold pack", "Massage — general", "Massage — deep tissue", "Spinal manipulation — significant relief", "Spinal mobilisation", "TENS machine", "Acupuncture / dry needling", "Lumbar support / brace", "Inversion table", "Epidural steroid injection (history)", "Hydrotherapy / pool therapy", "Specific physio exercises"] },
-    { id: "relMedications", label: "Medications relieve", type: "multi", options: ["NSAIDs — very effective (inflammatory indicator)", "NSAIDs — moderately effective", "Paracetamol — effective", "Codeine / weak opioids — effective", "Strong opioids — effective", "Muscle relaxants — effective", "Neuropathic medication — effective (neural indicator)", "Cortisone injection — effective", "Cortisone injection — short-lived only", "No medication helps", "Not tried / not prescribed", "Medication helps but side effects problematic"] },
-    { id: "directionalPreference", label: "Directional preference (McKenzie)", type: "single", options: ["Not assessed yet", "Extension preference — press-up centralises symptoms", "Flexion preference — knee-to-chest centralises", "Lateral shift correction needed", "No clear directional preference", "Peripheralises with extension", "Peripheralises with flexion", "Inconsistent response"] },
     { id: "overallPattern", label: "Overall symptom pattern", type: "multi", options: ["Constant — never goes away", "Constant — varies in intensity hour to hour", "Intermittent — clear triggers", "Intermittent — unpredictable", "Only with specific loading", "Only at rest / worse at rest", "Morning dominant", "Evening dominant — worse after day's activities", "Night dominant", "Activity-proportional (warms up then fades)", "Delayed onset — pain next day after activity", "Worse second half of night (AS inflammatory pattern)", "Unpredictable — no pattern (nociplastic flag)"] },
-    { id: "morning", label: "Morning symptoms", type: "single", options: ["No morning symptoms", "Pain free on waking — comes on with activity", "Stiff only — eases within 10 min", "Stiff — eases within 30 min", "Stiff — takes 30–60 min to ease", "Stiff — takes >1 hour to ease (inflammatory flag)", "Painful on waking — stays painful all morning", "First 30 steps very painful then eases", "Worst on waking — most severe time of day"] },
-    { id: "night", label: "Night symptoms", type: "multi", options: ["No night symptoms", "Difficulty finding comfortable position", "Pain on turning over in bed", "Gets up to walk (restlessness / inflammatory)", "Wakes once from pain", "Wakes 2–3 times from pain", "Wakes multiple times — >3", "Constant night pain — cannot sleep", "Leg pain at night — neural", "Bladder waking — note if changed since onset", "Severe night sweats accompanying pain (red flag)"] },
-    { id: "pattern24hr", label: "24-hour pattern classification", type: "single", options: ["Mechanical — worse with load and posture, better with rest", "Inflammatory — worse at rest / morning stiffness >30 min / eases with movement", "Neuropathic — constant burning / shooting, worse at night", "Postural — sustained position dependent only", "Neurogenic claudication — walking provokes bilateral leg symptoms relieved by flexion", "No clear 24-hour pattern", "Unpredictable — no recognisable pattern"] },
-    { id: "trajectory", label: "Symptom trajectory", type: "single", options: ["Improving steadily", "Improving slowly", "Plateau — no change", "Fluctuating — variable", "Slowly worsening", "Rapidly worsening", "Worsening despite treatment", "Changed in character recently (red flag)"] },
     { id: "irritability", label: "Irritability (Maitland SIN)", type: "single", options: ["Low — hard to provoke, settles quickly", "Moderate — provoked with sustained activity, settles reasonably", "High — easily provoked, slow to settle (hours)", "Very high — minimal provocation, prolonged aggravation (24hrs+)"] },
     { id: "neuroPresent", label: "Leg neurological symptoms?", type: "single", options: ["No leg neurological symptoms", "Yes — unilateral (L)", "Yes — unilateral (R)", "Yes — bilateral (cauda equina / stenosis flag)"] },
-    { id: "neuroQuality", label: "Leg symptom quality", type: "multi", options: ["Not applicable", "Aching — diffuse", "Sharp — specific", "Burning — constant", "Shooting — intermittent", "Electric shock quality", "Tingling", "Pins and needles", "Numbness — objective", "Weakness — functional limitation", "Heaviness", "Cramping", "Cold sensation", "Hot sensation", "Hypersensitivity — light touch painful"] },
-    { id: "neuroSigns", label: "Neurological signs reported", type: "multi", options: ["No neurological signs", "Numbness — specific dermatome", "Foot drop — difficulty clearing foot", "Heel walking difficult (L4/L5)", "Toe walking difficult (S1)", "Quad weakness — difficulty stairs", "Reduced or absent ankle reflex (S1)", "Reduced or absent knee reflex (L3/L4)", "Saddle area numbness (S3/S4) — cauda equina flag", "Bladder difficulty — retention — cauda flag", "Bladder incontinence — new onset — cauda flag", "Bowel incontinence — new onset — cauda flag", "Sexual dysfunction — new onset — cauda flag", "Bilateral lower limb involvement"] },
-    { id: "claudication", label: "Walking / claudication pattern", type: "single", options: ["No claudication pattern", "Limited by back pain only", "Limited by unilateral leg pain", "Limited by bilateral leg pain / heaviness", "Relieved by sitting down", "Relieved by leaning forward / bending (neurogenic claudication — stenosis)", "Can walk further uphill than downhill (neurogenic)", "Distance consistent — relieved by rest (vascular pattern)"] },
     { id: "bladderBaseline", label: "Bladder / bowel baseline BEFORE pain started", type: "single", options: ["Normal bladder and bowel before pain onset", "Pre-existing bladder issues — specify in notes", "Pre-existing bowel issues — specify in notes", "Not asked — needs clarifying", "Uncertain"] },
     { id: "redFlagsCauda", label: "⚠ Cauda equina screen (urgent)", type: "multi", options: ["No cauda equina signs", "Bilateral leg weakness — new onset", "Saddle area anaesthesia — perineum / inner thighs", "Bladder retention — cannot urinate", "Bladder incontinence — new onset / unexpected", "Bowel incontinence — new onset / unexpected", "Reduced anal tone (if assessed)", "Sexual dysfunction — new onset", "Rapidly progressive bilateral neurological deficit", "Bilateral sciatica — new onset"] },
     { id: "redFlagsFracture", label: "Fracture risk indicators", type: "multi", options: ["No fracture indicators", "Major high-energy trauma", "Minor trauma + known osteoporosis", "Minor trauma + age >70", "Long-term corticosteroid use", "History of previous vertebral fracture", "Point bone tenderness on spinous process", "Severe unrelenting pain unaffected by position", "Post-menopausal woman + acute onset"] },
     { id: "redFlagsInflammatory", label: "Inflammatory / spondyloarthropathy indicators (ASAS)", type: "multi", options: ["No inflammatory features", "Age of onset <45", "Insidious onset over weeks-months", "Morning stiffness >30 minutes", "Stiffness improves with movement / exercise", "Worse with rest — restlessness at night", "Alternating buttock pain (R to L)", "Family history of AS / psoriasis / IBD / uveitis", "Psoriasis — personal history", "IBD (Crohn's / colitis) — personal history", "Uveitis / iritis — personal history", "Peripheral joint involvement", "NSAIDs very effective (ASAS criterion)", "HLA-B27 positive (known)", "Elevated ESR / CRP (known)"] },
     { id: "redFlagsSerious", label: "Other serious pathology indicators", type: "multi", options: ["No other red flags", "Constant pain — completely unaffected by position or movement", "Progressive night pain", "Thoracic pain accompanying lumbar pain", "Abdominal pain accompanying", "Pulsatile abdominal mass (AAA)", "Unexplained weight loss", "History of cancer — any", "IV drug use — risk of discitis", "Recent bacterial infection elsewhere", "Fever / systemically unwell with back pain", "Pain radiating to flank / loin (renal / ureteric)"] },
-    { id: "yellowBeliefs", label: "Beliefs about low back pain", type: "multi", options: ["No unhelpful beliefs", "Believes pain = damage / structural harm", "Believes activity will cause serious harm", "Believes rest is the only effective treatment", "Believes this is serious / progressive disease", "Catastrophising — magnification", "Catastrophising — helplessness / hopelessness", "Catastrophising — rumination", "Negative expectation of recovery", "Believes will never return to previous function", "Received alarming / nocebo advice from clinician", "Conflicting diagnoses received", "Expects passive treatment only"] },
-    { id: "yellowFear", label: "Fear-avoidance", type: "single", options: ["No fear-avoidance behaviour", "Mild — some avoidance of certain activities", "Moderate — significant avoidance affecting daily function", "Severe — markedly restricted / near housebound", "Tampa Scale elevated (if scored)", "Avoids all exercise due to fear"] },
-    { id: "yellowEmotion", label: "Emotional / psychological factors", type: "multi", options: ["No emotional / psychological concerns", "Mild low mood", "Moderate depression", "Severe depression", "Mild anxiety", "Moderate anxiety", "Severe anxiety", "Anger — about injury / circumstances", "Grief / bereavement concurrent", "PTSD — current or history", "Excessive health anxiety", "Sleep significantly disrupted by psychological factors"] },
-    { id: "yellowWork", label: "Work / compensation factors", type: "multi", options: ["No work-related yellow flags", "Job dissatisfaction prior to injury", "Conflict with employer / manager", "Believe job caused or worsened condition", "Fear of returning to same job", "Expect job loss", "Compensation claim active", "Personal injury litigation ongoing", "Solicitor engaged", "Financial stress — significant", "Employer pressure to return too early", "Employer unsupportive", "History of workplace bullying"] },
-    { id: "yellowSocial", label: "Social factors", type: "multi", options: ["Adequate social support", "Social isolation", "Family overprotective — reinforcing disability", "Family dismissive / unsupportive", "Cultural / language barriers to care", "No social support network", "Relationship strain related to pain"] },
-    { id: "yellowStartBack", label: "STarT Back Screening Tool result", type: "single", options: ["Not yet assessed", "Low risk (total 0–3)", "Medium risk (total ≥4, subscale <4)", "High risk (total ≥4, subscale ≥4)", "Referred for STarT-matched care"] },
-    { id: "sittingTolerance", label: "Sitting tolerance", type: "single", options: ["No limitation", "Comfortable for >1 hour", "Comfortable for 30–60 min", "Comfortable for 15–30 min", "Comfortable for <15 min", "Cannot sit comfortably at all"] },
-    { id: "standingTolerance", label: "Standing tolerance", type: "single", options: ["No limitation", "Comfortable for >1 hour", "Comfortable for 30–60 min", "Comfortable for 15–30 min", "Comfortable for <15 min", "Cannot stand comfortably"] },
-    { id: "walkingTolerance", label: "Walking tolerance", type: "single", options: ["No walking limitation", "Walks unlimited distance", "Walks >1 km", "Walks 500m–1km", "Walks 100–500m", "Walks <100m", "Walks <50m", "Household ambulation only", "Walking aid required"] },
     { id: "adlRestrictions", label: "ADL restrictions", type: "multi", options: ["No ADL restrictions", "Putting on shoes and socks", "Bending to floor level", "Lifting children", "Lifting shopping / moderate loads", "Vacuuming / mopping / floor cleaning", "Bed mobility — turning over", "Getting out of bed", "Getting in / out of bath", "Driving", "Sexual activity", "Gardening", "Housework generally", "Childcare / parenting duties"] },
     { id: "workImpact", label: "Work impact", type: "single", options: ["No work impact", "Mild discomfort — full duties", "Modified duties", "Reduced hours", "Off work — short term (<4 weeks)", "Off work — medium term (4–12 weeks)", "Off work — long term (>12 weeks)", "Unemployed — job loss", "Unable to return to previous occupation"] },
-    { id: "priorEpisodes", label: "Number of previous episodes", type: "single", options: ["First episode", "2–3 episodes", "4–6 episodes", "More than 6", "Continuous since onset"] },
-    { id: "priorEpisodeOutcome", label: "Previous episode resolved by", type: "single", options: ["N/A — first episode", "Resolved fully on its own", "Physiotherapy helped", "Medication helped", "Injection helped", "Surgery helped", "Did not fully resolve", "Never fully resolved"] },
   ],
   shoulder: [
+    // Trimmed 10 -> 8 fields (2026-09-29): dropped stiffness (frozen-
+    // shoulder pattern still capturable via pattern/notes) and irritability.
     { id: "location", label: "Pain location", type: "multi", options: ["Anterior shoulder", "Lateral shoulder (deltoid)", "Posterior shoulder", "AC joint", "Bicipital groove", "Subacromial", "Scapular border", "Upper arm"] },
     { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Down to elbow", "Down to hand (consider cervical origin)", "Up to neck", "Between shoulder blades"] },
     { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious / overuse", "Fall onto shoulder / outstretched hand", "Direct blow", "Forced overhead / rotation movement", "Repetitive overhead activity", "Throwing / racquet sport", "Lifting overhead", "Post-surgical", "Age-related / degenerative"] },
     { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["Overhead reaching", "Reaching behind back", "Reaching across the body", "Lying on the shoulder", "Lifting", "Painful arc (mid-range)"] },
     { id: "relieving", label: "Relieving factor", type: "multi", options: ["Rest", "Supportive positioning", "Ice / heat", "Medication", "Avoiding overhead activity"] },
     { id: "pattern", label: "24-hour pattern", type: "single", options: PATTERN_OPTIONS },
-    { id: "stiffness", label: "Stiffness pattern", type: "multi", options: ["No significant stiffness", "Mild — end-range only", "Progressive stiffness in all directions (frozen shoulder pattern)", "Worse in the morning"] },
-    { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "redFlags", label: "Red flags", type: "multi", options: ["Suspected fracture (recent fall / trauma)", "Cannot lift arm at all after trauma", "Constant progressive pain unrelated to movement", "Night pain unrelated to position", "Palpable mass", "Redness / warmth / swelling (possible infection)", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Overhead activities", "Reaching behind back", "Dressing", "Carrying / lifting", "Sleeping on that side", "Work / sport demands"] },
   ],
   elbowWristHand: [
+    // Trimmed 10 -> 9 fields (2026-09-29): dropped irritability. Kept
+    // neuro -- median vs ulnar nerve pattern is a defining differential
+    // clue for this region, not a stylistic add-on.
     { id: "location", label: "Pain location", type: "multi", options: ["Lateral elbow", "Medial elbow", "Posterior elbow", "Anterior elbow", "Forearm", "Dorsal wrist", "Volar (palm-side) wrist", "Radial wrist / thumb side", "Ulnar wrist", "Thumb", "Fingers", "Palm"] },
     { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Into the fingers", "Up the forearm", "Numbness / tingling — thumb, index, middle finger (median nerve pattern)", "Numbness / tingling — ring and little finger (ulnar nerve pattern)"] },
     { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious / overuse", "Fall onto outstretched hand", "Repetitive gripping / lifting", "Racquet sport (lateral elbow)", "Golf / throwing (medial elbow)", "Repetitive thumb use (e.g. new parent lifting baby)", "Direct trauma", "Vibration exposure"] },
@@ -184,11 +155,14 @@ export const SUBJECTIVE_REGION_FIELDS = {
     { id: "relieving", label: "Relieving factor", type: "multi", options: ["Rest", "Splint / brace", "Ice", "Activity modification", "Medication"] },
     { id: "pattern", label: "24-hour pattern", type: "single", options: PATTERN_OPTIONS },
     { id: "neuro", label: "Neurological symptoms", type: "multi", options: ["None", "Numbness / tingling — night-dominant (carpal tunnel pattern)", "Numbness / tingling — worse with elbow flexion (cubital tunnel pattern)", "Weakness in grip", "Dropping objects", "Wasting of hand muscles"] },
-    { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "redFlags", label: "Red flags", type: "multi", options: ["Suspected fracture (fall / trauma + deformity)", "Snuffbox tenderness after a fall (possible scaphoid fracture)", "Sudden inability to extend a finger (tendon rupture)", "Rapidly increasing swelling / severe pain (compartment syndrome)", "Hot / red / swollen joint", "Bilateral symptoms (systemic screen)", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Gripping / carrying", "Typing / writing", "Fine motor tasks", "Lifting", "Sport / work demands"] },
   ],
   hip: [
+    // Trimmed 14 -> 9 fields (2026-09-29): dropped irritability and the
+    // four narrow sub-condition screens (cSign/piriformisSigns/
+    // meralgiaSigns/hamstringOnsetPattern) -- redFlags/mechanical (the
+    // core mechanical-symptoms screen) stay untouched.
     { id: "location", label: "Pain location", type: "multi", options: ["Anterior groin", "Anterior hip / hip flexor region", "Lateral hip (greater trochanter)", "Posterior hip / deep buttock", "Ischial tuberosity", "Adductor / inner thigh", "Pubic symphysis", "SI joint"] },
     { id: "locationPattern", label: "Dominant pattern", type: "single", options: ["Groin-dominant", "Lateral hip-dominant", "Posterior / buttock-dominant", "Adductor-dominant", "Diffuse / mixed"] },
     // Wording matches orthoHipReasoning.js's runHipReasoningFromData()
@@ -211,18 +185,13 @@ export const SUBJECTIVE_REGION_FIELDS = {
     // own bespoke pattern fields.
     { id: "pattern", label: "24-hour pattern", type: "single", options: ["Intermittent — activity-related", "Constant — rarely eases", "Night pain", "Morning stiffness", "Improves through the day", "Worse through the day"] },
     { id: "mechanical", label: "Mechanical symptoms", type: "multi", options: ["None", "Clicking — painless", "Clicking — with pain", "Catching sensation", "Giving way", "Locking — intermittent", "Internal snapping (anterior, iliopsoas)", "External snapping (lateral, IT band)", "Crepitus / grinding"] },
-    { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "redFlags", label: "Red flags", type: "multi", options: ["Suspected fracture / cannot weight bear (elderly + fall)", "Suspected fracture neck of femur", "Acute hot swollen hip joint", "Avascular necrosis risk (steroid use, sickle cell, alcohol excess)", "Constant progressive pain unrelated to loading", "Referred pain from abdomen / pelvis", "Gynaecological referral suspected", "Testicular referral suspected", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Walking tolerance", "Stairs", "Getting up from low chairs", "Sport / running", "Sitting tolerance"] },
-    // The narrow sub-condition probes the engine reads (hp_c_sign,
-    // hp_piriformis, hp_meralgia, hp_hamstring_onset) had literally no
-    // checklist field at all before -- these four close that gap.
-    { id: "cSign", label: "C-sign (patient cups hand over hip/groin describing pain)", type: "single", options: ["Not assessed", "Yes — cups hand in C-shape over hip/groin", "No"] },
-    { id: "piriformisSigns", label: "Piriformis / deep gluteal signs", type: "multi", options: ["None", "Deep buttock pain", "Sciatica-like radiation down the leg", "Tenderness deep to gluteus (piriformis)"] },
-    { id: "meralgiaSigns", label: "Lateral thigh sensory symptoms", type: "single", options: ["None", "Lateral thigh burning / numbness (meralgia paresthetica pattern)"] },
-    { id: "hamstringOnsetPattern", label: "Proximal hamstring onset pattern", type: "single", options: ["Not applicable", "Sitting on ischial tuberosity painful", "Insidious tendinopathy pattern", "Acute tear (sprint/kick mechanism)"] },
   ],
   knee: [
+    // Trimmed 11 -> 10 fields (2026-09-29): dropped irritability only --
+    // givingWay/locking kept, they're defining differential clues here
+    // (meniscus/ligament vs patellofemoral), not stylistic detail.
     { id: "location", label: "Pain location", type: "multi", options: ["Anterior / diffuse", "Around the kneecap", "Below the kneecap (patellar tendon)", "Above the kneecap (quad tendon)", "Medial joint line", "Lateral joint line", "Behind the knee (popliteal)", "Below the joint line (tibial tuberosity)", "Diffuse"] },
     { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Referred from the hip", "Referred from the lower back", "Down the shin"] },
     { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious / overuse", "Non-contact twisting", "Direct blow", "Hyperextension", "Landing from a jump", "Pivoting / cutting movement", "Post-surgical"] },
@@ -231,44 +200,28 @@ export const SUBJECTIVE_REGION_FIELDS = {
     { id: "pattern", label: "24-hour pattern", type: "single", options: PATTERN_OPTIONS },
     { id: "givingWay", label: "Giving way?", type: "single", options: ["No", "Yes — with pivoting / twisting", "Yes — on stairs", "Yes — unpredictable / no clear trigger"] },
     { id: "locking", label: "Locking?", type: "single", options: ["No", "Yes — true mechanical locking", "Yes — momentary / pseudo-locking"] },
-    { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "redFlags", label: "Red flags", type: "multi", options: ["Unable to bear weight for 4 steps", "Immediate marked swelling after injury (possible haemarthrosis)", "Locked knee that won't straighten", "Hot red severely tender joint", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Stairs", "Squatting / kneeling", "Running", "Walking distance", "Sport participation"] },
   ],
   ankleFoot: [
-    // Wording matches orthoAnkleFootReasoning.js's runAnkleFootDifferential()
-    // keyword checks exactly. Several of these (Achilles wording, "sprain"
-    // on inversion/eversion, "insidious onset") were previously phrased
-    // differently and never actually matched (2026-09-15, same class of bug
-    // as Hip/Shoulder). Anterior/Posterior ankle locations were missing
-    // outright.
+    // Trimmed 19 -> 9 fields (2026-09-29). NOTE: unlike the other trims in
+    // this pass, the 9 dropped screens below (previousSprains through
+    // peronealSymptoms) WERE verified matching-relevant to
+    // orthoAnkleFootReasoning.js (added deliberately on 2026-09-15 to close
+    // real gaps in its differential matching) -- cutting them is a bigger
+    // hit to "AI Objective Assessment" match quality for this region than
+    // most other regions' trims, explicitly accepted anyway per Aditi's
+    // "just want to trim... region specific" (2026-09-29). redFlags kept
+    // in full, untouched.
     { id: "location", label: "Pain location", type: "multi", options: ["Lateral ankle ligaments", "Medial ankle ligaments", "Anterior ankle", "Posterior ankle", "Achilles tendon — insertional", "Achilles tendon — mid-portion", "Plantar heel / arch", "1st big toe joint", "Forefoot / metatarsals", "Between the toes", "Top of the foot", "Shin"] },
     { id: "radiation", label: "Radiation", type: "multi", options: ["No radiation", "Referred from the lower back", "Tarsal tunnel — burning into the sole/toes (posterior tibial nerve)", "Burning between the toes", "Into the sole of the foot"] },
     { id: "mechanism", label: "Mechanism of injury", type: "multi", options: ["Insidious onset / overuse", "Inversion sprain (rolled inward)", "Eversion sprain (rolled outward)", "High ankle sprain (syndesmosis)", "Direct impact", "Fall from height", "Landing from a jump", "Change in footwear / surface", "Sudden increase in training"] },
     { id: "aggravating", label: "Aggravating movement", type: "multi", options: ["First steps in the morning", "Walking / running", "Downhill running", "Dorsiflexion (e.g. squatting, stairs down)", "Stairs", "Barefoot on a hard floor", "Tight / narrow footwear"] },
     { id: "relieving", label: "Relieving factor", type: "multi", options: ["Rest", "Ice", "Supportive footwear", "Stretching", "Taping / brace", "Medication"] },
-    // Bespoke options (not the shared PATTERN_OPTIONS) so night-dominant/
-    // constant/warms-up-then-worsens -- all real engine signals -- have
-    // something to actually match.
     { id: "pattern", label: "24-hour pattern", type: "single", options: ["Intermittent — activity-related", "Constant — never fully eases", "Worse in morning, improves through day", "Warms up then worsens (tendinopathy pattern)", "Night dominant (screen for serious pathology)", "Burning / night pain"] },
     { id: "swelling", label: "Swelling", type: "single", options: ["None", "Mild — settles same day", "Moderate — persistent low-grade swelling", "Severe / recurrent swelling after activity"] },
-    { id: "irritability", label: "Irritability", type: "single", options: IRRITABILITY_OPTIONS },
     { id: "redFlags", label: "Red flags", type: "multi", options: ["Ottawa rules — bony tenderness at malleolus", "Ottawa rules — cannot weight bear 4 steps", "Suspected Achilles rupture (unable to rise on toes)", "Suspected complete ATFL rupture", "Stress fracture suspected (focal tibial tenderness)", "Peroneal tendon subluxation", "Acute hot swollen joint", "Compartment syndrome / vascular compromise", "Cancer history", NONE_ABOVE] },
     { id: "function", label: "Functional limitations", type: "multi", options: ["Walking distance", "Running", "Stairs", "Standing tolerance", "Sport participation"] },
-    // These 9 fields didn't exist anywhere in this checklist before --
-    // real engine signals (previous sprains, felt/heard a pop, immediate
-    // weight-bearing, instability, morning Achilles stiffness, and the
-    // dedicated Achilles-rupture/shin-pain/Lisfranc/peroneal screens) that
-    // could never fire from Subjective data at all until now.
-    { id: "previousSprains", label: "Previous ankle sprains", type: "single", options: ["First-time sprain", "1 previous sprain", "2–3 previous sprains", "4+ previous sprains (multiple sprains)"] },
-    { id: "poppingSound", label: "Pop felt or heard at time of injury", type: "single", options: ["No pop felt/heard", "Felt/heard a pop — Achilles insertion", "Felt/heard a pop — mid-Achilles", "Felt/heard a pop — lateral ankle (ligament)"] },
-    { id: "weightBearingAfterInjury", label: "Weight-bearing immediately after injury", type: "single", options: ["Continued activity normally", "Stopped activity immediately", "Required assistance to walk"] },
-    { id: "morningSymptoms", label: "Morning symptoms", type: "single", options: ["No morning symptoms", "Achilles stiff and sore in the morning", "General ankle stiffness — eases quickly"] },
-    { id: "instability", label: "Instability / giving way", type: "single", options: ["No instability", "Occasional giving way", "Frequent giving way / functional instability"] },
-    { id: "calfAchillesOnset", label: "Calf/Achilles onset (if relevant)", type: "single", options: ["Not applicable", "Felt like being shot in the back of the leg", "Cannot rise on tiptoe (suspected Achilles rupture)"] },
-    { id: "shinPain", label: "Shin pain (if relevant)", type: "multi", options: ["Not applicable", "Diffuse tibial pain — stress reaction (shin splints)", "Exertional pain that eases with rest", "Focal point tenderness over tibia (stress fracture screen)", "Pain at rest + activity (stress fracture screen)"] },
-    { id: "lisfrancScreen", label: "Midfoot / Lisfranc screen (if relevant)", type: "single", options: ["Not applicable", "High-energy mechanism (RTA, fall from height, crush injury)", "Cannot weight bear on toes (Lisfranc screen)"] },
-    { id: "peronealSymptoms", label: "Peroneal tendon symptoms (if relevant)", type: "single", options: ["Not applicable", "Snapping behind lateral malleolus (clicking)", "Sensation of tendon flick out of groove"] },
   ],
 };
 
@@ -292,6 +245,78 @@ export function subjectiveFieldsForRegion(region) {
   return (key && SUBJECTIVE_REGION_FIELDS[key]) || GENERIC_REGION_FIELDS;
 }
 
+// Groups each region's (long) field list into named, collapsible sections
+// for RegionSubjectiveTabs (orthoOutpatientSections.jsx) to render (2026-09-29,
+// Aditi: the region-specific subjective form is "too long" as one flat list,
+// especially in the AI flow -- collapse it into sections instead of removing
+// any fields). Field IDs only, so this never duplicates label/type/options --
+// SUBJECTIVE_REGION_FIELDS above stays the single source of truth for those.
+// Any field id present in a region's list but NOT named in its grouping here
+// (e.g. a future addition someone forgot to file into a section) still shows,
+// under a trailing "Other" section, rather than silently disappearing.
+const SECTION_GROUPS = {
+  // Cervical/Thoracic/Lumbar keep dedicated groupings -- even trimmed,
+  // they're still the longest lists (9-17 fields). Shoulder/Elbow-Wrist-
+  // Hand/Hip/Knee/Ankle-Foot are short enough post-trim (8-10 fields) to
+  // just fall through to GENERIC_SECTION_GROUPS below, which already
+  // matches their field naming (mechanism/aggravating/relieving/pattern/
+  // redFlags/function); anything that doesn't match (locationPattern,
+  // mechanical, neuro, givingWay/locking, swelling) lands in the
+  // "Other" section via sectionedFieldsForRegion()'s own leftover net.
+  cervical: [
+    { title: "Location & Mechanism", ids: ["location", "radiation", "mechanismType"] },
+    { title: "Arm / Neuro Signs", ids: ["armPresent", "lhermitte"] },
+    { title: "Aggravating & Relieving", ids: ["aggMovements", "relMovements"] },
+    { title: "Pattern", ids: ["overallPattern", "irritability"] },
+    { title: "Headache", ids: ["haPresent"] },
+    { title: "Red Flag Screens", ids: ["redFlagsMyelopathy", "redFlagsVbi", "redFlagsInstability", "redFlagsOther", "fractureScreen", "rfAction"] },
+    { title: "Function", ids: ["fnAdl"] },
+  ],
+  thoracic: [
+    { title: "Location & Mechanism", ids: ["location", "radiation", "mechanismType"] },
+    { title: "Aggravating & Relieving", ids: ["aggMovements", "relTreatments"] },
+    { title: "Pattern", ids: ["pattern", "irritability"] },
+    { title: "Red Flags", ids: ["redFlags"] },
+    { title: "Function", ids: ["fnAdl"] },
+  ],
+  lumbarSI: [
+    { title: "Location & Mechanism", ids: ["location", "radiation", "mechanismType"] },
+    { title: "Leg Neuro Symptoms", ids: ["neuroPresent", "bladderBaseline"] },
+    { title: "Aggravating & Relieving", ids: ["aggPostures", "relPostures"] },
+    { title: "Pattern", ids: ["overallPattern", "irritability"] },
+    { title: "Red Flag Screens", ids: ["redFlagsCauda", "redFlagsFracture", "redFlagsInflammatory", "redFlagsSerious"] },
+    { title: "Function", ids: ["adlRestrictions", "workImpact"] },
+  ],
+};
+
+// Own small grouping for the generic write-in fallback too, same "collapse,
+// don't cut" treatment as every named region above.
+const GENERIC_SECTION_GROUPS = [
+  { title: "Location & Radiation", ids: ["location", "radiation"] },
+  { title: "Mechanism, Aggravating & Relieving", ids: ["mechanism", "aggravating", "relieving"] },
+  { title: "Pattern", ids: ["pattern", "irritability"] },
+  { title: "Red Flags", ids: ["redFlags"] },
+  { title: "Function", ids: ["function"] },
+];
+
+export function sectionedFieldsForRegion(region) {
+  const fields = subjectiveFieldsForRegion(region);
+  const key = contentKeyForRegion(region);
+  const groups = (key && SECTION_GROUPS[key]) || GENERIC_SECTION_GROUPS;
+  const byId = new Map(fields.map((f) => [f.id, f]));
+  const used = new Set();
+  const sections = groups
+    .map((g) => {
+      const groupFields = g.ids.map((id) => byId.get(id)).filter(Boolean);
+      groupFields.forEach((f) => used.add(f.id));
+      return { title: g.title, fields: groupFields };
+    })
+    .filter((s) => s.fields.length);
+  const leftover = fields.filter((f) => !used.has(f.id));
+  if (leftover.length) sections.push({ title: "Other", fields: leftover });
+  return sections;
+}
+
 // Which fields actually change what "AI Objective Assessment" suggests --
 // verified directly against each region's differential-matching adapter
 // (2026-09-15, following the Shoulder/Hip/Ankle keyword-matching audit &
@@ -304,12 +329,15 @@ export function subjectiveFieldsForRegion(region) {
 // same class of gap Shoulder/Hip/Ankle had before this fix) is collected
 // for the record but does not currently change the ranking -- said
 // honestly rather than starred aspirationally.
+// Ids trimmed out of SUBJECTIVE_REGION_FIELDS on 2026-09-29 were also
+// dropped from these lists (a stale id here is harmless -- it just never
+// matches a rendered field -- but there's no reason to keep dead entries).
 const FULLY_WIRED_REGIONS = ["cervical", "thoracic", "lumbarSI"];
 const MATCHING_RELEVANT_FIELDS = {
-  shoulder: ["mechanism", "aggravating", "relieving", "pattern", "stiffness", "radiation", "redFlags"],
-  hip: ["location", "locationPattern", "mechanism", "aggravating", "pattern", "mechanical", "redFlags", "cSign", "piriformisSigns", "meralgiaSigns", "hamstringOnsetPattern"],
+  shoulder: ["mechanism", "aggravating", "relieving", "pattern", "radiation", "redFlags"],
+  hip: ["location", "locationPattern", "mechanism", "aggravating", "pattern", "mechanical", "redFlags"],
   knee: ["location", "mechanism", "givingWay", "locking", "pattern", "redFlags"],
-  ankleFoot: ["location", "radiation", "mechanism", "aggravating", "pattern", "swelling", "redFlags", "previousSprains", "poppingSound", "weightBearingAfterInjury", "morningSymptoms", "instability", "calfAchillesOnset", "shinPain", "lisfrancScreen", "peronealSymptoms"],
+  ankleFoot: ["location", "radiation", "mechanism", "aggravating", "pattern", "swelling", "redFlags"],
   elbowWristHand: ["location", "radiation", "mechanism", "aggravating", "pattern", "neuro", "redFlags"],
 };
 export function isMatchingRelevant(region, fieldId) {

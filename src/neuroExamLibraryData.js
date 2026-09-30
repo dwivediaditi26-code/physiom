@@ -8,7 +8,7 @@
 // COORDINATION_TESTS in sharedClinicalData.js -- the exact same real,
 // already-validated dataset the app's "old" Neuro Learn section
 // (physiofeed/learn/NeuroStudy.jsx) and the real clinical exam screen
-// (PhysioNeuro.jsx) already use -- not freshly authored content, so it
+// (the old PhysioNeuro.jsx) already used -- not freshly authored content, so it
 // stays consistent with what's already in the app. `image: null`
 // throughout, same placeholder pattern as the rest of the InfoCard system.
 //

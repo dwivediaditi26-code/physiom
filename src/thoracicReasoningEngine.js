@@ -9,7 +9,7 @@
 //   Layer 3 (Reasoning Engine) -> this file
 //
 // Input: the canonical variable object produced by
-// extractThoracicVariablesStructured() (thoracicVariableExtractor.js) --
+// extractThoracicVariables() (orthoThoracicReasoning.js) --
 // NOT raw form data. Output: every T01-T11 condition ranked by an
 // UNWEIGHTED, count-based match tier.
 //
@@ -55,7 +55,7 @@ function textIncludes(text, ...needles) {
 // pleurisy, pneumothorax, pneumonia), visceral/GI (cholecystitis, peptic
 // ulcer), renal (pyelonephritis, nephrolithiasis) -- plus this app's own
 // cancer/infection/fracture/cord-compression additions to the same
-// single tx_rf screen (see thoracicVariableExtractor.js's file header for
+// single red-flag screen (see the old thoracicVariableExtractor.js's header, in git history, for
 // why this is one combined field rather than four separate ones like
 // lumbar/cervical have).
 function evaluateRedFlagOverride(tv) {
@@ -458,7 +458,7 @@ const TIER_ORDER = { "Strong match": 4, "Possible match": 3, "Weak match": 2, "I
 
 /**
  * Main entry point. Takes the output of
- * extractThoracicVariablesStructured() (thoracicVariableExtractor.js)
+ * extractThoracicVariables() (orthoThoracicReasoning.js)
  * and returns:
  *   { redFlagOverride, conditions: [...ranked...] }
  * Identical contract to runLumbarReasoningEngine()/runCervicalReasoningEngine().

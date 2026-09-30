@@ -1,29 +1,36 @@
 // thoracicReasoningEngine.test.js
 // Unit tests for the Layer 3 thoracic reasoning engine, run against
-// realistic cases through the real Pass 1 extractor (not hand-built tv
-// objects) so this also catches any mismatch between the two modules'
-// shapes. Mirrors lumbarReasoningEngine.test.js / cervicalReasoningEngine.test.js's
+// realistic cases written as answers to the Ortho Thoracic checklist and
+// read through the same adapter the app uses (orthoThoracicReasoning.js),
+// not hand-built tv objects, so this also catches any mismatch between
+// the checklist, the adapter and the engine. Mirrors lumbarReasoningEngine.test.js / cervicalReasoningEngine.test.js's
 // structure. T11 is NOT scored like T01-T10 -- it's a hard override, and
 // unlike lumbar's L11/cervical's C11 (one standout EMERGENCY category
 // each), Thoracic's T11 treats cardiac, respiratory, AND cord compression
 // ALL as EMERGENCY (Magee Table 8-1 lists MI/PE/pneumothorax side-by-side).
 import { describe, it, expect } from "vitest";
-import { extractThoracicVariablesStructured } from "../thoracicVariableExtractor.js";
+import { extractThoracicVariables } from "../orthoThoracicReasoning.js";
 import { runThoracicReasoningEngine } from "../thoracicReasoningEngine.js";
 
-const SEP = "|||";
+// The Ortho checklist stores multi-select answers joined with ", ".
+const SEP = ", ";
+
+// The Ortho tool doesn't pass the patient's age/sex into this adapter yet
+// (the adapter sets them to null), so checks of the engine's age/sex rules
+// add them to the adapter's output directly.
+const withDemographics = (v, demographics) => ({ ...v, demographics: { ...v.demographics, ...demographics } });
 
 describe("runThoracicReasoningEngine", () => {
   it("ranks T01 (facet/mechanical) at or near the top for a textbook mechanical case", () => {
     const data = {
-      tx_loc: ["Mid thoracic T5–T8"].join(SEP),
-      tx_agg_mov: ["Rotation (most thoracic sensitive to)", "Extension"].join(SEP),
-      tx_agg_post: ["Prolonged sitting"].join(SEP),
-      tx_pattern: ["Mechanical — movement and posture related"].join(SEP),
-      tx_rel: ["Manipulation — significant relief"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      location: ["Mid thoracic T5–T8"].join(SEP),
+      aggMovements: ["Rotation (most thoracic sensitive to)", "Extension"].join(SEP),
+      aggPostures: ["Prolonged sitting"].join(SEP),
+      pattern: ["Mechanical — movement and posture related"].join(SEP),
+      relTreatments: ["Manipulation — significant relief"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = extractThoracicVariables(data);
     const result = runThoracicReasoningEngine(tv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -34,12 +41,12 @@ describe("runThoracicReasoningEngine", () => {
 
   it("ranks T03 (rib/costovertebral dysfunction) at or near the top for a breathing/cough-aggravated, traumatic-onset case", () => {
     const data = {
-      tx_loc: ["Costovertebral — lateral"].join(SEP),
-      tx_agg_mov: ["Deep breathing in", "Coughing"].join(SEP),
-      tx_moi: ["Fall / direct trauma"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      location: ["Costovertebral — lateral"].join(SEP),
+      aggMovements: ["Deep breathing in", "Coughing"].join(SEP),
+      mechanismType: ["Fall / direct trauma"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = extractThoracicVariables(data);
     const result = runThoracicReasoningEngine(tv);
 
     expect(result.redFlagOverride.triggered).toBe(false);
@@ -50,20 +57,20 @@ describe("runThoracicReasoningEngine", () => {
 
   it("ranks T09 (myofascial) with strong support for interscapular/bilateral-paraspinal pain aggravated by sustained posture", () => {
     const data = {
-      tx_loc: ["Interscapular — central", "Bilateral paraspinal"].join(SEP),
-      tx_agg_post: ["Prolonged sitting", "Computer work sustained"].join(SEP),
-      tx_pattern: ["Mechanical — movement and posture related"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      location: ["Interscapular — central", "Bilateral paraspinal"].join(SEP),
+      aggPostures: ["Prolonged sitting", "Computer work sustained"].join(SEP),
+      pattern: ["Mechanical — movement and posture related"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = extractThoracicVariables(data);
     const result = runThoracicReasoningEngine(tv);
     const t09 = result.conditions.find(c => c.id === "T09");
     expect(t09.matchTier).toBe("Strong match");
   });
 
   it("triggers a hard EMERGENCY override for cardiac red flag indicators, regardless of other findings", () => {
-    const tv = extractThoracicVariablesStructured({
-      tx_rf: ["Cardiac symptoms with pain — chest tightness / radiation to left arm / jaw"].join(SEP),
+    const tv = extractThoracicVariables({
+      redFlags: ["Cardiac symptoms with pain — chest tightness / radiation to left arm / jaw"].join(SEP),
     });
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -71,8 +78,8 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("triggers a hard EMERGENCY override for respiratory red flag indicators", () => {
-    const tv = extractThoracicVariablesStructured({
-      tx_rf: ["Respiratory symptoms — shortness of breath / haemoptysis"].join(SEP),
+    const tv = extractThoracicVariables({
+      redFlags: ["Respiratory symptoms — shortness of breath / haemoptysis"].join(SEP),
     });
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -80,8 +87,8 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("triggers a hard EMERGENCY override for cord compression indicators (not merely URGENT_REFERRAL)", () => {
-    const tv = extractThoracicVariablesStructured({
-      tx_rf: ["Bilateral leg weakness or sensory change (cord level)"].join(SEP),
+    const tv = extractThoracicVariables({
+      redFlags: ["Bilateral leg weakness or sensory change (cord level)"].join(SEP),
     });
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -89,8 +96,8 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("treats a positive screen outside cardiac/respiratory/cord-compression as URGENT_REFERRAL, not EMERGENCY", () => {
-    const tv = extractThoracicVariablesStructured({
-      tx_rf: ["Cancer history — any — thoracic metastases risk"].join(SEP),
+    const tv = extractThoracicVariables({
+      redFlags: ["Cancer history — any — thoracic metastases risk"].join(SEP),
     });
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(true);
@@ -98,25 +105,25 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("reports an incomplete screen rather than treating it as negative when red flags were never asked", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(false);
     expect(result.redFlagOverride.urgency).toBe("SCREEN_INCOMPLETE");
   });
 
   it("reports SCREEN_NEGATIVE (not triggered, not incomplete) when the screen was completed and is clean", () => {
-    const tv = extractThoracicVariablesStructured({ tx_rf: ["No red flags"].join(SEP) });
+    const tv = extractThoracicVariables({ redFlags: ["No red flags"].join(SEP) });
     const result = runThoracicReasoningEngine(tv);
     expect(result.redFlagOverride.triggered).toBe(false);
     expect(result.redFlagOverride.urgency).toBe("SCREEN_NEGATIVE");
   });
 
   it("differentiates T08 (costochondritis) from a cardiac source via the explicit cardiac-red-flag refuting check", () => {
-    const clean = extractThoracicVariablesStructured({
-      tx_moi: ["Viral illness — post-viral costochondritis"].join(SEP),
-      tx_agg_mov: ["Deep breathing in", "Coughing"].join(SEP),
-      tx_loc: ["Anterior chest wall"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+    const clean = extractThoracicVariables({
+      mechanismType: ["Viral illness — post-viral costochondritis"].join(SEP),
+      aggMovements: ["Deep breathing in", "Coughing"].join(SEP),
+      location: ["Anterior chest wall"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     });
     const resultClean = runThoracicReasoningEngine(clean);
     const t08Clean = resultClean.conditions.find(c => c.id === "T08");
@@ -124,7 +131,7 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("every condition reports unknownCount so callers can distinguish low-confidence matches from genuinely negative ones", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     result.conditions.forEach(c => {
       expect(typeof c.unknownCount).toBe("number");
@@ -133,14 +140,14 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("returns exactly 10 scored conditions (T01-T10), with T11 handled only via redFlagOverride", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     expect(result.conditions.length).toBe(10);
     expect(result.conditions.some(c => c.id === "T11")).toBe(false);
   });
 
   it("flags T04, T05, and T07 as lowConfidence, honestly noting thin data coverage rather than hiding it", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     const t04 = result.conditions.find(c => c.id === "T04");
     const t05 = result.conditions.find(c => c.id === "T05");
@@ -154,7 +161,7 @@ describe("runThoracicReasoningEngine", () => {
   });
 
   it("grounds T09 (myofascial) in Magee's own Table 8-8 from the start -- never an UNVERIFIED placeholder, unlike L09/C10's original state", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     const t09 = result.conditions.find(c => c.id === "T09");
     expect(t09.note).toMatch(/Table 8-8/);
@@ -169,11 +176,10 @@ describe("runThoracicReasoningEngine", () => {
     // because a confirmed out-of-range age only failed to add support
     // rather than actively ruling the condition out.
     const data = {
-      dem_age: "45",
-      tx_moi: ["Insidious — postural / sustained"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      mechanismType: ["Insidious — postural / sustained"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = withDemographics(extractThoracicVariables(data), { age: "45" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     const t07 = result.conditions.find(c => c.id === "T07");
@@ -184,20 +190,19 @@ describe("runThoracicReasoningEngine", () => {
 
   it("does NOT hard-exclude T05 for a genuine adolescent (age confirmed inside 13-16)", () => {
     const data = {
-      dem_age: "14",
-      tx_moi: ["Insidious — postural / sustained"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      mechanismType: ["Insidious — postural / sustained"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = withDemographics(extractThoracicVariables(data), { age: "14" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     expect(t05.matchTier).not.toBe("Unlikely");
   });
 
   it("does not penalize T05/T07 any more than before when age was never captured at all", () => {
-    const tv = extractThoracicVariablesStructured({
-      tx_moi: ["Insidious — postural / sustained"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+    const tv = extractThoracicVariables({
+      mechanismType: ["Insidious — postural / sustained"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
@@ -215,16 +220,15 @@ describe("runThoracicReasoningEngine", () => {
     // proportions. T07 should lead here: its own checklist is fully
     // satisfied, T05's is only partly satisfied.
     const data = {
-      dem_age: "13", dem_sex: "Female",
-      tx_loc: ["Bilateral paraspinal"].join(SEP),
+      location: ["Bilateral paraspinal"].join(SEP),
       // Explicit negative (not just omitted) -- a later fix made
       // traumaticMechanism correctly read as "unknown" rather than a
-      // silent false-positive "confirmed no trauma" when tx_moi is never
+      // silent false-positive "confirmed no trauma" when mechanismType is never
       // touched at all, so the tie premise needs a real answer here.
-      tx_moi: ["No clear mechanism"].join(SEP),
-      tx_rf: ["No red flags"].join(SEP),
+      mechanismType: ["No clear mechanism"].join(SEP),
+      redFlags: ["No red flags"].join(SEP),
     };
-    const tv = extractThoracicVariablesStructured(data);
+    const tv = withDemographics(extractThoracicVariables(data), { age: "13", sex: "Female" });
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     const t07 = result.conditions.find(c => c.id === "T07");
@@ -240,21 +244,21 @@ describe("runThoracicReasoningEngine", () => {
     expect(t07Index).toBeLessThan(t05Index);
   });
 
-  it("does not let an entirely untouched tx_moi masquerade as a confirmed 'no trauma' finding", () => {
+  it("does not let an entirely untouched mechanismType masquerade as a confirmed 'no trauma' finding", () => {
     // Real-world regression found via a fully-blank-form sweep:
     // traumaticMechanism used to default to a plain `false` whenever
-    // tx_moi was never touched at all -- indistinguishable from a real
+    // mechanismType was never touched at all -- indistinguishable from a real
     // "mechanism asked, no trauma selected" answer. That silently
     // inflated T05's (Scheuermann's) supporting count on a completely
     // blank form via its "No traumatic mechanism" check.
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     const t05 = result.conditions.find(c => c.id === "T05");
     expect(t05.supportingMatched).not.toContain("No traumatic mechanism");
   });
 
   it("includes the Thoracic MMT test as a recommended objective test for T06 and T09", () => {
-    const tv = extractThoracicVariablesStructured({});
+    const tv = extractThoracicVariables({});
     const result = runThoracicReasoningEngine(tv);
     const t06 = result.conditions.find(c => c.id === "T06");
     const t09 = result.conditions.find(c => c.id === "T09");

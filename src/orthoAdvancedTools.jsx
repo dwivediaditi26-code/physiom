@@ -171,11 +171,23 @@ export function GradeSelect({ value, onChange, children, style, className = "gra
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(null);
   const btnRef = React.useRef(null);
+  const popoverRef = React.useRef(null);
   const current = opts.find((o) => o.value === (value || ""));
   const placeholder = opts.find((o) => o.value === "");
   React.useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
+    // Capture-phase so scrolling the PAGE (which could leave the popover
+    // misaligned with its trigger button) closes it -- but scroll events
+    // don't bubble, only capture, so without the popoverRef check below
+    // this also fired the instant you tried to scroll the option list
+    // itself (its own overflowY:auto div), closing it before anything
+    // moved (2026-09-29, Aditi: "in sttt the scrolling section is not
+    // working in joint play" -- Kaltenborn grade dropdown cut off with no
+    // way to reach Grade 4+).
+    const close = (e) => {
+      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
     return () => { window.removeEventListener("scroll", close, true); window.removeEventListener("resize", close); };
@@ -198,7 +210,7 @@ export function GradeSelect({ value, onChange, children, style, className = "gra
       </button>
       {open && pos && createPortal(
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100000 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.maxH, overflowY: "auto", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, boxShadow: "0 10px 28px rgba(20,10,60,.18)", padding: 4 }}>
+          <div ref={popoverRef} onClick={(e) => e.stopPropagation()} style={{ position: "fixed", left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom, maxHeight: pos.maxH, overflowY: "auto", background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, boxShadow: "0 10px 28px rgba(20,10,60,.18)", padding: 4 }}>
             {opts.map((o) => {
               const sel = (value || "") === o.value;
               return (

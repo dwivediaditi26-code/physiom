@@ -1,7 +1,7 @@
 import React, { useState, lazy, Suspense } from "react";
 import { SectionIntro, TextField, SelectField, Segmented, TextArea, NumberField, Stepper, Hint, useSectionData, fmtVal, FieldShell } from "./orthoFieldKit.jsx";
 import { RedFlagFields } from "./orthoRedFlagScreen.jsx";
-import { subjectiveFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
+import { subjectiveFieldsForRegion, sectionedFieldsForRegion, isMatchingRelevant } from "./orthoSubjectiveRegionData.js";
 import { AiExtractedPanel } from "./OrthoAiExtractedPanel.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { ALL_REGIONS } from "./orthoRegionLibrary.js";
@@ -30,17 +30,52 @@ function RegionField({ field, value, onChange, starred }) {
   return <TextField label={label} value={value} onChange={onChange} />;
 }
 
+// One collapsible group of RegionField rows (2026-09-29, Aditi: the
+// region-specific subjective form is "too long" as one flat list of 30+
+// fields, especially going through the AI flow -- group into sections
+// instead of cutting any of them). Same .collapsible-head/-chevron CSS
+// orthoExercisePrescription.jsx's "Quick-apply protocol" already uses.
+// Collapsed by default -- a section only stays open because the clinician
+// opened it, not because of how many fields happen to be in it.
+function RegionSubjectiveGroup({ title, fields, open, onToggle, region, regionData, setField }) {
+  const answeredCount = fields.filter((f) => {
+    const v = regionData[f.id];
+    return Array.isArray(v) ? v.length > 0 : !!v;
+  }).length;
+  return (
+    <div>
+      <button type="button" className="collapsible-head" onClick={onToggle}>
+        <span>{title}{answeredCount > 0 ? ` (${answeredCount}/${fields.length})` : ""}</span>
+        <span className={"collapsible-chevron" + (open ? " open" : "")}>⌄</span>
+      </button>
+      {open && fields.map((f) => (
+        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} />
+      ))}
+    </div>
+  );
+}
+
 /* Tab row reusing the exact .region-tab-row-wrap/.region-tab CSS already
    used by ROM/MMT (orthoRegionAssessments.jsx) — one tab per region picked
    at Setup, each showing that region's own core subjective field set. */
 function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegions }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  // Shared across regions on purpose -- "keep Aggravating Factors open" is
+  // a preference about the SECTION, not about which region tab it's under.
+  const [openSections, setOpenSections] = useState(() => new Set());
   if (!selectedRegions.length) return null;
   const region = selectedRegions[Math.min(activeIdx, selectedRegions.length - 1)];
-  const fields = subjectiveFieldsForRegion(region);
+  const sections = sectionedFieldsForRegion(region);
   const regionData = regions[region.id] || {};
   function setField(fieldId, value) {
     setRegions({ ...regions, [region.id]: { ...regionData, [fieldId]: value } });
+  }
+  function toggleSection(title) {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title); else next.add(title);
+      return next;
+    });
   }
   return (
     <>
@@ -63,8 +98,17 @@ function RegionSubjectiveTabs({ selectedRegions, regionLabelOf, regions, setRegi
           only when non-empty) so it also works as an ordinary manual
           note field when no AI intake was used. */}
       <TextArea label="From AI intake (review & transcribe into the fields below)" value={regionData.aiNotes} onChange={(v) => setField("aiNotes", v)} />
-      {fields.map((f) => (
-        <RegionField key={f.id} field={f} value={regionData[f.id]} onChange={(v) => setField(f.id, v)} starred={isMatchingRelevant(region, f.id)} />
+      {sections.map((s) => (
+        <RegionSubjectiveGroup
+          key={s.title}
+          title={s.title}
+          fields={s.fields}
+          open={openSections.has(s.title)}
+          onToggle={() => toggleSection(s.title)}
+          region={region}
+          regionData={regionData}
+          setField={setField}
+        />
       ))}
     </>
   );

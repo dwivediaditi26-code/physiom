@@ -148,7 +148,7 @@ function PhaseNav({ phase, setPhase, counts, phases }) {
           <button key={p.id} type="button" onClick={() => setPhase(p.id)}
             style={{ flex: "1 0 auto", display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
               border: `1.5px solid ${active ? BRAND.purple : BRAND.border}`, background: active ? BRAND.purple : "#fff", color: active ? "#fff" : BRAND.ink, fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap" }}>
-            <span style={{ opacity: 0.75 }}>{p.n}</span>{p.label}
+            {p.label}
             {c > 0 && <span style={{ fontSize: 10.5, fontWeight: 800, padding: "1px 6px", borderRadius: 99, background: active ? "rgba(255,255,255,.25)" : BRAND.purpleFaint, color: active ? "#fff" : BRAND.purpleDark }}>{c}</span>}
           </button>
         );

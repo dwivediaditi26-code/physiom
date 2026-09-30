@@ -62,7 +62,7 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
   // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
   // wizardBackRef comment: this component stays mounted (just hidden) while
   // a different tab is showing, same as Neuro/Cardio -- navContext is the
@@ -274,6 +274,17 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     backRef.current = { canGoBack: step > 0 && step < 3, goBack };
   });
 
+  // Same scroll-reset OrthoOutpatientAssessment.jsx already does per real
+  // wizard step (its own useEffect keyed on `step`) -- this screen's
+  // AI-assisted pre-wizard pages (Demographics/Region/Subjective) all share
+  // one scroll container too, so finishing a long Demographics form and
+  // tapping Next used to land Region already scrolled down to wherever
+  // Demographics left off, instead of at its own top (2026-09-29, Aditi:
+  // "ai wale karte hai tab niche se start hota hai").
+  useEffect(() => {
+    try { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; window.scrollTo(0, 0); } catch {}
+  }, [step, aiSubStep]);
+
   if (step === 3 && pathway) {
     const { Component } = PATHWAY_META[pathway];
     return (
@@ -298,6 +309,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
         entryMode={effectiveEntryMode}
         initialData={effectiveResume?.data}
         initialStep={pendingInitialStep || (resume ? resume.initialStep || "review" : undefined)}
+        onGeneratePdf={onGeneratePdf}
       />
     );
   }

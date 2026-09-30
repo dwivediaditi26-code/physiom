@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import Composer from "../components/feed/Composer.jsx";
 import FeedPostCard from "../components/feed/FeedPostCard.jsx";
 import FeedRightRail from "../components/feed/FeedRightRail.jsx";
-import PostDetailModal from "../components/feed/PostDetailModal.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
 const TABS = ["All", "Following"];
@@ -14,16 +12,14 @@ const TABS = ["All", "Following"];
 // existed and was fully wired up (composer, card, threaded replies,
 // notifications); it just had no home of its own, mixed in with every other
 // post type on /feed. This page is the same list, filtered to that one
-// type, reusing FeedPostCard/Composer/PostDetailModal as-is rather than
-// building a second post-rendering pipeline.
+// type, reusing FeedPostCard/Composer as-is rather than building a second
+// post-rendering pipeline. A single post now opens on its own page
+// (/post/:postId, PostDetailPage.jsx) instead of a popup here.
 export default function CaseDiscussionsPage() {
   const { posts, feedError, clearFeedError } = useAppData();
   const [activeTab, setActiveTab] = useState("All");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const openPostId = searchParams.get("post");
 
   const discussions = posts.filter((p) => p.postType === "discussion");
-  const openPost = openPostId ? discussions.find((p) => p.id === openPostId) : null;
   const visiblePosts = activeTab === "Following" ? discussions.filter((p) => p.isSelf || p.following) : discussions;
 
   return (
@@ -59,7 +55,6 @@ export default function CaseDiscussionsPage() {
         </div>
       </main>
       <FeedRightRail />
-      {openPost && <PostDetailModal post={openPost} onClose={() => setSearchParams({}, { replace: true })} />}
     </>
   );
 }

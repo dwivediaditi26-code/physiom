@@ -11,7 +11,7 @@
 // uses) instead of a hand-copied one.
 import { describe, it, expect } from "vitest";
 import { buildRealtimeSOAP } from "../ClinicalModules.jsx";
-import { ROM_DATA } from "../PhysioNeuro.jsx";
+import { ROM_DATA } from "../sharedClinicalData.js";
 
 describe("ROM movement coverage in the SOAP Objective section", () => {
   it("includes a previously-missing unilateral movement (TMJ mouth opening, measured in mm)", () => {

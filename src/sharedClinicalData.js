@@ -1,6 +1,6 @@
 import { injectConsolidatedNotes } from "./subjectiveTiering.js";
 // sharedClinicalData.js — pure data/constants shared across SubjectiveObjective.jsx,
-// ClinicalModules.jsx, OutcomeMeasuresPro.jsx, PhysioNeuro.jsx, and their external
+// ClinicalModules.jsx, OutcomeMeasuresPro.jsx, and their external
 // consumers (AppFull.jsx, PatientDatabase.jsx, AppModules.jsx, DashboardModules.jsx,
 // HomeProtocolTab.jsx).
 //
@@ -1153,7 +1153,7 @@ Object.assign(SCALES, {
   },
 });
 
-// ─── from PhysioNeuro.jsx ───────────────────────────────────────────────────
+// ─── ROM / MMT / neuro exam data (from the old PhysioNeuro.jsx, since removed) ───────────────────────────────────────────────────
 const ALL_TESTS = {
   home:{ label:"Home", icon:"🏠", desc:"App Overview & Features", groups:{ "Welcome":"HOME_MODULE" }},
   dashboard:{ label:"Dashboard", icon:"📊", desc:"Therapist Overview", groups:{ "Therapist Dashboard":"DASHBOARD_MODULE" }},
@@ -1697,13 +1697,6 @@ const RESTRICTION_GRADE=(measured,normal)=>{
   return{label:"Severe",color:"#ff4d6d",pct};
 };
 
-const ROM_REDFLAGS=[
-  {test:(mv,val)=>mv.toLowerCase().includes("cervical")&&parseFloat(val)<20,msg:"Cervical ROM <20° — fracture/instability protocol. Do not passively test.",color:"#ff4d6d"},
-  {test:(mv,val)=>mv.toLowerCase().includes("ankle dorsiflexion")&&parseFloat(val)<10,msg:"Ankle DF <10° — significant equinus. Kinetic chain assessment required.",color:"#ff8c42"},
-  {test:(mv,val)=>mv.toLowerCase().includes("hip ir")&&parseFloat(val)<20,msg:"Hip IR <20° — possible early hip OA or FAI. Labral tear assessment indicated.",color:"#ff8c42"},
-  {test:(mv,val)=>mv.toLowerCase().includes("knee flex")&&parseFloat(val)<90,msg:"Knee flexion <90° — functional limitation for ADLs. Effusion assessment needed.",color:"#ff8c42"},
-];
-
 const MMT_GRADES=[
   {g:"5",label:"Normal",desc:"Full ROM against gravity + full resistance. No fatigue.",color:"#00c97a"},
   {g:"4+",label:"Good+",desc:"Full ROM against gravity + strong resistance, slight give at end.",color:"#43d68a"},
@@ -2040,25 +2033,6 @@ const MMT_DATA={
 
 const MMT_GRADE_OPTIONS=["5","4+","4","4-","3+","3","3-","2+","2","2-","1","0","NT"];
 const MMT_REGIONS=Object.keys(MMT_DATA);
-function parseMuscleName(name){
-  const match = name.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-  if(!match) return { title:name, sub:null };
-  const sub = match[2].split(/[\/+]/).map(s=>s.trim()).filter(Boolean).join(" \u00b7 ");
-  return { title:match[1].trim(), sub };
-}
-
-const RED_FLAGS_MMT=[
-  {pattern:(r)=>Object.values(r).some(v=>v&&["1","0"].includes(v.split("_")[0])),msg:"Grade 0–1 detected — consider neurological workup and urgent referral if acute onset.",color:"#ff4d6d"},
-  {pattern:(r)=>["mmt_gmed_L","mmt_gmed_R"].every(k=>r[k]&&parseInt(r[k])<3),msg:"Bilateral Gmed ≤ 2 — significant fall risk. Neurological vs myopathic cause?",color:"#ff4d6d"},
-  {pattern:(r)=>["mmt_dnf_L","mmt_dnf_R","mmt_scm_L","mmt_scm_R"].some(k=>r[k]&&parseInt(r[k])===0),msg:"Cervical muscle grade 0 — possible high cervical cord lesion. URGENT.",color:"#ff4d6d"},
-];
-
-const KINETIC_CHAINS=[
-  {muscles:["mmt_dnf","mmt_ta","mmt_gmax","mmt_gmed"],label:"Posterior Oblique Sling",interpretation:"Weakness pattern: forward head + anterior pelvic tilt + Trendelenburg gait."},
-  {muscles:["mmt_serrant","mmt_trap_l","mmt_gmed","mmt_tp"],label:"Upper + Lower Cross Stabilisers",interpretation:"Weakness: scapular winging + medial arch collapse. Classic UCS+LCS pattern."},
-  {muscles:["mmt_quad","mmt_ta","mmt_gmax"],label:"Anterior-Posterior Force Couple",interpretation:"Weakness: knee hyperextension + anterior pelvic tilt + lumbar hyperlordosis."},
-  {muscles:["mmt_peronls","mmt_tp","mmt_abdhal"],label:"Ankle Stability Complex",interpretation:"Weakness: recurrent lateral sprain + progressive flatfoot + plantar fasciitis."},
-];
 
 const DERMATOMES = [
   { id:"n_c3",  level:"C3",  region:"Posterior neck / occipital",         reflex:null,    myotome:"Neck lateral flexion",         disc:"C2/3" },
@@ -2177,32 +2151,6 @@ const NEURAL_TENSION = [
   },
 ];
 
-const RED_FLAGS_NEURO = [
-  { id:"nrf_cauda",     label:"Cauda Equina Syndrome",   severity:"EMERGENCY",   description:"Saddle anaesthesia (S3–S5), bilateral leg weakness, bowel/bladder incontinence or retention", action:"999 / Emergency Department NOW. MRI within 24h.", icon:"🆘" },
-  { id:"nrf_myelopathy",label:"Cord Compression / Myelopathy", severity:"URGENT", description:"Positive Babinski, Hoffmann's, clonus, hyperreflexia + long tract signs, progressive spastic gait", action:"Urgent neurosurgical referral. No manipulation.", icon:"🔴" },
-  { id:"nrf_prog_weak", label:"Progressive Neurological Weakness", severity:"URGENT", description:"Weakness deteriorating over days/weeks, widespread myotomal involvement, bilateral findings", action:"Urgent MRI + neurological referral within 48h.", icon:"🔴" },
-  { id:"nrf_saddle",    label:"Saddle Anaesthesia",       severity:"EMERGENCY",   description:"Loss of sensation perineum, anus, inner thighs (S3–S5 distribution)", action:"Emergency Department immediately.", icon:"🆘" },
-  { id:"nrf_umnsigns",  label:"Upper Motor Neuron Signs", severity:"URGENT",      description:"Babinski positive, hyperreflexia, spasticity, sustained clonus", action:"Neurology referral. Cervical/thoracic MRI.", icon:"🔴" },
-  { id:"nrf_bilateral", label:"Bilateral Neurological Signs", severity:"URGENT",  description:"Bilateral leg weakness, bilateral dermatomal loss, bilateral reflex changes", action:"Urgent referral — central disc, cord pathology.", icon:"🔴" },
-  { id:"nrf_sphincter", label:"Sphincter Dysfunction",    severity:"EMERGENCY",   description:"New onset bowel/bladder dysfunction alongside back/leg pain", action:"Emergency admission.", icon:"🆘" },
-  { id:"nrf_raised_icp", label:"Raised Intracranial Pressure", severity:"EMERGENCY", description:"Vomiting, falling consciousness level, unequal or non-reactive pupils, worsening headache post head injury", action:"Emergency Department / neurosurgical review NOW. Do not delay for further assessment.", icon:"🆘" },
-  { id:"nrf_loc_change", label:"Evolving Consciousness Change", severity:"EMERGENCY", description:"Deteriorating GCS, new confusion, new focal weakness developing mid-session after head injury or stroke", action:"Stop assessment. Emergency Department NOW.", icon:"🆘" },
-  { id:"nrf_autonomic_dysreflexia", label:"Autonomic Dysreflexia", severity:"EMERGENCY", description:"SCI at or above T6: sudden severe headache with BP rise (20-40mmHg above the patient baseline), bradycardia, flushing/sweating above the injury level, pallor or goosebumps below it -- usually triggered by a noxious stimulus below the injury level (full bladder, bowel impaction, pressure sore, tight clothing)", action:"Sit the patient upright immediately, loosen restrictive clothing, and check for and remove the triggering stimulus (empty bladder/catheter check first). Stop assessment if BP remains elevated -- emergency medical attention required.", icon:"🆘" },
-];
-
-const NERVE_ROOT_MAP = {
-  "C5": { dermSensory:"Lateral arm", reflex:"Biceps", myotome:"Shoulder abduction, elbow flex", disc:"C4/5", peripheral:"Musculocutaneous / axillary" },
-  "C6": { dermSensory:"Lateral forearm, thumb, index", reflex:"Brachioradialis", myotome:"Wrist extension (ECRL/ECRB)", disc:"C5/6", peripheral:"Median / radial" },
-  "C7": { dermSensory:"Middle finger", reflex:"Triceps", myotome:"Elbow extension, wrist flex", disc:"C6/7", peripheral:"Radial / median" },
-  "C8": { dermSensory:"Ring, little finger, medial forearm", reflex:"None standard", myotome:"Finger flexion, grip", disc:"C7/T1", peripheral:"Ulnar / median" },
-  "T1": { dermSensory:"Medial forearm", reflex:"None", myotome:"Finger abduction", disc:"T1/2", peripheral:"Ulnar (intrinsics)" },
-  "L2": { dermSensory:"Anterior/medial thigh", reflex:"None", myotome:"Hip flexion", disc:"L1/2", peripheral:"Femoral / obturator" },
-  "L3": { dermSensory:"Medial knee, lower ant thigh", reflex:"Patella (with L4)", myotome:"Knee extension", disc:"L2/3", peripheral:"Femoral" },
-  "L4": { dermSensory:"Medial leg and foot", reflex:"Patella", myotome:"Ankle dorsiflexion (TA)", disc:"L3/4", peripheral:"Deep peroneal" },
-  "L5": { dermSensory:"Dorsum foot, 1st web space", reflex:"None reliable", myotome:"Great toe extension (EHL)", disc:"L4/5", peripheral:"Deep peroneal" },
-  "S1": { dermSensory:"Lateral foot, heel", reflex:"Achilles", myotome:"Ankle plantarflexion", disc:"L5/S1", peripheral:"Sural / tibial" },
-};
-
 const CRANIAL_NERVES = [
   { id:"cn1", numeral:"I", name:"Olfactory", test:"Smell identification each nostril separately (coffee, mint, soap) with eyes closed, one nostril occluded", record:"Intact — smell identified bilaterally / Impaired — reduced or absent (anosmia)", note:"Often the first CN lost after frontal/basal skull TBI (shearing of olfactory filaments). Rarely tested acutely but worth screening before discharge." },
   { id:"cn2", numeral:"II", name:"Optic", test:"Visual acuity (Snellen or finger counting), visual fields by confrontation (4 quadrants each eye), fundoscopy if trained", record:"Intact / Impaired — note acuity and any field cut location and laterality", note:"Field cuts localize the lesion: homonymous hemianopia = optic tract/radiation or occipital lobe, well past the retina — post-chiasmal." },
@@ -2221,8 +2169,6 @@ const COORDINATION_TESTS = [
   { id:"coord_ram", label:"Rapid alternating movements", how:"Patient rapidly pronates and supinates the forearm against the opposite palm, or taps thumb to each finger in sequence, as fast as possible", record:["Normal — regular rhythm and speed","Mild dysdiadochokinesia — some irregularity","Marked dysdiadochokinesia — slow, irregular, or unable to alternate","Unable to perform"], note:"Dysdiadochokinesia (inability to perform rapid alternating movements smoothly) is a classic cerebellar sign, usually ipsilateral to the lesion." },
   { id:"coord_rebound", label:"Rebound test", how:"Patient holds both arms outstretched, examiner pushes down on one forearm then suddenly releases, watching how quickly the arm corrects", record:["Absent — arm returns smoothly to position","Present — arm overshoots or oscillates before settling"], note:"A positive rebound (overshoot) indicates loss of the normal cerebellar check reflex, seen ipsilateral to cerebellar lesions." },
 ];
-
-const INVOLUNTARY_MOVEMENT_TYPES = ["None observed","Tremor — rest","Tremor — postural","Tremor — intention","Chorea","Dystonia","Myoclonus","Freezing of gait","Other (describe in notes)"];
 
 const VESTIBULAR_TESTS = [
   { id:"vest_dixhallpike", label:"Dix-Hallpike", purpose:"BPPV screen (posterior/anterior canal)", how:"Seated, head turned 45° to the test side, then rapidly laid supine with head extended 20° over the table edge, hold 30-60s watching the eyes", record:["Negative — no nystagmus, no vertigo","Positive — right, torsional/upbeating nystagmus with latency, resolves within 60s","Positive — left, torsional/upbeating nystagmus with latency, resolves within 60s","Positive — atypical pattern, consider central cause"], note:"Latency, fatigability, and torsional/upbeating direction all point to peripheral BPPV. Immediate onset, non-fatigable, or purely vertical/direction-changing nystagmus should raise suspicion for a central cause instead." },
@@ -6617,4 +6563,4 @@ function listRegionCatalogFields(prefix) {
   );
 }
 
-export { listGlobalCatalogFields, listRegionCatalogFields, SCALES, ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, ROM_REDFLAGS, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, parseMuscleName, RED_FLAGS_MMT, KINETIC_CHAINS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, RED_FLAGS_NEURO, NERVE_ROOT_MAP, CRANIAL_NERVES, COORDINATION_TESTS, INVOLUNTARY_MOVEMENT_TYPES, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage, sectionHeading, clinicalField, summaryRow, patientDetailsPanel, clinicalTable, testResultRow, SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS };
+export { listGlobalCatalogFields, listRegionCatalogFields, SCALES, ALL_TESTS, ROM_DATA, ROM_REGIONS, RESTRICTION_GRADE, MMT_GRADES, MMT_DATA, MMT_GRADE_OPTIONS, MMT_REGIONS, DERMATOMES, MYOTOMES, REFLEXES, NEURAL_TENSION, CRANIAL_NERVES, COORDINATION_TESTS, VESTIBULAR_TESTS, PERCEPTUAL_TESTS, SPECIAL_TESTS_DATA, CYRIAX_REGIONS_DATA, UNIV_S, REG_MOD_S, BPS_S, SLEEP_S, SPORT_S, NKT_REGIONS, KC_REGIONS, downloadPDFFromHTML, injectViewerControls, PDF_BASE_STYLES, makePDFPage, sectionHeading, clinicalField, summaryRow, patientDetailsPanel, clinicalTable, testResultRow, SCALE_DATA_LABELS, ST_DATA_LABELS, ROM_DERIVED, MMT_DATA_LABELS, mmtFallbackLabel, CYRIAX_REGION_LABELS, CYRIAX_REGION_KEYS, CYRIAX_FIELD_TYPES, CYRIAX_TEST_LABEL, CYRIAX_LEGACY_REGION, resolveCyriaxKey, EXERCISE_DB, TEMPLATE_TX, PROGRAMME_TEMPLATES, ALL_EXERCISES, EVIDENCE_PROTOCOLS };

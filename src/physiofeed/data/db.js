@@ -527,6 +527,19 @@ async function getFollowCounts(userId) {
   return { followers: followersRes.count || 0, following: followingRes.count || 0 };
 }
 
+// Live count of ACCEPTED connections (see supabase/add_mvp_network_opportunities.sql)
+// -- shown as its own stat on the profile, separate from followers/
+// following (Connect ≠ Follow ≠ Message, same "three independent
+// systems" rule as everywhere else this app enforces it).
+async function getConnectionCount(userId) {
+  const { count } = await supabase
+    .from("connections")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "accepted")
+    .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+  return count || 0;
+}
+
 export async function getProfile() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -593,6 +606,7 @@ export async function getProfile() {
     }
 
     const { followers, following } = await getFollowCounts(row.id);
+    const connections = await getConnectionCount(row.id);
 
     // Map DB column names to the shape every PhysioFeed screen already
     // expects (ProfileHeader.jsx etc.) -- zero UI changes needed for this step.
@@ -603,7 +617,7 @@ export async function getProfile() {
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
       bio: row.bio, quote: row.quote,
-      followers, following, // live counts from the follows table, NOT row.followers_count/following_count -- see getFollowCounts()
+      followers, following, connections, // live counts, NOT row.followers_count/following_count -- see getFollowCounts()/getConnectionCount()
       isAdmin: !!row.is_admin,
       // undefined (not null) on rows from before add_profile_avatar.sql runs
       // -- Avatar.jsx treats any falsy photoUrl as "show the gradient instead".
@@ -690,10 +704,11 @@ export async function getProfileById(userId) {
     if (error) throw error;
     if (!row) return null; // real uuid, but no profiles row -- genuinely doesn't exist
     const { followers, following } = await getFollowCounts(userId);
+    const connections = await getConnectionCount(userId);
     return clone({
       id: row.id, name: row.name, role: row.role, verified: row.verified,
       gradient: row.gradient, initials: row.initials, location: row.location,
-      bio: row.bio, quote: row.quote, followers, following, // live counts, not row.followers_count/following_count -- see getFollowCounts()
+      bio: row.bio, quote: row.quote, followers, following, connections, // live counts, not row.followers_count/following_count -- see getFollowCounts()/getConnectionCount()
       avatarUrl: row.avatar_url || null,
       experience: row.experience || "", languages: row.languages || "", memberships: row.memberships || "",
       availableForConsults: !!row.available_for_consults,
@@ -1248,6 +1263,75 @@ export async function toggleFollowPerson(id) {
   return getPeople();
 }
 
+// Followers/Following lists -- ProfileHeader's stat row is clickable into
+// these (previously just a static number). Demo people never had real
+// `follows` rows -- isRealUserId() short-circuits the same way every other
+// *ByUser query in this file does.
+export async function getFollowList(userId, kind) {
+  // kind: 'followers' (who follows userId) | 'following' (who userId follows)
+  if (!isRealUserId(userId)) return [];
+  try {
+    const matchCol = kind === "followers" ? "following_id" : "follower_id";
+    const otherCol = kind === "followers" ? "follower_id" : "following_id";
+    const { data, error } = await supabase.from("follows").select(otherCol).eq(matchCol, userId);
+    if (error) throw error;
+    const ids = (data || []).map((r) => r[otherCol]);
+    if (ids.length === 0) return [];
+    const { data: profiles, error: pErr } = await supabase
+      .from("profiles").select("id, name, role, gradient, initials, avatar_url").in("id", ids);
+    if (pErr) throw pErr;
+    return (profiles || []).map((p) => ({
+      id: p.id, name: p.name, role: p.role || "",
+      grad: p.gradient || "violet", initials: p.initials || "?", avatarUrl: p.avatar_url || null,
+    }));
+  } catch (e) {
+    console.error(`getFollowList(${kind}): --`, e?.message || e);
+    return [];
+  }
+}
+
+// Every id the signed-in clinician follows -- lets FollowListModal show a
+// correct Follow/Following toggle per row without an extra round trip per
+// person in the list.
+export async function getFollowingIds() {
+  const uid = await currentUserId();
+  if (!uid) return [];
+  const { data, error } = await supabase.from("follows").select("following_id").eq("follower_id", uid);
+  if (error) { console.error("getFollowingIds(): --", error.message); return []; }
+  return (data || []).map((r) => r.following_id);
+}
+
+// The Connections stat on ProfileHeader was a plain, unclickable <div>
+// with a count and nothing behind it (2026-09-29, Aditi: "connection
+// button doesnot work" -- there was no button at all). Same read-side
+// shape as getFollowList() above, but against the connections table
+// (requester_id/recipient_id/status, add_mvp_network_opportunities.sql)
+// instead of follows -- accepted rows only, other side of the pair
+// regardless of who sent the original request.
+export async function getConnectionsList(userId) {
+  if (!isRealUserId(userId)) return [];
+  try {
+    const { data, error } = await supabase
+      .from("connections")
+      .select("requester_id, recipient_id")
+      .eq("status", "accepted")
+      .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+    if (error) throw error;
+    const ids = (data || []).map((r) => (r.requester_id === userId ? r.recipient_id : r.requester_id));
+    if (ids.length === 0) return [];
+    const { data: profiles, error: pErr } = await supabase
+      .from("profiles").select("id, name, role, gradient, initials, avatar_url").in("id", ids);
+    if (pErr) throw pErr;
+    return (profiles || []).map((p) => ({
+      id: p.id, name: p.name, role: p.role || "",
+      grad: p.gradient || "violet", initials: p.initials || "?", avatarUrl: p.avatar_url || null,
+    }));
+  } catch (e) {
+    console.error("getConnectionsList(): --", e?.message || e);
+    return [];
+  }
+}
+
 /* ---------------- connections (P2) ---------------- */
 //
 // See supabase/add_mvp_network_opportunities.sql. Deliberately separate
@@ -1547,13 +1631,13 @@ export async function toggleJoinCommunity(id) {
 //
 // `link` is derived here, not stored as a URL in the database. Like/comment
 // (2026-08-27, "like how it happens in Insta") now jump straight to the
-// post itself via /feed?post=<id> -- FeedPage.jsx reads that query param
-// and opens PostDetailModal.jsx for it, same modal GridPostCard.jsx already
-// uses on the Profile/Saved/Explore grids. Falls back to the actor's
-// profile when post_id is null (older rows written before this migration,
-// or the post's since been deleted). Follow still goes to the actor's
-// profile and message still goes to the thread -- neither of those is
-// about a specific post.
+// post itself via /post/<id> -- PostDetailPage.jsx renders it as a real
+// page (2026-09-29: previously /feed?post=<id>, which opened
+// PostDetailModal.jsx as a popup -- see that page's history). Falls back to
+// the actor's profile when post_id is null (older rows written before this
+// migration, or the post's since been deleted). Follow still goes to the
+// actor's profile and message still goes to the thread -- neither of those
+// is about a specific post.
 export async function getNotifications() {
   const uid = await currentUserId();
   if (!uid) return clone(NOTIFICATIONS); // signed out / guest mode -- keep the demo list
@@ -1566,8 +1650,9 @@ export async function getNotifications() {
     if (error) throw error;
     return (data || []).map((n) => ({
       id: String(n.id), iconName: n.icon_name, text: n.text, time: timeAgo(n.created_at), tone: n.tone, read: n.read,
-      link: n.kind === "message" ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
-          : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/feed?post=${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
+      link: n.kind === "message" || n.kind === "message_request" || n.kind === "message_request_accepted"
+            ? (n.actor_id ? `/messages?with=${n.actor_id}` : null)
+          : n.kind === "like" || n.kind === "comment" ? (n.post_id ? `/post/${n.post_id}` : n.actor_id ? `/profile/${n.actor_id}` : null)
           : n.kind === "follow" ? (n.actor_id ? `/profile/${n.actor_id}` : null)
           // P6 (2026-09-22): the P2/P4/P5 triggers in
           // add_mvp_network_opportunities.sql write connection and
@@ -1809,49 +1894,107 @@ export async function addEvidence(article) {
 
 /* ---------------- direct messages ---------------- */
 //
-// Phase 8 (see supabase/add_direct_messages.sql). Like moderation, DMs are
-// a purely real-backend feature -- there's no sensible "demo conversation"
-// to fall back to -- so these throw a real, user-facing error on failure
-// instead of quietly pretending it worked. A "conversation" is derived
-// client-side from the flat direct_messages table (every row where you're
-// either party, grouped by the other person) rather than needing its own
-// conversations table.
+// Phase 8 (see supabase/add_direct_messages.sql), then message requests +
+// blocking (see supabase/add_conversations_and_blocks.sql). Every rule
+// that used to live only in MessagesPage.jsx -- the 3-message cap, who
+// counts as "connected" -- is now enforced by a trigger in Postgres; this
+// layer just calls it and turns its distinct error codes into readable
+// messages. Like moderation, DMs are a purely real-backend feature --
+// there's no sensible "demo conversation" to fall back to -- so these
+// throw a real, user-facing error on failure instead of quietly
+// pretending it worked.
 
-// One entry per person you've ever exchanged a message with -- most
-// recent message text/time and how many of THEIR messages to you are
-// still unread. MessagesPage.jsx's inbox list.
-export async function getConversations() {
+const MESSAGE_ERROR_TEXT = {
+  MSG_BLOCKED: "You can't message this person.",
+  MSG_LIMIT_REACHED: "You've sent 3 messages without a reply -- wait for them to respond before sending more.",
+  MSG_COOLDOWN: "This person isn't available to message right now -- try again later.",
+  MSG_RATE: "You're sending messages too fast -- wait a moment and try again.",
+  MSG_INVALID: "Couldn't send that message.",
+  NOT_AUTHENTICATED: "Sign in to send a message.",
+};
+
+// The `enforce_message_rules` trigger RAISEs one of the codes above as the
+// exception's own message text -- PostgREST hands that straight back as
+// error.message, no parsing needed, just a lookup for the friendly copy.
+// Unrecognized errors (RLS, network, etc.) pass through with their own
+// message so they're not swallowed by a generic string.
+function messageErrorFrom(error) {
+  const code = error?.message && MESSAGE_ERROR_TEXT[error.message] ? error.message : null;
+  const e = new Error(code ? MESSAGE_ERROR_TEXT[code] : (error?.message || "Couldn't send that message."));
+  if (code) e.code = code;
+  return e;
+}
+
+// One page-load call for the whole inbox tab -- get_inbox() (security
+// definer RPC) joins conversations + profiles + connections + follows
+// server-side rather than this doing N+1 fetches per row. `tab` is
+// 'primary' (accepted conversations) or 'requests' (pending both
+// directions, plus a declined conversation but ONLY for the person who
+// sent it -- see the SQL function for why).
+export async function getInbox(tab, { search = "", limit = 30, before = null } = {}) {
   const uid = await currentUserId();
   if (!uid) return [];
-  const { data, error } = await supabase
-    .from("direct_messages")
-    .select("id, sender_id, recipient_id, text, created_at, read")
-    .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("get_inbox", {
+    p_tab: tab, p_search: search || null, p_limit: limit, p_before: before,
+  });
   if (error) throw error;
-  if (!data || data.length === 0) return [];
+  return (data || []).map((r) => ({
+    conversationId: r.conversation_id,
+    userId: r.other_user_id,
+    name: r.other_name || "Unknown",
+    role: r.other_role || "",
+    gradient: r.other_gradient || "violet",
+    initials: r.other_initials || "?",
+    avatarUrl: r.other_avatar_url || null,
+    status: r.status, // request_pending | accepted | declined
+    requestInitiatorId: r.request_initiator_id,
+    requestRound: r.request_round,
+    requestDirection: r.request_direction, // 'incoming' | 'outgoing' | null
+    messagesSentThisRound: r.messages_sent_this_round,
+    lastText: r.last_message_text || "",
+    lastAt: r.last_message_at,
+    unread: r.unread_count || 0,
+    connectionStatus: r.connection_status, // raw connections.status or null -- same values getConnectionState() classifies
+    connectionRequesterId: r.connection_requester_id,
+    isFollowing: r.is_following,
+    cooldownUntil: r.cooldown_until,
+  }));
+}
 
-  const byOther = new Map();
-  for (const m of data) {
-    const otherId = m.sender_id === uid ? m.recipient_id : m.sender_id;
-    if (!byOther.has(otherId)) byOther.set(otherId, { lastText: m.text, lastAt: m.created_at, unread: 0 });
-    if (m.recipient_id === uid && !m.read) byOther.get(otherId).unread += 1;
+// State for a single pair, used before any message has necessarily been
+// sent (ProfileHeader/PersonCard deciding what the Message button should
+// say). Reads `conversations` directly rather than through get_inbox --
+// there's no tab to filter by and no other party's inbox row to join.
+export async function getConversationWith(otherUserId) {
+  const empty = { conversationId: null, status: "none", requestInitiatorId: null, requestRound: 0, messagesSentThisRound: 0, cooldownUntil: null, blockedByMe: false, blockedByThem: false };
+  const uid = await currentUserId();
+  if (!uid || !isRealUserId(otherUserId)) return empty;
+  const low = uid < otherUserId ? uid : otherUserId;
+  const high = uid < otherUserId ? otherUserId : uid;
+  const [{ data: conv, error: convErr }, { data: blocks, error: blockErr }] = await Promise.all([
+    supabase.from("conversations").select("id, status, request_initiator_id, request_round, cooldown_until").eq("user_low", low).eq("user_high", high).maybeSingle(),
+    supabase.from("user_blocks").select("blocker_id, blocked_id").or(`and(blocker_id.eq.${uid},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${uid})`),
+  ]);
+  if (convErr) throw convErr;
+  if (blockErr) throw blockErr;
+  let messagesSentThisRound = 0;
+  if (conv && conv.status === "request_pending" && conv.request_initiator_id === uid) {
+    const { count } = await supabase
+      .from("direct_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("conversation_id", conv.id).eq("request_round", conv.request_round).eq("sender_id", uid);
+    messagesSentThisRound = count || 0;
   }
-  const otherIds = [...byOther.keys()];
-  const { data: profiles } = await supabase.from("profiles").select("*").in("id", otherIds);
-  const profileById = Object.fromEntries((profiles || []).map((p) => [p.id, p]));
-
-  return otherIds
-    .map((id) => {
-      const c = byOther.get(id);
-      const p = profileById[id];
-      return {
-        userId: id, name: p?.name || "Unknown", role: p?.role || "",
-        gradient: p?.gradient || "violet", initials: p?.initials || "?", avatarUrl: p?.avatar_url || null,
-        lastText: c.lastText, lastAt: c.lastAt, unread: c.unread,
-      };
-    })
-    .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+  return {
+    conversationId: conv?.id || null,
+    status: conv?.status || "none",
+    requestInitiatorId: conv?.request_initiator_id || null,
+    requestRound: conv?.request_round || 0,
+    messagesSentThisRound,
+    cooldownUntil: conv?.cooldown_until || null,
+    blockedByMe: (blocks || []).some((b) => b.blocker_id === uid),
+    blockedByThem: (blocks || []).some((b) => b.blocker_id === otherUserId),
+  };
 }
 
 // Full thread with one other person, oldest first (chat reading order).
@@ -1871,8 +2014,8 @@ export async function getMessages(otherUserId) {
 // header's message icon needs this to show an unread dot -- the bell has
 // had one for months, the envelope never did, so a message that arrived
 // while you were anywhere other than /messages was completely silent.
-// A head-only count, not getConversations(), because that fetches every
-// message row plus the other parties' profiles just to derive a number.
+// A head-only count, not getInbox(), because that fetches every
+// conversation row plus the other parties' profiles just to derive a number.
 export async function getUnreadMessageCount() {
   try {
     const uid = await currentUserId();
@@ -1893,9 +2036,49 @@ export async function getUnreadMessageCount() {
 export async function sendMessage(otherUserId, text) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to send a message.");
-  const { error } = await supabase.from("direct_messages").insert({ sender_id: uid, recipient_id: otherUserId, text });
-  if (error) throw error;
+  // client_id (unique per sender) -- lets a retried send after a dropped
+  // connection never insert the same message twice; see
+  // direct_messages_sender_client_idx in the migration.
+  const clientId = crypto.randomUUID ? crypto.randomUUID() : `${uid}-${Date.now()}-${Math.random()}`;
+  const { error } = await supabase.from("direct_messages").insert({ sender_id: uid, recipient_id: otherUserId, text, client_id: clientId });
+  if (error) throw messageErrorFrom(error);
   return getMessages(otherUserId);
+}
+
+// Recipient accepts a pending message request -- moves it to Primary,
+// unlimited messaging from then on. Never creates a connection or a
+// follow (see the design doc: the three systems stay independent).
+export async function acceptMessageRequest(conversationId) {
+  const { error } = await supabase.rpc("accept_message_request", { p_conversation_id: conversationId });
+  if (error) throw new Error(error.message || "Couldn't accept that request.");
+}
+
+// Recipient declines -- the conversation closes for the cooldown window
+// (app_settings.message_cooldown_days). The sender sees a neutral
+// "closed" state; the decliner never sees this conversation again.
+export async function declineMessageRequest(conversationId) {
+  const { error } = await supabase.rpc("decline_message_request", { p_conversation_id: conversationId });
+  if (error) throw new Error(error.message || "Couldn't decline that request.");
+}
+
+// Removes any pending connection and both follow directions, then stops
+// new messages either way -- see block_user() in the migration for the
+// exact cleanup. Existing message/connection history isn't deleted.
+export async function blockUser(otherUserId) {
+  const { error } = await supabase.rpc("block_user", { p_user_id: otherUserId });
+  if (error) throw new Error(error.message || "Couldn't block that person.");
+}
+
+export async function unblockUser(otherUserId) {
+  const { error } = await supabase.rpc("unblock_user", { p_user_id: otherUserId });
+  if (error) throw new Error(error.message || "Couldn't unblock that person.");
+}
+
+export async function reportUser(otherUserId, reason, { conversationId = null, messageId = null } = {}) {
+  const { error } = await supabase.rpc("report_user", {
+    p_reported_user_id: otherUserId, p_reason: reason, p_conversation_id: conversationId, p_message_id: messageId,
+  });
+  if (error) throw new Error(error.message || "Couldn't submit that report.");
 }
 
 // Marks every unread message FROM otherUserId TO you as read. Deliberately
@@ -1935,6 +2118,22 @@ export async function subscribeToMessages(onChange) {
     .channel(`direct_messages:${uid}:${++_chanSeq}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` }, (payload) => onChange(payload.new))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` }, (payload) => onChange(payload.new))
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}
+
+// Same shape as subscribeToMessages above, for status changes on the
+// `conversations` row itself -- accept/decline/a new round starting --
+// so the request card and composer state update live without a manual
+// refresh. Fires with the raw postgres_changes payload (`.new`/`.old`,
+// `.eventType`); callers re-fetch whatever list they're showing.
+export async function subscribeToConversations(onChange) {
+  const uid = await currentUserId();
+  if (!uid) return () => {};
+  const channel = supabase
+    .channel(`conversations:${uid}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `user_low=eq.${uid}` }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `user_high=eq.${uid}` }, onChange)
     .subscribe();
   return () => supabase.removeChannel(channel);
 }
@@ -2568,7 +2767,7 @@ export async function searchEverything(query, { limit = 6 } = {}) {
       gradient: p.gradient || undefined,
       initials: initialsOf(p.author),
       avatarUrl: p.authorAvatarUrl || null,
-      to: `/feed?post=${encodeURIComponent(p.id)}`,
+      to: `/post/${encodeURIComponent(p.id)}`,
       _score: scoreOf(terms, hay(p.heading, p.caption, p.author, p.category, (p.tags || []).join(" ")), p.heading || p.caption),
     }))
     .filter((r) => r._score > 0);

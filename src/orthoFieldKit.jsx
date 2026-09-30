@@ -32,7 +32,7 @@ export function Hint({ children }) {
   return <div className="hint">💡 {children}</div>;
 }
 
-// Same real Cloudinary asset pattern used by PhysioNeuro.jsx's
+// Same real Cloudinary asset pattern used by the old PhysioNeuro.jsx's
 // ClinicalImage/ClinicalImageCard and the PhysioFeed Study Mode
 // StudyImage.jsx (f_auto,q_auto, no crop) -- duplicated here rather than
 // cross-imported since neither of those live in a shared, exported

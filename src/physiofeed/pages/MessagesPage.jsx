@@ -1,24 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Send, ChevronLeft, MessageSquare, Lock, Search, PenSquare, X } from "lucide-react";
+import { Send, ChevronLeft, MessageSquare, Lock, Search, PenSquare, X, Check, ShieldOff, Flag } from "lucide-react";
 import Avatar from "../components/shared/Avatar.jsx";
 import { initialsOf } from "../components/shared/constants.js";
+import ReportUserModal from "../components/shared/ReportUserModal.jsx";
 import * as db from "../data/db.js";
 import { useDemoConversations } from "../context/DemoConversationsContext.jsx";
 import { useAppData } from "../context/AppDataContext.jsx";
 
-// Non-connection message cap (2026-09-22, Aditi: "when connected only
-// then... 3 messages you can do if not connected") -- lets a clinician
-// send a few messages to break the ice before connecting, same shape as
-// LinkedIn's own free-InMail-style limit, but stops short of unlimited
-// messaging to someone who hasn't accepted a connection. Counts only the
-// open thread's OWN messages you sent (not theirs), so their replies never
-// count against your cap and don't need their own gating.
-const MESSAGE_LIMIT_IF_NOT_CONNECTED = 3;
-
 // Direct messages between clinicians (Aditi's request: "chat area to
 // message the physios"). See supabase/add_direct_messages.sql for the
-// schema/RLS this needs -- run once, required for this feature to work.
+// original schema and supabase/add_conversations_and_blocks.sql for the
+// request/accept/decline/block state machine -- both run once, required
+// for this feature to work. The 3-message cap, blocking, and the decline
+// cooldown are all enforced server-side now (see db.js's sendMessage());
+// this page just renders whatever state the database hands back and
+// calls the matching RPC for each action.
+//
 // Loads its own data directly from db.js rather than through
 // AppDataContext, same reasoning as AdminReportsPage.jsx: conversations
 // are only relevant on this one page, no reason to carry that state
@@ -61,19 +59,35 @@ function dayLabel(iso) {
   return d.toLocaleDateString([], { day: "numeric", month: "short", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
 }
 
+function cooldownLabel(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime()) || d <= new Date()) return "";
+  return d.toLocaleDateString([], { day: "numeric", month: "short" });
+}
+
 export default function MessagesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const withId = searchParams.get("with");
   const demo = useDemoConversations();
   const { connectionStates, connectWith, refreshUnreadMessages, people } = useAppData();
 
-  const [conversations, setConversations] = useState([]);
+  const [tab, setTab] = useState("primary"); // 'primary' | 'requests'
+  const [primary, setPrimary] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
+  // The open thread's own conversation row -- separate from the inbox
+  // lists because you can open a Message button on someone you've never
+  // messaged (no conversation row exists yet, so it's in neither list).
+  const [activeConv, setActiveConv] = useState(null);
   const [thread, setThread] = useState([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [requestActionError, setRequestActionError] = useState(null);
+  const [requestBusy, setRequestBusy] = useState(false);
+  const [reporting, setReporting] = useState(false);
   // Inbox search + "new message" picker (2026-09-23, Aditi's messaging
   // spec). Both are inbox-only state; which conversation is OPEN stays in
   // the URL, as before.
@@ -97,9 +111,11 @@ export default function MessagesPage() {
     el.style.height = `${el.scrollHeight}px`;
   }, [text]);
 
-  const loadConversations = useCallback(async () => {
+  const loadInbox = useCallback(async () => {
     try {
-      setConversations(await db.getConversations());
+      const [p, r] = await Promise.all([db.getInbox("primary"), db.getInbox("requests")]);
+      setPrimary(p);
+      setRequests(r);
     } catch (e) {
       setError(e.message || "Couldn't load your messages.");
     } finally {
@@ -107,7 +123,41 @@ export default function MessagesPage() {
     }
   }, []);
 
-  useEffect(() => { loadConversations(); }, [loadConversations]);
+  useEffect(() => { loadInbox(); }, [loadInbox]);
+
+  // Loads the open thread's own conversation-state row. Checked against
+  // the already-loaded inbox lists first (no extra round trip for the
+  // common case of opening something already in Primary/Requests); a
+  // Message button on someone with no conversation yet falls through to
+  // getConversationWith(), which returns a "none" shape safely.
+  useEffect(() => {
+    if (!withId) { setActiveConv(null); return; }
+    const known = [...primary, ...requests].find((c) => String(c.userId) === String(withId));
+    if (known) { setActiveConv(known); return; }
+    if (demo.hasThread(withId)) { setActiveConv(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const cw = await db.getConversationWith(withId);
+        // getConversationWith() only knows the pair's message-request
+        // state, not the other person's name/photo -- that's a fresh
+        // thread (opened via a profile's Message button before any
+        // message exists, so it's in neither inbox list yet). `people`
+        // already has everyone's profile summary loaded for the compose
+        // picker; reuse it instead of a third fetch.
+        const person = (people || []).find((p) => String(p.id) === String(withId));
+        if (!cancelled) {
+          setActiveConv({
+            userId: withId, ...cw,
+            name: person?.name, role: person?.role,
+            gradient: person?.grad, avatarUrl: person?.avatarUrl,
+            initials: person?.name ? initialsOf(person.name) : "?",
+          });
+        }
+      } catch { /* leave null -- composer just won't show a limit/blocked notice */ }
+    })();
+    return () => { cancelled = true; };
+  }, [withId, primary, requests, demo, people]);
 
   useEffect(() => {
     if (!withId) { setThread([]); return; }
@@ -132,7 +182,7 @@ export default function MessagesPage() {
         await db.markConversationRead(withId);
         // clears this conversation's unread badge in the list, and the
         // header's envelope dot if that was the last unread thread (P3)
-        if (!cancelled) { loadConversations(); refreshUnreadMessages(); }
+        if (!cancelled) { loadInbox(); refreshUnreadMessages(); }
       } catch (e) {
         if (!cancelled) setError(e.message || "Couldn't load this conversation.");
       } finally {
@@ -140,7 +190,7 @@ export default function MessagesPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [withId, loadConversations, demo, refreshUnreadMessages]);
+  }, [withId, loadInbox, demo, refreshUnreadMessages]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -163,64 +213,88 @@ export default function MessagesPage() {
       unsubscribe = await db.subscribeToMessages((row) => {
         if (cancelled) return;
         // Any message involving you should bump the conversation list
-        // (new last-message preview / unread dot), whether or not its
-        // thread happens to be the one currently open.
-        loadConversations();
+        // (new last-message preview / unread dot / request card), whether
+        // or not its thread happens to be the one currently open.
+        loadInbox();
         const openWith = withIdRef.current;
         if (!openWith || (row.sender_id !== openWith && row.recipient_id !== openWith)) return;
         // Within the open thread: recipient_id === me means I sent it
         // (already appended optimistically by submit()'s own setThread
         // call) -- guard on id to avoid appending our own message twice.
         setThread((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, { id: row.id, text: row.text, isSelf: row.recipient_id === openWith, createdAt: row.created_at }]));
-        if (row.sender_id === openWith) db.markConversationRead(openWith).then(() => { loadConversations(); refreshUnreadMessages(); });
+        if (row.sender_id === openWith) db.markConversationRead(openWith).then(() => { loadInbox(); refreshUnreadMessages(); });
       });
       if (cancelled) unsubscribe();
     })();
     return () => { cancelled = true; unsubscribe(); };
-  }, [loadConversations, refreshUnreadMessages]);
+  }, [loadInbox, refreshUnreadMessages]);
 
-  // Merges the real (Supabase) list with DemoConversationsContext's list
-  // so a "Chat / Invite" thread keeps showing up here, not just inside
-  // ApplicantChatModal's one-off popup (2026-09-22, Aditi: "the message
-  // conversation chat should always show here").
-  const allConversations = useMemo(
-    () => [...demo.list, ...conversations].sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)),
-    [demo.list, conversations]
+  // Same shape as the messages subscription above, for the conversation
+  // row itself -- a request getting accepted/declined, or a new round
+  // starting after a cooldown, should update the open thread's banner and
+  // move it between Primary/Requests without a manual refresh.
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+    (async () => {
+      unsubscribe = await db.subscribeToConversations(() => { if (!cancelled) loadInbox(); });
+      if (cancelled) unsubscribe();
+    })();
+    return () => { cancelled = true; unsubscribe(); };
+  }, [loadInbox]);
+
+  // Merges the real (Supabase) Primary list with DemoConversationsContext's
+  // list so a "Chat / Invite" thread keeps showing up here, not just
+  // inside ApplicantChatModal's one-off popup (2026-09-22, Aditi: "the
+  // message conversation chat should always show here").
+  const allPrimary = useMemo(
+    () => [...demo.list, ...primary].sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)),
+    [demo.list, primary]
   );
-  const active = allConversations.find((c) => c.userId === withId);
+  const listForTab = tab === "primary" ? allPrimary : requests;
+  const active =
+    (withId && [...allPrimary, ...requests].find((c) => String(c.userId) === String(withId))) ||
+    activeConv || null;
 
   // Search the inbox by person (2026-09-23, spec item 7). Name and
   // designation both, since "the sports physio in Bhopal" is as likely a
   // way to look someone up as their name.
-  const visibleConversations = useMemo(() => {
+  const visibleList = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
-    if (!q) return allConversations;
-    return allConversations.filter(
+    if (!q) return listForTab;
+    return listForTab.filter(
       (c) => c.name.toLowerCase().includes(q) || (c.role || "").toLowerCase().includes(q)
     );
-  }, [allConversations, listQuery]);
+  }, [listForTab, listQuery]);
 
   // "New message": anyone real you aren't already talking to. Demo
   // recruiter threads are excluded -- they aren't people you can start a
   // conversation with.
   const composeCandidates = useMemo(() => {
-    const already = new Set(conversations.map((c) => String(c.userId)));
+    const already = new Set([...allPrimary, ...requests].map((c) => String(c.userId)));
     const q = composeQuery.trim().toLowerCase();
     return (people || [])
       .filter((p) => !already.has(String(p.id)))
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.role || "").toLowerCase().includes(q));
-  }, [people, conversations, composeQuery]);
+  }, [people, allPrimary, requests, composeQuery]);
 
-  // Demo threads (recruiter/applicant chat) are exempt -- "connected" is a
-  // People/Profile concept that doesn't apply to those. Reads the real
-  // connections table via context (P2); this used to check the `follows`
-  // row, back when Connect was just a relabelled Follow.
-  const isConnected = active?.isDemo || connectionStates[withId] === "connected";
-  const sentCount = thread.filter((m) => m.isSelf && !m.system).length;
-  const limitReached = !isConnected && sentCount >= MESSAGE_LIMIT_IF_NOT_CONNECTED;
+  // Blocked either direction: no composer at all, matches the profile
+  // page's own "no message" rule for a blocked pair.
+  const isBlocked = !active?.isDemo && (active?.blockedByMe || active?.blockedByThem);
+  const status = active?.status || "none";
+  // requestInitiatorId is always either me or the other party in a 1:1
+  // conversation, so "not them" is enough to know it's me -- works whether
+  // `active` came from getInbox() (which also has requestDirection) or the
+  // getConversationWith() fallback for a thread with no inbox row yet
+  // (which doesn't).
+  const iAmInitiator = !!active?.requestInitiatorId && String(active.requestInitiatorId) !== String(withId);
+  const sentThisRound = active?.messagesSentThisRound ?? 0;
+  const isIncomingRequest = !active?.isDemo && status === "request_pending" && !iAmInitiator;
+  const limitReached = !active?.isDemo && status === "request_pending" && iAmInitiator && sentThisRound >= 3;
+  const isDeclinedClosed = !active?.isDemo && status === "declined";
 
   const submit = async () => {
-    if (!text.trim() || sending || !withId || limitReached) return;
+    if (!text.trim() || sending || !withId || limitReached || isBlocked) return;
     if (active?.isDemo) {
       demo.sendMessage({ id: withId, name: active.name, initials: active.initials, gradient: active.gradient, headline: active.role, regarding: active.regarding }, text.trim());
       setText("");
@@ -231,11 +305,25 @@ export default function MessagesPage() {
     try {
       setThread(await db.sendMessage(withId, text.trim()));
       setText("");
-      loadConversations();
+      loadInbox();
     } catch (e) {
       setError(e.message || "Couldn't send that message -- please try again.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const runRequestAction = async (fn) => {
+    if (requestBusy) return;
+    setRequestBusy(true);
+    setRequestActionError(null);
+    try {
+      await fn();
+      await loadInbox();
+    } catch (e) {
+      setRequestActionError(e.message || "Couldn't do that -- please try again.");
+    } finally {
+      setRequestBusy(false);
     }
   };
 
@@ -296,10 +384,12 @@ export default function MessagesPage() {
       clearTimeout(id);
       if (el) el.style.height = "";
     };
-  }, [withId, error, loadingThread, loadingList, listQuery]);
+  }, [withId, error, loadingThread, loadingList, listQuery, tab]);
 
   const openConversation = (userId) => setSearchParams({ with: userId });
   const backToList = () => setSearchParams({});
+
+  const requestsCount = requests.filter((c) => c.requestDirection === "incoming").length;
 
   return (
     <main className="flex-1 min-w-0">
@@ -326,7 +416,7 @@ export default function MessagesPage() {
             <PenSquare size={17} />
           </button>
         </div>
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-10">
+        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-10 mb-3">
           <Search size={15} className="text-slate-400 shrink-0" />
           <input
             value={listQuery}
@@ -337,6 +427,28 @@ export default function MessagesPage() {
           {listQuery && (
             <button type="button" onClick={() => setListQuery("")} aria-label="Clear search" className="shrink-0 text-slate-400 hover:text-slate-600"><X size={14} /></button>
           )}
+        </div>
+        {/* Primary / Requests -- Primary is "conversations allowed to
+            continue" (connections AND accepted non-connections alike), not
+            "connections only". Requests holds anything still pending
+            either direction, plus a declined thread but only for whoever
+            sent it. */}
+        <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+          <button
+            onClick={() => { setTab("primary"); backToList(); }}
+            className={`flex-1 text-xs font-bold py-2 rounded-lg transition ${tab === "primary" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+          >
+            Primary
+          </button>
+          <button
+            onClick={() => { setTab("requests"); backToList(); }}
+            className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-lg transition ${tab === "requests" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+          >
+            Requests
+            {requestsCount > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">{requestsCount}</span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -354,18 +466,20 @@ export default function MessagesPage() {
         <div className={`${withId ? "hidden sm:flex" : "flex"} flex-col w-full sm:w-72 shrink-0 border-r border-slate-100 overflow-y-auto`}>
           {loadingList ? (
             <p className="text-sm text-slate-400 p-4">Loading…</p>
-          ) : allConversations.length === 0 ? (
+          ) : listForTab.length === 0 ? (
             <div className="p-6 text-center">
               <MessageSquare size={26} className="text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Start a professional conversation</p>
-              <p className="text-xs text-slate-400 mt-1">Message a physio from their profile, or use the new-message button above.</p>
+              <p className="text-sm text-slate-500">{tab === "primary" ? "Start a professional conversation" : "No message requests"}</p>
+              <p className="text-xs text-slate-400 mt-1">
+                {tab === "primary" ? "Message a physio from their profile, or use the new-message button above." : "Requests from people you're not connected with will show up here."}
+              </p>
             </div>
-          ) : visibleConversations.length === 0 ? (
+          ) : visibleList.length === 0 ? (
             <div className="p-6 text-center">
               <p className="text-sm text-slate-400">No conversations match &ldquo;{listQuery.trim()}&rdquo;.</p>
             </div>
           ) : (
-            visibleConversations.map((c) => (
+            visibleList.map((c) => (
               <button
                 key={c.userId}
                 onClick={() => openConversation(c.userId)}
@@ -378,13 +492,16 @@ export default function MessagesPage() {
                       {c.name}
                       {c.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
                     </p>
-                    {/* Time and designation (2026-09-23): getConversations()
-                        has returned `role` and `lastAt` all along, the row
-                        just never showed either. */}
                     <span className="shrink-0 text-[10.5px] text-slate-400">{inboxTime(c.lastAt)}</span>
                   </div>
                   {c.role && <p className="text-[11px] text-slate-400 truncate">{c.role}</p>}
-                  <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
+                  {tab === "requests" ? (
+                    <p className="text-xs truncate text-slate-500">
+                      {c.status === "declined" ? "Closed" : c.requestDirection === "incoming" ? (c.lastText || "Sent you a message request") : `Waiting for reply · ${c.messagesSentThisRound ?? 0} of 3 sent`}
+                    </p>
+                  ) : (
+                    <p className={`text-xs truncate ${c.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>{c.lastText}</p>
+                  )}
                 </div>
                 {c.unread > 0 && (
                   <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EAF1FF] text-[#2B5FD9] text-[10px] font-bold flex items-center justify-center" aria-label={`${c.unread} unread`}>
@@ -405,19 +522,85 @@ export default function MessagesPage() {
               <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100">
                 <button onClick={backToList} aria-label="Back to conversations" className="sm:hidden text-slate-400 hover:text-slate-600"><ChevronLeft size={18} /></button>
                 {active && <Avatar size={30} grad={active.gradient} initials={active.initials} photoUrl={active.avatarUrl} />}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-900 truncate flex items-center gap-1.5">
                     {active?.name || "Conversation"}
                     {active?.isDemo && <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 rounded-full px-1.5 py-0.5">Demo</span>}
                   </p>
-                  {/* Designation under the name (2026-09-23), falling back
-                      to the "Re: <opportunity>" line the recruiter threads
-                      use -- both are context about who you're talking to. */}
                   {active?.regarding
                     ? <p className="text-[11px] text-slate-400 truncate">Re: {active.regarding}</p>
                     : active?.role ? <p className="text-[11px] text-slate-400 truncate">{active.role}</p> : null}
                 </div>
+                {!active?.isDemo && withId && (
+                  <button
+                    onClick={() => setReporting(true)}
+                    aria-label={`Report ${active?.name || "this person"}`}
+                    className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50"
+                  >
+                    <Flag size={14} />
+                  </button>
+                )}
               </div>
+
+              {/* Incoming request banner (spec: Accept/Decline/Block/Report
+                  live here AND in the Requests list row -- replying also
+                  accepts, per spec section 13, so the composer below stays
+                  open the whole time rather than being replaced by this). */}
+              {isIncomingRequest && (
+                <div className="px-4 py-3 border-b border-slate-100 bg-amber-50/60">
+                  <p className="text-xs text-amber-800 mb-2">
+                    <span className="font-semibold">{active?.name}</span> wants to message you. Accept to reply, or decline to close this request.
+                  </p>
+                  {requestActionError && <p className="text-xs text-rose-600 mb-2">{requestActionError}</p>}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => runRequestAction(() => db.acceptMessageRequest(active.conversationId))}
+                      disabled={requestBusy}
+                      className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      <Check size={13} /> Accept
+                    </button>
+                    <button
+                      onClick={() => runRequestAction(() => db.declineMessageRequest(active.conversationId))}
+                      disabled={requestBusy}
+                      className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-60"
+                    >
+                      <X size={13} /> Decline
+                    </button>
+                    <button
+                      onClick={() => runRequestAction(() => db.blockUser(withId))}
+                      disabled={requestBusy}
+                      className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 disabled:opacity-60 ml-auto"
+                    >
+                      <ShieldOff size={13} /> Block
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Outgoing pending, under the limit -- "N of 3" notice.
+                  Composer stays open below this. */}
+              {!active?.isDemo && status === "request_pending" && !isIncomingRequest && !limitReached && sentThisRound > 0 && (
+                <div className="px-4 py-2 border-b border-slate-100 bg-slate-50">
+                  <p className="text-xs text-slate-500">
+                    {active.name} hasn't replied yet -- {sentThisRound} of 3 messages sent before they need to accept.
+                  </p>
+                </div>
+              )}
+
+              {/* Declined -- neutral "closed" notice, no detail about what
+                  the other person did. Composer stays enabled: sending
+                  again after the cooldown starts a fresh request round
+                  server-side (MSG_COOLDOWN surfaces as a normal send error
+                  if it's tried too early). */}
+              {isDeclinedClosed && (
+                <div className="px-4 py-2 border-b border-slate-100 bg-slate-50">
+                  <p className="text-xs text-slate-500">
+                    This conversation is closed.{cooldownLabel(active?.cooldownUntil) ? ` You can send a new request after ${cooldownLabel(active.cooldownUntil)}.` : ""}
+                  </p>
+                </div>
+              )}
+
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
                 {loadingThread ? (
                   <p className="text-sm text-slate-400">Loading…</p>
@@ -453,11 +636,18 @@ export default function MessagesPage() {
                 )}
               </div>
               {error && <p className="px-4 text-xs text-rose-600 pb-1">{error}</p>}
-              {limitReached ? (
+              {isBlocked ? (
+                <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-100 bg-slate-50">
+                  <ShieldOff size={14} className="text-slate-400 shrink-0" />
+                  <p className="text-xs text-slate-500 flex-1">
+                    {active?.blockedByMe ? "You've blocked this person -- unblock them from their profile to message again." : "You can't message this person."}
+                  </p>
+                </div>
+              ) : limitReached ? (
                 <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-100 bg-slate-50">
                   <Lock size={14} className="text-slate-400 shrink-0" />
                   <p className="text-xs text-slate-500 flex-1">
-                    You've sent {MESSAGE_LIMIT_IF_NOT_CONNECTED} messages to {active?.name || "this person"} without connecting.
+                    You've sent 3 messages to {active?.name || "this person"} without a reply. Wait for them to accept, or connect instead.
                   </p>
                   <button
                     onClick={() => connectWith(withId).catch(() => {})}
@@ -525,7 +715,7 @@ export default function MessagesPage() {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => { setComposeOpen(false); openConversation(String(p.id)); }}
+                  onClick={() => { setComposeOpen(false); setTab("primary"); openConversation(String(p.id)); }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left"
                 >
                   <Avatar size={38} grad={p.grad} initials={initialsOf(p.name)} photoUrl={p.avatarUrl} />
@@ -538,6 +728,14 @@ export default function MessagesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {reporting && active && (
+        <ReportUserModal
+          name={active.name}
+          onClose={() => setReporting(false)}
+          onSubmit={(reason) => db.reportUser(withId, reason, { conversationId: active.conversationId })}
+        />
       )}
     </main>
   );

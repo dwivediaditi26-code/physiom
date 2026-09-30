@@ -537,7 +537,71 @@ async function syncPatientsToSupabase(patients, userId) {
     }));
     const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
     if (error) { console.warn("[Supabase sync]", error.message); throw error; }
-  } catch (e) { console.warn("[Supabase sync error]", e); throw e; }
+    clearSyncDirty(userId);
+  } catch (e) {
+    console.warn("[Supabase sync error]", e);
+    // A failed sync (almost always a dropped connection on campus wifi, not
+    // a real server rejection) must not just vanish into a console warning
+    // -- the record stays correct locally (persistPatientsLocal already ran)
+    // but Supabase falls out of date until *something* retries. Mark it
+    // dirty so the online-listener below retries automatically the moment
+    // connectivity returns, instead of silently staying stale until the
+    // student happens to edit that same patient again.
+    markSyncDirty(userId);
+    throw e;
+  }
+}
+
+// ── Background sync: retry queue for saves that failed while offline ───────
+// One flag per user (not per-record) -- upsert already re-sends the whole
+// patient list every save, so "dirty" just means "the last attempted sync
+// for this user didn't reach Supabase, try the current list again."
+const syncDirtyKey = (userId) => `physio_sync_dirty_v1_${userId || "anon"}`;
+function markSyncDirty(userId) {
+  try { localStorage.setItem(syncDirtyKey(userId), "1"); } catch {}
+}
+function clearSyncDirty(userId) {
+  try { localStorage.removeItem(syncDirtyKey(userId)); } catch {}
+}
+function isSyncDirty(userId) {
+  try { return localStorage.getItem(syncDirtyKey(userId)) === "1"; } catch { return false; }
+}
+
+let _flushingUserId = null;
+// Re-sends the current local patient list for this user. Safe to call
+// repeatedly/concurrently -- guarded so overlapping triggers (an 'online'
+// event firing while the Capacitor Network listener also fires) can't kick
+// off two upserts at once.
+async function flushPendingSync(userId) {
+  if (!userId || !isSyncDirty(userId) || _flushingUserId === userId) return;
+  _flushingUserId = userId;
+  try {
+    const patients = loadPatientDB(userId);
+    await syncPatientsToSupabase(patients, userId);
+  } catch {
+    // stays dirty; next reconnect (or next manual save) retries again
+  } finally {
+    _flushingUserId = null;
+  }
+}
+
+// Registered once per page load, not once per component mount -- avoids
+// piling up duplicate 'online' listeners across re-renders/remounts of
+// whatever component happens to import this module first.
+if (typeof window !== "undefined" && !window.__physioSyncListenersInstalled) {
+  window.__physioSyncListenersInstalled = true;
+  const retryCurrentUser = () => {
+    supabase.auth.getUser().then(({ data }) => {
+      const uid = data?.user?.id;
+      if (uid) flushPendingSync(uid);
+    }).catch(() => {});
+  };
+  window.addEventListener("online", retryCurrentUser);
+  // @capacitor/network resolves to a web no-op listener outside the native
+  // wrapper, so this is safe to call unconditionally on the Vercel build too.
+  import("@capacitor/network").then(({ Network }) => {
+    Network.addListener("networkStatusChange", (s) => { if (s.connected) retryCurrentUser(); }).catch(() => {});
+  }).catch(() => {});
 }
 // Encrypts (when a session key is available) and writes the local cache,
 // updating _patientCache synchronously first so any loadPatientDB() call in
@@ -1389,6 +1453,7 @@ export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
   hydrateLocalCache, clearPatientCache,
+  isSyncDirty, flushPendingSync,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
