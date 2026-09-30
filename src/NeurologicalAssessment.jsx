@@ -665,7 +665,7 @@ const MYOTOME_ROW_INFO = Object.fromEntries(MYOTOME_ROWS.map((r) => [r, neuroExa
 // points -- shared by the generic Sensory Examination step's own
 // Dermatomal Sensory Screen and the Spinal Cord Injury condition
 // library's full ASIA exam.
-const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S4-5 (perianal)"];
+const DERMATOME_ROWS = ["C5", "C6", "C7", "C8", "T1", "T4 (nipple)", "T10 (umbilicus)", "L3", "L4", "L5", "S1", "S2", "S3", "S4-5 (perianal)"];
 const DERMATOME_ROW_INFO = Object.fromEntries(DERMATOME_ROWS.map((r) => [r, neuroExamLibraryData["derm" + r]]));
 
 /* ============================================================

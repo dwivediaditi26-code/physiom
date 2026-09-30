@@ -842,6 +842,48 @@ export const neuroExamLibraryData = {
     },
   },
 
+  dermS2: {
+    title: "Dermatome S2",
+    icon: "🦶",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      caption: "Popliteal fossa, midline",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick at the midline of the popliteal fossa (ISNCSCI key sensory point). Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "One of the ISNCSCI key sensory points between S1 and S4-5. Not tied to a standard key muscle or reflex." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → sacral segment involvement; correlate with S1, S3 and S4-5 and with bladder/bowel function"],
+      note: "Testing S2 and S3 alongside S4-5 shows how far sacral sensation is preserved in a spinal cord injury.",
+    },
+  },
+
+  dermS3: {
+    title: "Dermatome S3",
+    icon: "🦶",
+    category: "Learn · Neuro · Dermatomes",
+    perform: {
+      caption: "Ischial tuberosity",
+      boxes: [
+        { tone: "", label: "👤 Position", text: "Patient's eyes closed, limb relaxed and exposed." },
+        { tone: "blue", label: "🖐️ Technique", text: "Test light touch + pinprick over the ischial tuberosity (ISNCSCI key sensory point). Compare side to side." },
+        { tone: "purple", label: "🩺 Special consideration", text: "One of the ISNCSCI key sensory points between S2 and S4-5. Not tied to a standard key muscle or reflex." },
+      ],
+    },
+    scaleLabel: "0–2 grading",
+    scale: { type: "table", rows: [{ k: "0", v: "Absent" }, { k: "1", v: "Altered" }, { k: "2", v: "Normal" }] },
+    interpret: {
+      normal: ["Intact, symmetrical sensation, grade 2"],
+      abnormal: ["Reduced/absent → sacral segment involvement; correlate with S2 and S4-5 and with bladder/bowel function"],
+      note: "Sparing here with absent S4-5 sensation is worth documenting separately, as sacral sparing at S4-5 decides AIS A versus B.",
+    },
+  },
+
   "dermS4-5 (perianal)": {
     title: "Dermatome S4-5 (Perianal)",
     icon: "🚨",
