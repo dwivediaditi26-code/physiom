@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, Calendar, Clock, Video, Check } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
@@ -19,6 +19,7 @@ import { trackEvent } from "../../../analytics/trackEvent.js";
 export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [zoom, setZoom] = useState(false);
   const blocked = isRegistrationBlocked(opp);
 
   useEffect(() => {
@@ -48,16 +49,27 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         <p className="text-sm font-semibold text-slate-900 truncate">Event Details</p>
       </div>
 
-      <div className="relative h-36 bg-gradient-to-br from-[#FF5FA2] to-[#FFB020] flex items-center justify-center overflow-hidden">
-        {opp.bannerUrl ? (
-          <img src={opp.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
+      {opp.bannerUrl ? (
+        // Full image, never cropped (a tall poster used to be cut to a
+        // 144px strip by object-cover). Tap to open it full screen.
+        <button type="button" onClick={() => setZoom(true)} aria-label="View full image" className="relative block w-full bg-slate-100">
+          <img src={opp.bannerUrl} alt={opp.title || "Workshop cover"} className="w-full h-auto max-h-[70vh] object-contain mx-auto" />
+          <span className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"><Maximize2 size={14} className="text-white" /></span>
+        </button>
+      ) : (
+        <div className="relative h-36 bg-gradient-to-br from-[#FF5FA2] to-[#FFB020] flex items-center justify-center overflow-hidden">
           <Video size={30} className="text-white/70" />
-        )}
-        {opp.mode === "Online" && (
-          <span className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/25 flex items-center justify-center"><Video size={15} className="text-white" /></span>
-        )}
-      </div>
+          {opp.mode === "Online" && (
+            <span className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/25 flex items-center justify-center"><Video size={15} className="text-white" /></span>
+          )}
+        </div>
+      )}
+      {zoom && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-3" onClick={() => setZoom(false)}>
+          <button type="button" aria-label="Close" className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center" onClick={() => setZoom(false)}><X size={20} className="text-white" /></button>
+          <img src={opp.bannerUrl} alt="" className="max-w-full max-h-full object-contain" style={{ touchAction: "pinch-zoom" }} onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
 
       <div className="p-5 pb-28">
         <h1 className="text-xl font-bold text-slate-900 leading-tight mb-3">{opp.title}</h1>

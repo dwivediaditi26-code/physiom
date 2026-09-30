@@ -1711,11 +1711,17 @@ export async function markNotificationRead(id) {
 // since getNotifications() is a single cheap indexed query.
 //
 // Same unsubscribe-on-unmount contract as subscribeToMessages() above.
+// Each call needs its OWN channel topic: supabase.channel(name) returns the
+// already-subscribed channel when the name is reused (header bell + another
+// screen, or a StrictMode remount before cleanup), and adding
+// postgres_changes callbacks to it throws.
+let _chanSeq = 0;
+
 export async function subscribeToNotifications(onChange) {
   const uid = await currentUserId();
   if (!uid) return () => {};
   const channel = supabase
-    .channel(`notifications:${uid}`)
+    .channel(`notifications:${uid}:${++_chanSeq}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` }, (payload) => onChange(payload.new))
     .subscribe();
   return () => supabase.removeChannel(channel);
@@ -2109,7 +2115,7 @@ export async function subscribeToMessages(onChange) {
   const uid = await currentUserId();
   if (!uid) return () => {};
   const channel = supabase
-    .channel(`direct_messages:${uid}`)
+    .channel(`direct_messages:${uid}:${++_chanSeq}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` }, (payload) => onChange(payload.new))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` }, (payload) => onChange(payload.new))
     .subscribe();

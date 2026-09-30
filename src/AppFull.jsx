@@ -1,5 +1,5 @@
 // AppFull.jsx — Posture engine, camera, patient DB, dashboard, AppInner, App
-import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, Suspense, lazy } from "react";
 import { track } from "@vercel/analytics";
 import { supabase } from "./supabase.js";
 import { trackEvent } from "./analytics/trackEvent.js";
@@ -101,6 +101,28 @@ const STREAM_ICONS = {
   cardio:    { Icon: HeartPulse, bg: "#FDEAEC" },
   sports:    { Icon: Footprints, bg: "#FFF1E6" },
 };
+
+// A patient row with no real name is a DRAFT (e.g. auto-created by AI intake before a
+// name was typed). Drafts keep auto-saving so nothing is lost, but stay out of the
+// patient list, counts and Recent Patients until the clinician names + saves them.
+const DRAFT_PLACEHOLDER_NAMES = ["", "new patient", "unnamed patient"];
+const DRAFT_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+const DRAFT_GRACE_MS = 10 * 60 * 1000;
+function isDraftPatient(p) {
+  return !!p && DRAFT_PLACEHOLDER_NAMES.includes(String(p.name || "").trim().toLowerCase());
+}
+function hasRealContent(v, depth = 0) {
+  if (v == null || v === "" || v === false) return false;
+  if (typeof v === "string") {
+    const t = v.trim();
+    if (!t) return false;
+    if (depth < 3 && (t[0] === "{" || t[0] === "[")) { try { return hasRealContent(JSON.parse(t), depth + 1); } catch { return true; } }
+    return true;
+  }
+  if (Array.isArray(v)) return v.some(x => hasRealContent(x, depth + 1));
+  if (typeof v === "object") return Object.entries(v).some(([k, x]) => k !== "__aiExtracted" && hasRealContent(x, depth + 1));
+  return true;
+}
 
 function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // Per-user storage keys — see PatientDatabase.jsx's dbKey()/draftKey() for
@@ -493,6 +515,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   useEffect(() => {
     if (active === "clinical" && navContext?.clinicalSubTab) setClinicalSubTab(navContext.clinicalSubTab);
   }, [active, navContext]);
+  // Deep-link into the Treatment screen's Home Protocol tab (profile's
+  // "Edit Program"); without this it always opens on Tx Techniques.
+  useEffect(() => {
+    if (active === "treatment" && (navContext?.txTab === "hep" || navContext?.txTab === "tx")) setTxTab(navContext.txTab);
+  }, [active, navContext]);
   // Clinical tab landing: "+ New Assessment" opens a minimal 5-question
   // intake (name, age, sex, phone, region) instead of asking AI-vs-Template
   // first (2026-09-10, Aditi: "i want patient small 5 ques minimal data
@@ -663,12 +690,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // separate "New patient" modal (IntakeForm/showIntake, AppModules.jsx)
   // with extra Occupation/Address fields, a tab layout, and its own consent
   // checkbox; retired in favor of one consistent flow everywhere.
-  const createNewPatient = () => {
+  const createNewPatient = () => guardDraftLeave(() => {
     setShowSpecialtyPicker(true);
     setShowPatientDb(false);
-  };
+  });
 
   const selectPatient = (p) => {
+    if (p && p.id !== activePatientId) { guardDraftLeave(() => selectPatientNow(p)); return; }
+    selectPatientNow(p);
+  };
+
+  const selectPatientNow = (p) => {
     // Re-selecting the patient who is ALREADY active (e.g. tapping their
     // profile mid-assessment): keep the current in-memory `data` -- it holds
     // the freshest, possibly-unsaved edits. Resetting it here to a stale
@@ -747,6 +779,93 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   };
 
   const activePatient = patients.find(p => p.id === activePatientId) || null;
+
+  // ── Drafts vs saved patients ────────────────────────────────────────────
+  const visiblePatients = useMemo(() => patients.filter(p => !isDraftPatient(p)), [patients]);
+  const draftPatients = useMemo(
+    () => patients.filter(isDraftPatient).sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)),
+    [patients]
+  );
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [showLeaveDraft, setShowLeaveDraft] = useState(false);
+  const [leaveAction, setLeaveAction] = useState(null);
+  const [nameModal, setNameModal] = useState(null);   // null | { after: fn|null }
+  const [nameInput, setNameInput] = useState("");
+  const [nameError, setNameError] = useState("");
+
+  const softDeleteRemote = (ids) => {
+    if (!currentUser?.id || !ids.length) return;
+    supabase.from("patients").update({ deleted_at: new Date().toISOString() })
+      .in("id", ids).eq("user_id", currentUser.id)
+      .then(({ error }) => { if (error) console.warn("[Supabase soft-delete]", error.message); })
+      .catch((e) => console.warn("[Supabase soft-delete error]", e));
+  };
+
+  const discardDraft = (id) => {
+    const updated = patients.filter(p => p.id !== id);
+    setPatients(updated);
+    savePatientDB(updated, currentUser?.id);
+    softDeleteRemote([id]);
+    if (activePatientId === id) { setData({}); setActivePatientId(null); try { localStorage.removeItem(DRAFT_KEY); } catch {} }
+  };
+
+  // Housekeeping: drop empty draft rows, and nameless drafts older than 7 days.
+  // Never touches the active patient or anything created in the last 10 minutes.
+  useEffect(() => {
+    const now = Date.now();
+    const junk = patients.filter(p => {
+      if (!isDraftPatient(p) || p.id === activePatientId) return false;
+      if (String(p.id).startsWith("demo_")) return false;
+      const created = new Date(p.createdAt || p.updatedAt || 0).getTime();
+      if (now - created < DRAFT_GRACE_MS) return false;
+      const updated = new Date(p.updatedAt || p.createdAt || 0).getTime();
+      return !hasRealContent(p.data) || now - updated > DRAFT_MAX_AGE_MS;
+    });
+    if (!junk.length) return;
+    const ids = new Set(junk.map(p => p.id));
+    const updated = patients.filter(p => !ids.has(p.id));
+    setPatients(updated);
+    savePatientDB(updated, currentUser?.id);
+    softDeleteRemote([...ids]);
+  }, [patients, activePatientId]);
+
+  // Save a draft as a real patient: name required, ask if the name already exists.
+  const saveDraftAsPatient = () => {
+    const name = nameInput.trim();
+    if (!name) { setNameError("Enter the patient's name to save."); return; }
+    const dup = visiblePatients.find(p => p.id !== activePatientId && String(p.name || "").trim().toLowerCase() === name.toLowerCase());
+    if (dup && !window.confirm(`A patient named "${name}" already exists.\n\nOK = save as a NEW patient anyway\nCancel = go back`)) return;
+    const after = nameModal?.after || null;
+    setData(prev => ({ ...prev, dem_name: name }));
+    setPatients(prev => {
+      const updated = prev.map(p => p.id === activePatientId ? { ...p, name, data: { ...(p.data||{}), ...data, dem_name: name }, updatedAt: new Date().toISOString() } : p);
+      savePatientDB(updated, currentUser?.id);
+      return updated;
+    });
+    setNameModal(null); setNameInput(""); setNameError("");
+    setJsonMsg({ type:"success", text:"✅ Patient saved" });
+    setTimeout(() => setJsonMsg(null), 2000);
+    if (after) setTimeout(after, 0);
+  };
+  const openNameModal = (after = null) => {
+    setNameInput(""); setNameError(""); setNameModal({ after });
+  };
+
+  // Before switching away from an unnamed draft that has real content, ask what to do with it.
+  const guardDraftLeave = (action) => {
+    const cur = patients.find(p => p.id === activePatientId);
+    if (cur && isDraftPatient(cur) && hasRealContent(data)) {
+      setLeaveAction(() => action); setShowLeaveDraft(true); return;
+    }
+    action();
+  };
+  const leaveDraft = (mode) => {
+    const action = leaveAction;
+    setShowLeaveDraft(false); setLeaveAction(null);
+    if (mode === "save") { openNameModal(action); return; }
+    if (mode === "discard") discardDraft(activePatientId);
+    if (action) setTimeout(action, 0);
+  };
 
   // ── Optimised set function ──────────────────────────────────────────────
   // set(obj) — SubjectiveModule style (passes whole data object)
@@ -1107,7 +1226,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* Patient controls */}
       <div style={{padding:"4px 8px 12px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
         <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.8rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-          👥 {patients.length} Patient{patients.length!==1?"s":""}
+          👥 {visiblePatients.length} Patient{visiblePatients.length!==1?"s":""}
         </button>
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
@@ -1269,13 +1388,72 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* Mobile nav overlay */}
       {navOpen&&<div className="pm-nav-overlay" onClick={()=>setNavOpen(false)}/>}
 
+      {/* ── DRAFT PATIENTS: name + save ── */}
+      {nameModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:16,padding:22,maxWidth:380,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontWeight:800,color:"#1a1025",fontSize:"1rem",marginBottom:4}}>Save patient</div>
+            <div style={{fontSize:"0.8rem",color:"#5a7090",marginBottom:12,lineHeight:1.5}}>Enter the patient's name. Once saved, they appear in your patient list.</div>
+            <input autoFocus value={nameInput} onChange={e=>{setNameInput(e.target.value);setNameError("");}}
+              onKeyDown={e=>{ if(e.key==="Enter") saveDraftAsPatient(); }}
+              placeholder="Full name, e.g. Riya Sharma"
+              style={{width:"100%",padding:"11px 12px",borderRadius:10,border:"1.5px solid rgba(124,58,237,0.3)",fontFamily:"inherit",fontSize:"0.9rem",outline:"none",boxSizing:"border-box"}}/>
+            {nameError && <div style={{fontSize:"0.75rem",color:"#dc2626",fontWeight:600,marginTop:6}}>{nameError}</div>}
+            <div style={{display:"flex",gap:8,marginTop:14}}>
+              <button onClick={()=>{setNameModal(null);setNameError("");}} style={{flex:1,padding:"11px",background:"transparent",border:"1px solid rgba(0,0,0,0.12)",borderRadius:10,color:"#5a7090",fontWeight:600,cursor:"pointer"}}>Cancel</button>
+              <button onClick={saveDraftAsPatient} style={{flex:1,padding:"11px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:10,color:"#fff",fontWeight:800,cursor:"pointer"}}>💾 Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DRAFT PATIENTS: leaving with an unnamed draft ── */}
+      {showLeaveDraft && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:650,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:16,padding:22,maxWidth:380,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontWeight:800,color:"#1a1025",fontSize:"1rem",marginBottom:6}}>Save this patient?</div>
+            <div style={{fontSize:"0.8rem",color:"#5a7090",marginBottom:16,lineHeight:1.6}}>This assessment has no patient name yet, so it is not in your patient list. Your typing is already kept as a draft.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button onClick={()=>leaveDraft("save")} style={{padding:"12px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:10,color:"#fff",fontWeight:800,fontSize:"0.85rem",cursor:"pointer"}}>💾 Save patient</button>
+              <button onClick={()=>leaveDraft("keep")} style={{padding:"11px",background:"#f5f3ff",border:"1px solid rgba(124,58,237,0.3)",borderRadius:10,color:"#7c3aed",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>📝 Keep as draft & leave</button>
+              <button onClick={()=>leaveDraft("discard")} style={{padding:"11px",background:"rgba(220,38,38,0.06)",border:"1px solid rgba(220,38,38,0.25)",borderRadius:10,color:"#dc2626",fontWeight:700,fontSize:"0.82rem",cursor:"pointer"}}>🗑 Discard draft</button>
+              <button onClick={()=>{setShowLeaveDraft(false);setLeaveAction(null);}} style={{padding:"10px",background:"transparent",border:"1px solid rgba(0,0,0,0.1)",borderRadius:10,color:"#5a7090",fontSize:"0.8rem",cursor:"pointer"}}>Keep editing</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DRAFT PATIENTS: list ── */}
+      {showDrafts && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:640,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:16,padding:22,maxWidth:420,width:"100%",maxHeight:"80vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontWeight:800,color:"#1a1025",fontSize:"1rem",marginBottom:4}}>Drafts</div>
+            <div style={{fontSize:"0.78rem",color:"#5a7090",marginBottom:14,lineHeight:1.5}}>These have no patient name, so they are not in your patient list. Resume one and tap Save patient, or delete it. Nameless drafts are removed after 7 days.</div>
+            {draftPatients.length===0 && <div style={{fontSize:"0.85rem",color:"#8a8fa0",padding:"8px 0"}}>No drafts.</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {draftPatients.map(p=>(
+                <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",border:"1px solid rgba(124,58,237,0.2)",borderRadius:10}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:"0.85rem",color:"#1a1025"}}>Unnamed draft</div>
+                    <div style={{fontSize:"0.7rem",color:"#8a8fa0"}}>{new Date(p.updatedAt||p.createdAt).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
+                  </div>
+                  <button onClick={()=>{setShowDrafts(false);selectPatient(p);}} style={{padding:"6px 12px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:8,color:"#fff",fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>Resume</button>
+                  <button onClick={()=>{ if(window.confirm("Delete this draft?")) discardDraft(p.id); }} style={{padding:"6px 10px",background:"transparent",border:"1px solid rgba(220,38,38,0.3)",borderRadius:8,color:"#dc2626",fontSize:"0.75rem",cursor:"pointer"}}>Delete</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>setShowDrafts(false)} style={{marginTop:14,width:"100%",padding:"10px",background:"transparent",border:"1px solid rgba(0,0,0,0.1)",borderRadius:10,color:"#5a7090",fontSize:"0.8rem",cursor:"pointer"}}>Close</button>
+          </div>
+        </div>
+      )}
+
       {/* ── PATIENT DATABASE PANEL ── */}
       {showPatientDb && (
         <PatientDatabasePanel
-          patients={patients}
+          patients={visiblePatients}
           activeId={activePatientId}
           onSelect={selectPatient}
-          onNew={()=>setShowSpecialtyPicker(true)}
+          onNew={createNewPatient}
           onDelete={deletePatient}
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
@@ -1527,7 +1705,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Patient selector */}
             <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.82rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:"0.85rem"}}>👥</span>
-              <span>{patients.length} Patients</span>
+              <span>{visiblePatients.length} Patients</span>
             </button>
 
 
@@ -1681,6 +1859,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 doing the exact same setShowPatientDb(true) the "N Patients"
                 button in the header above already does -- two buttons open
                 the identical patient-list modal. */}
+            {isDraftPatient(activePatient) && (
+              <button onClick={()=>openNameModal(null)} style={{padding:"3px 12px",background:"linear-gradient(135deg,#7c3aed,#9333ea)",border:"none",borderRadius:6,color:"#fff",fontSize:"0.82rem",fontWeight:800,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>💾 Save patient</button>
+            )}
+            {draftPatients.length>0 && (
+              <button onClick={()=>setShowDrafts(true)} style={{padding:"3px 10px",background:"#f5f3ff",border:"1px solid rgba(124,58,237,0.3)",borderRadius:6,color:"#7c3aed",fontSize:"0.82rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>📝 {draftPatients.length}</button>
+            )}
             <button onClick={createNewPatient} style={{padding:"3px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:6,color:PC.text,fontSize:"0.82rem",fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>＋ New</button>
           </div>
         </div>
@@ -1688,6 +1872,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {!activePatient && (
         <div className="pm-patient-bar" style={{background:"#ffffff",borderBottom:`1px solid ${PC.border}`,padding:"9px 24px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           <span style={{fontSize:"0.8rem",color:PC.muted,fontWeight:500}}>No active patient — create or load a patient record to save assessments</span>
+          {draftPatients.length>0 && <button onClick={()=>setShowDrafts(true)} style={{padding:"5px 14px",background:"#f5f3ff",border:"1px solid rgba(124,58,237,0.3)",borderRadius:7,color:"#7c3aed",fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>📝 Drafts ({draftPatients.length})</button>}
           <button onClick={createNewPatient} style={{padding:"5px 14px",background:`linear-gradient(135deg,${PC.accent}18,${PC.a2}12)`,border:`1px solid ${PC.accentBorder||PC.border}`,borderRadius:7,color:PC.accent,fontSize:"0.78rem",fontWeight:700,cursor:"pointer"}}>＋ New Patient</button>
         </div>
       )}
@@ -1749,7 +1934,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={patients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/>
+              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/>
             </div>
           )}
           {active==="posture" && !mountedTabs.has("posture") && (
@@ -1916,7 +2101,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               )}
 
               {tests==="HOME_MODULE"?(
-                <HomeModule onNav={navTo} patients={patients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
+                <HomeModule onNav={navTo} patients={visiblePatients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
               ):tests==="PHYSIOFEED_MODULE"?(
                 // Actually rendered by the mountedTabs-gated block up near
                 // Posture (see its own comment) so it stays mounted across
@@ -1953,7 +2138,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
                       ["assessment","Assess",ClipboardListIcon,null,""],
-                      ["patients","Patients",UsersIcon,patients.length,""],
+                      ["patients","Patients",UsersIcon,visiblePatients.length,""],
                       ["treatment","Treatment",PillIcon,treatmentDue,"due"],
                       ["posture","Posture",PersonStanding,null,""],
                     ];
@@ -1998,9 +2183,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           </div>
                           <div style={{background:"#fff"}}>
                             {clinicalSubTab==="today" ? (
-                              <TherapistDashboardModule patients={patients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                              <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                             ) : clinicalSubTab==="treatment" ? (
-                              <TreatmentCaseloadPanel patients={patients}
+                              <TreatmentCaseloadPanel patients={visiblePatients}
                                 onContinue={(p)=>openPatientProfile(p, "sessions")}
                                 onProfile={(p)=>openPatientProfile(p, "treatment")}
                                 // 2026-09-02, Aditi: "in treatment we can remove the
@@ -2064,17 +2249,26 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                 </button>
                               </div>
                             ) : (
-                              <PatientDatabasePanel
-                                embedded
-                                patients={patients}
-                                activeId={activePatientId}
-                                onSelect={selectPatient}
-                                onNew={()=>setShowSpecialtyPicker(true)}
-                                onDelete={deletePatient}
-                                onImport={importPatientFromJSON}
-                                onNav={navTo}
-                                liveData={data}
-                              />
+                              <>
+                                {draftPatients.length>0 && (
+                                  <button onClick={()=>setShowDrafts(true)} type="button"
+                                    style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"11px 14px",marginBottom:12,background:"#f5f3ff",border:"1px solid rgba(124,58,237,0.3)",borderRadius:12,color:"#7c3aed",fontWeight:700,fontSize:"0.85rem",cursor:"pointer",fontFamily:"inherit"}}>
+                                    <span>📝 {draftPatients.length} draft{draftPatients.length!==1?"s":""} not saved as patients</span>
+                                    <span>Review ›</span>
+                                  </button>
+                                )}
+                                <PatientDatabasePanel
+                                  embedded
+                                  patients={visiblePatients}
+                                  activeId={activePatientId}
+                                  onSelect={selectPatient}
+                                  onNew={createNewPatient}
+                                  onDelete={deletePatient}
+                                  onImport={importPatientFromJSON}
+                                  onNav={navTo}
+                                  liveData={data}
+                                />
+                              </>
                             )}
                           </div>
                         </div>

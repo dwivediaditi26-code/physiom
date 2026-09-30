@@ -159,13 +159,13 @@ describe("dermatomes", () => {
       return m ? [`${m[1]}${m[2]}`, `${m[3] || m[1]}${m[4]}`] : [];
     };
     const q = topic(qsOf("L4"), "Disc level");
-    expect(rightOf(q)).toBe("L4/5");
+    expect(rightOf(q)).toBe("L3/4"); // a disc affects the root numbered one below it (L3/4 disc -> L4 root)
     wrongOf(q).forEach((disc) => {
       expect(levelsOf(disc).length, disc).toBe(2);
-      levelsOf(disc).forEach((seg) => expect(["L4", "L5"], disc).not.toContain(seg));
+      levelsOf(disc).forEach((seg) => expect(["L3", "L4"], disc).not.toContain(seg));
     });
-    expect(wrongOf(q)).not.toContain("L3/4");
-    expect(wrongOf(q)).not.toContain("L5/S1");
+    expect(wrongOf(q)).not.toContain("L2/3");
+    expect(wrongOf(q)).not.toContain("L4/5");
   });
 
   it("answers a lumbar question from lumbar levels first", () => {
