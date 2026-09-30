@@ -662,6 +662,10 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
       .pdf-row-val{flex:1;font-weight:600;color:#1A1A2E;}
       .pdf-group-heading{font-weight:700;font-size:9.5px;color:#7C3AED;margin:8px 0 3px;}
       .pdf-group-heading:first-child{margin-top:0;}
+      .pdf-sign{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 4px;margin-top:4px;}
+      .pdf-sign-label{font-size:9.5px;color:#64748b;margin-bottom:18px;}
+      .pdf-sign-line{border-bottom:1px solid #334155;height:20px;margin-bottom:4px;}
+      .pdf-sign-note{font-size:9.5px;color:#64748b;}
     `;
 
     // ── PAGE FOOTER ───────────────────────────────────────────────────────
@@ -820,17 +824,9 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
           ${dxAssess && dxAssess !== "--" ? textRow(dxAssess) : ""}
         `) : ""}
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 4px;margin-top:4px;">
-          <div>
-            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Physiotherapist signature:</div>
-            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
-            <div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div>
-          </div>
-          <div>
-            <div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Next review / follow-up:</div>
-            <div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div>
-            <div style="font-size:8px;color:#94a3b8;">Date · Treating clinician · Location</div>
-          </div>
+        <div class="pdf-sign">
+          <div><div class="pdf-sign-label">Physiotherapist signature:</div><div class="pdf-sign-line"></div><div class="pdf-sign-note">Name · Registration no. · Date</div></div>
+          <div><div class="pdf-sign-label">Next review / follow-up:</div><div class="pdf-sign-line"></div><div class="pdf-sign-note">Date · Treating clinician · Location</div></div>
         </div>
     `;
     const page5 = buildTreatmentPageHtml(`Page ${totalPages} of ${totalPages} &middot; ${today}`, closingHtml, true);
@@ -930,7 +926,7 @@ ${breadcrumbHtml}
     <table><thead><tr><th>Sess.</th><th>Date</th><th>Pain (start&rarr;end)</th><th>Treatment given</th><th>Response</th></tr></thead>
     <tbody>${sessionRows}</tbody></table>
   `)}
-  ${closingHtml || `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:8px 4px;"><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Therapist signature:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Name · AHPRA registration no. · Date</div></div><div><div style="font-size:9px;color:#94a3b8;margin-bottom:18px;">Review date:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:8px;color:#94a3b8;">Date</div></div></div>`}
+  ${closingHtml || `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:8px 4px;"><div><div style="font-size:9.5px;color:#64748b;margin-bottom:18px;">Therapist signature:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:9.5px;color:#64748b;">Name · Registration no. · Date</div></div><div><div style="font-size:9.5px;color:#64748b;margin-bottom:18px;">Review date:</div><div style="border-bottom:1px solid #334155;height:20px;margin-bottom:4px;"></div><div style="font-size:9.5px;color:#64748b;">Date</div></div></div>`}
 </div>
 ${pdfFooter("Assessment & Treatment Report", pageLabel)}
 </div>`;

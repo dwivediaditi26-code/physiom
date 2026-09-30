@@ -49,6 +49,33 @@ const GreetingIllustration = () => (
   </svg>
 );
 
+// Prompts a signed-in therapist to fill in the clinic details that head every PDF
+// report (saved on the Profile tab). Hides itself once all are saved; "Later"
+// snoozes it for 7 days so it never nags.
+function ClinicDetailsBanner({ currentUser, onNav }) {
+  const key = `pm_clinic_banner_snooze_${currentUser?.id || ""}`;
+  const [snoozed, setSnoozed] = React.useState(() => {
+    try { return Date.now() - Number(localStorage.getItem(key) || 0) < 7 * 24 * 3600 * 1000; } catch { return false; }
+  });
+  const m = currentUser?.user_metadata || {};
+  const complete = m.clinic_name && m.clinic_address && m.clinic_phone;
+  if (!currentUser?.id || complete || snoozed) return null;
+  return (
+    <div role="region" aria-label="Clinic details" style={{background:"linear-gradient(135deg,#F5F3FF,#EEF2FF)",border:"1px solid #DDD6FE",borderRadius:14,padding:"12px 14px"}}>
+      <div style={{fontSize:13.5,fontWeight:800,color:"#4C1D95"}}>🏥 Add your clinic details</div>
+      <div style={{fontSize:12,color:"#5B21B6",lineHeight:1.5,margin:"3px 0 10px"}}>
+        Your name, clinic, address and phone appear at the top of every PDF report. Add them once and they fill in automatically.
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button type="button" onClick={()=>onNav("profile")}
+          style={{flex:1,padding:"9px 12px",border:"none",borderRadius:10,background:"#7C3AED",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Add now</button>
+        <button type="button" onClick={()=>{ try { localStorage.setItem(key, String(Date.now())); } catch {} setSnoozed(true); }}
+          style={{padding:"9px 14px",border:"1px solid #DDD6FE",borderRadius:10,background:"#fff",color:"#6D28D9",fontWeight:600,fontSize:13,cursor:"pointer"}}>Later</button>
+      </div>
+    </div>
+  );
+}
+
 function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser, onStartAI }) {
   // Home was a fixed 640px mobile column even on laptop/desktop widths,
   // leaving large empty gutters either side of the sidebar-plus-content
@@ -258,6 +285,8 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
 
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:16}}>
 
+        <ClinicDetailsBanner currentUser={currentUser} onNav={onNav}/>
+
         {/* ── TODAY STRIP -- compressed from a 2x2 grid (4 tall cards, real
             vertical scroll cost) into one row, one card. Same data, same
             click targets, far less space before the therapist reaches
@@ -333,4 +362,4 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
 
 
 // ── Exports ──────────────────────────────────────────────────────────────────
-export { HomeModule, TherapistDashboardModule };
+export { HomeModule, TherapistDashboardModule, ClinicDetailsBanner };
