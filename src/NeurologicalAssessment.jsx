@@ -2,8 +2,6 @@ import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
-import { useVoiceInput } from "./hooks/useVoiceInput.js";
-import { VoiceMicButton } from "./components/VoiceMicButton.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
 import { neuroRegionInfoData, LIGHT_TOUCH_ROW_INFO, PINPRICK_ROW_INFO, TEMPERATURE_ROW_INFO, PROPRIOCEPTION_ROW_INFO, VIBRATION_ROW_INFO, MMT_ROW_INFO, MAS_ROW_INFO } from "./neuroRegionInfoData.js";
@@ -293,14 +291,12 @@ function DateWheelField({ label, value, onChange, hint, howTo }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -361,10 +357,9 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint, voice }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const v = useVoiceInput(value, onChange);
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -374,7 +369,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   }, []);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref} style={voice ? { display: "flex", alignItems: "center", gap: 6 } : undefined}>
+      <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
           value={value || ""}
@@ -385,7 +380,6 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
           ▾
         </button>
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
         {open && (
           <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
         )}
@@ -1172,10 +1166,10 @@ function DemographicsSection({ data, setData }) {
       <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" />
       <div className="row-2">
         <div style={{ flex: 2 }}>
-          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} voice />
+          <TextField label="Patient name" value={d.name} onChange={(v) => set("name", v)} />
         </div>
         <div style={{ flex: 1 }}>
-          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} voice />
+          <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} />
         </div>
       </div>
       <div className="row-2">
@@ -1183,10 +1177,10 @@ function DemographicsSection({ data, setData }) {
           <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
         </div>
       </div>
-      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" voice />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
-      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" voice />
-      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} voice />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
+      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} />
       <SelectField
         label="Source of referral"
         type="single"
@@ -1194,7 +1188,7 @@ function DemographicsSection({ data, setData }) {
         value={d.referralSource}
         onChange={(v) => set("referralSource", v)}
       />
-      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
+      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
       <DateWheelField label="Date of onset / injury" value={d.onsetDate} onChange={(v) => set("onsetDate", v)} />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
@@ -1264,7 +1258,6 @@ function SubjectiveSection({ data, setData }) {
         value={d.chiefComplaint}
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient (or family/caregiver if communication is impaired) lead before narrowing to focused follow-ups."
-        voice
       />
       <TextArea
         label="History of presenting condition"

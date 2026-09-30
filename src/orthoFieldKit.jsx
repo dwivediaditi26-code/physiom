@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
-import { useVoiceInput } from "./hooks/useVoiceInput.js";
-import { VoiceMicButton } from "./components/VoiceMicButton.jsx";
 
 /* ============================================================
    BRAND / TOKENS — shared by every Ortho assessment module
@@ -359,14 +357,12 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
   );
 }
 
-export function TextField({ label, value, onChange, placeholder, hint, howTo, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+export function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -656,13 +652,11 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
   );
 }
 
-export function TextArea({ label, value, onChange, placeholder, hint, howTo, voice }) {
-  const v = useVoiceInput(value, onChange);
+export function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div style={voice ? { display: "flex", alignItems: "flex-start" } : undefined}>
-        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} style={voice ? { flex: 1 } : undefined} />
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
+      <div>
+        <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
       </div>
     </FieldShell>
   );

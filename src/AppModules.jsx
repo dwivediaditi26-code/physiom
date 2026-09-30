@@ -57,20 +57,6 @@ function DateWheelField({ value, onChange, inputStyle, placeholder }) {
   );
 }
 
-// Plain browser speech-to-text (src/hooks/useVoiceInput.js) -- reused across
-// the intake form's Full name / Age / Occupation / Address / Chief complaint
-// fields. This form keeps its own, larger mic button (with a test id).
-import { useVoiceInput } from "./hooks/useVoiceInput.js";
-
-function VoiceMicButton({ recording, onClick, testId }) {
-  return (
-    <button type="button" data-testid={testId} onClick={onClick} title={recording ? "Stop recording" : "Speak"}
-      style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1.5px solid ${recording ? "#dc2626" : "#d1d5db"}`,
-        background: recording ? "#dc2626" : "#fff", color: recording ? "#fff" : "#111", fontSize: "1rem", cursor: "pointer", fontFamily: "inherit" }}>
-      {recording ? "⏹" : "🎤"}
-    </button>
-  );
-}
 import { downloadPDFFromHTML, injectViewerControls } from "./sharedClinicalData.js";
 import { EXERCISE_DB, ALL_EXERCISES, PROGRAMME_TEMPLATES, TEMPLATE_TX } from "./sharedClinicalData.js";
 // buildRealtimeSOAP is the single, verified-correct source for real
@@ -1837,15 +1823,6 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const set = (k,v) => setFd(p=>({...p,[k]:v}));
 
-  // Mic buttons for the free-text intake fields -- plain speech-to-text,
-  // no AI parsing. One useVoiceInput call per field, all unconditional at
-  // the top of the component so hook order stays stable across renders.
-  const nameVoice = useVoiceInput(fd.dem_name, (v) => set("dem_name", v));
-  const ageVoice = useVoiceInput(fd.dem_age, (v) => set("dem_age", v));
-  const occupationVoice = useVoiceInput(fd.dem_occupation, (v) => set("dem_occupation", v));
-  const addressVoice = useVoiceInput(fd.dem_address, (v) => set("dem_address", v));
-  const ccVoice = useVoiceInput(fd.cc_main, (v) => set("cc_main", v));
-
   React.useEffect(() => {
     if (Object.keys(fd).length === 0) return;
     const timer = setTimeout(() => {
@@ -1932,18 +1909,8 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
       {/* ── STEP 1 · the 7 patient-detail questions ── */}
       {step==="details" && (
         <div>
-          {nField("Full name",
-            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
-              <input id="intake_dem_name" style={{...nInp,flex:1}} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>
-              <VoiceMicButton recording={nameVoice.recording} onClick={nameVoice.toggle} />
-            </div>
-          ,true,"intake_dem_name")}
-          {nField("Age",
-            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
-              <input id="intake_dem_age" style={{...nInp,flex:1}} type="text" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>
-              <VoiceMicButton recording={ageVoice.recording} onClick={ageVoice.toggle} />
-            </div>
-          ,false,"intake_dem_age")}
+          {nField("Full name",<input id="intake_dem_name" style={nInp} placeholder="e.g. Riya Sharma" value={fd.dem_name||""} onChange={e=>set("dem_name",e.target.value)} autoFocus/>,true,"intake_dem_name")}
+          {nField("Age",<input id="intake_dem_age" style={nInp} type="text" placeholder="e.g. 34" value={fd.dem_age||""} onChange={e=>set("dem_age",e.target.value)}/>,false,"intake_dem_age")}
           <div style={{marginBottom:16}}>
             <label style={nLbl}>Sex</label>
             <div style={{display:"flex",gap:8}}>
@@ -1959,24 +1926,9 @@ function IntakeForm({ PC, currentUser, onCancel, onSubmit }) {
             </div>
           </div>
           {nField("Phone",<input id="intake_dem_phone" style={nInp} type="tel" placeholder="+91 98765 43210" value={fd.dem_phone||""} onChange={e=>set("dem_phone",e.target.value)}/>,false,"intake_dem_phone")}
-          {nField("Occupation",
-            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
-              <input id="intake_dem_occupation" style={{...nInp,flex:1}} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>
-              <VoiceMicButton recording={occupationVoice.recording} onClick={occupationVoice.toggle} />
-            </div>
-          ,false,"intake_dem_occupation")}
-          {nField("Address",
-            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
-              <input id="intake_dem_address" style={{...nInp,flex:1}} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>
-              <VoiceMicButton recording={addressVoice.recording} onClick={addressVoice.toggle} />
-            </div>
-          ,false,"intake_dem_address")}
-          {nField("Chief complaint",
-            <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
-              <input id="intake_cc_main" style={{...nInp,flex:1}} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>
-              <VoiceMicButton testId="cc-mic-btn" recording={ccVoice.recording} onClick={ccVoice.toggle} />
-            </div>
-          ,true,"intake_cc_main")}
+          {nField("Occupation",<input id="intake_dem_occupation" style={nInp} placeholder="e.g. Teacher, Desk worker" value={fd.dem_occupation||""} onChange={e=>set("dem_occupation",e.target.value)}/>,false,"intake_dem_occupation")}
+          {nField("Address",<input id="intake_dem_address" style={nInp} placeholder="Street, City, Postcode" value={fd.dem_address||""} onChange={e=>set("dem_address",e.target.value)}/>,false,"intake_dem_address")}
+          {nField("Chief complaint",<input id="intake_cc_main" style={nInp} placeholder="e.g. Lower back pain, knee injury" value={fd.cc_main||""} onChange={e=>set("cc_main",e.target.value)}/>,true,"intake_cc_main")}
 
           {/* Everything the old four-tab intake asked for, kept on file and
               kept optional. Nothing was dropped — it just no longer blocks

@@ -2,8 +2,6 @@ import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
-import { useVoiceInput } from "./hooks/useVoiceInput.js";
-import { VoiceMicButton } from "./components/VoiceMicButton.jsx";
 import { cardiovascularData } from "./cardiovascularData.js";
 import { respiratoryData } from "./respiratoryData.js";
 import { Icon, IconPair, customStepIcon, sanitizeStepsMeta } from "./StepIcons.jsx";
@@ -259,14 +257,12 @@ function FieldShell({ label, hint, howTo, info, children }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit, voice }) {
-  const v = useVoiceInput(value, onChange);
+function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap" style={voice ? { display: "flex", alignItems: "center" } : undefined}>
+      <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
       </div>
     </FieldShell>
   );
@@ -322,10 +318,9 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint, voice }) {
+function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const v = useVoiceInput(value, onChange);
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -335,7 +330,7 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
   }, []);
   return (
     <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref} style={voice ? { display: "flex", alignItems: "center", gap: 6 } : undefined}>
+      <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
           value={value || ""}
@@ -346,7 +341,6 @@ function SelectField({ label, type = "single", options, value, onChange, howTo, 
         <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
           Select ⌄
         </button>
-        {voice && <VoiceMicButton recording={v.recording} onClick={v.toggle} />}
         {open && (
           <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
         )}
@@ -1179,13 +1173,13 @@ function DemographicsSection({ data, setData }) {
   return (
     <>
       <SectionIntro icon={<Icon name="clipboard" />} title="Patient Information" sub="Demographic data — one field at a time, tap through or type." />
-      <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" voice />
-      <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} placeholder="yrs" voice />
+      <TextField label="Name" value={d.name} onChange={(v) => set("name", v)} placeholder="Full name" />
+      <TextField label="Age" value={d.age} onChange={(v) => set("age", v)} placeholder="yrs" />
       <Segmented label="Gender" options={["Male", "Female", "Other"]} value={d.gender} onChange={(v) => set("gender", v)} />
-      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" voice />
+      <TextField label="Address" value={d.address} onChange={(v) => set("address", v)} placeholder="City / locality" />
       <Segmented label="Dominance" options={["Right", "Left"]} value={d.dominance} onChange={(v) => set("dominance", v)} />
-      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" voice />
-      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} voice />
+      <TextField label="Occupation" value={d.occupation} onChange={(v) => set("occupation", v)} placeholder="e.g. Farmer, office work" />
+      <TextField label="Referring doctor" value={d.referrer} onChange={(v) => set("referrer", v)} />
       <SelectField
         label="Source of referral"
         type="single"
@@ -1193,7 +1187,7 @@ function DemographicsSection({ data, setData }) {
         value={d.referralSource}
         onChange={(v) => set("referralSource", v)}
       />
-      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" voice />
+      <TextField label="Diagnosis" value={d.diagnosis} onChange={(v) => set("diagnosis", v)} placeholder="Working / referral diagnosis" />
       <TextField label="Hospital / file number" value={d.hospNo} onChange={(v) => set("hospNo", v)} />
     </>
   );
@@ -1284,7 +1278,6 @@ function SubjectiveSection({ data, setData }) {
         value={d.chiefComplaint}
         onChange={(v) => set("chiefComplaint", v)}
         howTo="Begin with an open question — 'what troubles you most?' — and let the patient lead before narrowing to focused follow-ups."
-        voice
       />
       <TextArea
         label="History of presenting condition"
