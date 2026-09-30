@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import InfoCard from "./InfoCard.jsx";
 import { neuroConditionLibraryData } from "./neuroConditionLibraryData.js";
 import { neuroExamLibraryData } from "./neuroExamLibraryData.js";
+import { neuroRegionInfoData, LIGHT_TOUCH_ROW_INFO, PINPRICK_ROW_INFO, TEMPERATURE_ROW_INFO, PROPRIOCEPTION_ROW_INFO, VIBRATION_ROW_INFO, MMT_ROW_INFO, MAS_ROW_INFO } from "./neuroRegionInfoData.js";
 import { NeuroExercisePrescriptionSection, formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { NeuroCarePlanSection, formatNeuroCarePlanSection } from "./NeuroCarePlan.jsx";
 import { orthoStyles } from "./orthoStyles.js";
@@ -1515,11 +1516,11 @@ function SensorySection({ data, setData }) {
   return (
     <>
       <SectionIntro icon={<Icon name="hand" />} title="Sensory Examination" />
-      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." info={neuroExamLibraryData.lightTouch} />
-      <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." />
-      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} />
-      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} />
-      <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} />
+      <LRGrid label="Light touch" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.lightTouch || {}} onChange={(v) => set("lightTouch", v)} howTo="Use a wisp of cotton wool with the patient's eyes closed; compare side to side and ask them to say 'yes' each time they feel it." info={neuroExamLibraryData.lightTouch} rowInfo={LIGHT_TOUCH_ROW_INFO} />
+      <LRGrid label="Pain / pinprick" rows={["Face", "UE proximal", "UE distal", "Trunk", "LE proximal", "LE distal"]} options={SENSORY_GRADES} value={d.pinprick || {}} onChange={(v) => set("pinprick", v)} howTo="Use a disposable neuro-tip; alternate sharp/dull unpredictably and ask the patient to identify which they feel." rowInfo={PINPRICK_ROW_INFO} />
+      <LRGrid label="Temperature" rows={["UE", "Trunk", "LE"]} options={SENSORY_GRADES} value={d.temperature || {}} onChange={(v) => set("temperature", v)} info={neuroExamLibraryData.sensoryTemperature} rowInfo={TEMPERATURE_ROW_INFO} />
+      <LRGrid label="Proprioception" rows={["Fingers", "Wrist", "Toes", "Ankle"]} options={SENSORY_GRADES} value={d.proprioception || {}} onChange={(v) => set("proprioception", v)} howTo="Hold the digit by its sides, move it up/down with the patient's eyes closed, and ask them to name the direction." info={neuroExamLibraryData.proprioception} rowInfo={PROPRIOCEPTION_ROW_INFO} />
+      <LRGrid label="Vibration" rows={["Wrist", "Ankle"]} options={SENSORY_GRADES} value={d.vibration || {}} onChange={(v) => set("vibration", v)} info={neuroExamLibraryData.vibration} rowInfo={VIBRATION_ROW_INFO} />
 
       <div className="subheading">Dermatomal sensory screen</div>
       <LRGrid
@@ -1586,12 +1587,12 @@ function MotorSection({ data, setData }) {
       <SelectField label="Fasciculations" type="single" options={["None", "Present"]} value={d.fasciculations} onChange={(v) => set("fasciculations", v)} />
 
       <div className="subheading">Strength / MMT</div>
-      <LRGrid label="Neck" rows={["Neck flexion", "Neck extension", "Neck rotation", "Neck lateral flexion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction." />
-      <LRGrid label="Shoulder" rows={["Shoulder flexion", "Shoulder extension", "Shoulder abduction", "Shoulder adduction", "Shoulder internal rotation", "Shoulder external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
-      <LRGrid label="Elbow / forearm" rows={["Elbow flexion", "Elbow extension", "Forearm pronation", "Forearm supination"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
-      <LRGrid label="Wrist / hand" rows={["Wrist flexion", "Wrist extension", "Finger flexion", "Finger extension", "Finger abduction", "Grip strength"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
-      <LRGrid label="Hip" rows={["Hip flexion", "Hip extension", "Hip abduction", "Hip adduction", "Hip internal rotation", "Hip external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
-      <LRGrid label="Knee / ankle" rows={["Knee flexion", "Knee extension", "Ankle dorsiflexion", "Ankle plantarflexion", "Ankle inversion", "Ankle eversion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} />
+      <LRGrid label="Neck" rows={["Neck flexion", "Neck extension", "Neck rotation", "Neck lateral flexion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} howTo="MRC/Oxford 0-5 grading: 5 normal, 4 good (moves against some resistance), 3 fair (full range against gravity only), 2 poor (full range with gravity eliminated), 1 trace (flicker), 0 no contraction." />
+      <LRGrid label="Shoulder" rows={["Shoulder flexion", "Shoulder extension", "Shoulder abduction", "Shoulder adduction", "Shoulder internal rotation", "Shoulder external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} />
+      <LRGrid label="Elbow / forearm" rows={["Elbow flexion", "Elbow extension", "Forearm pronation", "Forearm supination"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} />
+      <LRGrid label="Wrist / hand" rows={["Wrist flexion", "Wrist extension", "Finger flexion", "Finger extension", "Finger abduction", "Grip strength"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} />
+      <LRGrid label="Hip" rows={["Hip flexion", "Hip extension", "Hip abduction", "Hip adduction", "Hip internal rotation", "Hip external rotation"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} />
+      <LRGrid label="Knee / ankle" rows={["Knee flexion", "Knee extension", "Ankle dorsiflexion", "Ankle plantarflexion", "Ankle inversion", "Ankle eversion"]} options={MMT_OPTIONS} value={d.mmt || {}} onChange={(v) => set("mmt", v)} rowInfo={MMT_ROW_INFO} />
       <SelectField label="Pronator drift" type="single" options={["Negative", "Positive - Right", "Positive - Left", "Positive - Bilateral", "Not tested"]} value={d.pronatorDrift} onChange={(v) => set("pronatorDrift", v)} info={neuroExamLibraryData.pronatorDrift} />
 
       <div className="subheading">Myotomal strength screen</div>
@@ -1606,7 +1607,7 @@ function MotorSection({ data, setData }) {
       />
 
       <div className="subheading">Involuntary movements</div>
-      <SelectField label="Type" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics", "Other"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} />
+      <SelectField label="Type" type="multi" options={["None", "Tremor", "Chorea", "Athetosis", "Dystonia", "Myoclonus", "Tics", "Other"]} value={d.involuntary} onChange={(v) => set("involuntary", v)} info={neuroRegionInfoData.involuntaryMovements} />
       <SelectField label="Location" type="multi" options={["Face", "Upper limb", "Lower limb", "Trunk", "Generalized"]} value={d.involuntaryLocation} onChange={(v) => set("involuntaryLocation", v)} />
       <SelectField label="Side" type="single" options={["Right", "Left", "Bilateral"]} value={d.involuntarySide} onChange={(v) => set("involuntarySide", v)} />
       <SelectField label="Context" type="single" options={["At rest", "With movement", "Both"]} value={d.involuntaryContext} onChange={(v) => set("involuntaryContext", v)} />
@@ -1631,6 +1632,7 @@ function ToneReflexSection({ data, setData }) {
         value={d.mas || {}}
         onChange={(v) => set("mas", v)}
         info={neuroExamLibraryData.mas}
+        rowInfo={MAS_ROW_INFO}
       />
       <div className="subheading">Deep tendon reflexes</div>
       <LRGrid
@@ -1688,9 +1690,10 @@ function CoordinationSection({ data, setData }) {
         options={["Normal - opposing muscle checks the movement", "Positive - limb rebounds, unable to check movement", "Not tested"]}
         value={d.rebound || {}}
         onChange={(v) => set("rebound", v)}
+        info={neuroRegionInfoData.reboundTest}
         howTo="Resist elbow flexion isometrically, then release suddenly. Normally the triceps 'checks' the limb before it hits the patient -- a positive rebound (limb flies toward the face/body uncontrolled) suggests cerebellar dysfunction; interpret cautiously if spasticity is also present."
       />
-      <SelectField label="Dysmetria" type="single" options={["None", "Present - overshoots target", "Present - undershoots target"]} value={d.dysmetria} onChange={(v) => set("dysmetria", v)} />
+      <SelectField label="Dysmetria" type="single" options={["None", "Present - overshoots target", "Present - undershoots target"]} value={d.dysmetria} onChange={(v) => set("dysmetria", v)} info={neuroRegionInfoData.dysmetria} />
       <SelectField label="Tremor with movement" type="single" options={["None", "Intention tremor (worsens near target)", "Postural tremor", "Action tremor"]} value={d.movementTremor} onChange={(v) => set("movementTremor", v)} />
       <TextArea label="Additional coordination notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
