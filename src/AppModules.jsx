@@ -678,7 +678,13 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     // and the Home-screen entry point that only offered these two reports
     // as separate choices are both gone -- one "Generate PDF" button, from
     // inside the assessment itself, now produces the whole thing).
-    const totalPages = 2 + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0) + 1;
+    // Skip the Objective Findings page entirely when there is nothing to show
+    // (it used to print as a near-empty page holding one grey line).
+    const objStepIds = ["observation","palpation","rom","mmt","jointMobility","specialTests","neuroScreen","limbLength","kineticChain","cpa","sttt","fma","fascia","clinicalAssessment"];
+    const orthoObjHtml = orthoWizardData ? objStepIds.map(orthoStepCard).join("") : "";
+    const hasObjective = orthoWizardData ? !!orthoObjHtml : objSections.length > 0;
+    const totalPages = 1 + (hasObjective ? 1 : 0) + (d.cardio ? 1 : 0) + (d.neuro ? 1 : 0) + 1;
+    const specialtyStart = hasObjective ? 3 : 2;
     const pgFooter = (n, total) => `
       <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:7px 32px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:8px;color:#94a3b8;">PhysioMind · CONFIDENTIAL · Patient: ${escHtml(patName)}</span>
@@ -762,16 +768,12 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     </div>`;
 
     // ── PAGE 2: OBJECTIVE FINDINGS ────────────────────────────────────────
-    const page2 = `<div class="page">
+    const page2 = !hasObjective ? "" : `<div class="page">
       ${pdfHeader("Objective Findings", "Assessment & Advanced Assessment", "#0f6e56", true)}
       ${breadcrumbHtml}
       <div class="body">
 
-        ${orthoWizardData ? (() => {
-          const stepIds = ["observation","palpation","rom","mmt","jointMobility","specialTests","neuroScreen","limbLength","kineticChain","cpa","sttt","fma","fascia","clinicalAssessment"];
-          const html = stepIds.map(orthoStepCard).join("");
-          return html || `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>`;
-        })() : (objSections.length === 0 ? `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:10px;">No objective findings recorded yet.</div>` : objSections.map(s => sec(
+        ${orthoWizardData ? orthoObjHtml : (objSections.map(s => sec(
           objIcon(s.title), escHtml(s.title), null, renderObjBody(s.body)
         )).join(""))}
 
@@ -808,8 +810,8 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
       </div>
       ${pgFooter(pageNum, totalPages)}
     </div>` : "";
-    const page3 = specialtyPage(3, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
-    const page4 = specialtyPage(d.cardio ? 4 : 3, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
+    const page3 = specialtyPage(specialtyStart, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
+    const page4 = specialtyPage(d.cardio ? specialtyStart + 1 : specialtyStart, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
     const closingHtml = `
         ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
           ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => row(`Diagnosis ${i+1}`, `${escHtml(dx2.diagnosis||"")}${dx2.icd10?" · "+escHtml(dx2.icd10):""}${dx2.confidence?" · "+Math.round(dx2.confidence)+"%":""}`)).join("") : ""}
