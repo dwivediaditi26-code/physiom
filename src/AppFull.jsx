@@ -1289,32 +1289,17 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      {/* Settings now opens a real screen (2026-09-30, Aditi: "it should
-          be in setting...not in profile" -- clinic details need somewhere
-          real to live). It used to be a no-op header (2026-09-29: "the
-          setting is taking us to the profile of our self. It should not
-          be like that" -- back when it silently shared Profile's navKey).
-          Sign out / Delete account stay right below it in the sidebar,
-          unchanged. */}
+      {/* Settings opens a real screen (2026-09-30, Aditi: "it should be in
+          setting...not in profile" -- clinic details need somewhere real
+          to live). It used to be a no-op header (2026-09-29: "the setting
+          is taking us to the profile of our self. It should not be like
+          that" -- back when it silently shared Profile's navKey).
+          Sign out / Delete account moved from here into that screen
+          itself (same day, Aditi: "setting should have signout, delete
+          account and this") -- they used to be the sidebar item's only
+          content; now Settings has real content of its own, that's where
+          its own actions belong instead of split across both places. */}
       <SidebarTopItem navKey="settings" icon="⚙️" label="Settings"/>
-
-      {/* Sign out / Delete account -- moved here from the Clinical "Today"
-          tab's own header (2026-09-10, Aditi screenshot: "put this red
-          circle in side bar below the settings ... remove from todays
-          clinical section"). Account-level actions belong in the settings
-          menu, not floating in the middle of a patient-facing dashboard. */}
-      <div style={{padding:"10px 14px 4px",display:"flex",flexDirection:"column",gap:8}}>
-        <button onClick={onSignOut}
-          style={{width:"100%",padding:"8px 10px",borderRadius:9,border:`1px solid ${PC.border}`,
-            background:"transparent",color:PC.muted,fontSize:"0.8rem",
-            fontWeight:700,cursor:"pointer"}}>
-          Sign out
-        </button>
-        <DeleteAccountButton patients={patients} buttonStyle={{
-          width:"100%",padding:"8px 10px",borderRadius:9,border:"1px solid #FCA5A5",
-          background:"transparent",color:"#DC2626",fontSize:"0.8rem",
-          fontWeight:700,cursor:"pointer"}}/>
-      </div>
 
     </>
   );
@@ -2127,10 +2112,29 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // clinic/report details are account configuration, which
                 // belongs behind the sidebar's actual Settings entry, not
                 // bundled into the profile screen.
+                //
+                // Sign out / Delete account moved in here too (same day,
+                // Aditi: "setting should have signout, delete account and
+                // this") -- they used to sit below the sidebar's Settings
+                // header as its only content; now Settings is a real
+                // screen, that's where its own actions belong instead of
+                // splitting them across sidebar + screen.
                 <div style={{maxWidth:520,margin:"0 auto"}}>
                   <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
                   <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>Clinic details, account and sign-out.</div>
                   <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
+                    <button onClick={onSignOut}
+                      style={{width:"100%",padding:"11px 14px",borderRadius:12,border:"1px solid #e2e8f0",
+                        background:"#fff",color:"#475569",fontSize:14,
+                        fontWeight:700,cursor:"pointer"}}>
+                      Sign out
+                    </button>
+                    <DeleteAccountButton patients={patients} buttonStyle={{
+                      width:"100%",padding:"11px 14px",borderRadius:12,border:"1px solid #FCA5A5",
+                      background:"#fff",color:"#DC2626",fontSize:14,
+                      fontWeight:700,cursor:"pointer"}}/>
+                  </div>
                 </div>
               ):tests==="CLINICAL_MODULE"?(
                 // Same negative-margin full-bleed trick PhysioFeed uses just
