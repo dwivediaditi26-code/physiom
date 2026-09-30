@@ -7,11 +7,11 @@ const user = (meta) => ({ id: "u1", user_metadata: meta });
 beforeEach(() => localStorage.clear());
 
 describe("ClinicDetailsBanner", () => {
-  it("shows for a signed-in therapist with missing details and opens Profile", () => {
+  it("shows for a signed-in therapist with missing details and opens Settings", () => {
     const onNav = vi.fn();
     render(<ClinicDetailsBanner currentUser={user({ clinic_name: "Care" })} onNav={onNav} />);
     fireEvent.click(screen.getByText("Add now"));
-    expect(onNav).toHaveBeenCalledWith("profile");
+    expect(onNav).toHaveBeenCalledWith("settings");
   });
   it("hides when name, address and phone are all saved", () => {
     const { container } = render(<ClinicDetailsBanner currentUser={user({ clinic_name: "a", clinic_address: "b", clinic_phone: "c" })} onNav={() => {}} />);

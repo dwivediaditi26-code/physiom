@@ -67,7 +67,7 @@ function ClinicDetailsBanner({ currentUser, onNav }) {
         Your name, clinic, address and phone appear at the top of every PDF report. Add them once and they fill in automatically.
       </div>
       <div style={{display:"flex",gap:8}}>
-        <button type="button" onClick={()=>onNav("profile")}
+        <button type="button" onClick={()=>onNav("settings")}
           style={{flex:1,padding:"9px 12px",border:"none",borderRadius:10,background:"#7C3AED",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Add now</button>
         <button type="button" onClick={()=>{ try { localStorage.setItem(key, String(Date.now())); } catch {} setSnoozed(true); }}
           style={{padding:"9px 14px",border:"1px solid #DDD6FE",borderRadius:10,background:"#fff",color:"#6D28D9",fontWeight:600,fontSize:13,cursor:"pointer"}}>Later</button>

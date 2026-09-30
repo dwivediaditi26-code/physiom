@@ -44,7 +44,7 @@ const LEAVE_GATE_TARGETS = new Set(["home", "physiofeed", "learn", "profile", "c
 // Clinical landing page itself, plus every assessment step/wizard reached
 // from it) counts as "inside Clinical" for the resume-on-return behavior
 // below (see lastClinicalNavRef).
-const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile"]);
+const OUTER_TAB_KEYS = new Set(["home", "physiofeed", "learn", "profile", "settings"]);
 const OPAQUE_ASSESSMENT_KEYS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
 const ASSESSMENT_ACTIVE_KEYS = OPAQUE_ASSESSMENT_KEYS;
 // Screens of the old step-by-step "Screening Workflow" (and its standalone
@@ -1289,13 +1289,14 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
       <div style={{height:1,background:PC.border,margin:"6px 12px"}}/>
 
-      {/* Settings no longer navigates anywhere (2026-09-29, Aditi: "the
-          setting is taking us to the profile of our self. It should not be
-          like that") -- it used to share Profile's navKey, so tapping it
-          silently opened your own profile instead of a settings screen.
-          Sign out / Delete account below ARE its content -- see next
-          comment -- so this is now just that section's header. */}
-      <SidebarTopItem icon="⚙️" label="Settings" onClick={()=>{}}/>
+      {/* Settings now opens a real screen (2026-09-30, Aditi: "it should
+          be in setting...not in profile" -- clinic details need somewhere
+          real to live). It used to be a no-op header (2026-09-29: "the
+          setting is taking us to the profile of our self. It should not
+          be like that" -- back when it silently shared Profile's navKey).
+          Sign out / Delete account stay right below it in the sidebar,
+          unchanged. */}
+      <SidebarTopItem navKey="settings" icon="⚙️" label="Settings"/>
 
       {/* Sign out / Delete account -- moved here from the Clinical "Today"
           tab's own header (2026-09-10, Aditi screenshot: "put this red
@@ -1759,7 +1760,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             up there when we open the physio feed... if we open the
             clinical it should be the new patient button... and normally"
             -- "normally" being every other tab, which keeps "+ New"). */}
-        {active==="physiofeed"||active==="profile" ? (
+        {active==="settings" ? null : active==="physiofeed"||active==="profile" ? (
           <div style={{display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
             <button onClick={()=>navTo("physiofeed",{pfTab:"search"})} aria-label="Search"
               style={{minHeight:32,minWidth:32,padding:6,background:"transparent",border:"none",borderRadius:8,color:"#172033",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -2095,7 +2096,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Groups */}
           {currentSection && Object.entries(currentSection.groups).map(([groupName,tests])=>(
             <div key={groupName} style={{marginBottom:28}}>
-              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && tests!=="LEARN_MODULE" && (
+              {tests!=="PHYSIOFEED_MODULE" && tests!=="PROFILE_MODULE" && tests!=="LEARN_MODULE" && tests!=="SETTINGS_MODULE" && (
               <div className="pm-group-head" style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
                 <div style={{fontSize:"0.82rem",fontWeight:700,textTransform:"uppercase",letterSpacing:"1.4px",color:PC.a2,whiteSpace:"nowrap"}}>{groupName}</div>
                 <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${PC.border},transparent)`}}/>
@@ -2117,8 +2118,20 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 </Suspense>
               ):tests==="PROFILE_MODULE"?(
                 <Suspense fallback={<div style={{textAlign:"center",padding:"48px 20px",color:"#6B7280"}}>Loading profile…</div>}>
-                  <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut} extra={<ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>}/>
+                  <LazyProfileTabEntry key={profileResetKey} onSignOut={onSignOut}/>
                 </Suspense>
+              ):tests==="SETTINGS_MODULE"?(
+                // Clinic details lived on Profile until now (2026-09-30,
+                // Aditi: "it should be in setting...not in profile") --
+                // Profile is your public-facing PhysioFeed identity;
+                // clinic/report details are account configuration, which
+                // belongs behind the sidebar's actual Settings entry, not
+                // bundled into the profile screen.
+                <div style={{maxWidth:520,margin:"0 auto"}}>
+                  <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
+                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>Clinic details, account and sign-out.</div>
+                  <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
+                </div>
               ):tests==="CLINICAL_MODULE"?(
                 // Same negative-margin full-bleed trick PhysioFeed uses just
                 // above -- Clinical's own header/search/CTA want the full

@@ -1229,7 +1229,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
     // Screen-only nudge (hidden when printing) telling the therapist where to
     // save their clinic details once, so they stop being blank on every report.
     const missing = !clinicianName || !clinicNameTxt || !clinicAddrTxt || !clinicPhoneTxt;
-    const nudge = missing ? '<div class="no-print" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;padding:10px 16px;font:13px/1.5 -apple-system,Helvetica,Arial,sans-serif;text-align:center;">Clinic details are blank. Click a dotted line in the report header to type them now, or save them once in <b>Profile → Clinic details for reports</b> so every PDF fills them in automatically.</div><style>@media print{.no-print{display:none!important}}</style>' : "";
+    const nudge = missing ? '<div class="no-print" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#92400e;padding:10px 16px;font:13px/1.5 -apple-system,Helvetica,Arial,sans-serif;text-align:center;">Clinic details are blank. Click a dotted line in the report header to type them now, or save them once in <b>Settings → Clinic details for reports</b> so every PDF fills them in automatically.</div><style>@media print{.no-print{display:none!important}}</style>' : "";
     win.document.open(); win.document.write(injectViewerControls(htmlContent.replace(/<body[^>]*>/i, (m) => m + nudge))); win.document.close();
     setTimeout(() => { try { win.print(); } catch(e) {} }, 800);
   };

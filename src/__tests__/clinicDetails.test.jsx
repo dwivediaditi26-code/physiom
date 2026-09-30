@@ -39,9 +39,9 @@ describe("clinic details", () => {
     expect(h).not.toContain("Clinic details are blank");
   });
 
-  it("PDF shows a screen-only nudge pointing at Profile when details are missing", () => {
+  it("PDF shows a screen-only nudge pointing at Settings when details are missing", () => {
     const h = pdfHtml({ dem_name: "P" }, null);
-    expect(h).toContain("Profile → Clinic details for reports");
+    expect(h).toContain("Settings → Clinic details for reports");
     expect(h).toContain("@media print{.no-print{display:none!important}}");
   });
 });
