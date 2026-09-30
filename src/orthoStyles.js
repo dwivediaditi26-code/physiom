@@ -162,7 +162,7 @@ export function orthoStyles() {
            and we cannot see it or use it" -- also genuinely hard to tap at
            26px with a 1px border for contrast). White glyph on saturated
            purple reads at a glance instead of purple-on-near-white. */
-        .info-btn { border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; font-size: 14px; font-weight: 800; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
+        .info-btn { border: none; background: linear-gradient(155deg, #A78BFA, ${BRAND.purple} 55%, ${BRAND.purpleDark}); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0; text-transform: none; white-space: nowrap; width: auto; height: auto; min-height: 28px; padding: 4px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; box-shadow: 0 2px 0 ${BRAND.purpleDark}, 0 4px 7px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.55); transition: transform 0.08s ease, box-shadow 0.08s ease; }
         .info-btn:active { transform: translateY(2px); box-shadow: 0 0 0 ${BRAND.purpleDark}, 0 1px 2px rgba(109,40,217,0.35), inset 0 1px 1px rgba(255,255,255,0.3); }
         .info-btn-wrap-full { display: block; width: 100%; margin-top: 10px; }
         .info-btn-full { width: 100%; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.purple}; font-weight: 700; font-size: 12px; padding: 9px; border-radius: 10px; cursor: pointer; min-height: 36px; }
@@ -1106,7 +1106,8 @@ export function orthoStyles() {
            "60px" guess here left a visible gap of the page's grey background
            between the two bars on devices where the guess ran short (looked
            like this bar was "floating" above the tab bar on real iPhones). */
-        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; gap: 10px; }
+        .bottombar { position: fixed; left: calc(50% + var(--pm-side-w, 0px) / 2); transform: translateX(-50%); bottom: var(--pm-bnav-h, calc(60px + env(safe-area-inset-bottom))); width: 100%; max-width: var(--pm-col-w, 480px); z-index: 25; background: #fff; border-top: 1px solid ${BRAND.border}; padding: 8px 16px 8px; display: flex; gap: 10px; }
+        .bottombar::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 160px; background: #fff; pointer-events: none; }
         .ghost-btn { flex: 0 0 auto; border: 1.5px solid ${BRAND.border}; background: #fff; color: ${BRAND.ink}; padding: 13px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 46px; }
         .primary-btn {
           flex: 1; border: none; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleDark}); color: #fff;
