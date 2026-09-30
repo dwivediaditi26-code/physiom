@@ -39,6 +39,8 @@
    typing for anything not listed.
    ============================================================ */
 
+import { EXTRA_BUCKETS, EXTRA_FLAT, SITES_BY_REGION, INCISIONS_BY_REGION, INCISION_GROUP_BY_CONDITION } from "./orthoSurgicalExtras.js";
+
 export const WEIGHT_BEARING_OPTIONS = ["NWB", "TTWB", "PWB", "WBAT", "FWB"];
 
 const SURGICAL_BUCKETS = {
@@ -346,6 +348,29 @@ const SOFT_TISSUE_MUSCLE_BUCKET = {
   immobilization: ["Splint", "Brace", "None"],
 };
 
+/* Fold the extra lists (orthoSurgicalExtras.js) into the base buckets.
+   Existing entries keep their order and stay first; new entries append;
+   regions/buckets that had nothing curated are created. */
+const BUCKET_LIST_KEYS = ["procedures", "approaches", "fixation", "graft", "immobilization", "additionalProcedures", "restrictionPresets", "woundOptions"];
+function mergeBucketInto(target, extra) {
+  BUCKET_LIST_KEYS.forEach((k) => {
+    if (extra[k]) target[k] = union(target[k], extra[k]);
+  });
+  return target;
+}
+Object.entries(EXTRA_BUCKETS).forEach(([regionId, buckets]) => {
+  if (!SURGICAL_BUCKETS[regionId]) SURGICAL_BUCKETS[regionId] = {};
+  Object.entries(buckets).forEach(([key, extra]) => {
+    if (!SURGICAL_BUCKETS[regionId][key]) SURGICAL_BUCKETS[regionId][key] = {};
+    mergeBucketInto(SURGICAL_BUCKETS[regionId][key], extra);
+  });
+});
+mergeBucketInto(ARTHRITIS_BUCKET, EXTRA_FLAT.arthritis);
+mergeBucketInto(DEFORMITY_BUCKET, EXTRA_FLAT.deformity);
+mergeBucketInto(SOFT_TISSUE_MUSCLE_BUCKET, EXTRA_FLAT.softTissue);
+mergeBucketInto(AMPUTATION_BUCKET, EXTRA_FLAT.amputation);
+mergeBucketInto(INFECTION_BUCKET, EXTRA_FLAT.infection);
+
 /* Some conditions mean something different depending on the region — e.g.
    "Ligament Reconstruction" is ACL work at the knee but a Broström at the
    ankle. This maps a condition id to the region-appropriate bucket key. */
@@ -353,7 +378,7 @@ const REGION_OVERRIDE = {
   ligamentReconstruction: { knee: "aclReconstruction", ankle: "ankleLigament", foot: "ankleLigament", elbow: "tendonLigament", shoulder: "dislocation" },
   tendonRepair: { shoulder: "rotatorCuff", elbow: "tendonLigament", wrist: "tendonInjury", hand: "tendonInjury", ankle: "achillesRupture", foot: "achillesRupture" },
   tendonTransfer: { elbow: "tendonLigament", wrist: "tendonInjury", hand: "tendonInjury" },
-  jointStabilization: { shoulder: "dislocation", hip: "dislocation", knee: "patellarInstability" },
+  jointStabilization: { shoulder: "dislocation", elbow: "dislocation", hip: "dislocation", knee: "patellarInstability" },
   arthroscopy: { knee: "meniscus", shoulder: "rotatorCuff" },
 };
 
@@ -390,7 +415,11 @@ function bucketFor(regionId, conditionId) {
   if (conditionId === "infection") return SPINE_REGION_IDS.includes(regionId) ? SPINE_INFECTION_BUCKET : INFECTION_BUCKET;
   if (conditionId === "amputation") return AMPUTATION_BUCKET;
   if (conditionId === "arthritis") return ARTHRITIS_BUCKET;
-  if (conditionId === "deformityCorrection") return DEFORMITY_BUCKET;
+  if (conditionId === "deformityCorrection") {
+    // region-specific osteotomy options (HTO, PAO, bunion, ...) on top of the flat list
+    const regional = (SURGICAL_BUCKETS[regionId] || {}).deformityCorrection;
+    return regional ? mergeBucketInto(mergeBucketInto({}, DEFORMITY_BUCKET), regional) : DEFORMITY_BUCKET;
+  }
   if (conditionId === "softTissueMuscle") return SOFT_TISSUE_MUSCLE_BUCKET;
   const override = REGION_OVERRIDE[conditionId];
   if (override && override[regionId]) return (SURGICAL_BUCKETS[regionId] || {})[override[regionId]] || {};
@@ -430,4 +459,36 @@ export function resolveSurgicalOptions(selectedRegions, conditionId) {
 
 export function withFallbacks(list) {
   return union(list, ["Not documented", "Unknown", "Other"]);
+}
+
+/* Surgical site options for the selected regions: the region itself (with
+   side) plus its anatomical sub-sites, e.g. "Right Hip" and
+   "Right Hip — Proximal femur (neck)". `labelOf(region)` supplies the
+   side-aware label the rest of the form already uses. */
+export function resolveSiteOptions(selectedRegions, labelOf) {
+  if (!selectedRegions || !selectedRegions.length) return ["Not specified"];
+  const out = [];
+  selectedRegions.forEach((r) => {
+    const label = labelOf ? labelOf(r) : (r.label || r.id);
+    out.push(label);
+    (SITES_BY_REGION[r.id] || []).forEach((site) => out.push(`${label} — ${site}`));
+  });
+  return union(out);
+}
+
+/* Incision type for the selected regions + operation. Region+operation
+   specific where we have it, then the region's general list, then any
+   region-agnostic list for that operation group; the caller falls back to
+   its own generic list when this comes back empty. */
+export function resolveIncisionOptions(selectedRegions, conditionId) {
+  const group = INCISION_GROUP_BY_CONDITION[conditionId];
+  const lists = [];
+  (selectedRegions || []).forEach((r) => {
+    const reg = INCISIONS_BY_REGION[r.id];
+    if (!reg) return;
+    if (group && reg[group]) lists.push(reg[group]);
+    lists.push(reg.all);
+  });
+  if (group && INCISIONS_BY_REGION._groups[group]) lists.push(INCISIONS_BY_REGION._groups[group]);
+  return union(...lists);
 }

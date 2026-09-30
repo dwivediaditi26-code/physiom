@@ -352,7 +352,7 @@ export const neuroExamLibraryData = {
     icon: "🦷",
     category: "Learn · Neuro · Reflexes",
     perform: {
-      images: [null, null, null],
+      images: [img("n_ref_jaw_jerk"), img("n_ref_jaw_jerk_2"), img("n_ref_jaw_jerk_3")],
       caption: "Place a finger across the relaxed, slightly open jaw, tap the finger",
       boxes: [
         { tone: "", label: "👤 Position", text: "Ask the patient to let their jaw hang open and relaxed, lips slightly parted." },
@@ -1209,7 +1209,7 @@ export const neuroExamLibraryData = {
     icon: "🖐️",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_light_touch"), img("n_light_touch_2"), img("n_light_touch_3")],
       caption: "Wisp of cotton wool, eyes closed, compare side to side",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed with eyes closed so they can't anticipate where or when you'll touch." },
@@ -1237,7 +1237,7 @@ export const neuroExamLibraryData = {
     icon: "🌡️",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_temperature"), img("n_temperature_2"), img("n_temperature_3")],
       caption: "Warm and cold objects, eyes closed, compare side to side",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient relaxed, eyes closed, limb exposed and supported." },
@@ -1264,7 +1264,7 @@ export const neuroExamLibraryData = {
     icon: "🦵",
     category: "Learn · Neuro · Sensory",
     perform: {
-      images: [null, null, null],
+      images: [img("n_proprioception"), img("n_proprioception_2"), img("n_proprioception_3")],
       caption: "Move digit up/down with eyes closed, patient names the direction",
       boxes: [
         { tone: "", label: "👤 Position", text: "Patient's eyes closed, digit held by its sides (not the pad) to avoid giving pressure cues." },
@@ -1319,7 +1319,7 @@ export const neuroExamLibraryData = {
     icon: "👁️",
     category: "Learn · Neuro · Mental Status",
     perform: {
-      images: [null, null, null],
+      images: [img("n_gcs_eye"), img("n_gcs_eye_2"), img("n_gcs_eye_3")],
       caption: "Best eye-opening response, escalating the stimulus only as needed",
       boxes: [
         { tone: "", label: "👤 Position", text: "Observe first without any stimulus — check whether the eyes are already open spontaneously before saying or doing anything." },
@@ -1347,7 +1347,7 @@ export const neuroExamLibraryData = {
     icon: "🗣️",
     category: "Learn · Neuro · Mental Status",
     perform: {
-      images: [null, null, null],
+      images: [img("n_gcs_verbal"), img("n_gcs_verbal_2"), img("n_gcs_verbal_3")],
       caption: "Best verbal response to voice, escalating to pain if needed",
       boxes: [
         { tone: "", label: "👤 Position", text: "Address the patient by name in a normal tone before escalating to a louder voice or painful stimulus." },
@@ -1376,7 +1376,7 @@ export const neuroExamLibraryData = {
     icon: "🤲",
     category: "Learn · Neuro · Mental Status",
     perform: {
-      images: [null, null, null],
+      images: [img("n_gcs_motor"), img("n_gcs_motor_2"), img("n_gcs_motor_3")],
       caption: "Best motor response to command, then to a painful stimulus",
       boxes: [
         { tone: "", label: "👤 Position", text: "Start with a simple verbal command (e.g. 'squeeze my hand'); only apply a painful stimulus if there is no response to voice." },
@@ -1407,7 +1407,7 @@ export const neuroExamLibraryData = {
     icon: "⚖️",
     category: "Learn · Neuro · Balance",
     perform: {
-      images: [null, null, null],
+      images: [img("n_balance"), img("n_balance_2"), img("n_balance_3")],
       caption: "Static and dynamic balance, sitting and standing, with stand-by guard",
       boxes: [
         { tone: "", label: "👤 Position", text: "Test sitting balance before standing, and always have a stand-by guard/gait belt ready for standing balance in an at-risk patient." },
@@ -1436,7 +1436,7 @@ export const neuroExamLibraryData = {
     icon: "🩸",
     category: "Learn · Neuro · Safety Screen",
     perform: {
-      images: [null, null, null],
+      images: [img("n_dvt"), img("n_dvt_2"), img("n_dvt_3")],
       caption: "Screen for calf pain/swelling/warmth before mobilising a high-risk patient",
       boxes: [
         { tone: "", label: "👤 Position", text: "Inspect and gently palpate both calves with the patient supine, comparing side to side." },
