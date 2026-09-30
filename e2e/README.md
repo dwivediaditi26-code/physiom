@@ -109,10 +109,13 @@ npm run build
 npx playwright test
 ```
 
-Or skip the env vars and it'll fall back to hitting the real production
-Supabase project via the hardcoded default in `src/supabase.js` -- **don't
-do this** for anything other than a one-off manual check where you're
-certain you won't submit real patient-shaped data.
+If you skip the env vars the app falls back to the real production Supabase
+project (the hardcoded default in `src/supabase.js`). The guest-mode specs
+never talk to a database, so they are fine that way. The specs that sign in
+or sign up (`patient-journey`, `cross-device`, `load-concurrency`) call
+`assertNotLiveDatabase()` in `appMap.ts` first and stop with an error if the
+build points at the live project, so a local run without the env vars cannot
+create accounts in production.
 
 ## Adding more coverage later
 

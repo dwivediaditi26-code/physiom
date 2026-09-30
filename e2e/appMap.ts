@@ -22,8 +22,7 @@
 //     Patients ......... the patient list (filters: All / Outpatient / IPD / Post-op ...)
 //     Treatment ........ patients in active treatment
 //     Posture .......... leaves Clinical for the Posture Analysis screen
-//   Learn .............. topics: Practical Skills, Clinical Learning, X-ray Educational
-//                        Material (+ "Soon" cards)
+//   Learn .............. topics: Practical Skills, Clinical Cases (+ "Soon" cards)
 //   PhysioFeed ......... phone: tabs Feed | Opportunity | Case Discussion | People | Evidence | Saved
 //                        desktop: left menu Physio Feed | Opportunity | Case Discussion | People |
 //                        Evidence | Messages | Saved
@@ -50,7 +49,7 @@ export const ORTHO_STEPS = [
   "Demographics", "Subjective", "Red Flag Screen", "Pain", "General Observation",
   "Palpation", "ROM", "MMT", "Joint Mobility", "Special Tests", "Neuro Screen",
   "Limb Length", "Functional Assessment", "Outcome Measure", "Clinical Assessment",
-  "Problem List", "Care Plan Goals", "Care Plan Treatment", "Care Plan", "Final Review",
+  "Problem List", "Care Plan Goals", "Care Plan Treatment", "Care Plan", "Medical Records", "Final Review",
 ] as const;
 
 // Body regions on the region step, exactly as labelled there.
@@ -132,10 +131,37 @@ export function creds() {
   return { email: process.env.E2E_EMAIL || "", password: process.env.E2E_PASSWORD || "" };
 }
 
+// Safety net: the tests that sign in or sign up write to a real database, so
+// they must never run against the live one. The app falls back to the live
+// project whenever VITE_SUPABASE_URL was not set when it was built, so look
+// at the build the tests are about to use (and at the address, when testing
+// a deployed copy) and refuse if it points at the live project.
+const LIVE_PROJECT_REF = "gkhcysvayjrkrufcnqvz";
+export function assertNotLiveDatabase() {
+  const remote = process.env.E2E_BASE_URL;
+  if (remote) {
+    if (/physiom-sbs4/.test(remote)) {
+      throw new Error(`Refusing to sign in or sign up on the live site (${remote}). Use a copy built against the TEST Supabase project.`);
+    }
+    return;
+  }
+  const assets = path.join(__dirname, "..", "dist", "assets");
+  const files = fs.existsSync(assets) ? fs.readdirSync(assets).filter(f => f.endsWith(".js")) : [];
+  for (const f of files) {
+    if (fs.readFileSync(path.join(assets, f), "utf8").includes(LIVE_PROJECT_REF)) {
+      throw new Error(
+        "Refusing to sign in or sign up: this build talks to the LIVE Supabase project. " +
+        "Build with VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY set to the TEST project (see e2e/README.md)."
+      );
+    }
+  }
+}
+
 // An existing test-project account (E2E_EMAIL / E2E_PASSWORD, or
 // e2e/login.local.json).
 export async function login(page: Page, account = creds()) {
-  expect(account.email, "Put your TEST-project login in e2e/login.local.json (or E2E_EMAIL / E2E_PASSWORD)").not.toBe("");
+  assertNotLiveDatabase();
+  expect(account.email,"Put your TEST-project login in e2e/login.local.json (or E2E_EMAIL / E2E_PASSWORD)").not.toBe("");
   await freshStart(page);
   await page.goto("/");
   await page.getByPlaceholder("you@clinic.com").fill(account.email);
@@ -147,6 +173,7 @@ export async function login(page: Page, account = creds()) {
 // A brand-new account. The TEST project must have "Confirm email" OFF,
 // otherwise sign-up never returns a session (see e2e/README.md).
 export async function signUp(page: Page, account: { name: string; email: string; password: string }) {
+  assertNotLiveDatabase();
   await freshStart(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Create free account" }).click();

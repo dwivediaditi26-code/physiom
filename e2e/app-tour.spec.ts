@@ -17,7 +17,7 @@ test.describe("App tour @tour", () => {
 
     await openMainTab(page, "learn");
     await expect(page.getByText(/\d+ topics/)).toBeVisible({ timeout: 15_000 });
-    for (const topic of ["Practical Skills", "Clinical Learning", "X-ray Educational Material"]) {
+    for (const topic of ["Practical Skills", "Clinical Cases"]) {
       await expect(page.getByText(topic).first()).toBeVisible();
     }
     await noCrash(page);
