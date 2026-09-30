@@ -50,18 +50,28 @@ const RELEVANCE_KEYWORDS = [
   'fall prevention', 'gait', 'chronic pain', 'physical activity',
 ];
 
+function decodeEntities(s) {
+  return s
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&rsquo;/g, '’').replace(/&lsquo;/g, '‘')
+    .replace(/&ldquo;/g, '“').replace(/&rdquo;/g, '”')
+    .replace(/&nbsp;/g, ' ');
+}
+
 function extractTag(block, tag) {
   const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
   if (!m) return '';
   let val = m[1].trim();
   const cdata = val.match(/^<!\[CDATA\[([\s\S]*)\]\]>$/);
   if (cdata) val = cdata[1];
-  return val
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-    .replace(/&rsquo;/g, '’').replace(/&lsquo;/g, '‘')
-    .replace(/&ldquo;/g, '“').replace(/&rdquo;/g, '”')
+  // Decode BEFORE stripping tags -- WHO's feed entity-encodes its HTML
+  // (&lt;p&gt; rather than a raw <p> inside CDATA), so stripping first
+  // leaves those encoded tags untouched and a later decode turns them
+  // into literal <p> that leaks straight into the summary. Decode once
+  // to reveal any real tags, strip those, then decode again for entities
+  // that were sitting inside what just got stripped.
+  return decodeEntities(decodeEntities(val).replace(/<[^>]+>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim();
 }
