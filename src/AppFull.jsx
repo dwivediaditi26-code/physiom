@@ -2062,6 +2062,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
                 onNav={navTo}
+                onGeneratePdf={()=>setShowPdfReports(true)}
                 onBack={()=>{ setProfileTab(null); navTo("clinical"); }}
                 onSaveField={(id,newData)=>{
                   setPatients(prev=>{

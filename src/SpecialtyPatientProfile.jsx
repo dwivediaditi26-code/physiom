@@ -770,7 +770,7 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   );
 }
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab }) {
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab, onGeneratePdf }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
   // jump straight to Treatment via the now-removed legacy
@@ -1113,6 +1113,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🧠</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#7c3aed", flex: 1 }}>Neurological Assessment</span>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("neuro_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {neuroAssessmentSubtitle(d.neuro.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{neuroAssessmentSubtitle(d.neuro.meta)}</div>}
@@ -1125,6 +1126,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
                 <span style={{ fontSize: 24 }}>🫀</span>
                 <span style={{ fontSize: 17, fontWeight: 900, color: "#dc2626", flex: 1 }}>Cardiopulmonary Assessment</span>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("cardio_assessment")} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {cardioAssessmentSubtitle(d.cardio.meta) && <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 12 }}>{cardioAssessmentSubtitle(d.cardio.meta)}</div>}
@@ -1157,6 +1159,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
                     profile, so listOldPatientRecords() sees their real
                     saved assessment(s). */}
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { entryMode: "ai" })} style={{ padding: "6px 12px", fontSize: 12 }}>🔄 New Assessment</GhostBtn>
+                <GhostBtn onClick={() => onGeneratePdf?.()} style={{ padding: "6px 12px", fontSize: 12 }}>📄 PDF</GhostBtn>
                 <GhostBtn onClick={() => onNav?.("ortho_new_assessment", { resume: orthoResume })} style={{ padding: "6px 12px", fontSize: 12 }}>✏️ Edit</GhostBtn>
               </div>
               {[orthoParsed.regions, orthoParsed.condition].filter(Boolean).join(" · ") && (
