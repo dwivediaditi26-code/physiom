@@ -86,8 +86,10 @@ export async function expectHome(page: Page) {
 
 // After a reload the app comes back on the screen you were on (not Home), so
 // "we're still signed in" means: the app frame is there and the sign-in form is not.
+// On a phone the sidebar exists in the page but is a closed drawer, so only
+// count a bar or sidebar that is actually showing.
 export async function expectStillSignedIn(page: Page) {
-  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar")).first()).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByTestId("bnav-tab-home").or(page.locator(".pm-sidebar")).filter({ visible: true }).first()).toBeVisible({ timeout: 25_000 });
   await expect(page.getByPlaceholder("you@clinic.com")).toHaveCount(0);
   await noCrash(page);
 }
