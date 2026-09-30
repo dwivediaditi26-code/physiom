@@ -2797,3 +2797,36 @@ export async function searchEverything(query, { limit = 6 } = {}) {
     total,
   };
 }
+
+/* ---------------- career news (add_career_news.sql) ---------------- */
+//
+// Separate from `opportunities` above -- those are jobs/workshops a
+// community member posted themselves. This is outside news (WHO,
+// Physiopedia, and later real job-board sources) a daily server-side job
+// writes into `career_news`; the app only ever reads it. Public table, no
+// auth required -- readable in guest mode same as `profiles`/`connections`.
+export async function getCareerNews({ category = "all", search = "", limit = 30 } = {}) {
+  let q = supabase
+    .from("career_news")
+    .select("id, category, title, summary, source_name, source_url, location, published_at, deadline_at, last_checked_at, status")
+    .eq("status", "active")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (category !== "all") q = q.eq("category", category);
+  const { data, error } = await q;
+  if (error) { console.error("getCareerNews:", error.message); return []; }
+  const term = search.trim().toLowerCase();
+  const rows = term
+    ? (data || []).filter((n) => `${n.title} ${n.summary || ""} ${n.location || ""}`.toLowerCase().includes(term))
+    : data || [];
+  return rows.map((n) => ({ ...n, deadlineLabel: deadlineLabelOf(n.deadline_at) }));
+}
+
+function deadlineLabelOf(deadlineAt) {
+  if (!deadlineAt) return null;
+  const days = Math.ceil((new Date(deadlineAt).getTime() - Date.now()) / 86400000);
+  if (days < 0) return null;
+  if (days === 0) return "Closing today";
+  if (days <= 7) return "Closes this week";
+  return "Upcoming";
+}

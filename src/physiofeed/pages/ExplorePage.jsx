@@ -15,6 +15,7 @@ import MyOpportunitiesPage from "../components/opportunities/MyOpportunitiesPage
 import ApplicantPipeline from "../components/opportunities/ApplicantPipeline.jsx";
 import ApplicantProfileSheet from "../components/opportunities/ApplicantProfileSheet.jsx";
 import ApplicantChatModal from "../components/opportunities/ApplicantChatModal.jsx";
+import CareerNewsBoard from "../components/news/CareerNewsBoard.jsx";
 
 // Explore -> Opportunities board (2026-09-21, Aditi's brief + mockups: jobs,
 // internships, workshops and research collaborations for physiotherapists).
@@ -59,6 +60,9 @@ export default function ExplorePage() {
   // pre-filled and pointed at updateOpportunity instead -- editingOpp's own
   // `type` picks the wizard directly, skipping the type picker entirely.
   const [editingOpp, setEditingOpp] = useState(null);
+  // Opportunities (community-posted jobs/workshops) vs News (daily outside
+  // briefing, career_news table) -- Aditi: "news section beside opportunity".
+  const [boardTab, setBoardTab] = useState("opportunities");
 
   const openCreateFlow = () => setPickerOpen(true);
   const closeCreateFlow = () => { setPickerOpen(false); setModalType(null); setWorkshopOpen(false); setEditingOpp(null); };
@@ -454,8 +458,11 @@ export default function ExplorePage() {
       <div className="flex items-start justify-between gap-3 mb-5">
         <div>
           <h1 className="pf-font-head text-2xl font-extrabold text-[#2B2140] mb-1">Explore</h1>
-          <p className="pf-font-body text-sm text-[#8A7FA3]">Jobs, internships, workshops and collaborations for physiotherapists.</p>
+          <p className="pf-font-body text-sm text-[#8A7FA3]">
+            {boardTab === "news" ? "Daily physiotherapy news, updates and professional briefings." : "Jobs, internships, workshops and collaborations for physiotherapists."}
+          </p>
         </div>
+        {boardTab === "opportunities" && (
         <button
           type="button"
           onClick={openCreateFlow}
@@ -463,8 +470,25 @@ export default function ExplorePage() {
         >
           <Plus size={17} /> Post
         </button>
+        )}
       </div>
 
+      <div className="flex items-center gap-1 mb-4 bg-[#F7F5FF] border-2 border-[#EFE9FF] rounded-full p-1 w-fit">
+        {[
+          { key: "opportunities", label: "Opportunities" },
+          { key: "news", label: "News" },
+        ].map((t) => (
+          <button key={t.key} type="button" onClick={() => setBoardTab(t.key)}
+            className={`pf-font-head px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${boardTab === t.key ? "bg-white text-[#6D28D9] shadow-sm" : "text-[#8A7FA3]"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {boardTab === "news" ? (
+        <CareerNewsBoard />
+      ) : (
+      <>
       {/* Side by side (2026-09-28, Aditi's reference screenshot: "my posting
           and my opportunity section side by side") -- these were two
           full-width stacked rows before; same cards, just a 2-column grid
@@ -571,6 +595,8 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
           {filtered.map((o) => <OpportunityCard key={o.id} opp={o} onOpen={openOpportunity} />)}
         </div>
+      )}
+      </>
       )}
 
       {pickerOpen && <CreateOpportunityTypePicker onClose={closeCreateFlow} onPick={pickCreateType} />}
