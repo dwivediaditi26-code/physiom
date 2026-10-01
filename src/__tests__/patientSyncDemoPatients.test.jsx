@@ -58,7 +58,8 @@ describe("cloud save leaves the demo patients out", () => {
   it("saving only the demo patients uploads nothing and still succeeds", async () => {
     const uid = newUserId();
     const seeded = loadPatientDB(uid);
-    await expect(savePatientDB(seeded, uid)).resolves.toBeUndefined();
+    // false = nothing was sent, so the header must not claim "Saved to cloud".
+    await expect(savePatientDB(seeded, uid)).resolves.toBe(false);
     expect(upsert).not.toHaveBeenCalled();
   });
 
@@ -77,7 +78,20 @@ describe("cloud save leaves the demo patients out", () => {
   });
 
   it("without a signed-in user nothing is uploaded", async () => {
-    await savePatientDB([realPatient("real_3", "Guest Patient")], undefined);
+    await expect(savePatientDB([realPatient("real_3", "Guest Patient")], undefined)).resolves.toBe(false);
     expect(upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("what the save reports back (drives the header label)", () => {
+  it("resolves true only when a real patient reached the cloud", async () => {
+    const uid = newUserId();
+    await expect(savePatientDB([realPatient("real_4", "Uploaded")], uid)).resolves.toBe(true);
+  });
+
+  it("rejects when the cloud refuses the save, so the header shows the warning", async () => {
+    const uid = newUserId();
+    upsert.mockImplementationOnce(() => Promise.resolve({ error: { message: "new row violates row-level security policy" } }));
+    await expect(savePatientDB([realPatient("real_5", "Refused")], uid)).rejects.toBeTruthy();
   });
 });

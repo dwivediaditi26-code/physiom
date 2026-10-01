@@ -532,11 +532,15 @@ async function hydrateLocalCache(userId) {
 // retry"). Demo patients are sample data, so they stay on the device.
 const DEMO_PATIENT_IDS = new Set([SEED_PATIENT.id, SEED_PATIENT_2.id]);
 
+// Resolves to true only when the patients really reached Supabase, and to
+// false when there was nothing to upload (not logged in, or only the demo
+// patients) -- so the header can say "Saved to cloud" only when it is true.
+// Rejects when the upload failed.
 async function syncPatientsToSupabase(patients, userId) {
   try {
-    if (!userId) return; // not logged in — don't sync
+    if (!userId) return false; // not logged in — don't sync
     const toSync = patients.filter(p => !DEMO_PATIENT_IDS.has(p.id));
-    if (toSync.length === 0) return; // only demo patients -- nothing to upload
+    if (toSync.length === 0) return false; // only demo patients -- nothing to upload
     const rows = toSync.map(p => ({
       id: p.id,
       user_id: userId,
@@ -550,6 +554,7 @@ async function syncPatientsToSupabase(patients, userId) {
     const { error } = await supabase.from("patients").upsert(rows, { onConflict: "id" });
     if (error) { console.warn("[Supabase sync]", error.message); throw error; }
     clearSyncDirty(userId);
+    return true;
   } catch (e) {
     console.warn("[Supabase sync error]", e);
     // A failed sync (almost always a dropped connection on campus wifi, not
@@ -642,7 +647,7 @@ function savePatientDBLocalOnly(patients, userId) {
 
 function savePatientDB(patients, userId) {
   persistPatientsLocal(patients, userId); // fire-and-forget local (encrypted) cache write
-  return syncPatientsToSupabase(patients, userId); // unchanged return contract — callers await/.then/.catch THIS for cloud save status
+  return syncPatientsToSupabase(patients, userId); // resolves true = reached Supabase, false = nothing to upload, rejects = failed (callers await/.then/.catch THIS for cloud save status)
 }
 const TASK_KEY = 'physio_task_db_v1';
 function loadTaskDB() {

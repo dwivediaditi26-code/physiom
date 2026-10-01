@@ -65,6 +65,8 @@ test.describe("Guest mode journey @guest", () => {
     await expect(page.getByText(/right: Positive/i).first()).toBeVisible();
 
     await saveAssessment(page);
+    // A guest's work never reaches the cloud, so the header must not say it did.
+    await expect(page.getByText(/Saved to cloud/)).toHaveCount(0);
     await expectPatientListed(page, patientName);
     await noCrash(page);
   });

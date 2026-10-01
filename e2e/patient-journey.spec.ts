@@ -20,7 +20,7 @@ import {
 // only adds what needs a real account.
 
 test.describe('Full patient journey (real account)', () => {
-  test('sign up, record an Ortho assessment, save it, and find the patient again after a reload', async ({ page }) => {
+  test('sign up, record an Ortho assessment, save it, and find the patient again after a reload', async ({ page, isMobile }) => {
     const unique = uniqueSuffix();
     const email = `e2e-${unique}@physiomind-test.dev`;
     const password = 'TestPass123!';
@@ -43,6 +43,9 @@ test.describe('Full patient journey (real account)', () => {
     await expect(page.getByText(/L 4\/5/)).toBeVisible();
 
     await saveAssessment(page);
+    // The header only says "Saved to cloud" once a save really reached the cloud
+    // (the phone layout does not show this line).
+    if (!isMobile) await expect(page.getByText(/✓ Saved to cloud/)).toBeVisible({ timeout: 20_000 });
     await expectPatientListed(page, patientName);
     await expectCloudSaved(cloudSaves);
 

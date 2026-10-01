@@ -184,22 +184,6 @@
 
     <!-- Main app bundle — Vite injects this -->
     <script type="module" src="/src/main.jsx"></script>
-  <script type="module">
-    // PROD-only: the SW's cache-first fetch handling races Vite's own dev
-    // module/HMR requests (@vite/client, main.jsx, @react-refresh), which
-    // can fail them outright and leave `npm run dev` on a blank page.
-    // Also skipped inside the Android/iOS app: its files already ship inside
-    // the app, so a cache-first worker there only risks serving stale copies
-    // of the web build's assets. window.Capacitor is injected by the native
-    // shell before page scripts run.
-    const inNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-    if (import.meta.env.PROD && 'serviceWorker' in navigator && !inNativeApp) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(r => console.log('[SW] registered:', r.scope))
-          .catch(e => console.warn('[SW] registration failed:', e));
-      });
-    }
-  </script>
+    <!-- The service worker is registered from src/main.jsx (src/pwa/registerServiceWorker.js): production web build only, not inside the Android/iOS app. -->
   </body>
 </html>

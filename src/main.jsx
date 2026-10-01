@@ -7,6 +7,8 @@ import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 import { installButtonRipple } from './rippleEffect.js'
 import { initNativeApp } from './nativeApp.js'
 import { installGlobalErrorReporting } from './analytics/errorReporter.js'
+import { registerServiceWorker } from './pwa/registerServiceWorker.js'
+import PwaBanners from './pwa/PwaBanners.jsx'
 
 inject() // Enables Vercel Analytics — tracks page views and visitors automatically
 
@@ -66,8 +68,12 @@ window.addEventListener('load', () => {
   setTimeout(() => { try { sessionStorage.removeItem('pm_chunk_reload'); } catch { /* ignore */ } }, 10000);
 });
 
+// Offline shell + push alerts + "new version ready" (production web build only).
+registerServiceWorker()
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
+    <PwaBanners />
   </React.StrictMode>
 )

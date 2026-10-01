@@ -305,7 +305,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       setShowOnboarding(false);
     }
   }, [currentUser?.user_metadata?.pm_onboarded]);
+  // lastSaved = the last time the draft was written on THIS device;
+  // lastCloudSaved = the last time a save really reached the cloud. The
+  // header only says "Saved to cloud" for the second one.
   const [lastSaved, setLastSaved] = useState(null);
+  const [lastCloudSaved, setLastCloudSaved] = useState(null);
   // 'idle' | 'saving' | 'saved' | 'error' — reflects whether the active
   // patient's data has actually reached Supabase (the real record), not just
   // whether it's cached in this browser's local storage.
@@ -441,7 +445,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           ? { ...p, data, name: data["dem_name"] || p.name, updatedAt: new Date().toISOString() }
           : p);
         savePatientDB(updated, uid)
-          .then(() => { setCloudSaveStatus("saved"); setLastSaved(new Date()); })
+          .then((uploaded) => {
+            // uploaded === false: nothing was sent (e.g. only the demo
+            // patients) -- the record is only on this device.
+            if (uploaded) { setCloudSaveStatus("saved"); setLastCloudSaved(new Date()); }
+            else setCloudSaveStatus("local");
+          })
           .catch(() => setCloudSaveStatus("error")); // network/RLS failure — will retry on the next edit
         return updated;
       });
@@ -1831,12 +1840,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* Row 2: saved time + buttons */}
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap"}}>
             <span style={{fontSize:"0.78rem",fontWeight:600,flex:1,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4,
-              color: cloudSaveStatus==="error" ? "#dc2626" : cloudSaveStatus==="saving" ? PC.muted : PC.green}}>
+              color: cloudSaveStatus==="error" ? "#dc2626" : (cloudSaveStatus==="saved" && lastCloudSaved) ? PC.green : PC.muted}}>
               {cloudSaveStatus === "saving" && <>⏳ Saving…</>}
-              {cloudSaveStatus === "error" && <>⚠ Offline — will retry on next edit</>}
-              {cloudSaveStatus !== "saving" && cloudSaveStatus !== "error" && (
+              {cloudSaveStatus === "error" && <>⚠ Not in the cloud yet — will retry</>}
+              {cloudSaveStatus === "saved" && lastCloudSaved && <>✓ Saved to cloud {lastCloudSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>}
+              {cloudSaveStatus !== "saving" && cloudSaveStatus !== "error" && !(cloudSaveStatus === "saved" && lastCloudSaved) && (
                 lastSaved
-                  ? <>✓ Saved to cloud {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
+                  ? <>● Saved on this device {lastSaved.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</>
                   : <>● {new Date(activePatient.updatedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</>
               )}
             </span>
