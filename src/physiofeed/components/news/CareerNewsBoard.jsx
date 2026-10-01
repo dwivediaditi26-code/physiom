@@ -4,6 +4,7 @@ import * as db from "../../data/db.js";
 import NewsCard from "./NewsCard.jsx";
 import NewsBriefingCard from "./NewsBriefingCard.jsx";
 import NewsDetailModal from "./NewsDetailModal.jsx";
+import JobSearchLinks from "./JobSearchLinks.jsx";
 
 // Explore -> News (2026-09-30 redesign, Aditi's Google-News-style brief).
 // One fetch for the whole active list; every tab/search filters that same
@@ -169,6 +170,12 @@ export default function CareerNewsBoard() {
               ))}
             </div>
           )}
+
+          {/* Naukri/Indeed/LinkedIn/NHS Jobs don't allow scraping without a
+              partnership (2026-09-30, Aditi: "search link cards for now") --
+              real live-search links, shown only where job vacancies are the
+              point, never mixed into the verified news cards above. */}
+          {(category === "job_india" || category === "job_international") && <JobSearchLinks />}
 
           {items.length > 0 && (
             <div className="flex items-start gap-2 mt-4 px-1">
