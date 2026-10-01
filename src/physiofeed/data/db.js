@@ -2855,6 +2855,7 @@ function deadlineLabelOf(deadlineAt) {
 const TRUSTED_SOURCES = {
   "World Health Organization": "Official source",
   "News-Medical (Physiotherapy)": "Reputable publisher",
+  "World Physiotherapy": "Official source",
 };
 function verificationOf(sourceName) {
   return TRUSTED_SOURCES[sourceName] || "Needs review";

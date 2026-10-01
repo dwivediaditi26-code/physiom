@@ -20,6 +20,22 @@
 //     a near-miss. verificationOf() in db.js already marks any source not
 //     on its trusted allowlist "Needs review", which is correct here --
 //     these are aggregators republishing notices, not the hiring body.
+//   - World Physiotherapy (world.physio/rss.xml) -- the real international
+//     professional body (WCPT). No keyword filter -- every item on this
+//     feed already is physiotherapy-specific (congresses, global summits,
+//     professional development), unlike WHO/News-Medical which cover a
+//     much wider beat. category 'alert'; db.js's verificationOf() marks it
+//     "Official source", same tier as WHO.
+//
+// Checked and rejected (2026-09-30, Aditi asked for the 10 sources from her
+// ChatGPT research): IAP's domain doesn't resolve at either guessed address;
+// AIIPMR, ICMR and India e-Gazette are reachable but present a TLS
+// certificate this runtime (and Vercel's) can't verify, so fetching them
+// would mean disabling certificate checking -- not doing that for a
+// government site; NCAHP and MoHFW are client-rendered apps whose "feed"
+// paths just return the same empty HTML shell, no real RSS underneath.
+// AIIPMR genuinely does post real recruitment PDFs on its site (confirmed
+// by hand), it's just not reachable by an automated fetch right now.
 // No international job-listing source is wired in -- a free, reliable RSS
 // feed of real overseas physiotherapy vacancies doesn't exist; job_international
 // stays empty until a real source is found. Don't invent one here.
@@ -80,6 +96,13 @@ const SOURCES = [
     category: 'job_india',
     requireKeywordMatch: true,
     keywords: JOB_KEYWORDS,
+    max: 5,
+  },
+  {
+    name: 'World Physiotherapy',
+    url: 'https://world.physio/rss.xml',
+    category: 'alert',
+    requireKeywordMatch: false,
     max: 5,
   },
 ];
