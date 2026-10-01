@@ -13,6 +13,19 @@ const BOARDS = [
   { name: "LinkedIn Jobs", region: "Worldwide", url: "https://www.linkedin.com/jobs/search/?keywords=physiotherapist" },
   { name: "NHS Jobs", region: "UK", url: "https://www.jobs.nhs.uk/candidate/search/results?keyword=physiotherapist" },
   { name: "Google Jobs", region: "Worldwide", url: "https://www.google.com/search?q=physiotherapist+jobs" },
+  // NCS -- India's own official government job portal (Ministry of Labour
+  // & Employment, ncs.gov.in), not a third-party aggregator. Its job
+  // search is behind a login, so this links to the site itself rather
+  // than guessing at a query-string pattern that might silently 404.
+  { name: "NCS (Govt of India)", region: "India", url: "https://ncs.gov.in/" },
+  // A free-text Google search scoped to "government" specifically (2026-09-30,
+  // Aditi: "goverment job vacancy from inter net... google should be
+  // searchable") -- catches the many individual state/NHM/hospital
+  // recruitment pages that don't have RSS and can't each be wired in
+  // (see fetchCareerNews.js's source-by-source notes). Deliberately a
+  // separate card from "Google Jobs" above -- a plain web search surfaces
+  // government notice PDFs that Google's structured Jobs results miss.
+  { name: "Govt jobs (Google)", region: "India", url: "https://www.google.com/search?q=physiotherapist+vacancy+government+India" },
 ];
 
 export default function JobSearchLinks() {
