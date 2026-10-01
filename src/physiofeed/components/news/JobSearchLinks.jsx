@@ -26,6 +26,13 @@ const BOARDS = [
   // separate card from "Google Jobs" above -- a plain web search surfaces
   // government notice PDFs that Google's structured Jobs results miss.
   { name: "Govt jobs (Google)", region: "India", url: "https://www.google.com/search?q=physiotherapist+vacancy+government+India" },
+  // FreeJobAlert is already wired into fetchCareerNews.js as an RSS
+  // source (job_india) -- this is the same site as a manual-search
+  // fallback. Its `?s=` query param doesn't actually filter results
+  // (checked 2026-09-30: returns the generic homepage regardless of the
+  // search term), so this links to their real search-jobs page instead
+  // of a query string that would look pre-filled but silently do nothing.
+  { name: "FreeJobAlert", region: "India", url: "https://www.freejobalert.com/search-jobs/" },
 ];
 
 export default function JobSearchLinks() {
