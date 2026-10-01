@@ -168,19 +168,32 @@ export default async function handler(req, res) {
   const results = [];
   const rows = [];
 
+  // One retry per source, each with its own timeout -- a single slow or
+  // dead feed must not hang the whole run (every other source still needs
+  // its chance), and one real retry absorbs a transient blip without
+  // masking a genuinely dead source behind endless silent attempts.
   for (const source of SOURCES) {
-    try {
-      const r = await fetch(source.url, { headers: { 'User-Agent': 'PhysioMindNewsBot/1.0 (+https://physiomindapp.com)' } });
-      if (!r.ok) { results.push({ source: source.name, ok: false, error: `HTTP ${r.status}` }); continue; }
-      const xml = await r.text();
-      let items = parseRssItems(xml);
-      if (source.requireKeywordMatch) items = items.filter((it) => isRelevant(it, source.keywords));
-      items = items.slice(0, source.max);
-      items.forEach((item) => rows.push(toRow(item, source)));
-      results.push({ source: source.name, ok: true, found: items.length });
-    } catch (err) {
-      results.push({ source: source.name, ok: false, error: err.message });
+    let lastError = null;
+    let ok = false;
+    for (let attempt = 1; attempt <= 2 && !ok; attempt++) {
+      try {
+        const r = await fetch(source.url, {
+          headers: { 'User-Agent': 'PhysioMindNewsBot/1.0 (+https://physiomindapp.com)' },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!r.ok) { lastError = `HTTP ${r.status}`; continue; }
+        const xml = await r.text();
+        let items = parseRssItems(xml);
+        if (source.requireKeywordMatch) items = items.filter((it) => isRelevant(it, source.keywords));
+        items = items.slice(0, source.max);
+        items.forEach((item) => rows.push(toRow(item, source)));
+        results.push({ source: source.name, ok: true, found: items.length, attempt });
+        ok = true;
+      } catch (err) {
+        lastError = err.name === 'TimeoutError' ? 'Timed out after 10s' : err.message;
+      }
     }
+    if (!ok) results.push({ source: source.name, ok: false, error: lastError });
   }
 
   let written = 0;
