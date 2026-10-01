@@ -1,4 +1,5 @@
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
+import { initialDemographics } from "./orthoDemographicsSeed.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
@@ -474,15 +475,21 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   // Red Flag Screen. `extracted` rides along on data.subjective.__aiExtracted
   // (a "__" key, so every summary formatter already skips it) to render the
   // read-only "as extracted" panel on the Subjective step.
+  // Demographics also starts from what the clinician typed before the wizard
+  // opened (the quick "New assessment" form / New Patient form leave it on
+  // patientData as dem_name, dem_age, dem_sex, ...), so the name and age are
+  // not asked for twice; Neuro, Cardio and IPD already did this.
   const [data, setData] = useState(() => {
     if (initialData) return initialData;
-    if (!initialAiUpdates) return {};
+    const demographics = initialDemographics(initialAiUpdates?.demographics, patientData);
+    const hasDemographics = Object.keys(demographics).length > 0;
+    if (!initialAiUpdates) return hasDemographics ? { demographics } : {};
     const seeded = {
       subjective: { ...initialAiUpdates.subjective },
       pain: { ...initialAiUpdates.pain },
     };
     if (initialAiUpdates.extracted?.length) seeded.subjective.__aiExtracted = initialAiUpdates.extracted;
-    if (initialAiUpdates.demographics && Object.keys(initialAiUpdates.demographics).length) seeded.demographics = { ...initialAiUpdates.demographics };
+    if (hasDemographics) seeded.demographics = demographics;
     if (initialAiUpdates.redFlags && Object.keys(initialAiUpdates.redFlags).length) seeded.redFlags = { ...initialAiUpdates.redFlags };
     return seeded;
   });

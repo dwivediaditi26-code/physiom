@@ -69,6 +69,18 @@ test.describe("Guest mode journey @guest", () => {
     await noCrash(page);
   });
 
+  test("Ortho: the name and age typed in the quick form are already on the Demographics step", async ({ page }) => {
+    const patientName = `E2E Quick Form ${uniqueSuffix()}`;
+
+    await enterGuestMode(page);
+    await startOrtho(page, { name: patientName, age: 34, sex: "Female", region: "Knee", side: "Right" });
+    await goToStep(page, "Demographics");
+
+    await expect(page.getByPlaceholder("Patient's full name")).toHaveValue(patientName);
+    await expect(page.locator("select").first()).toHaveValue("34");
+    await noCrash(page);
+  });
+
   test("a guest who reloads is sent back to the sign-in screen (nothing is kept)", async ({ page }) => {
     await enterGuestMode(page);
     await page.reload();

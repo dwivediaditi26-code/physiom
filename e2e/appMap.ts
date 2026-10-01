@@ -244,19 +244,30 @@ export async function expectPatientListed(page: Page, name: string, timeout = 15
 // Starting an assessment
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Clinical -> Assess -> "＋ New Assessment" -> name + specialty -> Next.
-export async function startNewAssessment(page: Page, specialty: Specialty, patientName: string) {
+// Clinical -> Assess -> "＋ New Assessment" -> name (+ optional age and sex)
+// + specialty -> Next.
+export async function startNewAssessment(
+  page: Page,
+  specialty: Specialty,
+  patientName: string,
+  extra: { age?: number; sex?: "Male" | "Female" | "Other" } = {},
+) {
   await openClinical(page);
   await openClinicalTab(page, "Assess");
   await page.getByText("＋ New Assessment").click();
   const modal = page.getByTestId("specialty-picker-modal");
   await modal.getByPlaceholder("e.g. Riya Sharma").fill(patientName);
+  if (extra.age !== undefined) await modal.getByPlaceholder("yrs").fill(String(extra.age));
+  if (extra.sex) await modal.getByRole("button", { name: extra.sex, exact: true }).click();
   await modal.getByText(specialty, { exact: true }).click();
   await modal.getByText("Next →").click();
 }
 
 export interface OrthoStart {
   name: string;
+  // Also typed into the quick form; the wizard should already have them.
+  age?: number;
+  sex?: "Male" | "Female" | "Other";
   region?: Region;
   side?: Side;
   // "How do you want to start?" choice.
@@ -268,7 +279,7 @@ export interface OrthoStart {
 export async function startOrtho(page: Page, o: OrthoStart) {
   const region = o.region ?? "Knee";
   const setup = o.setup ?? "General Assessment";
-  await startNewAssessment(page, "Ortho", o.name);
+  await startNewAssessment(page, "Ortho", o.name, { age: o.age, sex: o.sex });
   await page.getByText("Outpatient / Musculoskeletal").click();
   await page.getByRole("button", { name: /^Continue/ }).click();
 
@@ -318,8 +329,8 @@ export async function walkToEnd(page: Page): Promise<number> {
   return total;
 }
 
-// Demographics step. Saving needs the name and age (the quick form's name is
-// not carried into this field).
+// Demographics step. Saving needs the name and age. The quick form's name,
+// age and sex are already filled in here; typing them again just replaces them.
 export async function fillDemographics(page: Page, d: { name: string; age?: number; sex?: "Male" | "Female" | "Other" }) {
   await goToStep(page, "Demographics");
   await page.getByPlaceholder("Patient's full name").fill(d.name);
