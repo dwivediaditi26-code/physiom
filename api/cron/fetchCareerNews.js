@@ -220,7 +220,19 @@ export default async function handler(req, res) {
   }
 
   let written = 0;
+  let newRows = [];
   if (rows.length > 0) {
+    // Diff against what's already there BEFORE upserting -- the upsert
+    // itself can't tell an insert from a no-op refresh of an already-seen
+    // row, and a push on every single cron run (including the 29 days out
+    // of 30 nothing new shows up) would make the opt-in feel like spam
+    // (2026-10-02, Aditi: "when the new news comes it should... show" --
+    // a phone push only on genuinely new postings, not a daily re-send).
+    const dedupeKeys = rows.map((r) => r.dedupe_key);
+    const { data: existing } = await admin.from('career_news').select('dedupe_key').in('dedupe_key', dedupeKeys);
+    const existingKeys = new Set((existing || []).map((r) => r.dedupe_key));
+    newRows = rows.filter((r) => !existingKeys.has(r.dedupe_key));
+
     const { error, count } = await admin.from('career_news').upsert(rows, { onConflict: 'dedupe_key', count: 'exact' });
     if (error) {
       console.error('fetchCareerNews: upsert failed', error.message);
@@ -237,5 +249,27 @@ export default async function handler(req, res) {
     .lt('last_checked_at', new Date(Date.now() - 30 * 86400000).toISOString())
     .eq('status', 'active');
 
-  return res.status(200).json({ ok: true, written, results });
+  // Broadcast a push for genuinely new postings only. send-push has no
+  // user_id to target here (career_news isn't "for" any one person the
+  // way a message is), so this calls it directly with broadcast:true
+  // instead of going through the notifications-table trigger every other
+  // push kind uses (see supabase/add_push_notification_trigger.sql).
+  // Best-effort: a failed push must never fail the cron run itself.
+  if (newRows.length > 0) {
+    const first = newRows[0];
+    const title = newRows.length === 1 ? first.title.slice(0, 80) : `${newRows.length} new updates on PhysioFeed`;
+    const body = newRows.length === 1 ? first.source_name : `${first.title.slice(0, 60)}${newRows.length > 1 ? ' and more' : ''}`;
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ broadcast: true, title, body, url: '/news' }),
+        signal: AbortSignal.timeout(10000),
+      });
+    } catch (err) {
+      console.error('fetchCareerNews: push broadcast failed', err.message);
+    }
+  }
+
+  return res.status(200).json({ ok: true, written, newCount: newRows.length, results });
 }

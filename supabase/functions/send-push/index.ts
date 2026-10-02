@@ -1,6 +1,11 @@
 // send-push — sends a web push notification to one user's registered
-// devices. Called from server-side/trusted contexts only (this function
-// runs with the service role key, so it can read every user's
+// devices, or to every registered device when `broadcast: true` is passed
+// instead of `user_id` (2026-10-02, for career_news: a new job/conference/
+// regulation posting isn't "for" any one user the way a message or
+// connection request is, so there's no single `notifications` row to hang
+// a trigger off -- the daily cron calls this directly once it finds
+// genuinely new rows). Called from server-side/trusted contexts only (this
+// function runs with the service role key, so it can read every user's
 // subscriptions).
 //
 // Security (2026-09-29 fix): `verify_jwt: true` on its own only checks
@@ -22,6 +27,8 @@
 //   POST /functions/v1/send-push
 //   Authorization: Bearer <service_role_key>
 //   { "user_id": "...", "title": "...", "body": "...", "url": "/optional/deep-link" }
+//   or, to every registered device instead of one user's:
+//   { "broadcast": true, "title": "...", "body": "...", "url": "/optional/deep-link" }
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3";
 
@@ -59,29 +66,27 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "Forbidden -- service role only" }), { status: 403 });
   }
 
-  let payload: { user_id?: string; title?: string; body?: string; url?: string };
+  let payload: { user_id?: string; title?: string; body?: string; url?: string; broadcast?: boolean };
   try {
     payload = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
   }
 
-  const { user_id, title, body, url } = payload;
-  if (!user_id || !title) {
-    return new Response(JSON.stringify({ error: "user_id and title are required" }), { status: 400 });
+  const { user_id, title, body, url, broadcast } = payload;
+  if (!title || (!user_id && !broadcast)) {
+    return new Response(JSON.stringify({ error: "title and (user_id or broadcast) are required" }), { status: 400 });
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const { data: subs, error } = await supabase
-    .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth")
-    .eq("user_id", user_id);
+  const subsQuery = supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth");
+  const { data: subs, error } = broadcast ? await subsQuery : await subsQuery.eq("user_id", user_id);
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
   if (!subs || subs.length === 0) {
-    return new Response(JSON.stringify({ sent: 0, note: "no subscriptions for this user" }), { status: 200 });
+    return new Response(JSON.stringify({ sent: 0, note: broadcast ? "no subscriptions registered" : "no subscriptions for this user" }), { status: 200 });
   }
 
   const notificationPayload = JSON.stringify({ title, body: body || "", url: url || "/" });

@@ -7,9 +7,15 @@ import { supabase } from "./supabase.js";
 // point of VAPID: the private half stays server-side as a Supabase secret
 // and is never sent to the browser). Override via VITE_VAPID_PUBLIC_KEY if
 // the deployed project's keys are ever rotated.
+// Rotated 2026-10-02 -- the previous key's matching private half was never
+// actually set as a Supabase secret (confirmed via send-push's own logs:
+// "No key set vapidDetails.publicKey"), so no push had ever really sent;
+// this pairs with the fresh key pair set on send-push's VAPID_PUBLIC_KEY/
+// VAPID_PRIVATE_KEY secrets. The 2 already-subscribed devices are tied to
+// the old, never-working key and will need to re-enable notifications once.
 const VAPID_PUBLIC_KEY =
   import.meta.env.VITE_VAPID_PUBLIC_KEY ||
-  "BEZ1IRBY1yJnLVz-eooDoc0QsBgHJDWDz5L6viG32cnV1HxYXTR7gS4Wc8DxYokORSF_WQlwQq7VnNckS40z6z8";
+  "BC03CRbyoaVuiw6xAlPjxoiEXW4hX6IDWpK1u3n9H5T6X67ICRduRfp55wCynYoI_P0KdnJp46i8n-UhazMtD_Y";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
