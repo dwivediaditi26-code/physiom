@@ -10,6 +10,7 @@ import { C, useTheme, MobileStyleInjector, ErrorBoundary, TabLoader } from "./ut
 import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
 import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
+import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import { ALL_TESTS } from "./sharedClinicalData.js";
@@ -2131,8 +2132,9 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // splitting them across sidebar + screen.
                 <div style={{maxWidth:520,margin:"0 auto"}}>
                   <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
-                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>Clinic details, account and sign-out.</div>
+                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>Clinic details, notifications, account and sign-out.</div>
                   <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
+                  <NotificationsSettingsCard key={"notif-"+(currentUser?.id||"anon")} currentUser={currentUser} isGuest={isGuest}/>
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
                     <button onClick={onSignOut}
                       style={{width:"100%",padding:"11px 14px",borderRadius:12,border:"1px solid #e2e8f0",
