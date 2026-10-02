@@ -327,7 +327,12 @@ const MOBILE_CSS = `
     background: #ffffff; border-top: 2px solid #E4E4E6;
     box-shadow: 0 -4px 20px rgba(124,58,237,0.10);
     max-height: 75vh;
-    padding-bottom: env(safe-area-inset-bottom);
+    /* Under the labels the iPhone keeps a strip for its swipe-up line (34px
+       on Face ID phones). All of it was left empty, which looked like dead
+       space under the bar; the line only needs the bottom ~13px, so keep
+       under half of it. Everything pinned above the bar follows its
+       measured height (--pm-bnav-h), so nothing else needs to move. */
+    padding-bottom: calc(env(safe-area-inset-bottom) * 0.45);
   }
   @media (max-width: 1023px) { .pm-bnav { display: flex; } }
   @media (max-width: 1023px) {
