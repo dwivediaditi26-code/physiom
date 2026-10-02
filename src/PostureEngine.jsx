@@ -13,6 +13,7 @@ import { compareMeasurement, capturesComparable, protocolQuality } from "./measu
 import HybridKendall from "./HybridKendall";
 import { downloadPDFFromHTML } from "./sharedClinicalData.js";
 import PatientCameraConsent from "./PatientCameraConsent.jsx";
+import { buildRealtimeSOAP } from "./ClinicalModules.jsx";
 // ─── CanvasOverlayOnImage — draws analysis overlay directly on top of img ─────
 // Fallback approach: instead of baking into canvas (fails on mobile with large images),
 // overlay a transparent canvas positioned absolutely on top of the photo
@@ -8572,8 +8573,8 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       severity: (f.severity||"moderate").toLowerCase(),
       // Patient-friendly plain text: use layer 2 contributors if available, else brief summary
       plain: f.plain || (f.findingName||f.text||"").replace(/^OBSERVATION[^:]*:\s*/i,"").split(".")[0] || f.description || "",
-      whatIfUntreated: f.whatIfUntreated || "May worsen without targeted intervention. Confirm clinically.",
-      correction: f.correction || (f.exercises||[]).join(". ") || "See exercise plan.",
+      whatIfUntreated: f.whatIfUntreated || "",
+      correction: f.correction || (f.exercises||[]).join(". "),
       icd: f.icd || "—",
       norm: f.norm || "—",
       measured: f.measured || "—",
@@ -8583,27 +8584,19 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       isObservationOnly: true, // All findings are observation-only per clinical audit
     }));
 
-    // Build exercise list
-    const rptExercises = Object.values(buildExercisePlan ? buildExercisePlan(findings,view) : {}).flat().map((ex,i)=>({
-      phase: ex.cat==="inhibit"?1:ex.cat==="activate"?2:3,
-      category: (ex.cat||"correct").toUpperCase(),
-      name: ex.name||"Exercise",
-      sets: ex.sets||"3×10",
-      freq: "Daily",
-      cue: ex.cue||ex.description||"",
-    }));
-
-    // Goals from findings
-    const goals = [];
-    if(m.cvaAngle!=null) goals.push({metric:"CVA (Yip 2008)",current:m.cvaAngle.toFixed(1)+"°",target:CVA_NORM_LABEL,timeframe:"6 weeks"});
-    if(m.thoracicAngle!=null) goals.push({metric:"Thoracic Kyphosis (Trunk Lean Est.)",current:m.thoracicAngle.toFixed(1)+"°",target:"<45°",timeframe:"8 weeks"});
+    // Subjective / Assessment / Plan come from the patient's normal assessment, not generated here
+    // Identity fields are blanked: patient name/age/sex deliberately never reach this PDF.
+    const na = activePatient?.data
+      ? buildRealtimeSOAP({ ...activePatient.data, dem_name: "", dem_age: "", dem_sex: "", dem_gender: "", dem_phone: "", dem_contact: "" })
+      : { S: "", A: "", P: "" };
+    const naText = (t) => escHtml(String(t || "").trim()).replace(/\n/g, "<br/>");
 
     const d = {
       analysisMode: isClinicianVerified ? "Clinician Verified" : "AI Estimated",
       clinician: {
-        name: escHtml(clinicianInfo.name||"Clinician"),
+        name: escHtml(clinicianInfo.name||""),
         credentials: escHtml(clinicianInfo.credentials||""),
-        clinic: escHtml(clinicianInfo.clinic||"PostureAI Clinic"),
+        clinic: escHtml(clinicianInfo.clinic||""),
         date: new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}),
         session: sessions.length+1,
       },
@@ -8630,21 +8623,12 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
         lcsIndex: m.lcsIndex||0, ucsIndex: m.ucsIndex||0,
         reliability: reliability?.score||0,
       },
-      exercises: rptExercises,
       soap: {
-        // escHtml: this string is interpolated raw into the report HTML via
-        // ${s.text} in the SOAP block, which is document.write()n into a
-        // same-origin popup -- so occupation, a free-text field, needs the
-        // same escaping the clinician fields get above. (patientHeightCm is
-        // numeric state, not free text.) The original escaping pass covered
-        // the d.patient.* fields but missed this separate interpolation.
-        subjective: `Patient presents with postural concerns. Height ${patientHeightCm}cm. Occupation: ${escHtml(patientInfo.occupation||"not specified")}. No red flags identified during screening.`,
+        subjective: naText(na.S),
         objective: `Postural analysis (${views.join(", ")}): ${rptFindings.map(f=>f.text).join("; ")}. Reliability ${reliability?.score||0}%. Method: ${reliability?.isManual?"Manual landmark placement":"AI landmark detection"}.`,
-        assessment: `${rptFindings.length} postural finding${rptFindings.length!==1?"s":""} identified. ${rptFindings.map(f=>f.region).join(", ")}. Clinical decision regarding referral at clinician discretion — confirm all findings with physical examination before treatment.`,
-        plan: `Janda Approach neuromuscular sequencing programme. Inhibit → Activate → Correct. Daily 10–15 min. Reassess in 4–6 weeks. Monitor for symptom development.`,
+        assessment: naText(na.A),
+        plan: naText(na.P),
       },
-      goals,
-      redFlags: { triggered: false, items: [] },
     };
 
     // Build HTML — wrap in full document so openPdf works (same as PdfReportsModal)
@@ -8804,67 +8788,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
                 </div>
               </div>`).join("")}
           </div>
-          ${footer(1,2,"Basic Report")}
+          ${footer(1,1,"Basic Report")}
         </div>
-        <div class="page">
-          ${hdr("Your Exercise Plan","Personalised Programme")}
-          <div style="padding:20px 32px 80px">
-            <div style="padding:12px;border-radius:10px;background:#f0f9ff;border:1px solid #bae6fd;margin-bottom:16px">
-              <div style="font-family:Fraunces;font-size:0.88rem;font-weight:700;color:#0369a1;margin-bottom:4px">Your 3-Phase Programme · 10–15 min/day</div>
-              <div style="font-size:0.67rem;color:#0369a1;line-height:1.6">Follow this order every day. Phase 1 relaxes tight muscles so Phase 2 exercises work properly. Phase 3 trains your brain to hold the corrected position.</div>
-            </div>
-            ${[1,2,3].map(ph=>{
-              const exs = d.exercises.filter(e=>e.phase===ph);
-              const meta = {1:{label:"Phase 1 — Inhibit (Relax Tight Muscles)",col:"#dc2626",bg:"#fef2f2",icon:"🔴"},2:{label:"Phase 2 — Activate (Strengthen Weak Muscles)",col:"#2563eb",bg:"#eff6ff",icon:"🔵"},3:{label:"Phase 3 — Correct (Train New Posture)",col:"#059669",bg:"#f0fdf4",icon:"🟢"}}[ph];
-              return `<div style="margin-bottom:12px;border-radius:10px;border:1px solid ${meta.col}25;overflow:hidden">
-                <div style="padding:9px 14px;background:${meta.bg};border-bottom:1px solid ${meta.col}25;display:flex;align-items:center;gap:8px">
-                  <span>${meta.icon}</span>
-                  <div style="font-family:Fraunces;font-size:0.78rem;font-weight:700;color:${meta.col}">${meta.label}</div>
-                </div>
-                ${exs.length?exs.map((ex,i)=>`
-                  <div style="padding:9px 14px;border-bottom:${i<exs.length-1?`1px solid ${C.border}`:"none"};display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start">
-                    <div>
-                      <div style="font-size:0.73rem;font-weight:700;color:${C.primary};margin-bottom:3px">${ex.name}</div>
-                      <div style="font-size:0.63rem;color:${C.muted};line-height:1.5">${ex.cue}</div>
-                    </div>
-                    <div style="text-align:right">
-                      <div style="font-size:0.68rem;font-weight:700;color:${meta.col};padding:2px 8px;border-radius:5px;background:${meta.bg};border:1px solid ${meta.col}30;white-space:nowrap">${ex.sets}</div>
-                      <div style="font-size:0.56rem;color:${C.muted};margin-top:3px">${ex.freq}</div>
-                    </div>
-                  </div>`).join(""):`<div style="padding:10px 14px;font-size:0.65rem;color:${C.muted}">See clinician for specific exercises.</div>`}
-              </div>`;
-            }).join("")}
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-              ${d.goals.map(g=>`<div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border};text-align:center">
-                <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;margin-bottom:4px">${g.metric}</div>
-                <div style="font-size:0.78rem;font-weight:900;color:${C.red};font-family:Fraunces">${g.current}</div>
-                <div style="font-size:0.62rem;color:${C.muted};margin:2px 0">→</div>
-                <div style="font-size:0.78rem;font-weight:900;color:${C.green};font-family:Fraunces">${g.target}</div>
-                <div style="font-size:0.56rem;color:${C.muted};margin-top:2px">by ${g.timeframe}</div>
-              </div>`).join("")}
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-              <div style="padding:12px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a">
-                <div style="font-size:0.64rem;font-weight:700;color:${C.yellow};margin-bottom:4px">📅 Next Reassessment</div>
-                <div style="font-size:0.7rem;color:${C.primary}">Recommended in <strong>4–6 weeks</strong></div>
-              </div>
-              <div style="padding:12px;border-radius:8px;background:${C.surface};border:1px solid ${C.border}">
-                <div style="font-size:0.58rem;font-weight:700;color:${C.muted};margin-bottom:16px">PATIENT ACKNOWLEDGEMENT</div>
-                <div style="border-bottom:1px solid ${C.primary};margin-bottom:4px"></div>
-                <div style="font-size:0.56rem;color:${C.muted}">Signature · Date: ___________</div>
-                <div style="font-size:0.54rem;color:${C.muted};margin-top:4px">I have received and understood this report</div>
-              </div>
-            </div>
-            <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PhysioMind</strong> · Basic Report</div>
-            </div>
-          </div>
-          ${footer(2,2,"Basic Report")}
-        </div>`;
+`;
     }
 
-    // Detailed report — 5 pages, +1 "Results by View" page for multi-view sessions
-    const totalPages = (d.perView && d.perView.length >= 2) ? 6 : 5;
+    // Detailed report — 4 pages, +1 "Results by View" page for multi-view sessions
+    const totalPages = (d.perView && d.perView.length >= 2) ? 5 : 4;
     return `
       <div class="page">
         <div style="height:7px;background:linear-gradient(90deg,${C.primary},${C.accent})"></div>
@@ -9033,45 +8963,13 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
       </div>
 
       <div class="page">
-        ${hdr("Exercise Programme","Inhibit → Activate → Correct (Janda Approach)")}
-        <div style="padding:18px 32px 80px">
-          <div style="padding:10px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-            <div><div style="font-family:Fraunces;font-size:0.83rem;font-weight:700;color:#0369a1">Personalised Programme · ${d.exercises.length} exercises</div><div style="font-size:0.6rem;color:#0369a1;margin-top:1px">Daily · 10–15 min · Reassess in 4–6 weeks</div></div>
-            <div style="font-size:0.6rem;color:#0369a1;text-align:right">Based on ${d.findings.length} findings<br/>Reliability ${m.reliability}%</div>
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:0.63rem">
-            <thead><tr style="background:${C.primary}">
-              ${["#","Phase","Exercise","Dosage","Frequency","Technique Cue"].map(h=>`<th style="padding:7px 10px;text-align:left;font-size:0.57rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,.65)">${h}</th>`).join("")}
-            </tr></thead>
-            <tbody>
-              ${d.exercises.map((ex,i)=>{
-                const meta={1:{col:C.red,bg:"#fef2f2",label:"INHIBIT"},2:{col:"#2563eb",bg:"#eff6ff",label:"ACTIVATE"},3:{col:C.green,bg:"#f0fdf4",label:"CORRECT"}}[ex.phase]||{col:C.muted,bg:C.surface,label:"CORRECT"};
-                return `<tr style="background:${i%2===0?"#fff":C.surface};border-bottom:1px solid ${C.border}">
-                  <td style="padding:7px 10px;font-weight:700;color:${C.muted}">${i+1}</td>
-                  <td style="padding:7px 10px"><span style="font-size:0.56rem;font-weight:700;color:${meta.col};padding:2px 6px;border-radius:4px;background:${meta.bg};border:1px solid ${meta.col}25">${meta.label}</span></td>
-                  <td style="padding:7px 10px;font-weight:700;color:${C.primary}">${ex.name}</td>
-                  <td style="padding:7px 10px;color:${meta.col};font-weight:700;white-space:nowrap">${ex.sets}</td>
-                  <td style="padding:7px 10px;color:${C.muted};white-space:nowrap">${ex.freq}</td>
-                  <td style="padding:7px 10px;color:${C.muted};line-height:1.5">${ex.cue}</td>
-                </tr>`;
-              }).join("")}
-            </tbody>
-          </table>
-          <div style="margin-top:14px;padding:10px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:0.59rem;color:${C.yellow};line-height:1.6">
-            <strong>Contraindication note:</strong> Foam roller extension contraindicated in osteoporosis, acute spinal fracture, or recent spinal surgery. Thomas stretch contraindicated post hip replacement. Screen before prescribing.
-          </div>
-        </div>
-        ${footer(4,totalPages,"Detailed Clinical Report")}
-      </div>
-
-      <div class="page">
         ${hdr("Clinical Notes & Sign-off","SOAP Documentation")}
         <div style="padding:18px 32px 80px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <div style="width:3px;height:14px;border-radius:2px;background:${C.accent}"></div>
             <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:${C.accent}">SOAP Note</div>
           </div>
-          ${[{k:"S",label:"Subjective",col:"#7c3aed",text:d.soap.subjective},{k:"O",label:"Objective",col:C.accent,text:d.soap.objective},{k:"A",label:"Assessment",col:C.yellow,text:d.soap.assessment},{k:"P",label:"Plan",col:C.green,text:d.soap.plan}].map(s=>`
+          ${[{k:"S",label:"Subjective",col:"#7c3aed",text:d.soap.subjective},{k:"O",label:"Objective",col:C.accent,text:d.soap.objective},{k:"A",label:"Assessment",col:C.yellow,text:d.soap.assessment},{k:"P",label:"Plan",col:C.green,text:d.soap.plan}].filter(s=>s.text).map(s=>`
             <div style="margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid ${s.col}25">
               <div style="padding:8px 14px;background:${s.col}12;display:flex;align-items:center;gap:8px">
                 <div style="width:22px;height:22px;border-radius:6px;background:${s.col};display:flex;align-items:center;justify-content:center;font-family:Fraunces;font-size:0.82rem;font-weight:900;color:#fff">${s.k}</div>
@@ -9101,21 +8999,21 @@ function PostureAnalysisModule({ activePatient, set: setPatientField, navContext
               <div style="font-size:0.58rem;font-weight:700;color:${C.muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:18px">Patient Acknowledgement</div>
               <div style="border-bottom:1px solid ${C.primary};margin-bottom:5px"></div>
               <div style="font-size:0.59rem;color:${C.muted}">Signature · Date: ___________</div>
-              <div style="font-size:0.56rem;color:${C.muted};margin-top:6px;line-height:1.5">I confirm I have received and understood this report and exercise programme.</div>
+              <div style="font-size:0.56rem;color:${C.muted};margin-top:6px;line-height:1.5">I confirm I have received and understood this report.</div>
             </div>
           </div>
           <div style="margin-top:14px;padding:10px;border-radius:8px;background:linear-gradient(135deg,#f8fafc,#f0f9ff);border:1px solid #bae6fd;display:flex;justify-content:space-between;align-items:center">
             <div style="font-size:0.58rem;color:${C.muted}">Generated by <strong>PhysioMind</strong> · Detailed Report · ID: ${Date.now().toString(36).toUpperCase()}</div>
           </div>
         </div>
-        ${footer(5,totalPages,"Detailed Clinical Report")}
-      </div>${totalPages===6 ? `
+        ${footer(4,totalPages,"Detailed Clinical Report")}
+      </div>${totalPages===5 ? `
       <div class="page">
         ${hdr("Results by View","Per-Photo Breakdown")}
         <div style="padding:20px 32px 80px">
           ${perViewSection(d.perView, 8)}
         </div>
-        ${footer(6,totalPages,"Detailed Clinical Report")}
+        ${footer(5,totalPages,"Detailed Clinical Report")}
       </div>` : ''}`;
   }
 
