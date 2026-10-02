@@ -185,7 +185,7 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
   if (d.neuro) bcSpecialties.push("Neuro");
   const bcSpecialty = bcSpecialties.join(" + ");
   const bcPathway = bcSpecialties.includes("Ortho") ? "Outpatient / Musculoskeletal" : "";
-  const bcCondition = d.soap_a_diagnosis || d.soap_a || dx?.dx?.[0]?.diagnosis || "";
+  const bcCondition = d.soap_a_diagnosis || d.soap_a || "";
   const breadcrumbHtml = (bcSpecialty || bcPathway || bcRegion || bcCondition) ? `
     <div class="pdf-crumb">
       ${bcSpecialty ? `<b>${escHtml(bcSpecialty)}</b>` : ""}
@@ -568,7 +568,6 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     const dxMain  = (orthoWizardData?.demographics?.provisionalDiagnosis ? escHtml(orthoWizardData.demographics.provisionalDiagnosis) : "") || v("soap_a_diagnosis") || v("soap_a");
     const dxIcd   = v("soap_icd10");
     const dxAssess = v("soap_assessment");
-    const dxList  = dx?.dx || [];
 
     // ── CSS ───────────────────────────────────────────────────────────────
     const css = `
@@ -731,8 +730,7 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     const page3 = specialtyPage(specialtyStart, d.cardio, "Cardiopulmonary Assessment", "Cardiovascular & Respiratory Findings", "🫀", "#dc2626");
     const page4 = specialtyPage(d.cardio ? specialtyStart + 1 : specialtyStart, d.neuro, "Neurological Assessment", "Full Neurological Examination Findings", "🧠", "#7c3aed");
     const closingHtml = `
-        ${(dxMain && dxMain !== "--") || dxList.length > 0 ? sec("🩺","Clinical diagnosis","#1e3a5f", `
-          ${dxList.length > 0 ? dxList.slice(0,4).map((dx2, i) => row(`Diagnosis ${i+1}`, `${escHtml(dx2.diagnosis||"")}${dx2.icd10?" · "+escHtml(dx2.icd10):""}${dx2.confidence?" · "+Math.round(dx2.confidence)+"%":""}`)).join("") : ""}
+        ${dxMain && dxMain !== "--" ? sec("🩺","Clinical diagnosis","#1e3a5f", `
           ${dxMain && dxMain !== "--" ? textRow(dxMain) : ""}
           ${dxIcd  && dxIcd  !== "--" ? row("ICD-10", dxIcd) : ""}
           ${dxAssess && dxAssess !== "--" ? textRow(dxAssess) : ""}

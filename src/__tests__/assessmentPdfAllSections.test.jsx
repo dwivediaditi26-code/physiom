@@ -192,6 +192,18 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(html).not.toContain("10 reps");
   });
 
+  it("prints only the diagnosis the clinician entered, never the diagnosis engine's suggestions", async () => {
+    let captured = "";
+    window.open = vi.fn(() => ({ document: { open(){}, write(h){ captured = h; }, close(){} }, print(){} }));
+    window.alert = vi.fn();
+    const dx = { dx: [{ diagnosis: "Engine Suggested Radiculopathy", icd10: "M54.16", confidence: 82 }] };
+    render(<PdfReportsModal data={{ dem_name: "Dx Test", soap_a_diagnosis: "My Entered Diagnosis" }} dx={dx} onClose={()=>{}} />);
+    await waitFor(() => { if (!captured) throw new Error("not yet"); }, { timeout: 5000 });
+    expect(captured).toContain("My Entered Diagnosis");
+    expect(captured).not.toContain("Engine Suggested Radiculopathy");
+    expect(captured).not.toContain("82%");
+  });
+
   it("states the diagnosis once on the Treatment Plan page, not twice", async () => {
     // "Working diagnosis" (top card) and "Clinical diagnosis" (bottom
     // section) both printed on the same Treatment Plan page (2026-10-02,
