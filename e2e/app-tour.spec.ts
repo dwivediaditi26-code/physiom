@@ -56,10 +56,7 @@ test.describe("App tour @tour", () => {
     await page.getByTestId("home-tile-assessment").click();
     await expect(page.getByText("＋ New Assessment")).toBeVisible();
 
-    await openMainTab(page, "home");
-    await page.getByTestId("home-tile-posture").click();
-    await expect(page.getByText("Posture Analysis").first()).toBeVisible();
-
+    // (No Posture tile: Posture Analysis is not launched, preview accounts only.)
     await openClinical(page);
     await openClinicalTab(page, "Treatment");
     await noCrash(page);

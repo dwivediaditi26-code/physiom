@@ -770,13 +770,15 @@ function ClinicalPlanPage({ patient, onSaveField, isNeuro, orthoPathway, orthoPa
   );
 }
 
-export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab, onGeneratePdf }) {
+export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSaveField, onOpenPosture, initialTab, onGeneratePdf, showPosture = false }) {
   // initialTab (2026-09-02): lets a caller open straight onto a specific
   // tab (e.g. the Treatment caseload list's own "Profile" button used to
   // jump straight to Treatment via the now-removed legacy
   // PatientProfileModal's initialTab) instead of always landing on
   // Overview.
-  const [tab, setTab] = useState(initialTab || "overview");
+  const [tabState, setTab] = useState(initialTab || "overview");
+  // Posture is a preview feature (featureFlags.js): never land on its tab otherwise.
+  const tab = tabState === "posture" && !showPosture ? "overview" : tabState;
   // Switching tabs here is local state, not a navTo() call, so it never got
   // navTo()'s scroll-reset (AppFull.jsx) -- scrolling down on Overview then
   // opening Assessment/Care Plan left the new tab already scrolled to that
@@ -893,7 +895,7 @@ export default function SpecialtyPatientProfile({ patient, onNav, onBack, onSave
     { k: "sessions", label: "Session & Progress" },
     { k: "home", label: "Home" },
     { k: "documents", label: "Docs" },
-    { k: "posture", label: "Posture" },
+    ...(showPosture ? [{ k: "posture", label: "Posture" }] : []),
   ];
 
   return (

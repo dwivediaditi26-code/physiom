@@ -13,6 +13,7 @@ import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
 import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
 import PatientsLoadBanner from "./PatientsLoadBanner.jsx";
 import HowToUseCard from "./HowToUse.jsx";
+import { usePreviewFeatures } from "./featureFlags.js";
 import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
@@ -396,6 +397,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // single `select *` returned an empty list with no explanation whenever it
   // failed (2026-10-02, Aditi: patients "all gone" after a refresh although
   // they were saved in Supabase).
+  // Posture Analysis is built but not launched: only preview (admin) accounts see it
+  // (featureFlags.js). Everyone else gets no tile, no Clinical tab, no profile tab,
+  // and a restored Posture screen sends them Home.
+  const { enabled: postureEnabled, ready: postureReady } = usePreviewFeatures(currentUser);
   const [patientsLoad, setPatientsLoad] = useState({ state: currentUser?.id ? "loading" : "ok", skipped: 0 });
   const loadPatientsFromCloud = useCallback(() => {
     const uid = currentUser?.id;
@@ -1348,6 +1353,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // of continuing to paper over it -- the assessment's own topbar already
   // has back/close, so pm-mobile-hdr is redundant chrome while one of these
   // is open, not lost functionality.
+  useEffect(() => {
+    if (active === "posture" && postureReady && !postureEnabled) navTo("home");
+  }, [active, postureReady, postureEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const isFullScreenAssessment = active === "ortho_new_assessment" || active === "neuro_assessment" || active === "cardio_assessment";
 
   return(
@@ -1953,12 +1962,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
           {/* Posture Analysis Module — injected at top of Posture tab */}
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
-          {mountedTabs.has("posture") && (
+          {postureEnabled && mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
               <Suspense fallback={<TabLoader/>}><LazyPostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/></Suspense>
             </div>
           )}
-          {active==="posture" && !mountedTabs.has("posture") && (
+          {active==="posture" && (postureEnabled ? !mountedTabs.has("posture") : !postureReady) && (
             <div style={{marginBottom:22}}>
               <TabLoader/>
             </div>
@@ -2082,6 +2091,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100dvh"}}>
               <Suspense fallback={<TabFallback/>}>
               <LazySpecialtyPatientProfile
+                showPosture={postureEnabled}
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
                 onNav={navTo}
@@ -2125,7 +2135,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               )}
 
               {tests==="HOME_MODULE"?(
-                <HomeModule onNav={navTo} patients={visiblePatients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")}/>
+                <HomeModule onNav={navTo} patients={visiblePatients} data={data} taskDB={taskDB} onNewPatient={createNewPatient} currentUser={currentUser} onStartAI={()=>startOrthoEntry("ai")} showPosture={postureEnabled}/>
               ):tests==="PHYSIOFEED_MODULE"?(
                 // Actually rendered by the mountedTabs-gated block up near
                 // Posture (see its own comment) so it stays mounted across
@@ -2159,6 +2169,11 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
                   <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>How to use the app, clinic details, notifications, account and sign-out.</div>
                   <HowToUseCard defaultOpen={!!navContext?.howTo}/>
+                  {postureEnabled && (
+                    <div style={{margin:"0 0 16px",padding:"12px 14px",borderRadius:14,background:"#FFF7ED",border:"1px solid #FED7AA",fontSize:12.5,lineHeight:1.5,color:"#9A3412"}}>
+                      <strong>🧪 Preview features are on for your account.</strong> Posture Analysis is visible to you only; other users don't see it yet.
+                    </div>
+                  )}
                   <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
                   <NotificationsSettingsCard key={"notif-"+(currentUser?.id||"anon")} currentUser={currentUser} isGuest={isGuest}/>
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
@@ -2197,7 +2212,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                       ["assessment","Assess",ClipboardListIcon,null,""],
                       ["patients","Patients",UsersIcon,visiblePatients.length,""],
                       ["treatment","Treatment",PillIcon,treatmentDue,"due"],
-                      ["posture","Posture",PersonStanding,null,""],
+                      ...(postureEnabled ? [["posture","Posture",PersonStanding,null,""]] : []),
                     ];
                     return (
                       <div style={{background:"#fff",padding:"14px 14px 0"}}>

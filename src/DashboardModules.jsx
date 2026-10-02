@@ -76,7 +76,7 @@ function ClinicDetailsBanner({ currentUser, onNav }) {
   );
 }
 
-function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser, onStartAI }) {
+function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, currentUser, onStartAI, showPosture=false }) {
   // Home was a fixed 640px mobile column even on laptop/desktop widths,
   // leaving large empty gutters either side of the sidebar-plus-content
   // shell (2026-08-25, laptop redesign). Widen the content column itself
@@ -112,7 +112,8 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
     // which also resets any stale patient/data first the way that picker
     // does -- onNav alone wouldn't do that.
     { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say your assessment in your words and get it filled", action:()=>onStartAI ? onStartAI() : onNav("ortho_new_assessment", { entryMode: "ai" }) },
-    { key:"posture",    icon:"🧍", bg:"#EFF6FF", title:"Posture Analysis",sub:"AI posture assessment",                       action:()=>onNav("posture") },
+    // Posture Analysis is not launched yet: shown only to preview accounts (featureFlags.js).
+    ...(showPosture ? [{ key:"posture",    icon:"🧍", bg:"#EFF6FF", title:"Posture Analysis",sub:"AI posture assessment",                       action:()=>onNav("posture") }] : []),
   ];
 
   const QUICK_ACCESS = [
@@ -140,7 +141,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
       </div>
 
       {/* ── Clinical / Assessment / AI Assessment / Posture Analysis ── */}
-      <div className="pm-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:18}}>
+      <div className="pm-grid-tiles" style={{display:"grid",gap:8,marginBottom:18,"--pm-tiles":TILES.length}}>
         {TILES.map(t=>(
           <button key={t.key} data-testid={`home-tile-${t.key}`} onClick={t.action} style={{
             background:"#fff", border:"1px solid #EDEDF2", borderRadius:16, padding: isDesktop?"18px 16px":"12px 8px",

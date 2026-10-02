@@ -11,9 +11,9 @@
 //                       (test ids bnav-tab-home, -__clinical, -physiofeed, -learn, -profile)
 //   Desktop: sidebar    Home | Patients | Clinical | Learn | PhysioFeed | Settings
 //
-//   Home ............... tiles: Clinical, Assessment, AI Assessment, Posture Analysis
+//   Home ............... tiles: Clinical, Assessment, AI Assessment (+ Posture Analysis for preview/admin accounts only)
 //                        (test ids home-tile-*), then Evidence, Explore, Learn, Saved
-//   Clinical ........... sub-tabs  Today | Assess | Patients | Treatment | Posture
+//   Clinical ........... sub-tabs  Today | Assess | Patients | Treatment (| Posture, preview accounts only)
 //     Assess ........... "＋ New Assessment" -> quick details (name, specialty)
 //       Ortho .......... pathway -> body region(s) -> how to start -> 20 steps
 //                        (Demographics ... Final Review) -> Save Assessment
@@ -21,7 +21,7 @@
 //       Cardio ......... Start Assessment -> setting -> system -> steps -> Summary & Review
 //     Patients ......... the patient list (filters: All / Outpatient / IPD / Post-op ...)
 //     Treatment ........ patients in active treatment
-//     Posture .......... leaves Clinical for the Posture Analysis screen
+//     Posture .......... (preview accounts only) leaves Clinical for the Posture Analysis screen
 //   Learn .............. topics: Practical Skills, Clinical Cases (+ "Soon" cards)
 //   PhysioFeed ......... phone: tabs Feed | Opportunity | Case Discussion | People | Evidence | Saved
 //                        desktop: left menu Physio Feed | Opportunity | Case Discussion | People |

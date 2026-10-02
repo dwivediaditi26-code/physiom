@@ -14,29 +14,28 @@ import {
 // Final Review page, save, and find the patient in my list.
 
 test.describe("Guest mode journey @guest", () => {
-  test("Home shows the main tiles and Clinical has its five tabs", async ({ page }) => {
+  test("Home shows the main tiles and Clinical has its four tabs (no Posture: not launched yet)", async ({ page }) => {
     await enterGuestMode(page);
-    for (const id of ["clinical", "assessment", "ai", "posture"]) {
+    for (const id of ["clinical", "assessment", "ai"]) {
       await expect(page.getByTestId(`home-tile-${id}`)).toBeVisible();
     }
+    // Posture Analysis is not launched: only preview (admin) accounts see it.
+    await expect(page.getByTestId("home-tile-posture")).toHaveCount(0);
 
     await openClinical(page);
-    for (const tab of ["Today", "Assess", "Treatment", "Posture"]) {
+    for (const tab of ["Today", "Assess", "Treatment"]) {
       await expect(page.getByRole("button", { name: tab, exact: true }).first()).toBeVisible();
     }
+    await expect(page.getByRole("button", { name: "Posture", exact: true })).toHaveCount(0);
     // "Patients" carries a count in front of it ("3Patients").
     await expect(page.getByRole("button", { name: /^\s*\d*\s*Patients\s*$/ }).first()).toBeVisible();
 
-    // Each sub-tab opens without crashing. "Posture" leaves Clinical for the
-    // Posture Analysis screen, so come back to Clinical for every tab.
+    // Each sub-tab opens without crashing.
     for (const tab of ["Assess", "Patients", "Treatment", "Today"] as const) {
       await openClinical(page);
       await openClinicalTab(page, tab);
       await noCrash(page);
     }
-    await openClinical(page);
-    await openClinicalTab(page, "Posture");
-    await expect(page.getByText("Posture Analysis").first()).toBeVisible();
     await noCrash(page);
   });
 

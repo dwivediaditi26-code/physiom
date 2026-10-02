@@ -521,6 +521,12 @@ const MOBILE_CSS = `
      regardless of source order, so this wins at every breakpoint above. */
   .pm-grid-4[style*="repeat(4,"] { grid-template-columns: repeat(4,1fr) !important; }
 
+  /* The Home page's main tile row: 3 tiles normally, 4 when a preview feature (Posture
+     Analysis) is on for the account. The column count comes from --pm-tiles instead of an
+     inline repeat(N,...), because the phone rule above collapses any inline repeat(3,...)
+     to a single column (which stacked the 3 tiles into tall full-width cards). */
+  .pm-grid-tiles { grid-template-columns: repeat(var(--pm-tiles, 4), 1fr) !important; }
+
   /* Action bars (space-between) → wrap on tiny screens */
   @media (max-width: 380px) {
     [style*="space-between"] { flex-wrap: wrap !important; gap: 8px !important; }

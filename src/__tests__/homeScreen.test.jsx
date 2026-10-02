@@ -26,10 +26,10 @@ const NEWS_ITEMS = [
 beforeEach(() => { getCareerNews.mockReset(); getCareerNews.mockResolvedValue([]); });
 
 describe("Home screen", () => {
-  test("the four main tiles go to the right places", () => {
+  test("the four main tiles go to the right places (Posture only for preview accounts)", () => {
     const onNav = vi.fn();
     const onStartAI = vi.fn();
-    render(<HomeModule onNav={onNav} onStartAI={onStartAI} />);
+    render(<HomeModule onNav={onNav} onStartAI={onStartAI} showPosture />);
     fireEvent.click(screen.getByTestId("home-tile-clinical"));
     expect(onNav).toHaveBeenLastCalledWith("clinical");
     fireEvent.click(screen.getByTestId("home-tile-assessment"));
@@ -38,6 +38,13 @@ describe("Home screen", () => {
     expect(onNav).toHaveBeenLastCalledWith("posture");
     fireEvent.click(screen.getByTestId("home-tile-ai"));
     expect(onStartAI).toHaveBeenCalledTimes(1);
+  });
+
+  test("Posture Analysis is not on Home for everyone else (not launched yet)", () => {
+    render(<HomeModule onNav={() => {}} />);
+    expect(screen.queryByTestId("home-tile-posture")).toBeNull();
+    expect(screen.queryByText("Posture Analysis")).toBeNull();
+    for (const key of ["clinical", "assessment", "ai"]) expect(screen.getByTestId(`home-tile-${key}`)).toBeTruthy();
   });
 
   test("AI Assessment falls back to the Ortho assessment's AI entry when no onStartAI is given", () => {
