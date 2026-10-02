@@ -1,5 +1,6 @@
 // DashboardModules.jsx — Home module, Therapist dashboard
 // Extracted from AppFull.jsx — pure extraction, no logic changes
+import { doctorFirstName } from "./userName.js";
 import React, { useState, useEffect } from "react";
 import { getCareerNews } from "./physiofeed/data/db.js";
 
@@ -90,7 +91,8 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   }, []);
 
   const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
-  const firstName = (currentUser?.user_metadata?.full_name || "Aditi").replace(/^dr\.?\s+/i,"").split(" ")[0];
+  // No made-up fallback name: someone with no name on file is just welcomed (was "Aditi").
+  const firstName = doctorFirstName(currentUser);
 
   // Home's main preview card shows News for now instead of Evidence
   // (2026-10-02, Aditi: "where evidences are shown in home, news should
@@ -103,7 +105,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
 
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
-    { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio, Pedia, Sports",         action:()=>onNav("clinical",{clinicalSubTab:"assessment"}) },
+    { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio. More soon",         action:()=>onNav("clinical",{clinicalSubTab:"assessment"}) },
     // 2026-09-02, Aditi: "the AI Assessment tile takes us to the old AI...
     // put it in a new AI orthopedic button" -- this used to open the old
     // Subjective step with an auto-open-AI flag; now starts the same real
@@ -134,7 +136,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
       }}>
         <div style={{minWidth:0}}>
           <div style={{fontSize:15,fontWeight:700,color:"#4C1D95"}}>{greeting},</div>
-          <div style={{fontSize:21,fontWeight:800,color:"#1F1147",marginTop:2}}>Dr. {firstName} 👋</div>
+          <div style={{fontSize:21,fontWeight:800,color:"#1F1147",marginTop:2}}>{firstName ? `Dr. ${firstName}` : "Welcome"} 👋</div>
           <div style={{fontSize:12,color:"#6D28D9",marginTop:7,fontWeight:600}}>What would you like to do today?</div>
         </div>
         <div style={{flexShrink:0}}><GreetingIllustration/></div>
@@ -337,7 +339,7 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
           <div>
             <div style={{fontSize:15,fontWeight:800,color:"white",letterSpacing:"-0.3px"}}>Start Assessment</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",marginTop:3}}>
-              Ortho, Neuro, Cardio, Pedia, Sports
+              Ortho, Neuro, Cardio. More soon
             </div>
           </div>
           <div style={{width:44,height:44,borderRadius:13,background:"rgba(255,255,255,0.2)",

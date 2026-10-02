@@ -14,6 +14,7 @@ import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
 import PatientsLoadBanner from "./PatientsLoadBanner.jsx";
 import HowToUseCard from "./HowToUse.jsx";
 import { usePreviewFeatures } from "./featureFlags.js";
+import { doctorFirstName } from "./userName.js";
 import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
@@ -2206,7 +2207,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                   {(() => {
                     const todayCount = getTodaysPatients(patients).length;
                     const treatmentDue = patients.filter(p=>Array.isArray(p.data?.tx_sessions)&&p.data.tx_sessions.length>0).length;
-                    const firstName = currentUser?.name || currentUser?.email?.split("@")[0] || null;
+                    const firstName = doctorFirstName(currentUser);
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
                       ["assessment","Assess",ClipboardListIcon,null,""],

@@ -54,6 +54,18 @@ describe("Home screen", () => {
     expect(onNav).toHaveBeenCalledWith("ortho_new_assessment", { entryMode: "ai" });
   });
 
+  test("someone with no name on file is welcomed, not greeted with a made-up name", () => {
+    render(<HomeModule onNav={() => {}} currentUser={{ user_metadata: {} }} />);
+    expect(screen.queryByText(/Aditi/)).toBeNull();
+    expect(screen.getByText(/Welcome/)).toBeTruthy();
+  });
+
+  test("the Assessment tile does not promise specialties that are not available yet", () => {
+    render(<HomeModule onNav={() => {}} />);
+    expect(screen.queryByText(/Pedia/)).toBeNull();
+    expect(screen.getByText(/Ortho, Neuro, Cardio/)).toBeTruthy();
+  });
+
   test("Quick Access opens Evidence and Learn", () => {
     const onNav = vi.fn();
     render(<HomeModule onNav={onNav} />);

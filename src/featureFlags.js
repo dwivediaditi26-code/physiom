@@ -56,3 +56,17 @@ export function usePreviewFeatures(currentUser) {
 
   return state;
 }
+
+// Same answer for a component that is not given the signed-in user (it looks the
+// session up itself). Used by small admin-only controls deep inside a screen.
+export function usePreviewFeaturesForCurrentUser() {
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    let live = true;
+    Promise.resolve(supabase.auth.getSession())
+      .then((res) => { if (live) setUser(res?.data?.session?.user || null); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
+  return usePreviewFeatures(user);
+}
