@@ -7,6 +7,8 @@ import { installAiIntakeTestHarness } from './aiIntakeTestHarness.js'
 import { installButtonRipple } from './rippleEffect.js'
 import { initNativeApp } from './nativeApp.js'
 import { installGlobalErrorReporting } from './analytics/errorReporter.js'
+import { trackEvent } from './analytics/trackEvent.js'
+import { installKeepBarsInPlace } from './pwa/keepBarsInPlace.js'
 import { registerServiceWorker } from './pwa/registerServiceWorker.js'
 import PwaBanners from './pwa/PwaBanners.jsx'
 
@@ -67,6 +69,17 @@ window.addEventListener('vite:preloadError', (e) => {
 window.addEventListener('load', () => {
   setTimeout(() => { try { sessionStorage.removeItem('pm_chunk_reload'); } catch { /* ignore */ } }, 10000);
 });
+
+// iPhone: after the keyboard closes, Safari can leave the visible window
+// shifted so the bottom bars scroll with the page. Puts it back, and records
+// (once per visit) that it happened so we can see how often. See the file.
+installKeepBarsInPlace({
+  report: (drift) => trackEvent('viewport_drift', {
+    entityType: 'screen',
+    entityId: window.__pmScreen || 'unknown',
+    properties: { ...drift, userAgent: navigator.userAgent, standalone: window.navigator.standalone === true },
+  }),
+})
 
 // Offline shell + push alerts + "new version ready" (production web build only).
 registerServiceWorker()
