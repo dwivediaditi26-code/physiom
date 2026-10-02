@@ -149,6 +149,35 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(await generateAssessmentPdf(neuroData)).toContain("Walk independently and regain use of right hand");
   });
 
+  it("never invents care plan goals, manual therapy techniques, or exercises when none were entered", async () => {
+    // Treatment Plan page used to always print a hardcoded 3rd goal per
+    // tier, a fabricated 6-technique table, and (via gatherExercises'
+    // empty-fallback) a diagnosis-keyword-matched 4-exercise program --
+    // all printed as if the clinician had entered them (2026-10-02,
+    // Aditi: "se what are hard coded?" audit, then "remove this any thing
+    // heard corded remove t"). None of this is real without clinician
+    // input, so an empty case must show honest placeholders only.
+    const data = { dem_name: "No Plan Yet", cc_main: "Low back pain" };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).not.toContain("Reduce swelling/inflammation");
+    expect(html).not.toContain("Return to work/leisure activities");
+    expect(html).not.toContain("Prevent recurrence");
+    expect(html).toContain("No care plan goals recorded yet.");
+
+    expect(html).not.toContain("Soft Tissue Mobilisation");
+    expect(html).not.toContain("Joint Mobilisation (Grade III");
+    expect(html).not.toContain("Therapeutic Ultrasound");
+    expect(html).not.toContain("Dry Needling");
+    expect(html).toContain("No manual therapy techniques logged yet.");
+
+    expect(html).not.toContain("Pelvic Tilt");
+    expect(html).not.toContain("Chin Tuck");
+    expect(html).not.toContain("Quad Set");
+    expect(html).not.toContain("Diaphragmatic Breathing");
+    expect(html).toContain("Not yet prescribed");
+  });
+
   it("states the diagnosis once on the Treatment Plan page, not twice", async () => {
     // "Working diagnosis" (top card) and "Clinical diagnosis" (bottom
     // section) both printed on the same Treatment Plan page (2026-10-02,

@@ -379,37 +379,6 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
         progression: d[`ex_progression_${i}`] || "",
       });
     }
-    if (exs.length === 0) {
-      const dxLabel = (dx?.dx?.[0]?.label||"").toLowerCase();
-      const cc = (Array.isArray(d.cc_location)?d.cc_location.join(" "):(d.cc_location||"")).toLowerCase();
-      const isLumbar = dxLabel.includes("lumbar")||dxLabel.includes("back")||cc.includes("back")||cc.includes("lumbar");
-      const isCervical = dxLabel.includes("cervical")||dxLabel.includes("neck")||cc.includes("neck");
-      const isKnee = dxLabel.includes("knee")||cc.includes("knee");
-      if (isLumbar) return [
-        {name:"Pelvic Tilt",sets:"3",reps:"15",hold:"3s",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Motor Control",notes:"Flatten lower back against floor. Breathe normally.",target:"Lumbar stabilisers, transversus abdominis",progression:"Progress to dead bug exercise"},
-        {name:"Glute Bridge",sets:"3",reps:"12",hold:"3s",rest:"45s",freq:"Daily",phase:"Phase 1 -- Motor Control",notes:"Drive through heels, squeeze glutes at top. Maintain neutral spine.",target:"Gluteus maximus, hamstrings, lumbar extensors",progression:"Single-leg bridge when pain-free"},
-        {name:"Bird Dog",sets:"3",reps:"10",hold:"5s",rest:"45s",freq:"Daily",phase:"Phase 2 -- Stability",notes:"Opposite arm and leg, maintain neutral spine. No rotation of pelvis.",target:"Multifidus, gluteus maximus, deep core",progression:"Add resistance band around wrists"},
-        {name:"Cat-Cow Stretch",sets:"2",reps:"12",hold:"",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Mobility",notes:"Slow controlled movement, breathe throughout. Avoid pain range.",target:"Spinal mobility, paraspinals",progression:""},
-      ];
-      if (isCervical) return [
-        {name:"Chin Tuck (DNF Activation)",sets:"3",reps:"10",hold:"10s",rest:"30s",freq:"3x Daily",phase:"Phase 1 -- Motor Control",notes:"Nod chin down without flexing neck. Feel length at back of neck. Do not use hands.",target:"Deep neck flexors (longus colli/capitis)",progression:"Add finger resistance on chin"},
-        {name:"Cervical Rotation Stretch",sets:"3",reps:"5",hold:"20s",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Mobility",notes:"Turn head to pain-free side first. Gently assist with hand at end range.",target:"Cervical rotators, SCM",progression:""},
-        {name:"Scapular Retraction",sets:"3",reps:"15",hold:"3s",rest:"45s",freq:"Daily",phase:"Phase 2 -- Strengthening",notes:"Squeeze shoulder blades together. No shrug or elevation. Keep chin tucked.",target:"Lower and middle trapezius, rhomboids",progression:"Add resistance band"},
-        {name:"Levator Scapulae Stretch",sets:"3",reps:"3",hold:"30s",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Flexibility",notes:"Ear to shoulder then rotate chin toward armpit. Breathe and relax into stretch.",target:"Levator scapulae, upper trapezius",progression:""},
-      ];
-      if (isKnee) return [
-        {name:"Quad Set",sets:"3",reps:"15",hold:"5s",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Activation",notes:"Flatten knee to surface, contract quad hard. Feel thigh muscle tighten.",target:"Quadriceps (VMO focus)",progression:"Straight leg raise"},
-        {name:"Short Arc Quad",sets:"3",reps:"15",hold:"3s",rest:"45s",freq:"Daily",phase:"Phase 1 -- Strengthening",notes:"Pillow under knee at 90 degrees. Extend to full extension. Slow and controlled.",target:"Quadriceps, VMO",progression:"Add ankle weight (0.5kg)"},
-        {name:"Mini Squat (0-45 deg)",sets:"3",reps:"12",hold:"",rest:"60s",freq:"Daily",phase:"Phase 2 -- Functional",notes:"Controlled descent, weight through heels. Stop before pain. Use wall for balance.",target:"Quadriceps, glutes, knee stabilisers",progression:"Increase depth to 60 degrees"},
-        {name:"Terminal Knee Extension (TKE)",sets:"3",reps:"15",hold:"",rest:"45s",freq:"Daily",phase:"Phase 2 -- Strengthening",notes:"Band behind knee. Fully extend from 30 degrees flexion. Slow return.",target:"Quadriceps (VMO), knee joint proprioception",progression:"Increase band resistance"},
-      ];
-      return [
-        {name:"Diaphragmatic Breathing",sets:"1",reps:"10",hold:"5s",rest:"",freq:"3x Daily",phase:"Phase 1 -- Foundation",notes:"Belly breathing. Hands on abdomen and chest. Belly should rise first. Exhale fully.",target:"Diaphragm, core activation, pain modulation",progression:""},
-        {name:"Transversus Abdominis Activation",sets:"3",reps:"10",hold:"10s",rest:"30s",freq:"2x Daily",phase:"Phase 1 -- Motor Control",notes:"Draw navel gently toward spine. Breathe normally. Do not suck stomach in or hold breath.",target:"Transversus abdominis, pelvic floor",progression:"Add limb loading"},
-        {name:"Hip Hinge Pattern",sets:"3",reps:"10",hold:"",rest:"60s",freq:"Daily",phase:"Phase 2 -- Functional",notes:"Hinge at hips, maintain neutral spine. Soft knees. Push hips back. Flat back.",target:"Gluteus maximus, hamstrings, spinal extensors",progression:"Add light weight or resistance band"},
-        {name:"Prone Hip Extension",sets:"3",reps:"15",hold:"3s",rest:"45s",freq:"Daily",phase:"Phase 2 -- Strengthening",notes:"Squeeze glute, lift leg 10cm from surface. Maintain neutral pelvis. No rotation.",target:"Gluteus maximus, hamstrings",progression:"Add ankle weight"},
-      ];
-    }
     return exs;
   };
 
@@ -856,33 +825,33 @@ ${breadcrumbHtml}
     ${row("Sessions planned", escHtml(String(d.tx_plan_sessions||d.plan_sessions||"")))}
     ${row("Sessions done", String(sessions.length))}
   `)}
-  ${orthoStepCard("carePlanGoals") || card("🎯","Care plan goals", `
-    <div class="pdf-group-heading">Short-term (2–4 wks)</div>
-    ${[d.ar_goal_pain||"Pain reduction ≥30% on VAS", d.ar_goal_function||"Improve functional ROM", "Reduce swelling/inflammation"].map(g=>textRow(escHtml(String(g)))).join("")}
-    <div class="pdf-group-heading">Medium-term (4–8 wks)</div>
-    ${[d.ar_goal_str||"Restore muscle strength to 4+/5", d.ar_goal_func||"Functional task independence", "Return to work/leisure activities"].map(g=>textRow(escHtml(String(g)))).join("")}
-    <div class="pdf-group-heading">Long-term (8–12 wks)</div>
-    ${[d.ar_goal_return||"Full return to prior activity", "Self-management strategies", "Prevent recurrence"].map(g=>textRow(escHtml(String(g)))).join("")}
-  `)}
-  ${card("🖐️","Manual therapy & treatment techniques", `
+  ${(() => {
+    const tiers = [
+      ["Short-term (2–4 wks)", [d.ar_goal_pain, d.ar_goal_function].filter(Boolean)],
+      ["Medium-term (4–8 wks)", [d.ar_goal_str, d.ar_goal_func].filter(Boolean)],
+      ["Long-term (8–12 wks)", [d.ar_goal_return].filter(Boolean)],
+    ];
+    const hasAny = tiers.some(([,goals]) => goals.length > 0);
+    return orthoStepCard("carePlanGoals") || card("🎯","Care plan goals", hasAny
+      ? tiers.filter(([,goals])=>goals.length>0).map(([label,goals])=>`
+        <div class="pdf-group-heading">${label}</div>
+        ${goals.map(g=>textRow(escHtml(String(g)))).join("")}
+      `).join("")
+      : `<div style="color:#94a3b8;">No care plan goals recorded yet.</div>`
+    );
+  })()}
+  ${card("🖐️","Manual therapy & treatment techniques", techniques.length > 0 ? `
     <table><thead><tr><th>Technique</th><th>Target area</th><th>Duration / dosage</th></tr></thead><tbody>
-    ${(techniques.length>0?techniques:[
-      {name:"Soft Tissue Mobilisation",area:"Hypertonic muscles / trigger points",duration:"5–10 min per area"},
-      {name:"Joint Mobilisation (Grade III–IV)",area:"Restricted articular joint segments",duration:"3 sets PA pressure"},
-      {name:"Therapeutic Ultrasound",area:"Periarticular / tendon tissue",duration:"1MHz, 1.0 W/cm², 5 min"},
-      {name:"Dry Needling / IMS",area:"Myofascial trigger points",duration:"As clinically indicated"},
-      {name:"Taping (Kinesio / Rigid)",area:"Joint support / proprioception",duration:"72 hrs per application"},
-      {name:"TENS / Electrotherapy",area:"Pain modulation (gate control)",duration:"80Hz, 20 min"},
-    ]).map(t=>`<tr><td>${escHtml(t.name)}</td><td>${escHtml(t.area)}</td><td>${escHtml(t.duration)}</td></tr>`).join("")}
+    ${techniques.map(t=>`<tr><td>${escHtml(t.name)}</td><td>${escHtml(t.area)}</td><td>${escHtml(t.duration)}</td></tr>`).join("")}
     </tbody></table>
-  `)}
-  ${Object.entries(groupedExercises).map(([phase,exs])=>card("🏋️", `Exercise prescription — ${escHtml(phase)}`, exs.map(ex => `
+  ` : `<div style="color:#94a3b8;">No manual therapy techniques logged yet.</div>`)}
+  ${Object.keys(groupedExercises).length > 0 ? Object.entries(groupedExercises).map(([phase,exs])=>card("🏋️", `Exercise prescription — ${escHtml(phase)}`, exs.map(ex => `
     <div class="pdf-group-heading">${escHtml(ex.name)}</div>
     ${row("Dosage", `${escHtml(String(ex.sets))} sets &times; ${escHtml(String(ex.reps))} reps${ex.hold?" · hold "+escHtml(String(ex.hold)):""} · ${escHtml(String(ex.freq))}`)}
     ${ex.target ? row("Target", escHtml(ex.target)) : ""}
     ${ex.notes ? row("Notes", escHtml(ex.notes)) : ""}
     ${ex.progression ? row("Progression", escHtml(ex.progression)) : ""}
-  `).join(""))).join("")}
+  `).join(""))).join("") : card("🏋️","Exercise prescription", `<div style="color:#94a3b8;">Not yet prescribed — add exercises in the Exercise Prescription tab.</div>`)}
   ${card("📈","Outcome measures & session log", `
     ${row("VAS pain", vasBaseline?`${vasBaseline}/10 &rarr; target &le;${targetVas}/10`:"")}
     ${row("VAS worst", d.pa_vas_worst?escHtml(d.pa_vas_worst)+"/10":"")}
@@ -923,6 +892,7 @@ ${pdfHeader("Home Exercise Program","Your Personalised Daily Rehabilitation Prot
     ["&#128222;","When to call us",`Contact ${escHtml(clinicName)} if symptoms worsen significantly. Do not push through severe pain.${clinicPhone?" Ph: "+escHtml(clinicPhone):""}`, "#2563eb"],
   ].map(([icon,title,text,color])=>`<div style="background:${color}06;border:1px solid ${color}25;border-radius:10px;padding:12px 14px;"><div style="font-size:18px;margin-bottom:6px;">${icon}</div><div style="font-size:10px;font-weight:700;color:${color};margin-bottom:5px;">${title}</div><div style="font-size:9px;color:#6b7280;line-height:1.5;">${text}</div></div>`).join("")}</div>
   <div style="margin-bottom:14px;font-size:11px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid #7c3aed;padding-bottom:8px;">Your Exercises &mdash; ${exercises.length} Total</div>
+  ${exercises.length === 0 ? `<div style="color:#94a3b8;font-size:11px;padding:12px 0;">No exercises prescribed yet.</div>` : ""}
   ${exercises.map((ex,i)=>{
     const phaseColors2={"Phase 1":"#0891b2","Phase 2":"#7c3aed","Phase 3":"#059669","Phase 4":"#d97706","Phase 1 -- Motor Control":"#0891b2","Phase 1 -- Mobility":"#0891b2","Phase 1 -- Activation":"#0891b2","Phase 1 -- Flexibility":"#0891b2","Phase 2 -- Stability":"#7c3aed","Phase 2 -- Strengthening":"#7c3aed","Phase 2 -- Functional":"#7c3aed","Phase 3 -- Functional":"#059669"};
     const pColor=phaseColors2[ex.phase]||"#7c3aed";
