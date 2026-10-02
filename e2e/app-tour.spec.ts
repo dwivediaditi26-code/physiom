@@ -80,4 +80,12 @@ test.describe("App tour @tour", () => {
     await expect(page.getByText(/It needs the patient's name and age/)).toBeVisible();
     await noCrash(page);
   });
+
+  test("the Home 'How to use' tile opens the guide, already expanded", async ({ page }) => {
+    await enterGuestMode(page);
+    await page.getByTestId("home-tile-howto").click();
+    await expect(page.getByRole("button", { name: /Start a new assessment/ })).toBeVisible();
+    await expect(page.getByText("First time here")).toBeVisible();
+    await noCrash(page);
+  });
 });

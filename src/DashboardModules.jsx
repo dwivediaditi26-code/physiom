@@ -155,6 +155,22 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
         ))}
       </div>
 
+      {/* ── How to use PhysioMind (2026-10-02, Aditi: "add new tile at home") --
+          opens Settings with the guide already expanded (AppFull.jsx reads
+          navContext.howTo). ── */}
+      <button data-testid="home-tile-howto" onClick={()=>onNav("settings",{howTo:true})} style={{
+        width:"100%", display:"flex", alignItems:"center", gap:12, background:"#fff", border:"1px solid #EDEDF2",
+        borderRadius:16, padding: isDesktop?"14px 16px":"12px 14px", marginBottom:18, cursor:"pointer", textAlign:"left",
+        boxShadow:"0 1px 4px rgba(16,24,40,0.04)", fontFamily:"inherit",
+      }}>
+        <div style={{width: isDesktop?40:34,height: isDesktop?40:34,borderRadius:10,background:"#FFF7ED",display:"flex",alignItems:"center",justifyContent:"center",fontSize: isDesktop?18:15,flexShrink:0}}>📖</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize: isDesktop?13:12,fontWeight:800,color:"#111827",lineHeight:1.2}}>How to use PhysioMind</div>
+          <div style={{fontSize: isDesktop?10.5:10,color:"#9A9AA2",lineHeight:1.35,marginTop:2}}>Short guides: start an assessment, save it, find a patient, make a report</div>
+        </div>
+        <span style={{color:"#C7C7CE",fontSize:16,flexShrink:0}}>›</span>
+      </button>
+
       {/* ── News preview (took over Evidence's spot here, see the comment
           above where `news` is fetched) ── */}
       <div style={{background:"#fff", border:"1px solid #EDEDF2", borderRadius:18, padding:"16px 16px 14px", marginBottom:18, boxShadow:"0 1px 4px rgba(16,24,40,0.04)"}}>
