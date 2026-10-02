@@ -2848,14 +2848,16 @@ function deadlineLabelOf(deadlineAt) {
   return "Upcoming";
 }
 
-// Only two real sources exist right now (see api/cron/fetchCareerNews.js)
-// -- both verified official/reputable by hand before being wired in. Not
-// meant to scale past a handful of names; a real source-trust table would
-// replace this if/when more sources are added.
+// Verified official/reputable by hand before being wired in. Not meant to
+// scale past a handful of names; a real source-trust table would replace
+// this if/when more sources are added.
 const TRUSTED_SOURCES = {
   "World Health Organization": "Official source",
   "News-Medical (Physiotherapy)": "Reputable publisher",
   "World Physiotherapy": "Official source",
+  // Added 2026-09-30 for a manually-confirmed one-off (RRB CEN 05/2026) --
+  // the actual recruiting body (Ministry of Railways), not an aggregator.
+  "Railway Recruitment Board (RRB)": "Official source",
 };
 function verificationOf(sourceName) {
   return TRUSTED_SOURCES[sourceName] || "Needs review";

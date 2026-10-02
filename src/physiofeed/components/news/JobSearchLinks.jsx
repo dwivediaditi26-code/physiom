@@ -33,6 +33,13 @@ const BOARDS = [
   // search term), so this links to their real search-jobs page instead
   // of a query string that would look pre-filled but silently do nothing.
   { name: "FreeJobAlert", region: "India", url: "https://www.freejobalert.com/search-jobs/" },
+  // RRB (Railway Recruitment Board) -- the actual recruiting body for
+  // Indian Railways paramedical posts (Staff Nurse, Optometrist,
+  // Physiotherapist, etc). Confirmed 2026-09-30: CEN 05/2026 is live,
+  // applications open 15 Sep - 14 Oct 2026, includes Physiotherapist.
+  // rrbapply.gov.in is a JS app shell (can't be scraped for RSS), so this
+  // links to the real apply portal rather than guessing a deep link.
+  { name: "RRB (Railways)", region: "India", url: "https://www.rrbapply.gov.in" },
 ];
 
 export default function JobSearchLinks() {
