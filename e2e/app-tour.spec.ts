@@ -64,4 +64,20 @@ test.describe("App tour @tour", () => {
     await openClinicalTab(page, "Treatment");
     await noCrash(page);
   });
+
+  test("Settings has the How to use guide, and a guide opens with its steps", async ({ page, isMobile }) => {
+    await enterGuestMode(page);
+    if (isMobile) {
+      // On the phone, Settings is at the bottom of the menu behind the hamburger.
+      await page.getByRole("button", { name: "Open navigation" }).filter({ visible: true }).first().click();
+      await page.locator(".pm-nav-drawer").getByText("Settings", { exact: true }).first().click();
+    } else {
+      await page.locator(".pm-sidebar").getByText("Settings", { exact: true }).first().click();
+    }
+    await page.getByRole("button", { name: /How to use PhysioMind/ }).click();
+    await page.getByRole("button", { name: /Start a new assessment/ }).click();
+    await expect(page.getByText("＋ New Assessment").first()).toBeVisible();
+    await expect(page.getByText(/It needs the patient's name and age/)).toBeVisible();
+    await noCrash(page);
+  });
 });

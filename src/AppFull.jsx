@@ -12,6 +12,7 @@ import DeleteAccountButton from "./AccountDeletion.jsx";
 import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
 import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
 import PatientsLoadBanner from "./PatientsLoadBanner.jsx";
+import HowToUseCard from "./HowToUse.jsx";
 import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
@@ -2148,7 +2149,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 // splitting them across sidebar + screen.
                 <div style={{maxWidth:520,margin:"0 auto"}}>
                   <div style={{fontSize:"1.1rem",fontWeight:800,color:"#0f172a",marginBottom:4}}>Settings</div>
-                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>Clinic details, notifications, account and sign-out.</div>
+                  <div style={{fontSize:"0.82rem",color:"#64748b",marginBottom:8}}>How to use the app, clinic details, notifications, account and sign-out.</div>
+                  <HowToUseCard defaultOpen={!!navContext?.howTo}/>
                   <ClinicDetailsCard key={currentUser?.id||"anon"} currentUser={currentUser} isGuest={isGuest}/>
                   <NotificationsSettingsCard key={"notif-"+(currentUser?.id||"anon")} currentUser={currentUser} isGuest={isGuest}/>
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
