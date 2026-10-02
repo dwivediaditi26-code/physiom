@@ -1,5 +1,6 @@
 // PostureEngine.jsx — Camera, pose analysis, posture scoring, overlay drawing
 // Extracted from AppFull.jsx — pure extraction, no logic changes
+import { PC } from "./postureColors.js";
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { r1, r2, mid, MIN_VIS, CLINICAL_MIN_VIS, calcAngleDeg } from "./utils.jsx";
@@ -96,12 +97,8 @@ function CanvasOverlayOnImage({ photoUrl, landmarks, view, measurements: propMea
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
-const PC = {
-  bg:"#faf8fc", surface:"#ffffff", s2:"#f5f0fb", s3:"#ede7f6",
-  border:"#d8cce8", accent:"#7c3aed", a2:"#9333ea", a3:"#059669",
-  text:"#1a1025", muted:"#7e6a9a", red:"#dc2626", yellow:"#b45309",
-  green:"#059669", purple:"#9333ea", orange:"#f97316",
-};
+// PC (the colour palette) moved to ./postureColors.js; imported just below.
+
 
 // ─── Additional Math Utilities ───────────────────────────────────────────────
 function vec3Angle(a, b, c) {

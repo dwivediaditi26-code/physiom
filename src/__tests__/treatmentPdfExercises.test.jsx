@@ -22,7 +22,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { PdfReportsModal } from "../AppModules.jsx";
+import PdfReportsModal from "../PdfReportsModal.jsx";
 
 const capturePdf = async (data) => {
   let captured = "";

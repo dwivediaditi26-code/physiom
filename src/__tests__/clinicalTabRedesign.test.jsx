@@ -54,8 +54,10 @@ describe("Clinical tab — patient list + specialty picker", () => {
     // No floating modal of any kind -- a real page in the normal tab flow.
     expect(screen.queryByTestId("intake-modal")).not.toBeInTheDocument();
     expect(screen.queryByTestId("specialty-picker-modal")).not.toBeInTheDocument();
-    expect(await screen.findByText("Which pathway is this assessment for?")).toBeInTheDocument();
-  });
+    // The assessment is loaded on demand now (it used to ride along with the first
+    // screen), so under test its code has to be loaded and compiled on the spot.
+    expect(await screen.findByText("Which pathway is this assessment for?", {}, { timeout: 25000 })).toBeInTheDocument();
+  }, 30000);
 
   it("Next stays disabled until a specialty is picked", async () => {
     await renderLoggedIn();

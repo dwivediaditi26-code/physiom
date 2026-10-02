@@ -5,7 +5,12 @@ import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
-import { MuscleImbalanceCard, ExercisePlanTab } from "./PostureEngine.jsx";
+// Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
+// (inside a posture session's results) need it from here.
+const LazyMuscleImbalanceCard = React.lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.MuscleImbalanceCard })));
+const LazyExercisePlanTab = React.lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.ExercisePlanTab })));
+const MuscleImbalanceCard = (props) => <React.Suspense fallback={null}><LazyMuscleImbalanceCard {...props}/></React.Suspense>;
+const ExercisePlanTab = (props) => <React.Suspense fallback={null}><LazyExercisePlanTab {...props}/></React.Suspense>;
 // These used to be flat constants shared by every user of a device. Now
 // they're per-user: two students sharing one browser/tablet each get their
 // own slot, so signing in as student B can never inherit student A's

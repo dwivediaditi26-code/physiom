@@ -63,11 +63,24 @@ export default defineConfig({
           // circularity can't exist by construction -- confirmed no
           // "Circular chunk" warning on rebuild after this change.
           if (id.includes('node_modules/')) {
+            // jsPDF and html2canvas (plus the small libraries only they use) are
+            // only needed when someone downloads a PDF: sharedClinicalData.js
+            // loads them with import(). Forcing them into 'vendor' made every
+            // first visit download ~700 KB of PDF code it will probably never
+            // run. Returning nothing lets Rollup keep them in their own lazy
+            // chunks. They never import anything from 'vendor', so this cannot
+            // recreate the circular-chunk problem described above.
+            if (/node_modules\/(jspdf|html2canvas|canvg|svg-pathdata|rgbcolor|stackblur-canvas|dompurify|css-line-break|text-segmentation|utrie|base64-arraybuffer|fast-png|iobuffer|pako|fflate|raf|performance-now)\//.test(id)) {
+              return undefined;
+            }
             return 'vendor';
           }
-          // Small, pure cross-file data/constants -- own tiny chunk so importing
-          // even one small constant from here never drags in a heavy UI chunk.
-          if (id.includes('sharedClinicalData')) return 'chunk-shareddata';
+          // (sharedClinicalData.js used to be pinned to a named 'chunk-shareddata' here,
+          // so importing even one small constant would not drag in a heavy UI chunk. But
+          // a named manual chunk is hoisted into the entry's static imports -- see the
+          // NOTE below -- so every first visit downloaded this 900 KB library (224 KB
+          // gzipped). The one small piece the first screen needs, ALL_TESTS, now lives in
+          // screenModules.js, so the pin is gone and Rollup loads the library on demand.)
           // NOTE: SubjectiveObjective.jsx, ClinicalModules.jsx, OutcomeMeasuresPro.jsx,
           // PhysioNeuro.jsx, BodyChartPro.jsx, HybridKendall.jsx, vitposeEngine,
           // contourEngine, sagittalFindings used to each get a fixed, named chunk here.

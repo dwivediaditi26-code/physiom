@@ -16,10 +16,9 @@ import HowToUseCard from "./HowToUse.jsx";
 import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
-import { ALL_TESTS } from "./sharedClinicalData.js";
-import HomeProtocolTab from "./HomeProtocolTab.jsx";
+import { ALL_TESTS } from "./screenModules.js";
 
-import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
+import { PC } from "./postureColors.js";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
@@ -33,7 +32,6 @@ import { setSessionKey, clearSessionKey } from "./localCrypto.js";
 import { HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
 import AssessmentReportView from "./AssessmentReportView.jsx";
-import SpecialtyPatientProfile from "./SpecialtyPatientProfile.jsx";
 import { PdfReportsModal, QuickVisitForm, OnboardingModal } from "./AppModules.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushOptInBanner from "./PushOptInBanner.jsx";
@@ -68,6 +66,14 @@ const LazyCardioAssessment = lazy(() => import("./CardiopulmonaryAssessment.jsx"
 const LazyNeuroAssessment = lazy(() => import("./NeurologicalAssessment.jsx"));
 // New Ortho Assessment module — standalone tool, same pattern as Cardio/Neuro.
 const LazyOrthoAssessmentNew = lazy(() => import("./OrthoAssessmentNew.jsx"));
+// The patient profile pulls in every assessment's summary code (Ortho, Neuro,
+// Cardio, ...) -- over a third of the app -- so it loads when a profile is first
+// opened instead of with the first screen.
+const LazySpecialtyPatientProfile = lazy(() => import("./SpecialtyPatientProfile.jsx"));
+// Home exercise programme editor: pulls in the whole exercise library, so it loads when first shown.
+const LazyHomeProtocolTab = lazy(() => import("./HomeProtocolTab.jsx"));
+// The posture screen (camera analysis, ~600 KB of source) loads when it is first opened.
+const LazyPostureAnalysisModule = lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.PostureAnalysisModule })));
 const LazyExercise      = lazy(() => import("./lazy_exercise.jsx"));
 const LazyTreatment     = lazy(() => import("./lazy_treatment.jsx"));
 
@@ -1949,7 +1955,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           {/* PostureAnalysisModule — deferred mount, hidden when not active */}
           {mountedTabs.has("posture") && (
             <div style={{marginBottom:22, display: active==="posture" ? "block" : "none"}}>
-              <PostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/>
+              <Suspense fallback={<TabLoader/>}><LazyPostureAnalysisModule activePatient={activePatient} set={set} navContext={active==="posture"?navContext:{}} patients={visiblePatients} onSelectPatient={selectPatient} onAddNewPatient={createNewPatient}/></Suspense>
             </div>
           )}
           {active==="posture" && !mountedTabs.has("posture") && (
@@ -2074,7 +2080,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               Same live-data merge as the report view above. */}
           {active==="specialty_profile" && (
             <div className="pm-bleed" style={{background:"#f8fafc",minHeight:"100dvh"}}>
-              <SpecialtyPatientProfile
+              <Suspense fallback={<TabFallback/>}>
+              <LazySpecialtyPatientProfile
                 patient={activePatient ? {...activePatient, data:{...activePatient.data, ...(activePatient.id===activePatientId?data:{})}} : null}
                 initialTab={profileTab||undefined}
                 onNav={navTo}
@@ -2103,6 +2110,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                 }}
                 onOpenPosture={(p)=>{ selectPatient(p); navTo("posture"); }}
               />
+              </Suspense>
             </div>
           )}
 
@@ -2337,7 +2345,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           <button onClick={()=>setTxTab("hep")} style={{flex:1,padding:"9px 6px",borderRadius:10,border:`2px solid ${txTab==="hep"?PC.accent:PC.border}`,background:txTab==="hep"?`${PC.accent}15`:PC.s2,color:txTab==="hep"?PC.accent:PC.text,fontWeight:700,fontSize:"0.75rem",cursor:"pointer"}}>🏠 Home Protocol</button>
                         </div>
                         {txTab==="hep"
-                          ? <HomeProtocolTab data={data} set={set} PC={PC}/>
+                          ? <Suspense fallback={<TabLoader/>}><LazyHomeProtocolTab data={data} set={set} PC={PC}/></Suspense>
                           : <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>
                         }
                       </div>
@@ -2354,7 +2362,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                         ))}
                       </div>
                       {txTab==="tx"       && <Suspense fallback={<TabFallback/>}><LazyTreatment data={data} set={set}/></Suspense>}
-                      {txTab==="hep"      && <HomeProtocolTab data={data} set={set} PC={PC}/>}
+                      {txTab==="hep"      && <Suspense fallback={<TabLoader/>}><LazyHomeProtocolTab data={data} set={set} PC={PC}/></Suspense>}
                     </div>
                   );
                 })()}</>

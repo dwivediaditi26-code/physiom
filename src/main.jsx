@@ -9,6 +9,7 @@ import { initNativeApp } from './nativeApp.js'
 import { installGlobalErrorReporting } from './analytics/errorReporter.js'
 import { trackEvent } from './analytics/trackEvent.js'
 import { installKeepBarsInPlace } from './pwa/keepBarsInPlace.js'
+import { prefetchLikelyScreens } from './prefetchScreens.js'
 import { registerServiceWorker } from './pwa/registerServiceWorker.js'
 import PwaBanners from './pwa/PwaBanners.jsx'
 
@@ -80,6 +81,11 @@ installKeepBarsInPlace({
     properties: { ...drift, userAgent: navigator.userAgent, standalone: window.navigator.standalone === true },
   }),
 })
+
+// The first screen no longer carries the assessments and the patient profile (they
+// are about three quarters of the app). Fetch them quietly once the phone is idle so
+// opening them is still instant. See prefetchScreens.js.
+window.addEventListener('load', () => { prefetchLikelyScreens() })
 
 // Offline shell + push alerts + "new version ready" (production web build only).
 registerServiceWorker()

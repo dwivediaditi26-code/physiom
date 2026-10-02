@@ -12,7 +12,7 @@ import { orthoSummaryFormatters, buildOrthoAssessSteps } from "./OrthoOutpatient
 import { formatConditionObjectiveSection } from "./ConditionObjectiveAssessment.jsx";
 import { orthoIPDSummaryFormatters, buildOrthoIPDAssessSteps } from "./OrthoIPDAssessment.jsx";
 import { orthoPostOpSummaryFormatters, buildOrthoPostOpAssessSteps } from "./OrthoPostOpAssessment.jsx";
-import { sendHepWhatsApp, downloadHepPdf } from "./AppModules.jsx";
+import { sendHepWhatsApp, downloadHepPdf } from "./SessionDetailView.jsx";
 import { formatExercisePrescriptionSection } from "./orthoExercisePrescription.jsx";
 import { formatNeuroExercisePrescriptionSection } from "./neuroExercisePrescription.jsx";
 import { PostureSessionsView } from "./PatientDatabase.jsx";

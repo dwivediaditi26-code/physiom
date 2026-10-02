@@ -6,7 +6,7 @@ const updateUser = vi.fn().mockResolvedValue({ error: null });
 vi.mock("../supabase.js", () => ({ supabase: { auth: { updateUser: (...a) => updateUser(...a) } } }));
 
 import ClinicDetailsCard from "../ClinicDetailsCard.jsx";
-import { PdfReportsModal } from "../AppModules.jsx";
+import PdfReportsModal from "../PdfReportsModal.jsx";
 
 function pdfHtml(data, user) {
   let html = "";
