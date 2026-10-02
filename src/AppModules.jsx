@@ -1145,7 +1145,7 @@ ${pdfFooter("Home Exercise Program &mdash; Patient Copy")}
 
 
 // ── HEP protocol helpers — versioned home programme with WhatsApp/PDF send ──
-function hepDose(e){ const st=e.customSets||e.sets, rp=e.customReps||e.reps, hd=e.customHold||e.hold, fq=e.customFreq||e.freq; return `${st}×${rp}${hd?` · hold ${hd}s`:""}${fq?` · ${fq}`:""}`; }
+function hepDose(e){ const st=e.customSets||e.sets, rp=e.customReps||e.reps, hd=e.customHold||e.hold, fq=e.customFreq||e.freq; return [st&&rp?`${st}×${rp}`:st?`${st} sets`:rp?`${rp} reps`:"", hd?`hold ${hd}s`:"", fq||""].filter(Boolean).join(" · "); }
 function buildHepWhatsAppText(d){
   const prog=Array.isArray(d.hep_programme)?d.hep_programme:[];
   if(!prog.length) return "";
