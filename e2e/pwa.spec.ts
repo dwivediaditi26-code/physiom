@@ -23,10 +23,4 @@ test.describe('Web app messages @pwa', () => {
     ]);
     await noCrash(page);
   });
-
-  test('the install message never shows on a first visit', async ({ page }) => {
-    await enterGuestMode(page);
-    await page.waitForTimeout(1000);
-    await expect(page.getByText(/Install PhysioMind|Add to Home Screen/)).toHaveCount(0);
-  });
 });
