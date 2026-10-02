@@ -792,6 +792,14 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
       ${breadcrumbHtml}
       <div class="body">
         ${Object.entries(dataObj).map(([sectionId, fields]) => {
+          // "meta" is NeurologicalAssessment.jsx's/CardiopulmonaryAssessment.jsx's
+          // own internal bookkeeping (setting/stepOrder/customStepsMeta/
+          // selectedRegions -- which steps were picked and in what order),
+          // not a clinical section. Printing it dumped raw internal state
+          // (including "[object Object]" for customStepsMeta) straight into
+          // the PDF (2026-10-02, Aditi: "why this section showing... remove
+          // these things").
+          if (sectionId === "meta") return "";
           if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) return "";
           const rows = Object.entries(fields).map(([k, val]) => row(specialtyLabel(k), escHtml(specialtyValueText(val)))).join("");
           if (!rows) return "";

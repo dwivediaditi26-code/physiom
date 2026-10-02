@@ -79,4 +79,40 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(html).toContain("ODI");
     expect(html).toContain("32");
   });
+
+  it("never prints NeurologicalAssessment.jsx's/CardiopulmonaryAssessment.jsx's internal `meta` bookkeeping as a section", async () => {
+    // meta (setting/stepOrder/customStepsMeta/selectedRegions) is how those
+    // wizards remember which steps were picked and in what order -- not
+    // clinical content. specialtyPage used to iterate every top-level key
+    // of d.neuro/d.cardio with no allowlist, so it printed this as its own
+    // "Meta" section, with customStepsMeta literally rendering as
+    // "[object Object]" (2026-10-02, Aditi's screenshot: "why this section
+    // showing... remove these things").
+    const data = {
+      dem_name: "Meta Leak Test",
+      neuro: {
+        safety: { redFlags: "Not required" },
+        subjective: { chiefComplaint: "Walk independently and regain use of right hand" },
+        meta: {
+          setting: "inpatient",
+          stepOrder: ["demographics", "safety", "subjective", "chart"],
+          customStepsMeta: { "nx-stroke-neglect-inattention": { label: "Neglect / Inattention Screen" } },
+        },
+      },
+      cardio: {
+        observation: { generalAppearance: "Alert, no distress" },
+        meta: { setting: "outpatient", stepOrder: ["observation"], customStepsMeta: {} },
+      },
+    };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).toContain("Not required");
+    expect(html).toContain("Walk independently and regain use of right hand");
+    expect(html).toContain("Alert, no distress");
+
+    expect(html).not.toContain("[object Object]");
+    expect(html).not.toContain("Step Order");
+    expect(html).not.toContain("Custom Steps Meta");
+    expect(html).not.toMatch(/>\s*Meta\s*</);
+  });
 });
