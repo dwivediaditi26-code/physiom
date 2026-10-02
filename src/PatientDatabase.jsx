@@ -645,6 +645,19 @@ function savePatientDBLocalOnly(patients, userId) {
   return persistPatientsLocal(patients, userId);
 }
 
+// The local copy is locked with a key made from the sign-in token (see
+// localCrypto.js), and that token is replaced about once an hour while the app
+// is open. The copy on disk stays locked with the OLD token's key, so any
+// reload after that could not open it and the patient list stayed empty until
+// the cloud read finished (2026-10-02, Aditi: patients "all gone" after
+// tapping Refresh in a long session). Call this right after the key changes:
+// it locks the list that is already open in memory again with the new key.
+async function relockLocalCache(userId) {
+  const list = userId ? _patientCache.get(userId) : null;
+  if (!Array.isArray(list) || !hasSessionKey()) return;
+  await persistPatientsLocal(list, userId);
+}
+
 function savePatientDB(patients, userId) {
   persistPatientsLocal(patients, userId); // fire-and-forget local (encrypted) cache write
   return syncPatientsToSupabase(patients, userId); // resolves true = reached Supabase, false = nothing to upload, rejects = failed (callers await/.then/.catch THIS for cloud save status)
@@ -1465,12 +1478,86 @@ function PostureSessionsView({ d, C, onNav }) {
   );
 }
 
+// ── Reading the patients back from Supabase ──────────────────────────────────
+// Used on every app start. It used to be one `select *` for the whole list; a
+// record with big attachments, or a slow phone connection, could make that one
+// request fail -- and the failure was swallowed, so the person just saw an
+// empty list although everything was safe in the cloud. Now: a few records at a
+// time, each retried, and if a group still fails it is retried one record at a
+// time so a single heavy record can't hide all the others. Returns the rows it
+// got plus how many records it could not read (and why).
+const PATIENT_PAGE_SIZE = 8;
+const PATIENT_RETRY_DELAYS_MS = [400, 1200];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchPatientRange(userId, from, size, retryDelays) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+    let query = supabase.from("patients").select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() in AppFull.jsx
+      .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, from + size - 1);
+    // Newer supabase-js retries failed reads itself (1s, 2s, 4s) -- on top of
+    // ours that made an outage take 20+ seconds to be reported. Ours is enough.
+    if (typeof query.retry === "function") query = query.retry(false);
+    const { data, error } = await query;
+    if (!error) return { rows: data || [], error: null };
+    lastError = error;
+    if (attempt < retryDelays.length) await wait(retryDelays[attempt]);
+  }
+  return { rows: [], error: lastError };
+}
+
+async function fetchPatientsFromSupabase(userId, { pageSize = PATIENT_PAGE_SIZE, retryDelays = PATIENT_RETRY_DELAYS_MS, maxPages = 250 } = {}) {
+  const rows = [];
+  let skipped = 0;
+  let error = null;
+  for (let pageNo = 0; pageNo < maxPages; pageNo++) {
+    const from = pageNo * pageSize;
+    const page = await fetchPatientRange(userId, from, pageSize, retryDelays);
+    if (!page.error) {
+      rows.push(...page.rows);
+      if (page.rows.length < pageSize) break;
+      continue;
+    }
+    error = page.error;
+    if (pageSize === 1) { skipped += 1; break; }
+    // This group failed even after retries: read it one record at a time.
+    let readOne = false;
+    let reachedEnd = false;
+    let failedInARow = 0;
+    const skippedBefore = skipped;
+    for (let i = 0; i < pageSize; i++) {
+      const one = await fetchPatientRange(userId, from + i, 1, retryDelays.slice(0, 1));
+      if (one.error) {
+        skipped += 1; error = one.error; failedInARow += 1;
+        // Two in a row with none read yet means it is not one heavy record
+        // but the whole connection: stop quickly so the warning shows.
+        if (!readOne && failedInARow >= 2) break;
+        continue;
+      }
+      failedInARow = 0;
+      if (one.rows.length === 0) { reachedEnd = true; break; }
+      readOne = true;
+      rows.push(...one.rows);
+    }
+    // Nothing in the group could be read (offline, signed out, a real
+    // permission problem): carrying on would just repeat the same failure.
+    if (!readOne) skipped = skippedBefore; // not particular records: the connection itself
+    if (reachedEnd || !readOne) break;
+  }
+  return { rows, skipped, error };
+}
+
 // ── Exports for AppFull.jsx ──────────────────────────────────────────────────
 export {
   dbKey, draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache,
+  hydrateLocalCache, clearPatientCache, relockLocalCache,
   isSyncDirty, flushPendingSync,
+  fetchPatientsFromSupabase,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,

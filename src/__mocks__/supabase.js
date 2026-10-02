@@ -15,6 +15,7 @@ function chainable(result = { data: [], error: null }) {
     // ErrorBoundary. Chainable like .eq()/.order(), not a terminal call.
     is: () => chain,
     order: () => chain,
+    range: () => chain, // patients are read a few at a time (fetchPatientsFromSupabase)
     upsert: () => Promise.resolve(result),
     insert: () => Promise.resolve(result),
     delete: () => chain,

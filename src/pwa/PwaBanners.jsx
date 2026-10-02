@@ -6,6 +6,13 @@ import { UPDATE_READY_EVENT } from "./registerServiceWorker.js";
 // in the background used to stay on the old version until restarted). The
 // "Offline mode" bar lives in OfflineBanner.jsx and the "Add to Home Screen"
 // popup in InstallPrompt.jsx; there is deliberately only ONE install popup.
+//
+// Never shown while an assessment is open: Refresh reloads the page, and the
+// last few seconds of typing can still be on their way to being saved (the
+// assessment keeps its own copy ~2s after the last edit, the app's draft another
+// ~2s after that), so a reload then sent people back to the first assessment
+// screen with their latest answers gone (2026-10-02, Aditi). The message waits
+// until they leave the assessment.
 
 const bar = {
   position: "fixed", left: "50%", transform: "translateX(-50%)", zIndex: 10000,
@@ -18,8 +25,18 @@ const bar = {
 const primaryBtn = { flexShrink: 0, border: "none", borderRadius: 8, padding: "7px 12px", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", background: "#fff", color: "#6d28d9", fontFamily: "inherit" };
 const ghostBtn = { flexShrink: 0, border: "none", background: "transparent", color: "inherit", opacity: 0.85, fontSize: "0.8rem", cursor: "pointer", padding: "7px 4px", fontFamily: "inherit" };
 
+// AppFull keeps window.__pmScreen equal to the screen being shown.
+const ASSESSMENT_SCREENS = new Set(["ortho_new_assessment", "neuro_assessment", "cardio_assessment"]);
+const inAssessment = () => ASSESSMENT_SCREENS.has(window.__pmScreen);
+
 export default function PwaBanners({ onRefresh = () => window.location.reload() }) {
   const [updateReady, setUpdateReady] = useState(false);
+  const [busy, setBusy] = useState(inAssessment);
+
+  useEffect(() => {
+    const t = setInterval(() => setBusy(inAssessment()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const onUpdate = () => setUpdateReady(true);
@@ -27,7 +44,7 @@ export default function PwaBanners({ onRefresh = () => window.location.reload() 
     return () => window.removeEventListener(UPDATE_READY_EVENT, onUpdate);
   }, []);
 
-  if (!updateReady) return null;
+  if (!updateReady || busy) return null;
   return (
     <div role="status" style={{ ...bar, background: "#6d28d9", color: "#fff" }}>
       <span style={{ flex: 1 }}>✨ A new version of PhysioMind is ready.</span>

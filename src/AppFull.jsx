@@ -11,6 +11,8 @@ import OfflineBanner from "./OfflineBanner.jsx";
 import DeleteAccountButton from "./AccountDeletion.jsx";
 import ClinicDetailsCard from "./ClinicDetailsCard.jsx";
 import NotificationsSettingsCard from "./NotificationsSettingsCard.jsx";
+import PatientsLoadBanner from "./PatientsLoadBanner.jsx";
+import { reportClientError } from "./analytics/errorReporter.js";
 import AuthScreen from "./AuthScreen.jsx";
 import { PrivacyPolicy, TermsOfService } from "./LegalPages.jsx";
 import { ALL_TESTS } from "./sharedClinicalData.js";
@@ -20,7 +22,7 @@ import { PostureAnalysisModule, PC } from "./PostureEngine.jsx";
 import {
   draftKey,
   loadPatientDB, savePatientDB, savePatientDBLocalOnly,
-  hydrateLocalCache, clearPatientCache,
+  hydrateLocalCache, clearPatientCache, relockLocalCache, fetchPatientsFromSupabase,
   loadTaskDB, saveTaskDB,
   genId,
   PatientDatabasePanel, TreatmentCaseloadPanel,
@@ -188,6 +190,10 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // needing `active` in its dependency array.
   const activeRef = useRef("home");
   useEffect(() => { activeRef.current = active; }, [active]);
+  // Also read by PwaBanners (holds the "new version" message while an assessment
+  // is open) and by errorReporter. navTo sets it on every real navigation; this
+  // covers the screen restored from a reload, where navTo never runs.
+  useEffect(() => { window.__pmScreen = active; }, [active]);
   // Mirrors `navContext` the same way activeRef mirrors `active` -- navTo
   // needs to read the CURRENT context's `wizardStep` (see OPAQUE_ASSESSMENT_KEYS
   // below) without putting navContext in its own dependency array.
@@ -377,42 +383,51 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   const [taskDB, setTaskDB] = useState(() => loadTaskDB());
 
   // ── Supabase: load patients on mount and merge with localStorage ──────────
-  useEffect(() => {
-    supabase.from("patients").select("*")
-      .eq("user_id", currentUser?.id || "")
-      .is("deleted_at", null) // hide soft-deleted rows -- see deletePatient() below
-      .order("updated_at", { ascending: false })
-      .then(({ data: rows, error }) => {
-        if (error || !rows || rows.length === 0) return;
-        const remote = rows.map(r => ({
-          id: r.id,
-          name: r.name,
-          data: r.data || {},
-          createdAt: r.created_at,
-          updatedAt: r.updated_at,
-          hasRedFlags: r.has_red_flags || false,
-          lastDx: r.last_dx || "",
-        }));
-        setPatients(prev => {
-          const localMap = new Map(prev.map(p => [p.id, p]));
-          const remoteMap = new Map(remote.map(p => [p.id, p]));
-          const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
-          const merged = [];
-          for (const id of allIds) {
-            const loc = localMap.get(id);
-            const rem = remoteMap.get(id);
-            if (!loc) { merged.push(rem); continue; }
-            if (!rem) { merged.push(loc); continue; }
-            const lt = new Date(loc.updatedAt || 0).getTime();
-            const rt = new Date(rem.updatedAt || 0).getTime();
-            merged.push(rt >= lt ? rem : loc);
-          }
-          merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-          savePatientDBLocalOnly(merged, currentUser?.id); // encrypted local cache write, no re-upload
-          return merged;
-        });
+  // Read a few at a time with retries (fetchPatientsFromSupabase), merged into
+  // whatever the local cache already showed. A failure is no longer silent:
+  // PatientsLoadBanner (below) says so and offers "Try again" -- the old
+  // single `select *` returned an empty list with no explanation whenever it
+  // failed (2026-10-02, Aditi: patients "all gone" after a refresh although
+  // they were saved in Supabase).
+  const [patientsLoad, setPatientsLoad] = useState({ state: currentUser?.id ? "loading" : "ok", skipped: 0 });
+  const loadPatientsFromCloud = useCallback(() => {
+    const uid = currentUser?.id;
+    if (!uid) { setPatientsLoad({ state: "ok", skipped: 0 }); return; }
+    setPatientsLoad((prev) => ({ state: "loading", skipped: prev.skipped }));
+    fetchPatientsFromSupabase(uid).then(({ rows, skipped, error }) => {
+      if (error) reportClientError(error, { phase: "patients_load", skipped, got: rows.length });
+      setPatientsLoad({ state: error ? "error" : "ok", skipped });
+      if (!rows || rows.length === 0) return;
+      const remote = rows.map(r => ({
+        id: r.id,
+        name: r.name,
+        data: r.data || {},
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        hasRedFlags: r.has_red_flags || false,
+        lastDx: r.last_dx || "",
+      }));
+      setPatients(prev => {
+        const localMap = new Map(prev.map(p => [p.id, p]));
+        const remoteMap = new Map(remote.map(p => [p.id, p]));
+        const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
+        const merged = [];
+        for (const id of allIds) {
+          const loc = localMap.get(id);
+          const rem = remoteMap.get(id);
+          if (!loc) { merged.push(rem); continue; }
+          if (!rem) { merged.push(loc); continue; }
+          const lt = new Date(loc.updatedAt || 0).getTime();
+          const rt = new Date(rem.updatedAt || 0).getTime();
+          merged.push(rt >= lt ? rem : loc);
+        }
+        merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+        savePatientDBLocalOnly(merged, uid); // encrypted local cache write, no re-upload
+        return merged;
       });
-  }, []);
+    });
+  }, [currentUser?.id]);
+  useEffect(() => { loadPatientsFromCloud(); }, []);
 
   // ── Auto-save draft to localStorage (2s debounce) ─────────────────────
   // activePatientId is a real dep now (2026-09-24) -- see its own declaration
@@ -1332,6 +1347,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     <div className="pm-shell" style={{background:PC.bg,color:PC.text,fontFamily:"'SF Pro Display','Helvetica Neue',system-ui,sans-serif",transition:"background 0.2s,color 0.15s"}}>
       <MobileStyleInjector/>
       <OfflineBanner/>
+      <PatientsLoadBanner state={patientsLoad.state} skipped={patientsLoad.skipped} hasPatients={patients.length>0} onRetry={loadPatientsFromCloud}/>
 
       {/* ── Onboarding Modal — fires once on first visit ─────────────────── */}
       {showOnboarding&&<OnboardingModal PC={PC} onDismiss={()=>{
@@ -2535,7 +2551,9 @@ export default function App() {
       // Same user as last time this ran (e.g. a token refresh) -- keep the
       // in-memory key current, but no need to re-show the loading gate or
       // redo the (already-done) cache hydration.
-      setSessionKey(session.access_token);
+      // The token changed, so the key did too: lock the open list with it
+      // again, or the copy on disk could no longer be opened after a reload.
+      setSessionKey(session.access_token).then(() => relockLocalCache(uid));
       return;
     }
     hydratedUserIdRef.current = uid;
