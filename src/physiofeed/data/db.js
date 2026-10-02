@@ -2858,6 +2858,13 @@ const TRUSTED_SOURCES = {
   // Added 2026-09-30 for a manually-confirmed one-off (RRB CEN 05/2026) --
   // the actual recruiting body (Ministry of Railways), not an aggregator.
   "Railway Recruitment Board (RRB)": "Official source",
+  // Added 2026-10-02 for manually-confirmed one-offs, each checked against
+  // its own official site before being wired in (see career_news rows
+  // dated 2026-10-02).
+  "NHS Jobs": "Official source",
+  "Maharashtra Institute of Physiotherapy (MIT MIP)": "Official source",
+  "AIIMS New Delhi": "Official source",
+  "NCAHP / AHPR (Govt of India)": "Official source",
 };
 function verificationOf(sourceName) {
   return TRUSTED_SOURCES[sourceName] || "Needs review";

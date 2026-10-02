@@ -1,7 +1,7 @@
 // DashboardModules.jsx — Home module, Therapist dashboard
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import React, { useState, useEffect } from "react";
-import { getEvidence } from "./physiofeed/data/db.js";
+import { getCareerNews } from "./physiofeed/data/db.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HOME MODULE — App Introduction & Feature Overview
@@ -92,14 +92,14 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   const greeting = new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening";
   const firstName = (currentUser?.user_metadata?.full_name || "Aditi").replace(/^dr\.?\s+/i,"").split(" ")[0];
 
-  // Real research_articles from PhysioFeed's Evidence tab (getEvidence()
-  // falls back to the same seeded demo library the Evidence page itself
-  // shows when the table is empty -- see db.js's own comment -- so this
-  // preview is never a second, different "fake" feed, just the newest
-  // couple of whatever Evidence actually has right now).
-  const [evidence, setEvidence] = useState([]);
-  useEffect(() => { getEvidence().then(setEvidence).catch(() => {}); }, []);
-  const latestEvidence = evidence.slice(0, 3);
+  // Home's main preview card shows News for now instead of Evidence
+  // (2026-10-02, Aditi: "where evidences are shown in home, news should
+  // shown for now... when people actively put opportunity then it should
+  // put this" -- News has real daily content right now; Evidence stays
+  // reachable via the Quick Access tile below, and Opportunity can take
+  // this same spot later once it has real, actively-posted content).
+  const [news, setNews] = useState([]);
+  useEffect(() => { getCareerNews().then((rows) => setNews(rows.slice(0, 3))).catch(() => {}); }, []);
 
   const TILES = [
     { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
@@ -155,36 +155,34 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
         ))}
       </div>
 
-      {/* ── Evidence preview (was a scripted demo PhysioFeed post; now the
-          real research_articles Evidence has, via the same getEvidence()
-          the Evidence tab itself reads from) ── */}
+      {/* ── News preview (took over Evidence's spot here, see the comment
+          above where `news` is fetched) ── */}
       <div style={{background:"#fff", border:"1px solid #EDEDF2", borderRadius:18, padding:"16px 16px 14px", marginBottom:18, boxShadow:"0 1px 4px rgba(16,24,40,0.04)"}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:12}}>
           <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-            <span style={{fontSize:18,lineHeight:1}}>📚</span>
+            <span style={{fontSize:18,lineHeight:1}}>📰</span>
             <div style={{minWidth:0}}>
-              <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>Evidence</div>
-              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Latest research and papers</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>News & Updates</div>
+              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Jobs, conferences & regulation</div>
             </div>
           </div>
-          <button onClick={()=>onNav("physiofeed",{pfTab:"evidence"})} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
+          <button onClick={()=>onNav("physiofeed",{pfTab:"news"})} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
         </div>
 
-        {latestEvidence.length ? (
+        {news.length ? (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {latestEvidence.map((a,i)=>(
-              <div key={a.id} onClick={()=>onNav("physiofeed",{pfTab:"evidence",pfArticleId:a.id})} style={{border:"1px solid #F0F0F3", borderRadius:14, padding:"11px 13px", cursor:"pointer"}}>
+            {news.map((n,i)=>(
+              <a key={n.id} href={n.source_url} target="_blank" rel="noopener noreferrer" style={{display:"block",border:"1px solid #F0F0F3", borderRadius:14, padding:"11px 13px", textDecoration:"none"}}>
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
-                  <div style={{fontSize:12.5,fontWeight:800,color:"#111827",lineHeight:1.35}}>{a.title}</div>
+                  <div style={{fontSize:12.5,fontWeight:800,color:"#111827",lineHeight:1.35}}>{n.title}</div>
                   {i===0 && <span style={{flexShrink:0,fontSize:9,fontWeight:800,color:"#059669",background:"#ECFDF5",borderRadius:99,padding:"2.5px 8px",whiteSpace:"nowrap"}}>NEW</span>}
                 </div>
-                <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:4}}>{a.journal}{a.year ? ` · ${a.year}` : ""}</div>
-                {a.category && <span style={{display:"inline-block",fontSize:10,fontWeight:700,color:"#6D28D9",background:"#F5F0FF",borderRadius:99,padding:"3px 10px",marginTop:8}}>{a.category}</span>}
-              </div>
+                <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:4}}>{n.source_name}{n.deadlineLabel ? ` · ${n.deadlineLabel}` : ""}</div>
+              </a>
             ))}
           </div>
         ) : (
-          <div style={{textAlign:"center",padding:"20px 10px",color:"#9A9AA2",fontSize:12}}>No evidence added yet — check back soon.</div>
+          <div style={{textAlign:"center",padding:"20px 10px",color:"#9A9AA2",fontSize:12}}>Nothing here yet — check back soon.</div>
         )}
       </div>
 
