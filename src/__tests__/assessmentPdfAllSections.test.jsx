@@ -178,6 +178,20 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(html).toContain("Not yet prescribed");
   });
 
+  it("never fills in a pain/PSFS target, frequency, duration or exercise dosage the clinician left blank", async () => {
+    const data = {
+      dem_name: "Blank Plan", cc_vas_now: "6", om_psfs1_now: "4",
+      tx_exercise_prescription: [{ id: "e1", name: "Bridge" }],
+    };
+    const html = await generateAssessmentPdf(data);
+    expect(html).toContain("Bridge");
+    expect(html).not.toContain("2–3x per week");
+    expect(html).not.toContain("6–8 wks");
+    expect(html).not.toMatch(/target\s*(&le;|&ge;)/);
+    expect(html).not.toContain("3 sets");
+    expect(html).not.toContain("10 reps");
+  });
+
   it("states the diagnosis once on the Treatment Plan page, not twice", async () => {
     // "Working diagnosis" (top card) and "Clinical diagnosis" (bottom
     // section) both printed on the same Treatment Plan page (2026-10-02,
