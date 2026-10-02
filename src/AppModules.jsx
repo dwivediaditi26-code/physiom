@@ -703,53 +703,17 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
           ${orthoStepCard("redFlags")}
           ${orthoStepCard("pain")}
         ` : `
-          ${/* Chief complaint/Red flags/History/Goals are this generic
-              Ortho-intake-shaped fallback's own fields (cc_/rf_/pmh_ etc)
-              -- real content for a patient who filled an Ortho intake but
-              never ran the newer wizard. For a Neuro/Cardio-only patient
-              they're just empty, and "Red & yellow flags" even asserted a
-              false "No red flags identified" despite no screen ever having
-              run. Neuro/Cardio each have their own real Subjective/Safety
-              sections a few pages later, so this duplicated them with
-              blank placeholders on top (2026-10-02, Aditi's screenshot:
-              "remove this chief red flags goals history... totally
-              remove"; also explains her "Subjective bhi repeat ho raha
-              hai" -- this Chief complaint card vs Neuro's own Subjective). */ !(d.neuro || d.cardio) ? `
-          ${sec("📋","Chief complaint","#1e3a5f", `
-            ${cc && cc !== "--" ? `<div style="border-left:3px solid #1e3a5f;padding:7px 10px;background:#f8fafc;border-radius:0 6px 6px 0;font-size:9.5px;font-style:italic;color:#334155;margin-bottom:6px;">"${escHtml(cc)}"</div>` : ""}
-            ${row("Body region", bodyRegion)}
-            ${row("Mechanism / onset", onset)}
-            ${row("Duration", duration)}
-            ${row("Pain behaviour", behaviour)}
-          `)}
-
-          ${sec("🚩","Red & yellow flags","#991b1b", `
-            ${rfItems.length > 0 ? row("Red flags", escHtml(rfItems.join(", "))) : textRow(`<span style="color:#059669;font-weight:600;">✓ No red flags identified — safe to proceed</span>`)}
-            ${yfItems.length ? row("Yellow flags", escHtml(yfItems.join(", "))) : ""}
-            ${rfAction && rfAction !== "--" ? row("Action", rfAction) : ""}
-          `)}
-
-          ${sec("🏥","Past medical history & medications","#4c1d95", `
-            ${row("Medical history", pmhConds)}
-            ${row("Current medications", pmhMeds)}
-            ${row("Allergies", pmhAllerg)}
-            ${row("Previous surgery", pmhSurg)}
-            ${row("Family history", pmhFam)}
-            ${row("Previous physiotherapy", v("hx_previous_injury") || v("hx_providers"))}
-            ${hxNotes && hxNotes !== "--" ? row("Notes", hxNotes) : ""}
-          `)}
-
-          ${sec("🎯","Goals & lifestyle","#0f6e56", `
-            ${row("Patient goal", goal)}
-            ${row("Patient belief / concern", goalBelief)}
-            ${row("Exercise", lsExercise)}
-            ${row("Sleep quality", lsSleep)}
-            ${row("Stress level", lsStress)}
-            ${row("Work demands", lsWork)}
-            ${lsNotes && lsNotes !== "--" ? row("Lifestyle notes", lsNotes) : ""}
-            ${goalNotes && goalNotes !== "--" ? row("Goal notes", goalNotes) : ""}
-          `)}
-          ` : ""}
+          ${/* Chief complaint/Red flags/History/Goals used to show here --
+              this generic Ortho-intake-shaped fallback's own fields (cc_/
+              rf_/pmh_ etc). Removed for every patient, not just Neuro/
+              Cardio (2026-10-02, Aditi: "remove this chief red flags goals
+              history... totally remove", then "remove for ortho also"):
+              "Red & yellow flags" asserted a false "No red flags
+              identified" whenever nothing had actually been screened, and
+              for a Neuro/Cardio patient these duplicated that module's own
+              real Subjective/Safety sections a few pages later ("Subjective
+              bhi repeat ho raha hai"). Pain scores stays -- it isn't
+              hardcoded/duplicated the same way. */ ""}
 
           ${sec("📊","Pain scores (NRS /10)","#991b1b", `
             ${row("Current", vasNow ? vasNow + "/10" : "")}
