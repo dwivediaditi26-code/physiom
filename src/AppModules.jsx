@@ -630,8 +630,7 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     const css = `
       *{box-sizing:border-box;margin:0;padding:0;}
       body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-      .page{background:#fff;max-width:860px;margin:0 auto 0;box-shadow:0 4px 40px rgba(0,0,0,0.12);page-break-after:always;}
-      .page:last-child{page-break-after:auto;}
+      .page{background:#fff;max-width:860px;margin:0 auto 0;box-shadow:0 4px 40px rgba(0,0,0,0.12);}
       .body{padding:22px 32px 28px;}
       table{width:100%;border-collapse:collapse;}
       th{background:#f1f5f9;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.7px;padding:6px 6px;text-align:left;border-bottom:1px solid #e2e8f0;}
@@ -640,7 +639,7 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
       .pdf-crumb{padding:7px 32px;background:#faf9ff;border-bottom:1px solid #ECE9F7;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:9.5px;color:#334155;}
       .pdf-crumb b{color:#7C3AED;font-weight:600;}
       .pdf-crumb .sep{color:#c4b5fd;}
-      .pdf-card{border:1.5px solid #ECE9F7;border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+      .pdf-card{border:1.5px solid #ECE9F7;border-radius:14px;padding:12px 14px;margin-bottom:10px;break-inside:avoid;}
       .pdf-card-title{font-weight:600;font-size:12px;color:#1A1A2E;margin-bottom:6px;}
       .pdf-row{display:flex;gap:8px;padding:4px 0;border-top:1px solid #F5F3FB;font-size:9.5px;color:#334155;}
       .pdf-row:first-child{border-top:none;}
@@ -704,6 +703,18 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
           ${orthoStepCard("redFlags")}
           ${orthoStepCard("pain")}
         ` : `
+          ${/* Chief complaint/Red flags/History/Goals are this generic
+              Ortho-intake-shaped fallback's own fields (cc_/rf_/pmh_ etc)
+              -- real content for a patient who filled an Ortho intake but
+              never ran the newer wizard. For a Neuro/Cardio-only patient
+              they're just empty, and "Red & yellow flags" even asserted a
+              false "No red flags identified" despite no screen ever having
+              run. Neuro/Cardio each have their own real Subjective/Safety
+              sections a few pages later, so this duplicated them with
+              blank placeholders on top (2026-10-02, Aditi's screenshot:
+              "remove this chief red flags goals history... totally
+              remove"; also explains her "Subjective bhi repeat ho raha
+              hai" -- this Chief complaint card vs Neuro's own Subjective). */ !(d.neuro || d.cardio) ? `
           ${sec("📋","Chief complaint","#1e3a5f", `
             ${cc && cc !== "--" ? `<div style="border-left:3px solid #1e3a5f;padding:7px 10px;background:#f8fafc;border-radius:0 6px 6px 0;font-size:9.5px;font-style:italic;color:#334155;margin-bottom:6px;">"${escHtml(cc)}"</div>` : ""}
             ${row("Body region", bodyRegion)}
@@ -711,17 +722,6 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
             ${row("Duration", duration)}
             ${row("Pain behaviour", behaviour)}
           `)}
-
-          ${sec("📊","Pain scores (NRS /10)","#991b1b", `
-            ${row("Current", vasNow ? vasNow + "/10" : "")}
-            ${row("Worst", vasWorst ? vasWorst + "/10" : "")}
-            ${row("Best", vasBest ? vasBest + "/10" : "")}
-          `)}
-
-          ${(aggAll.length > 0 || relAll.length > 0) ? sec("⬆️","Aggravating & easing factors","#78350f", `
-            ${row("Aggravating", escHtml(aggAll.join(", ")))}
-            ${row("Easing", escHtml(relAll.join(", ")))}
-          `) : ""}
 
           ${sec("🚩","Red & yellow flags","#991b1b", `
             ${rfItems.length > 0 ? row("Red flags", escHtml(rfItems.join(", "))) : textRow(`<span style="color:#059669;font-weight:600;">✓ No red flags identified — safe to proceed</span>`)}
@@ -749,6 +749,18 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
             ${lsNotes && lsNotes !== "--" ? row("Lifestyle notes", lsNotes) : ""}
             ${goalNotes && goalNotes !== "--" ? row("Goal notes", goalNotes) : ""}
           `)}
+          ` : ""}
+
+          ${sec("📊","Pain scores (NRS /10)","#991b1b", `
+            ${row("Current", vasNow ? vasNow + "/10" : "")}
+            ${row("Worst", vasWorst ? vasWorst + "/10" : "")}
+            ${row("Best", vasBest ? vasBest + "/10" : "")}
+          `)}
+
+          ${(aggAll.length > 0 || relAll.length > 0) ? sec("⬆️","Aggravating & easing factors","#78350f", `
+            ${row("Aggravating", escHtml(aggAll.join(", ")))}
+            ${row("Easing", escHtml(relAll.join(", ")))}
+          `) : ""}
 
           ${ccNotes && ccNotes !== "--" ? sec("📝","Clinician notes — subjective","#334155", textRow(ccNotes)) : ""}
         `}
@@ -842,7 +854,6 @@ function PdfReportsModal({ data, dx, onClose, currentUser }) {
     const exercises = gatherExercises();
     const techniques = gatherTechniques();
     const sessions = Array.isArray(d.tx_sessions) ? [...d.tx_sessions] : [];
-    const dxLabel = escHtml(dx?.dx?.[0]?.label || d.cc_main || "Musculoskeletal Dysfunction");
     const groupedExercises = exercises.reduce((acc, ex) => { const p = ex.phase || "Phase 1"; if(!acc[p]) acc[p]=[]; acc[p].push(ex); return acc; }, {});
 
     const vasBaseline = sessions.length>0 ? (parseFloat(sessions[sessions.length-1].vasStart)||0) : (parseFloat(d.pa_vas_now||d.cc_vas_now)||0);
@@ -875,7 +886,6 @@ ${breadcrumbHtml}
 <div class="body">
   ${card("👤","Patient details & plan", `
     ${row("Occupation", orthoWizardData?.demographics?.occupation ? escHtml(orthoWizardData.demographics.occupation) : occ)}
-    ${row("Working diagnosis", dxLabel)}
     ${row("Pain (VAS now)", (d.pa_vas_now||d.cc_vas_now) ? escHtml(d.pa_vas_now||d.cc_vas_now) + "/10" : "")}
     ${row("Treatment frequency", escHtml(d.tx_frequency||d.soap_frequency||"2–3x per week"))}
     ${row("Expected duration", escHtml(d.tx_duration_plan||d.tx_plan_duration||"6–8 wks"))}

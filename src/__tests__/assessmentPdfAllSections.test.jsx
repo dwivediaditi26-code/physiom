@@ -115,4 +115,45 @@ describe("Assessment Report PDF -- every objective/advanced category present wit
     expect(html).not.toContain("Custom Steps Meta");
     expect(html).not.toMatch(/>\s*Meta\s*</);
   });
+
+  it("drops the empty/hardcoded Chief complaint, Red & yellow flags, History and Goals cards for a Neuro/Cardio-only patient", async () => {
+    // Those 4 cards are the generic Ortho-intake fallback's own fields
+    // (cc_/rf_/pmh_ etc) -- for a patient who only ever did Neuro/Cardio,
+    // they're blank, and Red & yellow flags even asserted a false
+    // "No red flags identified" despite no screen ever running. Neuro
+    // already has its own real Subjective/Safety sections, so this was
+    // printing empty placeholders on top of real duplicate content
+    // (2026-10-02, Aditi: "remove this chief red flags goals history...
+    // totally remove"; "Subjective bhi repeat ho raha hai").
+    const data = {
+      dem_name: "No Ortho Patient",
+      cc_vas_now: "6",
+      neuro: { subjective: { chiefComplaint: "Walk independently and regain use of right hand" } },
+    };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).not.toContain("Chief complaint");
+    expect(html).not.toContain("Red & yellow flags");
+    expect(html).not.toContain("Past medical history & medications");
+    expect(html).not.toContain("Goals & lifestyle");
+    expect(html).not.toContain("No red flags identified");
+    // Pain scores isn't one of the hardcoded/duplicated ones -- still shown.
+    expect(html).toContain("Pain scores");
+    expect(html).toContain("Walk independently and regain use of right hand");
+  });
+
+  it("states the diagnosis once on the Treatment Plan page, not twice", async () => {
+    // "Working diagnosis" (top card) and "Clinical diagnosis" (bottom
+    // section) both printed on the same Treatment Plan page (2026-10-02,
+    // Aditi: "clinical diagnosis 2 bar aa raha hai"). Clinical diagnosis
+    // has the real detail (ICD-10, confidence, reasoning) -- dropped the
+    // terse duplicate instead.
+    const data = { dem_name: "Diagnosis Dedup Test", soap_a_diagnosis: "Lumbar radiculopathy (L5)", soap_icd10: "M54.16" };
+    const html = await generateAssessmentPdf(data);
+
+    expect(html).not.toContain("Working diagnosis");
+    const matches = html.match(/Clinical diagnosis/g) || [];
+    expect(matches.length).toBe(1);
+    expect(html).toContain("Lumbar radiculopathy (L5)");
+  });
 });
