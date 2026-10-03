@@ -8,7 +8,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT="$HERE/backup-database.sh"
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
-mkdir -p "$T/bin"
+mkdir -p "$T/bin" "$T/home"
 PASS=0; FAILS=0
 
 cat > "$T/bin/pg_dump" <<'STUB'
@@ -25,7 +25,12 @@ if [ -n "${FAKE_NO_PATIENTS:-}" ]; then echo "100; 0 1 TABLE DATA public profile
 echo "100; 0 1 TABLE DATA public patients postgres"
 echo "101; 0 2 TABLE DATA public profiles postgres"
 STUB
-chmod +x "$T/bin/pg_dump" "$T/bin/pg_restore"
+cat > "$T/bin/psql" <<'STUB'
+#!/bin/bash
+if [ -n "${FAKE_PSQL_FAIL:-}" ]; then echo 'password authentication failed for "u" (postgresql://u:Secret1@host)' >&2; exit 2; fi
+echo 1
+STUB
+chmod +x "$T/bin/pg_dump" "$T/bin/pg_restore" "$T/bin/psql"
 
 write_config() { # keep, url
   cat > "$T/config" <<CONF
@@ -35,7 +40,7 @@ KEEP=$1
 CONF
 }
 run() {
-  env PM_BACKUP_CONFIG="$T/config" PG_DUMP="$T/bin/pg_dump" PG_RESTORE="$T/bin/pg_restore" \
+  env HOME="$T/home" PM_BACKUP_CONFIG="$T/config" PG_DUMP="$T/bin/pg_dump" PG_RESTORE="$T/bin/pg_restore" PSQL="$T/bin/psql" \
       NOTIFY=0 PM_BACKUP_PASSPHRASE="${PASSPHRASE:-correct horse}" "$@" /bin/bash "$SCRIPT" ${ARGS:-} 2>&1
 }
 check() { # description, condition (0 = ok)
@@ -83,6 +88,31 @@ check "the [YOUR-PASSWORD] placeholder is caught" $([ $rc -ne 0 ]; echo $?)
 rm -f "$T/config"
 out="$(run env)"; rc=$?
 check "a missing settings file is caught" $([ $rc -ne 0 ]; echo $?)
+
+echo "Saving the connection string with --set-url"
+rm -f "$T/config"
+out="$(printf 'postgresql://postgres.abc:Secret1@host:5432/postgres\n' | ARGS=--set-url run env)"; rc=$?
+check "a pasted string is saved and tested" $rc
+check "the test says it connected" $(grep -q "Connected to the database OK" <<< "$out"; echo $?)
+check "the password is not echoed back" $(grep -q "Secret1" <<< "$out"; [ $? -ne 0 ]; echo $?)
+check "the settings file is private (600)" $([ "$(stat -f %Lp "$T/config")" = "600" ]; echo $?)
+check "the string is stored in the settings file" $(grep -q 'DATABASE_URL="postgresql://postgres.abc:Secret1@host' "$T/config"; echo $?)
+out="$(run env)"; rc=$?
+check "a backup then works with the saved string" $rc
+check "and it was saved under the (temporary) home folder, not the real one" $([ -d "$T/home/PhysioMind-Backups" ]; echo $?)
+rm -f "$T/config"
+out="$(printf 'postgresql://postgres.abc:[YOUR-PASSWORD]@host:5432/postgres\nRealPass9\n' | ARGS=--set-url run env)"; rc=$?
+check "[YOUR-PASSWORD] is filled in from a typed password" $rc
+check "the typed password ends up in the string" $(grep -q 'abc:RealPass9@host' "$T/config"; echo $?)
+rm -f "$T/config"
+out="$(printf 'not-a-url\n' | ARGS=--set-url run env)"; rc=$?
+check "something that is not a connection string is refused" $([ $rc -ne 0 ]; echo $?)
+check "and no settings file is written" $([ ! -f "$T/config" ]; echo $?)
+out="$(printf 'postgresql://postgres.abc:pa"ss@host:5432/postgres\n' | ARGS=--set-url run env)"; rc=$?
+check "a string with a quote in it is refused" $([ $rc -ne 0 ]; echo $?)
+out="$(printf 'postgresql://postgres.abc:Secret1@host:5432/postgres\n' | ARGS=--set-url run env FAKE_PSQL_FAIL=1)"; rc=$?
+check "a connection the database rejects is reported" $([ $rc -ne 0 ]; echo $?)
+check "and the password is hidden in that message" $(grep -q "Secret1" <<< "$out"; [ $? -ne 0 ]; echo $?)
 
 echo
 echo "$PASS passed, $FAILS failed"

@@ -12,6 +12,7 @@
 # Usage:
 #   backup-database.sh                 make a backup now
 #   backup-database.sh --check [file]  open a backup (newest by default) and list what is in it
+#   backup-database.sh --set-url       paste the database connection string once; it is saved and tested
 #
 # Settings come from ~/.physiomind-backup/config (see docs/BACKUPS.md) and the
 # encryption password from the macOS Keychain item "physiomind-backup".
@@ -60,7 +61,47 @@ find_tool() {
 }
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+  exit 0
+fi
+
+if [ "${1:-}" = "--set-url" ]; then
+  mkdir -p "$(dirname "$CONFIG")"
+  printf 'Paste the connection string from Supabase and press Enter (nothing shows as you paste): '
+  read -r -s URL; echo
+  [ -n "$URL" ] || { echo "Nothing was pasted. Nothing was changed."; exit 1; }
+  case "$URL" in postgresql://*|postgres://*) ;; *) echo "That does not look like a connection string: it should start with postgresql://. Nothing was changed."; exit 1 ;; esac
+  case "$URL" in *'"'*|*'$'*|*'`'*|*'\'*|*' '*) echo "The string has a quote, space or special character that this tool cannot store. Use a database password of only letters and numbers. Nothing was changed."; exit 1 ;; esac
+  case "$URL" in
+    *"[YOUR-PASSWORD]"*)
+      printf 'The string still has [YOUR-PASSWORD] in it. Type the database password and press Enter: '
+      read -r -s NEWPW; echo
+      [ -n "$NEWPW" ] || { echo "No password typed. Nothing was changed."; exit 1; }
+      case "$NEWPW" in *[!A-Za-z0-9]*) echo "Use a database password of only letters and numbers (reset it in Supabase if needed). Nothing was changed."; exit 1 ;; esac
+      URL="${URL//\[YOUR-PASSWORD\]/$NEWPW}"
+      ;;
+  esac
+  {
+    printf '# PhysioMind backup settings. Keep this file private: it holds the database password.\n'
+    printf 'DATABASE_URL="%s"\n\n' "$URL"
+    printf '# Where the copies are saved, and how many to keep (the oldest are deleted).\n'
+    printf 'BACKUP_DIR="$HOME/PhysioMind-Backups"\nKEEP=30\n'
+  } > "$CONFIG"
+  chmod 600 "$CONFIG"
+  echo "Saved to $CONFIG"
+  DB_PASSWORD="${URL#*://}"; DB_PASSWORD="${DB_PASSWORD#*:}"; DB_PASSWORD="${DB_PASSWORD%%@*}"
+  if PSQL="$(find_tool psql "${PSQL:-}")"; then
+    if msg="$(PGCONNECT_TIMEOUT=20 "$PSQL" "$URL" -At -c 'select 1' 2>&1)"; then
+      echo "Connected to the database OK."
+    else
+      echo "Saved, but the database did not accept the connection:"
+      hide_password "$msg"; echo
+      echo "Check the password (and that you copied the Session pooler string), then run --set-url again."
+      exit 1
+    fi
+  else
+    echo "Saved. (psql was not found, so the connection was not tested. Run: brew install libpq)"
+  fi
   exit 0
 fi
 

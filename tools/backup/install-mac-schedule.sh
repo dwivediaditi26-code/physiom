@@ -25,9 +25,11 @@ if [ ! -f "$DEST/config" ]; then
   cat > "$DEST/config" <<'CONF'
 # PhysioMind backup settings. Keep this file private: it holds the database password.
 #
-# Paste the connection string from Supabase between the quotes:
-#   Supabase > physiomind-prod > Connect > Session pooler
-# and replace [YOUR-PASSWORD] in it with the database password.
+# Easiest way to fill this in: run
+#   ~/.physiomind-backup/backup-database.sh --set-url
+# and paste the connection string from Supabase (physiomind-prod > Connect >
+# Session pooler). Or paste it between the quotes below by hand, replacing
+# [YOUR-PASSWORD] with the database password.
 DATABASE_URL=""
 
 # Where the copies are saved, and how many to keep (the oldest are deleted).
@@ -65,4 +67,4 @@ launchctl bootstrap "gui/$(id -u)" "$PLIST"
 
 echo "Daily backup scheduled for 02:30 (or when the Mac wakes up after that)."
 echo "Copies will be saved in $BACKUP_DIR"
-echo "Next: docs/BACKUPS.md, steps 3 and 4, then run a first backup by hand."
+echo "Next: docs/BACKUPS.md, steps 3 and 4 (step 3 is: ~/.physiomind-backup/backup-database.sh --set-url), then run a first backup by hand."

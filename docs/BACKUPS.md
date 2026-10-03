@@ -28,13 +28,15 @@ bash tools/backup/install-mac-schedule.sh
 
 It creates a settings file at `~/.physiomind-backup/config`.
 
-**3. Put the database connection in the settings file.**
+**3. Save the database connection.** In Supabase, open the **physiomind-prod** project (not the test one), click **Connect**, choose **Session pooler**, and copy the connection string. Then run:
 
-- In Supabase, open the **physiomind-prod** project (not the test one), click **Connect**, choose **Session pooler**, and copy the connection string.
-- Open the settings file: `open -e ~/.physiomind-backup/config`
-- Paste the string between the quotes after `DATABASE_URL=`.
-- Replace `[YOUR-PASSWORD]` in it with the database password. If you do not know it, go to Project Settings, Database, and reset it. Choose a password of only letters and numbers, so it does not need special handling inside the string. Resetting only affects tools that connect straight to the database; ask first if you are unsure.
-- Save the file.
+```bash
+~/.physiomind-backup/backup-database.sh --set-url
+```
+
+Paste the string when it asks and press Enter. Nothing shows on screen as you paste, which is normal. If the string still has `[YOUR-PASSWORD]` in it, the tool asks you to type the database password and fills it in for you. If you do not know the password, go to Project Settings, Database, and reset it; choose a password of only letters and numbers.
+
+The tool saves the string and tests it straight away. You should see **Connected to the database OK.** If it says the database did not accept the connection, check the password and that you copied the Session pooler string, then run the command again. (Resetting the database password only affects tools that connect straight to the database; ask first if you are unsure.)
 
 **4. Choose a backup password and store it in the Keychain.** This is the password that locks every backup file.
 
