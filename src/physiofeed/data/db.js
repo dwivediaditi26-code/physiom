@@ -1864,6 +1864,21 @@ export async function searchEuropePMCForEvidence(query) {
   return json.results || [];
 }
 
+// Evidence Library search (filters, sort, paging, real total). `source` is
+// "pubmed" or "europepmc"; the two admin-facing helpers above stay as they
+// were and ignore the extra fields. Returns { results, total }.
+export async function searchEvidenceLive(source, { query, studyType, yearFrom, sort, page }) {
+  const path = source === "europepmc" ? "/api/europepmcSearch" : "/api/pubmedSearch";
+  const res = await fetch(apiUrl(path), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ query, studyType, yearFrom, sort, page }),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Search failed.");
+  return { results: json.results || [], total: typeof json.total === "number" ? json.total : null };
+}
+
 export async function draftEvidenceFromEuropePMC(result) {
   const res = await fetch(apiUrl("/api/europepmcDraft"), {
     method: "POST",

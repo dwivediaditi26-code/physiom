@@ -17,6 +17,17 @@ import { splitAbstract } from './_lib/abstractSplit.js';
 // europepmcDraft.js skips straight to drafting instead of re-fetching.
 const SEARCH_URL = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search';
 
+const PAGE_SIZE = 10;
+
+// Europe PMC's own PUB_TYPE values (each verified to return real hits).
+const STUDY_TYPE_FILTERS = {
+  rct: 'PUB_TYPE:"Randomized Controlled Trial"',
+  systematic: 'PUB_TYPE:"Systematic Review"',
+  meta: 'PUB_TYPE:"Meta-Analysis"',
+  guideline: '(PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Guideline")',
+  observational: 'PUB_TYPE:"Observational Study"',
+};
+
 function resultUrl(r) {
   if (r.pmid) return `https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/`;
   if (r.doi) return `https://doi.org/${r.doi}`;
@@ -34,18 +45,25 @@ export default async function handler(req, res) {
   const userId = await authenticateAndRateLimit(req, res, 'europepmc-search');
   if (!userId) return;
 
-  const { query } = req.body || {};
+  const { query, studyType, yearFrom, sort, page } = req.body || {};
   if (!query || typeof query !== 'string' || !query.trim()) {
     return res.status(400).json({ error: 'A search query is required.' });
   }
 
   try {
-    const fullQuery = `(${query.trim()}) AND (SRC:MED OR SRC:PMC)`;
-    const url = `${SEARCH_URL}?query=${encodeURIComponent(fullQuery)}&format=json&resultType=core&pageSize=8`;
+    const filter = STUDY_TYPE_FILTERS[studyType];
+    const year = Number.isInteger(yearFrom) && yearFrom >= 1900 && yearFrom <= 2100 ? yearFrom : null;
+    const pageNum = Number.isInteger(page) && page >= 0 && page <= 50 ? page : 0;
+    let fullQuery = `(${query.trim()}) AND (SRC:MED OR SRC:PMC)`;
+    if (filter) fullQuery += ` AND ${filter}`;
+    if (year) fullQuery += ` AND PUB_YEAR:[${year} TO 3000]`;
+    if (sort === 'newest') fullQuery += ' sort_date:y';
+    const url = `${SEARCH_URL}?query=${encodeURIComponent(fullQuery)}&format=json&resultType=core&pageSize=${PAGE_SIZE}&page=${pageNum + 1}`;
     const r = await fetch(url);
     if (!r.ok) return res.status(502).json({ error: 'Europe PMC search failed.' });
     const json = await r.json();
     const raw = json?.resultList?.result || [];
+    const total = typeof json?.hitCount === 'number' ? json.hitCount : parseInt(json?.hitCount, 10) || 0;
 
     const results = raw.map((r) => {
       const { summary, conclusion } = splitAbstract(r.abstractText);
@@ -59,13 +77,16 @@ export default async function handler(req, res) {
         journal: r.journalTitle || 'Europe PMC',
         year: r.pubYear ? parseInt(r.pubYear, 10) : null,
         abstractText: r.abstractText || '',
+        abstract: (r.abstractText || '').replace(/<[^>]+>/g, '').trim(),
+        authors: r.authorString ? r.authorString.replace(/\.$/, '') : '',
+        types: Array.isArray(r.pubTypeList?.pubType) ? r.pubTypeList.pubType : [],
         summary,
         conclusion,
         url: resultUrl(r),
       };
     });
 
-    return res.status(200).json({ results });
+    return res.status(200).json({ results, total });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
