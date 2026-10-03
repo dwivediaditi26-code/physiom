@@ -67,14 +67,16 @@ fi
 
 if [ "${1:-}" = "--set-url" ]; then
   mkdir -p "$(dirname "$CONFIG")"
-  printf 'Paste the connection string from Supabase and press Enter (nothing shows as you paste): '
-  read -r -s URL; echo
+  # Shown on screen so you can see the paste worked. It normally holds only the
+  # [YOUR-PASSWORD] placeholder; the real password is asked for below, hidden.
+  printf 'Paste the connection string from Supabase, then press Enter: '
+  read -r URL
   [ -n "$URL" ] || { echo "Nothing was pasted. Nothing was changed."; exit 1; }
   case "$URL" in postgresql://*|postgres://*) ;; *) echo "That does not look like a connection string: it should start with postgresql://. Nothing was changed."; exit 1 ;; esac
   case "$URL" in *'"'*|*'$'*|*'`'*|*'\'*|*' '*) echo "The string has a quote, space or special character that this tool cannot store. Use a database password of only letters and numbers. Nothing was changed."; exit 1 ;; esac
   case "$URL" in
     *"[YOUR-PASSWORD]"*)
-      printf 'The string still has [YOUR-PASSWORD] in it. Type the database password and press Enter: '
+      printf 'Now type your database password and press Enter (nothing shows as you type): '
       read -r -s NEWPW; echo
       [ -n "$NEWPW" ] || { echo "No password typed. Nothing was changed."; exit 1; }
       case "$NEWPW" in *[!A-Za-z0-9]*) echo "Use a database password of only letters and numbers (reset it in Supabase if needed). Nothing was changed."; exit 1 ;; esac
