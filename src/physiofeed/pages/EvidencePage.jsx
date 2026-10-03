@@ -7,11 +7,10 @@ import { useAppData } from "../context/AppDataContext.jsx";
 
 const CATEGORIES = ["All", "MSK", "Neuro", "Sports", "Cardio"];
 const SORTS = [{ key: "oldest", label: "Oldest first" }, { key: "newest", label: "Newest first" }];
-const MODES = [{ key: "curated", label: "Curated" }, { key: "live", label: "Search Live" }];
+const MODES = [{ key: "live", label: "Search research" }, { key: "curated", label: "Curated" }];
 
 export default function EvidencePage() {
   const { evidence } = useAppData();
-  const [mode, setMode] = useState("curated");
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("oldest");
@@ -22,6 +21,8 @@ export default function EvidencePage() {
   // (2026-09-17, Aditi: "opening the article means... open the article
   // about the conclusion and result").
   const highlightId = useLocation().state?.articleId;
+  // Search is the main way in; a Home-screen article link still lands on Curated.
+  const [mode, setMode] = useState(highlightId ? "curated" : "live");
   const cardRefs = useRef({});
   useEffect(() => {
     if (!highlightId) return;
@@ -40,8 +41,8 @@ export default function EvidencePage() {
   return (
     <main className="flex-1 min-w-0">
       <div className="mb-5">
-        <h1 className="pf-font-head text-xl font-extrabold text-[#2B2140] mb-1">Evidence</h1>
-        <p className="pf-font-body text-sm text-[#8A7FA3]">Research and systematic reviews, curated for practicing clinicians.</p>
+        <h1 className="pf-font-head text-xl font-extrabold text-[#2B2140] mb-1">Evidence Library</h1>
+        <p className="pf-font-body text-sm text-[#8A7FA3]">Research you can use in practice.</p>
       </div>
 
       <div className="flex items-center gap-1 mb-4 bg-white border-2 border-[#F1EEFB] rounded-2xl p-1.5 shadow-sm w-fit">
