@@ -28,8 +28,14 @@ the PDF's look, and the patient profile in depth.
 5. Hiding Posture left three Home tiles, and the phone's global rule that squeezes any 3-column
    grid stacked them into tall single cards. The tile row has its own column rule now.
 
+## Done later the same day (Aditi picked 1, 3, 5, 6)
+- **1. Sample patients:** now tagged "Sample", left out of the counts, with a "Remove samples" button.
+- **3. AI Assessment:** signed-in users land on the speaking screen first (guests keep Demographics first, since the AI box needs an account).
+- **5. PhysioFeed made-up posts:** the demo posts are for guests only. A signed-in person whose feed could not load now sees an empty feed, not canned posts.
+- **6. Red Flag Screen:** a "No red flags identified" button marks all six questions negative in one tap.
+
 ## For a decision (not changed)
-Ordered roughly by how likely a new physio is to be confused or put off.
+Ordered roughly by how likely a new physio is to be confused or put off. Items 1, 3, 5 and 6 are done (above); the text is kept as written.
 
 1. **Sample patients look real.** Every new account starts with "Priya Sharma" and "Arjun
    Kapoor", counted in "1 patient today / 2 total", with no "sample" label. Suggest a Sample

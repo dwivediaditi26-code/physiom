@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Search as SearchIcon, ChevronRight, Bone, HeartPulse, Brain, Footprints, MoreVertical } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { hasSessionKey, encryptJSON, decryptJSON, isEncryptedEnvelope } from "./localCrypto.js";
+import { SAMPLE_PATIENT_IDS, isSamplePatient, withoutSamples } from "./samplePatients.js";
 // Loaded on demand: PostureEngine is ~600 KB of source and only these two cards
 // (inside a posture session's results) need it from here.
 const LazyMuscleImbalanceCard = React.lazy(() => import("./PostureEngine.jsx").then((m) => ({ default: m.MuscleImbalanceCard })));
@@ -25,7 +26,7 @@ const DB_KEY_LEGACY = "physio_patient_db_v1";
 const DRAFT_KEY_LEGACY = "physio_draft_v1";
 
 const SEED_PATIENT = {
-  id: "pt_priya_sharma_01",
+  id: SAMPLE_PATIENT_IDS[0],
   name: "Priya Sharma",
   createdAt: "2026-06-22T08:00:00.000Z",
   updatedAt: "2026-06-22T09:30:00.000Z",
@@ -255,7 +256,7 @@ const SEED_PATIENT = {
 };
 
 const SEED_PATIENT_2 = {
-  id: "pt_arjun_kapoor_01",
+  id: SAMPLE_PATIENT_IDS[1],
   name: "Arjun Kapoor",
   createdAt: "2026-06-20T09:00:00.000Z",
   updatedAt: "2026-06-20T11:00:00.000Z",
@@ -535,7 +536,7 @@ async function hydrateLocalCache(userId) {
 // was rejected as a whole ("new row violates row-level security policy") and
 // the real patients in it never reached the cloud (header: "Offline -- will
 // retry"). Demo patients are sample data, so they stay on the device.
-const DEMO_PATIENT_IDS = new Set([SEED_PATIENT.id, SEED_PATIENT_2.id]);
+const DEMO_PATIENT_IDS = new Set(SAMPLE_PATIENT_IDS);
 
 // Resolves to true only when the patients really reached Supabase, and to
 // false when there was nothing to upload (not logged in, or only the demo
@@ -713,7 +714,7 @@ function relativeDay(dateStr) {
 // source of truth instead of a second inline copy.
 function getTodaysPatients(patients=[]) {
   const today = new Date().toDateString();
-  return patients.filter(p => new Date(p.updatedAt).toDateString() === today);
+  return withoutSamples(patients).filter(p => new Date(p.updatedAt).toDateString() === today);
 }
 
 
@@ -758,14 +759,18 @@ function PatientRowCompact({ patient, isActive, specialtyLabel, careSettingLabel
         {getInitials(patient.name)}
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontWeight:800,fontSize:"0.88rem",color:"#111827",
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {patient.name || "Unnamed patient"}
-          {patient.hasRedFlags && <span style={{marginLeft:6,fontSize:"0.72rem"}}>🚩</span>}
+        <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,fontWeight:800,fontSize:"0.88rem",color:"#111827"}}>
+          <span style={{minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {patient.name || "Unnamed patient"}
+          </span>
+          {patient.hasRedFlags && <span style={{flexShrink:0,fontSize:"0.72rem"}}>🚩</span>}
         </div>
-        <div style={{fontSize:"0.76rem",color:"#9CA3AF",marginTop:1,
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {subtitle}
+        <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0,fontSize:"0.76rem",color:"#9CA3AF",marginTop:1}}>
+          {isSamplePatient(patient) && (
+            <span style={{flexShrink:0,padding:"0 7px",borderRadius:999,background:"#F3F4F6",
+              color:"#6B7280",fontSize:"0.66rem",fontWeight:700,lineHeight:"16px"}}>Sample</span>
+          )}
+          <span style={{minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{subtitle}</span>
         </div>
       </div>
       <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:4}}>
@@ -795,7 +800,7 @@ function PatientRowCompact({ patient, isActive, specialtyLabel, careSettingLabel
 }
 
 // ─── PATIENT DATABASE PANEL ────────────────────────────────────────────────────
-function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onClose: onCloseProp, onImport, onNav, liveData={}, embedded=false }) {
+function PatientDatabasePanel({ patients, activeId, onSelect, onNew, onDelete, onRemoveSamples, onClose: onCloseProp, onImport, onNav, liveData={}, embedded=false }) {
   // embedded=true (2026-08-17): renders as a normal full-width tab page
   // (mounted from the "clinical" ALL_TESTS entry in AppFull.jsx, same
   // pattern as Home/PhysioFeed/Learn/Profile) instead of the original
@@ -1064,6 +1069,21 @@ const innerBody = (
                 </button>
               )}
             </div>
+
+            {onRemoveSamples && patients.some(isSamplePatient) && (
+              <div data-testid="sample-patients-note" style={{display:"flex",alignItems:"center",gap:10,
+                padding:"10px 12px",marginBottom:10,background:"#F9FAFB",border:"1px solid #E5E7EB",
+                borderRadius:12}}>
+                <div style={{flex:1,fontSize:"0.76rem",lineHeight:1.4,color:"#6B7280"}}>
+                  Patients tagged <b>Sample</b> are for practice. They are not counted and stay on this phone.
+                </div>
+                <button type="button" onClick={onRemoveSamples} style={{flexShrink:0,padding:"7px 12px",
+                  background:"#fff",border:"1px solid #D1D5DB",borderRadius:8,color:"#374151",
+                  fontWeight:700,fontSize:"0.76rem",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  Remove samples
+                </button>
+              </div>
+            )}
 
             {filtered.length === 0 ? (
               <div style={{textAlign:"center",padding:"30px 10px",color:"#9CA3AF",

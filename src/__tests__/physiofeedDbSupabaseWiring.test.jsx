@@ -68,6 +68,19 @@ describe("PhysioFeed db.js Supabase wiring", () => {
     expect(posts[0]).toHaveProperty("commentList");
   });
 
+  it("getPosts() shows a signed-in clinician an empty feed, never the canned demo posts, when the feed query fails", async () => {
+    currentUser = { id: "u-me" };
+    setTable("posts", { data: null, error: { message: 'relation "posts" does not exist' } });
+    const posts = await db.getPosts();
+    expect(posts).toEqual([]);
+  });
+
+  it("getPosts() still shows the demo feed to a guest when the feed query fails", async () => {
+    setTable("posts", { data: null, error: { message: "network down" } });
+    const posts = await db.getPosts();
+    expect(posts.length).toBeGreaterThan(0);
+  });
+
   it("getPosts() maps a real post + likes + comments + profiles into the exact shape FeedPostCard/PostMedia expect", async () => {
     currentUser = { id: "u-me" };
     setTable("posts", {

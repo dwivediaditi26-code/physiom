@@ -171,8 +171,15 @@ export async function getPosts() {
       };
     });
   } catch (e) {
-    console.error("getPosts(): falling back to demo posts --", e?.message || e);
-    return clone(_posts);
+    // The canned demo posts are for guest mode only. A signed-in clinician
+    // whose feed query failed (table missing, network blip) used to be shown
+    // them as if they were real colleagues' posts, with verified ticks and
+    // like counts (first-time walkthrough, 2026-10-02). They get an honest
+    // empty feed instead.
+    let signedIn = false;
+    try { signedIn = !!(await currentUserId()); } catch { /* treat as guest */ }
+    console.error(signedIn ? "getPosts(): feed unavailable --" : "getPosts(): falling back to demo posts --", e?.message || e);
+    return signedIn ? [] : clone(_posts);
   }
 }
 

@@ -17,12 +17,14 @@ export const AI_JOURNEY_STAGES = ["Demographics", "Region", "Subjective", "AI Ob
 // renders as plain text, not a dead button (2026-09-16, Aditi: "when I'm
 // selecting region or subjective... it should jump" -- but only where
 // jumping is real, not everywhere the dot appears).
-export function AiJourneyDots({ activeIndex, onJump, jumpableIndices }) {
+export function AiJourneyDots({ activeIndex, onJump, jumpableIndices, doneIndices }) {
   return (
     <div className="ai-journey-dots">
       {AI_JOURNEY_STAGES.map((label, i) => {
         const canJump = onJump && i !== activeIndex && (!jumpableIndices || jumpableIndices.has(i));
-        const done = i < activeIndex;
+        // Position decides by default; a caller that can tell which stages
+        // really have content passes doneIndices instead.
+        const done = doneIndices ? doneIndices.has(i) && i !== activeIndex : i < activeIndex;
         const active = i === activeIndex;
         const dotClass = "ai-journey-dot" + (active ? " active" : done ? " done" : "");
         const dotContent = done ? "✓" : i + 1;

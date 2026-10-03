@@ -30,6 +30,7 @@ import {
   PatientDatabasePanel, TreatmentCaseloadPanel,
   getTodaysPatients,
 } from "./PatientDatabase.jsx";
+import { isSamplePatient, withoutSamples } from "./samplePatients.js";
 import { setSessionKey, clearSessionKey } from "./localCrypto.js";
 import { HomeModule, TherapistDashboardModule } from "./DashboardModules.jsx";
 import { CLINICAL_PASTEL } from "./clinicalHomeTheme.js";
@@ -804,6 +805,22 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setTimeout(() => setJsonMsg(null), 2000);
   };
 
+  // One tap clears both practice patients (Priya, Arjun). They never reach the
+  // cloud, so nothing needs deleting remotely beyond the usual soft-delete call.
+  const removeSamplePatients = () => {
+    if (!window.confirm("Remove the sample patients? Your own patients are not touched.")) return;
+    const samples = patients.filter(isSamplePatient);
+    if (!samples.length) return;
+    const ids = new Set(samples.map(p => p.id));
+    const updated = patients.filter(p => !ids.has(p.id));
+    setPatients(updated);
+    savePatientDB(updated, currentUser?.id);
+    softDeleteRemote([...ids]);
+    if (activePatientId && ids.has(activePatientId)) { setData({}); setActivePatientId(null); }
+    setJsonMsg({ type:"success", text:"Sample patients removed" });
+    setTimeout(() => setJsonMsg(null), 2000);
+  };
+
   const importPatientFromJSON = (parsed) => {
     if (!parsed.data) return;
     const newP = { id: genId(), name: parsed.patientName || parsed.data?.dem_name || "Imported Patient", data: parsed.data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), hasRedFlags: false, lastDx: parsed.lastDx || "" };
@@ -821,6 +838,8 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
 
   // ── Drafts vs saved patients ────────────────────────────────────────────
   const visiblePatients = useMemo(() => patients.filter(p => !isDraftPatient(p)), [patients]);
+  // Practice patients are shown in lists but not counted as the doctor's own.
+  const realPatientCount = useMemo(() => withoutSamples(visiblePatients).length, [visiblePatients]);
   const draftPatients = useMemo(
     () => patients.filter(isDraftPatient).sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)),
     [patients]
@@ -1265,7 +1284,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
       {/* Patient controls */}
       <div style={{padding:"4px 8px 12px",borderBottom:`1px solid ${PC.border}`,marginBottom:8}}>
         <button onClick={()=>setShowPatientDb(true)} style={{width:"100%",padding:"9px 10px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:"#9333ea",fontWeight:600,fontSize:"0.8rem",cursor:"pointer",marginBottom:5,display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
-          👥 {visiblePatients.length} Patient{visiblePatients.length!==1?"s":""}
+          👥 {realPatientCount} Patient{realPatientCount!==1?"s":""}
         </button>
         <button onClick={createNewPatient} style={{width:"100%",padding:"8px 10px",background:"rgba(5,150,105,0.06)",border:`1px solid ${PC.a3}25`,borderRadius:8,color:PC.a3,fontWeight:600,fontSize:"0.78rem",cursor:"pointer",display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}>
           ＋ New Patient
@@ -1485,6 +1504,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           onSelect={selectPatient}
           onNew={createNewPatient}
           onDelete={deletePatient}
+          onRemoveSamples={removeSamplePatients}
           onClose={()=>setShowPatientDb(false)}
           onImport={importPatientFromJSON}
           onNav={(key)=>{ setShowPatientDb(false); navTo(key); }}
@@ -1735,7 +1755,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
             {/* Patient selector */}
             <button className="pm-patients-btn" onClick={()=>setShowPatientDb(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:PC.s2,border:`1px solid ${PC.border}`,borderRadius:8,color:PC.text,fontWeight:600,fontSize:"0.82rem",cursor:"pointer",whiteSpace:"nowrap"}}>
               <span style={{fontSize:"0.85rem"}}>👥</span>
-              <span>{visiblePatients.length} Patients</span>
+              <span>{realPatientCount} Patients</span>
             </button>
 
 
@@ -2056,7 +2076,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
               removed 2026-09-25.) Same deferred-mount fix as above. */}
           {mountedTabs.has("ortho_new_assessment") && (
             <div className="pm-bleed" style={{display: active==="ortho_new_assessment" ? "block" : "none"}}>
-              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
+              <Suspense fallback={<TabFallback/>}><LazyOrthoAssessmentNew patientData={data} activePatientId={activePatientId} onSave={set} onNav={navTo} navContext={active==="ortho_new_assessment"?navContext:undefined} requireAuth={requireAuth} isGuest={isGuest} entryMode={active==="ortho_new_assessment"?navContext.entryMode:undefined} resume={active==="ortho_new_assessment"?navContext.resume:undefined} backRef={wizardBackRef} onGeneratePdf={()=>setShowPdfReports(true)}/></Suspense>
             </div>
           )}
           {active==="ortho_new_assessment" && !mountedTabs.has("ortho_new_assessment") && (
@@ -2211,7 +2231,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                     const SUBTABS = [
                       ["today","Today",Stethoscope,null,""],
                       ["assessment","Assess",ClipboardListIcon,null,""],
-                      ["patients","Patients",UsersIcon,visiblePatients.length,""],
+                      ["patients","Patients",UsersIcon,realPatientCount,""],
                       ["treatment","Treatment",PillIcon,treatmentDue,"due"],
                       ...(postureEnabled ? [["posture","Posture",PersonStanding,null,""]] : []),
                     ];
@@ -2337,6 +2357,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                                   onSelect={selectPatient}
                                   onNew={createNewPatient}
                                   onDelete={deletePatient}
+                                  onRemoveSamples={removeSamplePatients}
                                   onImport={importPatientFromJSON}
                                   onNav={navTo}
                                   liveData={data}

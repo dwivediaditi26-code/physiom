@@ -62,7 +62,7 @@ const OPD_MODES = [
   { id: "templates", icon: "ti-folder", label: "My Templates", desc: "Reuse a section list you saved from a previous assessment" },
 ];
 
-export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
+export default function OrthoAssessment({ onExit, onNav, navContext, onSave, activePatientId, requireAuth, isGuest, entryMode, patientData, resume, hideAiPathway, backRef, onGeneratePdf } = {}) {
   // See NeurologicalAssessment.jsx's matching effect / AppFull.jsx's
   // wizardBackRef comment: this component stays mounted (just hidden) while
   // a different tab is showing, same as Neuro/Cardio -- navContext is the
@@ -143,7 +143,16 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   // and Region collected here feed straight into the wizard's initial data
   // (see mount call below and AI_ENTRY_SKIP_IDS in OrthoOutpatientAssessment.jsx),
   // which is skipped past on mount instead of asking again.
-  const [aiSubStep, setAiSubStep] = useState(0); // 0 demographics, 1 region, 2 subjective
+  // AI entry opens on the speaking screen (2026-10-02, Aditi: the Home tile says
+  // "Say your assessment in your words" but opened Demographics first). The
+  // narrative fills in name/age/region where it can; Demographics and Region
+  // stay one tap away on the journey dots, and a missing name is still caught
+  // by the wizard's MissingDemographicsModal.
+  // Guests are the exception: the AI box needs an account, so landing on it
+  // would put the sign-in wall up the moment they arrive. They get the usual
+  // Demographics first and the AI Parse / Manual choice on the Subjective screen.
+  const aiFirst = !isGuest;
+  const [aiSubStep, setAiSubStep] = useState(entryMode === "ai" && aiFirst ? 2 : 0); // 0 demographics, 1 region, 2 subjective
   const [aiDemographicsData, setAiDemographicsData] = useState({});
   const [aiIntakeDone, setAiIntakeDone] = useState(false);
   const [pendingAiUpdates, setPendingAiUpdates] = useState(null);
@@ -151,7 +160,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
   // Which of the Subjective screen's two equal-weight cards (🎙 AI Parse /
   // ✍ Manual) is showing -- null is the chooser itself; "ai" reveals the
   // real intake panel inline.
-  const [subjectiveChoice, setSubjectiveChoice] = useState(null);
+  const [subjectiveChoice, setSubjectiveChoice] = useState(entryMode === "ai" && aiFirst ? "ai" : null);
 
   // One path for both AI-intake sources (a parsed narrative and an imported
   // old record): seed Subjective/Pain, and pre-tick whatever region(s) that
@@ -182,6 +191,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setPendingInitialStep(targetStepId);
     setStep(3);
   }
+  // A stage only shows its green tick once it has something in it. With AI
+  // entry opening on Subjective, Demographics and Region would otherwise be
+  // ticked as done although nothing was entered there.
+  const preWizardDone = new Set();
+  if (Object.values(aiDemographicsData.demographics || {}).some((v) => String(v ?? "").trim())) preWizardDone.add(0);
+  if (selectedRegions.length > 0) preWizardDone.add(1);
   function handleJourneyJump(i) {
     if (i <= 2) { setAiSubStep(i); return; }
     jumpToWizardStage(i === 3 ? "objectiveAI" : "functionalAssessment");
@@ -228,12 +243,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setOpdMode(entryMode ? "general" : null);
     setSelectedTemplate(null);
     setPickedAi(false);
-    setAiSubStep(0);
+    setAiSubStep(entryMode === "ai" && aiFirst ? 2 : 0);
     setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
-    setSubjectiveChoice(null);
+    setSubjectiveChoice(entryMode === "ai" && aiFirst ? "ai" : null);
     setPendingInitialStep(undefined);
   }
 
@@ -242,12 +257,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
     setCondition("general");
     setOpdMode("general");
     setPickedAi(true);
-    setAiSubStep(0);
+    setAiSubStep(aiFirst ? 2 : 0);
     setAiDemographicsData({});
     setAiIntakeDone(false);
     setPendingAiUpdates(null);
     setAiSuggestedRegions([]);
-    setSubjectiveChoice(null);
+    setSubjectiveChoice(aiFirst ? "ai" : null);
     setPendingInitialStep(undefined);
     setStep(1);
   }
@@ -371,7 +386,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
             )}
           </div>
           {step === 1 && effectiveEntryMode === "ai" && (
-            <AiJourneyDots activeIndex={aiSubStep} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} />
+            <AiJourneyDots activeIndex={aiSubStep} onJump={handleJourneyJump} jumpableIndices={AI_PRE_WIZARD_JUMPABLE} doneIndices={preWizardDone} />
           )}
         </div>
 
@@ -451,7 +466,7 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
 
           {step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2 && (
             <>
-              <SectionIntro icon="✨" title="Subjective" sub="How would you like to enter it?" />
+              <SectionIntro icon="✨" title="Subjective" sub={subjectiveChoice === "ai" ? "Say it the way you would tell a colleague: the patient's name, age, the painful area and their story. You can edit everything before continuing." : "How would you like to enter it?"} />
               {subjectiveChoice !== "ai" && (
                 <>
                   <div className="ai-choice-grid">

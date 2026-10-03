@@ -1,6 +1,7 @@
 // DashboardModules.jsx — Home module, Therapist dashboard
 // Extracted from AppFull.jsx — pure extraction, no logic changes
 import { doctorFirstName } from "./userName.js";
+import { withoutSamples } from "./samplePatients.js";
 import React, { useState, useEffect } from "react";
 import { getCareerNews } from "./physiofeed/data/db.js";
 
@@ -238,14 +239,17 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
   // Only real derived value the minimal page still needs -- everything
   // else (tasks, schedule, outcomes analytics, trend chart) was removed
   // along with the sections that displayed it.
+  const realPatients = useMemo(() => withoutSamples(patients), [patients]);
   const todayCount = useMemo(() => {
     const today = new Date().toDateString();
-    return patients.filter(p => new Date(p.updatedAt).toDateString() === today).length;
-  }, [patients]);
+    return realPatients.filter(p => new Date(p.updatedAt).toDateString() === today).length;
+  }, [realPatients]);
 
   const now = new Date();
   const greeting = now.getHours()<12?"Good morning":now.getHours()<17?"Good afternoon":"Good evening";
   const dateStr  = now.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  // No made-up fallback name for someone who has none on file (it used to say "Dr. Aditi").
+  const todayName = doctorFirstName(currentUser);
   // Minimal Today page (Aditi: "the today page should be minimal remove
   // the task workflow, patient outcome remove... more minimal", then "put
   // here that total patient count") -- Today's count plus the overall
@@ -253,7 +257,7 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
   // Subjective tab.
   const STATS = [
     {label:"Today",   value:String(todayCount),      sub:"patients", icon:"👥",color:"#6D28D9",bg:"#EDE9FE",nav:"clinical",navCtx:{clinicalSubTab:"patients"}},
-    {label:"Total",   value:String(patients.length),  sub:"patients", icon:"🗂️",color:"#0891B2",bg:"#ECFEFF",nav:"clinical",navCtx:{clinicalSubTab:"patients"}},
+    {label:"Total",   value:String(realPatients.length),  sub:"patients", icon:"🗂️",color:"#0891B2",bg:"#ECFEFF",nav:"clinical",navCtx:{clinicalSubTab:"patients"}},
   ];
 
   return (
@@ -274,7 +278,7 @@ function TherapistDashboardModule({ patients, data, onNav, onProfile, onQuickSta
           <div>
             <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500,marginBottom:2}}>{dateStr}</div>
             <div style={{fontSize:16,fontWeight:800,color:"#111827",letterSpacing:"-0.4px"}}>
-              {greeting}, Dr. {(currentUser?.user_metadata?.full_name || "Aditi").replace(/^dr\.?\s+/i,"").split(" ")[0]} 👋
+              {greeting}{todayName ? `, Dr. ${todayName}` : ""} 👋
             </div>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
