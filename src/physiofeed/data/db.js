@@ -1879,6 +1879,21 @@ export async function searchEvidenceLive(source, { query, studyType, yearFrom, s
   return { results: json.results || [], total: typeof json.total === "number" ? json.total : null };
 }
 
+// Admin "Add news" (AdminAddNewsPage.jsx): one server endpoint, two actions.
+// Admin status is re-checked server-side on every call.
+async function adminNewsCall(body) {
+  const res = await fetch(apiUrl("/api/admin/news"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body),
+  });
+  const json = await readApiJson(res);
+  if (!res.ok || json.error) throw new Error(json.error || "Request failed.");
+  return json;
+}
+export const draftNewsItem = (text, url) => adminNewsCall({ action: "draft", text, url });
+export const publishNewsItem = (item) => adminNewsCall({ action: "publish", ...item });
+
 export async function draftEvidenceFromEuropePMC(result) {
   const res = await fetch(apiUrl("/api/europepmcDraft"), {
     method: "POST",
