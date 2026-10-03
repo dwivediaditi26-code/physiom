@@ -13,6 +13,7 @@ import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assess
 import { Icon, customStepIcon, stepIconName, sanitizeStepsMeta } from "./StepIcons.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
+import { trackEvent } from "./analytics/trackEvent.js";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -3006,6 +3007,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                   onClick={() => {
                     const missing = missingDemographicsFields(data.demographics);
                     if (missing.length) { setMissingDemFields(missing); return; }
+                    trackEvent("assessment_completed", { entityType: "assessment", entityId: "neuro" });
                     onNav?.("clinical");
                   }}
                 >

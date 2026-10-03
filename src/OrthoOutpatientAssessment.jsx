@@ -23,6 +23,7 @@ import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import OrthoOutcomeMeasureFlow, { formatOutcomeMeasureSection } from "./OrthoOutcomeMeasureFlow.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import { AssessmentSummary } from "./orthoSummary.jsx";
+import { trackEvent } from "./analytics/trackEvent.js";
 import { saveTemplate } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
 
@@ -704,6 +705,7 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
   function handleSaveClick() {
     const missing = missingDemographicsFields(data.demographics);
     if (missing.length) { setMissingDemFields(missing); return; }
+    trackEvent("assessment_completed", { entityType: "assessment", entityId: "ortho", properties: { pathway: "outpatient", regions: regionsLabel, condition: conditionLabel } });
     saveAssessment();
   }
 

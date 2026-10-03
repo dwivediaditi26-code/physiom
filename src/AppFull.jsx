@@ -574,6 +574,12 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   // specialty is even chosen), step 2 asks which specialty so the
   // assessment can actually route to the right tool instead of assuming
   // Ortho for everyone.
+  // One event per explicit "start a new assessment" tap (not per wizard step
+  // or per re-open of the screen -- module_opened already covers those), so
+  // "started vs saved" on the admin dashboard compares like with like.
+  function trackAssessmentStart(specialty, entryMode) {
+    trackEvent("assessment_started", { entityType: "assessment", entityId: specialty, properties: entryMode ? { entryMode } : {} });
+  }
   // Shared "start a new assessment for this specialty" logic -- used by
   // both the "+ New Assessment" specialty-picker modal below and the
   // Clinical tab's own "Assessment" sub-tab pills (2026-08-23), so picking
@@ -582,13 +588,13 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   function startSpecialty(st) {
     if (st.id === "cardio") {
       setData({}); setActivePatientId(null);
-      navTo("cardio_assessment");
+      trackAssessmentStart("cardio"); navTo("cardio_assessment");
     } else if (st.id === "neuro") {
       setData({}); setActivePatientId(null);
-      navTo("neuro_assessment");
+      trackAssessmentStart("neuro"); navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
       setData({}); setActivePatientId(null);
-      navTo("ortho_new_assessment");
+      trackAssessmentStart("ortho"); navTo("ortho_new_assessment");
     }
   }
   // "New Assessment" picker's two honest entry points -- both go into the
@@ -598,7 +604,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
   function startOrthoEntry(mode) {
     setData({});
     setActivePatientId(null);
-    navTo("ortho_new_assessment", { entryMode: mode });
+    trackAssessmentStart("ortho", mode); navTo("ortho_new_assessment", { entryMode: mode });
   }
   // "+ New Assessment"'s minimal 5-question intake (name, age, sex, phone,
   // chief complaint) -- replaces the old AI-vs-Template picker. Step 1
@@ -625,15 +631,15 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
     setShowSpecialtyPicker(false);
     setQuickStart({ name: "", age: "", sex: "", phone: "", specialty: "" });
     if (st.id === "cardio") {
-      navTo("cardio_assessment");
+      trackAssessmentStart("cardio"); navTo("cardio_assessment");
     } else if (st.id === "neuro") {
-      navTo("neuro_assessment");
+      trackAssessmentStart("neuro"); navTo("neuro_assessment");
     } else if (st.id === "ortho_new") {
       // Plain navigate, no entryMode/resume shortcut -- the actual normal
       // Ortho flow (pathway: Outpatient/IPD/Post-op, then region, then
       // condition, then the wizard itself), just pre-filled with the
       // quick-intake answers instead of starting blank.
-      navTo("ortho_new_assessment");
+      trackAssessmentStart("ortho"); navTo("ortho_new_assessment");
     }
   }
 
@@ -2276,7 +2282,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
                           </div>
                           <div style={{background:"#fff"}}>
                             {clinicalSubTab==="today" ? (
-                              <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
+                              <TherapistDashboardModule patients={visiblePatients} data={data} onNav={navTo} onProfile={(p)=>openPatientProfile(p)} onQuickStart={(p)=>{ selectPatient(p); trackAssessmentStart("ortho"); navTo("ortho_new_assessment"); }} onStartAI={()=>startOrthoEntry("ai")} currentUser={currentUser} onSignOut={onSignOut}/>
                             ) : clinicalSubTab==="treatment" ? (
                               <TreatmentCaseloadPanel patients={visiblePatients}
                                 onContinue={(p)=>openPatientProfile(p, "sessions")}

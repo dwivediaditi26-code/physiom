@@ -12,6 +12,7 @@ import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
+import { trackEvent } from "./analytics/trackEvent.js";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -2879,6 +2880,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
                 onClick={() => {
                   const missing = missingDemographicsFields(data.demographics);
                   if (missing.length) { setMissingDemFields(missing); return; }
+                  trackEvent("assessment_completed", { entityType: "assessment", entityId: "cardio" });
                   onNav?.("clinical");
                 }}
               >

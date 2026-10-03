@@ -25,6 +25,7 @@ import { orthoStyles } from "./orthoStyles.js";
 import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
+import { trackEvent } from "./analytics/trackEvent.js";
 
 function regionLabelOf(r) {
   return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
@@ -463,6 +464,7 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
   function handleSaveClick() {
     const missing = missingDemographicsFields(caseInfo);
     if (missing.length) { setMissingDemFields(missing); return; }
+    trackEvent("assessment_completed", { entityType: "assessment", entityId: "ortho", properties: { pathway: "postop", regions: regionsLabel, condition: conditionLabel } });
     saveAssessment();
   }
 

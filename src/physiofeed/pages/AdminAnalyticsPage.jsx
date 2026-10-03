@@ -29,6 +29,8 @@ const RANGE_OPTIONS = [
 export default function AdminAnalyticsPage() {
   const { profile } = useAppData();
   const [range, setRange] = useState("30");
+  const [peopleQuery, setPeopleQuery] = useState("");
+  const [showAllPeople, setShowAllPeople] = useState(false);
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [summary, setSummary] = useState(null);
@@ -72,7 +74,7 @@ export default function AdminAnalyticsPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "analytics_events" }, (payload) => {
         setLiveEvents((prev) => [payload.new, ...prev].slice(0, 200));
         clearTimeout(refetchTimer.current);
-        refetchTimer.current = setTimeout(() => load(range, customFrom, customTo), 3000);
+        refetchTimer.current = setTimeout(() => load(range, customFrom, customTo), 15000);
       })
       .subscribe();
     return () => {
@@ -110,6 +112,14 @@ export default function AdminAnalyticsPage() {
   // registered user with a profile or a patient shows up here, even ones
   // with no tracked activity in the selected range.
   const userGroups = summary?.userActivity || [];
+
+  // At hundreds of students a card per person is unreadable -- search by
+  // name/email, show the first PEOPLE_PREVIEW until asked for the rest.
+  const q = peopleQuery.trim().toLowerCase();
+  const matchedPeople = q
+    ? userGroups.filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(q))
+    : userGroups;
+  const visiblePeople = q || showAllPeople ? matchedPeople : matchedPeople.slice(0, PEOPLE_PREVIEW);
   const errors = summary?.errors || [];
 
   // Live activity only carries raw ids (user_id, entity_id) -- reuse the
@@ -234,6 +244,20 @@ export default function AdminAnalyticsPage() {
           </section>
 
           <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Where students spend time</h2>
+            <p className="text-xs text-slate-400 mb-2">
+              Time is estimated from the gaps between each student's actions (each gap capped at 15 min). Clicks are not tracked yet.
+              {summary?.eventsTruncated && " Showing the newest 10,000 actions in this range, not all of them."}
+            </p>
+            <PageTable pages={summary?.pageStats} />
+          </section>
+
+          <section>
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Assessments: started vs saved</h2>
+            <AssessmentTable stats={summary?.assessmentStats} />
+          </section>
+
+          <section>
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Most-used features</h2>
             {trends && Object.keys(trends.featureCounts || {}).length > 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100">
@@ -256,9 +280,18 @@ export default function AdminAnalyticsPage() {
             <p className="text-xs text-slate-400 mb-2">
               "Time in app" is an estimate from the gaps between actions each day (each gap capped at 15 min), not exact wall-clock time -- there's no session tracking to measure that directly yet.
             </p>
+            {userGroups.length > PEOPLE_PREVIEW && (
+              <input
+                type="search"
+                value={peopleQuery}
+                onChange={(e) => setPeopleQuery(e.target.value)}
+                placeholder={`Search ${userGroups.length} students by name or email`}
+                className="w-full mb-3 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+              />
+            )}
             {userGroups.length > 0 ? (
               <div className="space-y-3">
-                {userGroups.map((u) => (
+                {visiblePeople.map((u) => (
                   <div key={u.userId} className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100">
                       <div>
@@ -296,6 +329,15 @@ export default function AdminAnalyticsPage() {
                     </div>
                   </div>
                 ))}
+                {!q && !showAllPeople && matchedPeople.length > PEOPLE_PREVIEW && (
+                  <button
+                    onClick={() => setShowAllPeople(true)}
+                    className="w-full text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  >
+                    Show all {matchedPeople.length} students
+                  </button>
+                )}
+                {q && matchedPeople.length === 0 && <EmptyNote text="No student matches that search." />}
               </div>
             ) : (
               <EmptyNote text="No per-day activity recorded yet for this range." />
@@ -329,6 +371,77 @@ export default function AdminAnalyticsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+const PEOPLE_PREVIEW = 20;
+
+const SPECIALTY_LABELS = { ortho: "Ortho", neuro: "Neuro", cardio: "Cardio" };
+const PATHWAY_LABELS = { outpatient: "Outpatient", ipd: "IPD", postop: "Post-op" };
+
+function PageTable({ pages }) {
+  if (!pages || pages.length === 0) {
+    return <EmptyNote text="Not enough data yet -- fills in as students open pages." />;
+  }
+  const maxMinutes = Math.max(...pages.map((p) => p.totalMinutes), 1);
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500">
+        <span>Page</span>
+        <span className="text-right">Visits</span>
+        <span className="text-right">Students</span>
+        <span className="text-right">Avg time / visit</span>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {pages.map((p) => (
+          <div key={p.page} className="px-4 py-2">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 text-xs items-center">
+              <span className="text-slate-900 font-medium">{prettifyModuleKey(p.page)}</span>
+              <span className="text-right text-slate-700">{p.visits}</span>
+              <span className="text-right text-slate-700">{p.uniqueStudents}</span>
+              <span className="text-right text-slate-700">{p.avgMinutesPerVisit} min</span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="block h-1.5 rounded-full bg-violet-500" style={{ width: `${Math.max((p.totalMinutes / maxMinutes) * 100, 2)}%` }} />
+              <span className="text-[11px] text-slate-400 shrink-0">{p.totalMinutes} min total</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssessmentTable({ stats }) {
+  if (!stats || stats.length === 0) {
+    return <EmptyNote text="No assessments started yet -- fills in once students start and save them." />;
+  }
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500">
+        <span>Specialty</span>
+        <span className="text-right">Started</span>
+        <span className="text-right">Saved</span>
+        <span className="text-right">% saved</span>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {stats.map((s) => (
+          <div key={s.specialty} className="px-4 py-2">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 text-xs items-center">
+              <span className="text-slate-900 font-medium">{SPECIALTY_LABELS[s.specialty] || s.specialty}</span>
+              <span className="text-right text-slate-700">{s.started} <span className="text-slate-400">({s.studentsStarted} students)</span></span>
+              <span className="text-right text-slate-700">{s.saved} <span className="text-slate-400">({s.studentsSaved} students)</span></span>
+              <span className="text-right font-semibold text-slate-900">{s.savedPct === null ? "--" : `${s.savedPct}%`}</span>
+            </div>
+            {Object.keys(s.savedByPathway || {}).length > 0 && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Saved by pathway: {Object.entries(s.savedByPathway).map(([k, v]) => `${PATHWAY_LABELS[k] || k} ${v}`).join(", ")}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

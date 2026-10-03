@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness } from "../../api/admin/_lib/analyticsMath.js";
+import { resolveRange, distinctUsersSince, countFeature, buildInsights, buildUserDailyActivity, buildCumulativeSeries, computeProfileCompleteness, buildPageStats, buildAssessmentStats } from "../../api/admin/_lib/analyticsMath.js";
 
 const NOW = new Date("2026-09-26T12:00:00.000Z");
 
@@ -208,5 +208,97 @@ describe("computeProfileCompleteness", () => {
   it("treats a missing profile as 0% rather than throwing", () => {
     expect(computeProfileCompleteness(null)).toBe(0);
     expect(computeProfileCompleteness(undefined)).toBe(0);
+  });
+});
+
+describe("buildPageStats", () => {
+  const ev = (name, key, iso, user = "u1") => ({ event_name: name, entity_id: key, user_id: user, created_at: iso });
+
+  it("attributes the time until the next page to the page the student was on", () => {
+    const events = [
+      ev("module_opened", "learn", "2026-09-20T09:00:00.000Z"),
+      ev("module_opened", "clinical", "2026-09-20T09:04:00.000Z"), // 4 min on learn
+      ev("module_opened", "learn", "2026-09-20T09:10:00.000Z"), // 6 min on clinical
+    ];
+    const stats = buildPageStats(events, { gapCapMs: 15 * 60 * 1000, tailMs: 60 * 1000 });
+    const learn = stats.find((s) => s.page === "learn");
+    const clinical = stats.find((s) => s.page === "clinical");
+    expect(clinical.totalMinutes).toBe(6);
+    expect(learn.visits).toBe(2);
+    expect(learn.totalMinutes).toBe(5); // 4 + 1 tail credit on the last page
+  });
+
+  it("collapses repeated module_opened for the same page into one visit", () => {
+    const events = [
+      ev("module_opened", "ortho_new_assessment", "2026-09-20T09:00:00.000Z"),
+      ev("module_opened", "ortho_new_assessment", "2026-09-20T09:02:00.000Z"), // wizard step change
+      ev("module_opened", "ortho_new_assessment", "2026-09-20T09:05:00.000Z"),
+      ev("module_opened", "clinical", "2026-09-20T09:08:00.000Z"),
+    ];
+    const ortho = buildPageStats(events).find((s) => s.page === "ortho_new_assessment");
+    expect(ortho.visits).toBe(1);
+    expect(ortho.totalMinutes).toBe(8);
+  });
+
+  it("caps an idle gap so an open tab is not counted as study time", () => {
+    const events = [
+      ev("module_opened", "learn", "2026-09-20T09:00:00.000Z"),
+      ev("module_opened", "clinical", "2026-09-20T20:00:00.000Z"), // 11 h later
+    ];
+    const learn = buildPageStats(events, { gapCapMs: 15 * 60 * 1000, tailMs: 60 * 1000 }).find((s) => s.page === "learn");
+    expect(learn.totalMinutes).toBe(15);
+  });
+
+  it("counts distinct students per page and ends a visit on logout", () => {
+    const events = [
+      ev("module_opened", "learn", "2026-09-20T09:00:00.000Z", "u1"),
+      ev("user_logged_out", null, "2026-09-20T09:03:00.000Z", "u1"),
+      ev("module_opened", "learn", "2026-09-20T09:00:00.000Z", "u2"),
+      ev("module_opened", "clinical", "2026-09-20T09:01:00.000Z", "u2"),
+    ];
+    const learn = buildPageStats(events).find((s) => s.page === "learn");
+    expect(learn.uniqueStudents).toBe(2);
+    expect(learn.visits).toBe(2);
+  });
+
+  it("sorts pages by total time, most first", () => {
+    const events = [
+      ev("module_opened", "a", "2026-09-20T09:00:00.000Z"),
+      ev("module_opened", "b", "2026-09-20T09:01:00.000Z"),
+      ev("module_opened", "a", "2026-09-20T09:11:00.000Z"),
+    ];
+    expect(buildPageStats(events)[0].page).toBe("b");
+  });
+});
+
+describe("buildAssessmentStats", () => {
+  it("counts started vs saved per specialty with a capped percentage", () => {
+    const events = [
+      { event_name: "assessment_started", entity_id: "neuro", user_id: "u1" },
+      { event_name: "assessment_started", entity_id: "neuro", user_id: "u2" },
+      { event_name: "assessment_completed", entity_id: "neuro", user_id: "u1" },
+    ];
+    const [neuro] = buildAssessmentStats(events);
+    expect(neuro).toMatchObject({ specialty: "neuro", started: 2, saved: 1, studentsStarted: 2, studentsSaved: 1, savedPct: 50 });
+  });
+
+  it("breaks ortho saves down by pathway", () => {
+    const events = [
+      { event_name: "assessment_completed", entity_id: "ortho", user_id: "u1", properties: { pathway: "outpatient" } },
+      { event_name: "assessment_completed", entity_id: "ortho", user_id: "u1", properties: { pathway: "ipd" } },
+      { event_name: "assessment_completed", entity_id: "ortho", user_id: "u2", properties: { pathway: "outpatient" } },
+    ];
+    expect(buildAssessmentStats(events)[0].savedByPathway).toEqual({ outpatient: 2, ipd: 1 });
+  });
+
+  it("never shows more than 100% saved and gives null when nothing started", () => {
+    const over = buildAssessmentStats([
+      { event_name: "assessment_started", entity_id: "cardio", user_id: "u1" },
+      { event_name: "assessment_completed", entity_id: "cardio", user_id: "u1" },
+      { event_name: "assessment_completed", entity_id: "cardio", user_id: "u1" },
+    ]);
+    expect(over[0].savedPct).toBe(100);
+    const none = buildAssessmentStats([{ event_name: "assessment_completed", entity_id: "ortho", user_id: "u1" }]);
+    expect(none[0].savedPct).toBeNull();
   });
 });
