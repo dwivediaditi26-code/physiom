@@ -40,7 +40,10 @@ vi.mock("../supabase.js", () => ({
   supabase: {
     from: vi.fn((table) => makeChain(table)),
     rpc: vi.fn((name) => Promise.resolve(rpcData[name] ?? { data: null, error: null })),
-    auth: { getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })) },
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({ data: { user: currentUser }, error: null })),
+      getSession: vi.fn(() => Promise.resolve({ data: { session: currentUser ? { user: currentUser } : null }, error: null })),
+    },
     storage: {
       from: vi.fn((bucket) => ({
         upload: vi.fn((path) => Promise.resolve({ data: storageUploadError ? null : { path }, error: storageUploadError })),

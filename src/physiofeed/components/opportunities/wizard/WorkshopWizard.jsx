@@ -255,6 +255,13 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
     date: dateLabel, time: timeLabel, mode: format, fee: isFree ? "Free" : (fee.trim() ? `₹${fee.trim()}` : "₹0"),
     feeNote: !isFree && earlyBird ? "Early bird" : undefined, postedAgo: "Just now", tags: [category],
     instructor, syllabus: outcomes.map((o) => o.trim()).filter(Boolean),
+    // Everything the real detail page shows, so the preview is truthful.
+    audience: audience.join(", ") || undefined, experienceLevel,
+    platform: needsOnline ? platform : undefined,
+    maxParticipants: hasLimit && maxParticipants ? Number(maxParticipants) : undefined,
+    venue: needsInPerson ? venue.trim() || undefined : undefined,
+    city: needsInPerson ? city.trim() || undefined : undefined,
+    address: needsInPerson ? address.trim() || undefined : undefined,
   };
 
   return createPortal(

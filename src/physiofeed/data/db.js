@@ -38,9 +38,18 @@ let _expertise = EXPERTISE.map((e) => ({ ...e }));
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
 // Shared by every posts/likes/comments/follows/saves function below.
+//
+// Reads the locally stored session instead of auth.getUser(): getUser() is a
+// network round trip to Supabase Auth on EVERY call (~3.5s each here, and
+// this helper runs 96 times across the app), which was the real cause of
+// slow screens. The session's user is all the client needs; Row Level
+// Security still checks the signed token on every query server-side.
+async function currentAuthUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user || null;
+}
 async function currentUserId() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
+  return (await currentAuthUser())?.id || null;
 }
 
 // Matches the "2h" / "1d" / "1w" style already used throughout mockData.js
@@ -549,7 +558,7 @@ async function getConnectionCount(userId) {
 
 export async function getProfile() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await currentAuthUser();
     // `isDemo` (P9, 2026-09-22) marks the shared demo identity so the UI
     // can tell "guest looking at seeded content" from "real clinician with
     // a real network" -- AppShell's demo banner keys off it.
@@ -2268,24 +2277,26 @@ function rowToOpportunity(row, uid, applicationCount = 0) {
 // MyPostingsPage/ApplicantPipeline show a real number instead of a seeded
 // one -- only for YOUR listings, because applications RLS only ever
 // returns rows on opportunities you created (or applied to yourself).
+// Opportunity timestamps (published/closed/cancelled/updated/deleted) are
+// written as the word "now", which Postgres evaluates with the DATABASE's
+// clock -- not the poster's phone/laptop clock, which can be minutes or
+// hours off and made new listings read "13 hours ago".
+const SERVER_NOW = "now";
+
 export async function getOpportunities() {
   try {
-    const uid = await currentUserId();
-    const { data, error } = await supabase
-      .from("opportunities")
-      .select("*")
-      .neq("status", "draft")
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    const rows = data || [];
-    let counts = {};
-    if (uid && rows.length) {
-      const { data: apps } = await supabase
-        .from("applications")
-        .select("opportunity_id")
-        .in("opportunity_id", rows.map((r) => r.id));
-      for (const a of apps || []) counts[a.opportunity_id] = (counts[a.opportunity_id] || 0) + 1;
-    }
+    // One round trip instead of three in a row: who I am, the board, and the
+    // application counts are independent (the counts query relies on RLS to
+    // return only applications this user may see, same as before).
+    const [uid, oppRes, appsRes] = await Promise.all([
+      currentUserId(),
+      supabase.from("opportunities").select("*").neq("status", "draft").order("created_at", { ascending: false }),
+      supabase.from("applications").select("opportunity_id"),
+    ]);
+    if (oppRes.error) throw oppRes.error;
+    const rows = oppRes.data || [];
+    const counts = {};
+    if (uid) for (const a of appsRes.data || []) counts[a.opportunity_id] = (counts[a.opportunity_id] || 0) + 1;
     return rows.map((r) => rowToOpportunity(r, uid, counts[r.id] || 0));
   } catch (e) {
     console.error("getOpportunities(): falling back to demo board --", e?.message || e);
@@ -2340,7 +2351,7 @@ export async function createOpportunity(fields, { publish = true } = {}) {
     ...fieldsToRow(fields),
     creator_id: uid,
     status: publish ? "published" : "draft",
-    published_at: publish ? new Date().toISOString() : null,
+    published_at: publish ? SERVER_NOW : null,
   };
   const { data, error } = await supabase.from("opportunities").insert(row).select("*").single();
   if (error) throw error;
@@ -2361,8 +2372,8 @@ export async function createOpportunity(fields, { publish = true } = {}) {
 export async function updateOpportunity(oppId, fields, { publish } = {}) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to edit your listing.");
-  const row = { ...fieldsToRow(fields), updated_at: new Date().toISOString() };
-  if (publish) { row.status = "published"; row.published_at = new Date().toISOString(); }
+  const row = { ...fieldsToRow(fields), updated_at: SERVER_NOW };
+  if (publish) { row.status = "published"; row.published_at = SERVER_NOW; }
   const { data, error } = await supabase
     .from("opportunities").update(row).eq("id", oppId).select("*").single();
   if (error) throw error;
@@ -2378,7 +2389,7 @@ export async function publishOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "published", published_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "published", published_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
   invalidateSearchCorpus();
@@ -2391,7 +2402,7 @@ export async function closeOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "closed", closed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "closed", closed_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2401,7 +2412,7 @@ export async function reopenOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "published", closed_at: null, updated_at: new Date().toISOString() })
+    .update({ status: "published", closed_at: null, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2415,7 +2426,7 @@ export async function cancelOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "cancelled", cancelled_at: SERVER_NOW, updated_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }
@@ -2456,7 +2467,7 @@ export async function deleteOpportunity(oppId) {
   if (!uid) throw new Error("Sign in to manage your listings.");
   const { error } = await supabase
     .from("opportunities")
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: SERVER_NOW })
     .eq("id", oppId);
   if (error) throw error;
 }

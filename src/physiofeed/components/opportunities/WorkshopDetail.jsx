@@ -115,6 +115,30 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
           </div>
         )}
 
+        {(opp.platform || opp.maxParticipants || opp.venue || opp.city || opp.address) && (
+          <div className="flex gap-2 flex-wrap mb-2">
+            {opp.platform && opp.mode !== "In-person" && (
+              <div className="flex-1 min-w-[140px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Platform</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">{opp.platform}</p>
+              </div>
+            )}
+            {opp.maxParticipants && (
+              <div className="flex-1 min-w-[140px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Seats</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">Limited to {opp.maxParticipants}</p>
+              </div>
+            )}
+            {(opp.venue || opp.city || opp.address) && opp.mode !== "Online" && (
+              <div className="flex-1 min-w-[200px] bg-slate-50 rounded-xl px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Venue</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">{[opp.venue, opp.city].filter(Boolean).join(", ")}</p>
+                {opp.address && <p className="text-xs text-slate-500 mt-0.5">{opp.address}</p>}
+              </div>
+            )}
+          </div>
+        )}
+
         {(opp.audience || opp.experienceLevel) && (
           <div className="flex gap-2 flex-wrap">
             {opp.audience && (

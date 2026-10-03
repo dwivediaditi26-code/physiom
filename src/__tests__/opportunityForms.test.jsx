@@ -206,3 +206,34 @@ describe("salary display", () => {
     expect(screen.getByText("Posted by")).toBeTruthy();
   });
 });
+
+describe("workshop detail shows what the organiser entered", () => {
+  it("shows platform, seat limit, audience and experience level on the detail page", async () => {
+    const { default: WorkshopDetail } = await import("../physiofeed/components/opportunities/WorkshopDetail.jsx");
+    const w = {
+      id: "w", type: "workshop", title: "Taping", org: "O", description: "d", postedAgo: "Just now", tags: [], mode: "Online",
+      fee: "Free", date: "2026-11-20", time: "10:00 – 12:00", platform: "Zoom", maxParticipants: 30,
+      audience: "Physiotherapists", experienceLevel: "Beginner",
+      instructor: { name: "Dr A", role: "PT", initials: "DA", gradient: "blue" },
+    };
+    render(<WorkshopDetail opp={w} onBack={() => {}} registered={false} onRegistered={async () => {}} />);
+    expect(screen.getByText("Zoom")).toBeTruthy();
+    expect(screen.getByText("Limited to 30")).toBeTruthy();
+    expect(screen.getByText("Physiotherapists")).toBeTruthy();
+    expect(screen.getByText("Beginner")).toBeTruthy();
+    expect(screen.getByText("20 November 2026")).toBeTruthy();
+  });
+
+  it("an in-person workshop shows its venue and city, not a platform", async () => {
+    const { default: WorkshopDetail } = await import("../physiofeed/components/opportunities/WorkshopDetail.jsx");
+    const w = {
+      id: "w2", type: "workshop", title: "Taping", org: "O", description: "d", postedAgo: "Just now", tags: [], mode: "In-person",
+      fee: "Free", date: "2026-11-20", time: "10:00 – 12:00", venue: "Hall 2", city: "Bhopal", address: "12 MP Nagar",
+      instructor: { name: "Dr A", role: "PT", initials: "DA", gradient: "blue" },
+    };
+    render(<WorkshopDetail opp={w} onBack={() => {}} registered={false} onRegistered={async () => {}} />);
+    expect(screen.getByText("Hall 2, Bhopal")).toBeTruthy();
+    expect(screen.getByText("12 MP Nagar")).toBeTruthy();
+    expect(screen.queryByText("Platform")).toBeNull();
+  });
+});
