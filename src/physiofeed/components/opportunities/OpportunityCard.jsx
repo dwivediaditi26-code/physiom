@@ -1,4 +1,5 @@
 import { MapPin, IndianRupee, Clock, Video } from "lucide-react";
+import { formatEventDate } from "./FormFields.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 import { isRegistrationBlocked } from "./StatusBanner.jsx";
 
@@ -71,7 +72,7 @@ export default function OpportunityCard({ opp, onOpen }) {
       <div className="flex flex-wrap gap-1.5 mb-3.5">
         {isWorkshop ? (
           <>
-            <Pill icon={Clock}>{opp.date}</Pill>
+            <Pill icon={Clock}>{formatEventDate(opp.date)}</Pill>
             {opp.mode === "Online" && <Pill icon={Video}>{opp.mode}</Pill>}
             <Pill icon={IndianRupee}>{opp.fee}{opp.feeNote ? ` · ${opp.feeNote}` : ""}</Pill>
           </>

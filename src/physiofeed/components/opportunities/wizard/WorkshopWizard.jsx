@@ -41,6 +41,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const [saving, setSaving] = useState(null); // null | "draft" | "publish"
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
   const [touched, setTouched] = useState(false);
 
@@ -95,7 +96,9 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
 
   useEffect(() => {
     let cancelled = false;
-    db.getProfile().then((p) => { if (!cancelled) setProfile(p); });
+    // Publishing before this resolves would save the workshop under a generic
+    // organiser/instructor name, so the buttons wait for it.
+    db.getProfile().then((p) => { if (!cancelled) setProfile(p); }).catch(() => {}).finally(() => { if (!cancelled) setProfileReady(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -112,7 +115,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const needsInPerson = format !== "Online";
 
   const step0Valid = title.trim() && shortDescription.trim() && category && format;
-  const step1Valid = date && startTime && endTime
+  const timesOrdered = !startTime || !endTime || endTime > startTime;
+  const step1Valid = date && startTime && endTime && timesOrdered
     && (!needsOnline || platform)
     && (!needsInPerson || (venue.trim() && city.trim() && address.trim()));
   const step4Valid = registrationMethod !== "external" || registrationUrl.trim();
@@ -130,6 +134,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   if (!date) missing.push({ step: 1, label: "Date" });
   if (!startTime) missing.push({ step: 1, label: "Start time" });
   if (!endTime) missing.push({ step: 1, label: "End time" });
+  if (!timesOrdered) missing.push({ step: 1, label: "End time must be after the start time" });
   if (needsOnline && !platform) missing.push({ step: 1, label: "Online platform" });
   if (needsInPerson && !venue.trim()) missing.push({ step: 1, label: "Venue" });
   if (needsInPerson && !city.trim()) missing.push({ step: 1, label: "City" });
@@ -480,6 +485,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
             </div>
           )}
 
+          {!profileReady && <p className="text-xs text-slate-400 mt-4">Loading your profile…</p>}
           {step < STEPS.length - 1 && stepMissing.length > 0 && (
             <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">Still needed on this step: {stepMissing.map((m) => m.label).join(", ")}.</p>
           )}
@@ -504,7 +510,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => submit(true)}
-                disabled={!!saving}
+                disabled={!!saving || !profileReady}
                 className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
               >
                 {saving ? "Saving…" : "Save Changes"}
@@ -514,7 +520,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(false)}
-                  disabled={!!saving}
+                  disabled={!!saving || !profileReady}
                   className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40"
                 >
                   {saving === "draft" ? "Saving…" : "Save Draft"}
@@ -522,7 +528,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 <button
                   type="button"
                   onClick={() => submit(true)}
-                  disabled={!!saving}
+                  disabled={!!saving || !profileReady}
                   className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40"
                 >
                   {saving === "publish" ? "Publishing…" : "Publish Workshop"}

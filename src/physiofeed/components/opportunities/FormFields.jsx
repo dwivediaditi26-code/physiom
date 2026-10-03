@@ -22,6 +22,20 @@ export const textareaCls = "w-full text-sm bg-white border border-slate-200 roun
 export function parseAmount(amount) {
   return amount ? amount.replace(/[^\d.]/g, "") : "";
 }
+// "20000" -> "20,000" (Indian digit grouping), so salary/stipend read the same
+// everywhere. Non-numeric input is returned untouched.
+export function formatINR(amount) {
+  const n = Number(String(amount).replace(/,/g, ""));
+  return Number.isFinite(n) && String(amount).trim() !== "" ? n.toLocaleString("en-IN") : String(amount);
+}
+// Workshop dates are stored as YYYY-MM-DD; show "20 November 2026" like the
+// preview does, and pass older free-text dates ("18 October 2026") through.
+export function formatEventDate(d) {
+  if (typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  }
+  return d;
+}
 export function splitAudience(str) {
   return str ? str.split(",").map((s) => s.trim()).filter(Boolean) : [];
 }

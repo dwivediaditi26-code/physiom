@@ -296,9 +296,13 @@ export default function ExplorePage() {
   const reopenListing = (oppId) => runListingAction(oppId, "reopen", db.reopenOpportunity, {
     rawStatus: "published", status: "active", lifecycleStatus: "published", closedAt: undefined,
   });
-  const cancelListing = (oppId) => runListingAction(oppId, "cancel", db.cancelOpportunity, {
-    rawStatus: "cancelled", status: "closed", lifecycleStatus: "cancelled", cancelledAt: new Date().toISOString(),
-  });
+  const cancelListing = (oppId) => {
+    const title = opportunities.find((o) => o.id === oppId)?.title || "this listing";
+    if (!window.confirm(`Cancel "${title}"? People who applied or registered will see it as cancelled.`)) return;
+    return runListingAction(oppId, "cancel", db.cancelOpportunity, {
+      rawStatus: "cancelled", status: "closed", lifecycleStatus: "cancelled", cancelledAt: new Date().toISOString(),
+    });
+  };
 
   const duplicateListing = async (oppId) => {
     setActionError(null);

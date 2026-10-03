@@ -3,6 +3,7 @@ import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
+import { formatEventDate } from "./FormFields.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // `registered` is owned by ExplorePage (2026-09-23), read from the real
@@ -78,7 +79,7 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         <div className="flex gap-2 mb-4">
           <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1"><Calendar size={11} /> Date</p>
-            <p className="text-sm font-semibold text-slate-900 mt-0.5">{opp.date}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatEventDate(opp.date)}</p>
           </div>
           <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 flex items-center gap-1"><Clock size={11} /> Time</p>
@@ -152,7 +153,9 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
               expired/cancelled there's no link to open or organiser to
               contact any more. Someone who already registered before that
               happened still sees their green "Registered" state, not this. */}
-          {blocked && !registered ? (
+          {opp.postedByMe ? (
+            <span className="pf-font-head text-xs font-semibold text-slate-500 bg-slate-50 rounded-xl px-4 py-3">This is your workshop</span>
+          ) : blocked && !registered ? (
             <span className="pf-font-head text-xs font-semibold text-slate-400 bg-slate-50 rounded-xl px-4 py-3">
               {opp.lifecycleStatus === "cancelled" ? "This workshop was cancelled." : "Registration closed"}
             </span>

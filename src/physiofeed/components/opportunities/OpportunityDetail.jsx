@@ -93,7 +93,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
           {(opp.salary || opp.stipend) && (
             <div className="flex items-start justify-between gap-3 bg-slate-50 rounded-xl px-3.5 py-2.5">
               <span className="text-xs font-semibold text-slate-500 shrink-0">{opp.type === "job" ? "Salary" : "Stipend"}</span>
-              <span className="text-xs text-slate-800 flex items-center gap-1">{!["Not disclosed", "Unpaid"].includes(opp.salary || opp.stipend) && <IndianRupee size={11} />}{(opp.salary || opp.stipend).replace("₹", "")}</span>
+              <span className="text-xs text-slate-800 flex items-center gap-1">{!["Not disclosed", "Unpaid"].includes(opp.salary || opp.stipend) && <IndianRupee size={11} />}{(opp.salary || opp.stipend).replace(/₹/g, "")}</span>
             </div>
           )}
         </div>
@@ -168,7 +168,9 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
             `blocked` (Phase F) takes priority over all three -- closed/
             expired/cancelled means there's nothing to open, message or
             apply to any more. */}
-        {blocked ? (
+        {opp.postedByMe ? (
+          <div className="flex-1 text-center text-sm font-semibold text-slate-500 rounded-xl py-3 bg-slate-50">This is your listing</div>
+        ) : blocked ? (
           <div className="flex-1 text-center text-sm font-semibold text-slate-400 rounded-xl py-3 bg-slate-50">
             {opp.lifecycleStatus === "cancelled" ? "This opportunity was cancelled." : "No longer accepting applications."}
           </div>

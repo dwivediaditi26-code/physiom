@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue, formatINR } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import OpportunityDetail from "../OpportunityDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -53,6 +53,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const [saving, setSaving] = useState(null);
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
   const [touched, setTouched] = useState(false);
 
@@ -93,7 +94,9 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
 
   useEffect(() => {
     let cancelled = false;
-    db.getProfile().then((p) => { if (!cancelled) setProfile(p); });
+    // Publishing before this resolves would save the listing under the generic
+    // "PhysioFeed member / Organiser" name, so the buttons wait for it.
+    db.getProfile().then((p) => { if (!cancelled) setProfile(p); }).catch(() => {}).finally(() => { if (!cancelled) setProfileReady(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -142,8 +145,8 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
 
     if (type === "job") {
       const salary = salaryMode === "Not disclosed" ? "Not disclosed"
-        : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
-        : `₹${salaryMin.trim()} – ₹${salaryMax.trim()}/mo`;
+        : salaryMode === "Fixed" ? `₹${formatINR(salaryFixed.trim())}/mo`
+        : `₹${formatINR(salaryMin.trim())} – ₹${formatINR(salaryMax.trim())}/mo`;
       return {
         ...base,
         specialty: department.trim() || undefined,
@@ -166,7 +169,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
         location: location.trim(),
         deadline: deadline || null,
         tags: [paid ? "Paid" : "Unpaid"].filter(Boolean),
-        stipend: paid ? `₹${stipend.trim()}/mo` : "Unpaid",
+        stipend: paid ? `₹${formatINR(stipend.trim())}/mo` : "Unpaid",
         audience: audience.join(", "),
         learningOutcomes: learningOutcomes.map((o) => o.trim()).filter(Boolean),
         // fmtDate() below is display-only (locale-formatted); this raw copy
@@ -214,11 +217,11 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
       const currentSalary = salaryMode === "Not disclosed" ? "Not disclosed"
         : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
         : `₹${salaryMin.trim()} – ₹${salaryMax.trim()}/mo`;
-      if (currentSalary !== (editingOpp.salary || "Not disclosed")) changes.push("the salary");
+      if (currentSalary.replace(/,/g, "") !== (editingOpp.salary || "Not disclosed").replace(/,/g, "")) changes.push("the salary");
     }
     if (type === "internship") {
       const currentStipend = paid ? `₹${stipend.trim()}/mo` : "Unpaid";
-      if (currentStipend !== (editingOpp.stipend || "Unpaid")) changes.push("the stipend");
+      if (currentStipend.replace(/,/g, "") !== (editingOpp.stipend || "Unpaid").replace(/,/g, "")) changes.push("the stipend");
     }
     return changes;
   }
@@ -407,6 +410,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
             </div>
           )}
 
+          {!profileReady && <p className="text-xs text-slate-400 mt-4">Loading your profile…</p>}
           {step === 0 && missing.length > 0 && (
             <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">
               Still needed: {missing.join(", ")}.{!singleSaveMode && (canSaveDraft ? " You can save a draft and finish it later." : " Add a title to save a draft.")}
@@ -421,29 +425,29 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
             {step === 0 ? (
               <>
                 {!singleSaveMode && (
-                  <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving} className="text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl px-4 py-3 disabled:opacity-40">
+                  <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving || !profileReady} className="text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl px-4 py-3 disabled:opacity-40">
                     {saving === "draft" ? "Saving…" : "Save Draft"}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  disabled={missing.length > 0}
+                  disabled={missing.length > 0 || !profileReady}
                   className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition disabled:opacity-40"
                 >
                   Preview →
                 </button>
               </>
             ) : singleSaveMode ? (
-              <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
+              <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving || !profileReady} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
                 {saving ? "Saving…" : "Save Changes"}
               </button>
             ) : (
               <>
-                <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving} className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40">
+                <button type="button" onClick={() => submit(false)} disabled={!canSaveDraft || !!saving || !profileReady} className="flex-1 text-sm font-bold text-indigo-700 bg-indigo-50 rounded-xl py-3 disabled:opacity-40">
                   {saving === "draft" ? "Saving…" : "Save Draft"}
                 </button>
-                <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
+                <button type="button" onClick={() => submit(true)} disabled={!canPublish || !!saving || !profileReady} className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md disabled:opacity-40">
                   {saving === "publish" ? "Publishing…" : "Publish"}
                 </button>
               </>
