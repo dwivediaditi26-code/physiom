@@ -1,5 +1,5 @@
 import { MapPin, IndianRupee, Clock, Video } from "lucide-react";
-import { formatEventDate } from "./FormFields.jsx";
+import { formatEventDate, earlyBirdActive } from "./FormFields.jsx";
 import { TYPE_COLORS } from "../../data/opportunitiesMock.js";
 import { isRegistrationBlocked } from "./StatusBanner.jsx";
 
@@ -74,13 +74,14 @@ export default function OpportunityCard({ opp, onOpen }) {
           <>
             <Pill icon={Clock}>{formatEventDate(opp.date)}</Pill>
             {opp.mode === "Online" && <Pill icon={Video}>{opp.mode}</Pill>}
-            <Pill icon={IndianRupee}>{opp.fee}{opp.feeNote ? ` · ${opp.feeNote}` : ""}</Pill>
+            <Pill icon={IndianRupee}>{earlyBirdActive(opp) ? `${opp.earlyBirdFee} · Early bird` : opp.fee}</Pill>
           </>
         ) : (
           <>
             {opp.location && <Pill icon={MapPin}>{opp.location}</Pill>}
             {(opp.stipend || opp.salary) && <Pill icon={(opp.stipend || opp.salary) === "Not disclosed" || (opp.stipend || opp.salary) === "Unpaid" ? undefined : IndianRupee}>{opp.stipend || opp.salary}</Pill>}
-            {opp.tags?.map((t) => <Pill key={t}>{t}</Pill>)}
+            {/* "Unpaid" is already the stipend pill -- don't repeat it as a tag. */}
+            {opp.tags?.filter((t) => t !== (opp.stipend || opp.salary)).map((t) => <Pill key={t}>{t}</Pill>)}
           </>
         )}
       </div>
@@ -91,7 +92,12 @@ export default function OpportunityCard({ opp, onOpen }) {
             Register/Apply button that invites a tap for nothing -- closed/
             cancelled keep the button visible (so the card still reads as
             "this existed"), just disabled. */}
-        {opp.lifecycleStatus !== "expired" && (
+        {opp.postedByMe ? (
+          // Your own listing: Apply/Register would only open a detail page
+          // with no apply bar (OpportunityDetail's "This is your listing"),
+          // so say so here instead of showing a button that does nothing.
+          <span className="pf-font-body text-[11px] font-bold px-3 py-1.5 rounded-full bg-[#F7F5FF] text-[#6E5CC7]">Your listing</span>
+        ) : opp.lifecycleStatus !== "expired" && (
           <button
             type="button"
             onClick={ctaDisabled ? undefined : () => onOpen(opp)}

@@ -237,3 +237,88 @@ describe("workshop detail shows what the organiser entered", () => {
     expect(screen.queryByText("Platform")).toBeNull();
   });
 });
+
+describe("Deadline in the past", () => {
+  it("blocks Preview for a job whose deadline has already passed, and says why", async () => {
+    profilePromise = null;
+    render(<ApplicationOpportunityForm type="job" onClose={() => {}} onSubmit={vi.fn()} />);
+    await profileLoaded();
+    type(screen.getByPlaceholderText("e.g. Junior Physiotherapist"), "Junior Physio");
+    type(screen.getByPlaceholderText(/Describe the opportunity/), "Details");
+    type(screen.getByPlaceholderText(/Apex Movement|Poster Person/), "Clinic");
+    expect(screen.getByRole("button", { name: /Preview/ }).disabled).toBe(false);
+    const dateInput = document.querySelector('input[type="date"]');
+    fireEvent.change(dateInput, { target: { value: "2020-01-01" } });
+    expect(screen.getByRole("button", { name: /Preview/ }).disabled).toBe(true);
+    expect(screen.getByText(/Deadline can't be in the past/)).toBeTruthy();
+    fireEvent.change(dateInput, { target: { value: "2999-01-01" } });
+    expect(screen.getByRole("button", { name: /Preview/ }).disabled).toBe(false);
+  });
+
+  it("does not show 'Unpaid' twice on an unpaid internship card", () => {
+    render(<OpportunityCard opp={{ id: 1, type: "internship", org: "O", orgInitials: "O", title: "T", description: "d", postedAgo: "Just now", stipend: "Unpaid", tags: ["Unpaid"] }} onOpen={() => {}} />);
+    expect(screen.getAllByText("Unpaid").length).toBe(1);
+  });
+});
+
+describe("Application / registration links", () => {
+  it("only accepts real web addresses, adding https:// when it is missing", async () => {
+    const { normalizeLink } = await import("../physiofeed/components/opportunities/FormFields.jsx");
+    expect(normalizeLink("not a link")).toBe("");
+    expect(normalizeLink("javascript:alert(1)")).toBe("");
+    expect(normalizeLink("ftp://x.com/a")).toBe("");
+    expect(normalizeLink("localhost")).toBe("");
+    expect(normalizeLink("clinic.com/apply")).toBe("https://clinic.com/apply");
+    expect(normalizeLink("https://clinic.com/apply?x=1")).toBe("https://clinic.com/apply?x=1");
+  });
+
+  it("blocks Preview for a typed non-link and never renders a javascript: href", () => {
+    render(<OpportunityDetail opp={{ id: 1, type: "job", org: "O", orgInitials: "O", title: "T", description: "d", registrationMethod: "external", registrationUrl: "javascript:alert(1)", lifecycleStatus: "active", fields: [] }} onBack={() => {}} onApply={() => {}} onMessage={() => {}} />);
+    const a = screen.getByText("Open Application Link");
+    expect(a.getAttribute("href")).toBeNull();
+  });
+});
+
+describe("Workshop pricing step", () => {
+  beforeEach(() => { profilePromise = null; });
+  const toPricing = () => {
+    render(<WorkshopWizard onClose={() => {}} onSubmit={vi.fn()} />);
+    type(screen.getByPlaceholderText("e.g. Clinical Taping Fundamentals"), "Taping");
+    type(screen.getByPlaceholderText(/Tell students/), "About taping");
+    const next = () => fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    next();
+    type(document.querySelector("input[type=date]"), "2099-11-20");
+    const [start, end] = document.querySelectorAll("input[type=time]");
+    type(start, "10:00"); type(end, "12:00");
+    next(); next(); next();
+  };
+
+  it("keeps letters out of the fee and needs a real early-bird price, last date and seat count", () => {
+    toPricing();
+    fireEvent.click(screen.getByRole("button", { name: "Paid" }));
+    const fee = screen.getByPlaceholderText("499");
+    type(fee, "ab1,500x");
+    expect(fee.value).toBe("1500");
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByText(/Early-bird price, Early-bird last date/)).toBeTruthy();
+    const early = screen.getByPlaceholderText("399");
+    type(early, "2000");
+    expect(screen.getByText(/Early-bird price must be lower than the fee/)).toBeTruthy();
+    type(early, "1000");
+    fireEvent.click(screen.getByRole("button", { name: "Limited seats" }));
+    expect(screen.getByText(/Number of seats \(or choose No limit\)/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Next/ }).disabled).toBe(true);
+    type(screen.getByPlaceholderText("50"), "30");
+    type(document.querySelectorAll("input[type=date]")[0], "2099-10-01");
+    expect(screen.getByRole("button", { name: /Next/ }).disabled).toBe(false);
+  });
+});
+
+describe("Title length", () => {
+  it("caps a listing title at 120 characters", async () => {
+    profilePromise = null;
+    render(<ApplicationOpportunityForm type="job" onClose={() => {}} onSubmit={vi.fn()} />);
+    await profileLoaded();
+    expect(screen.getByPlaceholderText("e.g. Junior Physiotherapist").maxLength).toBe(120);
+  });
+});

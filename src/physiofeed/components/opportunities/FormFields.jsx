@@ -36,6 +36,32 @@ export function formatEventDate(d) {
   }
   return d;
 }
+// An application/registration link must be a real web address. Returns the
+// normalised https/http URL ("clinic.com/apply" gains https://), or "" when
+// it is not one -- so "not a link" or "javascript:..." can never be saved or
+// turned into a button other people tap.
+export function normalizeLink(raw) {
+  const v = String(raw || "").trim();
+  if (!v || /\s/.test(v)) return "";
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(v) ? v : `https://${v}`;
+  try {
+    const u = new URL(withScheme);
+    if (!["http:", "https:"].includes(u.protocol) || !u.hostname.includes(".")) return "";
+    return u.toString();
+  } catch {
+    return "";
+  }
+}
+// True while a workshop's early-bird price still applies: it has one, and
+// its last date (if any) has not passed. After that the regular fee is the
+// price, so neither the card nor the detail page may keep advertising it.
+export function earlyBirdActive(opp) {
+  if (!opp?.earlyBirdFee) return false;
+  if (!opp.earlyBirdDeadline) return true;
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return opp.earlyBirdDeadline >= today;
+}
 export function splitAudience(str) {
   return str ? str.split(",").map((s) => s.trim()).filter(Boolean) : [];
 }

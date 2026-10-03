@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import Stepper from "./Stepper.jsx";
-import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue, formatINR } from "../FormFields.jsx";
+import { Field, inputCls, textareaCls, Combobox, PillSelect, CheckboxGroup, CriticalChangeConfirm, parseAmount, splitAudience, highlightValue, formatINR, normalizeLink } from "../FormFields.jsx";
 import OpportunityCard from "../OpportunityCard.jsx";
 import OpportunityDetail from "../OpportunityDetail.jsx";
 import * as db from "../../../data/db.js";
@@ -48,6 +48,12 @@ function parseSalary(salary) {
 // only exist as display strings on a saved opportunity (detailHighlights,
 // or a formatted `salary`), so parseSalary()/highlightValue() reverse them
 // back into the raw values this form edits.
+// Local calendar date (not UTC), so "today" is right in India late in the evening.
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function ApplicationOpportunityForm({ type, onClose, onSubmit, editingOpp }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(null);
@@ -106,7 +112,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   const priceValid = type !== "job" || salaryMode === "Not disclosed"
     || (salaryMode === "Fixed" ? salaryFixed.trim() : (salaryMin.trim() && salaryMax.trim()));
   const stipendValid = type !== "internship" || !paid || stipend.trim();
-  const regValid = registrationMethod !== "external" || registrationUrl.trim();
+  const regValid = registrationMethod !== "external" || normalizeLink(registrationUrl);
   const canPublish = detailsValid && priceValid && stipendValid && regValid;
   const canSaveDraft = title.trim().length > 0;
 
@@ -119,7 +125,10 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
   if (type === "job" && salaryMode === "Fixed" && !salaryFixed.trim()) missing.push("Salary amount");
   if (type === "job" && salaryMode === "Range" && (!salaryMin.trim() || !salaryMax.trim())) missing.push("Salary min and max");
   if (type === "internship" && paid && !stipend.trim()) missing.push("Stipend (or choose Unpaid)");
-  if (registrationMethod === "external" && !registrationUrl.trim()) missing.push("Application link");
+  if (registrationMethod === "external" && !normalizeLink(registrationUrl)) missing.push(registrationUrl.trim() ? "Application link must be a web address (https://…)" : "Application link");
+  // A deadline that has already passed would publish an instantly-expired
+  // listing. An old listing being edited keeps the date it already had.
+  if (deadline && deadline < todayIso() && deadline !== (editingOpp?.deadline || "")) missing.push("Deadline can't be in the past");
 
   const requestClose = () => {
     if (touched && !window.confirm("Discard this listing? What you've entered will be lost.")) return;
@@ -138,7 +147,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
       orgGradient: profile?.gradient || GRAD_KEYS[0],
       description: description.trim(),
       registrationMethod,
-      registrationUrl: registrationMethod === "external" ? registrationUrl.trim() : "",
+      registrationUrl: registrationMethod === "external" ? normalizeLink(registrationUrl) : "",
       mentor,
       requirements: requirements.map((r) => r.trim()).filter(Boolean),
     };
@@ -212,7 +221,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
     if (deadline !== (editingOpp.deadline || "")) changes.push("the deadline");
     if (type !== "collaboration" && location.trim() !== (editingOpp.location || "")) changes.push("the location");
     if (type === "collaboration" && collabLocationType !== (editingOpp.locationType || COLLAB_LOCATION_TYPES[0])) changes.push("the location");
-    if (registrationMethod === "external" && registrationUrl.trim() !== (editingOpp.registrationUrl || "")) changes.push("the application link");
+    if (registrationMethod === "external" && normalizeLink(registrationUrl) !== (editingOpp.registrationUrl || "")) changes.push("the application link");
     if (type === "job") {
       const currentSalary = salaryMode === "Not disclosed" ? "Not disclosed"
         : salaryMode === "Fixed" ? `₹${salaryFixed.trim()}/mo`
@@ -267,7 +276,7 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
           {step === 0 && (
             <>
               <Field label={TITLE_LABEL[type]}>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={TITLE_PLACEHOLDER[type]} className={inputCls} />
+                <input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder={TITLE_PLACEHOLDER[type]} className={inputCls} />
               </Field>
               <Field label={type === "collaboration" ? "Organisation / person" : "Organisation *"}>
                 <input value={org} onChange={(e) => setOrg(e.target.value)} placeholder={profile?.name || "e.g. Apex Movement Center"} className={inputCls} />
@@ -364,12 +373,12 @@ export default function ApplicationOpportunityForm({ type, onClose, onSubmit, ed
 
               {type !== "collaboration" && (
                 <Field label="Application deadline">
-                  <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
+                  <input type="date" min={todayIso()} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
                 </Field>
               )}
               {type === "collaboration" && (
                 <Field label="Deadline (if applicable)">
-                  <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
+                  <input type="date" min={todayIso()} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={inputCls} />
                 </Field>
               )}
 

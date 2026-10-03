@@ -3,7 +3,7 @@ import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
-import { formatEventDate } from "./FormFields.jsx";
+import { formatEventDate, normalizeLink, earlyBirdActive } from "./FormFields.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
 
 // `registered` is owned by ExplorePage (2026-09-23), read from the real
@@ -161,12 +161,12 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] text-slate-400 leading-none">{opp.earlyBirdFee ? "Early bird" : (opp.feeNote || "Fee")}</p>
+            <p className="text-[10px] text-slate-400 leading-none">{earlyBirdActive(opp) ? "Early bird" : "Fee"}</p>
             <p className="text-lg font-bold text-slate-900">
-              {opp.earlyBirdFee || opp.fee}
-              {opp.earlyBirdFee && <span className="text-xs font-semibold text-slate-400 line-through ml-1.5">{opp.fee}</span>}
+              {earlyBirdActive(opp) ? opp.earlyBirdFee : opp.fee}
+              {earlyBirdActive(opp) && <span className="text-xs font-semibold text-slate-400 line-through ml-1.5">{opp.fee}</span>}
             </p>
-            {opp.earlyBirdFee && opp.earlyBirdDeadline && (
+            {earlyBirdActive(opp) && opp.earlyBirdDeadline && (
               <p className="text-[10px] text-slate-400">
                 until {new Date(`${opp.earlyBirdDeadline}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
               </p>
@@ -185,7 +185,7 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
             </span>
           ) : opp.registrationMethod === "external" ? (
             <a
-              href={opp.registrationUrl}
+              href={normalizeLink(opp.registrationUrl) || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm text-white bg-[#FF5FA2] active:scale-[0.98] transition"

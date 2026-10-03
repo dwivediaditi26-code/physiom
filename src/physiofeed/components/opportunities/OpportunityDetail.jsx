@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { normalizeLink } from "./FormFields.jsx";
 import { ChevronLeft, MapPin, IndianRupee, Check, Bookmark } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import ApplyOpportunityModal from "./ApplyOpportunityModal.jsx";
@@ -176,7 +177,7 @@ export default function OpportunityDetail({ opp, onBack, onMessage, applied, onA
           </div>
         ) : opp.registrationMethod === "external" ? (
           <a
-            href={opp.registrationUrl}
+            href={normalizeLink(opp.registrationUrl) || undefined}
             target="_blank"
             rel="noopener noreferrer"
             className="pf-font-head flex-1 flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl py-3 shadow-sm text-white active:scale-[0.98] transition"
