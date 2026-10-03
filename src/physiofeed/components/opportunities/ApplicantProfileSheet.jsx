@@ -17,7 +17,7 @@ import Avatar from "../shared/Avatar.jsx";
 // content, not actually missing.
 export default function ApplicantProfileSheet({ applicant: a, opp, onBack, onClose, onPass, onShortlist, onMessage }) {
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+    <div className="physiofeed-root fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 sticky top-0 bg-white z-10">
           {onBack && <button type="button" onClick={onBack} aria-label="Back" className="p-1 -ml-1 text-slate-500 hover:text-slate-700"><ChevronLeft size={19} /></button>}

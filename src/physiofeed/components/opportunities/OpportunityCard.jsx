@@ -78,7 +78,7 @@ export default function OpportunityCard({ opp, onOpen }) {
         ) : (
           <>
             {opp.location && <Pill icon={MapPin}>{opp.location}</Pill>}
-            {(opp.stipend || opp.salary) && <Pill icon={IndianRupee}>{opp.stipend || opp.salary}</Pill>}
+            {(opp.stipend || opp.salary) && <Pill icon={(opp.stipend || opp.salary) === "Not disclosed" || (opp.stipend || opp.salary) === "Unpaid" ? undefined : IndianRupee}>{opp.stipend || opp.salary}</Pill>}
             {opp.tags?.map((t) => <Pill key={t}>{t}</Pill>)}
           </>
         )}

@@ -16,7 +16,7 @@ import { trackEvent } from "../../../analytics/trackEvent.js";
 // field), an external registration/payment link, or "message the
 // organiser" via onMessage -- reusing OpportunityDetail's existing chat
 // entry point rather than building a second one.
-export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage }) {
+export default function WorkshopDetail({ opp, onBack, registered, onRegistered, onMessage, preview = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [zoom, setZoom] = useState(false);
@@ -132,7 +132,7 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-4 py-3">
+      <div className={`${preview ? "" : "sticky bottom-0"} bg-white border-t border-slate-100 px-4 py-3`}>
         {error && <p className="text-xs text-rose-600 mb-2">{error}</p>}
         <div className="flex items-center justify-between gap-3">
           <div>

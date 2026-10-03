@@ -53,7 +53,7 @@ export default function ApplicantChatModal({ applicant: a, opp, onClose, onInvit
   // header painted underneath the app's own chrome) -- `.pm-mobile-hdr`
   // is z-101 and `.pm-bnav` is z-140, both above this modal's old z-60.
   return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+    <div className="physiofeed-root fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
       <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col h-[70vh] sm:h-[640px]">
         <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-100 shrink-0">
           <Avatar size={32} grad={a.gradient} initials={a.initials} />

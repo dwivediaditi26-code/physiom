@@ -42,6 +42,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const [error, setError] = useState(null);
   const [profile, setProfile] = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { publish, changes } | null
+  const [touched, setTouched] = useState(false);
 
   const editingDraft = editingOpp && editingOpp.rawStatus === "draft";
   const singleSaveMode = editingOpp && !editingDraft;
@@ -66,7 +67,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
 
   // Step 3 -- Learning Details
   const [outcomes, setOutcomes] = useState(editingOpp?.syllabus?.length ? editingOpp.syllabus : [""]);
-  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : ["BPT Students", "MPT Students", "Physiotherapists"]);
+  const [audience, setAudience] = useState(editingOpp?.audience ? splitAudience(editingOpp.audience) : []);
   const [experienceLevel, setExperienceLevel] = useState(editingOpp?.experienceLevel || EXPERIENCE_LEVELS[3]);
 
   // Step 4 -- Instructor. Defaults to the editable "someone else" fields
@@ -135,6 +136,12 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   if (needsInPerson && !address.trim()) missing.push({ step: 1, label: "Full address" });
   if (!isFree && !fee.trim()) missing.push({ step: 4, label: "Fee amount (or switch to Free)" });
   if (registrationMethod === "external" && !registrationUrl.trim()) missing.push({ step: 4, label: "Registration link" });
+
+  const stepMissing = missing.filter((m) => m.step === step);
+  const requestClose = () => {
+    if (touched && !window.confirm("Discard this workshop? What you've entered will be lost.")) return;
+    onClose();
+  };
 
   const orgDisplayName = orgName.trim() || profile?.name || "";
   const instructor = useMyProfile
@@ -239,18 +246,18 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
   const previewOpp = {
     id: "preview", type: "workshop", org: orgDisplayName || "Your organisation",
     orgInitials: initialsOf(orgDisplayName || "PF"), orgGradient: profile?.gradient || "violet",
-    title: title.trim() || "Workshop title", description: shortDescription.trim() || "Short description goes here.",
+    title: title.trim() || "Untitled workshop", description: shortDescription.trim() || "No description added yet.",
     date: dateLabel, time: timeLabel, mode: format, fee: isFree ? "Free" : (fee.trim() ? `₹${fee.trim()}` : "₹0"),
     feeNote: !isFree && earlyBird ? "Early bird" : undefined, postedAgo: "Just now", tags: [category],
     instructor, syllabus: outcomes.map((o) => o.trim()).filter(Boolean),
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
-      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
+    <div className="physiofeed-root fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/40 px-0 sm:px-4 pb-[88px] sm:pb-4">
+      <div onChangeCapture={() => setTouched(true)} className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[calc(100vh-104px)] sm:max-h-[85vh]">
         <div className="flex items-center justify-between px-5 pt-5 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-slate-900">{editingOpp ? "Edit Workshop" : "Create Workshop"}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
+          <button type="button" onClick={requestClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400"><X size={18} /></button>
         </div>
         <div className="sticky top-[52px] bg-white z-10 border-b border-slate-100">
           <Stepper step={step} steps={STEPS} />
@@ -463,16 +470,19 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                   and fail. */}
               <div className="pointer-events-none">
                 <div className="mb-4"><OpportunityCard opp={previewOpp} onOpen={() => {}} /></div>
-                <WorkshopDetail opp={previewOpp} onBack={() => {}} registered={false} onRegistered={async () => {}} />
+                <WorkshopDetail preview opp={previewOpp} onBack={() => {}} registered={false} onRegistered={async () => {}} />
               </div>
               {!canPublish && (
                 <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mt-4">
-                  Still needed to publish: {missing.map((m) => m.label).join(", ")}. You can still save this as a draft and finish it later.
+                  Still needed to publish: {missing.map((m) => m.label).join(", ")}.{canSaveDraft ? " You can save a draft and finish it later." : " Add a title to save a draft."}
                 </p>
               )}
             </div>
           )}
 
+          {step < STEPS.length - 1 && stepMissing.length > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">Still needed on this step: {stepMissing.map((m) => m.label).join(", ")}.</p>
+          )}
           {error && <p className="text-xs text-rose-600 mt-4">{error}</p>}
 
           <div className="flex items-center gap-2.5 mt-6">
@@ -485,7 +495,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
               <button
                 type="button"
                 onClick={() => setStep((s) => s + 1)}
-                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition"
+                disabled={stepMissing.length > 0}
+                className="flex-1 text-sm font-bold text-white rounded-xl py-3 bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md active:scale-[0.98] transition disabled:opacity-40"
               >
                 Next →
               </button>

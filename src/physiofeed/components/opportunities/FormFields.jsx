@@ -99,7 +99,7 @@ export function CriticalChangeConfirm({ count, noun, changes, onCancel, onConfir
     ? `${changes.slice(0, -1).join(", ")} and ${changes[changes.length - 1]}`
     : changes[0];
   return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/50 px-4">
+    <div className="physiofeed-root fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/50 px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-xl">
         <p className="text-sm font-bold text-slate-900 mb-1.5">
           {count} {noun}{count === 1 ? "" : "s"} {count === 1 ? "has" : "have"} already {noun === "applicant" ? "applied" : "registered"}
