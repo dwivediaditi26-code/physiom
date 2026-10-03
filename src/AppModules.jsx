@@ -523,7 +523,7 @@ function OnboardingModal({ PC, onDismiss }) {
   const STEPS = [
     { iconGlyph:"ti-stethoscope", title:"Welcome to PhysioMind", desc:"PhysioMind is strictly an educational training tool for physiotherapy students and clinicians. It does not provide medical diagnoses, treatment decisions, or replace professional clinical judgment.", color:"#7c3aed" },
     { iconGlyph:"ti-user-plus",   title:"Start with a Patient",        desc:'Tap "New Patient" on the dashboard to create a record. Fill in the name and chief complaint — everything else can be added as you go.',           color:"#0891b2" },
-    { iconGlyph:"ti-list-check",  title:"Assess Step by Step",          desc:"Work through the left-hand menu: Subjective → Posture → ROM → Special Tests. Each module saves automatically as you type.",             color:"#059669" },
+    { iconGlyph:"ti-list-check",  title:"Assess Step by Step",          desc:"Pick Ortho, Neuro or Cardio under Assess, then work through the steps one by one: Subjective, Pain, ROM, Special Tests and more. Your answers save automatically as you type.",             color:"#059669" },
   ];
   const [step, setStep] = React.useState(0);
   // Apple 5.1.1(v) / DPDP Act Sec 6: this acknowledgment is a mandatory
