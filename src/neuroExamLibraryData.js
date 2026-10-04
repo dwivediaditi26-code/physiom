@@ -1836,3 +1836,11 @@ export const neuroExamLibraryData = {
     },
   },
 };
+
+// Any card still without photo slots (e.g. a newly added dermatome) gets the same
+// deterministic Cloudinary ids as the rest, so InfoCard.jsx can offer upload on it.
+Object.entries(neuroExamLibraryData).forEach(([key, card]) => {
+  if (!card.perform || (Array.isArray(card.perform.images) && card.perform.images.length)) return;
+  const id = "n_" + key.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  card.perform.images = [img(id), img(`${id}_2`), img(`${id}_3`)];
+});
