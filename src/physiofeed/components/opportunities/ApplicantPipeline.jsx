@@ -22,6 +22,14 @@ const TABS = [
 export default function ApplicantPipeline({ opp, applicants, onBack, onOpenApplicant, onPass, onShortlist, onChat, registrantsOnly }) {
   const [tab, setTab] = useState("all");
   const filtered = registrantsOnly || tab === "all" ? applicants : applicants.filter((a) => a.status === tab);
+  // Past the seat limit = waiting list, by who registered first. Only
+  // meaningful for a workshop with a limit; everyone else is simply a registrant.
+  const waitingIds = new Set();
+  if (registrantsOnly && opp.maxParticipants) {
+    [...applicants].sort((x, y) => String(x.appliedAt).localeCompare(String(y.appliedAt)))
+      .slice(opp.maxParticipants).forEach((a) => waitingIds.add(a.id));
+  }
+  const waitingCount = waitingIds.size;
   const countFor = (key) => (key === "all" ? applicants.length : applicants.filter((a) => a.status === key).length);
 
   return (
@@ -33,7 +41,7 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
           <p className="text-xs text-slate-400">
             {applicants.length}{" "}
             {registrantsOnly
-              ? `registration${applicants.length === 1 ? "" : "s"}`
+              ? `registration${applicants.length === 1 ? "" : "s"}${waitingCount ? ` · ${waitingCount} on the waiting list` : ""}`
               : `applicant${applicants.length === 1 ? "" : "s"}`}
           </p>
         </div>
@@ -67,7 +75,10 @@ export default function ApplicantPipeline({ opp, applicants, onBack, onOpenAppli
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-slate-900 truncate">{a.name}</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {a.name}
+                      {waitingIds.has(a.id) && <span className="ml-1.5 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700">Waiting list</span>}
+                    </p>
                     <span className="text-[11px] text-slate-400 shrink-0">Applied {a.appliedAgo}</span>
                   </div>
                   <p className="text-xs text-slate-500 truncate">{a.headline}</p>

@@ -52,6 +52,11 @@ export function normalizeLink(raw) {
     return "";
   }
 }
+// Today's local calendar date as YYYY-MM-DD (not UTC), for date-input minimums.
+export function todayLocalIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 // True while a workshop's early-bird price still applies: it has one, and
 // its last date (if any) has not passed. After that the regular fee is the
 // price, so neither the card nor the detail page may keep advertising it.

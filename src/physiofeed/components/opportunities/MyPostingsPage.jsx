@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle, MoreHorizontal, Pencil, Send, XCircle, Ban, RotateCcw, Copy, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, ChevronDown, Eye, Users, MessageCircle, MoreHorizontal, Pencil, Send, XCircle, Ban, RotateCcw, Copy, Trash2, CalendarPlus } from "lucide-react";
 
 // "My Posted Opportunities" (2026-09-22, Aditi's brief + real mockup
 // reference) -- the recruiter/poster dashboard, reachable from a banner on
@@ -25,14 +25,14 @@ const STATUS_META = {
 
 export default function MyPostingsPage({
   postings, onBack, onNewPost, onViewApplicants, onView, onEdit,
-  onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete,
+  onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete, onExtend,
 }) {
   const [showPast, setShowPast] = useState(false);
   const drafts = postings.filter((o) => o.lifecycleStatus === "draft");
   const active = postings.filter((o) => o.lifecycleStatus === "published");
   const past = postings.filter((o) => ["closed", "expired", "cancelled"].includes(o.lifecycleStatus));
 
-  const actions = { onViewApplicants, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete };
+  const actions = { onViewApplicants, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete, onExtend };
 
   return (
     <main className="flex-1 min-w-0">
@@ -79,7 +79,7 @@ export default function MyPostingsPage({
   );
 }
 
-function PostingCard({ opp, count, onViewApplicants, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete }) {
+function PostingCard({ opp, count, onViewApplicants, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete, onExtend }) {
   const stats = opp.stats || { views: 0, applications: 0, chats: 0 };
   const meta = STATUS_META[opp.lifecycleStatus] || STATUS_META.published;
   // Manage (view applicants/registrations) is only meaningful once a
@@ -94,7 +94,7 @@ function PostingCard({ opp, count, onViewApplicants, onView, onEdit, onPublish, 
           <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
           {meta.label}{opp.lifecycleStatus === "published" && opp.daysRemaining != null ? ` · ${opp.daysRemaining} days left` : ""}
         </div>
-        <PostingOptionsMenu opp={opp} count={count} onView={onView} onEdit={onEdit} onPublish={onPublish} onClose={onClose} onReopen={onReopen} onCancel={onCancel} onDuplicate={onDuplicate} onDelete={onDelete} />
+        <PostingOptionsMenu opp={opp} count={count} onView={onView} onEdit={onEdit} onPublish={onPublish} onClose={onClose} onReopen={onReopen} onCancel={onCancel} onDuplicate={onDuplicate} onDelete={onDelete} onExtend={onExtend} />
       </div>
       <p className="text-sm font-bold text-slate-900 leading-snug">{opp.title}</p>
       <p className="text-xs text-slate-500 mb-2.5">{opp.orgShort || opp.org}</p>
@@ -124,17 +124,17 @@ function PostingCard({ opp, count, onViewApplicants, onView, onEdit, onPublish, 
 // Every other action lives here, filtered per lifecycleStatus per the
 // brief's per-status action set:
 //   draft:      View, Edit, Publish, Delete
-//   published:  View, Edit, Close, Cancel, Delete   (+ Manage, above)
-//   closed:     View, Reopen, Delete                (+ Manage, above)
-//   expired:    View, Duplicate, Delete              (+ Manage, above)
-//   cancelled:  View, Delete
+//   published:  View, Edit, Extend, Close, Cancel, Delete   (+ Manage, above)
+//   closed:     View, Edit, Extend & reopen, Reopen, Duplicate, Delete
+//   expired:    View, Edit, Extend, Duplicate, Delete
+//   cancelled:  View, Duplicate, Delete
 // Delete keeps DeletePostButton.jsx's one-menu-click-then-confirm pattern
 // (2026-08-18): a second tap to confirm, since it's the one destructive
 // action here -- though "destructive" now just means "no longer visible to
 // anyone" (opportunities_select_visible checks deleted_at), not gone:
 // deleteOpportunity is a soft delete precisely so the applications/
 // registrations it's attached to survive it (add_opportunity_lifecycle.sql).
-function PostingOptionsMenu({ opp, count, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete }) {
+function PostingOptionsMenu({ opp, count, onView, onEdit, onPublish, onClose, onReopen, onCancel, onDuplicate, onDelete, onExtend }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const status = opp.lifecycleStatus;
@@ -164,12 +164,13 @@ function PostingOptionsMenu({ opp, count, onView, onEdit, onPublish, onClose, on
       {open && (
         <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-20">
           <MenuItem icon={Eye} label="View listing" onClick={() => runWithOpp(onView)} />
-          {(status === "draft" || status === "published") && <MenuItem icon={Pencil} label="Edit listing" onClick={() => runWithOpp(onEdit)} />}
+          {status !== "cancelled" && <MenuItem icon={Pencil} label="Edit listing" onClick={() => runWithOpp(onEdit)} />}
           {status === "draft" && <MenuItem icon={Send} label="Publish" onClick={() => run(onPublish)} />}
+          {(status === "published" || status === "closed" || status === "expired") && <MenuItem icon={CalendarPlus} label={status === "closed" ? "Extend & reopen" : "Extend"} onClick={() => runWithOpp(onExtend)} />}
           {status === "published" && <MenuItem icon={XCircle} label="Close listing" onClick={() => run(onClose)} />}
           {status === "published" && <MenuItem icon={Ban} label="Cancel listing" tone="rose" onClick={() => run(onCancel)} />}
           {status === "closed" && <MenuItem icon={RotateCcw} label="Reopen" onClick={() => run(onReopen)} />}
-          {status === "expired" && <MenuItem icon={Copy} label="Duplicate as new draft" onClick={() => run(onDuplicate)} />}
+          {(status === "expired" || status === "closed" || status === "cancelled") && <MenuItem icon={Copy} label="Duplicate as new draft" onClick={() => run(onDuplicate)} />}
           <button
             type="button"
             onClick={() => {

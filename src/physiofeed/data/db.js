@@ -2517,6 +2517,42 @@ export async function closeOpportunity(oppId) {
   if (error) throw error;
 }
 
+// "Extend" from My Postings: give people more time (and, for a workshop, a
+// later date or more seats) without opening the whole edit form. Only the
+// fields passed are changed. A closed listing is reopened by extending it --
+// that is what extending means -- and an expired one becomes live again
+// simply because its dates now lie ahead. Creator-only via RLS.
+export async function extendOpportunity(oppId, { deadline, eventDate, maxParticipants } = {}) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in to manage your listings.");
+  const row = { updated_at: SERVER_NOW };
+  if (deadline !== undefined) row.deadline = deadline || null;
+  if (eventDate !== undefined) row.event_date = eventDate || null;
+  if (maxParticipants !== undefined) row.max_participants = maxParticipants || null;
+  const { data: cur, error: curErr } = await supabase.from("opportunities").select("status").eq("id", oppId).single();
+  if (curErr) throw curErr;
+  if (cur.status === "closed") { row.status = "published"; row.closed_at = null; }
+  const { data, error } = await supabase.from("opportunities").update(row).eq("id", oppId).select("*").single();
+  if (error) throw error;
+  invalidateSearchCorpus();
+  return rowToOpportunity(data, uid, 0);
+}
+
+// How many registrations a listing already has -- everyone's, not just the
+// ones this user may see. The count is a SECURITY DEFINER database function
+// (fix_applications_insert_recursion.sql) that returns only a number.
+// null when it can't be read, so callers never guess "full" or "free".
+export async function getSeatsTaken(oppId) {
+  try {
+    const { data, error } = await supabase.rpc("application_count", { p_opportunity_id: Number(oppId) });
+    if (error) throw error;
+    return typeof data === "number" ? data : Number(data);
+  } catch (e) {
+    console.error("getSeatsTaken(): --", e?.message || e);
+    return null;
+  }
+}
+
 export async function reopenOpportunity(oppId) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Sign in to manage your listings.");
@@ -2709,6 +2745,9 @@ export async function applyToOpportunity(oppId, { coverNote = "", resumeUrl = ""
   // Postgres error code.
   if (error) {
     if (error.code === "23505") throw new Error("You've already applied to this.");
+    // The insert rule only lets a row in while the listing is live, before
+    // its dates, and (unless the poster allows a waiting list) under the seat limit.
+    if (error.code === "42501") throw new Error("Registrations are closed for this listing, or its seats are full.");
     throw error;
   }
   trackEvent("opportunity_application_submitted", { entityType: "opportunity", entityId: oppId });
@@ -2810,6 +2849,7 @@ export async function getApplicantsForOpportunity(oppId) {
         status: APP_STATUS_TO_UI[a.status] || "new",
         rawStatus: a.status,
         appliedAgo: agoLabel(a.created_at),
+        appliedAt: a.created_at,
       };
     });
   } catch (e) {
