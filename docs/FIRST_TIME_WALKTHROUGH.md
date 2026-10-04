@@ -39,8 +39,12 @@ the PDF's look, and the patient profile in depth.
 - **8. Save easy to miss:** "Save Assessment" is now the main button on Final Review for Ortho.
 - **11. Disabled buttons give no reason:** Create free account and the Ortho Continue buttons now say what is missing.
 
+- **7. ROM boxes showing 45:** they start empty now, with the normal value as a faint hint.
+- **9. Small, pale text:** Home tile descriptions are bigger and darker.
+- **10. Cut-off labels:** shorter step-bar labels, and the PhysioFeed top bar no longer cuts "PhysioMind".
+
 ## For a decision (not changed)
-Ordered roughly by how likely a new physio is to be confused or put off. Items 1, 3, 4, 5, 6, 8 and 11 are done (above); the text is kept as written.
+Ordered roughly by how likely a new physio is to be confused or put off. Items 1, 3, 4, 5, 6, 7, 8, 9, 10 and 11 are done (above); the text is kept as written.
 
 1. **Sample patients look real.** Every new account starts with "Priya Sharma" and "Arjun
    Kapoor", counted in "1 patient today / 2 total", with no "sample" label. Suggest a Sample

@@ -13,6 +13,7 @@ import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessment
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
 import { trackEvent } from "./analytics/trackEvent.js";
+import { stepBarLabel } from "./orthoFieldKit.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -584,7 +585,7 @@ function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
             title={s.label}
           >
             <span className="step-circle-ring">{s.icon}</span>
-            <span className="step-circle-label">{s.label}</span>
+            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
           </button>
         );
       })}
@@ -2497,7 +2498,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
            icon (orthoStyles.js), this brought Cardio's own step nav in line
            with it instead of icon-only. */
         .step-circle {
-          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 56px; display: flex; flex-direction: column; align-items: center;
           gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -2505,7 +2506,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
           font-size: 13px;
         }
-        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 56px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purpleDark}; }

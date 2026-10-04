@@ -697,10 +697,14 @@ export function YesNo({ label, value, onChange, hint, howTo }) {
    built-in MMT scale (0–3 red, 4 amber, 5 green), or pass an explicit
    `tone` ("normal" | "mild" | "severe") when the caller has its own
    comparison logic (e.g. ROM value vs textbook norm). */
-export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square, large }) {
+// `placeholder` is the faint hint shown while the box is empty (default "--"); `startAt` is
+// where the arrows begin counting from when the box is empty (ROM passes the movement's
+// normal value, so the box can stay empty -- nothing looks entered -- while typing, or
+// nudging from normal with the arrows, both still work).
+export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize, tone: toneProp, square, large, placeholder = "--", startAt }) {
   const num = value === undefined || value === "" ? null : Number(value);
   function bump(delta) {
-    const base = num === null ? (min > 0 ? min : 0) : num;
+    const base = num === null ? (startAt != null ? Number(startAt) : min > 0 ? min : 0) : num;
     const next = Math.min(max, Math.max(min, base + delta));
     onChange(String(next));
   }
@@ -725,7 +729,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
           type="number"
           inputMode="decimal"
           value={value ?? ""}
-          placeholder="--"
+          placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="stepper-sq-arrows">
@@ -743,7 +747,7 @@ export function Stepper({ value, onChange, min = 0, max = 99, step = 1, colorize
         type="number"
         inputMode="decimal"
         value={value ?? ""}
-        placeholder="--"
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
       <div className="stepper-arrows">
@@ -842,7 +846,7 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
                 </span>
               )}
             </span>
-            <span className="step-circle-label">{s.label}</span>
+            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
           </button>
         );
       })}
@@ -854,6 +858,25 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
       </button>
     </div>
   );
+}
+
+// Labels that do not fit the 56px step-bar circle ("Demograp...", "General Observatic...")
+// get a shorter wording there. The full name is still the tooltip and the screen heading.
+// "\u00AD" is a soft hyphen: the word may break there ("Neuro-" / "vascular") and
+// shows a hyphen only if it does.
+const STEP_BAR_SHORT_LABELS = {
+  "Demographics": "Patient",
+  "General Observation": "Observe",
+  "Observation": "Observe",
+  "Neurovascular": "Neuro\u00ADvascular",
+  "Precautions & Safety": "Safety",
+  "Neurological Screen": "Neuro Screen",
+  "Functional Mobility": "Mobility",
+  "Gait / Ambulation": "Gait",
+  "MMT / Muscle Activation": "MMT",
+};
+export function stepBarLabel(label) {
+  return STEP_BAR_SHORT_LABELS[label] || label;
 }
 
 export function useSectionData(data, setData, key) {

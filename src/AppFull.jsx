@@ -1777,7 +1777,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
           stacked in the same scroll, the actual cause of the header
           jitter CSS containment alone couldn't fully fix. */}
       {!isFullScreenAssessment && (
-      <div className="pm-mobile-hdr" style={{
+      <div className="pm-mobile-hdr" data-wide-icons={active==="physiofeed"||active==="profile"?"1":undefined} style={{
         background: "#FFFFFF",
         borderBottom: `1px solid ${PC.isDark?PC.border:"#E0E0E2"}`,
         borderLeft: `3.5px solid ${PC.accent}`,
@@ -1802,7 +1802,7 @@ function AppInner({ currentUser, onSignOut, isGuest=false }) {
         {/* Logo — plain, bigger */}
         <img src="/logo.svg" alt="PhysioMind" style={{height:40,width:"auto",flexShrink:0}} />
         {/* Text */}
-        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+        <div className="pm-hdr-brand-text" style={{flex:1,minWidth:0,overflow:"hidden"}}>
           <div style={{fontWeight:800,fontSize:"0.92rem",color:PC.isDark?PC.a2:"#4c1d95",letterSpacing:"-0.3px",lineHeight:1.2,whiteSpace:"nowrap"}}>PhysioMind</div>
         </div>
         {/* Right side: swaps by tab instead of always showing "+ New" --

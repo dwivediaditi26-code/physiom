@@ -69,7 +69,7 @@ describe("Home screen", () => {
   test("Quick Access opens Evidence and Learn", () => {
     const onNav = vi.fn();
     render(<HomeModule onNav={onNav} />);
-    fireEvent.click(screen.getByRole("button", { name: /^📚 Evidence Latest research/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^📚 Evidence Research and papers/ }));
     expect(onNav).toHaveBeenLastCalledWith("physiofeed", { pfTab: "evidence" });
     fireEvent.click(screen.getByRole("button", { name: /Learn/ }));
     expect(onNav).toHaveBeenLastCalledWith("learn");

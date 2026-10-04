@@ -77,7 +77,7 @@ export function orthoStyles() {
            progress row below it were eating a third of the viewport) --
            label text kept, just smaller and tighter, not removed. */
         .step-circle {
-          flex: 0 0 auto; width: 48px; display: flex; flex-direction: column; align-items: center;
+          flex: 0 0 auto; width: 56px; display: flex; flex-direction: column; align-items: center;
           gap: 3px; background: none; border: none; padding: 0; cursor: pointer; color: ${BRAND.grayLight};
         }
         .step-circle-ring {
@@ -85,7 +85,7 @@ export function orthoStyles() {
           display: flex; align-items: center; justify-content: center; position: relative; transition: all .15s;
         }
         .step-circle-icon { display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; }
-        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 48px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .step-circle-label { font-size: 9.5px; font-weight: 600; line-height: 1.1; text-align: center; color: inherit; max-width: 56px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .step-active .step-circle-ring { border-color: ${BRAND.purple}; background: ${BRAND.purple}; color: #fff; box-shadow: 0 4px 10px rgba(108,77,255,.35); }
         .step-active .step-circle-label { color: ${BRAND.purple}; font-weight: 800; }
         .step-seen .step-circle-ring { border-color: ${BRAND.purple}; color: ${BRAND.purple}; }
@@ -302,6 +302,7 @@ export function orthoStyles() {
               The box is widened slightly as well so a 3-digit value (a
               180° shoulder flexion norm, say) always has clear room. */
         .stepper-input { flex: 1; border: none; outline: none; text-align: center; font-size: 13px !important; font-weight: 700; padding: 6px 2px !important; min-height: 0 !important; width: 100%; min-width: 0; color: ${BRAND.ink}; -moz-appearance: textfield; appearance: none; }
+        .stepper-input::placeholder, .stepper-sq-input::placeholder { color: #B6B0C9; font-weight: 600; opacity: 1; }
         .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .stepper-arrows { display: flex; flex-direction: column; border-left: 1px solid ${BRAND.border}; }
         .stepper-arrow { border: none; background: ${BRAND.purpleFaint}; color: ${BRAND.purpleDark}; width: 18px; height: 15px; font-size: 7px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }

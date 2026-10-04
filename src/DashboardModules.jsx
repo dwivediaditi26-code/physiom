@@ -105,7 +105,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
   useEffect(() => { getCareerNews().then((rows) => setNews(rows.slice(0, 3))).catch(() => {}); }, []);
 
   const TILES = [
-    { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients, treatment and sessions",            action:()=>onNav("clinical") },
+    { key:"clinical",   icon:"📋", bg:"#EEF2FF", title:"Clinical",        sub:"Patients and treatment",            action:()=>onNav("clinical") },
     { key:"assessment", icon:"✅", bg:"#ECFDF5", title:"Assessment",      sub:"Ortho, Neuro, Cardio. More soon",         action:()=>onNav("clinical",{clinicalSubTab:"assessment"}) },
     // 2026-09-02, Aditi: "the AI Assessment tile takes us to the old AI...
     // put it in a new AI orthopedic button" -- this used to open the old
@@ -114,16 +114,16 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
     // already uses (OrthoAssessmentNew.jsx's AI intake, entryMode:"ai"),
     // which also resets any stale patient/data first the way that picker
     // does -- onNav alone wouldn't do that.
-    { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say your assessment in your words and get it filled", action:()=>onStartAI ? onStartAI() : onNav("ortho_new_assessment", { entryMode: "ai" }) },
+    { key:"ai",         icon:"✨", bg:"#F5F3FF", title:"AI Assessment",   sub:"Say it, AI fills it in", action:()=>onStartAI ? onStartAI() : onNav("ortho_new_assessment", { entryMode: "ai" }) },
     // Posture Analysis is not launched yet: shown only to preview accounts (featureFlags.js).
     ...(showPosture ? [{ key:"posture",    icon:"🧍", bg:"#EFF6FF", title:"Posture Analysis",sub:"AI posture assessment",                       action:()=>onNav("posture") }] : []),
   ];
 
   const QUICK_ACCESS = [
-    { key:"evidence", icon:"📚", bg:"#EFF6FF", title:"Evidence", sub:"Latest research and papers",   action:()=>onNav("physiofeed",{pfTab:"evidence"}) },
-    { key:"explore",  icon:"🧭", bg:"#ECFEFF", title:"Explore",  sub:"Topics, tools & resources",     action:()=>onNav("physiofeed") },
-    { key:"learn",    icon:"🎓", bg:"#F5F3FF", title:"Learn",    sub:"Assessments, techniques & more",action:()=>onNav("learn") },
-    { key:"saved",    icon:"🔖", bg:"#FFF7ED", title:"Saved",    sub:"Your saved content",            action:()=>onNav("physiofeed") },
+    { key:"evidence", icon:"📚", bg:"#EFF6FF", title:"Evidence", sub:"Research and papers",   action:()=>onNav("physiofeed",{pfTab:"evidence"}) },
+    { key:"explore",  icon:"🧭", bg:"#ECFEFF", title:"Explore",  sub:"Topics and tools",     action:()=>onNav("physiofeed") },
+    { key:"learn",    icon:"🎓", bg:"#F5F3FF", title:"Learn",    sub:"Guides and techniques",action:()=>onNav("learn") },
+    { key:"saved",    icon:"🔖", bg:"#FFF7ED", title:"Saved",    sub:"Your saved items",            action:()=>onNav("physiofeed") },
   ];
 
   return (
@@ -153,7 +153,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
           }}>
             <div style={{width: isDesktop?40:34,height: isDesktop?40:34,borderRadius:10,background:t.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize: isDesktop?18:15}}>{t.icon}</div>
             <div style={{fontSize: isDesktop?13:11.5,fontWeight:800,color:"#111827",lineHeight:1.2}}>{t.title}</div>
-            <div style={{fontSize: isDesktop?10.5:9,color:"#9A9AA2",lineHeight:1.3}}>{t.sub}</div>
+            <div style={{fontSize: isDesktop?12:11,color:"#5B6270",lineHeight:1.3}}>{t.sub}</div>
             <span style={{marginTop:"auto",alignSelf:"flex-end",color:"#C7C7CE",fontSize:13}}>›</span>
           </button>
         ))}
@@ -170,7 +170,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
         <div style={{width: isDesktop?40:34,height: isDesktop?40:34,borderRadius:10,background:"#FFF7ED",display:"flex",alignItems:"center",justifyContent:"center",fontSize: isDesktop?18:15,flexShrink:0}}>📖</div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize: isDesktop?13:12,fontWeight:800,color:"#111827",lineHeight:1.2}}>How to use PhysioMind</div>
-          <div style={{fontSize: isDesktop?10.5:10,color:"#9A9AA2",lineHeight:1.35,marginTop:2}}>Short guides: start an assessment, save it, find a patient, make a report</div>
+          <div style={{fontSize: isDesktop?12:11.5,color:"#5B6270",lineHeight:1.35,marginTop:2}}>Short guides: start an assessment, save it, find a patient, make a report</div>
         </div>
         <span style={{color:"#C7C7CE",fontSize:16,flexShrink:0}}>›</span>
       </button>
@@ -183,7 +183,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
             <span style={{fontSize:18,lineHeight:1}}>📰</span>
             <div style={{minWidth:0}}>
               <div style={{fontSize:15,fontWeight:800,color:"#111827"}}>News & Updates</div>
-              <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:1}}>Jobs, conferences & regulation</div>
+              <div style={{fontSize:12,color:"#5B6270",marginTop:1}}>Jobs, conferences & regulation</div>
             </div>
           </div>
           <button onClick={()=>onNav("physiofeed",{pfTab:"news"})} style={{background:"none",border:"none",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,padding:0}}>View all ›</button>
@@ -197,7 +197,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
                   <div style={{fontSize:12.5,fontWeight:800,color:"#111827",lineHeight:1.35}}>{n.title}</div>
                   {i===0 && <span style={{flexShrink:0,fontSize:9,fontWeight:800,color:"#059669",background:"#ECFDF5",borderRadius:99,padding:"2.5px 8px",whiteSpace:"nowrap"}}>NEW</span>}
                 </div>
-                <div style={{fontSize:10.5,color:"#9A9AA2",marginTop:4}}>{n.source_name}{n.deadlineLabel ? ` · ${n.deadlineLabel}` : ""}</div>
+                <div style={{fontSize:11.5,color:"#5B6270",marginTop:4}}>{n.source_name}{n.deadlineLabel ? ` · ${n.deadlineLabel}` : ""}</div>
               </a>
             ))}
           </div>
@@ -217,7 +217,7 @@ function HomeModule({ onNav, patients=[], data={}, taskDB=[], onNewPatient, curr
             <button key={q.key} onClick={q.action} style={{background:"none",border:"none",padding:0,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:7,cursor:"pointer",textAlign:"left"}}>
               <div style={{width:32,height:32,borderRadius:10,background:q.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>{q.icon}</div>
               <div style={{fontSize:11,fontWeight:800,color:"#111827"}}>{q.title}</div>
-              <div style={{fontSize:9,color:"#9A9AA2",lineHeight:1.3}}>{q.sub}</div>
+              <div style={{fontSize:11,color:"#5B6270",lineHeight:1.3}}>{q.sub}</div>
             </button>
           ))}
         </div>

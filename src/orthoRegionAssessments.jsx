@@ -141,11 +141,12 @@ function romCountFor(entry, movements) {
    actually adding bulk to every row.
 
    The degree fields are a Stepper (+/- one degree at a time, same control
-   Treatment Techniques uses for sets/duration/frequency) pre-loaded to the
-   movement's own normal value as a starting point to nudge from, rather
-   than a blank box demanding an exact number typed from scratch -- typing
-   the exact value directly still works, the Stepper's box is a real,
-   always-editable number field. */
+   Treatment Techniques uses for sets/duration/frequency). The box starts
+   EMPTY, with the movement's normal value shown as a faint placeholder
+   (2026-10-03, Aditi: every box showing 45 looked like a value somebody had
+   entered, and she only wants people to be able to type straight in). Typing
+   the measured value works directly; the arrows start from the normal value;
+   "Normal -- document" records it in one tap. */
 export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, onSetVal, onSetMeta, region }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const detailSummary = [pain, endFeel].filter(Boolean).join(" · ");
@@ -172,13 +173,13 @@ export function RomMovementCard({ m, val, gradeL, gradeR, pain, endFeel, norm, o
               Objective Assessment's ROM section and preferred that
               compact rectangular box over the square -- supersedes the
               2026-09-02 "make it square" request. */}
-          <Stepper large value={val.left ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+          <Stepper large value={val.left ?? ""} placeholder={m.normal != null ? String(m.normal) : "--"} startAt={m.normal ?? undefined} onChange={(v) => onSetVal(m.id, "left", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
           {gradeL && <span className="restriction-label" style={{ color: gradeL.color }}>{gradeL.label}</span>}
         </div>
         <div className="rom-row-cell">
           {m.bilateral !== false && (
             <>
-              <Stepper large value={val.right ?? (m.normal != null ? String(m.normal) : "")} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
+              <Stepper large value={val.right ?? ""} placeholder={m.normal != null ? String(m.normal) : "--"} startAt={m.normal ?? undefined} onChange={(v) => onSetVal(m.id, "right", v)} min={0} max={m.normal ? m.normal * 2 : 180} />
               {gradeR && <span className="restriction-label" style={{ color: gradeR.color }}>{gradeR.label}</span>}
             </>
           )}
@@ -272,6 +273,9 @@ export function RomSection({ data, setData, selectedRegions, sectionKey = "rom" 
         <div className="rom-card-title">{activeKey}</div>
         <Segmented options={["Active", "Passive", "Resisted"]} value={mode === "arom" ? "Active" : mode === "prom" ? "Passive" : "Resisted"} onChange={(v) => set(activeKey, { ...entry, mode: v === "Active" ? "arom" : v === "Passive" ? "prom" : v === "Resisted" ? "resisted" : "arom" })} />
 
+        <div style={{ marginBottom: 12 }}>
+          <Hint>Type the measured degrees straight into each box. The faint number is the normal value, not a recording. Tap "✓ Normal" to record it.</Hint>
+        </div>
         <div className="rom-row-grid rom-table-head">
           <span>Movement</span>
           <span>L</span>

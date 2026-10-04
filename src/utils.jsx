@@ -575,7 +575,11 @@ const MOBILE_CSS = `
       min-height: 64px; flex-shrink: 0;
       contain: paint; isolation: isolate;
     }
-    .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
+    /* PhysioFeed / Profile put four icons in the top bar. On a phone the written "PhysioMind"
+     beside the logo no longer fits and was cut to "PhysioMir"; the logo already carries the name.
+     (Only the text is hidden; its box stays so the icons keep their place at the right.) */
+  @media (max-width: 459px) { .pm-mobile-hdr[data-wide-icons] .pm-hdr-brand-text > div { display: none; } }
+  .pm-mobile-hdr .pm-hamburger { min-height: 32px !important; min-width: 32px !important; padding: 5px 7px !important; }
     /* Hide desktop header and both patient bars on mobile */
     .pm-header { display: none !important; }
     .pm-patient-bar { display: none !important; }

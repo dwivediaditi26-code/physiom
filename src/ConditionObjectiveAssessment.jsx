@@ -2245,8 +2245,8 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   if (config.romBilateral) {
                     const rawL = v("rom", m.id + "_left");
                     const rawR = v("rom", m.id + "_right");
-                    const valL = rawL || normalStr;
-                    const valR = rawR || normalStr;
+                    const valL = rawL || "";
+                    const valR = rawR || "";
                     // Grade is judged off what was actually confirmed, not
                     // the suggested-normal default the Stepper shows before
                     // that — otherwise every untouched row would flash "WNL".
@@ -2263,11 +2263,11 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                             </div>
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                            <Stepper value={valL} onChange={(nv) => sv("rom", m.id + "_left", nv)} min={0} max={max} />
+                            <Stepper value={valL} placeholder={normalStr || "--"} startAt={m.normal ?? undefined} onChange={(nv) => sv("rom", m.id + "_left", nv)} min={0} max={max} />
                             {gradeL && <span style={{ fontSize: "0.92rem", fontWeight: 800, color: gradeL.color }}>{gradeL.label}</span>}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                            <Stepper value={valR} onChange={(nv) => sv("rom", m.id + "_right", nv)} min={0} max={max} />
+                            <Stepper value={valR} placeholder={normalStr || "--"} startAt={m.normal ?? undefined} onChange={(nv) => sv("rom", m.id + "_right", nv)} min={0} max={max} />
                             {gradeR && <span style={{ fontSize: "0.92rem", fontWeight: 800, color: gradeR.color }}>{gradeR.label}</span>}
                           </div>
                         </div>
@@ -2286,7 +2286,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                   }
 
                   const rawVal = v("rom", m.id);
-                  const val = rawVal || normalStr;
+                  const val = rawVal || "";
                   const grade = m.normal && rawVal ? RESTRICTION_GRADE(Number(rawVal), m.normal) : null;
                   return (
                     <div key={m.id} style={rowStyle}>
@@ -2298,7 +2298,7 @@ export default function ConditionObjectiveAssessment({ data, setData, selectedRe
                             <span style={{ fontSize: "0.656rem", color: BRAND.grayLight, fontWeight: 500 }}>Normal {m.normal}°</span>
                           </div>
                         </div>
-                        <Stepper value={val} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
+                        <Stepper value={val} placeholder={normalStr || "--"} startAt={m.normal ?? undefined} onChange={(nv) => sv("rom", m.id, nv)} min={0} max={max} />
                       </div>
                       {grade && (
                         <div style={{ fontSize: "0.92rem", fontWeight: 800, color: grade.color, textAlign: "right", marginTop: 2 }}>{grade.label}</div>
