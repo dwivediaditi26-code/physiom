@@ -1385,7 +1385,7 @@ export const neuroConditionLibraryData = {
     interpret: {
       normal: ["Negative at the site tested"],
       abnormal: ["Positive → supports nerve entrapment/irritation at that site (e.g. positive at the wrist supports carpal tunnel syndrome); correlate with the broader clinical picture and other special tests"],
-      note: "Tinel's accuracy is variable and only moderate for entrapment neuropathies (a negative test does not rule one out, and a positive test is not proof) — use it as one supporting finding alongside history, other special tests, and (where available) nerve conduction studies.",
+      note: "Tinel's accuracy is only moderate for entrapment neuropathies, so a negative test does not rule one out. Use it as one supporting finding alongside history, other special tests and nerve conduction studies.",
     },
   },
 
