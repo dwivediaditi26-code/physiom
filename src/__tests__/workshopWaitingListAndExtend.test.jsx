@@ -5,8 +5,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 let seats = null;
+let waiting = false;
+const withdrawApplication = vi.fn(() => Promise.resolve());
 vi.mock("../physiofeed/data/db.js", () => ({
   getSeatsTaken: () => Promise.resolve(seats),
+  isOnWaitingList: () => Promise.resolve(waiting),
+  withdrawApplication: (...a) => withdrawApplication(...a),
   registerForWorkshop: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("../analytics/trackEvent.js", () => ({ trackEvent: vi.fn() }));
@@ -45,6 +49,34 @@ describe("Workshop detail when seats are full", () => {
   it("tells people when registration closes", () => {
     render(<WorkshopDetail opp={{ ...ws, deadline: "2099-11-10" }} onBack={() => {}} registered={false} onRegistered={() => {}} onMessage={() => {}} />);
     expect(screen.getByText(/Registration closes on 10 November 2099/)).toBeTruthy();
+  });
+});
+
+describe("Withdraw and waiting-list status for the student", () => {
+  beforeEach(() => { seats = null; waiting = false; withdrawApplication.mockClear(); });
+  it("a registered student can withdraw after confirming, and the screen re-reads their registrations", async () => {
+    const onRegistered = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<WorkshopDetail opp={ws} onBack={() => {}} registered onRegistered={onRegistered} onMessage={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Withdraw my registration" }));
+    await waitFor(() => expect(withdrawApplication).toHaveBeenCalledWith("5"));
+    await waitFor(() => expect(onRegistered).toHaveBeenCalled());
+  });
+  it("does nothing if they say no to the confirmation", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<WorkshopDetail opp={ws} onBack={() => {}} registered onRegistered={() => {}} onMessage={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Withdraw my registration" }));
+    expect(withdrawApplication).not.toHaveBeenCalled();
+  });
+  it("shows 'On the waiting list' instead of 'Registered' when past the seat limit", async () => {
+    waiting = true;
+    render(<WorkshopDetail opp={{ ...ws, allowWaitlist: true }} onBack={() => {}} registered onRegistered={() => {}} onMessage={() => {}} />);
+    expect(await screen.findByText("On the waiting list")).toBeTruthy();
+    expect(screen.getByText(/you're on the waiting list/)).toBeTruthy();
+  });
+  it("says plainly that PhysioFeed does not take payment for a paid workshop", () => {
+    render(<WorkshopDetail opp={{ ...ws, fee: "₹1,500" }} onBack={() => {}} registered={false} onRegistered={() => {}} onMessage={() => {}} />);
+    expect(screen.getByText(/doesn't take payment/)).toBeTruthy();
   });
 });
 

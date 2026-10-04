@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, Calendar, Clock, Video, Check, X, Maximize2 } from "lucide-react";
 import Avatar from "../shared/Avatar.jsx";
 import * as db from "../../data/db.js";
+import WithdrawButton from "./WithdrawButton.jsx";
 import LifecycleBanner, { isRegistrationBlocked } from "./StatusBanner.jsx";
 import { formatEventDate, normalizeLink, earlyBirdActive } from "./FormFields.jsx";
 import { trackEvent } from "../../../analytics/trackEvent.js";
@@ -32,6 +33,14 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
     db.getSeatsTaken(opp.id).then((n) => { if (!cancelled) setSeatsTaken(n); });
     return () => { cancelled = true; };
   }, [opp.id, opp.maxParticipants, opp.postedByMe, preview, registered]);
+  // Am I past the seat limit? Only asked once I've registered.
+  const [onWaitingList, setOnWaitingList] = useState(false);
+  useEffect(() => {
+    if (preview || !registered || !opp.maxParticipants) { setOnWaitingList(false); return; }
+    let cancelled = false;
+    db.isOnWaitingList(opp.id).then((v) => { if (!cancelled) setOnWaitingList(v); });
+    return () => { cancelled = true; };
+  }, [opp.id, opp.maxParticipants, registered, preview]);
   const full = !!opp.maxParticipants && seatsTaken != null && seatsTaken >= opp.maxParticipants;
   const waitlistOpen = full && !!opp.allowWaitlist;
 
@@ -222,9 +231,9 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
               type="button"
               onClick={register}
               disabled={registered || busy}
-              className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? "bg-emerald-50 text-emerald-700" : "text-white bg-[#FF5FA2] active:scale-[0.98] disabled:opacity-60"}`}
+              className={`pf-font-head flex items-center justify-center gap-1.5 text-sm font-bold rounded-xl px-6 py-3 shadow-sm transition ${registered ? (onWaitingList ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700") : "text-white bg-[#FF5FA2] active:scale-[0.98] disabled:opacity-60"}`}
             >
-              {registered ? <><Check size={16} /> Registered</> : busy ? "Registering…" : waitlistOpen ? "Join Waiting List" : "Register Now"}
+              {registered ? <><Check size={16} /> {onWaitingList ? "On the waiting list" : "Registered"}</> : busy ? "Registering…" : waitlistOpen ? "Join Waiting List" : "Register Now"}
             </button>
           )}
         </div>
@@ -239,8 +248,23 @@ export default function WorkshopDetail({ opp, onBack, registered, onRegistered, 
         )}
         {registered && opp.registrationMethod !== "external" && opp.registrationMethod !== "contact" && (
           <p className="text-[11px] text-slate-400 mt-2">
-            The organiser has your request and a chat thread is open — they'll confirm the details there.
+            {onWaitingList
+              ? "All seats are taken, so you're on the waiting list. If someone withdraws, you move up and we'll tell you."
+              : "The organiser has your request and a chat thread is open — they'll confirm the details there."}
           </p>
+        )}
+        {registered && !preview && !opp.postedByMe && opp.registrationMethod !== "external" && opp.registrationMethod !== "contact" && (
+          <div className="mt-3">
+            <WithdrawButton
+              oppId={opp.id}
+              label="Withdraw my registration"
+              confirmText={`Withdraw your registration for "${opp.title}"? The organiser will be told and your seat goes to the next person.`}
+              onDone={onRegistered}
+            />
+          </div>
+        )}
+        {opp.fee && opp.fee !== "Free" && !blocked && (
+          <p className="text-[11px] text-slate-400 mt-2">PhysioFeed doesn't take payment. The organiser will arrange the fee with you in the chat.</p>
         )}
       </div>
     </div>

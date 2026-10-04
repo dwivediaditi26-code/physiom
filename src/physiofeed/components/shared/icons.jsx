@@ -8,6 +8,7 @@ import {
   ChevronRight, UserPlus, Check, Send, MapPin, Star, GraduationCap, Award,
   Trophy, Languages, ShieldCheck, Clock, Activity, Zap, MoreHorizontal, Link2,
   SlidersHorizontal, Building2, ExternalLink, Menu, Newspaper,
+  CalendarCheck, UserCheck, Briefcase, RefreshCw, UserMinus, XCircle, Ban, Lock,
 } from "lucide-react";
 
 export const ICONS = {
@@ -18,6 +19,7 @@ export const ICONS = {
   ChevronRight, UserPlus, Check, Send, MapPin, Star, GraduationCap, Award,
   Trophy, Languages, ShieldCheck, Clock, Activity, Zap, MoreHorizontal, Link2,
   SlidersHorizontal, Building2, ExternalLink, Menu, Newspaper,
+  CalendarCheck, UserCheck, Briefcase, RefreshCw, UserMinus, XCircle, Ban, Lock,
 };
 
 export function Icon({ name, ...props }) {

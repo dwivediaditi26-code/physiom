@@ -449,6 +449,8 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                 </>
               )}
 
+              {!isFree && <p className="text-xs text-slate-400 mb-3">PhysioFeed doesn't collect payment. You arrange the fee with each person in the chat.</p>}
+
               <span className="block text-xs font-semibold text-slate-600 mb-1.5 mt-1">Maximum participants</span>
               <div className="flex gap-1.5 mb-3">
                 <PillSelect value={hasLimit} onChange={setHasLimit} options={[false, true]} getKey={(v) => v} getLabel={(v) => v ? "Limited seats" : "No limit"} />
@@ -464,7 +466,7 @@ export default function WorkshopWizard({ onClose, onSubmit, editingOpp }) {
                   <input type="checkbox" checked={allowWaitlist} onChange={(e) => setAllowWaitlist(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                   <span>
                     Keep taking registrations after the seats are full (waiting list)
-                    <span className="block text-xs text-slate-400 mt-0.5">People past the seat limit show as "Waiting list" and you decide who gets in. Leave off to stop registrations when full.</span>
+                    <span className="block text-xs text-slate-400 mt-0.5">People past the seat limit show as "Waiting list". If someone withdraws, the first person waiting gets the seat automatically (first come, first served). Leave off to stop registrations when full.</span>
                   </span>
                 </label>
               )}

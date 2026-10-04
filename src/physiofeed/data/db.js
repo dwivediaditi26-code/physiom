@@ -2790,6 +2790,33 @@ export async function registerForWorkshop(oppId, { creatorId, title } = {}) {
   }
 }
 
+// Take back your own application/registration (applications_delete_own).
+// The database tells the organiser, and on a workshop with a waiting list
+// moves the first waiting person into the freed seat
+// (add_withdraw_and_waiting_list_status.sql).
+export async function withdrawApplication(oppId) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Sign in first.");
+  const { data, error } = await supabase
+    .from("applications").delete().eq("opportunity_id", oppId).eq("applicant_id", uid).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Couldn't find your application to withdraw.");
+  trackEvent("opportunity_application_withdrawn", { entityType: "opportunity", entityId: oppId });
+}
+
+// Is MY registration past the seat limit? false when unknown, so nobody is
+// wrongly told they are waiting.
+export async function isOnWaitingList(oppId) {
+  try {
+    const { data, error } = await supabase.rpc("is_on_waiting_list", { p_opportunity_id: Number(oppId) });
+    if (error) throw error;
+    return data === true;
+  } catch (e) {
+    console.error("isOnWaitingList(): --", e?.message || e);
+    return false;
+  }
+}
+
 export async function getApplicantsForOpportunity(oppId) {
   try {
     const { data, error } = await supabase
