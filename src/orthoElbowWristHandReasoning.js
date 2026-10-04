@@ -32,6 +32,28 @@ elbowEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.su
 wristEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 handEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 
+/* The Elbow/Wrist/Hand red-flag checklist words its options for the clinician;
+   normalize.ts searches for its own phrases ("suspected scaphoid", "rupture
+   extensor / flexor tendons", "acute septic arthritis", "acute compartment
+   syndrome"). The two never overlapped, so these ticked red flags changed
+   nothing. Each rule appends the engine's phrase when the option is ticked
+   (the original text is kept too). "Suspected fracture" and "Bilateral
+   symptoms" are left as they are: the engine needs a named bone / the carpal
+   tunnel screen, which these generic options do not say. */
+const EWH_RED_FLAG_PHRASES = [
+  ["possible scaphoid fracture", "suspected scaphoid"],
+  ["tendon rupture", "rupture extensor / flexor tendons"],
+  ["compartment syndrome", "acute compartment syndrome"],
+  ["Hot / red / swollen joint", "acute septic arthritis"],
+];
+
+function withEnginePhrases(value, rules) {
+  const text = joinMulti(value);
+  if (!text) return "";
+  const extra = rules.filter(([option]) => text.includes(option)).map(([, phrase]) => phrase);
+  return extra.length ? `${text}, ${extra.join(", ")}` : text;
+}
+
 function buildFlatElbowWristHandData(data) {
   const flat = {};
   const subjective = data.subjective || {};
@@ -48,7 +70,7 @@ function buildFlatElbowWristHandData(data) {
   flat.ew_agg_act = joinMulti(regionData.aggravating);
   flat.ew_pattern = regionData.pattern || "";
   flat.ew_neuro = joinMulti(regionData.neuro);
-  flat.ew_rf = joinMulti(regionData.redFlags);
+  flat.ew_rf = withEnginePhrases(regionData.redFlags, EWH_RED_FLAG_PHRASES);
   flat.ew_ucl = "";
   flat.ew_olecranon = "";
   flat.ew_biceps_rupture = "";

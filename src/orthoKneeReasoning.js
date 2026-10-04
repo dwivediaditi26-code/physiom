@@ -20,6 +20,38 @@ kneeEvidence.diagnoses.forEach((m, i) => { FIXED_ID_BY_NAME[m.name] = `KN${Strin
 const SUPPORTING_TOTAL_BY_NAME = {};
 kneeEvidence.diagnoses.forEach((m) => { SUPPORTING_TOTAL_BY_NAME[m.name] = m.supportingFindings.length; });
 
+/* The Knee subjective checklist (orthoSubjectiveRegionData.js, SUBJECTIVE_REGION_FIELDS.knee)
+   words its options for the clinician; reasoningEngine/normalize.ts's
+   normalizeKneeFromData() searches for its own shorter phrases ("true locking",
+   "irreducible", "septic arthritis", "patella —", ...). Before this mapping the
+   two never met: "Yes — true mechanical locking" did not contain "true locking",
+   and the "Locked knee that won't straighten" / "Hot red severely tender joint"
+   red flags never raised the joint-emergency stop. Each rule below appends the
+   engine's phrase when the matching checklist option is ticked; the original
+   option text is always kept as well. Found by running published case reports
+   through the wizard (meniscus tear scored 0 despite true locking). */
+const KNEE_ENGINE_PHRASES = {
+  location: [
+    ["Anterior / diffuse", "anterior knee"],
+    ["Around the kneecap", "patella —"],
+    ["Below the kneecap (patellar tendon)", "patellar tendon — inferior pole"],
+    ["Diffuse", "whole knee"],
+  ],
+  mechanism: [["Landing from a jump", "jumping"]],
+  locking: [["true mechanical locking", "true locking"]],
+  redFlags: [
+    ["Locked knee that won't straighten", "irreducible locking"],
+    ["Hot red severely tender joint", "septic arthritis"],
+  ],
+};
+
+function withEnginePhrases(value, rules) {
+  const text = joinMulti(value);
+  if (!text) return "";
+  const extra = rules.filter(([option]) => text.includes(option)).map(([, phrase]) => phrase);
+  return extra.length ? `${text}, ${extra.join(", ")}` : text;
+}
+
 function buildFlatKneeData(data) {
   const flat = {};
   const subjective = data.subjective || {};
@@ -29,23 +61,27 @@ function buildFlatKneeData(data) {
   flat.cc_onset = subjective.onset || "";
   flat.dem_age = (data.demographics || {}).age || "";
 
-  flat.knl_loc = joinMulti(regionData.location);
+  flat.knl_loc = withEnginePhrases(regionData.location, KNEE_ENGINE_PHRASES.location);
   flat.knr_loc = "";
-  flat.knl_moi = joinMulti(regionData.mechanism);
+  flat.knl_moi = withEnginePhrases(regionData.mechanism, KNEE_ENGINE_PHRASES.mechanism);
   flat.knr_moi = "";
   flat.knl_pop = "";
   flat.knr_pop = "";
-  flat.knl_swelling = "";
+  // "Immediate marked swelling after injury (possible haemarthrosis)" is a red-flag option in the
+  // checklist, but the engine reads haemarthrosis from the swelling field.
+  flat.knl_swelling = joinMulti(regionData.redFlags).includes("possible haemarthrosis") ? "haemarthrosis" : "";
   flat.knr_swelling = "";
   flat.knl_swelling_pattern = "";
   flat.knr_swelling_patt = "";
   flat.knl_giving_way = regionData.givingWay || "";
   flat.knr_giving_way = "";
-  flat.knl_locking = regionData.locking || "";
+  flat.knl_locking = withEnginePhrases(regionData.locking, KNEE_ENGINE_PHRASES.locking);
   flat.knr_locking = "";
-  flat.knl_movie = "";
+  // Aggravating movements were collected but never passed on.
+  const aggravating = joinMulti(regionData.aggravating);
+  flat.knl_movie = aggravating.includes("movie sign") ? "yes — prolonged sitting" : "";
   flat.knr_movie = "";
-  flat.knl_descent = "";
+  flat.knl_descent = aggravating.includes("Stairs (down)") ? "worse going down" : "";
   flat.knr_descent = "";
   flat.knl_clicking = "";
   flat.knr_clicking = "";
@@ -53,9 +89,9 @@ function buildFlatKneeData(data) {
   flat.knr_pattern = "";
   flat.knl_pcl = "";
   flat.knr_pcl = "";
-  flat.knl_rf = joinMulti(regionData.redFlags);
+  flat.knl_rf = withEnginePhrases(regionData.redFlags, KNEE_ENGINE_PHRASES.redFlags);
   flat.knr_rf = "";
-  flat.knl_bursa = "";
+  flat.knl_bursa = joinMulti(regionData.redFlags).includes("Hot red severely tender joint") ? "hot red swollen" : "";
   flat.knr_bursa = "";
 
   const romData = (data.rom && data.rom["Knee"]) || {};
