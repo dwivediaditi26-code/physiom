@@ -1,8 +1,9 @@
+import { AddAssessmentModal } from "./assessmentFrame.jsx";
+import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { Hint, TextField, DateField, SelectField, Segmented, NumberField, TextArea, YesNo, Alert, SectionIntro, StepNav, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { Icon } from "./StepIcons.jsx";
-import { formatBodyChartSummary } from "./BodyChartPro.jsx";
-import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
+import { regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, JointMobilitySection, SpecialTestsSection, formatRomSection, formatMmtSection, formatJointMobilitySection, formatSpecialTestsSection } from "./orthoRegionAssessments.jsx";
 import {
   CaseInfoSection,
@@ -26,21 +27,6 @@ import { OrthoCarePlanStep } from "./OrthoCarePlan.jsx";
 import { formatCarePlanSection } from "./NeuroCarePlan.jsx";
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import { trackEvent } from "./analytics/trackEvent.js";
-
-function regionLabelOf(r) {
-  return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
-}
-
-// Same as Outpatient/IPD's formatPainSection -- Pain carries a JSON-blob body
-// chart field that the generic formatter would otherwise dump raw.
-function formatPainSection(section) {
-  const { body_chart_pro, ...rest } = section;
-  const restRows = Object.entries(rest)
-    .filter(([k]) => !k.startsWith("__"))
-    .map(([k, v]) => ({ label: k, value: fmtVal(v) }))
-    .filter((r) => r.value);
-  return [...formatBodyChartSummary(body_chart_pro), ...restRows];
-}
 
 /* ============================================================
    CONDITION TEMPLATE ENGINE — Post-operative Rehab pathway
@@ -259,46 +245,6 @@ function ProsthesisSection({ data, setData }) {
 /* ============================================================
    ADD ASSESSMENT MODAL
    ============================================================ */
-function AddAssessmentModal({ activeIds, onToggle, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  const items = query ? ADD_LIBRARY.filter((it) => it.label.toLowerCase().includes(query)) : ADD_LIBRARY;
-  return (
-    <div className="ct-modal">
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">🛏️ Add Assessment</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="ct-search-wrap">
-        <input className="ct-search" placeholder="🔍 Search assessment..." value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-      </div>
-      <div className="ct-modal-body">
-        <div className="ct-group">
-          <div className="ct-group-title">AVAILABLE ASSESSMENTS</div>
-          {items.map((it) => {
-            const checked = activeIds.has(it.id);
-            return (
-              <button type="button" key={it.id} className={"ct-item" + (checked ? " ct-item-checked" : "")} onClick={() => onToggle(it.id)}>
-                <span className="ct-checkbox">{checked ? "☑" : "☐"}</span>
-                <span>
-                  {it.icon} {it.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="ct-modal-footer">
-        <button type="button" className="primary-btn" onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ============================================================
    MAIN APP — mounted by OrthoAssessment.jsx once region + type
    of surgery have been picked on the preceding two screens.
@@ -594,7 +540,16 @@ export default function OrthoPostOpAssessment({ selectedRegions, condition, cust
           )}
         </div>
 
-        {addOpen && <AddAssessmentModal activeIds={new Set(stepOrder)} onToggle={toggleAssessment} onClose={() => setAddOpen(false)} />}
+        {addOpen && (
+          <AddAssessmentModal
+            title="🚶 Add Assessment"
+            groups={[{ key: "available", title: "AVAILABLE ASSESSMENTS", items: ADD_LIBRARY }]}
+            isChecked={(id) => stepOrder.includes(id)}
+            onToggle={(it) => toggleAssessment(it.id)}
+            onClose={() => setAddOpen(false)}
+            autoFocusSearch
+          />
+        )}
         {missingDemFields && (
           <MissingDemographicsModal
             missing={missingDemFields}

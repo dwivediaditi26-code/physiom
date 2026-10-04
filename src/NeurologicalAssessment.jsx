@@ -1,3 +1,5 @@
+import { AddAssessmentModal } from "./assessmentFrame.jsx";
+import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
@@ -14,7 +16,7 @@ import { Icon, customStepIcon, stepIconName, sanitizeStepsMeta } from "./StepIco
 import { useWizardStepHistory } from "./useWizardStepHistory.js";
 import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessmentModal.jsx";
 import { trackEvent } from "./analytics/trackEvent.js";
-import { stepBarLabel } from "./orthoFieldKit.jsx";
+import { FieldKitContext, stepBarLabel, Hint, MissingDemographicsModal, missingDemographicsFields, FieldShell, LRGrid, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, Alert, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 
 // Same rich Outcome Measures tool Ortho uses (full searchable/categorized
 // scale library, guided question-by-question fill, blank-PDF export, score
@@ -66,44 +68,6 @@ const BRAND = {
   redBg: "#FDEDED",
   white: "#FFFFFF",
 };
-
-// True if patient name/age are missing from the Demographics section.
-function missingDemographicsFields(dem) {
-  const missing = [];
-  if (!String(dem?.name || "").trim()) missing.push("name");
-  if (!String(dem?.age || "").trim()) missing.push("age");
-  return missing;
-}
-
-// Blocks the explicit "Save Assessment" tap (not the continuous background
-// autosave -- that keeps running regardless, so in-progress work still
-// survives a crash/tab-close) when Patient Name and/or Age are still
-// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
-// appears" effect never fires, so the whole assessment silently has
-// nowhere to be filed under -- this stops that at the one moment the
-// therapist actually intends to finish, rather than nagging on every
-// keystroke. Same component/copy as orthoFieldKit.jsx's
-// MissingDemographicsModal, duplicated rather than cross-imported since
-// this module doesn't otherwise share components with the Ortho files.
-function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
-  const label = missing.length > 1 ? "name and age" : missing[0];
-  return createPortal(
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className="missing-dem-icon">📋</div>
-        <div className="missing-dem-title">Patient {label} needed</div>
-        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
-        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
-          Go to Patient Info
-        </button>
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 /* ============================================================
    STATIC DATA — Step 1 selector (setting only — Neuro is a
@@ -167,11 +131,6 @@ const DEFAULT_ASSESS_STEP_IDS = ASSESS_STEPS.filter((s) => !RETIRED_STEP_IDS.inc
    as the Cardiopulmonary module (purple ▾ = pick from list or
    type manually; ℹ How to = separate educational popover)
    ============================================================ */
-function Hint({ children }) {
-  if (!children) return null;
-  return <div className="hint">💡 {children}</div>;
-}
-
 function InfoButton({ text }) {
   const [open, setOpen] = useState(false);
   return (
@@ -221,20 +180,20 @@ function InfoCardButton({ data }) {
   );
 }
 
-function FieldShell({ label, hint, howTo, info, children }) {
-  return (
-    <div className="field-block">
-      {label && (
-        <div className="field-label-row">
-          <FieldLabel>{label}</FieldLabel>
-          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
-        </div>
-      )}
-      {children}
-      <Hint>{hint}</Hint>
-    </div>
-  );
-}
+// Neuro's look inside the shared field kit (orthoFieldKit.jsx): its own info cards and
+// "How to" pop-up, plain section titles and step circles, the compact "▾" list button,
+// and a search box in long option lists.
+const NEURO_KIT = {
+  renderInfo: (info) => <InfoCardButton data={info} />,
+  renderHowTo: (text) => <InfoButton text={text} />,
+  classicLayout: true,
+  compactSelect: true,
+  searchSelects: true,
+  addStepLabel: "Add a neuro assessment",
+};
+// Steps built on the shared kit from the start (Medical Records, Care Plan, Exercise
+// Prescription) keep the kit's own look inside Neuro, as they always had.
+const SHARED_KIT_LOOK = {};
 
 // Scroll-and-tap Day / Month / Year picker -- same "DD/MM/YYYY" string a
 // TextField would hold, so it's a drop-in replacement wherever a date is
@@ -290,290 +249,6 @@ function DateWheelField({ label, value, onChange, hint, howTo }) {
         )}
       </div>
     </FieldShell>
-  );
-}
-
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap">
-        <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
-        {unit && <span className="combo-unit">{unit}</span>}
-      </div>
-    </FieldShell>
-  );
-}
-
-function SelectPopover({ options, multi, value, onChange, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  const filtered = query ? options.filter((o) => o.toLowerCase().includes(query)) : options;
-  const selected = multi ? (value ? String(value).split(", ").filter(Boolean) : []) : value;
-  function toggle(opt) {
-    if (multi) {
-      const has = selected.includes(opt);
-      const next = has ? selected.filter((o) => o !== opt) : [...selected, opt];
-      onChange(next.join(", "));
-    } else {
-      onChange(opt);
-      onClose();
-    }
-  }
-  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
-  // the space of screen"): was one full-width lavender pill per option --
-  // on a real phone, a handful of those plus the header/search/Done button
-  // pushed well past the fold. Now a compact checklist (thin divider rows,
-  // a small check/radio box instead of a full color-fill flip) with its
-  // OWN capped, internally-scrolling list -- header/search/Done stay
-  // pinned and visible no matter how many options a field has.
-  return (
-    <div className="select-popover">
-      <div className="popover-head">
-        <span>{multi ? "Select any" : "Select one"}</span>
-        <button type="button" className="popover-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      {options.length > 6 && (
-        <input className="popover-search" placeholder="🔍 Search" value={q} onChange={(e) => setQ(e.target.value)} />
-      )}
-      <div className="popover-list">
-        {filtered.map((opt) => {
-          const isSel = multi ? selected.includes(opt) : value === opt;
-          return (
-            <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
-                {isSel && "✓"}
-              </span>
-              <span className="popover-item-label">{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-      {multi && (
-        <button type="button" className="popover-done" onClick={onClose}>
-          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref}>
-        <input
-          className="select-input"
-          value={value || ""}
-          placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
-          ▾
-        </button>
-        {open && (
-          <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
-        )}
-      </div>
-    </FieldShell>
-  );
-}
-
-function Segmented({ label, options, value, onChange, hint, howTo, info }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="segmented">
-        {options.map((o) => (
-          <button
-            type="button"
-            key={o}
-            className={"seg-btn" + (value === o ? " seg-active" : "")}
-            onClick={() => onChange(value === o ? "" : o)}
-          >
-            {o}
-          </button>
-        ))}
-      </div>
-    </FieldShell>
-  );
-}
-
-function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
-  return (
-    <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
-      <div className="vital-label-row">
-        <span className="vital-label">{label}</span>
-        {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
-      </div>
-      <div className="vital-input-wrap">
-        <input
-          type="number"
-          inputMode="decimal"
-          className="vital-input"
-          value={value || ""}
-          placeholder={placeholder || "—"}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        {unit && <span className="vital-unit">{unit}</span>}
-      </div>
-      <Hint>{hint}</Hint>
-    </div>
-  );
-}
-
-function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <textarea
-        className="textarea"
-        rows={2}
-        value={value || ""}
-        placeholder={placeholder || "Type here..."}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </FieldShell>
-  );
-}
-
-function ScaleField({ label, value, onChange, hint, howTo, info, max = 10 }) {
-  const v = value === undefined || value === "" ? 0 : Number(value);
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="scale-wrap">
-        <input
-          type="range"
-          min={0}
-          max={max}
-          step={1}
-          value={v}
-          style={{ minWidth: 0 }}
-          onChange={(e) => onChange(e.target.value)}
-          className="scale-range"
-        />
-        <span className="scale-readout">
-          {value === undefined || value === "" ? "—" : v}
-          <span className="scale-max">/{max}</span>
-        </span>
-      </div>
-    </FieldShell>
-  );
-}
-
-/* Left/Right (or multi-column) grading grid — used throughout for
-   dermatomes, myotomes, DTRs, MMT, tone, etc. */
-// rowInfo (optional): { [rowLabel]: InfoCard data } -- adds a small ⓘ next
-// to that specific row's label, for grids where each row is really its own
-// distinct test/reflex (e.g. DTRs) rather than one shared technique.
-function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, info, rowInfo }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="lr-grid">
-        <div className="lr-row lr-head">
-          <div className="lr-cell lr-zone" />
-          {columns.map((c) => (
-            <div className="lr-cell lr-colhead" key={c}>
-              {c}
-            </div>
-          ))}
-        </div>
-        {rows.map((r) => (
-          <div className="lr-row" key={r}>
-            <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { display: "flex", alignItems: "center", gap: 4 } : undefined}>
-              {r}
-              {rowInfo?.[r] && <InfoCardButton data={rowInfo[r]} />}
-            </div>
-            {columns.map((c) => {
-              const key = `${r}__${c}`;
-              return (
-                <div className="lr-cell" key={c}>
-                  <select
-                    className="lr-select"
-                    value={value[key] || ""}
-                    onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                  >
-                    <option value="">–</option>
-                    {options.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </FieldShell>
-  );
-}
-
-function Alert({ tone = "amber", children }) {
-  return <div className={"alert alert-" + tone}>{children}</div>;
-}
-
-function SectionIntro({ icon, title, sub, titleAs: TitleAs }) {
-  return (
-    <div className="section-intro">
-      {icon && <div className="section-intro-icon">{icon}</div>}
-      <div>
-        {TitleAs ? <TitleAs>{title}</TitleAs> : <div className="section-intro-title">{title}</div>}
-        {sub && <div className="section-intro-sub">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-/* Top step nav — small circles per step, tap to jump anywhere.
-   Scrolls only its own horizontal strip (container.scrollTo) instead
-   of el.scrollIntoView, which can otherwise drag the whole page
-   vertically when the active circle is near the edge of the screen. */
-function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
-  const refs = useRef([]);
-  useEffect(() => {
-    const el = refs.current[currentIndex];
-    const container = el && el.parentElement;
-    if (el && container) {
-      const target = el.offsetLeft - container.clientWidth / 2 + el.offsetWidth / 2;
-      container.scrollTo({ left: target, behavior: "smooth" });
-    }
-  }, [currentIndex]);
-  return (
-    <div className="step-nav">
-      {steps.map((s, i) => {
-        const active = i === currentIndex;
-        const seen = visited.has(s.id) && !active;
-        return (
-          <button
-            key={s.id}
-            ref={(el) => (refs.current[i] = el)}
-            type="button"
-            className={"step-circle" + (active ? " step-active" : seen ? " step-seen" : "")}
-            onClick={() => onJump(i)}
-            aria-label={s.label}
-            title={s.label}
-          >
-            <span className="step-circle-ring">{s.icon}</span>
-            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
-          </button>
-        );
-      })}
-      <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label="Add a neuro assessment" title="Add a neuro assessment">
-        <span className="step-circle-ring">+</span>
-        <span className="step-circle-label">Add</span>
-      </button>
-    </div>
   );
 }
 
@@ -1118,53 +793,6 @@ const NEURO_RENDERERS = {
   ),
 };
 
-/* Modal to add condition-specific items to the assessment */
-function AddAssessmentModal({ addedIds, onToggle, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  return (
-    <div className="ct-modal">
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">🧠 Add Neuro Assessment</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="ct-search-wrap">
-        <input className="ct-search" placeholder="🔍 Search assessment..." value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      <div className="ct-modal-body">
-        {NEURO_LIBRARY.map((group) => {
-          const items = query ? group.items.filter((it) => it.toLowerCase().includes(query)) : group.items;
-          if (!items.length) return null;
-          return (
-            <div className="ct-group" key={group.cat}>
-              <div className="ct-group-title">
-                {group.icon} {group.cat.toUpperCase()}
-              </div>
-              {items.map((label) => {
-                const id = neuroId(group.cat, label);
-                const checked = addedIds.has(id);
-                return (
-                  <button type="button" key={id} className={"ct-item" + (checked ? " ct-item-checked" : "")} onClick={() => onToggle(id, label, group.icon)}>
-                    <span className="ct-checkbox">{checked ? "☑" : "☐"}</span>
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-      <div className="ct-modal-footer">
-        <button type="button" className="primary-btn" onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // "My Templates" -> "+ Create New Template" (2026-09-22, Aditi: wants to pick
 // sections from the assessment list rather than running a live assessment
 // first). Scoped to DOMAIN_STEP_IDS only -- ALWAYS_STEP_IDS (demographics,
@@ -1241,12 +869,6 @@ function CustomSection({ id, meta, data, setData }) {
    sensory → motor → tone/reflexes → coordination → balance →
    gait → function)
    ============================================================ */
-function useSectionData(data, setData, key) {
-  const section = data[key] || {};
-  const set = (field, value) => setData((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-  return [section, set];
-}
-
 /* ---------- Demographics ---------- */
 function DemographicsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "demographics");
@@ -1943,15 +1565,6 @@ function PrecautionsSection({ data, setData, setting }) {
 }
 
 /* ---------- Summary ---------- */
-function fmtVal(v) {
-  if (v && typeof v === "object") {
-    const entries = Object.entries(v).filter(([, val]) => val);
-    return entries.length ? entries.map(([k, val]) => `${k.replace("__", " ")}: ${val}`).join(" · ") : null;
-  }
-  if (v === undefined || v === null || v === "") return null;
-  return String(v);
-}
-
 // Exported (2026-08-20, Aditi: "assessment should show like this image...
 // i command you put summary and review same to same not change at all in
 // assessment section") -- same reasoning as
@@ -1997,16 +1610,17 @@ export function SummaryStyles() {
 // formatters[stepId] contract as orthoSummary.jsx's AssessmentSummary, so
 // exercisePrescription can reuse formatNeuroExercisePrescriptionSection
 // from neuroExercisePrescription.jsx instead of showing "[object Object]".
-function rowsForStep(step, section, formatters) {
-  const formatter = formatters?.[step.id];
-  if (formatter) return formatter(section);
-  return Object.entries(section)
-    .map(([k, v]) => [k, fmtVal(v)])
-    .filter(([, v]) => v)
-    .map(([label, value]) => ({ label: humanizeKey(label), value }));
+// Also rendered by the patient profile (SpecialtyPatientProfile.jsx), outside the
+// wizard, so it sets the field-kit look itself.
+export function SummarySection(props) {
+  return (
+    <FieldKitContext.Provider value={NEURO_KIT}>
+      <SummarySectionBody {...props} />
+    </FieldKitContext.Provider>
+  );
 }
 
-export function SummarySection({ setting, data, assessSteps, formatters, onShare, onGeneratePdf }) {
+function SummarySectionBody({ setting, data, assessSteps, formatters, onShare, onGeneratePdf }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -2597,6 +2211,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
 
   return (
     <InfoCardContext.Provider value={setActiveCard}>
+    <FieldKitContext.Provider value={NEURO_KIT}>
     <div className="app-shell">
       <style>{`
         * { box-sizing: border-box; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -3030,7 +2645,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
               {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
               {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
               {current.id === "chart" && <ChartSection data={data} setData={setData} />}
-              {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
+              {current.id === "medicalRecords" && <FieldKitContext.Provider value={SHARED_KIT_LOOK}><MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} /></FieldKitContext.Provider>}
               {current.id === "observation" && <ObservationSection data={data} setData={setData} setting={setting} />}
               {current.id === "cognition" && <CognitionSection data={data} setData={setData} />}
               {current.id === "cranial" && <CranialNervesSection data={data} setData={setData} />}
@@ -3055,7 +2670,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                       Prescription step below -- NeuroCarePlan.jsx is built
                       on the Ortho field kit's classes. */}
                   <style>{orthoStyles()}</style>
-                  <NeuroCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
+                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><NeuroCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} /></FieldKitContext.Provider>
                 </>
               )}
               {current.id === "exercisePrescription" && (
@@ -3066,7 +2681,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
                       to just this step the same way SpecialtyPatientProfile.jsx
                       already does when it renders an Ortho summary. */}
                   <style>{orthoStyles()}</style>
-                  <NeuroExercisePrescriptionSection data={data} setData={setData} />
+                  <FieldKitContext.Provider value={SHARED_KIT_LOOK}><NeuroExercisePrescriptionSection data={data} setData={setData} /></FieldKitContext.Provider>
                 </>
               )}
               {current.id === "summary" && (
@@ -3130,7 +2745,16 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           </div>
         )}
 
-        {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {addStepOpen && (
+          <AddAssessmentModal
+            title="🧠 Add Neuro Assessment"
+            groups={NEURO_LIBRARY.map((g) => ({ key: g.cat, icon: g.icon, title: <>{g.icon} {g.cat.toUpperCase()}</>, items: g.items.map((label) => ({ id: neuroId(g.cat, label), label })) }))}
+            isChecked={(id) => stepOrder.includes(id)}
+            onToggle={(it, g) => toggleCtItem(it.id, it.label, g.icon)}
+            onClose={() => setAddStepOpen(false)}
+            hideEmptyGroups
+          />
+        )}
         {composeTemplateOpen && <NeuroTemplateComposer onClose={() => setComposeTemplateOpen(false)} onSave={saveComposedTemplate} />}
         {missingDemFields && (
           <MissingDemographicsModal
@@ -3174,6 +2798,7 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
         )}
       </div>
     </div>
+    </FieldKitContext.Provider>
     </InfoCardContext.Provider>
   );
 }
