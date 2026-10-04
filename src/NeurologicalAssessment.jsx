@@ -1,3 +1,5 @@
+import { AddAssessmentModal } from "./assessmentFrame.jsx";
+import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
@@ -703,53 +705,6 @@ const NEURO_RENDERERS = {
     <SelectField label="Truncal control" type="single" options={["Normal", "Mild sway/instability", "Marked truncal ataxia - unable to sit unsupported"]} value={d.truncalAtaxia} onChange={(v) => set("truncalAtaxia", v)} info={condInfo("Ataxia", "Truncal ataxia screen")} />
   ),
 };
-
-/* Modal to add condition-specific items to the assessment */
-function AddAssessmentModal({ addedIds, onToggle, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  return (
-    <div className="ct-modal">
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">🧠 Add Neuro Assessment</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="ct-search-wrap">
-        <input className="ct-search" placeholder="🔍 Search assessment..." value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
-      <div className="ct-modal-body">
-        {NEURO_LIBRARY.map((group) => {
-          const items = query ? group.items.filter((it) => it.toLowerCase().includes(query)) : group.items;
-          if (!items.length) return null;
-          return (
-            <div className="ct-group" key={group.cat}>
-              <div className="ct-group-title">
-                {group.icon} {group.cat.toUpperCase()}
-              </div>
-              {items.map((label) => {
-                const id = neuroId(group.cat, label);
-                const checked = addedIds.has(id);
-                return (
-                  <button type="button" key={id} className={"ct-item" + (checked ? " ct-item-checked" : "")} onClick={() => onToggle(id, label, group.icon)}>
-                    <span className="ct-checkbox">{checked ? "☑" : "☐"}</span>
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-      <div className="ct-modal-footer">
-        <button type="button" className="primary-btn" onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // "My Templates" -> "+ Create New Template" (2026-09-22, Aditi: wants to pick
 // sections from the assessment list rather than running a live assessment
@@ -1553,15 +1508,6 @@ export function SummaryStyles() {
 // formatters[stepId] contract as orthoSummary.jsx's AssessmentSummary, so
 // exercisePrescription can reuse formatNeuroExercisePrescriptionSection
 // from neuroExercisePrescription.jsx instead of showing "[object Object]".
-function rowsForStep(step, section, formatters) {
-  const formatter = formatters?.[step.id];
-  if (formatter) return formatter(section);
-  return Object.entries(section)
-    .map(([k, v]) => [k, fmtVal(v)])
-    .filter(([, v]) => v)
-    .map(([label, value]) => ({ label: humanizeKey(label), value }));
-}
-
 // Also rendered by the patient profile (SpecialtyPatientProfile.jsx), outside the
 // wizard, so it sets the field-kit look itself.
 export function SummarySection(props) {
@@ -2696,7 +2642,16 @@ export default function NeurologicalAssessment({ patientData, activePatientId, o
           </div>
         )}
 
-        {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {addStepOpen && (
+          <AddAssessmentModal
+            title="🧠 Add Neuro Assessment"
+            groups={NEURO_LIBRARY.map((g) => ({ key: g.cat, icon: g.icon, title: <>{g.icon} {g.cat.toUpperCase()}</>, items: g.items.map((label) => ({ id: neuroId(g.cat, label), label })) }))}
+            isChecked={(id) => stepOrder.includes(id)}
+            onToggle={(it, g) => toggleCtItem(it.id, it.label, g.icon)}
+            onClose={() => setAddStepOpen(false)}
+            hideEmptyGroups
+          />
+        )}
         {composeTemplateOpen && <NeuroTemplateComposer onClose={() => setComposeTemplateOpen(false)} onSave={saveComposedTemplate} />}
         {missingDemFields && (
           <MissingDemographicsModal

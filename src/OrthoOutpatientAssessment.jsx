@@ -1,11 +1,12 @@
+import { AddAssessmentModal } from "./assessmentFrame.jsx";
+import { regionLabelOf, formatPainSection } from "./orthoWizardHelpers.js";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import { initialDemographics } from "./orthoDemographicsSeed.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { StepNav, SelectField, SectionIntro, useSectionData, fmtVal, MissingDemographicsModal, missingDemographicsFields } from "./orthoFieldKit.jsx";
 import { AiJourneyDots, AiHubNav, RegionPicker } from "./orthoSetupKit.jsx";
 import { Icon } from "./StepIcons.jsx";
-import { formatBodyChartSummary } from "./BodyChartPro.jsx";
-import { regionDisplayLabel, regionLabelList } from "./orthoRegionLibrary.js";
+import { regionLabelList } from "./orthoRegionLibrary.js";
 import { RomSection, MmtSection, SpecialTestsSection, JointMobilitySection, formatRomSection, formatMmtSection, formatSpecialTestsSection, formatJointMobilitySection } from "./orthoRegionAssessments.jsx";
 import { VitalsSection, PainSection, GaitSection, BalanceSection, ActivityToleranceSection, NeuroScreenSection, LimbLengthSection, formatLimbLengthSection } from "./orthoCommonSections.jsx";
 import { DemographicsSection, RedFlagScreenSection, SubjectiveSection, formatSubjectiveSection, PalpationSection, FunctionalAssessmentSection, ClinicalAssessmentSection, TreatmentTechniquesSection, formatTreatmentTechniquesSection, ProgressFollowUpSection } from "./orthoOutpatientSections.jsx";
@@ -27,10 +28,6 @@ import { trackEvent } from "./analytics/trackEvent.js";
 import { saveTemplate } from "./orthoTemplates.js";
 import { orthoStyles } from "./orthoStyles.js";
 
-function regionLabelOf(r) {
-  return [r.side, regionDisplayLabel(r)].filter(Boolean).join(" ");
-}
-
 // Pain and Palpation both carry a JSON-blob field (the body chart / the
 // palpation pin map) alongside their normal fields -- without these, the
 // generic Object.entries fallback in orthoSummary.jsx would just dump the
@@ -41,10 +38,6 @@ function restRows(rest) {
     .filter(([k]) => !k.startsWith("__"))
     .map(([k, v]) => ({ label: humanizeKey(k), value: fmtVal(v) }))
     .filter((r) => r.value);
-}
-function formatPainSection(section) {
-  const { body_chart_pro, ...rest } = section;
-  return [...formatBodyChartSummary(body_chart_pro), ...restRows(rest)];
 }
 function formatPalpationSection(section) {
   // structures = the region-wise, structure-by-structure findings the
@@ -272,46 +265,6 @@ const STEP_META = {
 };
 
 const ADD_LIBRARY = OPTIONAL_IDS.map((id) => ({ id, ...STEP_META[id] }));
-
-function AddAssessmentModal({ activeIds, onToggle, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  const items = query ? ADD_LIBRARY.filter((it) => it.label.toLowerCase().includes(query)) : ADD_LIBRARY;
-  return (
-    <div className="ct-modal">
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">🚶 Add Assessment</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="ct-search-wrap">
-        <input className="ct-search" placeholder="🔍 Search assessment..." value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-      </div>
-      <div className="ct-modal-body">
-        <div className="ct-group">
-          <div className="ct-group-title">AVAILABLE ASSESSMENTS</div>
-          {items.map((it) => {
-            const checked = activeIds.has(it.id);
-            return (
-              <button type="button" key={it.id} className={"ct-item" + (checked ? " ct-item-checked" : "")} onClick={() => onToggle(it.id)}>
-                <span className="ct-checkbox">{checked ? "☑" : "☐"}</span>
-                <span>
-                  {it.icon} {it.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="ct-modal-footer">
-        <button type="button" className="primary-btn" onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function SaveTemplateModal({ defaultName, onSave, onClose }) {
   const [name, setName] = useState(defaultName || "");
@@ -973,7 +926,16 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
           )}
         </div>
 
-        {addOpen && <AddAssessmentModal activeIds={new Set(stepOrder)} onToggle={toggleAssessment} onClose={() => setAddOpen(false)} />}
+        {addOpen && (
+          <AddAssessmentModal
+            title="🚶 Add Assessment"
+            groups={[{ key: "available", title: "AVAILABLE ASSESSMENTS", items: ADD_LIBRARY }]}
+            isChecked={(id) => stepOrder.includes(id)}
+            onToggle={(it) => toggleAssessment(it.id)}
+            onClose={() => setAddOpen(false)}
+            autoFocusSearch
+          />
+        )}
         {missingDemFields && (
           <MissingDemographicsModal
             missing={missingDemFields}

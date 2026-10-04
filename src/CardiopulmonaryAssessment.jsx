@@ -1,3 +1,5 @@
+import { AddAssessmentModal } from "./assessmentFrame.jsx";
+import { rowsForStep } from "./orthoSummary.jsx";
 import { MedicalRecordsSection } from "./MedicalRecords.jsx";
 import React, { useState, useMemo, useRef, useEffect, useContext, createContext } from "react";
 import { createPortal } from "react-dom";
@@ -610,53 +612,6 @@ const CT_RENDERERS = {
   ),
 };
 
-
-/* Full-screen picker — cardiothoracic library only, checkbox multi-select, searchable */
-function AddAssessmentModal({ addedIds, onToggle, onClose }) {
-  const [q, setQ] = useState("");
-  const query = q.trim().toLowerCase();
-  return (
-    <div className="ct-modal">
-      <div className="ct-modal-header">
-        <div className="ct-modal-title">🫀🫁 Add Cardiothoracic Assessment</div>
-        <button type="button" className="ct-modal-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="ct-search-wrap">
-        <input className="ct-search" placeholder="🔍 Search assessment..." value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-      </div>
-      <div className="ct-modal-body">
-        {CT_LIBRARY.map((group) => {
-          const items = query ? group.items.filter((it) => it.toLowerCase().includes(query)) : group.items;
-          if (!items.length) return null;
-          return (
-            <div className="ct-group" key={group.cat}>
-              <div className="ct-group-title">
-                {group.icon} {group.cat.toUpperCase()}
-              </div>
-              {items.map((label) => {
-                const id = ctId(group.cat, label);
-                const checked = addedIds.has(id);
-                return (
-                  <button type="button" key={id} className={"ct-item" + (checked ? " ct-item-checked" : "")} onClick={() => onToggle(id, label, group.icon)}>
-                    <span className="ct-checkbox">{checked ? "☑" : "☐"}</span>
-                    <span>{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-      <div className="ct-modal-footer">
-        <button type="button" className="primary-btn" onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // "My Templates" for Cardio (2026-09-22, Aditi) -- previously Cardio had no
 // template concept at all: stepOrder was always the fixed
@@ -1631,13 +1586,6 @@ export function SummaryStyles() {
 // NeurologicalAssessment.jsx's own SummarySection/rowsForStep, so
 // formatCarePlanSection (NeuroCarePlan.jsx) can be reused as-is instead of
 // showing "[object Object]" for the Care Plan's array-shaped section.
-function rowsForStep(step, section, formatters) {
-  const formatter = formatters?.[step.id];
-  if (formatter) return formatter(section);
-  return Object.entries(section)
-    .map(([k, v]) => [humanizeKey(k), fmtVal(v)])
-    .filter(([, v]) => v);
-}
 const isGroupedResult = (result) => result && !Array.isArray(result) && Array.isArray(result.groups);
 
 // carePlanPlan: formatCarePlanSection -- the six Care Plan steps
@@ -2576,7 +2524,16 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           )}
         </div>
 
-        {addStepOpen && <AddAssessmentModal addedIds={new Set(stepOrder)} onToggle={toggleCtItem} onClose={() => setAddStepOpen(false)} />}
+        {addStepOpen && (
+          <AddAssessmentModal
+            title="🫀🫁 Add Cardiothoracic Assessment"
+            groups={CT_LIBRARY.map((g) => ({ key: g.cat, icon: g.icon, title: <>{g.icon} {g.cat.toUpperCase()}</>, items: g.items.map((label) => ({ id: ctId(g.cat, label), label })) }))}
+            isChecked={(id) => stepOrder.includes(id)}
+            onToggle={(it, g) => toggleCtItem(it.id, it.label, g.icon)}
+            onClose={() => setAddStepOpen(false)}
+            hideEmptyGroups
+          />
+        )}
         {saveTemplateOpen && (
           <CardioSaveTemplateModal
             defaultName={`${SETTINGS.find((s) => s.id === setting)?.label || ""} · ${SYSTEMS.find((s) => s.id === system)?.label || ""}`}
