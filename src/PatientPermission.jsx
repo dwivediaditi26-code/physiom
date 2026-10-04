@@ -1,12 +1,14 @@
-// Patient permission tick. Students will record real patients, so before a signed-in
-// person starts a new patient record they confirm the patient has agreed to it
-// (first-time walkthrough follow-up, 2026-10-03). The time of the tick is kept on the
-// record as data.consent_confirmed_at. Guests are not asked: nothing they enter is saved.
+// Patient permission. Students will record real patients, so a signed-in person confirms
+// ONCE, the first time they start a patient, that they will have each patient's permission
+// before recording their details (follow-up to the first-time walkthrough, 2026-10-03;
+// Aditi: asking for every patient is too much). After that a small reminder line replaces
+// the tick. The time of that confirmation is kept on each new record as
+// data.consent_confirmed_at. Guests are not asked: nothing they enter is saved.
 import React from "react";
 import { PC } from "./postureColors.js";
 
-export const PERMISSION_LABEL = "I have this patient's permission to record their details here.";
-export const PERMISSION_HINT = "Details are saved to your account. Initials are fine for practice cases.";
+export const PERMISSION_LABEL = "I confirm I will have each patient's permission before recording their details here.";
+export const PERMISSION_HINT = "Details are saved to your account. You only confirm this once. Initials are fine for practice cases.";
 
 export function PatientPermissionCheck({ checked, onChange }) {
   return (
@@ -22,6 +24,15 @@ export function PatientPermissionCheck({ checked, onChange }) {
   );
 }
 
+// The quiet line shown once the confirmation has been given.
+export function PatientPermissionReminder() {
+  return (
+    <div data-testid="patient-permission-reminder" style={{fontSize:"0.76rem",lineHeight:1.4,color:PC.muted,margin:"0 2px 14px"}}>
+      Remember: have the patient's permission before recording their details.
+    </div>
+  );
+}
+
 // Used where there is no form to hold the tick (the AI Assessment start).
 export function PatientPermissionModal({ onConfirm, onCancel }) {
   const [ok, setOk] = React.useState(false);
@@ -31,7 +42,7 @@ export function PatientPermissionModal({ onConfirm, onCancel }) {
       <div style={{width:"100%",maxWidth:420,background:PC.surface||"#fff",borderRadius:16,padding:"22px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{fontSize:"1rem",fontWeight:800,color:PC.accent,marginBottom:6}}>Before you start</div>
         <div style={{fontSize:"0.84rem",color:PC.muted,marginBottom:14,lineHeight:1.45}}>
-          Anything you record is saved to your account, so please check with the patient first.
+          Anything you record is saved to your account, so please have each patient's permission first. You only confirm this once.
         </div>
         <PatientPermissionCheck checked={ok} onChange={setOk} />
         <button type="button" disabled={!ok} onClick={onConfirm}

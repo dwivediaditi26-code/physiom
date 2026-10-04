@@ -45,7 +45,7 @@ the PDF's look, and the patient profile in depth.
 
 - **2. Too many choices before the first question:** Outpatient and General Assessment start chosen; "IPD" is now "Inpatient (IPD)".
 - **12. Clutter:** Learn's "Soon" cards are one line, the clinic-details prompt waits for a first patient, and the Patients options say what they are.
-- **Extra (asked for after this walkthrough):** a "patient permission" tick before a new patient record starts.
+- **Extra (asked for after this walkthrough):** a "patient permission" confirmation, asked once the first time a student starts a patient (not for every patient), then a small reminder line.
 
 ## For a decision (not changed)
 Ordered roughly by how likely a new physio is to be confused or put off. Items 1 to 12 are all done (above); the text is kept as written.

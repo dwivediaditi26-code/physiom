@@ -1,7 +1,8 @@
 // patientPermission.test.jsx
-// Students will record real patients, so a signed-in person confirms the patient's
-// permission before a new patient record starts (follow-up to the first-time
-// walkthrough, 2026-10-03). The time of the tick is kept on the record.
+// Students will record real patients, so a signed-in person confirms ONCE, the first time they
+// start a patient, that they will have each patient's permission (follow-up to the first-time
+// walkthrough, 2026-10-03; asking for every patient was too much). After that a small reminder
+// replaces the tick.
 import React, { useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
@@ -61,7 +62,7 @@ describe("PatientPermissionModal (the AI Assessment start)", () => {
 });
 
 describe("New patient form (signed in)", () => {
-  it("shows the permission tick and will not continue without it", async () => {
+  it("the first time, shows the permission tick and will not continue without it", async () => {
     await renderLoggedIn();
     await openClinical();
     const modal = await openSpecialtyStep("Test Patient");
@@ -70,5 +71,17 @@ describe("New patient form (signed in)", () => {
     expect(next.disabled).toBe(true);
     tickPatientPermission(modal);
     expect(next.disabled).toBe(false);
+    expect(screen.queryByTestId("patient-permission-reminder")).toBeNull();
+  }, 30000);
+
+  it("once confirmed, it is not asked again: a quiet reminder replaces the tick", async () => {
+    localStorage.setItem("pm_perm_ack_test-user-123", "2026-10-03T10:00:00.000Z");
+    await renderLoggedIn();
+    await openClinical();
+    const modal = await openSpecialtyStep("Second Patient");
+    fireEvent.click(modal.getByText("Ortho"));
+    expect(modal.queryByRole("checkbox", { name: /each patient's permission/i })).toBeNull();
+    expect(modal.getByTestId("patient-permission-reminder")).toBeTruthy();
+    expect(modal.getByText("Next →").closest("button").disabled).toBe(false);
   }, 30000);
 });

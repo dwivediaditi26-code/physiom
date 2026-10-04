@@ -26,7 +26,7 @@ export const HOW_TO_TOPICS = [
     summary: "Ortho, Neuro or Cardio, step by step",
     steps: [
       "Tap **Clinical**, then **Assess**, then **＋ New Assessment**.",
-      "Type the patient's name. Age and sex are optional but help the app's suggestions. Pick **Ortho**, **Neuro** or **Cardio**, tick **I have this patient's permission to record their details here.**, then tap **Next →**.",
+      "Type the patient's name. Age and sex are optional but help the app's suggestions. Pick **Ortho**, **Neuro** or **Cardio**, the first time, tick **I confirm I will have each patient's permission before recording their details here.** (you are only asked once), then tap **Next →**.",
       "Ortho: the pathway starts on **Outpatient / Musculoskeletal**, the usual one, so just tap **Continue** (pick Inpatient or Post-operative Rehab instead if that fits). Pick the body region, and the side for an arm or leg, then **Continue**. **General Assessment** (the core steps) is already chosen; pick **Advanced Assessment** for more steps. Then tap **Start assessment**.",
       "Neuro: choose the setting, tap **Continue**, then **Use Template** and pick one, for example General Neurological. Cardio: tap **Start Assessment**, choose the setting, then the system (cardiovascular, respiratory or combined).",
       "Move through the steps with **Next** and **Back**, or tap any step at the top to jump to it. Ortho shows a counter like Step 3/21 so you can see how far along you are.",
@@ -40,7 +40,7 @@ export const HOW_TO_TOPICS = [
     title: "Say it instead of typing",
     summary: "AI Assessment fills the form from your words",
     steps: [
-      "On Home, tap **AI Assessment** and confirm the patient has given permission. For an Ortho assessment you can also pick **AI Assisted Assessment** on the pathway screen.",
+      "On Home, tap **AI Assessment**. The first time you are asked to confirm you will have each patient's permission. For an Ortho assessment you can also pick **AI Assisted Assessment** on the pathway screen.",
       "Describe the patient in your own words, for example: 42-year-old teacher, neck pain for 4 months, worse with laptop work. You can type it, or tap the microphone if your browser supports voice (Chrome works best).",
       "The app fills in the form from what you said. Read it through and fix anything that is wrong. You are still the one who checks it.",
     ],
