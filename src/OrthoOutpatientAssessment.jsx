@@ -937,14 +937,14 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
                 onShare={onNav ? (text) => onNav("physiofeed", { pfShareDiscussion: { text } }) : undefined}
                 onGeneratePdf={onGeneratePdf}
               />
-              {onSave && (
-                <button type="button" className="primary-btn" style={{ width: "100%", marginTop: 10 }} onClick={handleSaveClick}>
-                  {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
-                </button>
-              )}
               <button type="button" className="info-btn-full" style={{ marginTop: 10 }} onClick={() => setSaveTemplateOpen(true)}>
                 💾 Save as Template
               </button>
+              {onSave && (
+                <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 10 }} onClick={onExit}>
+                  Start new assessment
+                </button>
+              )}
             </>
           )}
         </div>
@@ -954,9 +954,18 @@ export default function OrthoOutpatientAssessment({ selectedRegions: initialSele
             Back
           </button>
           {current.id === "review" ? (
-            <button className="primary-btn" onClick={onExit}>
-              Start new assessment
-            </button>
+            // Save is the main action here (it used to sit further down the
+            // page while the big button said "Start new assessment"). Without
+            // a save handler the bar falls back to starting a new assessment.
+            onSave ? (
+              <button className="primary-btn" onClick={handleSaveClick}>
+                {savedFlash ? "Saved ✓" : "💾 Save Assessment"}
+              </button>
+            ) : (
+              <button className="primary-btn" onClick={onExit}>
+                Start new assessment
+              </button>
+            )
           ) : (
             <button className="primary-btn" onClick={goNext}>
               {step === steps.length - 2 ? "Review & complete" : "Next"}

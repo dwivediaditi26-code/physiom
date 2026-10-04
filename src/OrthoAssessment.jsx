@@ -339,6 +339,20 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
       ? (opdMode === "condition" && !!condition) || opdMode === "general" || opdMode === "advanced" || (opdMode === "templates" && !!selectedTemplate)
       : !!condition);
   const canProceed = canProceedPathway && canProceedRegion && canProceedCondition;
+  // Says why Continue is faded instead of leaving it a silent dead button.
+  const continueHint = canProceed
+    ? null
+    : step === 0
+      ? "Choose a pathway above to continue."
+      : step === 1
+        ? "Pick at least one body region to continue."
+        : !isOutpatient
+          ? "Pick the clinical context to continue."
+          : opdMode === "condition"
+            ? "Pick a condition to continue."
+            : opdMode === "templates"
+              ? "Pick a template to continue."
+              : "Choose how you want to start to continue.";
 
   const meta = pathway ? PATHWAY_META[pathway] : null;
 
@@ -545,7 +559,12 @@ export default function OrthoAssessment({ onExit, onNav, navContext, onSave, act
         </div>
 
         {!(step === 1 && effectiveEntryMode === "ai" && aiSubStep === 2) && (
-          <div className="bottombar">
+          <div className="bottombar" style={continueHint ? { flexWrap: "wrap" } : undefined}>
+            {continueHint && (
+              <div role="status" style={{ flexBasis: "100%", order: -1, textAlign: "center", fontSize: 12, color: "#6B7280", paddingBottom: 2 }}>
+                {continueHint}
+              </div>
+            )}
             {step > 0 && (
               <button className="ghost-btn" onClick={goBack}>
                 Back

@@ -112,7 +112,8 @@ function Register({onSwitch,onAuth,onShowLegal}){
         , and I understand that PhysioMind is an academic training aid and that all clinical interpretations must be verified by a licensed physical therapist.
       </span>
     </label>
-    <button type="submit" style={{...btnS,opacity:loading||!agreed?0.5:1}} disabled={loading||!agreed}>{loading?"Creating…":"Create free account →"}</button>
+    <button type="submit" style={{...btnS,opacity:loading||!agreed?0.5:1}} disabled={loading||!agreed} aria-describedby={!agreed?"signup-why-disabled":undefined}>{loading?"Creating…":"Create free account →"}</button>
+    {!agreed&&!loading&&<p id="signup-why-disabled" style={{textAlign:"center",margin:"8px 0 0",fontSize:"0.76rem",color:MU}}>Tick the box above to create your account.</p>}
     <p style={{textAlign:"center",marginTop:18,fontSize:"0.78rem",color:MU}}>
       Already have an account?{" "}<button type="button" onClick={()=>onSwitch("login")} style={link}>Sign in</button>
     </p>

@@ -52,6 +52,33 @@ async function currentUserId() {
   return (await currentAuthUser())?.id || null;
 }
 
+// The canned demo lists (education, rotations, notifications, people, ...) are
+// for guest mode only. When a read fails for someone who IS signed in (table
+// missing, network blip) they get an honest empty list, not made-up entries
+// such as "Physiotherapist - Active Physio & Rehab Centre" on their own profile
+// (first-time walkthrough, 2026-10-02).
+async function demoOrEmpty(list) {
+  let signedIn = false;
+  try { signedIn = !!(await currentAuthUser()); } catch { /* treat as guest */ }
+  return signedIn ? [] : clone(list);
+}
+
+// A blank, real profile for a signed-in person whose profile could not be read,
+// used instead of the shared demo identity ("Dr. Aditi Sharma, PT").
+function blankProfileFor(user) {
+  const name = user?.user_metadata?.full_name || (user?.email ? user.email.split("@")[0] : "Physiotherapist");
+  return {
+    id: user.id, name, role: "Physiotherapist", verified: false, gradient: "violet",
+    initials: String(name || "P")[0].toUpperCase(), location: "", bio: "", quote: "",
+    followers: 0, following: 0, connections: 0, isAdmin: false, avatarUrl: null,
+    experience: "", languages: "", memberships: "", availableForConsults: false,
+    clinicalTitle: "", college: "", phone: "", openToWork: true, willingToRelocate: false,
+    skills: [], resumeUrl: null, resumeName: null, headline: "", areaOfPractice: [],
+    clinicalInterests: [], clinicalSkillsAssessment: [], clinicalSkillsTreatment: [],
+    patientPopulations: [], clinicalApproach: "", researchInterests: [], openToTypes: [],
+  };
+}
+
 // Matches the "2h" / "1d" / "1w" style already used throughout mockData.js
 // -- no library, just enough granularity for a feed timestamp.
 function timeAgo(iso) {
@@ -677,8 +704,13 @@ export async function getProfile() {
       openToTypes: row.open_to_types || [],
     });
   } catch (e) {
-    console.error("getProfile(): falling back to demo profile --", e?.message || e);
-    return { ...clone(CURRENT_USER), isDemo: true }; // `profiles` table not created yet, or any other failure
+    console.error("getProfile(): could not read the profile --", e?.message || e);
+    // A signed-in person gets a blank profile of their own; only a guest is
+    // shown the shared demo identity.
+    let user = null;
+    try { user = await currentAuthUser(); } catch { /* treat as guest */ }
+    if (user) return blankProfileFor(user);
+    return { ...clone(CURRENT_USER), isDemo: true };
   }
 }
 
@@ -834,7 +866,7 @@ export async function getEducation() {
     return data.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle, iconName: r.icon_name, month: r.month || "", year: r.year || "" }));
   } catch (e) {
     console.error("getEducation(): falling back to demo list --", e?.message || e);
-    return clone(EDUCATION);
+    return demoOrEmpty(EDUCATION);
   }
 }
 
@@ -927,7 +959,7 @@ export async function getRotations() {
     return data.map((r) => ({ id: r.id, department: r.department, duration: r.duration }));
   } catch (e) {
     console.error("getRotations(): falling back to demo list --", e?.message || e);
-    return clone(ROTATIONS);
+    return demoOrEmpty(ROTATIONS);
   }
 }
 
@@ -997,7 +1029,7 @@ export async function getAchievements() {
     }));
   } catch (e) {
     console.error("getAchievements(): falling back to demo list --", e?.message || e);
-    return clone(ACHIEVEMENTS);
+    return demoOrEmpty(ACHIEVEMENTS);
   }
 }
 
@@ -1075,7 +1107,7 @@ export async function getPublications() {
     return data.map((r) => ({ id: r.id, title: r.title, journal: r.journal, year: r.year, authors: r.authors, doiUrl: r.doi_url }));
   } catch (e) {
     console.error("getPublications(): falling back to demo list --", e?.message || e);
-    return clone(PUBLICATIONS);
+    return demoOrEmpty(PUBLICATIONS);
   }
 }
 
@@ -1143,7 +1175,7 @@ export async function getContributions() {
     return data.map((r) => ({ id: r.id, type: r.type, title: r.title, year: r.year || "", location: r.location || "" }));
   } catch (e) {
     console.error("getContributions(): falling back to demo list --", e?.message || e);
-    return clone(CONTRIBUTIONS);
+    return demoOrEmpty(CONTRIBUTIONS);
   }
 }
 
@@ -1249,7 +1281,7 @@ export async function getPeople() {
     return uid ? clone(real) : clone([...real, ..._people]);
   } catch (e) {
     console.error("getPeople(): falling back to demo people --", e?.message || e);
-    return clone(_people);
+    return demoOrEmpty(_people);
   }
 }
 
@@ -1608,7 +1640,7 @@ export async function getCommunities() {
     }));
   } catch (e) {
     console.error("getCommunities(): falling back to demo communities --", e?.message || e);
-    return clone(_communities);
+    return demoOrEmpty(_communities);
   }
 }
 
@@ -1697,7 +1729,7 @@ export async function getNotifications() {
     }));
   } catch (e) {
     console.error("getNotifications(): falling back to demo notifications --", e?.message || e);
-    return clone(NOTIFICATIONS);
+    return demoOrEmpty(NOTIFICATIONS);
   }
 }
 
@@ -2301,7 +2333,7 @@ export async function getOpportunities() {
   } catch (e) {
     console.error("getOpportunities(): falling back to demo board --", e?.message || e);
     const { INITIAL_OPPORTUNITIES } = await import("./opportunitiesMock.js");
-    return clone(INITIAL_OPPORTUNITIES);
+    return demoOrEmpty(INITIAL_OPPORTUNITIES);
   }
 }
 

@@ -34,8 +34,13 @@ the PDF's look, and the patient profile in depth.
 - **5. PhysioFeed made-up posts:** the demo posts are for guests only. A signed-in person whose feed could not load now sees an empty feed, not canned posts.
 - **6. Red Flag Screen:** a "No red flags identified" button marks all six questions negative in one tap.
 
+## Done on 2026-10-03
+- **4. Pre-filled public profile:** the demo entries now show to guests only; a signed-in person whose profile could not be read gets a blank profile of their own.
+- **8. Save easy to miss:** "Save Assessment" is now the main button on Final Review for Ortho.
+- **11. Disabled buttons give no reason:** Create free account and the Ortho Continue buttons now say what is missing.
+
 ## For a decision (not changed)
-Ordered roughly by how likely a new physio is to be confused or put off. Items 1, 3, 5 and 6 are done (above); the text is kept as written.
+Ordered roughly by how likely a new physio is to be confused or put off. Items 1, 3, 4, 5, 6, 8 and 11 are done (above); the text is kept as written.
 
 1. **Sample patients look real.** Every new account starts with "Priya Sharma" and "Arjun
    Kapoor", counted in "1 patient today / 2 total", with no "sample" label. Suggest a Sample

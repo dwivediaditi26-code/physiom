@@ -27,16 +27,29 @@ describe("PhysioFeed tab", () => {
     });
   });
 
-  it("renders the feed with a clear demo-content disclosure, not silently as real community content", async () => {
+  // The demo banner belongs to guest mode (db.js hands guests the shared demo
+  // identity). A signed-in clinician whose feed or profile cannot be read gets an
+  // honest empty feed and a blank profile of their own, never canned posts or
+  // someone else's identity (first-time walkthrough, 2026-10-02/03), so no banner.
+  it("renders the feed for a signed-in clinician without the demo disclosure or canned posts", async () => {
     render(<App />);
-    // Plain text "PhysioFeed" is ambiguous -- the Home dashboard also
-    // renders a "PhysioFeed" preview widget (DashboardModules.jsx) whose
-    // heading is that same literal text but isn't a nav control, and it
-    // sits earlier in DOM order than the real bottom-nav tab button below.
-    // getAllByText(...)[0]/.first() isn't guaranteed to land on the real
-    // tab, so this used to click a no-op and time out waiting for "Demo
-    // content". data-testid="bnav-tab-physiofeed" (AppFull.jsx) targets the
-    // actual tab button unambiguously.
+    const physiofeedTab = await screen.findByTestId("bnav-tab-physiofeed", {}, { timeout: 10_000 });
+    fireEvent.click(physiofeedTab);
+    // Slower than the guest case: it waits for the feed read to finish and fail first.
+    await waitFor(() => {
+      expect(screen.getByText(/Nothing here yet/i)).toBeTruthy();
+    }, { timeout: 20_000 });
+    expect(screen.queryByText(/Demo content/i)).toBeNull();
+    expect(screen.queryByText(/Aditi Sharma/)).toBeNull();
+  }, 35_000);
+
+  it("renders the feed in guest mode with a clear demo-content disclosure, not silently as real community content", async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null });
+    render(<App />);
+    fireEvent.click(await screen.findByText(/Try the full app/i));
+    // Plain text "PhysioFeed" is ambiguous -- the Home dashboard also renders a
+    // "PhysioFeed" preview widget. data-testid="bnav-tab-physiofeed" (AppFull.jsx)
+    // targets the actual tab button unambiguously.
     const physiofeedTab = await screen.findByTestId("bnav-tab-physiofeed", {}, { timeout: 10_000 });
     fireEvent.click(physiofeedTab);
     await waitFor(() => {
