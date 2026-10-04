@@ -54,7 +54,7 @@ export const IPD_CONDITIONS = [
   { id: "infection", icon: "🦠", label: "Infection", desc: "Medically-documented infection under treatment", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "activityTolerance"] },
   { id: "softTissue", icon: "🧵", label: "Soft-tissue Injury", desc: "Sprain, strain, contusion", optional: ["edema", "rom", "mmt", "jointMobility", "activityTolerance", "outcomeMeasure"] },
   { id: "spine", icon: "🦴", label: "Spine Condition", desc: "Neck / back pathology with neuro screening", optional: ["neurovascular", "neuroScreen", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
-  { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["edema", "wound", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
+  { id: "amputation", icon: "🦿", label: "Amputation", desc: "Residual limb and prosthetic pathway", optional: ["edema", "wound", "neurovascular", "rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "painFunctional", icon: "😣", label: "Pain / Functional Limitation", desc: "No clear structural diagnosis yet", optional: ["rom", "mmt", "jointMobility", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "deconditioning", icon: "🧍", label: "Deconditioning / Mobility Limitation", desc: "Generalised weakness / reduced mobility", optional: ["rom", "mmt", "balance", "activityTolerance", "outcomeMeasure"] },
   { id: "other", icon: "❓", label: "Other", desc: "Doesn't fit the templates above", optional: ["rom", "mmt", "activityTolerance"] },
@@ -171,7 +171,14 @@ function MedicalReviewSection({ data, setData, condition, selectedRegions }) {
   );
 }
 
-const PRECAUTION_OPTIONS = ["Fall risk", "Monitor vitals during mobilization", "Cardiac precautions", "Pulmonary precautions", "DVT precautions", "Bleeding / anticoagulation precautions", "Isolation precautions", "Cognitive / delirium precautions"];
+const PRECAUTION_OPTIONS = ["Fall risk", "Monitor vitals during mobilization", "Cardiac precautions", "Pulmonary precautions", "DVT precautions", "Bleeding / anticoagulation precautions", "Isolation precautions", "Cognitive / delirium precautions", "Pressure injury risk (immobile or insensate)", "Neurological deficit — monitor for change", "Diabetic / blood glucose precautions", "Spinal precautions (log-roll, brace as directed)"];
+
+// Pathway-level outcome-measure suggestions: ADL independence for every
+// inpatient, plus pressure-injury risk where the patient is likely to be
+// immobile or insensate. Module-level constants so ListView's useMemo is stable.
+const SUGGEST_ADL = [{ id: "barthel", reason: "Standard ADL-independence measure for inpatients — track it from admission to discharge." }];
+const SUGGEST_ADL_AND_PRESSURE = [...SUGGEST_ADL, { id: "braden", reason: "Pressure-injury risk — useful when the patient is bed-bound, insensate or recovering from spinal or limb-loss surgery." }];
+const PRESSURE_RISK_CONDITIONS = ["spine", "amputation", "deconditioning", "fracture"];
 function PrecautionsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "precautions");
   return (
@@ -461,16 +468,16 @@ export default function OrthoIPDAssessment({ selectedRegions, condition, customC
           {current.id === "edema" && <EdemaSection data={data} setData={setData} />}
           {current.id === "wound" && <WoundSection data={data} setData={setData} />}
           {current.id === "neurovascular" && <NeurovascularSection data={data} setData={setData} />}
-          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} />}
+          {current.id === "neuroScreen" && <NeuroScreenSection data={data} setData={setData} showCaudaEquina={condition === "spine"} />}
           {current.id === "rom" && <RomSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "mmt" && <MmtSection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "jointMobility" && <JointMobilitySection data={data} setData={setData} selectedRegions={selectedRegions} />}
           {current.id === "specialTests" && <SpecialTestsSection data={data} setData={setData} selectedRegions={selectedRegions} />}
-          {current.id === "functionalMobility" && <FunctionalMobilitySection data={data} setData={setData} />}
-          {current.id === "gait" && <GaitSection data={data} setData={setData} />}
+          {current.id === "functionalMobility" && <FunctionalMobilitySection data={data} setData={setData} showHomeEnvironment />}
+          {current.id === "gait" && <GaitSection data={data} setData={setData} showStairs />}
           {current.id === "balance" && <BalanceSection data={data} setData={setData} />}
           {current.id === "activityTolerance" && <ActivityToleranceSection data={data} setData={setData} />}
-          {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} />}
+          {current.id === "outcomeMeasure" && <OrthoOutcomeMeasureFlow data={data} setData={setData} selectedRegions={selectedRegions} regionLabelOf={regionLabelOf} extraRecommended={PRESSURE_RISK_CONDITIONS.includes(condition) ? SUGGEST_ADL_AND_PRESSURE : SUGGEST_ADL} />}
           {current.id === "impression" && <ImpressionSection data={data} setData={setData} />}
           {CAREPLAN_STEP_IDS.includes(current.id) && (
             <>

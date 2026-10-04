@@ -79,8 +79,8 @@ function MeasureCard({ measure, suggested, instance, onStart }) {
   );
 }
 
-function ListView({ selectedRegions, instances, onStart }) {
-  const { recommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion }), [selectedRegions]);
+function ListView({ selectedRegions, instances, onStart, extraRecommended }) {
+  const { recommended } = useMemo(() => suggestMeasures({ selectedRegions, contentKeyForRegion, extraRecommended }), [selectedRegions, extraRecommended]);
   const suggestedIds = new Set(recommended.map((r) => r.id));
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
@@ -227,7 +227,7 @@ function ResultView({ measure, answers, onSave, onClose }) {
   );
 }
 
-export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions = [], regionLabelOf, jumpTo }) {
+export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions = [], regionLabelOf, jumpTo, extraRecommended }) {
   const { instances, saveEntry } = useOutcomeData(data, setData);
   const [view, setView] = useState("list");
   const [activeId, setActiveId] = useState(null);
@@ -303,6 +303,7 @@ export default function OrthoOutcomeMeasureFlow({ data, setData, selectedRegions
   return (
     <ListView
       selectedRegions={selectedRegions}
+      extraRecommended={extraRecommended}
       instances={instances}
       onStart={(id) => {
         setActiveId(id);

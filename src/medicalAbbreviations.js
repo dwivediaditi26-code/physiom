@@ -34,6 +34,8 @@ const MEDICAL_ABBREVIATIONS = {
   hep: "HEP (Home Exercise Programme)",
   // Vitals and other short field names that read as raw keys ("Bp Sys",
   // "Hr") on the summary screens. Wording matches the input screens' labels.
+  heightcm: "Height (cm)",
+  weightkg: "Weight (kg)",
   bpsys: "Blood Pressure (Systolic)",
   bpdia: "Blood Pressure (Diastolic)",
   hr: "Heart Rate",
