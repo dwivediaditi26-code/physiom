@@ -10,6 +10,7 @@ import { render, screen, fireEvent, within, cleanup } from "@testing-library/rea
 vi.mock("../supabase.js", () => import("../__mocks__/supabase.js"));
 const { default: OrthoIPDAssessment } = await import("../OrthoIPDAssessment.jsx");
 const { MEASURES, suggestMeasures } = await import("../orthoOutcomeMeasureData.js");
+const { resolveSurgicalOptions } = await import("../orthoSurgicalLibrary.js");
 
 const answersAll = (measure, pick) => Object.fromEntries(measure.items.map((it) => [it.id, pick(it)]));
 const maxOf = (it) => Math.max(...it.options.map((o) => o.value));
@@ -112,6 +113,56 @@ describe("IPD wizard", () => {
     expect(screen.getByText("Barthel Index")).toBeTruthy();
     expect(screen.getByText("Braden Scale")).toBeTruthy();
     expect(screen.getAllByText(/Suggested/).length).toBeGreaterThanOrEqual(2);
+    cleanup();
+  });
+
+  it("Post-operative offers surgical options (incl. osteotomy and bone graft) instead of an empty list", () => {
+    const o = resolveSurgicalOptions([{ id: "knee", side: "right" }], "postop");
+    expect(o.procedures).toContain("High tibial osteotomy — medial opening wedge");
+    expect(o.graft).toContain("Allograft (e.g. fibular strut)");
+    expect(o.graft).toContain("Synthetic bone substitute (e.g. beta-TCP)");
+    expect(o.fixation.length).toBeGreaterThan(0);
+    // still includes the ordinary knee options
+    expect(o.procedures).toContain("ACL reconstruction");
+  });
+
+  it("Weight-bearing restriction asks how long, and fracture/post-op shows bone healing", () => {
+    render(<OrthoIPDAssessment selectedRegions={[{ id: "knee", side: "right" }]} condition="postop" onSave={() => {}} onExit={() => {}} />);
+    openStep("Medical / Chart Review");
+    expect(screen.queryByText("Weight-bearing restricted for / until")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "NWB" }));
+    expect(screen.getByText("Weight-bearing restricted for / until")).toBeTruthy();
+    expect(screen.getByText("Weight-bearing review date")).toBeTruthy();
+    expect(screen.getByText("Bone healing (radiology)")).toBeTruthy();
+    expect(screen.getByText("Union status")).toBeTruthy();
+    cleanup();
+  });
+
+  it("Amputation: the Wound step has a residual limb and phantom limb block", () => {
+    render(<OrthoIPDAssessment selectedRegions={[{ id: "leg", side: "left" }]} condition="amputation" onSave={() => {}} onExit={() => {}} />);
+    openStep("Wound / Surgical Site");
+    expect(screen.getByText("Phantom limb symptoms")).toBeTruthy();
+    expect(screen.getByText("Circumference, distal")).toBeTruthy();
+    expect(screen.getByText("Contralateral limb check")).toBeTruthy();
+    expect(screen.getByText("Prosthetic goal")).toBeTruthy();
+    cleanup();
+  });
+
+  it("Other conditions do not show the residual limb block", () => {
+    render(<OrthoIPDAssessment selectedRegions={[{ id: "knee", side: "right" }]} condition="postop" onSave={() => {}} onExit={() => {}} />);
+    openStep("Wound / Surgical Site");
+    expect(screen.queryByText("Phantom limb symptoms")).toBeNull();
+    cleanup();
+  });
+
+  it("Limb Length is available on joint replacement and fracture pathways", () => {
+    render(<OrthoIPDAssessment selectedRegions={[{ id: "hip", side: "left" }]} condition="jointReplacement" onSave={() => {}} onExit={() => {}} />);
+    openStep("Limb Length");
+    expect(screen.getByText(/Limb Length Discrepancy/)).toBeTruthy();
+    expect(screen.getByText("True length")).toBeTruthy();
+    cleanup();
+    render(<OrthoIPDAssessment selectedRegions={[{ id: "knee", side: "right" }]} condition="fracture" onSave={() => {}} onExit={() => {}} />);
+    expect(screen.getByRole("button", { name: "Limb Length" })).toBeTruthy();
     cleanup();
   });
 });

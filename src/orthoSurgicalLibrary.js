@@ -282,6 +282,37 @@ const SURGICAL_BUCKETS = {
    they resolve through the ankle / wrist buckets above; sacrum resolves via
    the lumbar buckets. Regions with no curated data fall back gracefully
    below (empty lists — the therapist enters everything manually). */
+/* Realignment / corrective osteotomies (e.g. proximal tibial osteotomy for
+   a malunited plateau fracture). Kept as its own bucket per lower-limb region
+   because the usual fracture lists carry no osteotomy, graft or bone-substitute
+   options. Reached through the generic "Post-operative" inpatient condition,
+   where every bucket for the region is offered together (see bucketFor). */
+const OSTEOTOMY_GRAFT = ["None", "Autograft (e.g. iliac crest)", "Allograft (e.g. fibular strut)", "Synthetic bone substitute (e.g. beta-TCP)"];
+SURGICAL_BUCKETS.knee.osteotomy = {
+  procedures: ["High tibial osteotomy — medial opening wedge", "High tibial osteotomy — lateral closing wedge", "Distal femoral osteotomy", "Corrective osteotomy for fracture malunion"],
+  approaches: ["Medial", "Lateral", "Anterior"],
+  fixation: ["Locking plate + screws", "Plate + screws", "Staples", "External fixator"],
+  graft: OSTEOTOMY_GRAFT,
+  immobilization: ["Hinged knee brace", "Knee immobilizer", "Cast or brace per surgeon"],
+  restrictionPresets: ["Weight-bearing strictly per surgeon order — often restricted until there is radiological union", "Range of motion as tolerated unless the surgeon limits it", "Protect the osteotomy from rotational and varus / valgus stress", "Report new pain, swelling or visible deformity — possible loss of correction or delayed union"],
+};
+SURGICAL_BUCKETS.hip.osteotomy = {
+  procedures: ["Periacetabular osteotomy", "Proximal femoral osteotomy", "Intertrochanteric osteotomy"],
+  approaches: ["Anterior", "Lateral", "Posterior"],
+  fixation: ["Plate + screws", "Blade plate", "Cannulated screws"],
+  graft: OSTEOTOMY_GRAFT,
+  immobilization: ["Usually none", "Hip abduction brace if prescribed"],
+  restrictionPresets: ["Weight-bearing strictly per surgeon order — often protected until healing is seen on X-ray", "Avoid active abduction and straight-leg raise if the surgeon restricts them", "Fall-prevention precautions"],
+};
+SURGICAL_BUCKETS.ankle.osteotomy = {
+  procedures: ["Supramalleolar osteotomy", "Calcaneal osteotomy", "Distal tibial osteotomy"],
+  approaches: ["Medial", "Lateral", "Anterior"],
+  fixation: ["Plate + screws", "Screws", "Staples"],
+  graft: OSTEOTOMY_GRAFT,
+  immobilization: ["Cast", "Walking boot", "Brace per surgeon"],
+  restrictionPresets: ["Weight-bearing strictly per surgeon order — usually protected until union", "Elevate and monitor swelling and the skin over the hardware"],
+};
+
 SURGICAL_BUCKETS.foot = SURGICAL_BUCKETS.ankle;
 SURGICAL_BUCKETS.hand = SURGICAL_BUCKETS.wrist;
 SURGICAL_BUCKETS.sacrum = SURGICAL_BUCKETS.lumbar;
@@ -411,7 +442,18 @@ const CONDITION_BUCKET = {
   tendonTransfer: "tendonTransfer",
 };
 
+/* "Post-operative" on the inpatient pathway does not say what kind of surgery,
+   so offer every option known for the region instead of an empty list. */
+function mergeRegionBuckets(regionId) {
+  const all = Object.values(SURGICAL_BUCKETS[regionId] || {});
+  const fields = ["procedures", "approaches", "fixation", "immobilization", "graft", "additionalProcedures", "restrictionPresets", "woundOptions"];
+  const merged = {};
+  fields.forEach((f) => { merged[f] = union(...all.map((b) => b[f])); });
+  return merged;
+}
+
 function bucketFor(regionId, conditionId) {
+  if (conditionId === "postop") return mergeRegionBuckets(regionId);
   if (conditionId === "infection") return SPINE_REGION_IDS.includes(regionId) ? SPINE_INFECTION_BUCKET : INFECTION_BUCKET;
   if (conditionId === "amputation") return AMPUTATION_BUCKET;
   if (conditionId === "arthritis") return ARTHRITIS_BUCKET;
