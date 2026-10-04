@@ -21,6 +21,7 @@ export function SurgicalDetailsSection({ data, setData, sectionKey, selectedRegi
   const isInfection = conditionId === "infection";
   const isAmputation = conditionId === "amputation";
   const showLevel = selectedRegions.some((r) => SPINE_IDS.includes(r.id));
+  const showHealing = ["fracture", "postop"].includes(conditionId) || /osteotomy|fusion|ORIF|fixation|nail|fracture/i.test(String(d.procedure || ""));
 
   return (
     <>
@@ -52,6 +53,20 @@ export function SurgicalDetailsSection({ data, setData, sectionKey, selectedRegi
         wrap
         howTo="NWB = non weight-bearing. TTWB = toe-touch. PWB = partial. WBAT = weight-bearing as tolerated. FWB = full weight-bearing. Always confirm against the surgeon's written order — do not assume progression."
       />
+      {["NWB", "TTWB", "PWB", "Other"].includes(d.weightBearing) && (
+        <>
+          <TextField label="Weight-bearing restricted for / until" value={d.weightBearingDuration} onChange={(v) => set("weightBearingDuration", v)} placeholder="e.g. 3 months, or until radiological union" />
+          <DateField label="Weight-bearing review date" value={d.weightBearingReviewDate} onChange={(v) => set("weightBearingReviewDate", v)} />
+        </>
+      )}
+      {showHealing && (
+        <>
+          <div className="subheading">Bone healing (radiology)</div>
+          <SelectField label="Union status" type="single" options={withFallbacks(["Not yet imaged", "No callus yet", "Early callus", "Bridging callus — healing", "United", "Delayed union", "Non-union", "Malunion"])} value={d.unionStatus} onChange={(v) => set("unionStatus", v)} />
+          <DateField label="Latest imaging date" value={d.latestImagingDate} onChange={(v) => set("latestImagingDate", v)} />
+          <TextField label="Imaging findings (alignment, hardware)" value={d.imagingFindings} onChange={(v) => set("imagingFindings", v)} placeholder="e.g. hardware intact, alignment maintained" />
+        </>
+      )}
 
       <SelectField label="Restrictions / precautions" type="multi" options={withFallbacks(opts.restrictionPresets)} value={d.restrictions} onChange={(v) => set("restrictions", v)} />
       {OPERATED_STATUSES.includes(d.procedureStatus) && (

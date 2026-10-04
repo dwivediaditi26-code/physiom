@@ -49,8 +49,29 @@ export function CaseInfoSection({ data, setData }) {
   );
 }
 
+// BMI cut-offs: WHO adult categories. South Asian populations carry more
+// metabolic risk at lower BMI (overweight from 23), so the hint says so
+// instead of silently using the Western numbers alone.
+function bmiCategory(bmi) {
+  if (!(bmi > 0)) return "";
+  if (bmi < 18.5) return "Underweight (WHO) -- consider nutrition and wound-healing risk";
+  if (bmi < 25) return "Normal range (WHO)";
+  if (bmi < 30) return "Overweight (WHO)";
+  return "Obese (WHO)";
+}
+
 export function VitalsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "vitals");
+  // BMI is derived, never typed: recomputed on every height/weight change.
+  const setBody = (key, value) => {
+    setData((prev) => {
+      const v = { ...(prev.vitals || {}), [key]: value };
+      const h = Number(v.heightCm);
+      const w = Number(v.weightKg);
+      v.bmi = h > 0 && w > 0 ? String(Math.round((w / ((h / 100) ** 2)) * 10) / 10) : "";
+      return { ...prev, vitals: v };
+    });
+  };
   useEffect(() => {
     setData((prev) => (prev.vitals && Object.keys(prev.vitals).length > 0 ? prev : { ...prev, vitals: { ...NORMAL_VITALS } }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,6 +88,12 @@ export function VitalsSection({ data, setData }) {
         <VitalRow label="Temperature" value={d.temp} onChange={(v) => set("temp", v)} unit="°C" max={42} step={0.1} />
         <VitalRow label="Pain (NRS)" value={d.pain} onChange={(v) => set("pain", v)} slider max={10} />
       </div>
+      <div className="subheading">Body measurements</div>
+      <div className="vitals-grid">
+        <NumberField label="Height" value={d.heightCm} onChange={(v) => setBody("heightCm", v)} unit="cm" width="45%" />
+        <NumberField label="Weight" value={d.weightKg} onChange={(v) => setBody("weightKg", v)} unit="kg" width="45%" />
+      </div>
+      {d.bmi && <Hint>{`BMI ${d.bmi} kg/m² -- ${bmiCategory(Number(d.bmi))}. South Asian adults are at higher metabolic risk from a BMI of about 23.`}</Hint>}
     </>
   );
 }
@@ -111,7 +138,9 @@ export function ObservationSection({ data, setData, showResponseToActivity }) {
   );
 }
 
-export function FunctionalMobilitySection({ data, setData }) {
+export const HOME_EQUIPMENT_OPTIONS = ["None needed", "Walker / frame", "Crutches", "Wheelchair", "Commode chair", "Raised toilet seat", "Grab rails", "Hospital bed", "Long-handled aids (reacher, sock aid)"];
+
+export function FunctionalMobilitySection({ data, setData, showHomeEnvironment }) {
   const [d, set] = useSectionData(data, setData, "functionalMobility");
   return (
     <>
@@ -122,6 +151,24 @@ export function FunctionalMobilitySection({ data, setData }) {
       <div className="subheading">Transfers</div>
       <AssistField label="Sit → Stand" value={d.sitToStand} onChange={(v) => set("sitToStand", v)} />
       <AssistField label="Bed → Chair" value={d.bedToChair} onChange={(v) => set("bedToChair", v)} />
+      {showHomeEnvironment && (
+        <>
+          <div className="subheading">Home environment &amp; discharge planning</div>
+          <SelectField label="Lives with" type="single" options={["Alone", "Spouse / family", "Live-in caregiver", "Care facility"]} value={d.livesWith} onChange={(v) => set("livesWith", v)} />
+          <SelectField label="Home access" type="single" options={["Ground floor, no steps", "Entrance steps only", "Stairs to bedroom / toilet", "Lift available"]} value={d.homeAccess} onChange={(v) => set("homeAccess", v)} />
+          <div className="vitals-grid">
+            <NumberField label="Steps / stairs at home" value={d.homeSteps} onChange={(v) => set("homeSteps", v)} unit="steps" width="45%" />
+            <NumberField label="Step height" value={d.stepHeight} onChange={(v) => set("stepHeight", v)} unit="cm" width="45%" />
+          </div>
+          <Segmented label="Handrail on stairs" options={["Yes", "No", "Not known"]} value={d.homeHandrail} onChange={(v) => set("homeHandrail", v)} />
+          <SelectField label="Toilet type" type="single" options={["Western commode", "Indian squat toilet", "Raised seat / commode chair"]} value={d.toiletType} onChange={(v) => set("toiletType", v)} />
+          <SelectField label="Sleeping / sitting surface" type="single" options={["Raised bed", "Floor mattress", "Low seating / floor sitting"]} value={d.sleepingSurface} onChange={(v) => set("sleepingSurface", v)} />
+          <Segmented label="Caregiver available" options={["Yes", "Part-time", "No"]} value={d.caregiver} onChange={(v) => set("caregiver", v)} />
+          <SelectField label="Equipment needed" type="multi" options={HOME_EQUIPMENT_OPTIONS} value={d.equipmentNeeded} onChange={(v) => set("equipmentNeeded", v)} />
+          <SelectField label="Planned discharge" type="single" options={["Home", "Home with support", "Rehabilitation facility", "Care facility", "Not yet decided"]} value={d.dischargeDestination} onChange={(v) => set("dischargeDestination", v)} />
+          <TextArea label="Discharge planning notes" value={d.dischargeNotes} onChange={(v) => set("dischargeNotes", v)} placeholder="e.g. second-floor flat, practised stairs on the ward, family trained in transfers..." />
+        </>
+      )}
     </>
   );
 }
@@ -276,8 +323,9 @@ const DTR_ROW_INFO = {
   "Patellar (L3-4)": neuroLibToRichItem(neuroExamLibraryData.reflexPatellar),
   "Achilles (S1-2)": neuroLibToRichItem(neuroExamLibraryData.reflexAchilles),
 };
-export function NeuroScreenSection({ data, setData }) {
+export function NeuroScreenSection({ data, setData, showCaudaEquina }) {
   const [d, set] = useSectionData(data, setData, "neuroScreen");
+  const cesFlag = d.saddleNumbness === "Present" || ["Urinary retention", "Urinary incontinence (new)", "Loss of bladder sensation"].includes(d.bladder) || d.bowel === "Faecal incontinence (new)";
   return (
     <>
       <SectionIntro icon="⚡" title="Neuro Screen" info="Quick myotome/dermatome/reflex screen for suspected nerve root involvement -- not a full neurological exam. Refer to Neuro assessment for a complete workup." />
@@ -343,6 +391,29 @@ export function NeuroScreenSection({ data, setData }) {
       <div className="subheading">Pathological reflexes</div>
       <SelectField label="Plantar response (Babinski)" type="single" options={["Flexor (normal/downgoing)", "Extensor (Babinski positive/upgoing)", "Equivocal", "Not tested"]} value={d.babinski} onChange={(v) => set("babinski", v)} />
       <SelectField label="Clonus" type="multi" options={["Absent", "Ankle clonus present", "Patellar clonus present", "Sustained clonus"]} value={d.clonus} onChange={(v) => set("clonus", v)} />
+      <div className="subheading">Muscle tone</div>
+      <LRGrid
+        label="Tone"
+        rows={["Upper limb", "Lower limb"]}
+        options={["Normal", "Hypotonic", "Flaccid", "Hypertonic (spastic)", "Rigid"]}
+        value={d.tone || {}}
+        onChange={(v) => set("tone", v)}
+        howTo="Move the limb passively at a moderate speed. Reduced resistance (hypotonic/flaccid) fits a lower motor neuron or acute cord/root injury; velocity-dependent resistance fits spasticity. Grade spasticity with the Modified Ashworth Scale if present."
+      />
+      {showCaudaEquina && (
+        <>
+          <div className="subheading">Cauda equina / bladder-bowel screen</div>
+          <Segmented label="Saddle (perineal) numbness" options={["Absent", "Present", "Not assessed"]} value={d.saddleNumbness} onChange={(v) => set("saddleNumbness", v)} howTo="Ask about numbness or altered sensation around the anus, genitals and inner thighs. Check light touch or pinprick over the S3–S5 saddle area where the patient agrees." />
+          <SelectField label="Bladder" type="single" options={["Normal", "Urinary retention", "Urinary incontinence (new)", "Loss of bladder sensation", "Catheter in situ", "Not assessed"]} value={d.bladder} onChange={(v) => set("bladder", v)} />
+          <SelectField label="Bowel" type="single" options={["Normal", "Constipation", "Faecal incontinence (new)", "Loss of bowel sensation", "Not assessed"]} value={d.bowel} onChange={(v) => set("bowel", v)} />
+          <Segmented label="Voluntary anal contraction (if examined by the medical team)" options={["Present", "Weak", "Absent", "Not examined"]} value={d.analContraction} onChange={(v) => set("analContraction", v)} wrap />
+          {cesFlag && (
+            <div className="alert alert-red" role="alert">
+              🚨 New saddle numbness or bladder/bowel change after spinal surgery can mean cauda equina syndrome. Stop mobilising and tell the surgical team now — this is an emergency.
+            </div>
+          )}
+        </>
+      )}
       <TextArea label="Additional neuro notes" value={d.notes} onChange={(v) => set("notes", v)} />
     </>
   );

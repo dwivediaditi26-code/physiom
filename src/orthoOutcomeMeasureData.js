@@ -45,6 +45,24 @@ function pctInterpret(maxScore, bands) {
   return (score) => bands(Math.round((score / maxScore) * 100));
 }
 
+// Barthel: 0-20 total dependence, 21-60 severe, 61-90 moderate, 91-99 slight, 100 independent.
+function barthelInterpret(score) {
+  if (score <= 20) return { label: "Total dependence", color: "#8A1F1F" };
+  if (score <= 60) return { label: "Severe dependence", color: "#DC2626" };
+  if (score <= 90) return { label: "Moderate dependence", color: "#D97706" };
+  if (score <= 99) return { label: "Slight dependence", color: "#65A30D" };
+  return { label: "Independent", color: "#16A34A" };
+}
+
+// Braden: 19-23 no risk, 15-18 mild, 13-14 moderate, 10-12 high, 9 or less very high.
+function bradenInterpret(score) {
+  if (score >= 19) return { label: "No risk", color: "#16A34A" };
+  if (score >= 15) return { label: "Mild risk", color: "#65A30D" };
+  if (score >= 13) return { label: "Moderate risk", color: "#D97706" };
+  if (score >= 10) return { label: "High risk", color: "#DC2626" };
+  return { label: "Very high risk", color: "#8A1F1F" };
+}
+
 export const MEASURES = {
   ndi: {
     id: "ndi",
@@ -255,11 +273,67 @@ export const MEASURES = {
     score: null,
     interpret: null,
   },
+  // ADL independence for inpatients. Standard Barthel Index structure (10
+  // activities, 0-100, higher = more independent); item wording written fresh
+  // for this app, scoring points and bands follow the published convention.
+  barthel: {
+    id: "barthel",
+    label: "Barthel Index",
+    full: "Barthel Index of Activities of Daily Living",
+    region: "general",
+    icon: "🛏️",
+    maxScore: 100,
+    unit: "/100",
+    mcid: null,
+    higherIsBetter: true,
+    items: [
+      { id: "bi_feeding", prompt: "Feeding", options: [{ label: "Unable to feed self", value: 0 }, { label: "Needs help, e.g. cutting food or spreading", value: 5 }, { label: "Independent, eats within a reasonable time", value: 10 }] },
+      { id: "bi_bathing", prompt: "Bathing", options: [{ label: "Needs help", value: 0 }, { label: "Independent (bath or shower)", value: 5 }] },
+      { id: "bi_grooming", prompt: "Grooming (face, hair, teeth, shaving)", options: [{ label: "Needs help", value: 0 }, { label: "Independent", value: 5 }] },
+      { id: "bi_dressing", prompt: "Dressing", options: [{ label: "Dependent", value: 0 }, { label: "Needs some help, does about half unaided", value: 5 }, { label: "Independent, including fastenings and footwear", value: 10 }] },
+      { id: "bi_bowels", prompt: "Bowels", options: [{ label: "Incontinent (or needs enemas)", value: 0 }, { label: "Occasional accident", value: 5 }, { label: "Continent", value: 10 }] },
+      { id: "bi_bladder", prompt: "Bladder", options: [{ label: "Incontinent, or catheter the patient cannot manage alone", value: 0 }, { label: "Occasional accident", value: 5 }, { label: "Continent, or manages a catheter independently", value: 10 }] },
+      { id: "bi_toilet", prompt: "Toilet use", options: [{ label: "Dependent", value: 0 }, { label: "Needs some help, manages part alone", value: 5 }, { label: "Independent (on/off, clothing, hygiene)", value: 10 }] },
+      { id: "bi_transfer", prompt: "Transfer, bed to chair and back", options: [{ label: "Unable, no sitting balance", value: 0 }, { label: "Major help from one or two people, can sit", value: 5 }, { label: "Minor help, verbal or physical", value: 10 }, { label: "Independent", value: 15 }] },
+      { id: "bi_mobility", prompt: "Mobility on level ground", options: [{ label: "Immobile, or cannot walk 50 m", value: 0 }, { label: "Independent in a wheelchair for 50 m, including corners", value: 5 }, { label: "Walks 50 m with help from one person", value: 10 }, { label: "Independent for 50 m (walking aid allowed)", value: 15 }] },
+      { id: "bi_stairs", prompt: "Stairs", options: [{ label: "Unable", value: 0 }, { label: "Needs help (verbal, physical or carrying an aid)", value: 5 }, { label: "Independent up and down", value: 10 }] },
+    ],
+    score: null,
+    interpret: null,
+    custom: true,
+  },
+  // Pressure-injury risk (Braden-style, 6 subscales, 6-23, LOWER = higher
+  // risk). Wording written fresh; ranges and risk bands follow the standard.
+  braden: {
+    id: "braden",
+    label: "Braden Scale",
+    full: "Pressure injury risk (Braden)",
+    region: "general",
+    icon: "🩹",
+    maxScore: 23,
+    unit: "/23",
+    mcid: null,
+    higherIsBetter: true,
+    items: [
+      { id: "br_sensory", prompt: "Sensory perception (ability to respond to pressure discomfort)", options: [{ label: "Completely limited — no response or cannot feel over most of the body", value: 1 }, { label: "Very limited — responds only to painful stimuli", value: 2 }, { label: "Slightly limited — responds to commands but cannot always say they are uncomfortable", value: 3 }, { label: "No impairment", value: 4 }] },
+      { id: "br_moisture", prompt: "Moisture (skin exposed to moisture)", options: [{ label: "Constantly moist", value: 1 }, { label: "Very moist — linen changed at least every shift", value: 2 }, { label: "Occasionally moist — extra linen change about daily", value: 3 }, { label: "Rarely moist", value: 4 }] },
+      { id: "br_activity", prompt: "Activity", options: [{ label: "Bedfast", value: 1 }, { label: "Chairfast — cannot bear own weight, needs help into chair", value: 2 }, { label: "Walks occasionally, short distances", value: 3 }, { label: "Walks frequently", value: 4 }] },
+      { id: "br_mobility", prompt: "Mobility (ability to change and control body position)", options: [{ label: "Completely immobile", value: 1 }, { label: "Very limited — only slight position changes", value: 2 }, { label: "Slightly limited — makes frequent small changes", value: 3 }, { label: "No limitation", value: 4 }] },
+      { id: "br_nutrition", prompt: "Nutrition (usual food intake)", options: [{ label: "Very poor — eats less than a third of meals", value: 1 }, { label: "Probably inadequate — about half of meals", value: 2 }, { label: "Adequate — eats most meals", value: 3 }, { label: "Excellent — eats nearly all meals", value: 4 }] },
+      { id: "br_friction", prompt: "Friction and shear", options: [{ label: "Problem — needs moderate to maximum help to move, slides down in bed or chair", value: 1 }, { label: "Potential problem — moves feebly or needs minimum help", value: 2 }, { label: "No apparent problem — moves independently", value: 3 }] },
+    ],
+    score: null,
+    interpret: null,
+    custom: true,
+  },
 };
 
 // Wire score/interpret after object literal so functions can reference each measure's own item list cleanly.
 Object.values(MEASURES).forEach((m) => {
-  if (m.isPsfs) {
+  if (m.custom) {
+    m.score = sumScore(m.items);
+    m.interpret = m.id === "barthel" ? barthelInterpret : bradenInterpret;
+  } else if (m.isPsfs) {
     m.score = (answers) => {
       const vals = m.items.map((it) => answers[it.id]).filter((v) => v !== undefined && v !== "" && v !== null);
       if (!vals.length) return null;
@@ -277,7 +351,7 @@ Object.values(MEASURES).forEach((m) => {
    LEFS offered for any lower-limb region. */
 const LOWER_LIMB_CLUSTERS = ["hip", "knee", "ankleFoot", "lumbarSI"];
 
-export function suggestMeasures({ selectedRegions = [], contentKeyForRegion } = {}) {
+export function suggestMeasures({ selectedRegions = [], contentKeyForRegion, extraRecommended = [] } = {}) {
   const clusters = selectedRegions.map((r) => (contentKeyForRegion ? contentKeyForRegion(r) : null)).filter(Boolean);
   const recommended = [];
   const seen = new Set();
@@ -291,6 +365,10 @@ export function suggestMeasures({ selectedRegions = [], contentKeyForRegion } = 
       addRecommended(m.id, `Matches the selected region (${m.label} is a standard measure for this area).`);
     }
   });
+
+  // Pathway-level suggestions (e.g. the inpatient pathway recommends Barthel
+  // for every patient and Braden for immobile ones) -- region-independent.
+  extraRecommended.forEach((e) => { if (MEASURES[e.id]) addRecommended(e.id, e.reason); });
 
   const otherSuitable = [];
   const seenOther = new Set([...seen]);
@@ -338,6 +416,8 @@ const INSTRUMENT_ALIASES = {
   psfs: ["psfs"],
   ndi: ["neck disability index", "ndi"],
   lumbarDisability: ["oswestry disability index", "odi", "roland-morris", "rmdq"],
+  barthel: ["barthel"],
+  braden: ["braden"],
 };
 
 export function matchMeasureIdForInstrument(label) {
