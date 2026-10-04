@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import { FieldLabel, SectionTitle } from "./assessmentTypography.jsx";
 import { uploadImage, uploadErrorMessage } from "./services/cloudinary.js";
@@ -27,7 +27,35 @@ export const BRAND = {
 
 /* ============================================================
    GENERIC FIELD COMPONENTS — tap-to-select, minimal typing
+
+   One field kit for every assessment: Ortho (IPD / Outpatient /
+   Post-op), Neuro and Cardio. Ortho uses the defaults. Neuro and
+   Cardio used to carry their own copies of these components; they
+   now wrap their wizard in <FieldKitContext.Provider value={...}> to
+   keep the few things that look or behave differently there:
+
+     renderInfo(info)  rich info-card button for a field's `info` prop
+                       (Neuro/Cardio's Perform / Scale / Interpret card)
+     renderHowTo(text) the "How to" button for a field's `howTo` text
+     classicLayout     plain section title and step-bar circles
+                       (no title row / icon wrapper)
+     compactSelect     "▾" list button instead of "Select ⌄"
+     searchSelects     search box in long option lists (> 6 options)
+     scaleStep         slider step for ScaleField (default 1)
+     addStepLabel      tooltip of the step bar's "+" button
    ============================================================ */
+export const FieldKitContext = createContext({});
+const useKit = () => useContext(FieldKitContext) || {};
+
+// The help button next to a field label: a rich info card when the module
+// supplies one, otherwise the plain "how to" text.
+function FieldHelp({ info, howTo }) {
+  const kit = useKit();
+  if (info && kit.renderInfo) return kit.renderInfo(info);
+  if (!howTo) return null;
+  return kit.renderHowTo ? kit.renderHowTo(howTo) : <InfoButton text={howTo} />;
+}
+
 export function Hint({ children }) {
   if (!children) return null;
   return <div className="hint">💡 {children}</div>;
@@ -294,13 +322,13 @@ export function missingDemographicsFields(dem) {
   return missing;
 }
 
-export function FieldShell({ label, hint, howTo, children }) {
+export function FieldShell({ label, hint, howTo, info, children }) {
   return (
     <div className="field-block">
       {label && (
         <div className="field-label-row">
           <FieldLabel>{label}</FieldLabel>
-          {howTo && <InfoButton text={howTo} />}
+          <FieldHelp info={info} howTo={howTo} />
         </div>
       )}
       {children}
@@ -323,9 +351,10 @@ export function FieldShell({ label, hint, howTo, children }) {
 // ⓘ pass, "in neuro clinical assessment this have in sensory and reflex
 // examination take reference of image and info card from there and put it
 // images like rom").
-export function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, rowInfo }) {
+export function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, info, rowInfo }) {
+  const kit = useKit();
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="lr-grid">
         <div className="lr-row lr-head">
           <div className="lr-cell lr-zone" />
@@ -335,10 +364,18 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
         </div>
         {rows.map((r) => (
           <div className="lr-row" key={r}>
-            <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { gap: 6 } : undefined}>
-              {rowInfo?.[r] && <InfoButton imageTrigger small fallbackIcon="ti-photo" title={r} richItem={rowInfo[r]} />}
-              <span>{r}</span>
-            </div>
+            {kit.renderInfo ? (
+              // Neuro/Cardio: the row's own info card after the row name.
+              <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { display: "flex", alignItems: "center", gap: 4 } : undefined}>
+                {r}
+                {rowInfo?.[r] && kit.renderInfo(rowInfo[r])}
+              </div>
+            ) : (
+              <div className="lr-cell lr-zone" style={rowInfo?.[r] ? { gap: 6 } : undefined}>
+                {rowInfo?.[r] && <InfoButton imageTrigger small fallbackIcon="ti-photo" title={r} richItem={rowInfo[r]} />}
+                <span>{r}</span>
+              </div>
+            )}
             {columns.map((c) => {
               const key = `${r}__${c}`;
               return (
@@ -357,9 +394,9 @@ export function LRGrid({ label, rows, columns = ["Right", "Left"], options, valu
   );
 }
 
-export function TextField({ label, value, onChange, placeholder, hint, howTo, unit }) {
+export function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="text-input-wrap">
         <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
         {unit && <span className="combo-unit">{unit}</span>}
@@ -369,6 +406,11 @@ export function TextField({ label, value, onChange, placeholder, hint, howTo, un
 }
 
 function SelectPopover({ options, multi, value, onChange, onClose }) {
+  const kit = useKit();
+  const [q, setQ] = useState("");
+  const query = q.trim().toLowerCase();
+  const showSearch = kit.searchSelects && options.length > 6;
+  const shown = showSearch && query ? options.filter((o) => o.toLowerCase().includes(query)) : options;
   const selected = multi ? (value ? String(value).split(", ").filter(Boolean) : []) : value;
   function toggle(opt) {
     if (multi) {
@@ -395,8 +437,11 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
           ✕
         </button>
       </div>
+      {showSearch && (
+        <input className="popover-search" placeholder="🔍 Search" value={q} onChange={(e) => setQ(e.target.value)} />
+      )}
       <div className="popover-list">
-        {options.map((opt) => {
+        {shown.map((opt) => {
           const isSel = multi ? selected.includes(opt) : value === opt;
           return (
             <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
@@ -417,7 +462,8 @@ function SelectPopover({ options, multi, value, onChange, onClose }) {
   );
 }
 
-export function SelectField({ label, type = "single", options, value, onChange, howTo, placeholder, hint }) {
+export function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
+  const kit = useKit();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -428,7 +474,7 @@ export function SelectField({ label, type = "single", options, value, onChange, 
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="select-wrap" ref={ref}>
         <input
           className="select-input"
@@ -437,9 +483,15 @@ export function SelectField({ label, type = "single", options, value, onChange, 
           onFocus={() => setOpen(true)}
           onChange={(e) => onChange(e.target.value)}
         />
-        <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
-          Select ⌄
-        </button>
+        {kit.compactSelect ? (
+          <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)} aria-label="Choose from list">
+            ▾
+          </button>
+        ) : (
+          <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
+            Select ⌄
+          </button>
+        )}
         {open && <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />}
       </div>
     </FieldShell>
@@ -541,10 +593,10 @@ export function DateField({ label, value, onChange, hint, howTo }) {
 // (every other Segmented call site) is completely unchanged. Each option
 // can be a plain string (as before) or { label, icon } to show an icon --
 // only used by the chips variant, ignored otherwise.
-export function Segmented({ label, options, value, onChange, hint, howTo, wrap, variant }) {
+export function Segmented({ label, options, value, onChange, hint, howTo, info, wrap, variant }) {
   if (variant === "chips") {
     return (
-      <FieldShell label={label} hint={hint} howTo={howTo}>
+      <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
         <div className="chip-row">
           {options.map((o) => {
             const opt = typeof o === "object" ? o : { label: o, icon: null };
@@ -566,7 +618,7 @@ export function Segmented({ label, options, value, onChange, hint, howTo, wrap, 
     );
   }
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className={"segmented" + (wrap ? " segmented-wrap" : "")}>
         {options.map((o) => (
           <button type="button" key={o} className={"seg-btn" + (value === o ? " seg-active" : "")} onClick={() => onChange(value === o ? "" : o)}>
@@ -578,13 +630,15 @@ export function Segmented({ label, options, value, onChange, hint, howTo, wrap, 
   );
 }
 
-export function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, width }) {
+export function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
   return (
     <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
-      <div className="vital-label-row">
-        <span className="vital-label">{label}</span>
-        {howTo && <InfoButton text={howTo} />}
-      </div>
+      {label && (
+        <div className="vital-label-row">
+          <span className="vital-label">{label}</span>
+          <FieldHelp info={info} howTo={howTo} />
+        </div>
+      )}
       <div className="vital-input-wrap">
         <input
           type="number"
@@ -652,22 +706,27 @@ export function VitalRow({ label, value, onChange, unit, howTo, richItem, slider
   );
 }
 
-export function TextArea({ label, value, onChange, placeholder, hint, howTo }) {
+export function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
-      <div>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
+      {useKit().classicLayout ? (
         <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
-      </div>
+      ) : (
+        <div>
+          <textarea className="textarea" rows={2} value={value || ""} placeholder={placeholder || "Type here..."} onChange={(e) => onChange(e.target.value)} />
+        </div>
+      )}
     </FieldShell>
   );
 }
 
-export function ScaleField({ label, value, onChange, hint, howTo, max = 10 }) {
+export function ScaleField({ label, value, onChange, hint, howTo, info, max = 10 }) {
+  const kit = useKit();
   const v = value === undefined || value === "" ? 0 : Number(value);
   return (
-    <FieldShell label={label} hint={hint} howTo={howTo}>
+    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
       <div className="scale-wrap">
-        <input type="range" min={0} max={max} step={1} value={v} style={{ minWidth: 0 }} onChange={(e) => onChange(e.target.value)} className="scale-range" />
+        <input type="range" min={0} max={max} step={kit.scaleStep || 1} value={v} style={{ minWidth: 0 }} onChange={(e) => onChange(e.target.value)} className="scale-range" />
         <span className="scale-readout">
           {value === undefined || value === "" ? "—" : v}
           <span className="scale-max">/{max}</span>
@@ -786,7 +845,21 @@ export function Alert({ tone = "amber", children }) {
 // right") -- an optional right-aligned slot in the title row, e.g. Care
 // Plan Treatment's search toggle, instead of it rendering on its own row
 // with dead space above the section content.
-export function SectionIntro({ icon, title, sub, info, action, titleAs: TitleAs = SectionTitle }) {
+export function SectionIntro({ icon, title, sub, info, action, titleAs }) {
+  const kit = useKit();
+  if (kit.classicLayout) {
+    const ClassicTitle = titleAs;
+    return (
+      <div className="section-intro">
+        {icon && <div className="section-intro-icon">{icon}</div>}
+        <div>
+          {ClassicTitle ? <ClassicTitle>{title}</ClassicTitle> : <div className="section-intro-title">{title}</div>}
+          {sub && <div className="section-intro-sub">{sub}</div>}
+        </div>
+      </div>
+    );
+  }
+  const TitleAs = titleAs || SectionTitle;
   return (
     <div className="section-intro">
       {icon && <div className="section-intro-icon">{icon}</div>}
@@ -802,13 +875,22 @@ export function SectionIntro({ icon, title, sub, info, action, titleAs: TitleAs 
   );
 }
 
-/* Top step nav — small circles per step, tap to jump anywhere */
+/* Top step nav — small circles per step, tap to jump anywhere.
+   Scrolls only its own horizontal strip (container.scrollTo) instead of
+   el.scrollIntoView, which can drag the whole page vertically when the
+   active circle is near the edge of the screen (Neuro's fix, now shared). */
 export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requiredIds }) {
+  const kit = useKit();
   const refs = useRef([]);
   useEffect(() => {
     const el = refs.current[currentIndex];
-    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const container = el && el.parentElement;
+    if (el && container && container.scrollTo) {
+      const target = el.offsetLeft - container.clientWidth / 2 + el.offsetWidth / 2;
+      container.scrollTo({ left: target, behavior: "smooth" });
+    }
   }, [currentIndex]);
+  const addLabel = kit.addStepLabel || "Add assessment";
   return (
     <div className="step-nav">
       {steps.map((s, i) => {
@@ -832,7 +914,7 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
             title={required ? `${s.label} — required for this condition` : s.label}
           >
             <span className="step-circle-ring">
-              <span className="step-circle-icon">{s.icon}</span>
+              {kit.classicLayout ? s.icon : <span className="step-circle-icon">{s.icon}</span>}
               {required && (
                 <span
                   aria-hidden="true"
@@ -850,9 +932,9 @@ export function StepNav({ steps, currentIndex, visited, onJump, onAddClick, requ
           </button>
         );
       })}
-      <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label="Add assessment" title="Add assessment">
+      <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label={addLabel} title={addLabel}>
         <span className="step-circle-ring">
-          <span className="step-circle-icon">+</span>
+          {kit.classicLayout ? "+" : <span className="step-circle-icon">+</span>}
         </span>
         <span className="step-circle-label">Add</span>
       </button>
@@ -882,7 +964,11 @@ export function stepBarLabel(label) {
 export function useSectionData(data, setData, key) {
   const section = data[key] || {};
   const set = (field, value) => setData((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-  return [section, set];
+  // Merges several fields in one update -- used by "Mark all normal" quick-pick
+  // buttons so the whole batch lands as a single state change, not one render
+  // per field.
+  const setMany = (fields) => setData((prev) => ({ ...prev, [key]: { ...prev[key], ...fields } }));
+  return [section, set, setMany];
 }
 
 export function AddMovementRow({ onAdd, placeholder }) {

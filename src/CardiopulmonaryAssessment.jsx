@@ -13,7 +13,7 @@ import ShareAssessmentModal, { SHARE_EXCLUDED_STEP_IDS } from "./ShareAssessment
 import { humanizeKey } from "./medicalAbbreviations.js";
 import { TYPO, SPACING, AssessmentTitle, FieldLabel, SummaryRow } from "./assessmentTypography.jsx";
 import { trackEvent } from "./analytics/trackEvent.js";
-import { stepBarLabel } from "./orthoFieldKit.jsx";
+import { FieldKitContext, stepBarLabel, Hint, MissingDemographicsModal, missingDemographicsFields, FieldShell, LRGrid, TextField, SelectField, Segmented, NumberField, TextArea, ScaleField, Alert, SectionIntro, StepNav, useSectionData, fmtVal } from "./orthoFieldKit.jsx";
 
 // Opens the rich InfoCard overlay from anywhere in the field tree below
 // CardiopulmonaryAssessment without prop-drilling a setter through every
@@ -40,45 +40,6 @@ const BRAND = {
   redBg: "#FDEDED",
   white: "#FFFFFF",
 };
-
-// True if patient name/age are missing from the Demographics section.
-function missingDemographicsFields(dem) {
-  const missing = [];
-  if (!String(dem?.name || "").trim()) missing.push("name");
-  if (!String(dem?.age || "").trim()) missing.push("age");
-  return missing;
-}
-
-// Blocks the explicit "Save Assessment" tap (not the continuous background
-// autosave -- that keeps running regardless, so in-progress work still
-// survives a crash/tab-close) when Patient Name and/or Age are still
-// blank. Without a name, AppFull.jsx's "create a patient row once dem_name
-// appears" effect never fires, so the whole assessment silently has
-// nowhere to be filed under -- this stops that at the one moment the
-// therapist actually intends to finish, rather than nagging on every
-// keystroke. Same component/copy as orthoFieldKit.jsx's/
-// NeurologicalAssessment.jsx's MissingDemographicsModal, duplicated
-// rather than cross-imported since this module doesn't otherwise share
-// components with those files.
-function MissingDemographicsModal({ missing, onGoToDemographics, onClose }) {
-  const label = missing.length > 1 ? "name and age" : missing[0];
-  return createPortal(
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="missing-dem-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className="missing-dem-icon">📋</div>
-        <div className="missing-dem-title">Patient {label} needed</div>
-        <div className="missing-dem-body">The assessment is filed under the patient's name — fill in the {label} before saving, or it won't be linked to a patient record.</div>
-        <button type="button" className="primary-btn" style={{ width: "100%" }} onClick={onGoToDemographics}>
-          Go to Patient Info
-        </button>
-        <button type="button" className="ghost-btn" style={{ width: "100%", marginTop: 8 }} onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 /* ============================================================
    STATIC DATA — Step 1 / Step 2 selectors
@@ -191,11 +152,6 @@ function ensureCarePlanSteps(order) {
 /* ============================================================
    GENERIC FIELD COMPONENTS
    ============================================================ */
-function Hint({ children }) {
-  if (!children) return null;
-  return <div className="hint">💡 {children}</div>;
-}
-
 function InfoButton({ text }) {
   const [open, setOpen] = useState(false);
   return (
@@ -244,156 +200,19 @@ function InfoCardButton({ data }) {
   );
 }
 
-function FieldShell({ label, hint, howTo, info, children }) {
-  return (
-    <div className="field-block">
-      {label && (
-        <div className="field-label-row">
-          <FieldLabel>{label}</FieldLabel>
-          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
-        </div>
-      )}
-      {children}
-      <Hint>{hint}</Hint>
-    </div>
-  );
-}
-
-function TextField({ label, value, onChange, placeholder, hint, howTo, info, unit }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="text-input-wrap">
-        <input className="text-input" value={value || ""} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
-        {unit && <span className="combo-unit">{unit}</span>}
-      </div>
-    </FieldShell>
-  );
-}
-
-function SelectPopover({ options, multi, value, onChange, onClose }) {
-  const selected = multi ? (value ? String(value).split(", ").filter(Boolean) : []) : value;
-  function toggle(opt) {
-    if (multi) {
-      const has = selected.includes(opt);
-      const next = has ? selected.filter((o) => o !== opt) : [...selected, opt];
-      onChange(next.join(", "));
-    } else {
-      onChange(opt);
-      onClose();
-    }
-  }
-  // Redesign (2026-08-31, Aditi: "the choosing option is big and takes all
-  // the space of screen"): was one full-width lavender pill per option --
-  // on a real phone, 4-8 of those plus the header/Done button pushed well
-  // past the fold, so opening a symptom list buried its own confirm button
-  // off-screen. Now a compact checklist (thin divider rows, a small check/
-  // radio box instead of a full color-fill flip) with its OWN capped,
-  // internally-scrolling list -- the header and Done stay pinned and
-  // visible no matter how many options a field has.
-  return (
-    <div className="select-popover">
-      <div className="popover-head">
-        <span>{multi ? "Select any" : "Select one"}</span>
-        <button type="button" className="popover-close" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
-      </div>
-      <div className="popover-list">
-        {options.map((opt) => {
-          const isSel = multi ? selected.includes(opt) : value === opt;
-          return (
-            <button type="button" key={opt} className={"popover-item" + (isSel ? " popover-item-active" : "")} onClick={() => toggle(opt)}>
-              <span className={"popover-check-icon" + (multi ? "" : " popover-check-icon-radio") + (isSel ? " popover-check-icon-active" : "")}>
-                {isSel && "✓"}
-              </span>
-              <span className="popover-item-label">{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-      {multi && (
-        <button type="button" className="popover-done" onClick={onClose}>
-          Done{selected.length > 0 ? ` · ${selected.length} selected` : ""}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function SelectField({ label, type = "single", options, value, onChange, howTo, info, placeholder, hint }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="select-wrap" ref={ref}>
-        <input
-          className="select-input"
-          value={value || ""}
-          placeholder={placeholder || (type === "multi" ? "Type or select, comma separated..." : "Type or select...")}
-          onFocus={() => setOpen(true)}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <button type="button" className="select-btn" onClick={() => setOpen((o) => !o)}>
-          Select ⌄
-        </button>
-        {open && (
-          <SelectPopover options={options} multi={type === "multi"} value={value} onChange={onChange} onClose={() => setOpen(false)} />
-        )}
-      </div>
-    </FieldShell>
-  );
-}
-
-function Segmented({ label, options, value, onChange, hint, howTo, info }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="segmented">
-        {options.map((o) => (
-          <button
-            type="button"
-            key={o}
-            className={"seg-btn" + (value === o ? " seg-active" : "")}
-            onClick={() => onChange(value === o ? "" : o)}
-          >
-            {o}
-          </button>
-        ))}
-      </div>
-    </FieldShell>
-  );
-}
-
-function NumberField({ label, value, onChange, unit, placeholder, hint, howTo, info, width }) {
-  return (
-    <div className="vital-field" style={width ? { flexBasis: width } : undefined}>
-      {label && (
-        <div className="vital-label-row">
-          <span className="vital-label">{label}</span>
-          {info ? <InfoCardButton data={info} /> : howTo && <InfoButton text={howTo} />}
-        </div>
-      )}
-      <div className="vital-input-wrap">
-        <input
-          type="number"
-          inputMode="decimal"
-          className="vital-input"
-          value={value || ""}
-          placeholder={placeholder || "—"}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        {unit && <span className="vital-unit">{unit}</span>}
-      </div>
-      <Hint>{hint}</Hint>
-    </div>
-  );
-}
+// Cardio's look inside the shared field kit (orthoFieldKit.jsx): its own info cards and
+// "How to" pop-up, plain section titles and step circles, and half-point steps on
+// rating scales (Borg, dyspnoea).
+const CARDIO_KIT = {
+  renderInfo: (info) => <InfoCardButton data={info} />,
+  renderHowTo: (text) => <InfoButton text={text} />,
+  classicLayout: true,
+  scaleStep: 0.5,
+  addStepLabel: "Add a custom step",
+};
+// Steps built on the shared kit from the start (Medical Records, Care Plan) keep the
+// kit's own look inside Cardio, as they always had.
+const SHARED_KIT_LOOK = {};
 
 // Collapsed-by-default vital sign row -- opens already showing the value
 // (normally a pre-filled normal default) with a maximize (+) button to
@@ -463,136 +282,6 @@ function VitalRow({ label, value, onChange, unit, info, howTo, slider, max = 10,
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function TextArea({ label, value, onChange, placeholder, hint, howTo, info }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <textarea
-        className="textarea"
-        rows={2}
-        value={value || ""}
-        placeholder={placeholder || "Type here..."}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </FieldShell>
-  );
-}
-
-function ScaleField({ label, value, onChange, hint, howTo, info, max = 10 }) {
-  const v = value === undefined || value === "" ? 0 : Number(value);
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="scale-wrap">
-        <input
-          type="range"
-          min={0}
-          max={max}
-          step={0.5}
-          value={v}
-          style={{ minWidth: 0 }}
-          onChange={(e) => onChange(e.target.value)}
-          className="scale-range"
-        />
-        <span className="scale-readout">
-          {value === undefined || value === "" ? "—" : v}
-          <span className="scale-max">/{max}</span>
-        </span>
-      </div>
-    </FieldShell>
-  );
-}
-
-function LRGrid({ label, rows, columns = ["Right", "Left"], options, value = {}, onChange, hint, howTo, info }) {
-  return (
-    <FieldShell label={label} hint={hint} howTo={howTo} info={info}>
-      <div className="lr-grid">
-        <div className="lr-row lr-head">
-          <div className="lr-cell lr-zone" />
-          {columns.map((c) => (
-            <div className="lr-cell lr-colhead" key={c}>
-              {c}
-            </div>
-          ))}
-        </div>
-        {rows.map((r) => (
-          <div className="lr-row" key={r}>
-            <div className="lr-cell lr-zone">{r}</div>
-            {columns.map((c) => {
-              const key = `${r}__${c}`;
-              return (
-                <div className="lr-cell" key={c}>
-                  <select
-                    className="lr-select"
-                    value={value[key] || ""}
-                    onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                  >
-                    <option value="">–</option>
-                    {options.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </FieldShell>
-  );
-}
-
-function Alert({ tone = "amber", children }) {
-  return <div className={"alert alert-" + tone}>{children}</div>;
-}
-
-function SectionIntro({ icon, title, sub, titleAs: TitleAs }) {
-  return (
-    <div className="section-intro">
-      {icon && <div className="section-intro-icon">{icon}</div>}
-      <div>
-        {TitleAs ? <TitleAs>{title}</TitleAs> : <div className="section-intro-title">{title}</div>}
-        {sub && <div className="section-intro-sub">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-/* Top step nav — small circles per step, tap to jump anywhere */
-function StepNav({ steps, currentIndex, visited, onJump, onAddClick }) {
-  const refs = useRef([]);
-  useEffect(() => {
-    const el = refs.current[currentIndex];
-    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [currentIndex]);
-  return (
-    <div className="step-nav">
-      {steps.map((s, i) => {
-        const active = i === currentIndex;
-        const seen = visited.has(s.id) && !active;
-        return (
-          <button
-            key={s.id}
-            ref={(el) => (refs.current[i] = el)}
-            type="button"
-            className={"step-circle" + (active ? " step-active" : seen ? " step-seen" : "")}
-            onClick={() => onJump(i)}
-            aria-label={s.label}
-            title={s.label}
-          >
-            <span className="step-circle-ring">{s.icon}</span>
-            <span className="step-circle-label">{stepBarLabel(s.label)}</span>
-          </button>
-        );
-      })}
-      <button type="button" className="step-circle step-add" onClick={onAddClick} aria-label="Add a custom step" title="Add a custom step">
-        <span className="step-circle-ring">+</span>
-        <span className="step-circle-label">Add</span>
-      </button>
     </div>
   );
 }
@@ -1159,16 +848,6 @@ function CustomSection({ id, meta, data, setData }) {
 /* ============================================================
    SECTION CONTENT
    ============================================================ */
-function useSectionData(data, setData, key) {
-  const section = data[key] || {};
-  const set = (field, value) => setData((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-  // Merges several fields in one update -- used by "Mark all normal" quick-pick
-  // buttons so the whole batch lands as a single state change, not one render
-  // per field.
-  const setMany = (fields) => setData((prev) => ({ ...prev, [key]: { ...prev[key], ...fields } }));
-  return [section, set, setMany];
-}
-
 /* ---------- Demographics ---------- */
 function DemographicsSection({ data, setData }) {
   const [d, set] = useSectionData(data, setData, "demographics");
@@ -1899,15 +1578,6 @@ function PrecautionsSection({ data, setData, setting, system }) {
 }
 
 /* ---------- Summary ---------- */
-function fmtVal(v) {
-  if (v && typeof v === "object") {
-    const entries = Object.entries(v).filter(([, val]) => val);
-    return entries.length ? entries.map(([k, val]) => `${k.replace("__", " ")}: ${val}`).join(" · ") : null;
-  }
-  if (v === undefined || v === null || v === "") return null;
-  return String(v);
-}
-
 // Exported (2026-08-20, Aditi: "assessment should show like this image...
 // i command you put summary and review same to same not change at all in
 // assessment section") so SpecialtyPatientProfile.jsx's Assessments tab can
@@ -1992,7 +1662,17 @@ export function withCarePlanSummaryAlias(data) {
   return { ...data, carePlanPlan: data?.cardioCarePlan };
 }
 
-export function SummarySection({ setting, system, data, setData, assessSteps, formatters, onShare, onGeneratePdf }) {
+// Also rendered by the patient profile (SpecialtyPatientProfile.jsx), outside the
+// wizard, so it sets the field-kit look itself.
+export function SummarySection(props) {
+  return (
+    <FieldKitContext.Provider value={CARDIO_KIT}>
+      <SummarySectionBody {...props} />
+    </FieldKitContext.Provider>
+  );
+}
+
+function SummarySectionBody({ setting, system, data, setData, assessSteps, formatters, onShare, onGeneratePdf }) {
   const settingLabel = SETTINGS.find((s) => s.id === setting)?.label || "—";
   const systemLabel = setting === "rehab" && system ? rehabSubLabel(system) : SYSTEMS.find((s) => s.id === system)?.label || "—";
   const [copied, setCopied] = useState(false);
@@ -2439,6 +2119,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
 
   return (
     <InfoCardContext.Provider value={setActiveCard}>
+    <FieldKitContext.Provider value={CARDIO_KIT}>
     <div className="app-shell">
       <style>{`
         * { box-sizing: border-box; }
@@ -2827,7 +2508,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
           {current.id === "safety" && <SafetySection data={data} setData={setData} setting={setting} />}
           {current.id === "subjective" && <SubjectiveSection data={data} setData={setData} />}
           {current.id === "chart" && <ChartSection data={data} setData={setData} setting={setting} system={system} />}
-          {current.id === "medicalRecords" && <MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} />}
+          {current.id === "medicalRecords" && <FieldKitContext.Provider value={SHARED_KIT_LOOK}><MedicalRecordsSection data={data} setData={setData} patientData={patientData} onSave={onSave} /></FieldKitContext.Provider>}
           {current.id === "vitals" && <VitalsSection data={data} setData={setData} system={system} />}
           {current.id === "cardio" && <CardioSection data={data} setData={setData} system={system} />}
           {current.id === "resp" && <RespSection data={data} setData={setData} system={system} />}
@@ -2841,7 +2522,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
               carePlanProgress in its own stepOrder and must still mount
               the shared Care Plan component, not render blank. */}
           {CAREPLAN_PHASE_BY_STEP[current.id] != null && (
-            <CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} />
+            <FieldKitContext.Provider value={SHARED_KIT_LOOK}><CardioCarePlanSection data={data} setData={setData} phase={CAREPLAN_PHASE_BY_STEP[current.id]} onAdvance={goNext} /></FieldKitContext.Provider>
           )}
           {current.id === "precautions" && <PrecautionsSection data={data} setData={setData} setting={setting} system={system} />}
           {current.id === "summary" && (
@@ -2929,6 +2610,7 @@ export default function CardiopulmonaryAssessment({ patientData, activePatientId
         <InfoCard data={activeCard} onClose={() => setActiveCard(null)} />
       </div>
     </div>
+    </FieldKitContext.Provider>
     </InfoCardContext.Provider>
   );
 }
