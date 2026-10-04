@@ -156,6 +156,21 @@ export default function ExplorePage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Opening My Postings / My Opportunities re-reads the board quietly, so the
+  // applicant/registration counts and "Shortlisted" statuses are current
+  // instead of frozen at whatever they were when Explore first loaded.
+  useEffect(() => {
+    if (!myPostingsOpen && !myAppsOpen) return;
+    let cancelled = false;
+    (async () => {
+      const [opps, apps] = await Promise.all([db.getOpportunities(), db.getMyApplications()]);
+      if (cancelled) return;
+      setOpportunities(opps);
+      setMyApplications(apps);
+    })();
+    return () => { cancelled = true; };
+  }, [myPostingsOpen, myAppsOpen]);
+
   // Applicants are fetched per listing when its pipeline opens, rather
   // than all up front -- only the creator can read them, and most people
   // never open this side of the board at all.
